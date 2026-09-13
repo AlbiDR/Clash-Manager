@@ -285,8 +285,10 @@ export interface HubMetadata {
   ageMinutes: number;
   /** Formatted time when the remote dataset was last compiled. */
   lastCompiled: string | null;
-  /** Formatted time when the backend last fetched raw API data. */
+  /** Formatted time when THIS client last completed a successful fetch. */
   lastFetched: string | null;
+  /** Minutes since this client last fetched, for logical thresholding. */
+  fetchedMinutes: number | null;
   /** Flag indicating if the data has exceeded the staleness threshold. */
   isStale: boolean;
 }

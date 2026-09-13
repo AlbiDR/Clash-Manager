@@ -32,7 +32,12 @@
  * sibling card - which is precisely why it read as foreign inside the Settings stack.
  */
 import { LinkRow, SettingsCard } from "@shared";
-import { appVersion, useExternalLink } from "@core";
+import {
+  appVersion,
+  REPOSITORY_ISSUES_URL,
+  REPOSITORY_URL,
+  useExternalLink,
+} from "@core";
 
 defineProps<{
   /**
@@ -59,13 +64,13 @@ const aboutLinks = [
   {
     label: "Report an Issue",
     desc: "Open a bug report or request a feature",
-    url: "https://github.com/AlbiDR/Clash-Manager/issues/new",
+    url: REPOSITORY_ISSUES_URL,
     icon: "warning",
   },
   {
     label: "Source Code",
     desc: "Read, audit, or fork the project",
-    url: "https://github.com/AlbiDR/Clash-Manager",
+    url: REPOSITORY_URL,
     icon: "github",
   },
   {
@@ -86,11 +91,11 @@ const aboutLinks = [
     <div class="about-body">
       <div class="about-meta">
         <div class="about-meta-cell">
-          <span class="about-meta-label">Version</span>
+          <span class="about-meta-label label-caption">Version</span>
           <strong class="about-meta-value">{{ appVersion }}</strong>
         </div>
         <div class="about-meta-cell">
-          <span class="about-meta-label">Licence</span>
+          <span class="about-meta-label label-caption">Licence</span>
           <strong class="about-meta-value">GPL-3.0-only</strong>
         </div>
       </div>
@@ -136,10 +141,7 @@ const aboutLinks = [
 }
 
 .about-meta-label {
-  font-size: var(--sys-typescale-label-sm);
-  font-weight: 900;
   color: var(--sys-color-on-surface-variant);
-  text-transform: uppercase;
   line-height: 1;
 }
 

@@ -134,11 +134,11 @@ onMounted(() => {
       </div>
       <div class="apk-version-grid">
         <div class="apk-version-cell">
-          <span class="apk-version-label">Installed</span>
+          <span class="apk-version-label label-caption">Installed</span>
           <strong class="apk-version-value">{{ installedApkLabel }}</strong>
         </div>
         <div class="apk-version-cell">
-          <span class="apk-version-label">Published</span>
+          <span class="apk-version-label label-caption">Published</span>
           <strong class="apk-version-value">{{ latestApkLabel }}</strong>
         </div>
       </div>
@@ -279,7 +279,7 @@ onMounted(() => {
   color: var(--apk-state-on-container);
   font-family: var(--sys-font-family-mono);
   font-size: var(--sys-typescale-label-sm);
-  font-weight: 850;
+  font-weight: 700;
 }
 
 .apk-version-grid {
@@ -298,10 +298,7 @@ onMounted(() => {
 }
 
 .apk-version-label {
-  font-size: var(--sys-typescale-label-sm);
-  font-weight: 900;
   color: var(--sys-color-on-surface-variant);
-  text-transform: uppercase;
   line-height: 1;
 }
 
@@ -327,7 +324,7 @@ onMounted(() => {
   color: var(--sys-color-on-surface-variant);
   font-family: var(--sys-font-family-mono);
   font-size: var(--sys-typescale-label-sm);
-  font-weight: 750;
+  font-weight: 700;
   line-height: 1.3;
   text-overflow: ellipsis;
   white-space: nowrap;

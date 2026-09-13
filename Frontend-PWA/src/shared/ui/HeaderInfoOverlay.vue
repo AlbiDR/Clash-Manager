@@ -116,7 +116,7 @@ watch(
   max-height: 85vh;
   background: var(--sys-surface-glass);
   border: 1px solid var(--sys-surface-glass-border);
-  border-radius: 32px;
+  border-radius: var(--sys-shape-corner-extra-large);
   padding: 24px;
   box-shadow: var(--sys-elevation-4);
   display: flex;
@@ -146,7 +146,7 @@ watch(
 
 .expansion-header h3 {
   margin: 0;
-  font-size: 20px;
+  font-size: var(--sys-typescale-title-md);
   font-weight: 950;
   color: var(--sys-color-on-surface);
   letter-spacing: -0.03em;

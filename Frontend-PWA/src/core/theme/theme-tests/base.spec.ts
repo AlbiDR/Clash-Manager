@@ -56,7 +56,17 @@ describe("Base Theme", () => {
     });
 
     it("should enforce native app gestures and behavior", () => {
-      expect(baseStyles).toContain("overscroll-behavior-y: contain");
+      // Horizontal overscroll is blocked so a sideways drag cannot trigger the
+      // browser's back gesture. Vertical overscroll is deliberately left at
+      // `auto`, because pull-to-refresh depends on it.
+      //
+      // This previously asserted `overscroll-behavior-y: contain`, a value that
+      // appeared exactly once in the whole stylesheet, inside a
+      // `.prevent-overscroll` rule no element ever carried. The assertion was
+      // therefore describing a dead rule rather than the shipped policy, and it
+      // would have gone on passing however `body` itself behaved.
+      expect(baseStyles).toContain("overscroll-behavior-x: none");
+      expect(baseStyles).toContain("overscroll-behavior-y: auto");
       expect(baseStyles).toContain("-webkit-user-select: none");
       expect(baseStyles).toContain("-webkit-tap-highlight-color: transparent");
       expect(baseStyles).toContain("touch-action: manipulation");

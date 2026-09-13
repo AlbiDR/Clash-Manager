@@ -39,9 +39,43 @@ function walkFiles(root) {
   return files.sort((a, b) => normalizeRepoPath(a).localeCompare(normalizeRepoPath(b)));
 }
 
+/**
+ * The SFC's root <template> block, found by counting nesting rather than by a
+ * non-greedy match.
+ *
+ * The previous expression was /<template\b[^>]*>([\s\S]*?)<\/template>/i. The
+ * `*?` stops at the FIRST closing tag, so any component using a named slot had
+ * everything after that slot silently unexamined: 18 of 77 .vue files in this
+ * repository contain a nested <template>, and they are biased toward exactly
+ * the composed components most likely to carry a slot-bearing control.
+ *
+ * Reproduced with two files differing only by a named slot above the offending
+ * element: the one without it was reported, the one with it was not. The audit
+ * printed "Violations: 1" and looked clean.
+ *
+ * An unterminated block returns the remainder rather than nothing, so a
+ * malformed file is over-scanned rather than skipped. Wrong in the loud
+ * direction is the only acceptable way for this to be wrong.
+ */
 function extractVueTemplate(content) {
-  const match = content.match(/<template\b[^>]*>([\s\S]*?)<\/template>/i);
-  return match ? { text: match[1], offset: match.index + match[0].indexOf(match[1]) } : { text: content, offset: 0 };
+  const opening = /<template\b[^>]*>/i.exec(content);
+  if (!opening) return { text: content, offset: 0 };
+
+  const innerStart = opening.index + opening[0].length;
+  const tag = /<template\b[^>]*?(\/)?>|<\/template\s*>/gi;
+  tag.lastIndex = innerStart;
+
+  let depth = 1;
+  let match;
+  while ((match = tag.exec(content)) !== null) {
+    if (match[0].startsWith("</")) {
+      depth -= 1;
+      if (depth === 0) return { text: content.slice(innerStart, match.index), offset: innerStart };
+    } else if (!match[1]) {
+      depth += 1;
+    }
+  }
+  return { text: content.slice(innerStart), offset: innerStart };
 }
 
 function stripTemplateComments(content) {
@@ -75,6 +109,29 @@ function isNativeClickableObservation(tagName, tag, attrs) {
   return ["button", "a", "input"].includes(tagName) || attrs.get("role") === "button";
 }
 
+
+/**
+ * An interactive control whose entire visible content is an icon.
+ *
+ * Deliberately narrow. The inner HTML is stripped of icon elements and
+ * whitespace, and the control only qualifies when NOTHING remains: a button
+ * containing an icon AND a word has a name and is not reported. Recall is
+ * traded for precision on purpose, because an audit that cries wolf stops
+ * being read, and this one already reports PASS on a tree where four icon-only
+ * buttons had no accessible name.
+ */
+function isIconOnly(inner) {
+  const withoutIcons = inner
+    .replace(/<Icon\b[^>]*\/>/gi, " ")
+    .replace(/<Icon\b[^>]*>[\s\S]*?<\/Icon>/gi, " ")
+    .replace(/<svg\b[^>]*>[\s\S]*?<\/svg>/gi, " ")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/\{\{[\s\S]*?\}\}/g, "X");
+  return /<Icon\b|<svg\b/i.test(inner) && withoutIcons.trim() === "";
+}
+
+const ACCESSIBLE_NAME_ATTRS = ["aria-label", ":aria-label", "v-bind:aria-label", "aria-labelledby", ":aria-labelledby", "title", ":title"];
+
 function auditTemplate({ repoPath, content }) {
   const template = extractVueTemplate(content);
   const searchable = stripTemplateComments(template.text);
@@ -103,6 +160,24 @@ function auditTemplate({ repoPath, content }) {
         message: "External anchors must open outside the primary WebView and include rel=\"noopener\".",
       });
     }
+  }
+
+  // An icon-only control with no accessible name is unusable with TalkBack,
+  // which is the screen reader on the Android device this app ships to. This
+  // stage reported PASS on 77 files every night while four such buttons sat in
+  // the tree: its three rules covered raw selects, external links and haptic
+  // evidence, and nothing about whether a control can be named aloud.
+  for (const match of searchable.matchAll(/<(button|a)\b([^>]*)>([\s\S]*?)<\/\1>/gi)) {
+    const attrs = tagAttributes(`<${match[1]}${match[2]}>`);
+    if (hasAttribute(attrs, ACCESSIBLE_NAME_ATTRS)) continue;
+    if (!isIconOnly(match[3])) continue;
+    violations.push({
+      code: "icon-only-control-without-accessible-name",
+      severity: "fail",
+      path: repoPath,
+      line: lineForOffset(content, template.offset + match.index),
+      message: `<${match[1]}> renders only an icon and has no accessible name. TalkBack announces it as an unlabelled control. Add aria-label, or visible text.`,
+    });
   }
 
   for (const match of searchable.matchAll(/<([\w.-]+)\b[^>]*@click(?:\.[\w.-]+)?=[^>]*>/g)) {

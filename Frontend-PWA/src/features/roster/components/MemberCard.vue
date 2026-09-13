@@ -106,7 +106,8 @@ const memberAccessibilityLabel = computed(() => {
     :selection-mode="props.selectionMode"
     :is-tagged="props.isTagged"
     :score="props.member.performanceScore"
-    :aria-label="memberAccessibilityLabel"
+    :card-label="memberAccessibilityLabel"
+    :card-name="props.member.n"
     @toggle="emit('toggle')"
     @toggle-select="emit('toggle-select')"
   >

@@ -10,4 +10,5 @@ export { default as ModeSettings } from "./ModeSettings.vue";
 export { default as NetworkSettings } from "./NetworkSettings.vue";
 export { default as NotificationSettings } from "./NotificationSettings.vue";
 export { default as RecoverySettings } from "./RecoverySettings.vue";
+export { default as SettingsSkeleton } from "./SettingsSkeleton.vue";
 export { default as UsefulLinksSettings } from "./UsefulLinksSettings.vue";

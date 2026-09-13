@@ -50,6 +50,7 @@ describe("useConnectivityManager", () => {
 
     // Reset mock store defaults
     mockStore.lastSyncTime = 0;
+    mockStore.lastFetchedTime = null;
     mockStore.currentSource = null;
     mockStore.lastCompiledTime = null;
     mockStore.lastFetchedTime = null;
@@ -163,8 +164,38 @@ describe("useConnectivityManager", () => {
         type: "warning",
         label: "STALE",
         confidence: 40,
-        diagnosis: "Data is 30m ago old"
+        diagnosis: "Last synced a while ago"
       });
+    });
+
+    it("blames the source, not the client, when this client is syncing normally", () => {
+      // [THREAT:] The age shown is the ingestion pipeline's heartbeat, not this
+      // client's. A bare "STALE" while the client is polling fine sends the
+      // operator looking for a fault on the wrong side - which is exactly what
+      // happened: an ingestor 45 minutes behind was read as the app being
+      // broken.
+      const now = Date.now();
+      mockStore.lastSyncTime = now - (45 * 60 * 1000);
+      mockStore.lastFetchedTime = now - (2 * 60 * 1000);
+      vi.mocked(timeUtils.formatTimeAgo).mockImplementation((t: number) =>
+        t === mockStore.lastFetchedTime ? "2m ago" : "45m ago"
+      );
+
+      const { hubHealth } = useConnectivityManager();
+
+      expect(hubHealth.value.label).toBe("STALE");
+      expect(hubHealth.value.diagnosis).toBe("Synced 2m ago; source data 45m ago");
+    });
+
+    it("blames the client when this client itself has not fetched recently", () => {
+      const now = Date.now();
+      mockStore.lastSyncTime = now - (45 * 60 * 1000);
+      mockStore.lastFetchedTime = now - (40 * 60 * 1000);
+      vi.mocked(timeUtils.formatTimeAgo).mockReturnValue("40m ago");
+
+      const { hubHealth } = useConnectivityManager();
+
+      expect(hubHealth.value.diagnosis).toBe("Last synced 40m ago");
     });
 
     it("returns STALE state when data is older than 30 minutes", () => {
@@ -178,7 +209,7 @@ describe("useConnectivityManager", () => {
         type: "warning",
         label: "STALE",
         confidence: 40,
-        diagnosis: "Data is 31m ago old"
+        diagnosis: "Last synced a while ago"
       });
     });
 

@@ -20,6 +20,45 @@ import {
 
 const SYNC_FAILURE_VISIBILITY_THRESHOLD = 3;
 
+/**
+ * Failure classes recognised in a transport error, and the copy shown for each.
+ *
+ * @remarks
+ * [DECISION LOG] TRANSLATED AT THE BOUNDARY, NOT RENDERED RAW:
+ * The raw exception message went straight into the user-facing error headline,
+ * so a sync failure showed the operator strings like "TypeError: Failed to
+ * fetch" or "JWT expired" as though they were an explanation. None of those
+ * tells anyone what happened or what to do about it.
+ *
+ * Matching is on the message text because the errors arrive from several
+ * layers (fetch, Supabase, valibot) with no common typed shape. The order
+ * matters: the first match wins, so the more specific patterns are listed
+ * first.
+ */
+const SYNC_FAILURE_COPY: readonly { pattern: RegExp; headline: string }[] = [
+  { pattern: /abort|timeout|timed out/i, headline: "The server took too long to answer" },
+  { pattern: /jwt|401|403|unauthor|apikey|invalid api key/i, headline: "The app is not authorised to read this data" },
+  { pattern: /50\d|internal server|bad gateway|unavailable/i, headline: "The server could not answer right now" },
+  { pattern: /failed to fetch|network\s*error|network request failed|load failed/i, headline: "Could not reach the server" },
+  { pattern: /unconfigured|no api url|not configured/i, headline: "No backend is configured yet" },
+  { pattern: /validation|invalid type|expected/i, headline: "The server sent data this app could not read" },
+];
+
+/** Fallback headline when the failure matches no known class. */
+const SYNC_FAILURE_FALLBACK = "The clan data could not be refreshed";
+
+/**
+ * Converts a transport error into copy addressed to the operator.
+ *
+ * @param error - The error raised by the sync attempt.
+ * @returns A short human-readable headline.
+ */
+function describeSyncFailure(error: Error): string {
+  const raw = `${error.name} ${error.message}`;
+  return SYNC_FAILURE_COPY.find(({ pattern }) => pattern.test(raw))?.headline
+    ?? SYNC_FAILURE_FALLBACK;
+}
+
 type SyncIntent = "background" | "manual";
 
 type SyncAttemptResult =
@@ -300,7 +339,7 @@ export function useClashSync(data: Ref<WebAppData | null>) {
       || !data.value
       || syncResult.failureCount >= SYNC_FAILURE_VISIBILITY_THRESHOLD;
 
-    if (shouldExposeFailure) syncError.value = syncResult.error.message;
+    if (shouldExposeFailure) syncError.value = describeSyncFailure(syncResult.error);
   }
 
   /** Triggers a user-visible foreground synchronization from Supabase. */

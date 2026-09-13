@@ -55,13 +55,20 @@ export const componentStyles = `
   transform: scale(0.95);
 }
 
-.header-wrapper.is-scrolled .view-title { font-size: var(--sys-typescale-title-sm); }
+/* The collapsing console header. is-scrolled is bound on .console-header
+   (ConsoleHeader.vue), never on a .header-wrapper - no such class exists
+   anywhere in the app - so this rule has never matched and the header shrank
+   its padding and radius around a title that stayed at full size. .view-title
+   already carries the transition this was written to animate.
+   NOTE: this file is a template literal, so comments here must never contain a
+   backtick or a dollar-brace. */
+.console-header.is-scrolled .view-title { font-size: var(--sys-typescale-title-sm); }
 
 /* =========================================
    LINKS & INTERACTION
    ========================================= */
 a { text-decoration: underline; color: inherit; }
-.btn-action, .icon-button, .fab-btn, .dock-item { text-decoration: none !important; }
+.btn-action, .fab-btn, .dock-item { text-decoration: none !important; }
 
 .squish-interaction {
   transition: transform var(--sys-motion-duration-200) var(--sys-motion-spring), background-color var(--sys-motion-duration-200) ease, border-color var(--sys-motion-duration-200) ease;
@@ -69,7 +76,7 @@ a { text-decoration: underline; color: inherit; }
 .squish-interaction:active { transform: scale(0.96) translateY(1px); }
 .card:active, button:active { transform: scale(0.98); }
 
-.card, .hit-target, button, a, input, select, .icon-button {
+.card, .hit-target, button, a, input, select {
   touch-action: manipulation;
   transition: transform var(--sys-motion-duration-200) var(--sys-motion-spring), opacity var(--sys-motion-duration-200) ease, background-color var(--sys-motion-duration-200) ease, box-shadow var(--sys-motion-duration-200) ease;
 }
@@ -113,7 +120,7 @@ a { text-decoration: underline; color: inherit; }
   align-items: center;
   justify-content: center;
   font-size: var(--sys-typescale-label-md);
-  font-weight: 800;
+  font-weight: 700;
   color: var(--sys-color-on-surface);
   font-family: var(--sys-font-family-mono);
   text-transform: uppercase;
@@ -165,7 +172,7 @@ a { text-decoration: underline; color: inherit; }
 
 .stat-score {
   font-size: var(--sys-typescale-score);
-  font-weight: 950;
+  font-weight: 700;
   font-family: var(--sys-font-family-mono);
   letter-spacing: var(--sys-tracking-tightest);
   z-index: 1;
@@ -231,7 +238,7 @@ a { text-decoration: underline; color: inherit; }
   border-radius: var(--sys-shape-corner-input);
   color: var(--sys-color-on-surface);
   font-family: var(--sys-font-family-mono);
-  font-weight: 800;
+  font-weight: 700;
   outline: none;
   transition: border-color var(--sys-motion-duration-200) ease,
     box-shadow var(--sys-motion-duration-200) ease;
@@ -242,8 +249,119 @@ a { text-decoration: underline; color: inherit; }
   box-shadow: 0 0 0 3px rgba(var(--sys-color-primary-rgb), 0.12);
 }
 
+/* =========================================
+   SMALL UPPERCASE LABEL TIERS
+   -----------------------------------------
+   One visual object was drawn by 35 separate rules across six sizes, six
+   weights and six letter-spacings, which is what made the app read as though
+   several people had built it. These three are the whole vocabulary now, and
+   between them they use two sizes and two weights.
+
+   The tiers are separated by ROLE, not by how big they happened to be:
+   caption names a value sitting beside it, section names a group of content,
+   badge is a token on a ground that already carries a tint - which is why it
+   alone is full opacity, since the chip supplies the contrast.
+
+   Controls are deliberately not in here. A button, a text input, a segmented
+   control and the StatusPill readout are all uppercase and none of them is a
+   label; giving them a label recipe would make a button read as a caption.
+   ========================================= */
+.label-caption {
+  font-size: var(--sys-typescale-label-sm);
+  font-weight: 850;
+  text-transform: uppercase;
+  letter-spacing: var(--sys-tracking-wider);
+  opacity: 0.55;
+}
+
+.label-section {
+  font-size: var(--sys-typescale-label-md);
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: var(--sys-tracking-wider);
+  opacity: 0.7;
+}
+
+.label-badge {
+  font-size: var(--sys-typescale-label-sm);
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: var(--sys-tracking-wider);
+}
+
+/* The label half of the same trio the .glass-input block above consolidated.
+   It was left behind, so .field-label stayed declared three times: identical in
+   VoyageSetupForm and DurationInput, and divergent in NetworkSettings at
+   0.05em tracking and 0.4 opacity against the others' 0.06em and 0.45. Three
+   labels that sit above three visually identical fields rendered at two
+   different weights of spacing. 0.06em is exactly --sys-tracking-wider. */
+.field-label {
+  font-size: var(--sys-typescale-label-md);
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: var(--sys-tracking-wider);
+  opacity: 0.45;
+}
+
 .glass-input:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+/* =========================================
+   CONSOLE LIST TRANSITIONS
+   -----------------------------------------
+   [DECISION LOG] THE LIST KEEPS ITS PLACE WHEN IT REORDERS:
+   Changing the sort, typing in the search, or dismissing a member rewrote the
+   roster instantly, so all forty-eight rows teleported and nothing connected
+   where a row had been to where it went. On a list this long that costs the
+   reader their place on every interaction, which is the single most common
+   thing they do here.
+
+   These are Vue's own TransitionGroup classes, applied in ConsoleList. The FLIP
+   is Vue's: it measures each row before and after the patch and animates the
+   difference, so the work here is only to say how that difference should be
+   crossed. Nothing polls, caches coordinates or observes intersections, which
+   matters on a list whose rows also carry content-visibility.
+
+   Reduced motion needs no rule of its own and deliberately has none. The global
+   block in animations.ts drops transform from transition-property, so a moving
+   row stops sliding and simply arrives, while opacity survives the filter and
+   an entering or leaving row still crossfades. That is the same substitution
+   the rest of the app makes, reached without a second code path that could
+   drift from the first.
+
+   The container selector is load-bearing: .card declares its own transform
+   transition on the spring curve, and a bare .console-list-move would tie with
+   it on specificity and lose on order. Scoping to .list-container wins the
+   cascade outright rather than by luck of position.
+   ========================================= */
+.list-container .console-list-move {
+  transition: transform var(--sys-motion-duration-250) var(--sys-motion-easing-standard);
+}
+
+.list-container .console-list-enter-active,
+.list-container .console-list-leave-active {
+  transition:
+    opacity var(--sys-motion-duration-200) var(--sys-motion-easing-standard),
+    transform var(--sys-motion-duration-200) var(--sys-motion-easing-standard);
+}
+
+.list-container .console-list-enter-from,
+.list-container .console-list-leave-to {
+  opacity: 0;
+  transform: translateY(var(--sys-space-8));
+}
+
+/* A leaving row has to come out of flow or the rows below it wait for its fade
+   to finish before they start closing the gap, and the reorder arrives in two
+   stages instead of one. The content container carries no inline padding of its
+   own - only the skeleton branch does - so left and right of zero land the row
+   exactly where it already sat, and it fades in place while the list closes
+   over it. */
+.list-container .console-list-leave-active {
+  position: absolute;
+  left: 0;
+  right: 0;
 }
 `;

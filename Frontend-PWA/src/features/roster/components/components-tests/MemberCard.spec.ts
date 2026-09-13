@@ -66,8 +66,9 @@ describe("MemberCard.vue", () => {
         stubs: {
           BaseCard: {
             name: "BaseCard",
+            props: ["id", "expanded", "selected", "selectionMode", "isTagged", "score", "cardLabel", "cardName"],
             template: `
-              <div :aria-label="$attrs['aria-label']">
+              <div :aria-label="cardLabel">
                 <slot name="identity-meta"></slot>
                 <slot name="identity-name"></slot>
                 <slot name="score-section"></slot>
@@ -76,7 +77,6 @@ describe("MemberCard.vue", () => {
                 </div>
               </div>
             `,
-            props: ["id", "expanded", "selected", "selectionMode", "isTagged", "score"],
           },
           Icon: true,
           MomentumPill: true,
@@ -152,11 +152,23 @@ describe("MemberCard.vue", () => {
     expect(wrapper.find(".trophy-val").text()).toBe("0");
   });
 
-  it("applies aria-label correctly for accessibility", () => {
+  it("describes the member to assistive technology", () => {
+    // Asserted through the prop rather than the rendered attribute: the stub
+    // below chooses whether to render it, so a DOM assertion here tests the
+    // stub's template as much as the component's contract.
     const wrapper = mountMemberCard();
-    const baseCardStub = wrapper.find('[aria-label="Test Player, score 85, Formatted elder"]');
 
-    expect(baseCardStub.exists()).toBe(true);
+    expect(wrapper.findComponent({ name: "BaseCard" }).props("cardLabel"))
+      .toBe("Test Player, score 85, Formatted elder");
+  });
+
+  it("gives the card actions the member's own name", () => {
+    // [THREAT:] Every row's select and expand button was labelled "Select card"
+    // and "Expand details", so a 48-row roster offered 48 identically named
+    // controls and the name said nothing about which row it belonged to.
+    const wrapper = mountMemberCard();
+
+    expect(wrapper.findComponent({ name: "BaseCard" }).props("cardName")).toBe("Test Player");
   });
 
   it("renders expanded content when expanded is true", () => {

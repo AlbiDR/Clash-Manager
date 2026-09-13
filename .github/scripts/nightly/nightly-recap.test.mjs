@@ -207,7 +207,7 @@ test("a whole recap is assembled and rendered from evidence alone", () => {
   assert.equal(text, [
     "Nightly Recap: 2026-08-27",
     "",
-    "Summary: 13/13 merged | 0 changed | 13 clean | 0 stuck | 0 intervention",
+    "Summary: 13/13 merged | 0 changed | 13 clean | 0 stuck | 0 auto-recovered",
     "Grade: 10/10 - Optimal run: every stage completed unaided.",
     "",
     // The overview, asserted verbatim. It states nothing the Summary line
@@ -1017,9 +1017,16 @@ test("a rescued run is never described as self-driven", () => {
       { stage: 9, slug: "refactor", outcome: "CLEAN", merged: true },
     ],
   }));
-  assert.match(rescuedText, /S05 documentation README could not finish unaided/);
-  assert.match(rescuedText, /not entirely self-driven/);
+  assert.match(rescuedText, /S05 documentation README stalled/);
+  assert.match(rescuedText, /watchdog nudged it automatically/);
   assert.doesNotMatch(rescuedText, /got there without help/);
+  // The other half of the same guarantee, added after 2026-09-13. Saying a
+  // stage "needed intervention" sent the owner looking for a cause behind the
+  // two stages named that night. There is none to find: across 416 stage-days
+  // the rescue count per stage runs 4 to 7 with no outlier. The line has to
+  // say a human was not involved, or it invites exactly that hunt.
+  assert.match(rescuedText, /no action from you/);
+  assert.match(rescuedText, /close to random/);
 
   // A finished run makes no unaided claim in prose at all now: the grade line
   // already carries it, and carried it more precisely, distinguishing 10 from 9

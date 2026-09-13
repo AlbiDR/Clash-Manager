@@ -42,34 +42,28 @@ describe("SelectionBar", () => {
     expect(wrapper.text()).toContain("Done");
   });
 
-  it("toggles score expansion and emits select-score on mode toggle", async () => {
+  it("emits select-score on mode toggle", async () => {
     const wrapper = mount(SelectionBar, {
       props: { count: 0, totalCount: 50 },
     });
-    
-    // Toggle Mode
-    const modeBtn = wrapper.find(".mode-toggle");
-    await modeBtn.trigger("click");
+
+    await wrapper.find(".mode-toggle").trigger("click");
+
     expect(wrapper.emitted("select-score")).toBeTruthy();
     expect(wrapper.emitted("select-score")![0]).toEqual([75, "le"]);
-
-    // Expand
-    const trigger = wrapper.find(".sp-trigger");
-    await trigger.trigger("click");
-    expect(wrapper.find(".value-picker").exists()).toBe(true);
   });
 
-  it("emits select-score when a threshold is selected", async () => {
+  it("emits select-score when the threshold is stepped", async () => {
     const wrapper = mount(SelectionBar, {
       props: { count: 0, totalCount: 50 },
     });
-    
-    await wrapper.find(".sp-trigger").trigger("click");
-    const options = wrapper.findAll(".val-opt");
-    await options[0].trigger("click"); // 15
-    
+
+    // Keyboard rather than a drag: this asserts the event reaches the bar, and
+    // the slider's own pointer geometry is covered in its own spec.
+    await wrapper.find(".sp-slider").trigger("keydown", { key: "ArrowLeft" });
+
     expect(wrapper.emitted("select-score")).toBeTruthy();
-    expect(wrapper.emitted("select-score")![0]).toEqual([15, "ge"]);
+    expect(wrapper.emitted("select-score")![0]).toEqual([70, "ge"]);
   });
 
   it("emits clear when active action is clicked", async () => {

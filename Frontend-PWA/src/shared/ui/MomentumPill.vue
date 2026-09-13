@@ -92,7 +92,7 @@ const { benchmarkTooltipContent } = useBenchmarkedStat(
 
 .trend-val {
   font-size: 9px;
-  font-weight: 900;
+  font-weight: 700;
   font-family: var(--sys-font-family-mono);
 }
 </style>

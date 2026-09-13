@@ -1,6 +1,6 @@
 {
   "name": "clash-manager-monorepo",
-  "version": "14.50.66",
+  "version": "14.50.93",
   "license": "GPL-3.0-only",
   "private": true,
   "scripts": {
@@ -25,6 +25,7 @@
     "test:migration-audit": "node --test .github/scripts/database/sql-lexer.test.mjs .github/scripts/database/audit-db-drift.test.mjs .github/scripts/database/baseline-rules.test.mjs .github/scripts/database/audit-migrations.test.mjs .github/scripts/database/fold-state.test.mjs",
     "test:apk-ux-audit": "node --test .github/scripts/android/audit-apk-ux.test.mjs",
     "test:database-baseline": "bash .github/scripts/database/test-database-baseline.sh",
+    "test:database-baseline:nodocker": "bash .github/scripts/database/baseline-no-docker.sh",
     "test:sync-branches": "node --test .github/scripts/nightly/sync-branches-invariants.test.mjs",
     "test:version-code": "node --test .github/scripts/android/android-version-code.test.mjs .github/scripts/android/apk-slot.test.mjs",
     "test:nightly-lifecycle": "node --test .github/scripts/nightly/nightly-stage.test.mjs && node .github/scripts/nightly/nightly-stage.mjs validate",
@@ -58,7 +59,8 @@
     "test:nightly-coherence": "node --test .github/scripts/nightly/nightly-coherence.test.mjs",
     "audit:cron": "node .github/scripts/database/audit-cron-schedule.mjs",
     "test:cron-schedule": "node --test .github/scripts/database/audit-cron-schedule.test.mjs",
-    "test:credential-fanout": "node --test .github/scripts/project/credential-fanout.test.mjs"
+    "test:credential-fanout": "node --test .github/scripts/project/credential-fanout.test.mjs",
+    "verify:push": "pnpm --dir Frontend-PWA type-check && pnpm -r test"
   },
   "devDependencies": {
     "@ast-grep/cli": "catalog:",
@@ -74,7 +76,7 @@
   "simple-git-hooks": {
     "pre-commit": "node .github/scripts/project/commit-trailers.mjs --check-author-config && pnpm exec depcruise --config .github/.dependency-cruiser.mjs Frontend-PWA/src && pnpm --dir Frontend-PWA run lint",
     "commit-msg": "node .github/scripts/project/commit-trailers.mjs $1",
-    "pre-push": "node .github/scripts/project/commit-trailers.mjs --check-push"
+    "pre-push": "node .github/scripts/project/commit-trailers.mjs --check-push && pnpm verify:push"
   },
   "engines": {
     "node": ">=24.0.0",

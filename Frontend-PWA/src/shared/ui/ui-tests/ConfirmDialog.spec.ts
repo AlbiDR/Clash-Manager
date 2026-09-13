@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, afterEach, beforeEach } from "vitest";
 import { mount } from "@vue/test-utils";
 import { useConfirm } from "@core";
 import ConfirmDialog from "../ConfirmDialog.vue";
@@ -158,5 +158,83 @@ describe("ConfirmDialog.vue", () => {
 
     expect(result).toBe(false);
     expect(active.value).toBeNull();
+  });
+  describe("keyboard and assistive-technology contract", () => {
+    // This replaced window.confirm(), which dismisses on Escape, moves focus
+    // into itself and hands focus back afterwards, all for free. None of that
+    // survived the replacement, so the app asked a blocking question that a
+    // keyboard could neither answer nor escape, and a screen reader was never
+    // told a dialog had opened.
+
+    // [THREAT:] `active` is a module singleton, so every dialog left mounted by
+    // an earlier test still watches it and still takes focus when the next test
+    // opens one. Without this teardown the focus assertion reads whichever
+    // leaked instance happened to run its watcher last.
+    const mounted: ReturnType<typeof mount>[] = [];
+
+    afterEach(() => {
+      while (mounted.length) mounted.pop()?.unmount();
+    });
+
+    /** Mounts the dialog with Teleport and Transition flattened. */
+    function mountDialog() {
+      const wrapper = mount(ConfirmDialog, {
+        attachTo: document.body,
+        global: { stubs: { teleport: true, transition: false } },
+      });
+      mounted.push(wrapper);
+      return wrapper;
+    }
+
+    it("resolves false on Escape, never true", async () => {
+      // [THREAT:] Dismissing a confirmation must never be read as confirming.
+      // These dialogs guard Factory Reset and cache destruction.
+      const promise = confirm({ title: "Escape Test" });
+      const wrapper = mountDialog();
+
+      await wrapper.find(".confirm-overlay").trigger("keydown", { key: "Escape" });
+
+      expect(await promise).toBe(false);
+      expect(active.value).toBeNull();
+    });
+
+    it("ignores keys that are not Escape", async () => {
+      confirm({ title: "Other Key Test" });
+      const wrapper = mountDialog();
+
+      await wrapper.find(".confirm-overlay").trigger("keydown", { key: "a" });
+
+      expect(active.value).not.toBeNull();
+    });
+
+    it("announces itself as a modal dialog named by its title", async () => {
+      confirm({ title: "Reset everything?", message: "This cannot be undone." });
+      const wrapper = mountDialog();
+      await wrapper.vm.$nextTick();
+
+      const card = wrapper.find(".confirm-card");
+      expect(card.attributes("role")).toBe("dialog");
+      expect(card.attributes("aria-modal")).toBe("true");
+      expect(card.attributes("aria-labelledby")).toBe(wrapper.find("h3").attributes("id"));
+      expect(card.attributes("aria-describedby")).toBe(wrapper.find(".confirm-message").attributes("id"));
+    });
+
+    it("references no description region when there is no message", async () => {
+      confirm({ title: "Bare" });
+      const wrapper = mountDialog();
+      await wrapper.vm.$nextTick();
+
+      expect(wrapper.find(".confirm-card").attributes("aria-describedby")).toBeUndefined();
+    });
+
+    it("moves focus onto the dismissing action when it opens", async () => {
+      // Cancel rather than confirm, so a stray Enter cannot destroy anything.
+      confirm({ title: "Focus Test" });
+      const wrapper = mountDialog();
+      await wrapper.vm.$nextTick();
+      await wrapper.vm.$nextTick();
+
+      expect(document.activeElement).toBe(wrapper.find(".cancel-btn").element);
+    });
   });
 });

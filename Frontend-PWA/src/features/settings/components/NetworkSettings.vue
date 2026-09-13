@@ -43,6 +43,25 @@ const isEditing = ref(false);
 const hasLocalOverride = computed(() => !!localStorage.getItem("cm_supabase_url"));
 const isChecking = computed(() => apiStatus.value === "checking");
 
+/**
+ * What the Link stat reads, per connectivity state.
+ *
+ * @remarks
+ * [DECISION LOG] This stat was the literal string "Ready", with no binding at
+ * all. It therefore read Ready while the app was offline, unconfigured or
+ * waking, including when the status dot directly beside it was painted red.
+ * A readout that cannot be wrong is not a readout.
+ */
+const LINK_LABELS: Record<string, string> = {
+  online: "Ready",
+  offline: "Offline",
+  unconfigured: "Not set",
+  stale: "Stale",
+  waking: "Waking",
+};
+
+const linkLabel = computed(() => LINK_LABELS[apiStatus.value] ?? "Unknown");
+
 watch(
   apiStatus,
   (newApiStatus) => {
@@ -78,7 +97,7 @@ function saveApiUrl() {
 
     <div class="network-stats">
       <div class="stat-item">
-        <span class="label">Ping</span>
+        <span class="label label-caption">Ping</span>
         <template v-if="isChecking">
           <div
             class="sk-stat-value"
@@ -91,7 +110,7 @@ function saveApiUrl() {
       </div>
       <span class="v-sep" />
       <div class="stat-item">
-        <span class="label">Backend</span>
+        <span class="label label-caption">Backend</span>
         <template v-if="isChecking">
           <div
             class="sk-stat-value"
@@ -104,7 +123,7 @@ function saveApiUrl() {
       </div>
       <span class="v-sep" />
       <div class="stat-item">
-        <span class="label">Link</span>
+        <span class="label label-caption">Link</span>
         <template v-if="isChecking">
           <div
             class="sk-stat-value"
@@ -112,7 +131,10 @@ function saveApiUrl() {
           />
         </template>
         <template v-else>
-          <span class="value">Ready</span>
+          <span
+            class="value"
+            :class="`link-${apiStatus}`"
+          >{{ linkLabel }}</span>
         </template>
       </div>
     </div>
@@ -171,6 +193,7 @@ function saveApiUrl() {
           <button
             v-tactile
             class="save-btn"
+            aria-label="Save API endpoint"
             @click="saveApiUrl"
           >
             <Icon
@@ -181,9 +204,13 @@ function saveApiUrl() {
           <button
             v-tactile
             class="cancel-btn"
+            aria-label="Cancel editing"
             @click="isEditing = false"
           >
-            X
+            <Icon
+              name="close"
+              size="20"
+            />
           </button>
         </template>
       </div>
@@ -219,18 +246,29 @@ function saveApiUrl() {
   align-items: baseline;
   gap: 8px;
 }
-.stat-item .label {
-  font-size: 9px;
-  font-weight: 900;
-  opacity: 0.4;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
+
 .stat-item .value {
   font-size: 13px;
-  font-weight: 800;
+  font-weight: 700;
   font-family: var(--sys-font-family-mono);
   color: var(--sys-color-primary);
+}
+
+/* The Link readout carries the same meaning as the status dot above it, so it
+   carries the same colour. Anything not-yet-good reads as a warning rather than
+   as the primary accent, which previously made every state look healthy. */
+.stat-item .value.link-online {
+  color: var(--sys-color-success);
+}
+
+.stat-item .value.link-offline {
+  color: var(--sys-color-error);
+}
+
+.stat-item .value.link-unconfigured,
+.stat-item .value.link-stale,
+.stat-item .value.link-waking {
+  color: var(--sys-color-warning);
 }
 .v-sep {
   width: 1px;
@@ -239,13 +277,10 @@ function saveApiUrl() {
   opacity: 0.3;
 }
 
+/* The label recipe now comes from the global .field-label primitive; only this
+   view's own spacing below it stays local. */
 .field-label {
-  font-size: 10px;
-  font-weight: 900;
-  opacity: 0.4;
-  margin-bottom: 8px;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  margin-bottom: var(--sys-space-8);
 }
 .url-readout {
   background: var(--sys-color-surface-container-highest);
@@ -274,6 +309,9 @@ function saveApiUrl() {
   /* Compensating padding keeps the visual label small while the tap
      footprint still meets the 48px hybrid touch-target minimum. */
   min-height: var(--sys-space-48);
+  /* The comment above claimed the 48px minimum, and the height met it while the
+     width came out at 47px from the label plus padding. Both axes now. */
+  min-width: var(--sys-space-48);
   padding: 0 var(--sys-space-12);
   display: inline-flex;
   align-items: center;
@@ -305,7 +343,7 @@ function saveApiUrl() {
   min-height: var(--sys-space-48);
   border-radius: 8px;
   background: var(--sys-color-primary);
-  color: white;
+  color: var(--sys-color-on-primary);
   border: none;
 }
 .cancel-btn {

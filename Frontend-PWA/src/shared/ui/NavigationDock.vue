@@ -181,11 +181,13 @@ function onInteractionStart() {
 .capsule-bg {
   position: absolute;
   inset: 0;
-  background: linear-gradient(
-    135deg,
-    var(--sys-color-primary),
-    var(--sys-color-primary-variant, var(--sys-color-primary))
-  );
+  /* [DECISION LOG] A FLAT FILL, STATED AS ONE:
+     This was a two-stop gradient whose second stop was `--sys-color-primary-variant`,
+     a Material 2 role this Material 3 token set never defined, so the declaration
+     always fell through to its `--sys-color-primary` fallback and painted flat.
+     Written here as the flat fill it has always rendered as, so the code and the
+     pixels agree. Reintroducing a ramp is a design decision, not a repair. */
+  background: var(--sys-color-primary);
   border-radius: var(--sys-shape-corner-full);
   z-index: -1;
   animation: pop-in var(--sys-motion-duration-300) var(--sys-motion-easing-spring-nav);

@@ -4,7 +4,13 @@
 import { idb } from "./StorageService";
 import * as v from "valibot";
 import { ref, watch, reactive, toRaw } from "vue";
-import { type BlitzSpeed, BLITZ_SPEED_DEFAULT } from "@core/config";
+import {
+  BLITZ_DWELL_DEFAULT,
+  BLITZ_DWELL_MAX,
+  BLITZ_DWELL_MIN,
+  BLITZ_LEGACY_SPEED_DWELL,
+  type LegacyBlitzSpeed,
+} from "@core/config";
 
 /** Key used for persisting global feature flags and module settings in LocalStorage. */
 const MODULES_KEY = "cm_modules_v2";
@@ -19,8 +25,8 @@ const MODULES_KEY = "cm_modules_v2";
 export interface ModuleState {
   /** Enables automated high-speed scanning and recruitment execution modes. */
   blitzMode: boolean;
-  /** Configured execution speed tier for automated blitz operations. */
-  blitzSpeed: BlitzSpeed;
+  /** Milliseconds the sequencer waits for each profile to render before tapping. */
+  blitzDwellMs: number;
   /** Toggles background ghost benchmarking and comparative performance metrics. */
   ghostBenchmarking: boolean;
   /** Controls display of algorithmic sorting logic explanation cards in roster views. */
@@ -47,7 +53,7 @@ export interface ModuleState {
  */
 const DEFAULT_STATE: ModuleState = {
   blitzMode: true,
-  blitzSpeed: BLITZ_SPEED_DEFAULT,
+  blitzDwellMs: BLITZ_DWELL_DEFAULT,
   ghostBenchmarking: true,
   sortExplanation: true,
   backendRefresher: false,
@@ -68,7 +74,7 @@ const DEFAULT_STATE: ModuleState = {
  */
 const ModuleStateSchema = v.object({
   blitzMode: v.optional(v.boolean(), DEFAULT_STATE.blitzMode),
-  blitzSpeed: v.optional(v.picklist(["fast", "medium", "slow"]), DEFAULT_STATE.blitzSpeed),
+  blitzDwellMs: v.optional(v.number(), DEFAULT_STATE.blitzDwellMs),
   ghostBenchmarking: v.optional(v.boolean(), DEFAULT_STATE.ghostBenchmarking),
   sortExplanation: v.optional(v.boolean(), DEFAULT_STATE.sortExplanation),
   backendRefresher: v.optional(v.boolean(), DEFAULT_STATE.backendRefresher),
@@ -87,6 +93,46 @@ const isInitialized = ref(false);
 let watchInitialized = false;
 
 /**
+ * Reshapes a stored payload written by an earlier version into the current contract.
+ *
+ * @remarks
+ * Runs ahead of the validation boundary so that renamed keys and out-of-domain
+ * values are repaired rather than rejected. Satisfies ADR Section III.
+ *
+ * @param stored - The raw unvalidated payload retrieved from storage.
+ * @returns The same payload with legacy fields translated and bounds applied.
+ */
+function migrateStoredModules(stored: unknown): unknown {
+  if (typeof stored !== "object" || stored === null) return stored;
+
+  const payload = { ...(stored as Record<string, unknown>) };
+  const storedDwell = payload.blitzDwellMs;
+
+  // [DECISION LOG] LEGACY SPEED TIERS:
+  // Before the dwell slider, this setting persisted as one of three speed names.
+  // Mapping them onto their equivalent dwell time keeps an existing operator's
+  // choice intact; without it the schema would find no `blitzDwellMs`, fall back
+  // to the default, and silently discard a deliberate setting.
+  if (typeof storedDwell !== "number" && typeof payload.blitzSpeed === "string") {
+    const legacyDwell = BLITZ_LEGACY_SPEED_DWELL[payload.blitzSpeed as LegacyBlitzSpeed];
+    if (legacyDwell !== undefined) payload.blitzDwellMs = legacyDwell;
+  }
+
+  // [THREAT:] A hand-edited or downgraded payload can carry a dwell time outside
+  // the domain the control exposes, which would drive the handle off its track.
+  // [DECISION LOG] Clamped here rather than rejected by the schema: rejection
+  // fails the whole object, so one bad field would reset every unrelated setting.
+  if (typeof payload.blitzDwellMs === "number" && Number.isFinite(payload.blitzDwellMs)) {
+    payload.blitzDwellMs = Math.min(
+      BLITZ_DWELL_MAX,
+      Math.max(BLITZ_DWELL_MIN, payload.blitzDwellMs),
+    );
+  }
+
+  return payload;
+}
+
+/**
  * Robustly merges external stored data with default schema to handle upgrades, regressions, and schema drift.
  *
  * @remarks
@@ -99,7 +145,7 @@ let watchInitialized = false;
 function mergeStorage(stored: unknown): ModuleState {
   // [GUARD] VALIDATION BOUNDARY: Target B [1]
   // [THREAT:] Malformed or malicious settings payload in LocalStorage causing UI state instability or runtime crashes.
-  const result = v.safeParse(ModuleStateSchema, stored);
+  const result = v.safeParse(ModuleStateSchema, migrateStoredModules(stored));
 
   if (!result.success) {
     // [DECISION LOG] Safe parse failure logs warning and reverts safely to DEFAULT_STATE without crashing UI bootstrap.

@@ -288,7 +288,14 @@ export const GRADE_RUBRIC = [
   { grade: 3, when: r => r.stuck > r.total / 2, why: "Critical failure: the majority of stages did not complete." },
   { grade: 5, when: r => r.stuck >= 2, why: "Multiple blocks: more than one stage failed or got stuck." },
   { grade: 7, when: r => r.stuck === 1, why: "Partial block: one stage failed or got stuck." },
-  { grade: 9, when: r => r.rescued > 0, why: "Minor issues: every stage completed, but some needed intervention." },
+  // Still a 9, because a stage that needed rescuing is not the same as one that
+  // did not, and the health check that spots a RISING rescue rate depends on
+  // this staying visible. But the old wording, "some needed intervention", read
+  // as though a human had stepped in, and on 2026-09-13 it sent the owner
+  // hunting for a cause behind S06 and S11. There was none: over 416 stage-days
+  // the rescue count per stage runs 4 to 7 with no outlier, so which stages get
+  // nudged on a given night is a coin toss, not a signal.
+  { grade: 9, when: r => r.rescued > 0, why: r => `Minor issues: every stage completed. ${r.rescued === 1 ? "One stage" : `${r.rescued} stages`} needed an automatic watchdog nudge, which required nothing from you.` },
   // "Unaided" is a claim about intervention, and intervention is only knowable
   // from a ledger row. Tags alone prove the merge, never that it was unaided,
   // so a night with unobserved stages can reach 10/10 on tags while a rescue
@@ -548,7 +555,9 @@ function stageNotes(stage) {
     notes.push(phrase);
   }
   if (stage.rescued) {
-    notes.push(`This stage could not finish unaided and was recovered via ${stage.rescuedBy || "retry"}.`);
+    notes.push(stage.rescuedBy === "watchdog-nudge"
+      ? "Its Jules session finished the work but never opened the PR. The watchdog nudged it automatically; nobody had to do anything."
+      : `This stage could not finish unaided and was recovered via ${stage.rescuedBy || "retry"}.`);
   }
   // A malformed description does not mean the work was wrong: in all five cases
   // on 2026-09-03 the code, tests and coverage log landed correctly.
@@ -764,7 +773,7 @@ function overviewSection(recap) {
     sentences.push(`${joinList(stuck.map(stageLabel))} produced nothing at all.`);
   }
   if (rescued.length > 0) {
-    sentences.push(`${joinList(rescued.map(stageLabel))} could not finish unaided and had to be nudged first, so the clean sweep above was not entirely self-driven.`);
+    sentences.push(`${joinList(rescued.map(stageLabel))} stalled after finishing the work and the watchdog nudged ${rescued.length === 1 ? "it" : "them"} automatically, with no action from you. Which stages this hits is close to random; the number is what matters, and the pipeline health check below is what judges it.`);
   } else if (stuck.length === 0 && pendingStages.length > 0) {
     // Said only while the run is in flight, because only then can the grade not
     // say it. A finished run's grade line already carries the claim exactly
@@ -1036,7 +1045,7 @@ export function renderRecap(recap) {
     "",
     `Summary: ${recap.merged}/${recap.total} merged | ${recap.changed} changed | ${recap.clean} clean | ${recap.stuck} stuck`
       + (pending > 0 ? ` | ${pending} still to run` : "")
-      + ` | ${recap.rescued} intervention`,
+      + ` | ${recap.rescued} auto-recovered`,
     // Never prints "null/10". A withheld grade is a statement in its own right
     // and has to read like one, not like a rendering bug.
     recap.grade === null ? `Grade: withheld - ${recap.rationale}` : `Grade: ${recap.grade}/10 - ${recap.rationale}`,

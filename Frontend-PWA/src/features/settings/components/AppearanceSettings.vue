@@ -36,7 +36,7 @@ const { theme, wakeLock, isRefreshing, handleThemeChange } = useSettings();
               size="18"
             />
           </div>
-          <span class="option-name">Light</span>
+          <span class="option-name label-badge">Light</span>
         </button>
 
         <button
@@ -52,7 +52,7 @@ const { theme, wakeLock, isRefreshing, handleThemeChange } = useSettings();
               size="18"
             />
           </div>
-          <span class="option-name">Auto</span>
+          <span class="option-name label-badge">Auto</span>
         </button>
 
         <button
@@ -68,7 +68,7 @@ const { theme, wakeLock, isRefreshing, handleThemeChange } = useSettings();
               size="18"
             />
           </div>
-          <span class="option-name">Dark</span>
+          <span class="option-name label-badge">Dark</span>
         </button>
 
         <div
@@ -157,14 +157,6 @@ const { theme, wakeLock, isRefreshing, handleThemeChange } = useSettings();
   align-items: center;
   justify-content: center;
   transition: transform 0.4s var(--sys-motion-spring);
-}
-
-.option-name {
-  font-size: 9px;
-  font-weight: 950;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  opacity: 0.5;
 }
 
 .theme-option.active {

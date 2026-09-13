@@ -51,6 +51,7 @@ const {
 <template>
   <ConsoleLayout
     title="Headhunter"
+    skeleton-bone-group="RecruitCard"
     v-bind="layoutProps"
     v-on="layoutEvents"
   >

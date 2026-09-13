@@ -53,6 +53,7 @@ export interface ThemeTokens {
     surface: string;
     onSurface: string;
 
+    surfaceContainerLow: string;
     surfaceContainer: string;
     surfaceContainerHigh: string;
     surfaceContainerHighest: string;
@@ -70,8 +71,10 @@ export interface ThemeTokens {
     glassBlur: string;
   };
   elevation: {
+    level1: string;
     level2: string;
     level3: string;
+    level4: string;
   };
   // Loading-skeleton placeholder tones (--sk-*). Deliberately independent
   // from `color` - e.g. light.surf ('#f3edf7') is not the same shade as
@@ -123,6 +126,7 @@ export const lightTokens: ThemeTokens = {
     surface: '#fdfcff',
     onSurface: '#1a1c1e',
 
+    surfaceContainerLow: '#f7f2fa',
     surfaceContainer: '#f3edf7',
     surfaceContainerHigh: '#ece6f0',
     surfaceContainerHighest: '#e6e0e9',
@@ -140,8 +144,10 @@ export const lightTokens: ThemeTokens = {
     glassBlur: 'blur(24px) saturate(180%)',
   },
   elevation: {
+    level1: '0 2px 6px -2px rgba(0, 0, 0, 0.06), 0 1px 3px -1px rgba(0, 0, 0, 0.03)',
     level2: '0 4px 12px -2px rgba(0, 0, 0, 0.08), 0 2px 6px -1px rgba(0, 0, 0, 0.04)',
     level3: '0 12px 32px -4px rgba(0, 0, 0, 0.1), 0 8px 16px -4px rgba(0, 0, 0, 0.08), 0 4px 8px -2px rgba(0, 0, 0, 0.04)',
+    level4: '0 24px 56px -8px rgba(0, 0, 0, 0.14), 0 16px 32px -8px rgba(0, 0, 0, 0.1), 0 6px 12px -4px rgba(0, 0, 0, 0.06)',
   },
   skeleton: {
     bg: '#fdfcff',
@@ -188,6 +194,7 @@ export const darkTokens: ThemeTokens = {
     surface: '#0b0e14',
     onSurface: '#e1e2e8',
 
+    surfaceContainerLow: '#151920',
     surfaceContainer: '#1b1f27',
     surfaceContainerHigh: '#242932',
     surfaceContainerHighest: '#2f343e',
@@ -205,8 +212,10 @@ export const darkTokens: ThemeTokens = {
     glassBlur: 'blur(24px) saturate(180%)',
   },
   elevation: {
+    level1: '0 4px 8px -2px rgba(0, 0, 0, 0.4), 0 2px 4px -2px rgba(0, 0, 0, 0.3)',
     level2: '0 8px 16px -4px rgba(0, 0, 0, 0.5), 0 4px 8px -4px rgba(0, 0, 0, 0.4)',
     level3: '0 20px 40px -8px rgba(0, 0, 0, 0.7), 0 12px 24px -8px rgba(0, 0, 0, 0.6), 0 0 1px 0 rgba(255, 255, 255, 0.08)',
+    level4: '0 32px 64px -12px rgba(0, 0, 0, 0.8), 0 20px 40px -12px rgba(0, 0, 0, 0.7), 0 0 1px 0 rgba(255, 255, 255, 0.1)',
   },
   skeleton: {
     bg: '#0b0e14',
@@ -230,7 +239,14 @@ export function hexToRgbTriplet(hex: string): string {
 // Color roles that need an `rgba()`-friendly '--sys-color-{role}-rgb' companion
 // var, for translucent fills/borders/shadows built on top of a solid role.
 // Add a role here (not a hand-typed literal) when a new one is needed.
-const RGB_COMPANIONS = ['primary', 'onPrimaryContainer'] as const;
+const RGB_COMPANIONS = [
+  'primary',
+  'onPrimaryContainer',
+  'error',
+  'success',
+  'outline',
+  'outlineVariant',
+] as const;
 
 // Automated camelCase to kebab-case transformation to ensure alignment with
 // standard CSS custom-property naming conventions.
@@ -294,8 +310,10 @@ export function generateCssVariables(tokens: ThemeTokens): Record<string, string
     if (hex) vars[`--sys-color-${toKebabCase(role)}-rgb`] = hexToRgbTriplet(hex);
   }
 
+  vars['--sys-elevation-1'] = tokens.elevation.level1;
   vars['--sys-elevation-2'] = tokens.elevation.level2;
   vars['--sys-elevation-3'] = tokens.elevation.level3;
+  vars['--sys-elevation-4'] = tokens.elevation.level4;
 
   // Add glass special properties
   vars['--sys-surface-glass'] = tokens.color.glass;

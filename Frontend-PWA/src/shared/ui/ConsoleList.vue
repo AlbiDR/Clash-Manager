@@ -13,6 +13,10 @@
  *   standard time-sliced rendering.
  * - Scoped Slot: Decouples the iteration logic from the specific card
  *   implementations (MemberCard vs RecruitCard).
+ * - Positional Continuity: the standard branch is a TransitionGroup, so a row
+ *   that changes place under a sort, a search or a dismissal travels there
+ *   instead of teleporting. Showcase Mode is deliberately left out: it is a
+ *   static demo whose one real row never moves.
  *
  * @param items - The processed subset of items to render (usually from useProgressiveList).
  * @param isShowcaseMode - Flag to trigger the single-item demo layout.
@@ -52,8 +56,24 @@ defineSlots<{
     />
   </template>
 
-  <template v-else>
-    <!-- Standard Mode: Render all items -->
+  <!--
+    [DECISION LOG] NO TAG, SO THE DOM IS EXACTLY WHAT IT WAS:
+    TransitionGroup renders a fragment when it is given no `tag`, so the rows
+    stay direct children of ConsoleLayout's `.list-container` and no wrapper
+    element appears between them. The transition is therefore pure behaviour:
+    every existing layout, selector and containment rule still addresses the
+    same nodes it did before.
+
+    There is no `appear`, so the forty-eight rows do not each fade in on first
+    paint. Arrival is already spoken for by the skeleton swap and the `--i`
+    stagger; this animates only what changes afterwards - a sort, a search, a
+    dismissal. The classes live in core/theme/components.ts, which also records
+    why reduced motion needs no branch here.
+  -->
+  <TransitionGroup
+    v-else
+    name="console-list"
+  >
     <template
       v-for="(item, index) in items"
       :key="item.id"
@@ -64,5 +84,5 @@ defineSlots<{
         :index="index"
       />
     </template>
-  </template>
+  </TransitionGroup>
 </template>

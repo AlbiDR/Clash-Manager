@@ -253,7 +253,14 @@ export async function fetchRemote(options?: {
     dataSource: "SUPABASE",
     remoteTimestamp: timestamp,
     lastCompiled: timestamp,
-    lastFetched: timestamp,
+    // [DECISION LOG] WHEN WE FETCHED, NOT WHEN THE SOURCE LAST RAN:
+    // All three of these carried the ingestor's heartbeat, so the app held one
+    // number under three names and could not tell "this client has not synced
+    // in a while" from "the client is syncing fine and the upstream pipeline is
+    // behind". Those are opposite faults with opposite remedies, and the status
+    // pill reported both of them as STALE, which reads to an operator as the app
+    // having failed. This is the client's own clock.
+    lastFetched: Date.now(),
     blacklist: blacklistTags,
   };
   

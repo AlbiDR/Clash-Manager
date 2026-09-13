@@ -114,7 +114,7 @@ const delta = computed(() =>
     v-if="!benchmark && simpleLines.length > 1"
     class="bc-simple-rich"
   >
-    <span class="bc-simple-label">{{ simpleLines[0] }}</span>
+    <span class="bc-simple-label label-section">{{ simpleLines[0] }}</span>
     <span class="bc-simple-value">{{ simpleLines[1] }}</span>
   </div>
   <div
@@ -128,9 +128,9 @@ const delta = computed(() =>
     class="bc-panel"
   >
     <div class="bc-header">
-      <span class="bc-label">{{ benchmark.label }}</span>
+      <span class="bc-label label-section">{{ benchmark.label }}</span>
       <span
-        class="bc-tier"
+        class="bc-tier label-badge"
         :class="`tier-${tierSlug}`"
       >{{ benchmark.tier }}</span>
     </div>
@@ -182,16 +182,12 @@ const delta = computed(() =>
 }
 
 .bc-simple-label {
-  font-size: var(--sys-typescale-label-md);
-  font-weight: 850;
-  text-transform: uppercase;
-  letter-spacing: var(--sys-tracking-wider);
   color: var(--sys-color-on-surface-variant);
 }
 
 .bc-simple-value {
   font-size: var(--sys-typescale-body-md);
-  font-weight: 900;
+  font-weight: 700;
   font-family: var(--sys-font-family-mono);
   color: var(--sys-color-on-surface);
 }
@@ -210,19 +206,11 @@ const delta = computed(() =>
 }
 
 .bc-label {
-  font-size: var(--sys-typescale-label-md);
-  font-weight: 850;
-  text-transform: uppercase;
-  letter-spacing: var(--sys-tracking-wider);
   color: var(--sys-color-on-surface-variant);
 }
 
 .bc-tier {
   flex-shrink: 0;
-  font-size: var(--sys-typescale-label-xs);
-  font-weight: 900;
-  letter-spacing: var(--sys-tracking-wider);
-  text-transform: uppercase;
   padding: 2px var(--sys-space-8);
   border-radius: var(--sys-shape-corner-full);
 }
@@ -292,14 +280,14 @@ const delta = computed(() =>
 
 .bc-stat {
   font-size: var(--sys-typescale-footer);
-  font-weight: 800;
+  font-weight: 700;
   font-family: var(--sys-font-family-mono);
   color: var(--sys-color-on-surface-variant);
 }
 
 .bc-delta {
   font-size: var(--sys-typescale-body-sm);
-  font-weight: 900;
+  font-weight: 700;
   font-family: var(--sys-font-family-mono);
 }
 .bc-delta.better {

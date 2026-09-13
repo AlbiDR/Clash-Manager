@@ -74,10 +74,16 @@ const {
     <div class="pill-content-wrapper">
       <div class="pill-content">
         <!-- BASE LABEL -->
+        <!-- [THREAT:] This branch used to hardcode "Syncing...", so the `text`
+             prop was silently discarded for every loading state on every
+             console. Laboratory authored "Scanning Vault..." and "Computing
+             Trajectory..." and neither ever appeared, and Settings' distinct
+             "Connecting..." state was reported to the operator as "Syncing...",
+             which is a different claim about what the app is doing. -->
         <span
           v-if="props.type === 'loading'"
           class="status-label technical base-label"
-        >Syncing...</span>
+        >{{ displayText }}</span>
         <span
           v-else
           class="status-label technical base-label"
@@ -145,10 +151,10 @@ const {
   min-height: 48px; /* 48px Mobile Footprint (Target B.2) */
   padding: 0 8px;
   border-radius: 24px;
-  background: var(--sys-surface-container);
-  border: 1px solid var(--sys-outline);
+  background: var(--sys-color-surface-container);
+  border: 1px solid var(--sys-color-outline);
   cursor: pointer;
-  transition: all 0.5s var(--sys-motion-spring, cubic-bezier(0.175, 0.885, 0.32, 1.275));
+  transition: all 0.5s var(--sys-motion-spring);
   user-select: none;
   position: relative;
   z-index: 50;
@@ -174,8 +180,8 @@ const {
   background: var(--sys-surface-glass);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border-color: var(--sys-outline-variant);
-  box-shadow: var(--sys-elevation-level2);
+  border-color: var(--sys-color-outline-variant);
+  box-shadow: var(--sys-elevation-2);
 }
 
 .status-pill.expand-left {
@@ -266,7 +272,7 @@ const {
 .technical {
   font-family: var(--sys-font-family-mono);
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: 0.02em;
   text-transform: uppercase;
   line-height: 1;

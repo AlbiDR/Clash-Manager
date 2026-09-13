@@ -69,13 +69,34 @@ function walk(dir: string, out: string[] = []): string[] {
   for (const entry of readdirSync(dir)) {
     const full = join(dir, entry);
     if (statSync(full).isDirectory()) {
-      if (entry === 'node_modules' || entry === 'theme-tests') continue;
+      if (entry === 'node_modules' || entry.endsWith('-tests')) continue;
       walk(full, out);
     } else if (/\.(ts|vue)$/.test(entry)) {
       out.push(full);
     }
   }
   return out;
+}
+
+// Every `--sys-` reference, fallback or not.
+//
+// [DECISION LOG] THE NAMESPACE IS THE CONTRACT:
+// `extractVarReferences` above exempts any reference carrying a fallback,
+// because that is how this codebase marks an instance-scoped property set
+// inline through a `:style` binding. Those are correctly un-namespaced
+// (`--score-raw`, `--ptr-offset`, `--ps-ratio`). A `--sys-` name claims to be
+// a theme token, so it has to resolve whether or not a fallback is written
+// beside it.
+//
+// [THREAT:] A fallback on a misspelled token is worse than no fallback. It
+// renders something plausible, so the typo never surfaces as a visible defect
+// and survives review. `var(--sys-surf-c, var(--sys-color-surface-container))`
+// painted the right colour for as long as it existed while referencing a token
+// that was never emitted.
+function extractSysVarReferences(css: string): Set<string> {
+  const refs = new Set<string>();
+  for (const match of css.matchAll(/var\(\s*(--sys-[\w-]+)/g)) refs.add(match[1]);
+  return refs;
 }
 
 describe('Theme token SSOT drift firewall', () => {
@@ -113,6 +134,26 @@ describe('Theme token SSOT drift firewall', () => {
 
     const dangling = [...referenced].filter((v) => !definedLight.has(v));
     expect(dangling, `referenced but never defined: ${dangling.join(', ')}`).toEqual([]);
+  });
+
+  it('every --sys- token referenced by any component resolves, fallback or not', () => {
+    const defined = new Set([
+      ...Object.keys(generateCssVariables(lightTokens)),
+      ...Object.keys(extractVarDeclarations(extractBlock(getAppShellStyles(), ':root'))),
+      ...Object.keys(extractVarDeclarations(extractBlock(staticTokens, ':root'))),
+    ]);
+
+    const offenders: string[] = [];
+    for (const file of walk(SRC_DIR)) {
+      const source = readFileSync(file, 'utf8');
+      for (const ref of extractSysVarReferences(source)) {
+        // tokens.ts documents the companion mechanism using a placeholder role.
+        if (ref === '--sys-color-x-rgb') continue;
+        if (!defined.has(ref)) offenders.push(`${relative(SRC_DIR, file)}: ${ref}`);
+      }
+    }
+
+    expect(offenders, `referenced but never emitted:\n  ${offenders.join('\n  ')}`).toEqual([]);
   });
 
   it('the static shell block is exactly generateCssVariables output plus the documented shell aliases', () => {

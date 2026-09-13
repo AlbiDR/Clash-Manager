@@ -59,7 +59,7 @@ const { benchmarkTooltipContent } = useBenchmarkedStat(
   left: 50%;
   transform: translate(-50%, -50%);
   font-size: var(--sys-typescale-score);
-  font-weight: 900;
+  font-weight: 700;
   font-family: var(--sys-font-family-mono);
   line-height: var(--sys-leading-none);
 }

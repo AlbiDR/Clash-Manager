@@ -57,7 +57,7 @@ describe("RecruitCard.vue", () => {
                 </div>
               </div>
             `,
-            props: ["id", "expanded", "selected", "selectionMode", "score"],
+            props: ["id", "expanded", "selected", "selectionMode", "isTagged", "score", "cardLabel", "cardName"],
           },
           TrophyBadge: {
             name: "TrophyBadge",
@@ -158,6 +158,22 @@ describe("RecruitCard.vue", () => {
     });
 
     expect(wrapper.findComponent({ name: "CardActions" }).props("loading")).toBe(true);
+  });
+
+  it("describes the recruit to assistive technology", () => {
+    // [THREAT:] RecruitCard passed no description at all while its sibling
+    // MemberCard did, so every row on Headhunter announced as a bare "article"
+    // with no name, no score and nothing to tell one row from the next.
+    const wrapper = mountRecruitCard();
+
+    expect(wrapper.findComponent({ name: "BaseCard" }).props("cardLabel"))
+      .toBe("Test Recruit, potential 92, found Time ago: 2d");
+  });
+
+  it("gives the card actions the recruit's own name", () => {
+    const wrapper = mountRecruitCard();
+
+    expect(wrapper.findComponent({ name: "BaseCard" }).props("cardName")).toBe("Test Recruit");
   });
 
   it("emits toggle event when BaseCard emits toggle", async () => {

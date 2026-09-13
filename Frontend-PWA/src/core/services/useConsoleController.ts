@@ -245,6 +245,41 @@ export function useConsoleController<T extends { id: string; n?: string }>(
   /**
    * Standardized Props Contract for the ConsoleLayout.vue component.
    */
+  /**
+   * Empty-state copy, chosen from the reason the list is empty.
+   *
+   * @remarks
+   * [DECISION LOG] THE CAUSE DECIDES THE COPY:
+   * Neither console authored an empty state, so both fell through to
+   * ConsoleLayout's generic "No items found" with no hint and no way forward.
+   * That reads identically whether the clan has never synced or the operator
+   * simply mistyped a name, which are opposite problems with opposite remedies.
+   *
+   * An active search means the data arrived and the filter excluded it, so the
+   * remedy is to clear the filter. An empty list with no search means nothing
+   * arrived, so the remedy is upstream. `statsLabel` already carries the domain
+   * noun each console uses for its counts, which keeps this copy correct for
+   * Roster and Headhunter without either having to restate it.
+   */
+  const emptyStateCopy = computed(() => {
+    const activeSearch = searchQuery.value.trim();
+    const noun = statsLabel.toLowerCase();
+
+    if (activeSearch) {
+      return {
+        emptyIcon: "search",
+        emptyMessage: `No ${noun} matches "${activeSearch}"`,
+        emptyHint: "Clear the search to see the full list.",
+      };
+    }
+
+    return {
+      emptyIcon: "roster",
+      emptyMessage: `No ${noun} data yet`,
+      emptyHint: "Pull down to refresh. If this persists, check the backend in Settings.",
+    };
+  });
+
   const layoutProps = computed(() => ({
     status: status.value,
     loading: showSkeletons.value,
@@ -259,6 +294,7 @@ export function useConsoleController<T extends { id: string; n?: string }>(
     totalCount: filteredItems.value.length,
     currentSort: sortBy.value,
     isEmpty: !showSkeletons.value && filteredItems.value.length === 0,
+    ...emptyStateCopy.value,
     remoteInfo: {
       source: metadata.value.source,
       dataAge: metadata.value.age,

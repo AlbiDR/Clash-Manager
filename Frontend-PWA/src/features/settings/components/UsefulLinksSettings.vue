@@ -33,6 +33,29 @@ import {
 } from "@core";
 import { useNativeBridge } from "@core/services/useNativeBridge";
 
+/**
+ * Shape of a single outbound destination row rendered by `LinkRow`.
+ *
+ * @remarks
+ * [DECISION LOG] EXPLICIT RECORD SHAPE:
+ * The collection previously inferred its element type from the literal members,
+ * which silently coupled the optional Android download entry (icon-bearing) to
+ * whichever brand rows happened to be present. Stating the shape keeps the
+ * conditional push valid regardless of how the corpus changes.
+ */
+interface UsefulLinkRecord {
+  /** Primary destination name. */
+  label: string;
+  /** Supporting subtitle describing what the destination offers. */
+  desc: string;
+  /** Absolute destination URL. */
+  url: string;
+  /** Remote brand image URL. Takes precedence over `icon` in `LinkRow`. */
+  logo?: string;
+  /** Icon name resolved through the Icon.vue primitive. */
+  icon?: string;
+}
+
 defineProps<{
   /**
    * Whether the links card should be initially expanded in the settings view.
@@ -80,7 +103,7 @@ onMounted(async () => {
  */
 const usefulLinks = computed(() => {
   const locale = getSupercellLocale();
-  const usefulLinksCollection = [
+  const usefulLinksCollection: UsefulLinkRecord[] = [
     {
       label: "RoyaleAPI Blog",
       desc: "Latest news and articles about Clash Royale",
@@ -104,12 +127,6 @@ const usefulLinks = computed(() => {
       desc: "Official Supercell store specials and deals",
       url: `https://store.supercell.com/${locale}/clashroyale`,
       logo: "https://store.supercell.com/public/icon-nav-supercell-store-HDDWMNKU.png",
-    },
-    {
-      label: "Clash Manager on GitHub",
-      desc: "Contribute to the open source project",
-      url: "https://github.com/AlbiDR/Clash-Manager",
-      icon: "github",
     },
   ];
 

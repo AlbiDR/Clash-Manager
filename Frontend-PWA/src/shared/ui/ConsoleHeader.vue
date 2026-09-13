@@ -23,7 +23,6 @@ const props = defineProps<{
   currentSort?: string;
   loading?: boolean;
   remoteInfo?: ConsoleRemoteInfo;
-  reserveExtraSpace?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -63,7 +62,7 @@ const handleOpenDashboard = () => {
 <template>
   <header
     class="console-header"
-    :class="{ 'is-scrolled': unref(isScrolled), 'has-extra': props.reserveExtraSpace }"
+    :class="{ 'is-scrolled': unref(isScrolled) }"
   >
     <div class="header-main">
       <div class="title-row">
@@ -82,7 +81,7 @@ const handleOpenDashboard = () => {
               class="title-label"
             >
               <span class="count-value">{{ props.stats.value }}</span>
-              <span class="count-label">{{ props.stats.label }}</span>
+              <span class="count-label label-caption">{{ props.stats.label }}</span>
             </div>
           </div>
         </div>
@@ -259,10 +258,7 @@ const handleOpenDashboard = () => {
 }
 
 .count-label {
-  font-size: var(--sys-typescale-label-md);
-  text-transform: uppercase;
   color: var(--sys-color-on-surface-variant);
-  font-weight: 600;
 }
 
 .action-group {
@@ -283,9 +279,15 @@ const handleOpenDashboard = () => {
   min-width: 0;
 }
 
+/* [DECISION LOG] 48, MATCHING ITS ROW-MATE:
+   This stood at 40px beside a 48px sort control in the same flex row, so two
+   fields that read as a pair were visibly different heights, and it sat under
+   the ADR touch minimum. The input inside it only occupied 23px of that, so
+   the actual target was smaller again; stretching it to the box's full height
+   makes the whole field tappable rather than just the text line. */
 .search-box {
   position: relative;
-  height: 40px;
+  height: var(--sys-space-48);
   background: var(--sys-color-surface-container-high);
   border-radius: var(--sys-shape-corner-input);
   display: flex;
@@ -307,6 +309,7 @@ const handleOpenDashboard = () => {
 
 .search-input {
   flex: 1;
+  align-self: stretch;
   background: none;
   border: none;
   color: var(--sys-color-on-surface);

@@ -44,6 +44,11 @@ const props = defineProps<{
   fabState?: ConsoleFabState;
   skeletonComponent?: Component;
   skeletonCount?: number;
+  /**
+   * Capture group the default skeleton measures itself against, e.g.
+   * `"RecruitCard"`. Omit on consoles whose rows are `MemberCard`-sized.
+   */
+  skeletonBoneGroup?: string;
   totalCount?: number;
   /** Consolidated info about the remote data source. */
   remoteInfo?: ConsoleRemoteInfo;
@@ -137,18 +142,25 @@ onUnmounted(() => {
 
 <template>
   <div class="view-container">
+    <!-- [DECISION LOG] THE PULL STATE LIVES ON THE SCROLLER, NOT THE SPINNER:
+         All three pull-to-refresh rules are written against an ancestor
+         (`.view-content.is-pulling` for the content follow, `.is-pulling
+         .ptr-indicator` for the reveal, `.is-refreshing .ptr-icon` for the
+         spin), and these classes used to be bound one level too deep, on the
+         indicator itself. Two of the three could therefore never match: the
+         content never followed the finger and the indicator never rose above
+         `opacity: 0`. The gesture itself always worked, which is why this
+         survived - a pull did refresh the list, in complete silence. -->
     <div
       class="view-content"
+      :class="{ 'is-refreshing': props.isRefreshing, 'is-pulling': isPulling }"
       :style="ptrStyle"
       @touchstart="onTouchStart"
       @touchmove="onTouchMove"
       @touchend="onTouchEnd"
     >
       <!-- Pull to Refresh Indicator -->
-      <div
-        class="ptr-indicator"
-        :class="{ 'is-refreshing': props.isRefreshing, 'is-pulling': isPulling }"
-      >
+      <div class="ptr-indicator">
         <div class="ptr-spinner">
           <Icon
             v-if="!props.isRefreshing"
@@ -168,7 +180,6 @@ onUnmounted(() => {
         :current-sort="props.currentSort"
         :loading="displayLoading"
         :remote-info="props.remoteInfo"
-        reserve-extra-space
         @update:search="(searchQueryCandidate: string) => emit('update:search', searchQueryCandidate)"
         @update:sort="(targetSortValue: string) => emit('update:sort', targetSortValue)"
         @refresh="emit('refresh')"
@@ -209,13 +220,14 @@ onUnmounted(() => {
       <!-- Loading State (Skeletons) -->
       <div
         v-else-if="displayLoading"
-        class="list-container gpu-contain"
+        class="list-container gpu-contain skeleton-list"
       >
         <component
           :is="props.skeletonComponent || BaseCardSkeleton"
           v-for="i in (props.skeletonCount || 8)"
           :key="i"
           :index="i"
+          :bone-group="props.skeletonBoneGroup"
           :style="{ '--i': i }"
         />
       </div>
@@ -262,6 +274,23 @@ onUnmounted(() => {
 .list-container {
   padding-bottom: var(--sys-space-48);
   position: relative;
+}
+
+/* [DECISION LOG] THE LOADING BRANCH BORROWS THE VIEW'S GEOMETRY:
+   Skeletons render into this container, while the real content renders into
+   whatever wrapper the view supplies in the default slot. When those two
+   disagree the list visibly shifts as it hydrates - Settings insets its cards
+   by 16px and spaces them by 10px, so its skeletons were arriving full-bleed
+   and 10px tighter, and the whole column slid sideways on load.
+
+   A view states its own geometry by setting these two custom properties on
+   ConsoleLayout; both default to zero, so consoles whose rows are full-bleed
+   are untouched and need say nothing. */
+.skeleton-list {
+  padding-inline: var(--console-gutter, 0);
+  display: flex;
+  flex-direction: column;
+  gap: var(--console-gap, 0);
 }
 .gpu-contain {
   contain: layout;

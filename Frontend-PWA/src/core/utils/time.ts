@@ -68,6 +68,33 @@ export function getDurationUnits(ms: number): DurationUnits {
 }
 
 /**
+ * Formats a duration as the shortest label that still reads precisely.
+ *
+ * @remarks
+ * [DECISION LOG] Drops empty trailing units rather than zero-padding them, so a
+ * two-minute estimate reads "2m" and not "2m 00s". Intended for inline prose
+ * where a duration is the outcome of a choice rather than a live countdown;
+ * `formatCountdown` remains the authority for ticking clocks.
+ *
+ * @param ms - The duration in milliseconds.
+ * @returns A compact label such as `41s`, `1m 24s`, `2m`, or `1h 05m`.
+ */
+export function formatCompactDuration(ms: number): string {
+  const { days, hours, minutes, seconds } = getDurationUnits(ms);
+  const totalHours = days * 24 + hours;
+
+  if (totalHours > 0) {
+    return `${totalHours}h ${String(minutes).padStart(2, "0")}m`;
+  }
+
+  if (minutes > 0) {
+    return seconds > 0 ? `${minutes}m ${seconds}s` : `${minutes}m`;
+  }
+
+  return `${seconds}s`;
+}
+
+/**
  * Formats a date into a countdown string (e.g., 'hh:mm:ss' or '2d 05h').
  *
  * @param end - The target date (Date, string, or timestamp).

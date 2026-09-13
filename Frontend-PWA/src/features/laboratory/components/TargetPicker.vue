@@ -95,9 +95,10 @@ function handleKeydown(keyboardEvent: KeyboardEvent) {
         @keydown="handleKeydown"
       >
       
-      <button 
-        v-tactile 
+      <button
+        v-tactile
         class="lock-btn"
+        :aria-label="props.isFetching ? 'Looking up player' : 'Lock in target player'"
         :disabled="props.isFetching"
         @click="handleLockIn"
       >
@@ -112,7 +113,7 @@ function handleKeydown(keyboardEvent: KeyboardEvent) {
       v-if="props.playerName"
       class="player-label"
     >
-      <span class="label-text">{{ props.playerName }}</span>
+      <span class="label-text label-badge">{{ props.playerName }}</span>
     </div>
   </div>
 </template>
@@ -170,18 +171,27 @@ function handleKeydown(keyboardEvent: KeyboardEvent) {
 }
 
 .lock-btn {
-  width: 40px;
-  height: 40px;
+  /* Drawn at 40px because it sits inside the 48px input box and has no room to
+     grow; the hit area below reaches the 48px minimum instead. */
+  position: relative;
+  width: var(--sys-space-40);
+  height: var(--sys-space-40);
   border-radius: var(--sys-shape-corner-stat);
   background: var(--sys-color-primary);
   border: none;
-  color: white;
+  color: var(--sys-color-on-primary);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   transition: all var(--sys-motion-duration-200) var(--sys-motion-spring);
   flex-shrink: 0;
+}
+
+.lock-btn::after {
+  content: "";
+  position: absolute;
+  inset: calc(-1 * var(--sys-space-4));
 }
 
 .lock-btn:hover:not(:disabled) {
@@ -214,10 +224,7 @@ function handleKeydown(keyboardEvent: KeyboardEvent) {
 }
 
 .label-text {
-  font-size: var(--sys-typescale-meta);
-  font-weight: 800;
   color: var(--sys-color-primary);
-  text-transform: uppercase;
   overflow: hidden;
   text-overflow: ellipsis;
   user-select: none; /* Text Selection Containment (Target A.3) */

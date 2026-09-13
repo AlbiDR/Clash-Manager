@@ -90,7 +90,7 @@ function onInput(event: Event, durationUnitKey: keyof DurationModel) {
           class="glass-input t2t-input"
           @input="onInput($event, 'days')"
         >
-        <span class="t2t-label">D</span>
+        <span class="t2t-label label-caption">D</span>
       </div>
       <span class="t2t-sep">:</span>
 
@@ -104,7 +104,7 @@ function onInput(event: Event, durationUnitKey: keyof DurationModel) {
           class="glass-input t2t-input"
           @input="onInput($event, 'hours')"
         >
-        <span class="t2t-label">H</span>
+        <span class="t2t-label label-caption">H</span>
       </div>
       <span class="t2t-sep">:</span>
 
@@ -118,7 +118,7 @@ function onInput(event: Event, durationUnitKey: keyof DurationModel) {
           class="glass-input t2t-input"
           @input="onInput($event, 'minutes')"
         >
-        <span class="t2t-label">M</span>
+        <span class="t2t-label label-caption">M</span>
       </div>
     </div>
   </div>
@@ -129,14 +129,6 @@ function onInput(event: Event, durationUnitKey: keyof DurationModel) {
   display: flex;
   flex-direction: column;
   gap: 8px;
-}
-
-.field-label {
-  font-size: 10px;
-  font-weight: 900;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  opacity: 0.45;
 }
 
 /* .glass-input is a global field-surface primitive in @core/theme/components.ts.
@@ -159,21 +151,14 @@ function onInput(event: Event, durationUnitKey: keyof DurationModel) {
 .t2t-input {
   width: 100%;
   height: 48px;
-  font-size: 20px;
+  font-size: var(--sys-typescale-title-md);
   text-align: center;
   padding: 0;
 }
 
-.t2t-label {
-  font-size: 9px;
-  font-weight: 900;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  opacity: 0.35;
-}
-
 .t2t-sep {
-  font-size: 22px;
+  /* Matches .t2t-input, the digits this colon sits between. */
+  font-size: var(--sys-typescale-title-md);
   font-weight: 900;
   opacity: 0.2;
   padding-bottom: 16px;

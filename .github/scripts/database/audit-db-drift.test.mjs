@@ -4,7 +4,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { alignmentVerdict, auditDbDrift, compareDrift, declaredObjects, describeAlignment, exposedSchemas } from './audit-db-drift.mjs';
+import { alignmentVerdict, auditDbDrift, compareDrift, declaredObjects, describeAlignment, exposedSchemas, jwtRole } from './audit-db-drift.mjs';
 
 const BASELINE = `
 CREATE SCHEMA IF NOT EXISTS drivers;
@@ -361,23 +361,23 @@ test('an anon-executable SECURITY DEFINER vault reader in an exposed schema is r
   // and no checker could have told the difference either way.
   const live = clone();
   live.routines.push(secdef());
-  const finding = compareDrift(live, declared(), EXPOSED).find(f => f.direction === 'LIVE_ANON_EXECUTABLE');
+  const finding = compareDrift(live, declared(), EXPOSED, {}).find(f => f.direction === 'LIVE_ANON_EXECUTABLE');
   assert.ok(finding, 'this must be reported');
   assert.match(finding.consequence, /publishable key/);
-  assert.match(finding.consequence, /reads Vault, so this exposes secrets directly/);
+  assert.match(finding.consequence, /reads Vault/);
   assert.match(finding.consequence, /REVOKE EXECUTE/);
 });
 
 test('the same function is not reported once anon can no longer execute it', () => {
   const live = clone();
   live.routines.push(secdef({ executableByAnon: false }));
-  assert.deepEqual(compareDrift(live, declared(), EXPOSED).filter(f => f.direction === 'LIVE_ANON_EXECUTABLE'), []);
+  assert.deepEqual(compareDrift(live, declared(), EXPOSED, {}).filter(f => f.direction === 'LIVE_ANON_EXECUTABLE'), []);
 });
 
 test('an unexposed schema is not reachable over PostgREST and is not reported', () => {
   const live = clone();
   live.routines.push(secdef({ schema: 'substrate' }));
-  assert.deepEqual(compareDrift(live, declared(), EXPOSED).filter(f => f.direction === 'LIVE_ANON_EXECUTABLE'), []);
+  assert.deepEqual(compareDrift(live, declared(), EXPOSED, {}).filter(f => f.direction === 'LIVE_ANON_EXECUTABLE'), []);
 });
 
 test('a SECURITY INVOKER function is not reported however widely granted', () => {
@@ -385,7 +385,7 @@ test('a SECURITY INVOKER function is not reported however widely granted', () =>
   // grant does not escalate anything.
   const live = clone();
   live.routines.push(secdef({ securityDefiner: false }));
-  assert.deepEqual(compareDrift(live, declared(), EXPOSED).filter(f => f.direction === 'LIVE_ANON_EXECUTABLE'), []);
+  assert.deepEqual(compareDrift(live, declared(), EXPOSED, {}).filter(f => f.direction === 'LIVE_ANON_EXECUTABLE'), []);
 });
 
 test('an unknown exposed-schema list SKIPS the check rather than clearing it', () => {
@@ -393,11 +393,78 @@ test('an unknown exposed-schema list SKIPS the check rather than clearing it', (
   // strictly worse than not checking. The report says the check did not run.
   const live = clone();
   live.routines.push(secdef());
-  assert.deepEqual(compareDrift(live, declared(), null).filter(f => f.direction === 'LIVE_ANON_EXECUTABLE'), []);
+  assert.deepEqual(compareDrift(live, declared(), null, {}).filter(f => f.direction === 'LIVE_ANON_EXECUTABLE'), []);
 });
 
 test('an older snapshot without the privilege fields reports nothing rather than guessing', () => {
   const live = clone();
   live.routines.push({ schema: 'public', name: 'legacy', hasEmbeddedSecret: false });
-  assert.deepEqual(compareDrift(live, declared(), EXPOSED).filter(f => f.direction === 'LIVE_ANON_EXECUTABLE'), []);
+  assert.deepEqual(compareDrift(live, declared(), EXPOSED, {}).filter(f => f.direction === 'LIVE_ANON_EXECUTABLE'), []);
+});
+
+const ANON_CLAIMS = 'eyJpc3MiOiJzdXBhYmFzZSIsInJvbGUiOiJhbm9uIiwiZXhwIjoxfQ';
+const SERVICE_CLAIMS = 'eyJpc3MiOiJzdXBhYmFzZSIsInJvbGUiOiJzZXJ2aWNlX3JvbGUiLCJleHAiOjF9';
+
+test('jwtRole reads the role out of a claims segment', () => {
+  assert.equal(jwtRole(ANON_CLAIMS), 'anon');
+  assert.equal(jwtRole(SERVICE_CLAIMS), 'service_role');
+  for (const bad of [null, undefined, '', 'not-base64!!', 'YWJj']) assert.equal(jwtRole(bad), null);
+});
+
+test('an embedded anon key is inventory, not a leaked credential', () => {
+  // The live case: all three substrate.run_* bodies embed the anon JWT as the
+  // apikey header. It ships inside the PWA by design. Calling that a leaked
+  // credential is what cost this audit its credibility on its first real run.
+  const live = clone();
+  live.routines.push({
+    schema: 'substrate', name: 'run_job', hasEmbeddedSecret: true,
+    secretRules: ['jwt'], usesVaultLookup: true, embeddedJwtClaims: ANON_CLAIMS,
+  });
+  const inventory = {};
+  const findings = compareDrift(live, declared(), EXPOSED, inventory);
+  assert.deepEqual(findings.filter(f => f.direction === 'LIVE_SECRET'), []);
+  assert.equal(inventory.publishableKeyInBody, 1, 'counted, not hidden');
+});
+
+test('an embedded service_role key is the most severe finding there is', () => {
+  const live = clone();
+  live.routines.push({
+    schema: 'substrate', name: 'run_job', hasEmbeddedSecret: true,
+    secretRules: ['jwt'], usesVaultLookup: true, embeddedJwtClaims: SERVICE_CLAIMS,
+  });
+  const finding = compareDrift(live, declared(), EXPOSED, {}).find(f => f.direction === 'LIVE_SECRET');
+  assert.match(finding.consequence, /bypasses row level security/);
+});
+
+test('an anon key alongside a second rule is still a finding', () => {
+  // Only the jwt rule can be explained away by the role. A bearer literal in
+  // the same body is a separate credential and must survive.
+  const live = clone();
+  live.routines.push({
+    schema: 'substrate', name: 'run_job', hasEmbeddedSecret: true,
+    secretRules: ['jwt', 'bearer'], usesVaultLookup: true, embeddedJwtClaims: ANON_CLAIMS,
+  });
+  assert.ok(compareDrift(live, declared(), EXPOSED, {}).some(f => f.direction === 'LIVE_SECRET'));
+});
+
+test('an undecodable literal is never downgraded', () => {
+  const live = clone();
+  live.routines.push({
+    schema: 'substrate', name: 'run_job', hasEmbeddedSecret: true,
+    secretRules: ['jwt'], usesVaultLookup: true, embeddedJwtClaims: null,
+  });
+  assert.ok(compareDrift(live, declared(), EXPOSED, {}).some(f => f.direction === 'LIVE_SECRET'));
+});
+
+test('an anon-executable function is only a finding when it reads Vault', () => {
+  // 18 of these are the app's own RPC surface. Reporting them all is how the
+  // one that matters gets skipped along with them.
+  const live = clone();
+  live.routines.push({ schema: 'features', name: 'cancel_voyage', securityDefiner: true, executableByAnon: true, hasEmbeddedSecret: false });
+  live.routines.push({ schema: 'public', name: 'reads_vault', securityDefiner: true, executableByAnon: true, hasEmbeddedSecret: false, usesVaultLookup: true });
+  const inventory = {};
+  const flagged = compareDrift(live, declared(), EXPOSED, inventory).filter(f => f.direction === 'LIVE_ANON_EXECUTABLE');
+  assert.deepEqual(flagged.map(f => f.object), ['public.reads_vault']);
+  assert.equal(inventory.anonExecutable, 2, 'both are counted');
+  assert.equal(inventory.anonExecutableVaultReaders, 1);
 });

@@ -41,7 +41,7 @@ vi.mock("../../composables/useSettings", () => ({
 vi.mock("@shared", () => ({
   Icon: { template: "<i class='mock-icon'></i>" },
   SettingRow: {
-    template: "<div class='setting-row' @click=\"$emit('click')\">{{ label }}</div>",
+    template: "<div class='setting-row' :disabled=\"disabled || undefined\" @click=\"$emit('click')\">{{ label }} {{ description }}</div>",
     props: ["active", "label", "description", "loading", "disabled"],
   },
   SettingsCard: {
@@ -170,17 +170,50 @@ describe("NotificationSettings.vue", () => {
     expect(mockSettings.sendTestNotification).toHaveBeenCalled();
   });
 
-  it("handles background synchronization toggle click", async () => {
+  it("handles the recruit alerts master toggle click", async () => {
+    // Labelled "Background Sync" until the row was renamed for what it does:
+    // it gates recruit alerts and syncs nothing.
     const wrapper = mount(NotificationSettings, {
       props: { initiallyExpanded: true }
     });
     await nextTick();
 
-    const backgroundSyncRow = wrapper.findAll(".setting-row").find(r => r.text().includes("Background Sync"));
-    expect(backgroundSyncRow).toBeDefined();
+    const recruitAlertsRow = wrapper.findAll(".setting-row").find(r => r.text().includes("Recruit Alerts"));
+    expect(recruitAlertsRow).toBeDefined();
 
-    await backgroundSyncRow!.trigger("click");
+    await recruitAlertsRow!.trigger("click");
     expect(mockSettings.toggle).toHaveBeenCalledWith("experimentalNotifications");
+  });
+
+  it("offers a control for what the app badge counts", async () => {
+    // `notificationBadgeHighPotential` changes what useHeadhunter counts onto
+    // the app badge and had no control anywhere in Settings.
+    mockSettings.notificationPermission.value = "granted";
+    const wrapper = mount(NotificationSettings, {
+      props: { initiallyExpanded: true }
+    });
+    await nextTick();
+
+    const badgeRow = wrapper.findAll(".setting-row").find(r => r.text().includes("Badge high potential only"));
+    expect(badgeRow).toBeDefined();
+
+    await badgeRow!.trigger("click");
+    expect(mockSettings.toggle).toHaveBeenCalledWith("notificationBadgeHighPotential");
+  });
+
+  it("shows Cloud Push as unavailable rather than as a working switch", async () => {
+    // `subscribePush` is a stub that raises a "coming soon" toast, so the row
+    // is disabled and states the reason instead of silently declining.
+    mockSettings.notificationPermission.value = "granted";
+    const wrapper = mount(NotificationSettings, {
+      props: { initiallyExpanded: true }
+    });
+    await nextTick();
+
+    const cloudPushRow = wrapper.findAll(".setting-row").find(r => r.text().includes("Cloud Push"));
+    expect(cloudPushRow).toBeDefined();
+    expect(cloudPushRow!.attributes("disabled")).toBeDefined();
+    expect(cloudPushRow!.text()).toContain("not deployed");
   });
 
   it("handles Quiet Mode toggle click when permission is granted", async () => {
@@ -212,6 +245,7 @@ describe("NotificationSettings.vue", () => {
   });
 
   it("displays the correct badge preview text when threshold is 50", async () => {
+    mockModules.experimentalNotifications = true;
     mockModules.notificationThreshold = 50;
     const wrapper = mount(NotificationSettings, {
       props: { initiallyExpanded: true }
@@ -223,6 +257,7 @@ describe("NotificationSettings.vue", () => {
   });
 
   it("displays the correct badge preview text when threshold is 75", async () => {
+    mockModules.experimentalNotifications = true;
     mockModules.notificationThreshold = 75;
     const wrapper = mount(NotificationSettings, {
       props: { initiallyExpanded: true }
@@ -231,5 +266,18 @@ describe("NotificationSettings.vue", () => {
 
     const thresholdRow = wrapper.find(".threshold-row");
     expect(thresholdRow.text()).toContain("High potential");
+  });
+
+  it("says the threshold is inert while recruit alerts are off", async () => {
+    // [THREAT:] The threshold reads as a live setting, but nothing consults it
+    // until the master switch above it is on. Describing the band in that state
+    // tells the operator a filter is running when none is.
+    mockModules.experimentalNotifications = false;
+    const wrapper = mount(NotificationSettings, {
+      props: { initiallyExpanded: true }
+    });
+    await nextTick();
+
+    expect(wrapper.find(".threshold-row").text()).toContain("Applies once Recruit Alerts are on");
   });
 });

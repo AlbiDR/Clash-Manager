@@ -947,7 +947,8 @@ BEGIN
             'Content-Type', 'application/json',
             'apikey', v_anon,
             'Authorization', 'Bearer ' || v_token
-        )
+        ),
+        timeout_milliseconds := 30000
     );
 END;
 $function$;
@@ -972,7 +973,8 @@ BEGIN
             'apikey', v_anon,
             'Authorization', 'Bearer ' || v_token
         ),
-        body := '{"tournaments": ["AUTO"]}'::jsonb
+        body := '{"tournaments": ["AUTO"]}'::jsonb,
+        timeout_milliseconds := 30000
     );
 END;
 $function$;
@@ -1135,7 +1137,8 @@ BEGIN
             'apikey',        substrate.get_vault_secret('SUPABASE_ANON_KEY'),
             'Authorization', 'Bearer ' || v_token
         ),
-        body    := '{"tournaments": ["AUTO"]}'::jsonb
+        body    := '{"tournaments": ["AUTO"]}'::jsonb,
+        timeout_milliseconds := 30000
     );
 
     INSERT INTO substrate.governance_telemetry (event_type, status, message, metadata)
@@ -3431,7 +3434,7 @@ CREATE OR REPLACE FUNCTION public.update_epoch_state(p_top50 integer)
  RETURNS void
  LANGUAGE plpgsql
  SECURITY DEFINER
- SET search_path TO 'public', 'features', 'drivers', 'substrate', 'pg_temp'
+ SET search_path TO 'public', 'substrate', 'pg_temp'
 AS $function$
 BEGIN
     PERFORM substrate.update_epoch_state(p_top50);

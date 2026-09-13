@@ -72,6 +72,62 @@ describe('SettingRow.vue', () => {
     expect(wrapper.emitted('click')).toHaveLength(1);
   });
 
+  describe('accessibility contract', () => {
+    // This row is the app's primary preference control, reached from six
+    // screens. It was a bare clickable <div>: not focusable, not in the tab
+    // order, no keyboard activation, and no state exposed under a switch that
+    // is drawn purely in CSS. These assertions exist so it cannot regress to
+    // that, since nothing else in the toolchain would notice.
+
+    it('is a real button, so focus and Enter/Space come from the platform', () => {
+      const wrapper = shallowMount(SettingRow, { props: { label: 'Dark mode' } });
+
+      expect(wrapper.element.tagName).toBe('BUTTON');
+      expect(wrapper.attributes('type')).toBe('button');
+    });
+
+    it('reports its state as a switch', () => {
+      expect(
+        shallowMount(SettingRow, { props: { active: true } }).attributes('aria-checked')
+      ).toBe('true');
+      expect(
+        shallowMount(SettingRow, { props: { active: false } }).attributes('aria-checked')
+      ).toBe('false');
+      expect(
+        shallowMount(SettingRow, { props: { active: true } }).attributes('role')
+      ).toBe('switch');
+    });
+
+    it('takes its name from the label and its detail from the description', () => {
+      const wrapper = shallowMount(SettingRow, {
+        props: { label: 'Dark mode', description: 'Follows the system setting' },
+      });
+
+      expect(wrapper.attributes('aria-labelledby')).toBe(wrapper.find('.row-label').attributes('id'));
+      expect(wrapper.attributes('aria-describedby')).toBe(wrapper.find('.row-desc').attributes('id'));
+    });
+
+    it('references no description region when there is no description', () => {
+      const wrapper = shallowMount(SettingRow, { props: { label: 'Dark mode' } });
+
+      expect(wrapper.attributes('aria-describedby')).toBeUndefined();
+    });
+
+    it('carries the native disabled attribute, which removes it from the tab order', () => {
+      expect(
+        shallowMount(SettingRow, { props: { disabled: true } }).attributes('disabled')
+      ).toBeDefined();
+    });
+
+    it('hides the decorative switch from assistive technology', () => {
+      // aria-checked on the root already carries the state; announcing the
+      // painted track as well would report it twice.
+      expect(
+        shallowMount(SettingRow, { props: { active: true } }).find('.switch').attributes('aria-hidden')
+      ).toBe('true');
+    });
+  });
+
   it('applies loading classes to the switch when loading prop is true', () => {
     const wrapper = shallowMount(SettingRow, {
       props: { loading: true }

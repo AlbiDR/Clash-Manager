@@ -43,12 +43,19 @@ const cardMinHeight = computed(() => `${getBone("SettingsCard", "card")?.height 
 </template>
 
 <style scoped>
+/* [THREAT:] Every value here is a hand-copy of SettingsCard.vue's, so the two
+   drift apart silently whenever the real card is restyled - and they had. The
+   radius still read 24px against the real card's 8px, the header still padded
+   16px/20px against 12px/16px, and this card carried an 8px bottom margin the
+   real one does not, on top of the 10px gap the settings column already
+   supplies. Hydrating the Settings screen reshaped and re-spaced every card in
+   the list. Keep these in lockstep with SettingsCard.vue. */
 .settings-card {
   background: var(--sys-color-surface-container);
-  border-radius: 24px;
+  border-radius: var(--sys-shape-corner-small);
   border: 1px solid var(--sys-surface-glass-border);
   overflow: hidden;
-  margin-bottom: 8px;
+  margin: 0;
 
   /* CLS Fix: min-height is bound inline from the captured `SettingsCard.card`
      bone (see script block) instead of a hardcoded guess. */
@@ -58,10 +65,11 @@ const cardMinHeight = computed(() => `${getBone("SettingsCard", "card")?.height 
 }
 
 .card-header {
-  padding: 16px 20px;
+  min-height: var(--sys-space-56);
+  padding: var(--sys-space-12) var(--sys-space-16);
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--sys-space-12);
 }
 
 .sk-icon-small {

@@ -373,6 +373,33 @@ else
 fi
 DEP_LINES=$(wc -l < "$CONTEXT_DIR/dep-violations.txt" | tr -d ' ')
 
+# 6b. Dead-export scan (Stage 9 only)
+#
+# knip has been installed and scriptable in package.json the whole time and no
+# lane has ever read it. It answers the one question Stage 9's Priority List
+# asks that depcruise cannot: depcruise finds a dependency pointing the wrong
+# way, knip finds one that should not exist at all.
+#
+# Generated on the same terms as dep-violations.txt, for Stage 9 and nobody
+# else, and written to a file rather than a summary line so the lane has to
+# open it. A skip writes the reason into the file: an empty knip.txt and a
+# knip that never ran must not look the same to the stage reading it.
+if [ "$RUN_DEPCRUISE" = "true" ]; then
+  echo "Running knip dead-export scan dynamically for Stage ${STAGE_NUM}..."
+  set +e
+  run_bounded 120 pnpm knip --no-progress > "$CONTEXT_DIR/knip.txt" 2>&1
+  KNIP_RC=$?
+  set -e
+  # knip exits non-zero when it FINDS something, so a non-zero code is a
+  # result, not an error. Only an empty file means it failed to produce one.
+  if [ ! -s "$CONTEXT_DIR/knip.txt" ]; then
+    echo "knip produced no output (exit ${KNIP_RC}). Treat this as NOT SCANNED, never as clean." > "$CONTEXT_DIR/knip.txt"
+  fi
+else
+  echo "Skipped: dead-export scan runs dynamically only for Stage 9." > "$CONTEXT_DIR/knip.txt"
+fi
+KNIP_LINES=$(wc -l < "$CONTEXT_DIR/knip.txt" | tr -d ' ')
+
 # 7. CLEAN calibration state
 if command -v node >/dev/null 2>&1 && [ -f "$CLEAN_CALIBRATION" ] && [ "${STAGE_NUM}" != "0" ]; then
   node "$CLEAN_CALIBRATION" --stage "$STAGE_NUM" --json > "$CONTEXT_DIR/clean-calibration.json"
@@ -411,6 +438,7 @@ PLIMIT_VER=$(node -e 'try{console.log(require(process.argv[1]).version)}catch(e)
   echo "doc-debt: ${DOC_DEBT_COUNT}"
   echo "zero-minute-audits: ${ZERO_MINUTE_AUDITS}"
   echo "dep-violations-lines: ${DEP_LINES}"
+  echo "knip-lines: ${KNIP_LINES}"
 } > "$CONTEXT_DIR/toolchain.txt"
 
 echo "Dynamic context generation complete."

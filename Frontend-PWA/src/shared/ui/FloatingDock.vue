@@ -42,7 +42,7 @@ const { isDesktop } = useViewport();
 .dock-container {
   position: fixed;
   /* Respect safe area insets for notched devices + Showcase Frame */
-  bottom: calc(var(--sys-space-24) + env(safe-area-inset-bottom) + var(--sys-safe-frame-offset, 0px));
+  bottom: calc(var(--sys-space-24) + env(safe-area-inset-bottom) + var(--safe-frame-offset, 0px));
   left: 50%;
   transform: translate3d(-50%, 0, 0);
   background: var(--sys-surface-glass);
@@ -73,7 +73,7 @@ const { isDesktop } = useViewport();
 
 @media (hover: hover) and (pointer: fine) {
   .dock-container:hover {
-    bottom: calc(var(--sys-space-28) + env(safe-area-inset-bottom) + var(--sys-safe-frame-offset, 0px));
+    bottom: calc(var(--sys-space-28) + env(safe-area-inset-bottom) + var(--safe-frame-offset, 0px));
     box-shadow: 0 16px 48px rgba(0, 0, 0, 0.4);
   }
 }

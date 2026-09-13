@@ -59,10 +59,10 @@ defineProps<{
           />
           <span class="next">{{ upgrade.targetLevel }}</span>
         </div>
-        <span class="logic-type">{{ upgrade.upgradeType }}</span>
+        <span class="logic-type label-badge">{{ upgrade.upgradeType }}</span>
         <span
           v-if="upgrade.isTowerTroop"
-          class="tower-badge"
+          class="tower-badge label-badge"
         >Tower</span>
       </div>
 
@@ -198,7 +198,7 @@ defineProps<{
   border-radius: 6px;
   font-family: var(--sys-font-family-mono);
   font-size: 11px;
-  font-weight: 850;
+  font-weight: 700;
   border: 1px solid var(--sys-color-outline-variant);
 }
 
@@ -206,23 +206,11 @@ defineProps<{
 .level-pill .next { color: var(--sys-color-primary); }
 .level-pill .divider { opacity: 0.2; }
 
-.logic-type {
-  font-size: 9px;
-  font-weight: 900;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  opacity: 0.4;
-}
-
 .tower-badge {
-  font-size: 8px;
-  font-weight: 900;
-  text-transform: uppercase;
   background: var(--sys-color-surface-container-highest);
   color: var(--sys-color-primary);
   padding: 1px 4px;
   border-radius: 4px;
-  letter-spacing: 0.05em;
   border: 1px solid rgba(var(--sys-color-primary-rgb), 0.2);
 }
 
@@ -240,13 +228,6 @@ defineProps<{
   text-overflow: ellipsis;
 }
 
-.efficiency-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 8px;
-}
-
 .efficiency-slab {
   display: inline-flex;
   align-items: center;
@@ -257,7 +238,7 @@ defineProps<{
   border: 1px solid var(--sys-color-outline-variant);
   font-family: var(--sys-font-family-mono);
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 700;
   width: fit-content;
 }
 
@@ -286,12 +267,6 @@ defineProps<{
   filter: drop-shadow(0 1px 2px rgba(0,0,0,0.1));
 }
 
-.eff-divider {
-  opacity: 0.3;
-  font-size: 10px;
-  font-weight: 700;
-}
-
 .eff-val {
   color: #000000;
 }
@@ -314,7 +289,7 @@ defineProps<{
   gap: 10px;
   font-family: var(--sys-font-family-mono);
   font-size: 15px;
-  font-weight: 850;
+  font-weight: 700;
   text-align: right;
 }
 

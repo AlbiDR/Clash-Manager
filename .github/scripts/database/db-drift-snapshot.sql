@@ -98,6 +98,25 @@ SELECT jsonb_pretty(jsonb_build_object(
       ),
       'usesVaultLookup', (p.prosrc ~ '(?i)get_vault_secret\s*\('),
 
+      -- The CLAIMS segment of an embedded JWT, so the reader can tell a
+      -- publishable key from a privileged one. A Supabase key carries its role
+      -- in the payload: "anon" is designed to ship in browsers and is not a
+      -- secret, "service_role" bypasses RLS and is a severe finding.
+      --
+      -- Without this the detector called all three substrate.run_* bodies a
+      -- "credential in a routine body" when what they embed is the anon key,
+      -- used for the apikey header because SUPABASE_ANON_KEY is not in Vault.
+      -- An audit that reports a publishable key as a leaked credential trains
+      -- its reader to ignore it, which costs more than the check is worth.
+      --
+      -- The claims segment only. No signature, so nothing emitted here is a
+      -- usable token, and the decode happens in JS where a malformed value
+      -- cannot take down the whole snapshot query.
+      'embeddedJwtClaims', (
+        SELECT split_part(m[1], '.', 2)
+        FROM regexp_match(p.prosrc, '(eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,})') AS m
+      ),
+
       -- Who may actually EXECUTE this, asked of Postgres rather than parsed
       -- out of proacl. has_function_privilege accounts for the default PUBLIC
       -- grant and for role inheritance, which a proacl string does not make

@@ -92,7 +92,7 @@ const handleInput = (inputEvent: Event, resourceKey: string) => {
       <div class="wildcards-section">
         <div class="section-meta">
           <span class="res-label">Wild Cards owned</span>
-          <span class="res-hint">Input current Wild Cards inventory</span>
+          <span class="res-hint label-caption">Input current Wild Cards inventory</span>
         </div>
         <div class="wildcards-row">
           <div 
@@ -159,7 +159,7 @@ const handleInput = (inputEvent: Event, resourceKey: string) => {
 .res-input {
   background: var(--sys-color-surface-container);
   border: 1px solid var(--sys-color-outline-variant);
-  border-radius: var(--sys-shape-corner-medium);
+  border-radius: var(--sys-shape-corner-input);
   padding: 12px 14px;
   font-family: var(--sys-font-family-mono);
   font-size: 16px;
@@ -194,14 +194,6 @@ const handleInput = (inputEvent: Event, resourceKey: string) => {
   gap: 4px;
 }
 
-.res-hint {
-  font-size: 10px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  opacity: 0.4;
-}
-
 .wildcards-row {
   display: flex;
   flex-wrap: wrap;
@@ -227,7 +219,7 @@ const handleInput = (inputEvent: Event, resourceKey: string) => {
 .wc-input {
   background: var(--sys-color-surface-container);
   border: 1px solid var(--sys-color-outline-variant);
-  border-radius: var(--sys-shape-corner-small);
+  border-radius: var(--sys-shape-corner-input);
   padding: var(--sys-space-12) var(--sys-space-6);
   font-family: var(--sys-font-family-mono);
   font-size: 13px;
