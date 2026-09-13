@@ -79,6 +79,51 @@ test("registry defines exactly one ordered identity for every stage", () => {
   assert.throws(() => validateRegistryData(duplicate), /Duplicate coverage log/);
 });
 
+test("a stage prompt budget is declared data, and may only ever be raised", () => {
+  // Every prompt is measured against the registry default unless its own stage
+  // declares otherwise, so a stage whose mandate outgrows the default widens the
+  // ruler in one visible place instead of the validator growing a special case.
+  assert.ok(Number.isInteger(registry.promptWordBudget) && registry.promptWordBudget > 0);
+  for (const stage of registry.stages) {
+    if (stage.promptWordBudget === undefined) continue;
+    assert.ok(
+      stage.promptWordBudget >= registry.promptWordBudget,
+      `Stage ${stage.number} declares a budget below the default.`,
+    );
+  }
+
+  const missingDefault = structuredClone(registry);
+  delete missingDefault.promptWordBudget;
+  assert.throws(() => validateRegistryData(missingDefault), /promptWordBudget must be a positive integer/);
+
+  // The failure this guards: a prompt that will not fit passes by shrinking its
+  // own limit rather than its own text.
+  const lowered = structuredClone(registry);
+  lowered.stages[8].promptWordBudget = registry.promptWordBudget - 1;
+  assert.throws(() => validateRegistryData(lowered), /promptWordBudget must be an integer of at least/);
+
+  const fractional = structuredClone(registry);
+  fractional.stages[8].promptWordBudget = 2200.5;
+  assert.throws(() => validateRegistryData(fractional), /promptWordBudget must be an integer of at least/);
+});
+
+test("every stage prompt fits the budget its own stage declares", () => {
+  // The validator enforces this too, but only when someone runs `validate`. This
+  // asserts it inside the suite CI actually runs on a prompt-only change.
+  const repoRoot = fileURLToPath(new URL("../../..", import.meta.url));
+  for (const stage of registry.stages) {
+    const budget = stage.promptWordBudget ?? registry.promptWordBudget;
+    const words = readFileSync(path.join(repoRoot, stage.prompt), "utf8")
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean).length;
+    assert.ok(
+      words <= budget,
+      `Stage ${stage.number} prompt is ${words} words, over its ${budget}-word budget.`,
+    );
+  }
+});
+
 test("lockfile fingerprint detects snapshot drift", () => {
   const first = computeLockFingerprint("lockfile A");
   const same = computeLockFingerprint("lockfile A");
