@@ -307,4 +307,61 @@ a { text-decoration: underline; color: inherit; }
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+/* =========================================
+   CONSOLE LIST TRANSITIONS
+   -----------------------------------------
+   [DECISION LOG] THE LIST KEEPS ITS PLACE WHEN IT REORDERS:
+   Changing the sort, typing in the search, or dismissing a member rewrote the
+   roster instantly, so all forty-eight rows teleported and nothing connected
+   where a row had been to where it went. On a list this long that costs the
+   reader their place on every interaction, which is the single most common
+   thing they do here.
+
+   These are Vue's own TransitionGroup classes, applied in ConsoleList. The FLIP
+   is Vue's: it measures each row before and after the patch and animates the
+   difference, so the work here is only to say how that difference should be
+   crossed. Nothing polls, caches coordinates or observes intersections, which
+   matters on a list whose rows also carry content-visibility.
+
+   Reduced motion needs no rule of its own and deliberately has none. The global
+   block in animations.ts drops transform from transition-property, so a moving
+   row stops sliding and simply arrives, while opacity survives the filter and
+   an entering or leaving row still crossfades. That is the same substitution
+   the rest of the app makes, reached without a second code path that could
+   drift from the first.
+
+   The container selector is load-bearing: .card declares its own transform
+   transition on the spring curve, and a bare .console-list-move would tie with
+   it on specificity and lose on order. Scoping to .list-container wins the
+   cascade outright rather than by luck of position.
+   ========================================= */
+.list-container .console-list-move {
+  transition: transform var(--sys-motion-duration-250) var(--sys-motion-easing-standard);
+}
+
+.list-container .console-list-enter-active,
+.list-container .console-list-leave-active {
+  transition:
+    opacity var(--sys-motion-duration-200) var(--sys-motion-easing-standard),
+    transform var(--sys-motion-duration-200) var(--sys-motion-easing-standard);
+}
+
+.list-container .console-list-enter-from,
+.list-container .console-list-leave-to {
+  opacity: 0;
+  transform: translateY(var(--sys-space-8));
+}
+
+/* A leaving row has to come out of flow or the rows below it wait for its fade
+   to finish before they start closing the gap, and the reorder arrives in two
+   stages instead of one. The content container carries no inline padding of its
+   own - only the skeleton branch does - so left and right of zero land the row
+   exactly where it already sat, and it fades in place while the list closes
+   over it. */
+.list-container .console-list-leave-active {
+  position: absolute;
+  left: 0;
+  right: 0;
+}
 `;

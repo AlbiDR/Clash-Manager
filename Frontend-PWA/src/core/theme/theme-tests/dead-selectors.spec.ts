@@ -433,7 +433,18 @@ const files = walk(SRC_DIR);
 
 const globalTokens = new Set<string>();
 for (const file of files) {
-  for (const token of usageText(file).match(/[\w-]+/g) ?? []) globalTokens.add(token);
+  const usage = usageText(file);
+  for (const token of usage.match(/[\w-]+/g) ?? []) globalTokens.add(token);
+  // The scoped pass already derives a Transition's generated class names; the
+  // global pass has to do it too, because a raw token scan only ever sees the
+  // `name` and never the six or seven classes Vue builds from it. Without this
+  // a global `.x-move` rule looks unreachable to the checker while being the
+  // only thing that makes the transition run - a false positive that would
+  // teach the reader to disbelieve this test, which is worse than the drift it
+  // exists to catch.
+  for (const match of usage.matchAll(/<Transition(?:Group)?\b[^>]*\bname="([^"]+)"/g)) {
+    for (const suffix of TRANSITION_SUFFIXES) globalTokens.add(`${match[1]}-${suffix}`);
+  }
 }
 
 const componentFindings: Finding[] = [];
