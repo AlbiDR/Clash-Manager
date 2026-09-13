@@ -173,13 +173,13 @@ const { targets, isRefreshing, refresh } = useBackendRefresher();
 
 .action-btn:hover:not(:disabled) {
   background: var(--sys-color-primary);
-  color: white;
+  color: var(--sys-color-on-primary);
 }
 
 .action-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-  background: var(--sys-color-surface-variant);
+  background: var(--sys-color-surface-container-highest);
   color: var(--sys-color-on-surface-variant);
 }
 

@@ -149,14 +149,14 @@ const getSelectedLabel = () => {
   height: 48px;
   padding: 0 14px;
   padding-right: 36px;
-  background: var(--sys-surf-c, var(--sys-color-surface-container));
+  background: var(--sys-color-surface-container);
   border: 1px solid rgba(128, 128, 128, 0.15);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
   border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  color: var(--sys-text-secondary, var(--sys-color-on-surface));
+  color: var(--sys-color-on-surface);
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
@@ -180,7 +180,7 @@ const getSelectedLabel = () => {
   right: 14px;
   top: 50%;
   transform: translateY(-50%);
-  color: var(--sys-text-tertiary, var(--sys-color-outline));
+  color: var(--sys-color-outline);
   transition: transform 0.2s var(--sys-motion-spring);
 }
 

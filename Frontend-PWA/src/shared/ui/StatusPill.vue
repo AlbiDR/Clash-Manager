@@ -145,10 +145,10 @@ const {
   min-height: 48px; /* 48px Mobile Footprint (Target B.2) */
   padding: 0 8px;
   border-radius: 24px;
-  background: var(--sys-surface-container);
-  border: 1px solid var(--sys-outline);
+  background: var(--sys-color-surface-container);
+  border: 1px solid var(--sys-color-outline);
   cursor: pointer;
-  transition: all 0.5s var(--sys-motion-spring, cubic-bezier(0.175, 0.885, 0.32, 1.275));
+  transition: all 0.5s var(--sys-motion-spring);
   user-select: none;
   position: relative;
   z-index: 50;
@@ -174,8 +174,8 @@ const {
   background: var(--sys-surface-glass);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border-color: var(--sys-outline-variant);
-  box-shadow: var(--sys-elevation-level2);
+  border-color: var(--sys-color-outline-variant);
+  box-shadow: var(--sys-elevation-2);
 }
 
 .status-pill.expand-left {

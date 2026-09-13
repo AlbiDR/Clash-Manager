@@ -305,7 +305,7 @@ function saveApiUrl() {
   min-height: var(--sys-space-48);
   border-radius: 8px;
   background: var(--sys-color-primary);
-  color: white;
+  color: var(--sys-color-on-primary);
   border: none;
 }
 .cancel-btn {

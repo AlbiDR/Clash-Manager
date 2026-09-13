@@ -98,14 +98,14 @@ const isRetryInteractionActive = ref(false);
   color: var(--sys-color-on-error-container);
   border-radius: 32px;
   border: 1px solid var(--sys-surface-glass-border);
-  box-shadow: var(--sys-shadow-xl);
+  box-shadow: var(--sys-elevation-3);
   margin: 20px 0;
 }
 
 .error-icon-box {
   color: var(--sys-color-error);
   padding: 16px;
-  background: rgba(var(--sys-color-error-rgb, 255, 68, 68), 0.1);
+  background: rgba(var(--sys-color-error-rgb), 0.1);
   border-radius: 20px;
   display: flex;
   align-items: center;
@@ -137,19 +137,19 @@ const isRetryInteractionActive = ref(false);
   gap: 10px;
   padding: 12px 24px;
   background: var(--sys-color-error);
-  color: white;
+  color: var(--sys-color-on-error);
   border: none;
-  border-radius: 99px;
+  border-radius: var(--sys-shape-corner-full);
   font-weight: 850;
   font-size: 14px;
   cursor: pointer;
   transition: all 0.3s var(--sys-motion-spring);
-  box-shadow: 0 8px 16px rgba(var(--sys-color-error-rgb, 255, 68, 68), 0.3);
+  box-shadow: 0 8px 16px rgba(var(--sys-color-error-rgb), 0.3);
 }
 
 .btn-error:hover {
   transform: translateY(-2px);
-  box-shadow: 0 10px 20px rgba(var(--sys-color-error-rgb, 255, 68, 68), 0.4);
+  box-shadow: 0 10px 20px rgba(var(--sys-color-error-rgb), 0.4);
 }
 
 .btn-error.active {

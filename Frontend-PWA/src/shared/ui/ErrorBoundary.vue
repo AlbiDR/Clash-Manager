@@ -146,14 +146,14 @@ function reset() {
   max-width: 440px;
   width: 100%;
   border: 1px solid var(--sys-surface-glass-border);
-  box-shadow: var(--sys-shadow-xl);
+  box-shadow: var(--sys-elevation-3);
   user-select: text; /* Enable selection on entire content */
 }
 
 .error-icon-wrapper {
   width: 72px;
   height: 72px;
-  background: rgba(var(--sys-color-error-rgb, 255, 68, 68), 0.1);
+  background: rgba(var(--sys-color-error-rgb), 0.1);
   color: var(--sys-color-error);
   border-radius: 20px;
   display: flex;
@@ -187,7 +187,7 @@ p {
   background: rgba(0, 0, 0, 0.04);
   padding: 16px 48px 16px 16px;
   border-radius: 16px;
-  font-family: var(--sys-font-mono, monospace);
+  font-family: var(--sys-font-family-mono);
   font-size: 12px;
   text-align: left;
   word-break: break-all;

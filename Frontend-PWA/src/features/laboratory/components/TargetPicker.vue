@@ -175,7 +175,7 @@ function handleKeydown(keyboardEvent: KeyboardEvent) {
   border-radius: var(--sys-shape-corner-stat);
   background: var(--sys-color-primary);
   border: none;
-  color: white;
+  color: var(--sys-color-on-primary);
   display: flex;
   align-items: center;
   justify-content: center;

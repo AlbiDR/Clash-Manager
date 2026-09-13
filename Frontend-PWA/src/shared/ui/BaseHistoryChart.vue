@@ -296,7 +296,7 @@ const { chartData } = useBaseHistoryChart({
 
 /* Shared Miss */
 .bar-miss {
-  background: rgba(var(--sys-color-outline-variant-rgb, 100, 100, 100), 0.3);
+  background: rgba(var(--sys-color-outline-variant-rgb), 0.3);
 }
 
 /* Shared Projection Pattern */

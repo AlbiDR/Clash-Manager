@@ -235,7 +235,7 @@ onUnmounted(clearTimer);
 /* Success State */
 .toast.success {
   background: var(--sys-color-success-container);
-  color: #002105; /* Fallback high contrast */
+  color: var(--sys-color-on-success-container);
   border-color: rgba(0, 0, 0, 0.05);
 }
 
