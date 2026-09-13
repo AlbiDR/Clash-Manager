@@ -95,6 +95,9 @@ export function useConnectivityManager() {
       ageMinutes: dataAgeMinutes,
       lastCompiled: unref(store.lastCompiledTime) ? formatTimeAgo(unref(store.lastCompiledTime)) : null,
       lastFetched: unref(store.lastFetchedTime) ? formatTimeAgo(unref(store.lastFetchedTime)) : null,
+      fetchedMinutes: unref(store.lastFetchedTime)
+        ? Math.floor((currentTimeMs - (unref(store.lastFetchedTime) as number)) / 60000)
+        : null,
       isStale: unref(store.isStale)
     };
   });
@@ -158,11 +161,26 @@ export function useConnectivityManager() {
     // [THREAT: Silent Data Stale Drift] Data older than DATA_STALENESS_MINUTES is considered STALE,
     // signaling that a refresh is recommended before relying on cached analytics.
     if (metadata.value.ageMinutes >= DATA_STALENESS_MINUTES) {
+      // [DECISION LOG] NAME THE SIDE THAT IS BEHIND:
+      // The age reported here is the ingestion pipeline's heartbeat, not this
+      // client's. When the client is polling normally and the upstream pipeline
+      // has not produced a new batch, a bare "STALE" reads as the app having
+      // failed, and the operator goes looking for a fault that is not on this
+      // side. If this client fetched within the staleness window, the client is
+      // working and the diagnosis says so.
+      const clientIsCurrent =
+        metadata.value.fetchedMinutes !== null
+        && metadata.value.fetchedMinutes < DATA_STALENESS_MINUTES;
+
       return {
         type: "warning",
         label: "STALE",
         confidence: 40,
-        diagnosis: `Data is ${metadata.value.age} old`
+        // `age` and `lastFetched` are already phrased as "45m ago", so neither
+        // needs a trailing "old". The previous copy read "Data is 31m ago old".
+        diagnosis: clientIsCurrent
+          ? `Synced ${metadata.value.lastFetched}; source data ${metadata.value.age}`
+          : `Last synced ${metadata.value.lastFetched ?? "a while ago"}`
       };
     }
 
