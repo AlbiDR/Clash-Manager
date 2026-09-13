@@ -41,7 +41,13 @@ describe("ScoreBadge.vue", () => {
       global: {
         stubs: {
           MomentumPill: {
-            template: '<div class="mock-momentum-pill"></div>',
+            // Named, and rendering both values it declares. The previous stub
+            // declared scoreDelta and performanceRawScore and rendered an empty
+            // div, so nothing in this file could observe either one. Severing
+            // :performance-raw-score at ScoreBadge.vue:43 left all 8 tests
+            // passing.
+            name: 'MomentumPill',
+            template: '<div class="mock-momentum-pill" :data-delta="scoreDelta" :data-raw="performanceRawScore"></div>',
             props: ['scoreDelta', 'performanceRawScore']
           }
         },
@@ -51,6 +57,18 @@ describe("ScoreBadge.vue", () => {
       }
     });
   };
+
+  it("hands the momentum pill both of the values it is given", () => {
+    // Asserted through the component, not the DOM, so it holds regardless of
+    // what the stub chooses to render. performanceRawScore in particular had
+    // no assertion anywhere: it could be severed at source without any test
+    // noticing.
+    const wrapper = createWrapper({ score: 150, scoreDelta: -12, performanceRawScore: 0.42 });
+    const pill = wrapper.findComponent({ name: "MomentumPill" });
+    expect(pill.exists()).toBe(true);
+    expect(pill.props("scoreDelta")).toBe(-12);
+    expect(pill.props("performanceRawScore")).toBe(0.42);
+  });
 
   it("renders correctly with a valid score", () => {
     const wrapper = createWrapper({ score: 150 });

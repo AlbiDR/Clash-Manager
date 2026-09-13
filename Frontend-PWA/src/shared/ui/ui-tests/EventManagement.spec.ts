@@ -69,6 +69,19 @@ describe("EventManagement.vue", () => {
     });
   };
 
+  it("opens the card when asked to, and leaves it closed otherwise", () => {
+    // initiallyExpanded had no assertion anywhere in this file. The SettingsCard
+    // mock declares it and renders an empty div, so no DOM check could see it,
+    // and replacing it with a constant at EventManagement.vue:55 left every
+    // test passing. Asserted through the component so the stub's template
+    // cannot blind it again.
+    const card = (w: ReturnType<typeof createWrapper>) =>
+      w.findComponent({ name: "SettingsCard" });
+
+    expect(card(createWrapper({ initiallyExpanded: true })).props("initiallyExpanded")).toBe(true);
+    expect(card(createWrapper()).props("initiallyExpanded")).toBe(false);
+  });
+
   it("renders correctly in IDLE state", async () => {
     const wrapper = createWrapper();
     await nextTick();
