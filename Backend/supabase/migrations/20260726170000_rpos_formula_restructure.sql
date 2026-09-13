@@ -4,8 +4,12 @@
 
 
 
+-- IF NOT EXISTS because this column has since been folded into the baseline.
+-- Replaying the history onto the folded baseline is what the semantic gate
+-- does, and without this guard that replay dies here, which is why
+-- test:database-baseline has failed in CI on every run since June.
 ALTER TABLE drivers.recruits
-    ADD COLUMN win_rate numeric DEFAULT 0.0;
+    ADD COLUMN IF NOT EXISTS win_rate numeric DEFAULT 0.0;
 
 COMMENT ON COLUMN drivers.recruits.win_rate IS 'Precomputed weighted win rate (wins/battleCount, three-crown wins weighted at RPOS_THREE_CROWN_MULT), persisted at profiler/rescan time for display on the recruit card. See calculateWeightedWinRate() in _shared/utils.ts.';
 

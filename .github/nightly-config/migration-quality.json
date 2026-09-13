@@ -25,7 +25,7 @@
     "Backend/supabase/migrations/20260705030000_voyage_history_pruning.sql": "8d64cd00a7beb6d9725f896abbf609772314feeb9c4feb800a577dd218ebedfa",
     "Backend/supabase/migrations/20260707003200_rename_voyage_5_to_4.sql": "67cb14e7c50624d4e3fda57c42980fb04096d1a5e0fd9690815d4006c0894b17",
     "Backend/supabase/migrations/20260726163300_drop_orphaned_views.sql": "dd5885c11eeeca4ef9eaab4a7d9c33bb1261eae13bc091451715c7ee58dd8493",
-    "Backend/supabase/migrations/20260726170000_rpos_formula_restructure.sql": "62169a3859b25116a04da0b5c4ecca140f641b40ff2f97c3e27fc70a49ee4901",
+    "Backend/supabase/migrations/20260726170000_rpos_formula_restructure.sql": "3736dc90f453f7da2e6226b5a16cfbdac6764755b8dd86c3e12014fc92ed420a",
     "Backend/supabase/migrations/20260726180000_fix_raw_potential_score_column_comment.sql": "23f4c070cae1d097faab9d694794f77b36654137a87ba9174e8bb5b37b2eb81b",
     "Backend/supabase/migrations/20260727000000_rpos_rescan_backfill.sql": "c3d4e8a39832bdd24ffd496432f787a63466b1880a3a03e76d22afd7a30423ca",
     "Backend/supabase/migrations/20260727010000_roster_lifetime_kpi_row.sql": "320af47f08aa646bf17c04111f1e86a3c0a7fc49890d0b94edd3753d826be3da",
