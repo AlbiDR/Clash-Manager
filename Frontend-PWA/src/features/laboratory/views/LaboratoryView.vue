@@ -24,8 +24,9 @@ export const useClashDataLoader = defineBasicLoader(hydrateClashData, { lazy: tr
  * ============================================================================
  */
 import {
+  ConsoleLayout,
+  EmptyState,
   Icon,
-  ConsoleLayout
 } from "@shared";
 import { useClashDataStore } from "@core";
 import { storeToRefs } from "pinia";
@@ -129,6 +130,18 @@ const { data: globalData } = storeToRefs(clashDataStore);
         v-if="operation && operation.actions.length > 0"
         :actions="[...operation.actions]"
         :get-trajectory-memo-keys="getTrajectoryMemoKeys"
+      />
+
+      <!-- [DECISION LOG] A RUN THAT RECOMMENDS NOTHING STILL HAS TO SAY SO:
+           A simulation returning zero upgrades used to render nothing at all
+           below the summary, which is indistinguishable from the list having
+           failed to load. Zero is a real and informative answer here, so it
+           gets stated rather than left as blank space. -->
+      <EmptyState
+        v-else-if="operation"
+        icon="card"
+        message="No upgrade is affordable yet"
+        hint="The run finished, and nothing in the vault can be upgraded with the gold, cards and gems entered above."
       />
     </div>
   </ConsoleLayout>

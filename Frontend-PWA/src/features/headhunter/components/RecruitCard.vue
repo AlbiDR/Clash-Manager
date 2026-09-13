@@ -54,6 +54,21 @@ const emit = defineEmits<{
  * Uses the authoritative longevity label provided by the backend.
  */
 const timeAgo = computed(() => props.recruit.longevityLabel || formatTimeAgo(props.recruit.d.ago));
+
+/**
+ * Spoken description of the recruit.
+ *
+ * @remarks
+ * [DECISION LOG] Mirrors `memberAccessibilityLabel` in MemberCard, which is the
+ * sibling row on the other console. RecruitCard passed nothing, so every row
+ * announced as a bare "article" with no name, no score and no way to tell one
+ * from the next. The score is rounded for the same reason it is there: a
+ * decimal read aloud is noise.
+ */
+const recruitAccessibilityLabel = computed(() => {
+  const roundedPotentialScore = Math.round(props.recruit.potentialScore ?? 0);
+  return `${props.recruit.n}, potential ${roundedPotentialScore}, found ${timeAgo.value}`;
+});
 </script>
 
 <template>
@@ -65,6 +80,8 @@ const timeAgo = computed(() => props.recruit.longevityLabel || formatTimeAgo(pro
     :selection-mode="props.selectionMode"
     :is-tagged="props.isTagged"
     :score="props.recruit.potentialScore"
+    :card-label="recruitAccessibilityLabel"
+    :card-name="props.recruit.n"
     @toggle="emit('toggle')"
     @toggle-select="emit('toggle-select')"
   >

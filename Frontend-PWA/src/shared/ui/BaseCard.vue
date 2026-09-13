@@ -1,6 +1,7 @@
 <!-- SPDX-License-Identifier: GPL-3.0-only -->
 <!-- Copyright (C) 2026 AlbiDR -->
 <script setup lang="ts">
+import { computed } from "vue";
 import Icon from "./Icon.vue";
 import { useCardMechanics } from "../composables/useCardMechanics";
 import { scoreTintStyle } from "../utils/scoreTint";
@@ -57,6 +58,30 @@ const props = defineProps<{
    * Numeric score value used to derive score-tint background styles dynamically.
    */
   score?: number;
+
+  /**
+   * Full spoken description of the card, e.g. "ADR, score 100, Leader".
+   *
+   * @remarks
+   * [DECISION LOG] DECLARED RATHER THAN LEFT TO FALLTHROUGH:
+   * MemberCard already passed `aria-label` and it landed on the root by attribute
+   * fallthrough, which worked but advertised nothing, so RecruitCard never
+   * passed one and every recruit row announced as a bare "article". Declaring it
+   * makes the contract visible to the next card that gets written.
+   */
+  cardLabel?: string;
+
+  /**
+   * Short identity for the card's action buttons, e.g. "ADR".
+   *
+   * @remarks
+   * [THREAT:] The select and expand buttons were labelled "Select card" and
+   * "Expand details" for every row. Tabbing a 48-row roster produced 48
+   * identically named controls, so the name told a screen-reader user nothing
+   * about which row they were on. The full `cardLabel` is too long to repeat on
+   * an action, so the bare name is carried separately.
+   */
+  cardName?: string;
 }>();
 
 const emit = defineEmits<{
@@ -102,6 +127,19 @@ function handleScoreClick(cardScoreClickEvent: MouseEvent | TouchEvent | Keyboar
   internalScoreClick(cardScoreClickEvent);
   emit("score-click", cardScoreClickEvent as Event);
 }
+
+/**
+ * What the chevron does next, named for the action rather than the state.
+ *
+ * @remarks
+ * This read "Expand details" in both directions, so an already-open card still
+ * offered to expand. The verb has to follow the state or the control lies about
+ * what pressing it will do.
+ */
+const expandActionLabel = computed(() => {
+  const subject = props.cardName ? ` ${props.cardName}` : " details";
+  return props.expanded ? `Collapse${subject}` : `Expand${subject}`;
+});
 </script>
 
 <template>
@@ -111,7 +149,7 @@ function handleScoreClick(cardScoreClickEvent: MouseEvent | TouchEvent | Keyboar
     class="card squish-interaction"
     :class="{ expanded: props.expanded, selected: props.selected, tagged: props.isTagged }"
     role="article"
-    v-bind="{ 'aria-expanded': props.expanded }"
+    v-bind="{ 'aria-expanded': props.expanded, 'aria-label': props.cardLabel }"
   >
     <div class="card-header">
       <div class="identity-group">
@@ -134,7 +172,7 @@ function handleScoreClick(cardScoreClickEvent: MouseEvent | TouchEvent | Keyboar
           role="button"
           tabindex="0"
           :aria-pressed="props.selected"
-          aria-label="Select card"
+          :aria-label="props.cardName ? `Select ${props.cardName}` : 'Select card'"
           @click.stop="handleScoreClick"
           @keydown.enter="handleScoreClick"
           @keydown.space.prevent="handleScoreClick"
@@ -153,7 +191,8 @@ function handleScoreClick(cardScoreClickEvent: MouseEvent | TouchEvent | Keyboar
           v-tactile
           class="expand-btn hit-target"
           :class="{ 'is-active': props.expanded }"
-          v-bind="{ 'aria-expanded': props.expanded, 'aria-label': 'Expand details' }"
+          :aria-expanded="props.expanded"
+          :aria-label="expandActionLabel"
           @click.stop="internalExpandClick"
         >
           <Icon
@@ -295,7 +334,21 @@ function handleScoreClick(cardScoreClickEvent: MouseEvent | TouchEvent | Keyboar
   gap: var(--sys-space-4);
 }
 
+/* [DECISION LOG] SQUARE, AND ACTUALLY 48 WITH ITS HIT TARGET:
+   Padding alone produced 36x40 - a 20px chevron plus 8px each side across, but
+   taller than it was wide - so the chevron sat visibly off-square beside the
+   48x48 score pod next to it. It also left the shared `.hit-target` bleed of
+   4px per edge reaching only 44px across, 4px under the ADR minimum on one axis
+   while clearing it on the other. Sizing the box to 40x40 makes it square, puts
+   the chevron on the pod's centre line, and brings the hit target to exactly
+   48x48. */
 .expand-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: var(--sys-space-40);
+  height: var(--sys-space-40);
   background: none;
   border: none;
   padding: var(--sys-space-8);
