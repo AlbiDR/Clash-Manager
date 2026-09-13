@@ -325,7 +325,7 @@ const engineStatus = computed(() => {
   width: 24px;
   height: 24px;
   object-fit: contain;
-  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+  filter: drop-shadow(0 2px 4px var(--sys-overlay-dark-soft));
 }
 
 .res-meta {

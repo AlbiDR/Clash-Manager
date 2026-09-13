@@ -123,7 +123,7 @@ function selectOption(targetValue: T) {
 .segmented-control.compact .segment-btn.active {
   color: var(--sys-color-on-surface);
   background: var(--sys-color-surface-container-highest);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 1px 2px var(--sys-overlay-dark-medium);
 }
 
 /* [UX] TOUCH TARGET COMPLIANCE

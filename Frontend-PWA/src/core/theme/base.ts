@@ -67,6 +67,33 @@ export const staticTokens = `
   --sys-typescale-title-md: 20px;
   --sys-typescale-title-lg: 24px;
 
+  /* ── SURFACE OVERLAYS ──
+     Translucent black and white laid over whatever is beneath: hover tints,
+     hairline borders, inset highlights, shadow alphas. Pure black and pure
+     white are theme-independent by definition, which is why these are static
+     rather than living beside the palette - a component picks the direction,
+     the theme does not pick it for them.
+
+     [DECISION LOG] These four steps and three replace twenty-three distinct
+     alphas found across the components on 2026-09-14: fifteen blacks running
+     0.02, 0.04, 0.05, 0.08, 0.1, 0.12, 0.15, 0.2, 0.28, 0.3, 0.4, and eight
+     whites running 0.03 through 0.16 with several pairs a single hundredth
+     apart. Nothing there was a decision; it was twenty-three separate guesses
+     at the same few intentions, and the pairs that sit a hundredth apart are
+     the proof - no one can see 0.05 against 0.06, so no one chose between
+     them. The steps below sit at the centre of each cluster, so a shadow keeps
+     the geometry it was authored with and only its alpha moves onto the scale.
+
+     Naming is by weight rather than by number so that a reader picking one is
+     asked what they mean, not what they measured. */
+  --sys-overlay-dark-subtle:   rgba(0, 0, 0, 0.04);
+  --sys-overlay-dark-soft:     rgba(0, 0, 0, 0.08);
+  --sys-overlay-dark-medium:   rgba(0, 0, 0, 0.16);
+  --sys-overlay-dark-strong:   rgba(0, 0, 0, 0.32);
+  --sys-overlay-light-subtle:  rgba(255, 255, 255, 0.04);
+  --sys-overlay-light-soft:    rgba(255, 255, 255, 0.08);
+  --sys-overlay-light-medium:  rgba(255, 255, 255, 0.16);
+
   /* ── MOTION DURATIONS (interaction) ── */
   --sys-motion-duration-100: 0.1s;
   --sys-motion-duration-200: 0.2s;

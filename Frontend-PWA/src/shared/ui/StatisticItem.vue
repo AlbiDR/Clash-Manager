@@ -63,12 +63,12 @@ const { benchmarkTooltipContent } = useBenchmarkedStat(
     transform var(--sys-motion-duration-200) var(--sys-motion-easing-spring-overshoot),
     background-color var(--sys-motion-duration-200) ease,
     box-shadow var(--sys-motion-duration-200) ease;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 1px 2px var(--sys-overlay-dark-subtle);
 }
 .stat-item:hover {
   transform: translateY(-2px) scale(1.02);
   background: var(--sys-color-surface-container-high);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px var(--sys-overlay-dark-soft);
   z-index: 2;
 }
 

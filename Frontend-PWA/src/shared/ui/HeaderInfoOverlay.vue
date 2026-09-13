@@ -98,7 +98,7 @@ watch(
 .info-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.4);
+  background: var(--sys-overlay-dark-strong);
 
   z-index: 2000;
   display: flex;

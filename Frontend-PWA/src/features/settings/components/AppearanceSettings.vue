@@ -181,7 +181,7 @@ const { theme, wakeLock, isRefreshing, handleThemeChange } = useSettings();
   border-radius: 6px;
   z-index: 1;
   transition: transform var(--sys-motion-duration-500) cubic-bezier(0.34, 1.56, 0.64, 1);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px var(--sys-overlay-dark-soft);
   border: 1px solid rgba(var(--sys-color-primary-rgb), 0.1);
 }
 

@@ -275,7 +275,7 @@ const getSelectedLabel = () => {
   padding-right: 36px;
   background: var(--sys-color-surface-container);
   border: 1px solid rgba(128, 128, 128, 0.15);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+  box-shadow: 0 2px 4px var(--sys-overlay-dark-subtle);
   border-radius: var(--sys-shape-corner-input);
   display: flex;
   align-items: center;

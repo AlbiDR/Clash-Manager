@@ -215,7 +215,7 @@ onMounted(() => {
   border: 1px solid color-mix(in srgb, var(--apk-state-color) 18%, var(--sys-color-outline-variant));
   border-radius: var(--sys-shape-corner-small);
   background: color-mix(in srgb, var(--sys-color-surface-container) 82%, transparent);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  box-shadow: inset 0 1px 0 var(--sys-overlay-light-subtle);
 }
 
 .apk-status-row {

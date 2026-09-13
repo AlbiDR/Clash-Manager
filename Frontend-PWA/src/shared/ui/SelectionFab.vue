@@ -283,7 +283,7 @@ function handleFabAbortHarvest() {
   box-shadow: var(--sys-elevation-2);
 }
 .fab-btn.secondary-harvest:active {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--sys-overlay-light-subtle);
 }
 .fab-btn.secondary-harvest:disabled {
   opacity: 0.5;

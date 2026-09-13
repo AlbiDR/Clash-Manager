@@ -163,7 +163,7 @@ const shouldShowBanner = computed(() => {
   -webkit-backdrop-filter: blur(12px);
   box-shadow:
     0 4px 24px rgba(var(--sys-color-primary-rgb), 0.12),
-    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    inset 0 1px 0 var(--sys-overlay-light-soft);
   overflow: hidden;
   position: relative;
 }
@@ -172,7 +172,7 @@ const shouldShowBanner = computed(() => {
 .voyage-banner.is-pre-event {
   background: rgba(245, 158, 11, 0.07);
   border-color: rgba(245, 158, 11, 0.25);
-  box-shadow: 0 4px 24px rgba(245, 158, 11, 0.1), inset 0 1px 0 rgba(255,255,255,0.06);
+  box-shadow: 0 4px 24px rgba(245, 158, 11, 0.1), inset 0 1px 0 var(--sys-overlay-light-subtle);
   animation: pre-event-pulse var(--sys-motion-ambient-pulse) ease-in-out infinite;
 }
 
@@ -191,13 +191,13 @@ const shouldShowBanner = computed(() => {
   border-color: rgba(251, 191, 36, 0.4);
   box-shadow:
     0 4px 32px rgba(251, 191, 36, 0.2),
-    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+    inset 0 1px 0 var(--sys-overlay-light-soft);
   animation: victory-pulse var(--sys-motion-ambient-pulse) ease-in-out infinite;
 }
 
 @keyframes victory-pulse {
-  0%, 100% { box-shadow: 0 4px 32px rgba(251, 191, 36, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.12); }
-  50%       { box-shadow: 0 4px 48px rgba(251, 191, 36, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.16); }
+  0%, 100% { box-shadow: 0 4px 32px rgba(251, 191, 36, 0.2), inset 0 1px 0 var(--sys-overlay-light-soft); }
+  50%       { box-shadow: 0 4px 48px rgba(251, 191, 36, 0.4), inset 0 1px 0 var(--sys-overlay-light-medium); }
 }
 
 /* --- Header Row --- */

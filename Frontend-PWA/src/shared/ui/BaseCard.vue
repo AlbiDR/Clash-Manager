@@ -367,7 +367,7 @@ const expandActionLabel = computed(() => {
   height: var(--sys-space-48);
   background-image: radial-gradient(
     circle at 20% 20%,
-    rgba(255, 255, 255, 0.05) 0%,
+    var(--sys-overlay-light-subtle) 0%,
     transparent 60%
   );
   border-radius: var(--sys-shape-corner-input);
@@ -378,7 +378,7 @@ const expandActionLabel = computed(() => {
     transform var(--sys-motion-duration-200) var(--sys-motion-easing-spring-overshoot),
     background-color var(--sys-motion-duration-300) ease;
   contain: layout;
-  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.05);
+  box-shadow: inset 0 1px 1px var(--sys-overlay-light-subtle);
 }
 .stat-pod:hover {
   transform: scale(1.1);
@@ -399,7 +399,7 @@ const expandActionLabel = computed(() => {
   color: var(--sys-color-on-surface) !important;
   opacity: 0.95;
   /* Clean elevation without sticker-effect */
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  text-shadow: 0 1px 2px var(--sys-overlay-dark-soft);
 }
 
 /* Tinted stat-pods fade the fill toward vivid primary as the score rises
@@ -422,7 +422,7 @@ const expandActionLabel = computed(() => {
 .card-body {
   margin-top: var(--sys-space-16);
   padding-top: var(--sys-space-16);
-  border-top: 1px solid rgba(0, 0, 0, 0.05);
+  border-top: 1px solid var(--sys-overlay-dark-subtle);
   animation: fade-in var(--sys-motion-duration-300) ease;
 }
 @keyframes fade-in {

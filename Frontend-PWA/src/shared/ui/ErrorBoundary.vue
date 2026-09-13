@@ -184,7 +184,7 @@ p {
 }
 
 .error-details {
-  background: rgba(0, 0, 0, 0.04);
+  background: var(--sys-overlay-dark-subtle);
   padding: 16px 48px 16px 16px;
   border-radius: 16px;
   font-family: var(--sys-font-family-mono);
@@ -194,7 +194,7 @@ p {
   max-height: 120px;
   overflow-y: auto;
   color: var(--sys-color-on-surface-variant);
-  border: 1px solid rgba(0, 0, 0, 0.05);
+  border: 1px solid var(--sys-overlay-dark-subtle);
   user-select: text;
 }
 

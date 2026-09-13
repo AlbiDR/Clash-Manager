@@ -120,7 +120,7 @@ function handleKeyDown(keyboardEvent: KeyboardEvent): void {
 .confirm-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.4);
+  background: var(--sys-overlay-dark-strong);
   z-index: 3000;
   display: flex;
   justify-content: center;

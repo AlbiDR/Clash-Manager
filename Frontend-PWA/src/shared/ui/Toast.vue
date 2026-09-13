@@ -214,7 +214,7 @@ onUnmounted(clearTimer);
   color: var(--sys-color-on-surface);
   padding: 12px 16px;
   border-radius: 20px; /* Subtle rounded corners for multiline layout compatibility */
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 8px 32px var(--sys-overlay-dark-medium);
   min-width: 280px;
   max-width: 90vw;
   border: 1px solid var(--sys-surface-glass-border);
@@ -237,21 +237,21 @@ onUnmounted(clearTimer);
 .toast.success {
   background: var(--sys-color-success-container);
   color: var(--sys-color-on-success-container);
-  border-color: rgba(0, 0, 0, 0.05);
+  border-color: var(--sys-overlay-dark-subtle);
 }
 
 /* Error State */
 .toast.error {
   background: var(--sys-color-error-container);
   color: var(--sys-color-on-error-container);
-  border-color: rgba(0, 0, 0, 0.05);
+  border-color: var(--sys-overlay-dark-subtle);
 }
 
 /* Undo State (Premium Dark Glass) */
 .toast.undo {
   background: var(--sys-color-inverse-surface);
   color: var(--sys-color-inverse-on-surface);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--sys-overlay-light-soft);
   padding: 12px 20px;
 }
 
@@ -294,7 +294,7 @@ onUnmounted(clearTimer);
 }
 .copy-btn:hover {
   opacity: 1;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--sys-overlay-light-soft);
 }
 
 .action-btn {
@@ -352,6 +352,6 @@ onUnmounted(clearTimer);
 
 .close-btn:hover {
   opacity: 1;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--sys-overlay-light-soft);
 }
 </style>

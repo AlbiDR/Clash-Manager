@@ -115,7 +115,7 @@ const { targets, isRefreshing, refresh } = useBackendRefresher();
   align-items: center;
   justify-content: space-between;
   padding: var(--sys-space-16);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  border-bottom: 1px solid var(--sys-overlay-dark-subtle);
   user-select: none; /* Text Selection Containment (Target A.3) */
   -webkit-user-select: none;
 }

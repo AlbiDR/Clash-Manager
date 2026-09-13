@@ -263,7 +263,7 @@ const delta = computed(() =>
   width: 10px;
   height: 10px;
   border: 2px solid var(--sys-surface-glass);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 1px 3px var(--sys-overlay-dark-strong);
 }
 .bc-marker-player.better {
   background: var(--sys-color-success);

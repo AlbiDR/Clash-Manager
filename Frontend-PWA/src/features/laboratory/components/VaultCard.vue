@@ -213,7 +213,7 @@ const handleInput = (inputEvent: Event, resourceKey: string) => {
   width: 32px;
   height: 32px;
   object-fit: contain;
-  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.2));
+  filter: drop-shadow(0 4px 8px var(--sys-overlay-dark-medium));
 }
 
 .wc-input {

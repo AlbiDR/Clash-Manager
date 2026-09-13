@@ -379,7 +379,7 @@ const handleOpenDashboard = () => {
   padding: 0 var(--sys-space-14);
   gap: var(--sys-space-12);
   border: 1px solid rgba(128, 128, 128, 0.15);
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.02);
+  box-shadow: inset 0 2px 4px var(--sys-overlay-dark-subtle);
   transition: all var(--sys-motion-duration-200) ease;
 }
 

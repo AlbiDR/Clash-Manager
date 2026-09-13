@@ -428,8 +428,8 @@ function handleTrackKeyDown(keyboardEvent: KeyboardEvent): void {
   border-radius: 50%;
   background: var(--sys-color-primary);
   box-shadow:
-    0 1px 2px rgba(0, 0, 0, 0.28),
-    0 2px 6px rgba(0, 0, 0, 0.12);
+    0 1px 2px var(--sys-overlay-dark-strong),
+    0 2px 6px var(--sys-overlay-dark-soft);
   pointer-events: none;
 }
 
