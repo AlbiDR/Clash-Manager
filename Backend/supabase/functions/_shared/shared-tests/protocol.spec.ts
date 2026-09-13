@@ -860,4 +860,98 @@ describe("clinicalServe", () => {
       }
     });
   });
+
+  describe("Data Perfection Governance (isDataPerfect and validation_report)", () => {
+    it("calculates isDataPerfect = true when all integrity_checked entries pass validation with passed = true", async () => {
+      const { supabase, calls } = makeSupabaseMock(async (fn) => {
+        if (fn === "report_telemetry") return { data: { id: "tid-perf-1" }, error: null };
+        return { data: null, error: null };
+      });
+
+      const response = await clinicalServe({
+        req: makeRequest({}),
+        supabase: supabase as any,
+        bearerToken: BEARER_TOKEN,
+        eventType: "TEST_EVENT",
+        componentId: "data-perfection-spec",
+        schema: EMPTY_SCHEMA,
+        handler: async (_payload, logAudit) => {
+          logAudit("INSPECT_STAGE", "integrity_checked", { passed: true, details: "All checks passed" });
+          return { status: "ok" };
+        },
+      });
+
+      expect(response.status).toBe(200);
+
+      const updateCall = calls.find((c) => c.fn === "update_telemetry" && (c.args as any).p_status === "SUCCESS");
+      expect(updateCall).toBeDefined();
+      const metadata = (updateCall!.args as any).p_metadata;
+      expect(metadata.is_data_perfect).toBe(true);
+      expect(metadata.validation_report.integrity_checks).toEqual([
+        { stage: "INSPECT_STAGE", passed: true },
+      ]);
+    });
+
+    it("calculates isDataPerfect = false when any integrity_checked entry fails or has malformed details", async () => {
+      const { supabase, calls } = makeSupabaseMock(async (fn) => {
+        if (fn === "report_telemetry") return { data: { id: "tid-perf-2" }, error: null };
+        return { data: null, error: null };
+      });
+
+      const response = await clinicalServe({
+        req: makeRequest({}),
+        supabase: supabase as any,
+        bearerToken: BEARER_TOKEN,
+        eventType: "TEST_EVENT",
+        componentId: "data-perfection-spec",
+        schema: EMPTY_SCHEMA,
+        handler: async (_payload, logAudit) => {
+          logAudit("STAGE_A", "integrity_checked", { passed: true });
+          logAudit("STAGE_B", "integrity_checked", { passed: false, error: "Validation failure" });
+          logAudit("STAGE_C", "integrity_checked", "malformed_details_not_object");
+          return { status: "partial" };
+        },
+      });
+
+      expect(response.status).toBe(200);
+
+      const updateCall = calls.find((c) => c.fn === "update_telemetry" && (c.args as any).p_status === "SUCCESS");
+      expect(updateCall).toBeDefined();
+      const metadata = (updateCall!.args as any).p_metadata;
+      expect(metadata.is_data_perfect).toBe(false);
+      expect(metadata.validation_report.integrity_checks).toEqual([
+        { stage: "STAGE_A", passed: true },
+        { stage: "STAGE_B", passed: false },
+        { stage: "STAGE_C", passed: false },
+      ]);
+    });
+
+    it("calculates isDataPerfect = false when no integrity_checked entries are logged", async () => {
+      const { supabase, calls } = makeSupabaseMock(async (fn) => {
+        if (fn === "report_telemetry") return { data: { id: "tid-perf-3" }, error: null };
+        return { data: null, error: null };
+      });
+
+      const response = await clinicalServe({
+        req: makeRequest({}),
+        supabase: supabase as any,
+        bearerToken: BEARER_TOKEN,
+        eventType: "TEST_EVENT",
+        componentId: "data-perfection-spec",
+        schema: EMPTY_SCHEMA,
+        handler: async (_payload, logAudit) => {
+          logAudit("STAGE_RUN", "run", { step: 1 });
+          return { status: "ok" };
+        },
+      });
+
+      expect(response.status).toBe(200);
+
+      const updateCall = calls.find((c) => c.fn === "update_telemetry" && (c.args as any).p_status === "SUCCESS");
+      expect(updateCall).toBeDefined();
+      const metadata = (updateCall!.args as any).p_metadata;
+      expect(metadata.is_data_perfect).toBe(false);
+      expect(metadata.validation_report.integrity_checks).toEqual([]);
+    });
+  });
 });
