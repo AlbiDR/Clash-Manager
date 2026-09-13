@@ -147,7 +147,7 @@ const { theme, wakeLock, isRefreshing, handleThemeChange } = useSettings();
   min-height: 48px;
   padding: 8px 0;
   cursor: pointer;
-  transition: all 0.4s var(--sys-motion-spring);
+  transition: all var(--sys-motion-duration-400) var(--sys-motion-spring);
   color: var(--sys-color-outline);
   border-radius: 6px;
 }
@@ -156,7 +156,7 @@ const { theme, wakeLock, isRefreshing, handleThemeChange } = useSettings();
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: transform 0.4s var(--sys-motion-spring);
+  transition: transform var(--sys-motion-duration-400) var(--sys-motion-spring);
 }
 
 .theme-option.active {
@@ -180,7 +180,7 @@ const { theme, wakeLock, isRefreshing, handleThemeChange } = useSettings();
   background: var(--sys-color-primary-container);
   border-radius: 6px;
   z-index: 1;
-  transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: transform var(--sys-motion-duration-500) cubic-bezier(0.34, 1.56, 0.64, 1);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   border: 1px solid rgba(var(--sys-color-primary-rgb), 0.1);
 }

@@ -6,7 +6,7 @@
  */
 export const skeletonStyles = `
 .skeleton-anim {
-  animation: pulse 1.5s infinite ease-in-out;
+  animation: pulse var(--sys-motion-ambient-pulse) infinite ease-in-out;
   pointer-events: none;
 }
 

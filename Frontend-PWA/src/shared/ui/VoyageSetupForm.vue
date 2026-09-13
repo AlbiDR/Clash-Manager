@@ -242,7 +242,7 @@ watch(
 }
 
 .hint-fade-enter-active, .hint-fade-leave-active {
-  transition: all 0.2s ease;
+  transition: all var(--sys-motion-duration-200) ease;
 }
 .hint-fade-enter-from, .hint-fade-leave-to {
   opacity: 0;
@@ -261,7 +261,7 @@ watch(
   font-weight: 900;
   letter-spacing: 0.02em;
   cursor: pointer;
-  transition: opacity 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
+  transition: opacity var(--sys-motion-duration-200) ease, transform var(--sys-motion-duration-200) ease, box-shadow var(--sys-motion-duration-200) ease;
   box-shadow: 0 4px 16px rgba(var(--sys-color-primary-rgb), 0.35);
 }
 
@@ -295,7 +295,7 @@ watch(
   font-weight: 700;
   cursor: pointer;
   padding: 8px 0;
-  transition: opacity 0.2s ease;
+  transition: opacity var(--sys-motion-duration-200) ease;
   align-self: center;
 }
 

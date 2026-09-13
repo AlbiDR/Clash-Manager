@@ -237,7 +237,7 @@ function handleKeydown(keyboardEvent: KeyboardEvent) {
 }
 
 .is-fetching .lock-btn :deep(svg) {
-  animation: rotate 1s linear infinite;
+  animation: rotate var(--sys-motion-ambient-spin) linear infinite;
 }
 
 @keyframes rotate {

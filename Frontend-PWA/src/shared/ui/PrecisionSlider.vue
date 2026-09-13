@@ -526,10 +526,13 @@ function handleTrackKeyDown(keyboardEvent: KeyboardEvent): void {
   color: var(--sys-color-on-surface-variant);
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .ps-tick,
-  .ps-thumb::after {
-    transition-duration: 0.01ms;
-  }
-}
+/* [DECISION LOG] REDUCED MOTION IS HANDLED ONCE, GLOBALLY, AND NOT LIKE THIS:
+   A local block here set transition-duration to 0.01ms under the preference.
+   animations.ts already documents why that is the wrong answer - a change that
+   takes no time does not read as calm, it reads as a rendering fault, and
+   [THREAT:] a near-zero duration suppresses transitionend, so any handler
+   waiting on it never resumes. The global block substitutes a fade instead, by
+   dropping transform from transition-property while leaving opacity and the
+   durations alone, and it already covers these two selectors. This was a second
+   implementation of a solved problem, disagreeing with the first. */
 </style>

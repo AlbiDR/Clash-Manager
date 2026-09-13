@@ -239,7 +239,7 @@ onMounted(() => {
     transparent
   );
   background-size: 200% 100%;
-  animation: shimmer 1.5s linear infinite;
+  animation: shimmer var(--sys-motion-ambient-drift) linear infinite;
 }
 .connectivity-strip.success-resolve {
   background: var(--sys-color-success);
@@ -259,8 +259,8 @@ onMounted(() => {
 .page-enter-active,
 .page-leave-active {
   transition:
-    opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1),
-    transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    opacity var(--sys-motion-duration-250) cubic-bezier(0.4, 0, 0.2, 1),
+    transform var(--sys-motion-duration-250) cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .page-enter-from {

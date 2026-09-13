@@ -171,7 +171,7 @@ const { chartData } = useBaseHistoryChart({
   fill: none;
   stroke-width: 1.5px;
   opacity: 0.9;
-  transition: all 0.3s ease;
+  transition: all var(--sys-motion-duration-300) ease;
 }
 
 /* Theme: WAR - Positive State: Vibrant Green */
@@ -179,7 +179,7 @@ const { chartData } = useBaseHistoryChart({
   stroke: #4ade80;
   filter: drop-shadow(0 0 4px rgba(74, 222, 128, 0.4));
   stroke-dasharray: 4 2;
-  animation: dash-move 2s linear infinite;
+  animation: dash-move var(--sys-motion-ambient-drift) linear infinite;
 }
 
 /* Theme: WAR - Negative State: Coral Red */
@@ -187,7 +187,7 @@ const { chartData } = useBaseHistoryChart({
   stroke: #f87171;
   filter: drop-shadow(0 0 3px rgba(248, 113, 113, 0.3));
   stroke-dasharray: 4 2;
-  animation: dash-move 2s linear infinite;
+  animation: dash-move var(--sys-motion-ambient-drift) linear infinite;
 }
 
 /* Theme: VOYAGE - Positive State: Cyan */
@@ -195,7 +195,7 @@ const { chartData } = useBaseHistoryChart({
   stroke: #22d3ee;
   filter: drop-shadow(0 0 4px rgba(34, 211, 238, 0.4));
   stroke-dasharray: 4 2;
-  animation: dash-move 2s linear infinite;
+  animation: dash-move var(--sys-motion-ambient-drift) linear infinite;
 }
 
 /* Theme: VOYAGE - Negative State: Slate */
@@ -203,7 +203,7 @@ const { chartData } = useBaseHistoryChart({
   stroke: #94a3b8;
   filter: drop-shadow(0 0 3px rgba(148, 163, 184, 0.3));
   stroke-dasharray: 4 2;
-  animation: dash-move 2s linear infinite;
+  animation: dash-move var(--sys-motion-ambient-drift) linear infinite;
 }
 
 
@@ -227,7 +227,7 @@ const { chartData } = useBaseHistoryChart({
   width: 6px;
   height: 6px;
   border: 1px solid var(--sys-color-surface-container);
-  transition: background-color 0.3s;
+  transition: background-color var(--sys-motion-duration-300);
 }
 
 /* Theme dots */
@@ -260,7 +260,7 @@ const { chartData } = useBaseHistoryChart({
   min-height: 4px;
   border-radius: 2px;
   opacity: 0.9;
-  transition: all 0.2s ease;
+  transition: all var(--sys-motion-duration-200) ease;
   background-color: var(--sys-color-surface-container-highest);
   position: relative;
 }

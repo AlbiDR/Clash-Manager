@@ -228,7 +228,7 @@ const handleInput = (inputEvent: Event, resourceKey: string) => {
   width: 100%;
   height: var(--sys-space-48); /* 48px Mobile Footprint (Target B.2) */
   text-align: center;
-  transition: all 0.2s ease;
+  transition: all var(--sys-motion-duration-200) ease;
 }
 
 /* Rarity-specific border colors */

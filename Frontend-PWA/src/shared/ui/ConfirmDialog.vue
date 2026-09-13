@@ -206,7 +206,7 @@ function handleKeyDown(keyboardEvent: KeyboardEvent): void {
 
 .console-expand-enter-active,
 .console-expand-leave-active {
-  transition: opacity 0.3s ease;
+  transition: opacity var(--sys-motion-duration-300) ease;
 }
 .console-expand-enter-from,
 .console-expand-leave-to {
@@ -214,7 +214,7 @@ function handleKeyDown(keyboardEvent: KeyboardEvent): void {
 }
 .console-expand-enter-active .confirm-card,
 .console-expand-leave-active .confirm-card {
-  transition: transform 0.35s var(--sys-motion-spring), opacity 0.3s ease;
+  transition: transform var(--sys-motion-duration-300) var(--sys-motion-spring), opacity var(--sys-motion-duration-300) ease;
 }
 .console-expand-enter-from .confirm-card {
   transform: scale(0.92);

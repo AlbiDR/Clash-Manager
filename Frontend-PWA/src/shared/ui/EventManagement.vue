@@ -197,7 +197,7 @@ const pillClass = computed(() => {
 
 .status-pill.idle        { color: var(--sys-color-outline); }
 .status-pill.pending     { color: #f59e0b; }
-.status-pill.active      { color: #22c55e; animation: pulse-pill 2s infinite; }
+.status-pill.active      { color: #22c55e; animation: pulse-pill var(--sys-motion-ambient-pulse) infinite; }
 .status-pill.completed   { color: var(--sys-color-primary); }
 
 @keyframes pulse-pill {

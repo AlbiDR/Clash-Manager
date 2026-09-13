@@ -154,7 +154,7 @@ const { targets, isRefreshing, refresh } = useBackendRefresher();
   cursor: pointer;
   min-width: 80px;
   height: 48px; /* 48px Mobile Footprint (Target B.2) */
-  transition: all 0.2s;
+  transition: all var(--sys-motion-duration-200);
   position: relative; /* For skeleton overlay */
 }
 .action-btn.skeleton-anim.sk-button-m {
@@ -168,7 +168,7 @@ const { targets, isRefreshing, refresh } = useBackendRefresher();
   inset: 0;
   background: var(--sk-fill-secondary); /* Skeleton background */
   border-radius: 8px;
-  animation: pulse 1.5s infinite ease-in-out;
+  animation: pulse var(--sys-motion-ambient-pulse) infinite ease-in-out;
 }
 
 .action-btn:hover:not(:disabled) {
@@ -189,7 +189,7 @@ const { targets, isRefreshing, refresh } = useBackendRefresher();
   border: 2px solid currentColor;
   border-top-color: transparent;
   border-radius: 50%;
-  animation: spin 0.8s linear infinite;
+  animation: spin var(--sys-motion-ambient-spin) linear infinite;
   opacity: 0.6;
 }
 

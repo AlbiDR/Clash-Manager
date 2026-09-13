@@ -178,7 +178,7 @@ watch(isExpanded, (expanded) => emit("update:expanded", expanded), { immediate: 
   background: var(--sys-color-surface-container);
   border: 1px solid var(--sys-color-outline);
   cursor: pointer;
-  transition: all 0.5s var(--sys-motion-spring);
+  transition: all var(--sys-motion-duration-500) var(--sys-motion-spring);
   user-select: none;
   position: relative;
   z-index: 50;
@@ -247,16 +247,16 @@ watch(isExpanded, (expanded) => emit("update:expanded", expanded), { immediate: 
   border-radius: 50%;
   background: currentColor;
   z-index: 2;
-  transition: all 0.3s cubic-bezier(0.25, 1, 0.3, 1);
+  transition: all var(--sys-motion-duration-300) cubic-bezier(0.25, 1, 0.3, 1);
 }
 
 
 .dot-nucleus.breath {
-  animation: breath 4s ease-in-out infinite;
+  animation: breath var(--sys-motion-ambient-breath) ease-in-out infinite;
 }
 
 .dot-nucleus.pulse {
-  animation: pulse 2s infinite;
+  animation: pulse var(--sys-motion-ambient-pulse) infinite;
 }
 
 .dot-halo {
@@ -266,7 +266,7 @@ watch(isExpanded, (expanded) => emit("update:expanded", expanded), { immediate: 
   background: currentColor;
   transform: scale(0.6);
   opacity: 0.4;
-  animation: halo-pulse 2.5s infinite;
+  animation: halo-pulse var(--sys-motion-ambient-pulse) infinite;
 }
 
 .pill-content-wrapper {
@@ -306,7 +306,7 @@ watch(isExpanded, (expanded) => emit("update:expanded", expanded), { immediate: 
   display: flex;
   align-items: center;
   gap: 4px;
-  transition: opacity 0.3s ease;
+  transition: opacity var(--sys-motion-duration-300) ease;
 }
 
 .status-label.is-db {
@@ -314,7 +314,7 @@ watch(isExpanded, (expanded) => emit("update:expanded", expanded), { immediate: 
 }
 
 .icon-bolt {
-  animation: bolt-flicker 3s infinite;
+  animation: bolt-flicker var(--sys-motion-ambient-breath) infinite;
 }
 
 /* EXPANDED SECTION GRID TRANSITION */
@@ -322,8 +322,8 @@ watch(isExpanded, (expanded) => emit("update:expanded", expanded), { immediate: 
   display: grid;
   grid-template-columns: 0fr;
   opacity: 0;
-  transition: grid-template-columns 0.5s var(--sys-motion-spring, cubic-bezier(0.175, 0.885, 0.32, 1.275)), 
-              opacity 0.4s ease;
+  transition: grid-template-columns var(--sys-motion-duration-500) var(--sys-motion-spring, cubic-bezier(0.175, 0.885, 0.32, 1.275)), 
+              opacity var(--sys-motion-duration-400) ease;
 }
 
 .expanded-section.is-open {
@@ -398,7 +398,7 @@ watch(isExpanded, (expanded) => emit("update:expanded", expanded), { immediate: 
   background: var(--sys-color-surface-container-high);
   color: var(--sys-color-primary);
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.25, 1, 0.3, 1);
+  transition: all var(--sys-motion-duration-300) cubic-bezier(0.25, 1, 0.3, 1);
   flex-shrink: 0;
 }
 
@@ -422,11 +422,11 @@ watch(isExpanded, (expanded) => emit("update:expanded", expanded), { immediate: 
   width: 18px;
   height: 18px;
   flex-shrink: 0;
-  animation: rotate 1.5s linear infinite;
+  animation: rotate var(--sys-motion-ambient-spin) linear infinite;
 }
 
 .is-spinning {
-  animation: rotate 0.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  animation: rotate var(--sys-motion-ambient-spin) cubic-bezier(0.4, 0, 0.2, 1) infinite;
 }
 
 @keyframes bolt-flicker {

@@ -131,7 +131,7 @@ defineEmits<{
   font-weight: 800;
   font-size: var(--sys-typescale-body-rg);
   color: var(--sys-color-on-surface);
-  transition: color 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: color var(--sys-motion-duration-250) cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .link-desc {
@@ -143,7 +143,7 @@ defineEmits<{
 .link-icon {
   color: var(--sys-color-outline);
   opacity: 0.6;
-  transition: opacity 0.25s, color 0.25s;
+  transition: opacity var(--sys-motion-duration-250), color var(--sys-motion-duration-250);
 }
 
 .link-row:hover .link-icon {
@@ -156,7 +156,7 @@ defineEmits<{
   height: 18px;
   object-fit: contain;
   filter: grayscale(1) opacity(0.6);
-  transition: opacity 0.25s, filter 0.25s;
+  transition: opacity var(--sys-motion-duration-250), filter var(--sys-motion-duration-250);
 }
 
 .link-row:hover .link-logo {

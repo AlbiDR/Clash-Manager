@@ -331,7 +331,7 @@ onUnmounted(() => {
 }
 
 .is-refreshing .ptr-icon {
-  animation: rotate 1s linear infinite;
+  animation: rotate var(--sys-motion-ambient-spin) linear infinite;
 }
 
 @keyframes rotate {

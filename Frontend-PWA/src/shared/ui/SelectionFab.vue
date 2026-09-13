@@ -202,8 +202,8 @@ function handleFabAbortHarvest() {
   cursor: pointer;
   border: none;
   transition:
-    transform 0.15s cubic-bezier(0.2, 0, 0, 1),
-    background 0.2s;
+    transform var(--sys-motion-duration-200) cubic-bezier(0.2, 0, 0, 1),
+    background var(--sys-motion-duration-200);
   color: var(--sys-color-on-surface);
   white-space: nowrap;
   flex-shrink: 0;
@@ -270,7 +270,7 @@ function handleFabAbortHarvest() {
   border: 2px solid var(--sys-color-primary);
   border-top-color: transparent;
   border-radius: 50%;
-  animation: spin 0.8s linear infinite;
+  animation: spin var(--sys-motion-ambient-spin) linear infinite;
   opacity: 0.6;
 }
 

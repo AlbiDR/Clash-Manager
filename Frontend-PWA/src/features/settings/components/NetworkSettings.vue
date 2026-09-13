@@ -386,6 +386,6 @@ function saveApiUrl() {
 }
 .status-indicator.unconfigured {
   background: var(--sys-color-warning);
-  animation: pulse 2s infinite;
+  animation: pulse var(--sys-motion-ambient-pulse) infinite;
 }
 </style>

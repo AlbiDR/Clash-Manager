@@ -173,7 +173,7 @@ const shouldShowBanner = computed(() => {
   background: rgba(245, 158, 11, 0.07);
   border-color: rgba(245, 158, 11, 0.25);
   box-shadow: 0 4px 24px rgba(245, 158, 11, 0.1), inset 0 1px 0 rgba(255,255,255,0.06);
-  animation: pre-event-pulse 3s ease-in-out infinite;
+  animation: pre-event-pulse var(--sys-motion-ambient-pulse) ease-in-out infinite;
 }
 
 @keyframes pre-event-pulse {
@@ -192,7 +192,7 @@ const shouldShowBanner = computed(() => {
   box-shadow:
     0 4px 32px rgba(251, 191, 36, 0.2),
     inset 0 1px 0 rgba(255, 255, 255, 0.12);
-  animation: victory-pulse 2s ease-in-out infinite;
+  animation: victory-pulse var(--sys-motion-ambient-pulse) ease-in-out infinite;
 }
 
 @keyframes victory-pulse {
@@ -229,7 +229,7 @@ const shouldShowBanner = computed(() => {
 
 .is-victory .banner-icon {
   filter: drop-shadow(0 0 8px rgba(251, 191, 36, 0.8));
-  animation: icon-spin 0.4s ease;
+  animation: icon-spin var(--sys-motion-duration-400) ease;
 }
 
 .is-pre-event .banner-icon {
@@ -344,7 +344,7 @@ const shouldShowBanner = computed(() => {
 .countdown.awaiting {
   color: #f97316;
   font-weight: 900;
-  animation: pulse-pill 2s infinite;
+  animation: pulse-pill var(--sys-motion-ambient-pulse) infinite;
 }
 
 @keyframes pulse-pill {
@@ -369,7 +369,7 @@ const shouldShowBanner = computed(() => {
     var(--sys-color-primary),
     rgba(var(--sys-color-primary-rgb), 0.7)
   );
-  transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: width var(--sys-motion-duration-800) cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
 }
 
@@ -408,10 +408,10 @@ const shouldShowBanner = computed(() => {
 
 /* --- Entry Transition --- */
 .banner-slide-enter-active {
-  transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: all var(--sys-motion-duration-400) cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 .banner-slide-leave-active {
-  transition: all 0.25s ease-in;
+  transition: all var(--sys-motion-duration-250) ease-in;
 }
 .banner-slide-enter-from,
 .banner-slide-leave-to {

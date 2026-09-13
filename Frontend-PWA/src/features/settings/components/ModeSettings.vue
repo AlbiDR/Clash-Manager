@@ -103,9 +103,9 @@ const {
   background: transparent;
   border: 1px solid transparent;
   transition:
-    background 0.3s var(--sys-motion-spring),
-    border-color 0.3s var(--sys-motion-spring),
-    box-shadow 0.3s var(--sys-motion-spring);
+    background var(--sys-motion-duration-300) var(--sys-motion-spring),
+    border-color var(--sys-motion-duration-300) var(--sys-motion-spring),
+    box-shadow var(--sys-motion-duration-300) var(--sys-motion-spring);
 }
 
 .mode-master-container.active {

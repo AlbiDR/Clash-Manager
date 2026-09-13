@@ -143,7 +143,7 @@ const isRetryInteractionActive = ref(false);
   font-weight: 850;
   font-size: 14px;
   cursor: pointer;
-  transition: all 0.3s var(--sys-motion-spring);
+  transition: all var(--sys-motion-duration-300) var(--sys-motion-spring);
   box-shadow: 0 8px 16px rgba(var(--sys-color-error-rgb), 0.3);
 }
 
@@ -158,7 +158,7 @@ const isRetryInteractionActive = ref(false);
 }
 
 .svg-refresh {
-  transition: transform 0.6s var(--sys-motion-spring);
+  transition: transform var(--sys-motion-duration-500) var(--sys-motion-spring);
 }
 
 .btn-error:hover .svg-refresh {

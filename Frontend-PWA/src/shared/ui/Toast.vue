@@ -220,8 +220,8 @@ onUnmounted(clearTimer);
   border: 1px solid var(--sys-surface-glass-border);
   pointer-events: auto;
   transition:
-    transform 0.2s var(--sys-motion-spring),
-    box-shadow 0.2s;
+    transform var(--sys-motion-duration-200) var(--sys-motion-spring),
+    box-shadow var(--sys-motion-duration-200);
   user-select: text;
   -webkit-user-select: text;
 }
@@ -288,7 +288,7 @@ onUnmounted(clearTimer);
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: opacity 0.2s, background 0.2s;
+  transition: opacity var(--sys-motion-duration-200), background var(--sys-motion-duration-200);
   margin-left: 2px;
   margin-top: -1px; /* Align with first line */
 }
@@ -338,7 +338,7 @@ onUnmounted(clearTimer);
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: opacity 0.2s;
+  transition: opacity var(--sys-motion-duration-200);
   margin-left: -4px;
   margin-top: 1px; /* Align with first line */
 }

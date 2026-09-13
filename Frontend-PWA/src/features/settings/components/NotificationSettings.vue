@@ -251,7 +251,7 @@ const threshold = computed(() => modules.notificationThreshold);
   align-items: center;
   justify-content: center;
   gap: 2px;
-  transition: all 0.18s var(--sys-motion-spring);
+  transition: all var(--sys-motion-duration-200) var(--sys-motion-spring);
 }
 
 .threshold-symbol {
@@ -306,7 +306,7 @@ const threshold = computed(() => modules.notificationThreshold);
   font-weight: 800;
   font-size: var(--sys-typescale-body-sm);
   cursor: pointer;
-  transition: transform 0.18s var(--sys-motion-spring);
+  transition: transform var(--sys-motion-duration-200) var(--sys-motion-spring);
 }
 
 .enable-btn:active {

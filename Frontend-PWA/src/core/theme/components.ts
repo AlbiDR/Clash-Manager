@@ -19,7 +19,7 @@ export const componentStyles = `
   border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: var(--sys-elevation-2);
 }
 
-.ptr-indicator.is-refreshing .ptr-spinner { animation: spin 0.8s linear infinite; }
+.ptr-indicator.is-refreshing .ptr-spinner { animation: spin var(--sys-motion-ambient-spin) linear infinite; }
 .ptr-icon { color: var(--sys-color-primary); transition: transform var(--sys-motion-duration-200); }
 .is-pulling .ptr-icon { transform: rotate(var(--ptr-rotate, 0deg)); }
 

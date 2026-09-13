@@ -192,7 +192,7 @@ onMounted(() => {
   text-align: center;
   line-height: 1.2;
   cursor: pointer;
-  transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1), opacity 0.2s, background-color 0.2s;
+  transition: transform var(--sys-motion-duration-200) cubic-bezier(0.2, 0, 0, 1), opacity var(--sys-motion-duration-200), background-color var(--sys-motion-duration-200);
 }
 .trouble-btn:active {
   transform: scale(0.92);

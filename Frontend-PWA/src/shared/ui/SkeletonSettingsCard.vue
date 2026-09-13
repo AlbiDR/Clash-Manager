@@ -61,7 +61,7 @@ const cardMinHeight = computed(() => `${getBone("SettingsCard", "card")?.height 
      bone (see script block) instead of a hardcoded guess. */
 
   /* Inherit global skeleton animation */
-  animation: pulse 1.5s infinite ease-in-out;
+  animation: pulse var(--sys-motion-ambient-pulse) infinite ease-in-out;
 }
 
 .card-header {

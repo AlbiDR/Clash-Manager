@@ -167,7 +167,7 @@ const levelOptions = computed(() => {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  transition: all 0.3s ease;
+  transition: all var(--sys-motion-duration-300) ease;
 }
 
 .parameter-item.disabled {

@@ -67,13 +67,41 @@ export const staticTokens = `
   --sys-typescale-title-md: 20px;
   --sys-typescale-title-lg: 24px;
 
-  /* ── MOTION DURATIONS ── */
+  /* ── MOTION DURATIONS (interaction) ── */
   --sys-motion-duration-100: 0.1s;
   --sys-motion-duration-200: 0.2s;
   --sys-motion-duration-250: 0.25s;
   --sys-motion-duration-300: 0.3s;
   --sys-motion-duration-400: 0.4s;
+  /* Five components reached for half a second independently - the status pill,
+     its expanding section, the appearance slider, the header overlay and the
+     selection bar's morph button - which is a step the scale was missing rather
+     than five mistakes. Same reasoning as title-md above. */
+  --sys-motion-duration-500: 0.5s;
   --sys-motion-duration-800: 0.8s;
+
+  /* ── MOTION DURATIONS (ambient) ──
+     Loops that run unattended: spinners, skeleton breathing, travelling chart
+     marks, decorative glow. They are named rather than numbered because they
+     are chosen by character, not by position on the interaction scale above,
+     the same way the easings below are named. An interaction is measured
+     against the reader's patience; a loop is measured against how often it is
+     allowed to draw the eye.
+
+     [DECISION LOG] Before these existed the app used thirteen unmanaged
+     timings between 1s and 4s - 1s and 1.5s for the same spinner gesture in
+     three different components, 2s and 2.5s and 3s and 4s for four different
+     slow pulses - so nothing in the app breathed in step with anything else.
+     That is the kind of drift nobody reports and everybody feels. */
+  --sys-motion-ambient-spin:   1s;
+  --sys-motion-ambient-pulse:  1.5s;
+  --sys-motion-ambient-drift:  2s;
+  --sys-motion-ambient-breath: 3s;
+
+  /* The interval between one staggered item starting and the next, not a
+     duration. TrajectoryItem multiplies it by its index; the Laboratory
+     skeleton counts it out by hand in three inline styles. */
+  --sys-motion-stagger-step: 0.05s;
 
   /* ── MOTION EASINGS ── */
   --sys-motion-spring:                 cubic-bezier(0.175, 0.885, 0.32, 1.15);

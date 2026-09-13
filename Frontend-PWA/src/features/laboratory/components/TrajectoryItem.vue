@@ -134,8 +134,8 @@ defineProps<{
   border-radius: var(--sys-shape-corner-large);
   padding: 10px 14px;
   position: relative;
-  animation: slide-in 0.4s cubic-bezier(0.2, 0, 0, 1) both;
-  animation-delay: calc(min(var(--i), 10) * 0.05s);
+  animation: slide-in var(--sys-motion-duration-400) cubic-bezier(0.2, 0, 0, 1) both;
+  animation-delay: calc(min(var(--i), 10) * var(--sys-motion-stagger-step));
   border-left: 4px solid transparent;
 }
 

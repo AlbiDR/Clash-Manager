@@ -133,7 +133,7 @@ const {
   );
   border-radius: 16px;
   gap: 8px;
-  transition: all 0.4s var(--sys-motion-spring);
+  transition: all var(--sys-motion-duration-400) var(--sys-motion-spring);
   position: relative;
   overflow: hidden;
   box-sizing: border-box;
@@ -177,7 +177,7 @@ const {
   font-weight: 900;
   cursor: pointer;
   /* Smoother, slightly slower transition */
-  transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: all var(--sys-motion-duration-500) cubic-bezier(0.34, 1.56, 0.64, 1);
   text-transform: uppercase;
   letter-spacing: 0.02em;
 }
@@ -217,15 +217,15 @@ const {
 
 /* Transitions */
 .status-pop-enter-active {
-  animation: pop-in 0.4s var(--sys-motion-spring);
+  animation: pop-in var(--sys-motion-duration-400) var(--sys-motion-spring);
 }
 .status-pop-leave-active {
-  animation: pop-in 0.3s var(--sys-motion-spring) reverse;
+  animation: pop-in var(--sys-motion-duration-300) var(--sys-motion-spring) reverse;
 }
 
 .text-morph-enter-active,
 .text-morph-leave-active {
-  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: all var(--sys-motion-duration-200) cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .text-morph-enter-from {

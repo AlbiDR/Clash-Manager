@@ -237,7 +237,7 @@ watch(
   justify-content: center;
   color: var(--sys-color-on-surface);
   cursor: pointer;
-  transition: 0.2s;
+  transition: var(--sys-motion-duration-200);
 }
 .close-btn-round:active {
   transform: scale(0.9);
@@ -246,8 +246,8 @@ watch(
 .console-expand-enter-active,
 .console-expand-leave-active {
   transition:
-    opacity 0.4s ease,
-    transform 0.4s var(--sys-motion-spring);
+    opacity var(--sys-motion-duration-400) ease,
+    transform var(--sys-motion-duration-400) var(--sys-motion-spring);
 }
 .console-expand-enter-from,
 .console-expand-leave-to {
@@ -255,7 +255,7 @@ watch(
   transform: translateY(-20px) scaleY(0.95);
 }
 .console-expand-enter-active .info-card-expanded {
-  transition: transform 0.5s var(--sys-motion-spring);
+  transition: transform var(--sys-motion-duration-500) var(--sys-motion-spring);
 }
 .console-expand-enter-from .info-card-expanded {
   transform: translateY(-100%);

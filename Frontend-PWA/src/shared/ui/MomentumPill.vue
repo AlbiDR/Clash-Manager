@@ -64,8 +64,8 @@ const { benchmarkTooltipContent } = useBenchmarkedStat(
   z-index: 2;
   border: 1px solid var(--sys-color-outline-variant);
   transition:
-    transform 0.2s ease,
-    box-shadow 0.2s ease;
+    transform var(--sys-motion-duration-200) ease,
+    box-shadow var(--sys-motion-duration-200) ease;
   flex-shrink: 0;
 }
 

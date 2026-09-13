@@ -212,7 +212,7 @@ p {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all 0.2s var(--sys-motion-spring);
+  transition: all var(--sys-motion-duration-200) var(--sys-motion-spring);
   padding: 0;
   user-select: none; /* Keep button non-selectable */
 }
@@ -252,7 +252,7 @@ p {
   font-weight: 750;
   font-size: 15px;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.2, 0, 0, 1);
+  transition: all var(--sys-motion-duration-300) cubic-bezier(0.2, 0, 0, 1);
   box-shadow: 0 8px 16px rgba(var(--sys-color-primary-rgb), 0.3);
 }
 

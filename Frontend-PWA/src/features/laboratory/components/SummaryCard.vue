@@ -318,7 +318,7 @@ const engineStatus = computed(() => {
   padding: 10px 14px;
   border-radius: var(--sys-shape-corner-medium);
   border: 1px solid var(--sys-color-outline-variant);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all var(--sys-motion-duration-300) cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .res-icon {
