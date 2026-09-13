@@ -40,9 +40,18 @@ const threshold = computed(() => modules.notificationThreshold);
     :initially-expanded="initiallyExpanded"
   >
     <div class="notification-stack">
+      <!-- [DECISION LOG] NAMED FOR WHAT IT DOES:
+           This was labelled "Background Sync", which describes neither the flag
+           it sets nor the effect. It toggles `experimentalNotifications`, the
+           single gate useHeadhunter checks before raising a recruit alert
+           (useHeadhunter.ts:175), and nothing about it syncs anything. The
+           description now states the consequence rather than repeating the
+           switch position back at the reader, which the switch already shows. -->
       <SettingRow
-        label="Background Sync"
-        :description="modules.experimentalNotifications ? 'Active' : 'Paused'"
+        label="Recruit Alerts"
+        :description="modules.experimentalNotifications
+          ? 'Alert me when a recruit clears the threshold below'
+          : 'No alerts are raised for new recruits'"
         :active="modules.experimentalNotifications"
         mini
         @click="toggle('experimentalNotifications')"
@@ -50,11 +59,16 @@ const threshold = computed(() => modules.notificationThreshold);
 
       <div class="threshold-row">
         <div class="threshold-copy">
+          <!-- Named for the band it sets. The master switch above is now
+               "Recruit Alerts", and two stacked rows carrying one name is
+               worse than the label this replaces. -->
           <div class="row-label">
-            Recruit Alerts
+            Alert Threshold
           </div>
           <div class="row-desc">
-            {{ threshold === 75 ? "High potential" : "Good and higher" }}
+            {{ modules.experimentalNotifications
+              ? (threshold === 75 ? "High potential only" : "Good and higher")
+              : "Applies once Recruit Alerts are on" }}
           </div>
         </div>
 
@@ -118,13 +132,30 @@ const threshold = computed(() => modules.notificationThreshold);
           @click="toggle('notificationSound')"
         />
 
+        <!-- [DECISION LOG] A SWITCH THAT CANNOT SWITCH IS DISABLED, NOT LIVE:
+             `subscribePush` is a stub (useSettings.ts) that raises a "coming
+             soon" toast and subscribes to nothing, while this row rendered as a
+             working toggle. Offering a control that silently declines is worse
+             than showing it greyed with the reason, so it now says why. Restore
+             the handler and this row together once the Edge Function exists. -->
         <SettingRow
           v-if="hasWorker"
           label="Cloud Push"
-          description="Worker alerts"
+          description="Unavailable: server push is not deployed yet"
           :active="isPushSubscribed"
+          :disabled="true"
           mini
           @click="subscribePush"
+        />
+
+        <SettingRow
+          label="Badge high potential only"
+          :description="modules.notificationBadgeHighPotential
+            ? 'App badge counts recruits at or above the threshold'
+            : 'App badge counts every new recruit'"
+          :active="modules.notificationBadgeHighPotential"
+          mini
+          @click="toggle('notificationBadgeHighPotential')"
         />
       </div>
 

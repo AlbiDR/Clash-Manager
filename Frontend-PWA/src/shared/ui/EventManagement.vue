@@ -52,7 +52,7 @@ const pillClass = computed(() => {
   <SettingsCard
     title="Event Management"
     icon="flag"
-    :initially-expanded="initiallyExpanded"
+    :initially-expanded="initiallyExpanded || store.isActive || store.isPending"
   >
     <!-- Active Event Status -->
     <template #header-extra>

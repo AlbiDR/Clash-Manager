@@ -2,7 +2,7 @@
 <!-- Copyright (C) 2026 AlbiDR -->
 <script setup lang="ts">
 import { Icon, vTactile, useHaptics } from "@shared";
-import { ref } from "vue";
+import { ref, watch } from "vue";
 const props = defineProps<{
   title: string;
   icon: string;
@@ -13,6 +13,26 @@ const props = defineProps<{
 
 const haptics = useHaptics();
 const isCollapsed = ref(!props.initiallyExpanded);
+
+/**
+ * [DECISION LOG] OPENS ON BECOMING RELEVANT, NEVER CLOSES ON ITS OWN.
+ *
+ * @remarks
+ * `initiallyExpanded` was read once at setup, which is correct for a static
+ * caller but wrong for one whose answer arrives later: the Event Management
+ * card asks to be open while a Voyage is running, and that store hydrates after
+ * mount, so the card stayed shut through the one state it exists to report.
+ *
+ * [THREAT:] Mirroring the flag in both directions would let a background
+ * refresh collapse a card mid-read, so a card that has become relevant opens
+ * and then stays under the reader's control.
+ */
+watch(
+  () => props.initiallyExpanded,
+  (isNowExpanded) => {
+    if (isNowExpanded) isCollapsed.value = false;
+  },
+);
 
 const toggleCollapse = () => {
   haptics.tap();

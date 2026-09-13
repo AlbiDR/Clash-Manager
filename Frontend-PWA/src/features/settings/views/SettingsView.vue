@@ -28,7 +28,6 @@ export const useClashDataLoader = defineBasicLoader(hydrateClashData, { lazy: tr
  * Setup block for the Settings feature view.
  * Integrates global useSettings composition logic and manages settings sections.
  */
-import { computed } from "vue";
 import { ConsoleLayout, SkeletonSettingsCard, EventManagement } from "@shared";
 import { useSettings } from "../composables";
 import { useShowcaseMode } from "@core/services/useShowcaseMode";
@@ -43,6 +42,7 @@ import {
   NetworkSettings,
   BackendRefresher,
   RecoverySettings,
+  SettingsSkeleton,
   UsefulLinksSettings,
   AboutSettings,
 } from "../components";
@@ -58,17 +58,6 @@ const {
 const { isShowcaseMode } = useShowcaseMode();
 const { isBlueprintMode } = useBlueprintMode();
 
-/**
- * How many cards the hydrated list will contain.
- *
- * @remarks
- * [DECISION LOG] The loading branch has to reserve the same number of rows the
- * real list resolves to, or the page grows or shrinks by whole cards as it
- * hydrates. Kept beside the card list below, which is the only place that
- * knows the answer, and counted the same way: eight cards always render and
- * the Backend Refresher card is gated on its own module flag.
- */
-const settingsCardCount = computed(() => (modules.backendRefresher ? 9 : 8));
 </script>
 
 <template>
@@ -79,90 +68,104 @@ const settingsCardCount = computed(() => (modules.backendRefresher ? 9 : 8));
        per-card swap below instead, keeping every card in its original order. -->
   <ConsoleLayout
     v-bind="layoutProps"
-    :skeleton-component="SkeletonSettingsCard"
-    :skeleton-count="settingsCardCount"
+    :skeleton-component="SettingsSkeleton"
+    :skeleton-count="1"
     class="settings-console"
     ignore-blueprint-mode
     v-on="layoutEvents"
   >
     <div class="settings-content">
-      <template v-if="isBlueprintMode">
-        <SkeletonSettingsCard :index="0" />
-      </template>
-      <EventManagement
-        v-else
-        :initially-expanded="isShowcaseMode"
-      />
-
-      <template v-if="isBlueprintMode">
-        <SkeletonSettingsCard :index="1" />
-      </template>
-      <AppearanceSettings
-        v-else
-        :initially-expanded="isShowcaseMode"
-      />
-
-      <template v-if="isBlueprintMode">
-        <SkeletonSettingsCard :index="2" />
-      </template>
-      <NotificationSettings
-        v-else
-        :initially-expanded="isShowcaseMode"
-      />
-
-      <template v-if="isBlueprintMode">
-        <SkeletonSettingsCard :index="3" />
-      </template>
-      <FeatureSettings
-        v-else
-        :initially-expanded="isShowcaseMode"
-      />
-
-      <!-- Always real, in its normal position - see the ignore-blueprint-mode
-           note above. -->
-      <ModeSettings :initially-expanded="isShowcaseMode" />
-
-      <template v-if="isBlueprintMode">
-        <SkeletonSettingsCard :index="4" />
-      </template>
-      <NetworkSettings
-        v-else
-        :initially-expanded="isShowcaseMode"
-      />
-
-      <template v-if="modules.backendRefresher">
+      <!-- LIVE: what the clan is doing right now. Kept first, unlabelled and
+           visually separated, because it is the only card whose contents change
+           on their own. -->
+      <section class="settings-group">
         <template v-if="isBlueprintMode">
-          <SkeletonSettingsCard :index="5" />
+          <SkeletonSettingsCard :index="0" />
         </template>
-        <BackendRefresher
+        <EventManagement v-else />
+      </section>
+
+      <section class="settings-group">
+        <h2 class="group-label">
+          Preferences
+        </h2>
+
+        <template v-if="isBlueprintMode">
+          <SkeletonSettingsCard :index="1" />
+        </template>
+        <AppearanceSettings
           v-else
           :initially-expanded="isShowcaseMode"
         />
-      </template>
 
-      <template v-if="isBlueprintMode">
-        <SkeletonSettingsCard :index="6" />
-      </template>
-      <UsefulLinksSettings
-        v-else
-        :initially-expanded="isShowcaseMode"
-      />
+        <template v-if="isBlueprintMode">
+          <SkeletonSettingsCard :index="2" />
+        </template>
+        <NotificationSettings
+          v-else
+          :initially-expanded="isShowcaseMode"
+        />
 
-      <template v-if="isBlueprintMode">
-        <SkeletonSettingsCard :index="7" />
-      </template>
-      <RecoverySettings
-        v-else
-        :initially-expanded="isShowcaseMode"
-      />
+        <template v-if="isBlueprintMode">
+          <SkeletonSettingsCard :index="3" />
+        </template>
+        <FeatureSettings
+          v-else
+          :initially-expanded="isShowcaseMode"
+        />
 
-      <template v-if="isBlueprintMode">
-        <SkeletonSettingsCard :index="8" />
-      </template>
-      <AboutSettings
-        v-else
-        :initially-expanded="isShowcaseMode"
-      />
+        <!-- Always real, in its normal position - see the ignore-blueprint-mode
+             note above. -->
+        <ModeSettings :initially-expanded="isShowcaseMode" />
+      </section>
+
+      <section class="settings-group">
+        <h2 class="group-label">
+          System
+        </h2>
+
+        <template v-if="isBlueprintMode">
+          <SkeletonSettingsCard :index="4" />
+        </template>
+        <NetworkSettings
+          v-else
+          :initially-expanded="isShowcaseMode"
+        />
+
+        <template v-if="modules.backendRefresher">
+          <template v-if="isBlueprintMode">
+            <SkeletonSettingsCard :index="5" />
+          </template>
+          <BackendRefresher
+            v-else
+            :initially-expanded="isShowcaseMode"
+          />
+        </template>
+
+        <template v-if="isBlueprintMode">
+          <SkeletonSettingsCard :index="6" />
+        </template>
+        <UsefulLinksSettings
+          v-else
+          :initially-expanded="isShowcaseMode"
+        />
+
+        <template v-if="isBlueprintMode">
+          <SkeletonSettingsCard :index="7" />
+        </template>
+        <RecoverySettings
+          v-else
+          :initially-expanded="isShowcaseMode"
+        />
+
+        <template v-if="isBlueprintMode">
+          <SkeletonSettingsCard :index="8" />
+        </template>
+        <AboutSettings
+          v-else
+          :initially-expanded="isShowcaseMode"
+        />
+      </section>
     </div>
   </ConsoleLayout>
 </template>
@@ -175,12 +178,40 @@ const settingsCardCount = computed(() => (modules.backendRefresher ? 9 : 8));
 .settings-console {
   --console-gutter: var(--sys-space-16);
   --console-gap: var(--sys-space-10);
+  --console-group-gap: var(--sys-space-20);
 }
 
 .settings-content {
   padding: 0 var(--console-gutter);
   display: flex;
   flex-direction: column;
+  gap: var(--console-group-gap);
+}
+
+.settings-group {
+  display: flex;
+  flex-direction: column;
   gap: var(--console-gap);
+}
+
+/* [DECISION LOG] THREE TIERS, NOT NINE PEERS:
+   Every card used to sit at one flat level, all collapsed, so a Clan Voyage
+   running right now carried exactly the weight of Factory Reset. The live card
+   leads and is deliberately unlabelled, because a heading over a single card
+   is noise; the two headings below separate what a person changes by
+   preference from what belongs to the machine. */
+.group-label {
+  margin: var(--sys-space-4) 0 var(--sys-space-2) var(--sys-space-4);
+  font-size: var(--sys-typescale-label-md);
+  /* Pinned so the heading occupies exactly one typescale step. The inherited
+     1.5 reset made it 15px against the 10px its placeholder reserved, which is
+     a 5px shift per heading at hydration. Both sides now resolve through the
+     same two tokens. */
+  line-height: var(--sys-leading-none);
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: var(--sys-tracking-wider);
+  color: var(--sys-color-on-surface-variant);
+  opacity: 0.7;
 }
 </style>

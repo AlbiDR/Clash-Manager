@@ -43,6 +43,25 @@ const isEditing = ref(false);
 const hasLocalOverride = computed(() => !!localStorage.getItem("cm_supabase_url"));
 const isChecking = computed(() => apiStatus.value === "checking");
 
+/**
+ * What the Link stat reads, per connectivity state.
+ *
+ * @remarks
+ * [DECISION LOG] This stat was the literal string "Ready", with no binding at
+ * all. It therefore read Ready while the app was offline, unconfigured or
+ * waking, including when the status dot directly beside it was painted red.
+ * A readout that cannot be wrong is not a readout.
+ */
+const LINK_LABELS: Record<string, string> = {
+  online: "Ready",
+  offline: "Offline",
+  unconfigured: "Not set",
+  stale: "Stale",
+  waking: "Waking",
+};
+
+const linkLabel = computed(() => LINK_LABELS[apiStatus.value] ?? "Unknown");
+
 watch(
   apiStatus,
   (newApiStatus) => {
@@ -112,7 +131,10 @@ function saveApiUrl() {
           />
         </template>
         <template v-else>
-          <span class="value">Ready</span>
+          <span
+            class="value"
+            :class="`link-${apiStatus}`"
+          >{{ linkLabel }}</span>
         </template>
       </div>
     </div>
@@ -231,6 +253,23 @@ function saveApiUrl() {
   font-weight: 800;
   font-family: var(--sys-font-family-mono);
   color: var(--sys-color-primary);
+}
+
+/* The Link readout carries the same meaning as the status dot above it, so it
+   carries the same colour. Anything not-yet-good reads as a warning rather than
+   as the primary accent, which previously made every state look healthy. */
+.stat-item .value.link-online {
+  color: var(--sys-color-success);
+}
+
+.stat-item .value.link-offline {
+  color: var(--sys-color-error);
+}
+
+.stat-item .value.link-unconfigured,
+.stat-item .value.link-stale,
+.stat-item .value.link-waking {
+  color: var(--sys-color-warning);
 }
 .v-sep {
   width: 1px;

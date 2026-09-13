@@ -26,9 +26,16 @@ const {
     :initially-expanded="initiallyExpanded"
   >
     <div class="setting-row-stack">
+      <!-- [DECISION LOG] A DISABLED ROW STATES ITS CAUSE:
+           Master Showcase requires Synthetic to stay on, so this row locks
+           whenever Showcase is active. Previously it only dimmed, leaving no
+           way to tell a deliberate lock from a bug - the description now names
+           the switch holding it. -->
       <SettingRow
         label="Synthetic Engine"
-        description="Populate the interface with high-fidelity mock data"
+        :description="isShowcaseMode
+          ? 'Locked on while Master Showcase is active'
+          : 'Populate the interface with high-fidelity mock data'"
         :active="isSyntheticMode"
         :disabled="isShowcaseMode"
         mini
