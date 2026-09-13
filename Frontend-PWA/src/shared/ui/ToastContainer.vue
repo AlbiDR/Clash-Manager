@@ -43,7 +43,7 @@ const containerStyle = computed(() => ({
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: var(--sys-space-8);
   z-index: 1000;
   pointer-events: none; /* Let clicks pass through around toasts */
 

@@ -193,7 +193,7 @@ const threshold = computed(() => modules.notificationThreshold);
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--sys-space-2);
 }
 
 /* Row typescale is aligned to the SettingRow/LinkRow scale (body-rg over body-sm).
@@ -220,9 +220,9 @@ const threshold = computed(() => modules.notificationThreshold);
   align-items: center;
   justify-content: space-between;
   gap: var(--sys-space-12);
-  padding: 8px 10px 8px 12px;
+  padding: var(--sys-space-8) var(--sys-space-10) var(--sys-space-8) var(--sys-space-12);
   border: 1px solid rgba(var(--sys-color-outline-rgb), 0.12);
-  border-radius: 8px;
+  border-radius: var(--sys-shape-corner-small);
   background: var(--sys-color-surface-container-low);
 }
 
@@ -230,19 +230,19 @@ const threshold = computed(() => modules.notificationThreshold);
   flex: 0 0 auto;
   display: flex;
   background: var(--sys-color-surface-container-high);
-  padding: 4px;
-  border-radius: 8px;
-  gap: 4px;
+  padding: var(--sys-space-4);
+  border-radius: var(--sys-shape-corner-small);
+  gap: var(--sys-space-4);
 }
 
 .threshold-btn {
   min-width: 64px;
   height: var(--sys-space-48); /* 48px Mobile Footprint (Target B.2) */
-  padding: 0 12px;
+  padding: 0 var(--sys-space-12);
   border: none;
   background: transparent;
   color: var(--sys-color-outline);
-  border-radius: 6px;
+  border-radius: var(--sys-shape-corner-badge);
   font-weight: 700;
   font-size: 13px;
   font-family: var(--sys-font-family-mono);
@@ -250,7 +250,7 @@ const threshold = computed(() => modules.notificationThreshold);
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 2px;
+  gap: var(--sys-space-2);
   transition: all var(--sys-motion-duration-200) var(--sys-motion-spring);
 }
 
@@ -280,9 +280,9 @@ const threshold = computed(() => modules.notificationThreshold);
   align-items: center;
   justify-content: space-between;
   gap: var(--sys-space-12);
-  padding: 8px 8px 8px 12px;
+  padding: var(--sys-space-8) var(--sys-space-8) var(--sys-space-8) var(--sys-space-12);
   border: 1px solid rgba(var(--sys-color-primary-rgb), 0.16);
-  border-radius: 8px;
+  border-radius: var(--sys-shape-corner-small);
   background: rgba(var(--sys-color-primary-rgb), 0.06);
 }
 
@@ -302,7 +302,7 @@ const threshold = computed(() => modules.notificationThreshold);
   background: var(--sys-color-primary);
   color: var(--sys-color-on-primary);
   border: none;
-  border-radius: 6px;
+  border-radius: var(--sys-shape-corner-badge);
   font-weight: 800;
   font-size: var(--sys-typescale-body-sm);
   cursor: pointer;
@@ -329,8 +329,8 @@ const threshold = computed(() => modules.notificationThreshold);
 
 .action-btn {
   height: var(--sys-space-48); /* 48px Mobile Footprint (Target B.2) */
-  padding: 0 12px;
-  border-radius: 8px;
+  padding: 0 var(--sys-space-12);
+  border-radius: var(--sys-shape-corner-small);
   border: 1px solid rgba(var(--sys-color-outline-rgb), 0.16);
   background: var(--sys-color-surface-container-low);
   color: var(--sys-color-on-surface);
@@ -338,7 +338,7 @@ const threshold = computed(() => modules.notificationThreshold);
   font-weight: 800;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--sys-space-6);
   cursor: pointer;
 }
 

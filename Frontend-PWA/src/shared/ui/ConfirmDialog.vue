@@ -125,7 +125,7 @@ function handleKeyDown(keyboardEvent: KeyboardEvent): void {
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 24px;
+  padding: var(--sys-space-24);
   touch-action: none;
 }
 
@@ -135,11 +135,11 @@ function handleKeyDown(keyboardEvent: KeyboardEvent): void {
   background: var(--sys-surface-glass);
   border: 1px solid var(--sys-surface-glass-border);
   border-radius: var(--sys-shape-corner-extra-large);
-  padding: 24px;
+  padding: var(--sys-space-24);
   box-shadow: var(--sys-elevation-4);
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--sys-space-12);
 }
 
 .confirm-card h3 {
@@ -161,8 +161,8 @@ function handleKeyDown(keyboardEvent: KeyboardEvent): void {
 .confirm-actions {
   display: flex;
   justify-content: flex-end;
-  gap: 8px;
-  margin-top: 8px;
+  gap: var(--sys-space-8);
+  margin-top: var(--sys-space-8);
 }
 
 .confirm-btn {

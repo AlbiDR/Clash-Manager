@@ -99,14 +99,14 @@ const isRetryInteractionActive = ref(false);
   border-radius: var(--sys-shape-corner-extra-large);
   border: 1px solid var(--sys-surface-glass-border);
   box-shadow: var(--sys-elevation-3);
-  margin: 20px 0;
+  margin: var(--sys-space-20) 0;
 }
 
 .error-icon-box {
   color: var(--sys-color-error);
-  padding: 16px;
+  padding: var(--sys-space-16);
   background: rgba(var(--sys-color-error-rgb), 0.1);
-  border-radius: 20px;
+  border-radius: var(--sys-shape-corner-m);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -134,8 +134,8 @@ const isRetryInteractionActive = ref(false);
 .btn-error {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 12px 24px;
+  gap: var(--sys-space-10);
+  padding: var(--sys-space-12) var(--sys-space-24);
   background: var(--sys-color-error);
   color: var(--sys-color-on-error);
   border: none;

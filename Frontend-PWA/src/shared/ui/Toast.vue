@@ -208,12 +208,12 @@ onUnmounted(clearTimer);
 .toast {
   display: flex;
   align-items: flex-start; /* Align top for multiline compatibility */
-  gap: 12px;
+  gap: var(--sys-space-12);
   background: var(--sys-surface-glass);
 
   color: var(--sys-color-on-surface);
-  padding: 12px 16px;
-  border-radius: 20px; /* Subtle rounded corners for multiline layout compatibility */
+  padding: var(--sys-space-12) var(--sys-space-16);
+  border-radius: var(--sys-shape-corner-m); /* Subtle rounded corners for multiline layout compatibility */
   box-shadow: 0 8px 32px var(--sys-overlay-dark-medium);
   min-width: 280px;
   max-width: 90vw;
@@ -252,14 +252,14 @@ onUnmounted(clearTimer);
   background: var(--sys-color-inverse-surface);
   color: var(--sys-color-inverse-on-surface);
   border: 1px solid var(--sys-overlay-light-soft);
-  padding: 12px 20px;
+  padding: var(--sys-space-12) var(--sys-space-20);
 }
 
 .icon-side {
   display: flex;
   align-items: center;
   opacity: 0.9;
-  margin-top: 1px; /* Align perfectly with first text line */
+  margin-top: var(--sys-space-1); /* Align perfectly with first text line */
 }
 
 .undo-icon {
@@ -283,14 +283,14 @@ onUnmounted(clearTimer);
   color: inherit;
   opacity: 0.6;
   cursor: pointer;
-  padding: 6px;
+  padding: var(--sys-space-6);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: opacity var(--sys-motion-duration-200), background var(--sys-motion-duration-200);
-  margin-left: 2px;
-  margin-top: -1px; /* Align with first line */
+  margin-left: var(--sys-space-2);
+  margin-top: -var(--sys-space-1); /* Align with first line */
 }
 .copy-btn:hover {
   opacity: 1;
@@ -301,8 +301,8 @@ onUnmounted(clearTimer);
   background: var(--sys-color-inverse-primary);
   color: var(--sys-color-inverse-surface);
   border: none;
-  border-radius: 99px;
-  padding: 6px 14px;
+  border-radius: var(--sys-shape-corner-full);
+  padding: var(--sys-space-6) var(--sys-space-14);
   font-weight: 800;
   font-size: 12px;
   text-transform: uppercase;
@@ -339,8 +339,8 @@ onUnmounted(clearTimer);
   align-items: center;
   justify-content: center;
   transition: opacity var(--sys-motion-duration-200);
-  margin-left: -4px;
-  margin-top: 1px; /* Align with first line */
+  margin-left: -var(--sys-space-4);
+  margin-top: var(--sys-space-1); /* Align with first line */
 }
 /* Widens a 24px glyph button to the 48px touch minimum without moving the
    glyph or reflowing the toast. Same technique as ErrorBoundary's hit target. */

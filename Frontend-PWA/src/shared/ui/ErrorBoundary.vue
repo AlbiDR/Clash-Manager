@@ -130,7 +130,7 @@ function reset() {
 
 <style scoped>
 .error-boundary {
-  padding: 60px 24px;
+  padding: var(--sys-space-56) var(--sys-space-24);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -140,7 +140,7 @@ function reset() {
 .error-content {
   background: var(--sys-surface-glass);
 
-  padding: 40px;
+  padding: var(--sys-space-40);
   border-radius: var(--sys-shape-corner-extra-large);
   text-align: center;
   max-width: 440px;
@@ -155,24 +155,24 @@ function reset() {
   height: 72px;
   background: rgba(var(--sys-color-error-rgb), 0.1);
   color: var(--sys-color-error);
-  border-radius: 20px;
+  border-radius: var(--sys-shape-corner-m);
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0 auto 24px;
+  margin: 0 auto var(--sys-space-24);
   transform: rotate(-5deg);
   user-select: none; /* Keep icon non-selectable */
 }
 
 h2 {
-  margin: 0 0 12px;
+  margin: 0 0 var(--sys-space-12);
   font-weight: 850;
   letter-spacing: -0.02em;
   color: var(--sys-color-on-surface);
 }
 
 p {
-  margin: 0 0 28px;
+  margin: 0 0 var(--sys-space-28);
   line-height: 1.6;
   font-size: 15px;
   color: var(--sys-color-on-surface-variant);
@@ -180,13 +180,13 @@ p {
 
 .error-details-container {
   position: relative;
-  margin-bottom: 32px;
+  margin-bottom: var(--sys-space-32);
 }
 
 .error-details {
   background: var(--sys-overlay-dark-subtle);
-  padding: 16px 48px 16px 16px;
-  border-radius: 16px;
+  padding: var(--sys-space-16) var(--sys-space-48) var(--sys-space-16) var(--sys-space-16);
+  border-radius: var(--sys-shape-corner-large);
   font-family: var(--sys-font-family-mono);
   font-size: 12px;
   text-align: left;
@@ -204,7 +204,7 @@ p {
   right: 8px;
   width: 32px;
   height: 32px;
-  border-radius: 8px;
+  border-radius: var(--sys-shape-corner-small);
   border: none;
   background: var(--sys-color-surface-container-high);
   color: var(--sys-color-on-surface-variant);
@@ -247,8 +247,8 @@ p {
   background: var(--sys-color-primary);
   color: var(--sys-color-on-primary);
   border: none;
-  padding: 14px 32px;
-  border-radius: 99px;
+  padding: var(--sys-space-14) var(--sys-space-32);
+  border-radius: var(--sys-shape-corner-full);
   font-weight: 750;
   font-size: 15px;
   cursor: pointer;

@@ -154,9 +154,9 @@ const shouldShowBanner = computed(() => {
 <style scoped>
 /* --- Base Banner --- */
 .voyage-banner {
-  margin: 0 16px 8px;
-  padding: 12px 16px;
-  border-radius: 20px;
+  margin: 0 var(--sys-space-16) var(--sys-space-8);
+  padding: var(--sys-space-12) var(--sys-space-16);
+  border-radius: var(--sys-shape-corner-m);
   background: rgba(var(--sys-color-primary-rgb), 0.08);
   border: 1px solid rgba(var(--sys-color-primary-rgb), 0.2);
   backdrop-filter: blur(12px);
@@ -205,8 +205,8 @@ const shouldShowBanner = computed(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 20px;
-  gap: 8px;
+  margin-bottom: var(--sys-space-20);
+  gap: var(--sys-space-8);
 }
 
 .banner-header.no-margin {
@@ -216,7 +216,7 @@ const shouldShowBanner = computed(() => {
 .banner-title-group {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--sys-space-10);
 }
 
 .banner-icon {
@@ -244,7 +244,7 @@ const shouldShowBanner = computed(() => {
 .banner-labels {
   display: flex;
   flex-direction: column;
-  gap: 1px;
+  gap: var(--sys-space-1);
 }
 
 .banner-title {
@@ -275,13 +275,13 @@ const shouldShowBanner = computed(() => {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 3px;
+  gap: var(--sys-space-4);
 }
 
 .crown-count {
   display: flex;
   align-items: baseline;
-  gap: 3px;
+  gap: var(--sys-space-4);
 }
 
 .crown-value {
@@ -322,7 +322,7 @@ const shouldShowBanner = computed(() => {
 .crown-icon {
   font-size: 12px;
   opacity: 0.6;
-  margin-left: 2px;
+  margin-left: var(--sys-space-2);
 }
 
 .countdown {
@@ -357,13 +357,13 @@ const shouldShowBanner = computed(() => {
   position: relative;
   height: 8px;
   background: rgba(var(--sys-color-primary-rgb), 0.1);
-  border-radius: 99px;
+  border-radius: var(--sys-shape-corner-full);
   overflow: visible;
 }
 
 .progress-fill {
   height: 100%;
-  border-radius: 99px;
+  border-radius: var(--sys-shape-corner-full);
   background: linear-gradient(
     90deg,
     var(--sys-color-primary),

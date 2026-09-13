@@ -49,7 +49,7 @@ export const skeletonStyles = `
   width: 100%; height: var(--sys-space-48); background: var(--sk-fill-secondary); border-radius: var(--sys-shape-corner-small);
   display: flex; justify-content: center; align-items: flex-end; gap: var(--sys-space-2); padding: var(--sys-space-4); box-sizing: border-box;
 }
-.sk-chart-bar { flex: 1; background: var(--sk-fill); border-radius: 2px; opacity: 0.6; }
+.sk-chart-bar { flex: 1; background: var(--sk-fill); border-radius: var(--sys-shape-corner-hairline); opacity: 0.6; }
 .sk-text-line-s { width: 80px; height: 10px; background: var(--sk-fill); border-radius: var(--sys-shape-corner-extra-small); opacity: 0.6; }
 .sk-stat-value { width: 40px; height: 14px; background: var(--sk-fill); border-radius: var(--sys-shape-corner-extra-small); }
 .sk-icon-btn-s { width: 36px; height: 36px; background: var(--sk-fill-secondary); border-radius: var(--sys-shape-corner-medium); opacity: 0.6; }

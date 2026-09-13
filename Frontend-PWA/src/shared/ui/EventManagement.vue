@@ -153,9 +153,9 @@ const pillClass = computed(() => {
 /* --- Active Summary --- */
 .active-summary {
   background: rgba(var(--sys-color-primary-rgb), 0.06);
-  border-radius: 14px;
-  padding: 12px 14px;
-  margin-bottom: 16px;
+  border-radius: var(--sys-shape-corner-input);
+  padding: var(--sys-space-12) var(--sys-space-14);
+  margin-bottom: var(--sys-space-16);
 }
 
 .pre-event-summary {
@@ -166,7 +166,7 @@ const pillClass = computed(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 4px 0;
+  padding: var(--sys-space-4) 0;
 }
 
 .summary-value {
@@ -185,13 +185,13 @@ const pillClass = computed(() => {
 .section-divider {
   height: 1px;
   background: rgba(var(--sys-color-primary-rgb), 0.1);
-  margin-top: 10px;
+  margin-top: var(--sys-space-10);
 }
 
 /* --- Status Pill (Header Slot) --- */
 .status-pill {
-  padding: 3px 8px;
-  border-radius: 99px;
+  padding: var(--sys-space-4) var(--sys-space-8);
+  border-radius: var(--sys-shape-corner-full);
   border: 1px solid currentColor;
 }
 

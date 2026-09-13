@@ -126,13 +126,13 @@ const {
   justify-content: space-between;
   width: 100%;
   height: 56px;
-  padding: 0 8px;
+  padding: 0 var(--sys-space-8);
   background: var(
     --sys-color-surface-container-low,
     var(--sys-color-surface-container)
   );
-  border-radius: 16px;
-  gap: 8px;
+  border-radius: var(--sys-shape-corner-large);
+  gap: var(--sys-space-8);
   transition: all var(--sys-motion-duration-400) var(--sys-motion-spring);
   position: relative;
   overflow: hidden;
@@ -152,14 +152,14 @@ const {
 
 .sel-group.strategy {
   flex: 1;
-  gap: 6px;
+  gap: var(--sys-space-6);
   min-width: 0;
 }
 
 .sel-group.management {
   flex: 0 0 auto;
   justify-content: flex-end;
-  gap: 6px;
+  gap: var(--sys-space-6);
 }
 
 .morph-btn {
@@ -172,7 +172,7 @@ const {
   border: none;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--sys-space-8);
   font-size: 11px;
   font-weight: 900;
   cursor: pointer;
@@ -205,7 +205,7 @@ const {
   align-items: center;
   justify-content: center;
   height: 48px;
-  padding: 0 16px;
+  padding: 0 var(--sys-space-16);
   background: var(--sys-color-surface-container-highest);
   color: var(--sys-color-on-surface);
   border-radius: var(--sys-shape-corner-medium);

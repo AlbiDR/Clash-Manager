@@ -126,7 +126,7 @@ const { targets, isRefreshing, refresh } = useBackendRefresher();
 .row-info {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--sys-space-2);
 }
 /* Row typescale aligned to the SettingRow/LinkRow scale (body-rg over body-sm); these
    were previously hardcoded one step smaller at 14px/12px. */
@@ -147,8 +147,8 @@ const { targets, isRefreshing, refresh } = useBackendRefresher();
   background: var(--sys-color-secondary-container);
   color: var(--sys-color-on-secondary-container);
   border: none;
-  padding: 0 20px;
-  border-radius: 8px;
+  padding: 0 var(--sys-space-20);
+  border-radius: var(--sys-shape-corner-small);
   font-weight: 700;
   font-size: 11px;
   cursor: pointer;
@@ -167,7 +167,7 @@ const { targets, isRefreshing, refresh } = useBackendRefresher();
   position: absolute;
   inset: 0;
   background: var(--sk-fill-secondary); /* Skeleton background */
-  border-radius: 8px;
+  border-radius: var(--sys-shape-corner-small);
   animation: pulse var(--sys-motion-ambient-pulse) infinite ease-in-out;
 }
 

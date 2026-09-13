@@ -71,16 +71,16 @@ const { visibleItems } = useProgressiveList(actions, 20);
 .section-title {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--sys-space-10);
   font-size: 18px;
   font-weight: 900;
-  margin: 12px 0;
-  padding: 0 8px;
+  margin: var(--sys-space-12) 0;
+  padding: 0 var(--sys-space-8);
 }
 
 .trajectory-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--sys-space-8);
 }
 </style>

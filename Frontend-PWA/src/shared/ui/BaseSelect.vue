@@ -271,8 +271,8 @@ const getSelectedLabel = () => {
 .select-trigger {
   width: 100%;
   height: 48px;
-  padding: 0 14px;
-  padding-right: 36px;
+  padding: 0 var(--sys-space-14);
+  padding-right: var(--sys-space-40);
   background: var(--sys-color-surface-container);
   border: 1px solid rgba(128, 128, 128, 0.15);
   box-shadow: 0 2px 4px var(--sys-overlay-dark-subtle);
@@ -330,7 +330,7 @@ const getSelectedLabel = () => {
 .options-list {
   max-height: 240px;
   overflow-y: auto;
-  padding: 6px;
+  padding: var(--sys-space-6);
   margin: 0;
   list-style: none;
   scrollbar-width: thin;
@@ -343,12 +343,12 @@ const getSelectedLabel = () => {
 
 .options-list::-webkit-scrollbar-thumb {
   background: var(--sys-color-outline-variant);
-  border-radius: 99px;
+  border-radius: var(--sys-shape-corner-full);
 }
 
 .option-item {
-  padding: 14px 12px;
-  border-radius: 8px;
+  padding: var(--sys-space-14) var(--sys-space-12);
+  border-radius: var(--sys-shape-corner-small);
   font-size: 13px;
   font-weight: 600;
   color: var(--sys-color-on-surface);

@@ -153,8 +153,8 @@ const engineStatus = computed(() => {
 .summary-header {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  margin-bottom: 24px;
+  gap: var(--sys-space-16);
+  margin-bottom: var(--sys-space-24);
 }
 
 .player-name {
@@ -174,13 +174,13 @@ const engineStatus = computed(() => {
 
 .header-badges {
   display: flex;
-  gap: 8px;
+  gap: var(--sys-space-8);
   width: 100%;
 }
 
 .projection-badge {
   color: var(--sys-color-on-primary-container);
-  padding: 6px 10px;
+  padding: var(--sys-space-6) var(--sys-space-10);
   border-radius: var(--sys-shape-corner-small);
   display: flex;
   flex-direction: row;
@@ -189,7 +189,7 @@ const engineStatus = computed(() => {
   border: 1px solid rgba(var(--sys-color-primary-rgb), 0.1);
   background: var(--sys-color-surface-container);
   flex: 1;
-  gap: 8px;
+  gap: var(--sys-space-8);
 }
 
 .projection-badge.status {
@@ -210,7 +210,7 @@ const engineStatus = computed(() => {
 .projection-badge.status .value {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--sys-space-4);
 }
 
 .projection-badge .value {
@@ -223,27 +223,27 @@ const engineStatus = computed(() => {
 .progression-row, .metrics-section {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  margin-top: 24px;
+  gap: var(--sys-space-12);
+  margin-top: var(--sys-space-24);
 }
 
 .section-label {
-  margin-bottom: 2px;
+  margin-bottom: var(--sys-space-2);
 }
 
 /* King Level Display */
 .king-level-display {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--sys-space-8);
 }
 
 .level-badge {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--sys-space-8);
   background: var(--sys-color-surface-container-high);
-  padding: 8px 16px;
+  padding: var(--sys-space-8) var(--sys-space-16);
   border-radius: var(--sys-shape-corner-large);
   border: 1px solid var(--sys-color-outline-variant);
   min-width: 80px;
@@ -287,7 +287,7 @@ const engineStatus = computed(() => {
 .resources-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 12px;
+  gap: var(--sys-space-12);
 }
 
 .resources-grid.triple {
@@ -297,7 +297,7 @@ const engineStatus = computed(() => {
 @media (max-width: 320px) {
   .resources-grid, .resources-grid.triple {
     grid-template-columns: 1fr;
-    gap: 8px;
+    gap: var(--sys-space-8);
   }
 }
 
@@ -313,9 +313,9 @@ const engineStatus = computed(() => {
 .res-slab {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--sys-space-12);
   background: var(--sys-color-surface-container-low);
-  padding: 10px 14px;
+  padding: var(--sys-space-10) var(--sys-space-14);
   border-radius: var(--sys-shape-corner-medium);
   border: 1px solid var(--sys-color-outline-variant);
   transition: all var(--sys-motion-duration-300) cubic-bezier(0.4, 0, 0.2, 1);

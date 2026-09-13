@@ -329,7 +329,7 @@ function handleTrackKeyDown(keyboardEvent: KeyboardEvent): void {
   display: flex;
   align-items: baseline;
   justify-content: flex-end;
-  gap: 3px;
+  gap: var(--sys-space-4);
   flex-shrink: 0;
   font-family: var(--sys-font-family-mono);
   font-variant-numeric: tabular-nums;
@@ -397,7 +397,7 @@ function handleTrackKeyDown(keyboardEvent: KeyboardEvent): void {
   height: var(--ps-tick-height);
   margin-left: calc(var(--ps-tick-width) / -2);
   transform: translateY(-50%);
-  border-radius: 1px;
+  border-radius: var(--sys-shape-corner-hairline);
   background: var(--sys-color-outline-variant);
   pointer-events: none;
   transition:
@@ -491,7 +491,7 @@ function handleTrackKeyDown(keyboardEvent: KeyboardEvent): void {
 .ps-scale {
   position: relative;
   height: 13px;
-  margin-top: -2px;
+  margin-top: -var(--sys-space-2);
   font-family: var(--sys-font-family-mono);
   font-variant-numeric: tabular-nums;
   font-size: 10px;
@@ -519,7 +519,7 @@ function handleTrackKeyDown(keyboardEvent: KeyboardEvent): void {
 
 .ps-chip {
   flex-shrink: 0;
-  padding: 3px 7px;
+  padding: var(--sys-space-4) var(--sys-space-8);
   border-radius: var(--sys-shape-corner-badge);
   background: var(--sys-color-surface-container-highest);
   font-family: var(--sys-font-family-mono);

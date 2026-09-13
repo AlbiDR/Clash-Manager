@@ -122,7 +122,7 @@ function handleKeydown(keyboardEvent: KeyboardEvent) {
 .target-picker {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--sys-space-8);
   flex: 1;
   min-width: 140px;
 }

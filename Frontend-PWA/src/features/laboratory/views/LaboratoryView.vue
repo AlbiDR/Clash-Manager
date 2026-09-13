@@ -151,13 +151,13 @@ const { data: globalData } = storeToRefs(clashDataStore);
 .dashboard-grid {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: var(--sys-space-20);
 }
 
 .dashboard-sidebar {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 16px;
+  gap: var(--sys-space-16);
 }
 
 @media (min-width: 640px) {

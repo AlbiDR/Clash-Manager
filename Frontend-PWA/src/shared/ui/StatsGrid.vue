@@ -31,8 +31,8 @@ const props = defineProps<{
 <style scoped>
 .stats-grid {
   display: grid;
-  gap: 8px;
-  margin-bottom: 12px;
+  gap: var(--sys-space-8);
+  margin-bottom: var(--sys-space-12);
 }
 
 .cols-2 {
@@ -45,13 +45,13 @@ const props = defineProps<{
 
 @media (max-width: 360px) {
   .cols-2 {
-    gap: 6px;
+    gap: var(--sys-space-6);
   }
 }
 
 @media (max-width: 380px) {
   .cols-3 {
-    gap: 4px;
+    gap: var(--sys-space-4);
   }
 }
 </style>

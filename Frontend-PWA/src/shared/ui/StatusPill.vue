@@ -173,8 +173,8 @@ watch(isExpanded, (expanded) => emit("update:expanded", expanded), { immediate: 
   display: inline-flex;
   align-items: center;
   min-height: 48px; /* 48px Mobile Footprint (Target B.2) */
-  padding: 0 8px;
-  border-radius: 24px;
+  padding: 0 var(--sys-space-8);
+  border-radius: var(--sys-shape-corner-l);
   background: var(--sys-color-surface-container);
   border: 1px solid var(--sys-color-outline);
   cursor: pointer;
@@ -214,10 +214,10 @@ watch(isExpanded, (expanded) => emit("update:expanded", expanded), { immediate: 
 
 /* Ensure symmetric padding so width animation is flawless */
 .status-pill.is-expanded.expand-right {
-  padding-right: 6px;
+  padding-right: var(--sys-space-6);
 }
 .status-pill.is-expanded.expand-left {
-  padding-left: 6px;
+  padding-left: var(--sys-space-6);
 }
 
 /* Color Tones */
@@ -272,13 +272,13 @@ watch(isExpanded, (expanded) => emit("update:expanded", expanded), { immediate: 
 .pill-content-wrapper {
   display: flex;
   align-items: center;
-  margin-left: 2px;
-  margin-right: 4px;
+  margin-left: var(--sys-space-2);
+  margin-right: var(--sys-space-4);
 }
 
 .status-pill.expand-left .pill-content-wrapper {
-  margin-left: 4px;
-  margin-right: 2px;
+  margin-left: var(--sys-space-4);
+  margin-right: var(--sys-space-2);
   flex-direction: row-reverse;
 }
 
@@ -305,7 +305,7 @@ watch(isExpanded, (expanded) => emit("update:expanded", expanded), { immediate: 
 .base-label {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--sys-space-4);
   transition: opacity var(--sys-motion-duration-300) ease;
 }
 
@@ -335,7 +335,7 @@ watch(isExpanded, (expanded) => emit("update:expanded", expanded), { immediate: 
   overflow: hidden;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--sys-space-8);
 }
 
 .status-pill.expand-left .expanded-inner {
@@ -347,21 +347,21 @@ watch(isExpanded, (expanded) => emit("update:expanded", expanded), { immediate: 
   height: 4px;
   border-radius: 50%;
   background: var(--sys-color-outline-variant);
-  margin: 0 4px;
+  margin: 0 var(--sys-space-4);
   flex-shrink: 0;
 }
 
 .hub-details {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--sys-space-6);
 }
 
 .source-tag {
   display: flex;
   align-items: center;
-  padding: 2px 5px;
-  border-radius: 5px;
+  padding: var(--sys-space-2) var(--sys-space-6);
+  border-radius: var(--sys-shape-corner-badge);
   background: var(--sys-color-surface-container-highest);
   color: var(--sys-color-on-surface-variant);
   font-size: 8px;

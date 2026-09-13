@@ -160,13 +160,13 @@ const levelOptions = computed(() => {
 .parameter-grid {
   display: flex;
   flex-direction: column;
-  gap: 28px;
+  gap: var(--sys-space-28);
 }
 
 .parameter-item {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: var(--sys-space-10);
   transition: all var(--sys-motion-duration-300) ease;
 }
 
@@ -181,11 +181,11 @@ const levelOptions = computed(() => {
   line-height: 1.4;
   color: var(--sys-color-on-surface-variant);
   background: var(--sys-color-surface-container);
-  padding: 10px 12px;
+  padding: var(--sys-space-10) var(--sys-space-12);
   border-radius: var(--sys-shape-corner-small);
   border-left: 3px solid var(--sys-color-primary);
-  margin-top: 6px;
-  gap: 4px;
+  margin-top: var(--sys-space-6);
+  gap: var(--sys-space-4);
   display: flex;
   flex-direction: column;
 }
@@ -202,16 +202,16 @@ const levelOptions = computed(() => {
 }
 
 .parameter-toggle {
-  padding: 12px 0;
+  padding: var(--sys-space-12) 0;
   border-top: 1px solid var(--sys-color-outline-variant);
 }
 
 .limit-warning {
   display: flex;
   align-items: center;
-  gap: 6px;
-  margin-top: 4px;
-  padding: 8px 10px;
+  gap: var(--sys-space-6);
+  margin-top: var(--sys-space-4);
+  padding: var(--sys-space-8) var(--sys-space-10);
   background: rgba(var(--sys-color-error-rgb), 0.1);
   border: 1px solid rgba(var(--sys-color-error-rgb), 0.2);
   border-radius: var(--sys-shape-corner-small);

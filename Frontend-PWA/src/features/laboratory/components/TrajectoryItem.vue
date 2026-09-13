@@ -128,11 +128,11 @@ defineProps<{
 .trajectory-item {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--sys-space-12);
   background: var(--sys-color-surface-container-low);
   border: 1px solid var(--sys-color-outline-variant);
   border-radius: var(--sys-shape-corner-large);
-  padding: 10px 14px;
+  padding: var(--sys-space-10) var(--sys-space-14);
   position: relative;
   animation: slide-in var(--sys-motion-duration-400) cubic-bezier(0.2, 0, 0, 1) both;
   animation-delay: calc(min(var(--i), 10) * var(--sys-motion-stagger-step));
@@ -179,23 +179,23 @@ defineProps<{
   display: flex;
   flex-direction: column;
   align-items: flex-start; /* Ensure all children are left-aligned and don't stretch */
-  gap: 6px;
+  gap: var(--sys-space-6);
   min-width: 0;
 }
 
 .level-row {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--sys-space-10);
 }
 
 .level-pill {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--sys-space-6);
   background: var(--sys-color-surface-container-high);
-  padding: 2px 8px;
-  border-radius: 6px;
+  padding: var(--sys-space-2) var(--sys-space-8);
+  border-radius: var(--sys-shape-corner-badge);
   font-family: var(--sys-font-family-mono);
   font-size: 11px;
   font-weight: 700;
@@ -209,8 +209,8 @@ defineProps<{
 .tower-badge {
   background: var(--sys-color-surface-container-highest);
   color: var(--sys-color-primary);
-  padding: 1px 4px;
-  border-radius: 4px;
+  padding: var(--sys-space-1) var(--sys-space-4);
+  border-radius: var(--sys-shape-corner-extra-small);
   border: 1px solid rgba(var(--sys-color-primary-rgb), 0.2);
 }
 
@@ -231,10 +231,10 @@ defineProps<{
 .efficiency-slab {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  padding: 2px 6px; /* Reduced padding for tighter fit */
+  gap: var(--sys-space-6);
+  padding: var(--sys-space-2) var(--sys-space-6); /* Reduced padding for tighter fit */
   background: var(--sys-color-surface-container);
-  border-radius: 6px;
+  border-radius: var(--sys-shape-corner-badge);
   border: 1px solid var(--sys-color-outline-variant);
   font-family: var(--sys-font-family-mono);
   font-size: 11px;
@@ -277,7 +277,7 @@ defineProps<{
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 6px;
+  gap: var(--sys-space-6);
   flex-shrink: 0;
 }
 
@@ -285,7 +285,7 @@ defineProps<{
   display: grid;
   grid-template-columns: 1fr 20px; /* Fixed width for the icon slot */
   align-items: center;
-  gap: 10px;
+  gap: var(--sys-space-10);
   font-family: var(--sys-font-family-mono);
   font-size: 15px;
   font-weight: 700;

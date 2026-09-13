@@ -211,7 +211,7 @@ const delta = computed(() =>
 
 .bc-tier {
   flex-shrink: 0;
-  padding: 2px var(--sys-space-8);
+  padding: var(--sys-space-2) var(--sys-space-8);
   border-radius: var(--sys-shape-corner-full);
 }
 
@@ -255,7 +255,7 @@ const delta = computed(() =>
 .bc-marker-avg {
   width: 2px;
   height: 10px;
-  border-radius: 1px;
+  border-radius: var(--sys-shape-corner-hairline);
   background: var(--sys-color-outline);
 }
 

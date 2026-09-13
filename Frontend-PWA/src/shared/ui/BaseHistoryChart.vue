@@ -123,13 +123,13 @@ const { chartData } = useBaseHistoryChart({
   height: 48px;
   overflow-x: auto;
   overflow-y: hidden;
-  margin: 12px 0;
+  margin: var(--sys-space-12) 0;
   display: flex;
   align-items: flex-end;
   scroll-behavior: smooth;
   scrollbar-width: thin;
   scrollbar-color: rgba(var(--sys-color-primary-rgb), 0.3) transparent;
-  padding-top: 10px;
+  padding-top: var(--sys-space-10);
   position: relative; /* Ensure stacking context */
 }
 
@@ -142,7 +142,7 @@ const { chartData } = useBaseHistoryChart({
 }
 .chart-container::-webkit-scrollbar-thumb {
   background: rgba(var(--sys-color-primary-rgb), 0.3);
-  border-radius: 2px;
+  border-radius: var(--sys-shape-corner-hairline);
 }
 
 .base-chart {
@@ -150,7 +150,7 @@ const { chartData } = useBaseHistoryChart({
   align-items: flex-end;
   height: 100%;
   min-width: 100%;
-  gap: 2px;
+  gap: var(--sys-space-2);
   position: relative;
   z-index: 1;
 }
@@ -258,7 +258,7 @@ const { chartData } = useBaseHistoryChart({
     calc((100% - var(--bar-count, 52) * 2px) / var(--bar-count, 52))
   );
   min-height: 4px;
-  border-radius: 2px;
+  border-radius: var(--sys-shape-corner-hairline);
   opacity: 0.9;
   transition: all var(--sys-motion-duration-200) ease;
   background-color: var(--sys-color-surface-container-highest);
@@ -337,22 +337,22 @@ const { chartData } = useBaseHistoryChart({
   justify-content: center;
   align-items: center;
   background-color: transparent; /* Reset for skeleton */
-  border-radius: 8px;
-  gap: 2px; /* Gap between skeleton bars */
-  padding: 4px;
+  border-radius: var(--sys-shape-corner-small);
+  gap: var(--sys-space-2); /* Gap between skeleton bars */
+  padding: var(--sys-space-4);
   box-sizing: border-box;
 }
 
 .sk-chart-area {
   background: var(--sk-fill-secondary); /* Use secondary skeleton color */
-  border-radius: 8px;
-  padding: 4px; /* Internal padding for bars */
+  border-radius: var(--sys-shape-corner-small);
+  padding: var(--sys-space-4); /* Internal padding for bars */
 }
 
 .sk-chart-bar {
   width: 8px; /* Fixed width for skeleton bars */
   background: var(--sk-fill); /* Primary skeleton color for bars */
-  border-radius: 2px;
+  border-radius: var(--sys-shape-corner-hairline);
   opacity: 0.7;
   height: var(--bar-height); /* Dynamic height set in template */
 }

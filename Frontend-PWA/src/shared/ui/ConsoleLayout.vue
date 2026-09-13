@@ -263,7 +263,7 @@ onUnmounted(() => {
 <style scoped>
 .view-container {
   min-height: 100%;
-  padding-bottom: calc(112px + env(safe-area-inset-bottom));
+  padding-bottom: calc(var(--sys-layout-dock-clearance) + env(safe-area-inset-bottom));
 }
 .view-content {
   transition: transform var(--sys-motion-duration-200) var(--sys-motion-spring);

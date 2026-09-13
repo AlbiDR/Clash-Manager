@@ -10,12 +10,21 @@ export const staticTokens = `
 :root {
   /* ── LAYOUT ── */
   --sys-layout-max-width: 720px;
+  /* What the list must clear to sit above the dock. A measurement of another
+     element, not a step on the spacing scale, so it is named rather than
+     rounded onto one - 112px snapped to the nearest step would have put eight
+     pixels of dead air under every list. */
+  --sys-layout-dock-clearance: 112px;
 
   /* ── FONTS ── */
   --sys-font-family-body: "Inter", system-ui, sans-serif;
   --sys-font-family-mono: "JetBrains Mono", monospace;
 
   /* ── SHAPE CORNERS (ascending order) ── */
+  /* Seven marks take a radius small enough only to stop a corner looking cut:
+     chart bars, skeleton bars, slider ticks. They were split between 1px and
+     2px, which nobody can tell apart. */
+  --sys-shape-corner-hairline:     2px;
   --sys-shape-corner-extra-small:  4px;
   --sys-shape-corner-badge:        6px;
   --sys-shape-corner-small:        8px;
@@ -29,6 +38,12 @@ export const staticTokens = `
   --sys-shape-corner-full:        9999px;
 
   /* ── SPACING SCALE (pixel-named, 4px atomic grid) ── */
+  /* Below the grid on purpose. Six places nudge by a single pixel to sit an
+     icon on a text baseline or pull a border back under its neighbour - Toast
+     aligns its glyphs to the first line this way. Those are optical
+     corrections, not spacing decisions, and snapping them to 2px would undo
+     the alignment they exist to make. */
+  --sys-space-1:    1px;
   --sys-space-2:    2px;
   --sys-space-4:    4px;
   --sys-space-6:    6px;

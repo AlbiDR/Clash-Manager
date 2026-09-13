@@ -237,14 +237,14 @@ function saveApiUrl() {
   align-items: center;
   justify-content: space-between;
   background: var(--sys-color-surface-container-high);
-  padding: 8px 16px;
-  border-radius: 8px;
+  padding: var(--sys-space-8) var(--sys-space-16);
+  border-radius: var(--sys-shape-corner-small);
   margin-bottom: var(--sys-space-12);
 }
 .stat-item {
   display: flex;
   align-items: baseline;
-  gap: 8px;
+  gap: var(--sys-space-8);
 }
 
 .stat-item .value {
@@ -284,12 +284,12 @@ function saveApiUrl() {
 }
 .url-readout {
   background: var(--sys-color-surface-container-highest);
-  padding: 10px 14px;
-  border-radius: 8px;
+  padding: var(--sys-space-10) var(--sys-space-14);
+  border-radius: var(--sys-shape-corner-small);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: var(--sys-space-12);
 }
 .url-text {
   font-family: var(--sys-font-family-mono);
@@ -341,7 +341,7 @@ function saveApiUrl() {
   /* 48px hybrid touch-target minimum (Target B.2). */
   width: var(--sys-space-48);
   min-height: var(--sys-space-48);
-  border-radius: 8px;
+  border-radius: var(--sys-shape-corner-small);
   background: var(--sys-color-primary);
   color: var(--sys-color-on-primary);
   border: none;
@@ -350,16 +350,16 @@ function saveApiUrl() {
   /* 48px hybrid touch-target minimum (Target B.2). */
   width: var(--sys-space-48);
   min-height: var(--sys-space-48);
-  border-radius: 8px;
+  border-radius: var(--sys-shape-corner-small);
   background: var(--sys-color-surface-container-highest);
   border: none;
   font-weight: 800;
 }
 
 .override-pill {
-  margin-top: 10px;
-  padding: 8px;
-  border-radius: 8px;
+  margin-top: var(--sys-space-10);
+  padding: var(--sys-space-8);
+  border-radius: var(--sys-shape-corner-small);
   background: var(--sys-color-error-container);
   color: var(--sys-color-on-error-container);
   font-size: 11px;

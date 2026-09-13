@@ -76,13 +76,13 @@ const cardMinHeight = computed(() => `${getBone("SettingsCard", "card")?.height 
   width: 20px;
   height: 20px;
   background: var(--sk-fill-secondary);
-  border-radius: 4px; /* Square for settings icons */
+  border-radius: var(--sys-shape-corner-extra-small); /* Square for settings icons */
 }
 
 .sk-line-m {
   height: 16px; /* Matches h3 font size */
   background: var(--sk-fill);
-  border-radius: 4px;
+  border-radius: var(--sys-shape-corner-extra-small);
   flex: 1; /* Allows it to take available space */
 }
 </style>

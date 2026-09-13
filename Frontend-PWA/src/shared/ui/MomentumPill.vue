@@ -54,12 +54,12 @@ const { benchmarkTooltipContent } = useBenchmarkedStat(
 <style scoped>
 .momentum-pill {
   height: 18px;
-  padding: 0 6px;
+  padding: 0 var(--sys-space-6);
   background: var(--sys-color-surface-container-highest);
-  border-radius: 10px;
+  border-radius: var(--sys-shape-corner-stat);
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: var(--sys-space-2);
   box-shadow: 0 2px 4px var(--sys-overlay-dark-soft);
   z-index: 2;
   border: 1px solid var(--sys-color-outline-variant);

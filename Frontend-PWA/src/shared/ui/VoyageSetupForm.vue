@@ -197,13 +197,13 @@ watch(
 .setup-form {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: var(--sys-space-16);
 }
 
 .field-group {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--sys-space-8);
 }
 
 /* --- Inputs ---
@@ -213,13 +213,13 @@ watch(
 .input-row {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--sys-space-8);
 }
 
 .target-input {
   flex: 1;
   height: 48px;
-  padding: 0 14px;
+  padding: 0 var(--sys-space-14);
   font-size: 18px;
   text-align: center;
 }
@@ -233,8 +233,8 @@ watch(
 /* --- Validation Hint --- */
 .validation-hint {
   margin: 0;
-  padding: 8px 12px;
-  border-radius: 10px;
+  padding: var(--sys-space-8) var(--sys-space-12);
+  border-radius: var(--sys-shape-corner-stat);
   background: rgba(var(--sys-color-error-rgb), 0.08);
   color: var(--sys-color-error, #ef4444);
   font-size: 11px;
@@ -253,7 +253,7 @@ watch(
 .activate-btn {
   width: 100%;
   height: 48px;
-  border-radius: 14px;
+  border-radius: var(--sys-shape-corner-input);
   border: none;
   background: var(--sys-color-primary);
   color: var(--sys-color-on-primary, #fff);
@@ -294,7 +294,7 @@ watch(
   font-size: 12px;
   font-weight: 700;
   cursor: pointer;
-  padding: 8px 0;
+  padding: var(--sys-space-8) 0;
   transition: opacity var(--sys-motion-duration-200) ease;
   align-self: center;
 }

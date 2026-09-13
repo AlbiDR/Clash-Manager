@@ -129,25 +129,25 @@ const handleInput = (inputEvent: Event, resourceKey: string) => {
 .resource-grid {
   display: flex;
   flex-direction: column;
-  gap: 28px;
+  gap: var(--sys-space-28);
 }
 
 .resource-item {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--sys-space-8);
 }
 
 .res-meta {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--sys-space-8);
 }
 
 .resource-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 16px;
+  gap: var(--sys-space-16);
 }
 
 .res-label {
@@ -160,7 +160,7 @@ const handleInput = (inputEvent: Event, resourceKey: string) => {
   background: var(--sys-color-surface-container);
   border: 1px solid var(--sys-color-outline-variant);
   border-radius: var(--sys-shape-corner-input);
-  padding: 12px 14px;
+  padding: var(--sys-space-12) var(--sys-space-14);
   font-family: var(--sys-font-family-mono);
   font-size: 16px;
   font-weight: 700;
@@ -183,28 +183,28 @@ const handleInput = (inputEvent: Event, resourceKey: string) => {
 .wildcards-section {
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  padding-top: 16px;
+  gap: var(--sys-space-14);
+  padding-top: var(--sys-space-16);
   border-top: 1px solid var(--sys-color-outline-variant);
 }
 
 .section-meta {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--sys-space-4);
 }
 
 .wildcards-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: var(--sys-space-10);
 }
 
 .wc-item {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: var(--sys-space-8);
   flex: 1;
   min-width: 50px;
 }
