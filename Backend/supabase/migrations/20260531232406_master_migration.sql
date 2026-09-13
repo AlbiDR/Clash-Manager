@@ -4524,11 +4524,12 @@ CREATE OR REPLACE VIEW features.roster_view AS
           WHERE ((m.is_active = true) AND (m.player_tag ~ '^#[0289CGJLPQRUVY]+$'::text))
         ),
      battle_stats AS (
-         SELECT player_tag,
+         SELECT pb.player_tag,
                 count(*) AS battle_count,
-                count(*) FILTER (WHERE win_status) AS wins
-           FROM drivers.player_battles
-          GROUP BY player_tag
+                count(*) FILTER (WHERE pb.win_status) AS wins
+           FROM drivers.player_battles pb
+          WHERE pb.player_tag IN (SELECT rs_tags.player_tag FROM roster_source rs_tags)
+          GROUP BY pb.player_tag
         )
  SELECT player_name,
     role,
