@@ -29,4 +29,4 @@ const output = generateHtmlEntry(packageJson.version);
 const target = join(__dirname, '../index.html');
 
 writeFileSync(target, output);
-console.log('⚡ [Purity] Generated physical index.html from TypeScript substrate.');
+console.log('[Purity] Generated physical index.html from TypeScript substrate.');
