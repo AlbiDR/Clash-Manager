@@ -74,20 +74,21 @@ const { benchmarkTooltipContent } = useBenchmarkedStat(
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
 }
 
+/* [DECISION LOG] THE PALETTE ALREADY KNEW WHAT UP AND DOWN LOOK LIKE:
+   These four rules were a second, private implementation of theming. Raw hex
+   cannot respond to the theme, so this component re-derived by hand what the
+   token layer already resolves per theme - and landed within a few points of
+   it: its light green #166534 against --sys-color-success at #145218, its light
+   red #991b1b against --sys-color-error at #ba1a1a. Two sources of truth for
+   what green means, agreeing today by coincidence and free to drift tomorrow,
+   with the :root.dark overrides existing only to paper over the first mistake.
+   The tokens carry both themes, so both overrides go. */
 .momentum-pill.up {
-  color: #166534;
-}
-
-:root.dark .momentum-pill.up {
-  color: #22c55e;
+  color: var(--sys-color-success);
 }
 
 .momentum-pill.down {
-  color: #991b1b;
-}
-
-:root.dark .momentum-pill.down {
-  color: #ef4444;
+  color: var(--sys-color-error);
 }
 
 .trend-val {

@@ -242,7 +242,7 @@ onMounted(() => {
   animation: shimmer 1.5s linear infinite;
 }
 .connectivity-strip.success-resolve {
-  background: #22c55e;
+  background: var(--sys-color-success);
   opacity: 1;
   transform: scaleY(1.5);
 }

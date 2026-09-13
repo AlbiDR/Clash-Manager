@@ -373,15 +373,19 @@ function saveApiUrl() {
   height: 8px;
   border-radius: 50%;
 }
+/* Online, offline and unconfigured are success, error and warning. They were
+   frozen hex with no dark variant at all, so they read the same on both
+   grounds; the glow reuses the same token rather than a second hex with an
+   alpha suffix. */
 .status-indicator.online {
-  background: #22c55e;
-  box-shadow: 0 0 10px #22c55e66;
+  background: var(--sys-color-success);
+  box-shadow: 0 0 10px rgba(var(--sys-color-success-rgb), 0.4);
 }
 .status-indicator.offline {
-  background: #ef4444;
+  background: var(--sys-color-error);
 }
 .status-indicator.unconfigured {
-  background: #f59e0b;
+  background: var(--sys-color-warning);
   animation: pulse 2s infinite;
 }
 </style>
