@@ -164,6 +164,7 @@ export function useConsoleController<T extends { id: string; n?: string }>(
   const { status, statsBadge, metadata, hubHealth } = useConsoleMetadata(
     statsLabel,
     computed(() => data.value.length),
+    computed(() => filteredItems.value.length),
   );
 
   // STEP 5: Deep Linking and Expansion logic
@@ -286,6 +287,7 @@ export function useConsoleController<T extends { id: string; n?: string }>(
     isRefreshing: isRefreshing.value,
     syncError: syncError.value || undefined,
     stats: statsBadge.value,
+    searchQuery: searchQuery.value,
     sortOptions,
     showSearch,
     fabState: fabState.value,

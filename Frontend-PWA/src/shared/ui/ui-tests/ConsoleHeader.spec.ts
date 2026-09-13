@@ -59,18 +59,76 @@ describe("ConsoleHeader", () => {
     windowSpy.mockRestore();
   });
 
-  it("handles search input emission", async () => {
+  it("opens the search field on demand and debounces what is typed into it", async () => {
     vi.useFakeTimers();
     const wrapper = mount(ConsoleHeader, {
-      props: { title: "Search Test", showSearch: true },
+      props: { title: "Search Test", showSearch: true, searchQuery: "" },
     });
 
-    const input = wrapper.find(".search-input");
-    await input.setValue("clash");
-    
+    // Idle, the control is an icon: there is no field to type into yet.
+    expect(wrapper.find(".search-input").exists()).toBe(false);
+    expect(wrapper.find(".search-trigger").exists()).toBe(true);
+
+    await wrapper.find(".search-trigger").trigger("click");
+    expect(wrapper.find(".search-input").exists()).toBe(true);
+
+    await wrapper.find(".search-input").setValue("clash");
+    expect(wrapper.emitted("update:search")).toBeUndefined();
+
     vi.advanceTimersByTime(300);
     expect(wrapper.emitted("update:search")?.[0]).toEqual(["clash"]);
     vi.useRealTimers();
+  });
+
+  it("keeps the field open while a query stands, so a filter can never hide", async () => {
+    // The reader never opened it; the query alone is enough to pin it open.
+    const wrapper = mount(ConsoleHeader, {
+      props: { title: "Search Test", showSearch: true, searchQuery: "adr" },
+    });
+
+    expect(wrapper.find(".search-input").exists()).toBe(true);
+    expect(wrapper.find(".search-trigger").exists()).toBe(false);
+
+    // A blur must not be able to dismiss it either.
+    await wrapper.find(".search-input").trigger("blur");
+    expect(wrapper.find(".search-input").exists()).toBe(true);
+  });
+
+  it("reflects the query it is given rather than keeping its own copy", () => {
+    const wrapper = mount(ConsoleHeader, {
+      props: { title: "Search Test", showSearch: true, searchQuery: "leandro" },
+    });
+
+    expect((wrapper.find(".search-input").element as HTMLInputElement).value).toBe("leandro");
+  });
+
+  it("clears the query on Escape and reports it immediately", async () => {
+    vi.useFakeTimers();
+    const wrapper = mount(ConsoleHeader, {
+      props: { title: "Search Test", showSearch: true, searchQuery: "adr" },
+    });
+
+    await wrapper.find(".search-input").trigger("keydown", { key: "Escape" });
+
+    // Immediately, without waiting out the debounce - a clear is not a keystroke.
+    expect(wrapper.emitted("update:search")?.[0]).toEqual([""]);
+    vi.useRealTimers();
+  });
+
+  it("offers a clear affordance only while there is something to clear", async () => {
+    const idle = mount(ConsoleHeader, {
+      props: { title: "Search Test", showSearch: true, searchQuery: "" },
+    });
+    await idle.find(".search-trigger").trigger("click");
+    expect(idle.find(".search-clear").exists()).toBe(false);
+
+    const active = mount(ConsoleHeader, {
+      props: { title: "Search Test", showSearch: true, searchQuery: "adr" },
+    });
+    expect(active.find(".search-clear").exists()).toBe(true);
+
+    await active.find(".search-clear").trigger("click");
+    expect(active.emitted("update:search")?.[0]).toEqual([""]);
   });
 
   it("handles sort selection emission", async () => {

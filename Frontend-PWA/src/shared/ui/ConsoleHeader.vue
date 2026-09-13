@@ -1,8 +1,9 @@
 <!-- SPDX-License-Identifier: GPL-3.0-only -->
 <!-- Copyright (C) 2026 AlbiDR -->
 <script setup lang="ts">
-import { computed, ref, unref } from "vue";
+import { computed, ref, unref, useTemplateRef } from "vue";
 import { useHaptics } from "../composables/useHaptics";
+import { useSearchField } from "../composables/useSearchField";
 import { useHeaderScroll } from "../composables/useHeaderScroll";
 import StatusPill from "./StatusPill.vue";
 import Icon from "./Icon.vue";
@@ -24,6 +25,13 @@ const props = defineProps<{
     nominal?: boolean;
   };
   showSearch?: boolean;
+  /**
+   * The live query, owned by whoever filters the list. Supplying it makes the
+   * input controlled, which is what lets the owner clear it - previously the
+   * field only ever emitted upward and reflected nothing back, so clearing the
+   * state left the stale text sitting in the box.
+   */
+  searchQuery?: string;
   dashboardUrl?: string;
   stats?: { label: string; value: string };
   sortOptions?: { label: string; value: string; desc?: string; fullDesc?: string }[];
@@ -41,16 +49,23 @@ const emit = defineEmits<{
 const haptics = useHaptics();
 const { isScrolled } = useHeaderScroll(10);
 
-let debounceTimer: number | null = null;
+/** The field itself, owned here because the element belongs to this template. */
+const searchInput = useTemplateRef<HTMLInputElement>("searchInput");
 
-const handleInput = (inputEvent: Event) => {
-  const searchQueryCandidate = (inputEvent.target as HTMLInputElement).value;
-  if (debounceTimer) window.clearTimeout(debounceTimer);
-
-  debounceTimer = window.setTimeout(() => {
-    emit("update:search", searchQueryCandidate);
-  }, 300);
-};
+const {
+  isOpen: isSearchOpen,
+  hasQuery: hasSearchQuery,
+  openSearchField,
+  closeSearchField,
+  clearSearchField,
+  handleSearchInput,
+  handleSearchKeydown,
+} = useSearchField({
+  readQuery: () => props.searchQuery ?? "",
+  onQueryChange: (query) => emit("update:search", query),
+  focusInput: () => searchInput.value?.focus(),
+  blurInput: () => searchInput.value?.blur(),
+});
 
 const activeSortDescription = computed(() => {
   if (!props.sortOptions || !props.currentSort) return "";
@@ -114,24 +129,71 @@ const handleOpenDashboard = () => {
         v-if="props.showSearch || !!$slots.filters"
         class="search-sort-row"
       >
+        <!-- [DECISION LOG] PROMINENCE TRACKS WHETHER THE CONTROL IS WORKING:
+             Idle this is a 48px icon; the moment it holds a query it is a
+             field, and it cannot be dismissed back to an icon while that query
+             stands. That rule is what makes collapsing safe here, because the
+             query outlives a view switch, so a collapsed control with a live
+             filter is reachable in ordinary use rather than hypothetical.
+
+             It also settles both size extremes the old always-open field got
+             wrong. At 320px it had been crushed to 108px and was clipping its
+             own contents; at 1440px it ballooned to 508px, 77% of the row, for
+             a list of forty-odd rows. An icon has one size and an open field
+             has a ceiling. -->
         <div
           v-if="props.showSearch"
           class="search-bar"
+          :class="{ 'is-open': isSearchOpen }"
         >
-          <div class="search-box">
+          <button
+            v-if="!isSearchOpen"
+            type="button"
+            class="search-trigger"
+            aria-label="Search"
+            :aria-expanded="false"
+            @click="openSearchField"
+          >
+            <Icon
+              name="search"
+              size="18"
+            />
+          </button>
+
+          <div
+            v-else
+            class="search-box"
+          >
             <Icon
               name="search"
               size="18"
               class="search-icon"
             />
             <input
+              ref="searchInput"
               type="text"
               class="search-input"
               placeholder="Search..."
               autocomplete="off"
               aria-label="Search"
-              @input="handleInput"
+              :value="props.searchQuery ?? ''"
+              @input="handleSearchInput"
+              @keydown="handleSearchKeydown"
+              @blur="closeSearchField"
             >
+            <button
+              v-if="hasSearchQuery"
+              type="button"
+              class="search-clear"
+              aria-label="Clear search"
+              @mousedown.prevent
+              @click="clearSearchField"
+            >
+              <Icon
+                name="close"
+                size="16"
+              />
+            </button>
           </div>
         </div>
 
@@ -352,15 +414,88 @@ const handleOpenDashboard = () => {
   }
 }
 
+/* Wraps for the same reason the title row does: when the row cannot hold
+   everything, something takes a second line rather than everything being
+   squeezed. Only the open field can trigger it, and only where there is truly
+   no room - at 375px the field still sits beside the sort control, and at
+   320px it takes the line and the sort drops below. */
 .search-sort-row {
   display: flex;
   align-items: center;
   gap: var(--sys-space-12);
+  flex-wrap: wrap;
 }
 
+/* [DECISION LOG] THE CONTROL TAKES THE SPACE IT IS USING, NOT THE SPACE THERE IS:
+   Idle it is a fixed 48px icon that yields every spare pixel to its row-mates.
+   Open it grows, but only to a ceiling, because the queries it takes are player
+   names of a few characters. The old rule was a flat `flex: 1`, which made the
+   field a hostage to the viewport in both directions: crushed to 108px and
+   clipping its own contents at 320px, ballooned to 508px at 1440px. */
 .search-bar {
-  flex: 1;
+  flex: 0 0 auto;
   min-width: 0;
+}
+
+.search-bar.is-open {
+  flex: 1 1 var(--sys-layout-search-min-width);
+  min-width: var(--sys-layout-search-min-width);
+  max-width: var(--sys-layout-search-max-width);
+}
+
+/* Square, so the icon sits in the middle of a target that already meets the
+   ADR's 48px minimum without a pseudo-element widening it. */
+.search-trigger {
+  width: var(--sys-space-48);
+  height: var(--sys-space-48);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--sys-color-surface-container-high);
+  border: 1px solid var(--sys-color-outline-variant);
+  border-radius: var(--sys-shape-corner-input);
+  color: var(--sys-color-on-surface-variant);
+  cursor: pointer;
+  transition:
+    color var(--sys-motion-duration-200) var(--sys-motion-easing-standard),
+    background-color var(--sys-motion-duration-200) var(--sys-motion-easing-standard);
+}
+
+.search-trigger:hover {
+  color: var(--sys-color-on-surface);
+  background: var(--sys-color-surface-container-highest);
+}
+
+.search-trigger:active {
+  transform: scale(0.96);
+}
+
+/* Only appears while there is something to clear, so it never occupies the
+   field as dead weight. mousedown is prevented on it in the template: without
+   that the input blurs first, and a blur that closed the field would take the
+   button out from under the finger before the click landed. */
+.search-clear {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--sys-space-4);
+  border-radius: var(--sys-shape-corner-full);
+  background: none;
+  border: none;
+  color: var(--sys-color-on-surface-variant);
+  cursor: pointer;
+  transition: color var(--sys-motion-duration-200) var(--sys-motion-easing-standard);
+}
+
+.search-clear::after {
+  content: "";
+  position: absolute;
+  inset: calc(-1 * var(--sys-space-12));
+}
+
+.search-clear:hover {
+  color: var(--sys-color-on-surface);
 }
 
 /* [DECISION LOG] 48, MATCHING ITS ROW-MATE:
@@ -378,7 +513,10 @@ const handleOpenDashboard = () => {
   align-items: center;
   padding: 0 var(--sys-space-14);
   gap: var(--sys-space-12);
-  border: 1px solid rgba(128, 128, 128, 0.15);
+  /* Was rgba(128, 128, 128, 0.15): a grey mixed by hand, frozen across both
+     themes and invisible to the overlay firewall, which polices pure black and
+     white only. outline-variant is this line's actual role. */
+  border: 1px solid var(--sys-color-outline-variant);
   box-shadow: inset 0 2px 4px var(--sys-overlay-dark-subtle);
   transition: all var(--sys-motion-duration-200) ease;
 }
@@ -391,8 +529,16 @@ const handleOpenDashboard = () => {
   color: var(--sys-color-on-surface-variant);
 }
 
+/* [DECISION LOG] min-width: 0 IS WHY THE FIELD USED TO CLIP:
+   An <input> carries an intrinsic minimum width from its default size="20", so
+   as a flex item under the initial `min-width: auto` it simply refuses to
+   shrink below roughly 170px. Measured: a 161px box holding a 170px input, a
+   53px shortfall, with the overflow hidden behind the box's own rounding. That
+   is what crushed the old always-open field at 320px, and no amount of space
+   granted to the parent fixes it - the child was never willing to fit. */
 .search-input {
   flex: 1;
+  min-width: 0;
   align-self: stretch;
   background: none;
   border: none;
