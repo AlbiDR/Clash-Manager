@@ -69,7 +69,7 @@ const trajectoryLevelPill = computed(() => px(getBone("TrajectoryItem", "levelPi
               >
                 <div
                   class="sk-box"
-                  style="width: 32px; height: 32px; border-radius: 6px;"
+                  style="width: 32px; height: 32px; border-radius: var(--sys-shape-corner-badge);"
                 />
                 <div
                   class="sk-input"
@@ -103,12 +103,12 @@ const trajectoryLevelPill = computed(() => px(getBone("TrajectoryItem", "levelPi
             />
             <div
               class="sk-input"
-              style="height: 80px; border-radius: 8px;"
+              style="height: 80px; border-radius: var(--sys-shape-corner-small);"
             />
             
             <div
               class="sk-label-box"
-              style="width: 100px; margin-top: 8px;"
+              style="width: 100px; margin-top: var(--sys-space-8);"
             />
             <div
               class="sk-input"
@@ -118,7 +118,7 @@ const trajectoryLevelPill = computed(() => px(getBone("TrajectoryItem", "levelPi
             <div class="sk-toggle-row">
               <div
                 class="sk-vstack"
-                style="gap: 4px;"
+                style="gap: var(--sys-space-4);"
               >
                 <div
                   class="sk-text-line-m"
@@ -161,7 +161,7 @@ const trajectoryLevelPill = computed(() => px(getBone("TrajectoryItem", "levelPi
         </div>
         <div
           class="sk-label-box"
-          style="width: 100px; margin-top: 16px; margin-bottom: 8px;"
+          style="width: 100px; margin-top: var(--sys-space-16); margin-bottom: var(--sys-space-8);"
         />
         <div class="sk-progression-row">
           <div
@@ -180,14 +180,14 @@ const trajectoryLevelPill = computed(() => px(getBone("TrajectoryItem", "levelPi
 
         <div
           class="sk-label-box"
-          style="width: 120px; margin-top: 24px; margin-bottom: 8px;"
+          style="width: 120px; margin-top: var(--sys-space-24); margin-bottom: var(--sys-space-8);"
         />
         <div class="sk-grid-3">
           <div
             v-for="i in 3"
             :key="i"
             class="sk-input"
-            style="height: 60px; border-radius: 16px;"
+            style="height: 60px; border-radius: var(--sys-shape-corner-large);"
           />
         </div>
       </div>
@@ -230,7 +230,7 @@ const trajectoryLevelPill = computed(() => px(getBone("TrajectoryItem", "levelPi
               </div>
               <div
                 class="sk-pill"
-                style="width: 80px; height: 24px; border-radius: 6px; margin-top: 4px;"
+                style="width: 80px; height: 24px; border-radius: var(--sys-shape-corner-badge); margin-top: var(--sys-space-4);"
               />
             </div>
             <div class="sk-cost-stack">

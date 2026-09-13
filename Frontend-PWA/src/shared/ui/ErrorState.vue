@@ -52,7 +52,7 @@ const isRetryInteractionActive = ref(false);
             />
             <stop
               offset="100%"
-              style="stop-color: #ff8e8e; stop-opacity: 1"
+              style="stop-color: rgba(var(--sys-color-error-rgb), 0.55); stop-opacity: 1"
             />
           </linearGradient>
         </defs>

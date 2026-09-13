@@ -10,7 +10,7 @@ exports[`ErrorState.vue > matches snapshot for visual consistency 1`] = `
       <defs data-v-37e03845="">
         <linearGradient data-v-37e03845="" id="warning-grad" x1="0%" y1="0%" x2="100%" y2="100%">
           <stop data-v-37e03845="" offset="0%" style="stop-color: var(--sys-color-error); stop-opacity: 1;"></stop>
-          <stop data-v-37e03845="" offset="100%" style="stop-color: rgb(255, 142, 142); stop-opacity: 1;"></stop>
+          <stop data-v-37e03845="" offset="100%" style="stop-color: rgba(var(--sys-color-error-rgb), 0.55); stop-opacity: 1;"></stop>
         </linearGradient>
       </defs>
     </svg>

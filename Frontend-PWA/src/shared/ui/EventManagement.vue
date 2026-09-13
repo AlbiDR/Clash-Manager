@@ -75,7 +75,7 @@ const pillClass = computed(() => {
           {{ formatNumber(store.targetCrowns) }} <Icon
             name="crown"
             size="14"
-            style="display: inline-block; vertical-align: middle; margin-left: 2px;"
+            style="display: inline-block; vertical-align: middle; margin-left: var(--sys-space-2);"
           />
         </span>
       </div>
@@ -102,7 +102,7 @@ const pillClass = computed(() => {
           {{ formatNumber(store.totalCrowns) }} / {{ formatNumber(store.targetCrowns) }} <Icon
             name="crown"
             size="14"
-            style="display: inline-block; vertical-align: middle; margin-left: 2px;"
+            style="display: inline-block; vertical-align: middle; margin-left: var(--sys-space-2);"
           />
         </span>
       </div>

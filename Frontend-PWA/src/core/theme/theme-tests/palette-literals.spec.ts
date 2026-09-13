@@ -35,7 +35,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import { join } from 'node:path';
-import { walkSource, styleBodies, stripComments } from './style-corpus';
+import { walkSource, styleBodies, stripComments, inlineStyles } from './style-corpus';
 
 const SRC_DIR = join(__dirname, '..', '..', '..');
 
@@ -57,8 +57,14 @@ const files = walkSource(SRC_DIR).filter((file) => !file.endsWith(PALETTE_SOURCE
 const findings: Finding[] = [];
 let inspectedBodies = 0;
 
+/** `<style>` blocks and static `style=` attributes are one surface here. */
+const surfaces = (file: string): { css: string; startLine: number }[] => [
+  ...styleBodies(file),
+  ...inlineStyles(file).map(({ css, line }) => ({ css, startLine: line })),
+];
+
 for (const file of files) {
-  for (const { css, startLine } of styleBodies(file)) {
+  for (const { css, startLine } of surfaces(file)) {
     inspectedBodies += 1;
     stripComments(css)
       .split('\n')

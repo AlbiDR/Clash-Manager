@@ -29,7 +29,13 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { walkSource, styleBodies, readScale, durationLiterals } from './style-corpus';
+import {
+  walkSource,
+  styleBodies,
+  readScale,
+  durationLiterals,
+  inlineStyles,
+} from './style-corpus';
 
 const SRC_DIR = join(__dirname, '..', '..', '..');
 const BASE_TOKENS = readFileSync(join(__dirname, '..', 'base.ts'), 'utf8');
@@ -58,8 +64,17 @@ const files = walkSource(SRC_DIR);
 const findings: Finding[] = [];
 let inspectedBodies = 0;
 
+/**
+ * A `<style>` block and a static `style=` attribute are the same surface as far
+ * as these rules are concerned, so they are read as one list.
+ */
+const surfaces = (file: string): { css: string; startLine: number }[] => [
+  ...styleBodies(file),
+  ...inlineStyles(file).map(({ css, line }) => ({ css, startLine: line })),
+];
+
 for (const file of files) {
-  for (const { css, startLine } of styleBodies(file)) {
+  for (const { css, startLine } of surfaces(file)) {
     inspectedBodies += 1;
     for (const { ms, line, text } of durationLiterals(css)) {
       if (ms === 0 || PERMITTED_MS.has(ms)) continue;

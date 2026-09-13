@@ -91,6 +91,42 @@ export function styleBodies(path: string): StyleBody[] {
 }
 
 /**
+ * Reads the STATIC `style` attributes a template carries.
+ *
+ * @param path - A `.vue` file.
+ * @returns One entry per attribute, with the file line it sits on.
+ *
+ * @remarks
+ * These are the design values that live outside `<style>` blocks, and every
+ * check in this folder was blind to them until now. That blindness let a
+ * firewall report a clean sweep over a surface narrower than it implied, which
+ * is the failure these checks exist to prevent, committed by the checks
+ * themselves.
+ *
+ * Bound attributes (`:style`) are deliberately excluded. Their value is
+ * computed, so there is no literal to hold to a scale, and a rule that flagged
+ * them would push authors away from the dynamic form for no gain. Only the
+ * static spelling can carry a hardcoded value, and only it is read here.
+ */
+export function inlineStyles(path: string): { css: string; line: number }[] {
+  if (!path.endsWith('.vue')) return [];
+  const source = readFileSync(path, 'utf8');
+  const template = source.match(/<template>([\s\S]*)<\/template>/);
+  if (!template) return [];
+
+  const offset = source.slice(0, template.index ?? 0).split('\n').length;
+  const found: { css: string; line: number }[] = [];
+  // A leading character that is not ':' or '-' keeps `:style` and `v-bind:style` out.
+  for (const match of template[1].matchAll(/(^|[\s"'])style="([^"]*)"/g)) {
+    found.push({
+      css: match[2],
+      line: offset + template[1].slice(0, match.index).split('\n').length - 1,
+    });
+  }
+  return found;
+}
+
+/**
  * Blanks CSS block comments while preserving line structure.
  *
  * @param css - A style body.
