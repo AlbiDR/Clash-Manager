@@ -4173,6 +4173,11 @@ $function$;
 DROP VIEW IF EXISTS features.scoring_view CASCADE;
 CREATE OR REPLACE VIEW features.scoring_view AS
  WITH
+  active_members AS (
+      SELECT m.player_tag
+        FROM drivers.members m
+       WHERE m.is_active = true
+  ),
   -- -- Voyage pipeline -----------------------------------------------------------
   voyage_history AS (
       -- Source A: individual rows still in the live contributions table.
@@ -4185,6 +4190,7 @@ CREATE OR REPLACE VIEW features.scoring_view AS
         FROM drivers.clan_voyage_contributions c
           JOIN drivers.clan_voyage v ON v.id = c.voyage_id
        WHERE v.status = 'COMPLETED'::text
+         AND c.player_tag IN (SELECT am.player_tag FROM active_members am)
 
       UNION ALL
 
@@ -4199,6 +4205,7 @@ CREATE OR REPLACE VIEW features.scoring_view AS
         FROM   drivers.player_voyage_history pvh
         CROSS  JOIN LATERAL unnest(string_to_array(pvh.history, ',')) AS entry
        WHERE   pvh.history <> ''
+         AND   pvh.player_tag IN (SELECT am.player_tag FROM active_members am)
   ),
   voyage_ranked AS (
       SELECT
@@ -4244,6 +4251,7 @@ CREATE OR REPLACE VIEW features.scoring_view AS
              avg(wa.decks_used) / 16.0 * 100.0 AS decks_pct,
              max(wa.recorded_at)               AS max_recorded
         FROM drivers.war_activity wa
+       WHERE wa.player_tag IN (SELECT am.player_tag FROM active_members am)
        GROUP BY wa.player_tag, wa.week_id
   ),
   -- Level 2: assign recency rank (1 = most recent section)
@@ -4276,6 +4284,7 @@ CREATE OR REPLACE VIEW features.scoring_view AS
              DATE_TRUNC('week', snapshot_date) AS week_start,
              MAX(donations)                    AS max_donations
         FROM drivers.member_snapshots
+       WHERE player_tag IN (SELECT am.player_tag FROM active_members am)
        GROUP BY player_tag, DATE_TRUNC('week', snapshot_date)
   ),
   -- Level 2: assign recency rank (1 = most recent calendar week)
