@@ -34,6 +34,67 @@ watch(
   },
 );
 
+/**
+ * Expand and collapse, animated on a real measured height.
+ *
+ * @remarks
+ * [DECISION LOG] MEASURED, NOT GUESSED:
+ * This animated `max-height` between a fixed 1000px and 0. That value is not
+ * the height of any card, and the clip only becomes visible once the ceiling
+ * drops below the real content height, so a short card spent most of the 300ms
+ * apparently doing nothing and then snapped shut, while a tall one moved the
+ * whole way. Nine cards of different lengths opened at nine apparent speeds,
+ * and any card taller than 1000px would have been truncated outright.
+ *
+ * The interpolable `grid-template-rows: 0fr -> 1fr` technique was tried first
+ * and does not work here: with padding and a border on the inner element the
+ * `fr` track resolves to the padding alone (measured at 33px against 363px of
+ * content), whatever `min-height` is set to. Measuring `scrollHeight` and
+ * animating to it is exact, and the duration means the same thing on every
+ * card.
+ *
+ * [THREAT:] Leaving an inline height behind after expanding would freeze the
+ * card at its opening height, so a panel that grows later - a settings list
+ * that reveals a row, a toast, an async load - would be clipped. The height is
+ * handed back to `auto` once the transition finishes.
+ *
+ * @param element - The transitioning wrapper.
+ */
+function onCollapseEnter(element: Element): void {
+  const wrapper = element as HTMLElement;
+  wrapper.style.height = "0px";
+
+  // [THREAT:] Measuring in the same frame the element is inserted reports the
+  // padding alone - 32px against a card several hundred tall - because the
+  // slotted children have not laid out yet. Forcing a reflow does not help: the
+  // children are not there to measure. Deferring one frame lets them render,
+  // and only then is scrollHeight the height this card will actually be.
+  requestAnimationFrame(() => {
+    wrapper.style.height = `${wrapper.scrollHeight}px`;
+  });
+}
+
+/**
+ * Releases the measured height once the card is open.
+ *
+ * @param element - The transitioning wrapper.
+ */
+function onCollapseAfterEnter(element: Element): void {
+  (element as HTMLElement).style.height = "";
+}
+
+/**
+ * Collapses from the card's current height rather than from a guess.
+ *
+ * @param element - The transitioning wrapper.
+ */
+function onCollapseLeave(element: Element): void {
+  const wrapper = element as HTMLElement;
+  wrapper.style.height = `${wrapper.scrollHeight}px`;
+  void wrapper.offsetHeight;
+  wrapper.style.height = "0px";
+}
+
 const toggleCollapse = () => {
   haptics.tap();
   isCollapsed.value = !isCollapsed.value;
@@ -77,13 +138,22 @@ const toggleCollapse = () => {
         </button>
       </div>
     </div>
-    <Transition name="collapse">
+    <Transition
+      name="collapse"
+      @enter="onCollapseEnter"
+      @after-enter="onCollapseAfterEnter"
+      @leave="onCollapseLeave"
+    >
       <div
         v-if="!isCollapsed"
-        class="card-body"
-        :class="bodyClass"
+        class="card-body-wrap"
       >
-        <slot />
+        <div
+          class="card-body"
+          :class="bodyClass"
+        >
+          <slot />
+        </div>
       </div>
     </Transition>
   </div>
@@ -198,20 +268,20 @@ const toggleCollapse = () => {
   padding: 0;
 }
 
-/* Collapse Transition */
+/* Height is set inline by the transition hooks from a real measurement; this
+   rule only supplies the timing and the clipping while it runs. */
 .collapse-enter-active,
 .collapse-leave-active {
-  transition: all var(--sys-motion-duration-300) var(--sys-motion-easing-standard);
-  max-height: 1000px;
-  opacity: 1;
+  overflow: hidden;
+  transition:
+    height var(--sys-motion-duration-300) var(--sys-motion-easing-standard),
+    opacity var(--sys-motion-duration-200) var(--sys-motion-easing-standard);
 }
 
 .collapse-enter-from,
 .collapse-leave-to {
-  max-height: 0;
   opacity: 0;
-  padding-top: 0;
-  padding-bottom: 0;
-  overflow: hidden;
 }
+
+
 </style>
