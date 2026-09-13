@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-12
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-13] PR #1801 [Stage 5]: Audited protocol.ts and useProgressiveList.ts against adjacent READMEs; verified accurate and no drift present
+**Domain:** documentation | **Commit:** 467cd0c8 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1801)
+**Files:** .github/nightly-logs/05-documentation-readme-coverage.log, .github/nightly-logs/05-documentation-readme-pr-body.md
+**Why:** doc-debt targets protocol.ts and useProgressiveList.ts prose match actual implementation and current version ground truth
+**Change:** Audited protocol.ts and useProgressiveList.ts against adjacent READMEs; verified accurate and no drift present
+**Result:** git diff --check passed with 0 errors and pnpm test passed 195/195 test files (1829 tests)
+**Nudges:** 0
+
+
 ### [2026-09-13] PR #1800 [Stage 4]: Audited Edge Function SQL view usage and L1/L0 performance composables (useProgressiveList.ts, StorageService.ts); widened calibration scan across 64 changed files and confirmed all 6 known database views remain unreferenced
 **Domain:** optimization | **Commit:** af05e98d | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1800)
 **Files:** .github/nightly-logs/04-optimization-coverage.log, .github/nightly-logs/04-optimization-pr-body.md
