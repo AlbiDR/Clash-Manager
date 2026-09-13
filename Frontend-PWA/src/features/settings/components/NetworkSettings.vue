@@ -283,13 +283,10 @@ function saveApiUrl() {
   opacity: 0.3;
 }
 
+/* The label recipe now comes from the global .field-label primitive; only this
+   view's own spacing below it stays local. */
 .field-label {
-  font-size: 10px;
-  font-weight: 900;
-  opacity: 0.4;
-  margin-bottom: 8px;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  margin-bottom: var(--sys-space-8);
 }
 .url-readout {
   background: var(--sys-color-surface-container-highest);

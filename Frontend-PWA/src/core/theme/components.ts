@@ -249,6 +249,20 @@ a { text-decoration: underline; color: inherit; }
   box-shadow: 0 0 0 3px rgba(var(--sys-color-primary-rgb), 0.12);
 }
 
+/* The label half of the same trio the .glass-input block above consolidated.
+   It was left behind, so .field-label stayed declared three times: identical in
+   VoyageSetupForm and DurationInput, and divergent in NetworkSettings at
+   0.05em tracking and 0.4 opacity against the others' 0.06em and 0.45. Three
+   labels that sit above three visually identical fields rendered at two
+   different weights of spacing. 0.06em is exactly --sys-tracking-wider. */
+.field-label {
+  font-size: var(--sys-typescale-label-md);
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: var(--sys-tracking-wider);
+  opacity: 0.45;
+}
+
 .glass-input:disabled {
   opacity: 0.5;
   cursor: not-allowed;

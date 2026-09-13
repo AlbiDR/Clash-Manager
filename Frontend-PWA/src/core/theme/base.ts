@@ -61,6 +61,10 @@ export const staticTokens = `
   --sys-typescale-player:   16px;
   --sys-typescale-title-sm: 18px;
   --sys-typescale-score:    19px;
+  /* Four components reached for 20px independently, between title-sm at 18 and
+     title-lg at 24, which is a step the scale was missing rather than four
+     mistakes. Naming it stops the fifth from being invented. */
+  --sys-typescale-title-md: 20px;
   --sys-typescale-title-lg: 24px;
 
   /* ── MOTION DURATIONS ── */

@@ -220,7 +220,7 @@ const shouldShowBanner = computed(() => {
 }
 
 .banner-icon {
-  font-size: 20px;
+  font-size: var(--sys-typescale-title-md);
   line-height: 1;
   display: flex;
   align-items: center;

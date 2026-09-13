@@ -206,14 +206,6 @@ watch(
   gap: 8px;
 }
 
-.field-label {
-  font-size: 10px;
-  font-weight: 900;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  opacity: 0.45;
-}
-
 /* --- Inputs ---
    .glass-input is a global field-surface primitive in @core/theme/components.ts.
    This component supplies only the dimensions, via .target-input below. */

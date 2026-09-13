@@ -264,7 +264,7 @@ const engineStatus = computed(() => {
 }
 
 .level-badge .num {
-  font-size: 20px;
+  font-size: var(--sys-typescale-title-md);
   font-weight: 900;
   color: var(--sys-color-on-surface);
 }

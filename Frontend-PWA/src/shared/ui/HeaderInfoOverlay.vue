@@ -146,7 +146,7 @@ watch(
 
 .expansion-header h3 {
   margin: 0;
-  font-size: 20px;
+  font-size: var(--sys-typescale-title-md);
   font-weight: 950;
   color: var(--sys-color-on-surface);
   letter-spacing: -0.03em;

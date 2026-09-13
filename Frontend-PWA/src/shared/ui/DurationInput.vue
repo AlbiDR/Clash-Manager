@@ -131,14 +131,6 @@ function onInput(event: Event, durationUnitKey: keyof DurationModel) {
   gap: 8px;
 }
 
-.field-label {
-  font-size: 10px;
-  font-weight: 900;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  opacity: 0.45;
-}
-
 /* .glass-input is a global field-surface primitive in @core/theme/components.ts.
    This component supplies only the dimensions, via .t2t-input below. */
 
@@ -159,7 +151,7 @@ function onInput(event: Event, durationUnitKey: keyof DurationModel) {
 .t2t-input {
   width: 100%;
   height: 48px;
-  font-size: 20px;
+  font-size: var(--sys-typescale-title-md);
   text-align: center;
   padding: 0;
 }
@@ -173,7 +165,8 @@ function onInput(event: Event, durationUnitKey: keyof DurationModel) {
 }
 
 .t2t-sep {
-  font-size: 22px;
+  /* Matches .t2t-input, the digits this colon sits between. */
+  font-size: var(--sys-typescale-title-md);
   font-weight: 900;
   opacity: 0.2;
   padding-bottom: 16px;
