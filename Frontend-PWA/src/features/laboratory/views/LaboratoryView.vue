@@ -142,11 +142,6 @@ const { data: globalData } = storeToRefs(clashDataStore);
   padding: 0 4px;
 }
 
-.laboratory-header {
-  margin-bottom: 20px;
-  padding: 0 4px;
-}
-
 .dashboard-sidebar {
   display: grid;
   grid-template-columns: 1fr;

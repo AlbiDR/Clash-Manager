@@ -68,7 +68,7 @@ export const componentStyles = `
    LINKS & INTERACTION
    ========================================= */
 a { text-decoration: underline; color: inherit; }
-.btn-action, .icon-button, .fab-btn, .dock-item { text-decoration: none !important; }
+.btn-action, .fab-btn, .dock-item { text-decoration: none !important; }
 
 .squish-interaction {
   transition: transform var(--sys-motion-duration-200) var(--sys-motion-spring), background-color var(--sys-motion-duration-200) ease, border-color var(--sys-motion-duration-200) ease;
@@ -76,7 +76,7 @@ a { text-decoration: underline; color: inherit; }
 .squish-interaction:active { transform: scale(0.96) translateY(1px); }
 .card:active, button:active { transform: scale(0.98); }
 
-.card, .hit-target, button, a, input, select, .icon-button {
+.card, .hit-target, button, a, input, select {
   touch-action: manipulation;
   transition: transform var(--sys-motion-duration-200) var(--sys-motion-spring), opacity var(--sys-motion-duration-200) ease, background-color var(--sys-motion-duration-200) ease, box-shadow var(--sys-motion-duration-200) ease;
 }

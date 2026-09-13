@@ -262,8 +262,4 @@ button, a, [role="button"], [role="link"], input, select, textarea {
   overscroll-behavior-y: auto;
 }
 
-/* Enforce containment option for custom overlays */
-.prevent-overscroll {
-  overscroll-behavior-y: contain;
-}
 `;
