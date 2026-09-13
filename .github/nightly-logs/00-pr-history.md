@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-12
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-13] PR #1800 [Stage 4]: Audited Edge Function SQL view usage and L1/L0 performance composables (useProgressiveList.ts, StorageService.ts); widened calibration scan across 64 changed files and confirmed all 6 known database views remain unreferenced
+**Domain:** optimization | **Commit:** af05e98d | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1800)
+**Files:** .github/nightly-logs/04-optimization-coverage.log, .github/nightly-logs/04-optimization-pr-body.md
+**Why:** Substrate hygiene audit and widened calibration scan confirmed zero new orphaned views or logic bottlenecks; 64 candidate files inspected with zero source mutations required
+**Change:** Audited Edge Function SQL view usage and L1/L0 performance composables (useProgressiveList.ts, StorageService.ts); widened calibration scan across 64 changed files and confirmed all 6 known database views remain unreferenced
+**Result:** 195 test files passed (1829 tests)
+**Nudges:** 0
+
+
 ### [2026-09-13] PR #1799 [Stage 3]: Audited master migration 20260531232406_master_migration.sql against 33 replayed migrations with 0 pending migrations; verified RLS compliance, search_path isolation, and zero em-dash/emoji formatting constraints.
 **Domain:** database | **Commit:** de3de9ed | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1799)
 **Files:** .github/nightly-logs/03-baseline-consolidation-coverage.log, .github/nightly-logs/03-baseline-consolidation-pr-body.md
