@@ -1,23 +1,23 @@
 ### Nightly Stage 11: APK Optimization - Native Wrapper Performance Engineer
 
-**Status:** CLEAN
+**Status:** CHANGED
 
-In plain terms: nothing needed fixing. This run checked the APK optimization area and found it already correct, so the only file here is the log recording that the check happened.
+In plain terms: this changes 1 code file, so the app's behaviour may be affected. No tests were added or changed alongside it.
 
-**What was checked:** Verified MainActivity.java, sw.ts, and vite.config.ts WebView, SW route, and bundle chunking configurations; 0 optimization defects found
+**What changed:** Excluded social sharing card asset from PWA precache footprint
 
-**Why:** All APK wrapper settings, Service Worker caching strategies, and Vite bundle chunking configurations match optimal baselines
+**Why:** og-card.png (313 KB) is a social sharing preview image not required by the PWA runtime app shell; excluding it reduces precache footprint from 327.8 KB to 11.1 KB
 
-**Result:** pnpm audit:apk PASS; pnpm apk:verify:source PASS
+**Result:** audit:apk-perf PASS, 6 files 11.1 KB precached
 
-**Files changed:** .github/nightly-logs/11-apk-optimization-coverage.log
+**Files changed:** .github/nightly-logs/11-apk-optimization-coverage.log, Frontend-PWA/vite.config.ts
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: apk
-  Why: All APK wrapper settings, Service Worker caching strategies, and Vite bundle chunking configurations match optimal baselines
-  Change: Verified MainActivity.java, sw.ts, and vite.config.ts WebView, SW route, and bundle chunking configurations; 0 optimization defects found
-  Result: pnpm audit:apk PASS; pnpm apk:verify:source PASS
-  Files: .github/nightly-logs/11-apk-optimization-coverage.log
+  Why: og-card.png (313 KB) is a social sharing preview image not required by the PWA runtime app shell; excluding it reduces precache footprint from 327.8 KB to 11.1 KB
+  Change: Excluded social sharing card asset from PWA precache footprint
+  Result: audit:apk-perf PASS, 6 files 11.1 KB precached
+  Files: .github/nightly-logs/11-apk-optimization-coverage.log, Frontend-PWA/vite.config.ts
   Nudges: 0
 -->

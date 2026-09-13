@@ -4,20 +4,20 @@
 
 In plain terms: nothing needed fixing. This run checked the version integrity area and found it already correct, so the only file here is the log recording that the check happened.
 
-**What was checked:** Audit complete: no version drift or catalog violations detected
+**What was checked:** Scanned catalog usage across Frontend-PWA/Backend package.json, verified version 14.50.66 in root, Frontend-PWA, and Backend, and ran pnpm audit:version confirming zero drift across all 10 tracked manifests and derived declarations.
 
-**Why:** All monorepo package manifests and derived declarations are synchronized at ground truth version 14.50.54
+**Why:** Catalog protocol adherence and package versions are fully reconciled with ground truth version 14.50.66, and pnpm audit:version confirmed no drift in derived files or badges.
 
-**Result:** Passed catalog scan across Frontend-PWA and Backend package.json, verified package versions across package.json, Frontend-PWA/package.json, and Backend/package.json, and verified pnpm audit:version zero-drift result.
+**Result:** pnpm audit:version reported 0 drift lines across 10 tracked manifests and derived declarations.
 
 **Files changed:** .github/nightly-logs/07-version-integrity-coverage.log
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: versioning
-  Why: All monorepo package manifests and derived declarations are synchronized at ground truth version 14.50.54
-  Change: Audit complete: no version drift or catalog violations detected
-  Result: Passed catalog scan across Frontend-PWA and Backend package.json, verified package versions across package.json, Frontend-PWA/package.json, and Backend/package.json, and verified pnpm audit:version zero-drift result.
+  Why: Catalog protocol adherence and package versions are fully reconciled with ground truth version 14.50.66, and pnpm audit:version confirmed no drift in derived files or badges.
+  Change: Scanned catalog usage across Frontend-PWA/Backend package.json, verified version 14.50.66 in root, Frontend-PWA, and Backend, and ran pnpm audit:version confirming zero drift across all 10 tracked manifests and derived declarations.
+  Result: pnpm audit:version reported 0 drift lines across 10 tracked manifests and derived declarations.
   Files: .github/nightly-logs/07-version-integrity-coverage.log
   Nudges: 0
 -->

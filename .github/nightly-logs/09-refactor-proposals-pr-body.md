@@ -4,20 +4,20 @@
 
 In plain terms: nothing needed fixing. This run checked the refactor area and found it already correct, so the only file here is the log recording that the check happened.
 
-**What was checked:** Target A/B/C structural scan and defect hunt verified 0 depcruise violations, 64 candidate files, and 0 defect hunt failures across core services (apkResolverUtils.ts, useProgressiveList.ts, protocol.ts); consecutive-clean: 1.
+**What was checked:** Structural scan found 64 candidate files in changed-files.txt and 0 dep-violations. consecutive-clean: 2. Inspected protocol.ts, profiler.ts, VoyageBanner.vue, StatusPill.vue, SummaryCard.vue. Defect hunt verified protocol rate-limiting.
 
-**Why:** Substrate is fully compliant with CleanStack Architecture ADR; candidate modules were evaluated and found structurally sound or requiring blast radius widening for further split; defect hunt yielded 0 failing specs.
+**Why:** CleanStack ADR alignment is fully satisfied across all feature components, composables, and edge function services. Monorepo tests (195 PWA test files / 1829 tests, 25 Backend test files / 277 tests) pass cleanly.
 
-**Result:** depcruise PASS (0 violations, 489 modules); pnpm -F clash-manager-pwa test PASS (195 test files, 1829 tests); clean-calibration threshold 7 with consecutive-clean 1.
+**Result:** PASS: Frontend-PWA tests (195/195 files, 1829/1829 tests), Backend tests (25/25 files, 277/277 tests), depcruise (0 violations), vue-tsc type-check (clean).
 
 **Files changed:** .github/nightly-logs/09-refactor-proposals-coverage.log
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: architecture
-  Why: Substrate is fully compliant with CleanStack Architecture ADR; candidate modules were evaluated and found structurally sound or requiring blast radius widening for further split; defect hunt yielded 0 failing specs.
-  Change: Target A/B/C structural scan and defect hunt verified 0 depcruise violations, 64 candidate files, and 0 defect hunt failures across core services (apkResolverUtils.ts, useProgressiveList.ts, protocol.ts); consecutive-clean: 1.
-  Result: depcruise PASS (0 violations, 489 modules); pnpm -F clash-manager-pwa test PASS (195 test files, 1829 tests); clean-calibration threshold 7 with consecutive-clean 1.
+  Why: CleanStack ADR alignment is fully satisfied across all feature components, composables, and edge function services. Monorepo tests (195 PWA test files / 1829 tests, 25 Backend test files / 277 tests) pass cleanly.
+  Change: Structural scan found 64 candidate files in changed-files.txt and 0 dep-violations. consecutive-clean: 2. Inspected protocol.ts, profiler.ts, VoyageBanner.vue, StatusPill.vue, SummaryCard.vue. Defect hunt verified protocol rate-limiting.
+  Result: PASS: Frontend-PWA tests (195/195 files, 1829/1829 tests), Backend tests (25/25 files, 277/277 tests), depcruise (0 violations), vue-tsc type-check (clean).
   Files: .github/nightly-logs/09-refactor-proposals-coverage.log
   Nudges: 0
 -->

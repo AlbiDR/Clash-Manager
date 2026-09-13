@@ -379,11 +379,19 @@
   - Resolution Details: Watchdog nudge successfully recovered the session (`ok: true`). Stage 3 completed and published a CLEAN coverage log entry for 2026-09-11. Pipeline intervention rate for 2026-09-11: 1/12 (8.3%).
 
 * Missing-Run / Unobservable Events on 2026-09-12:
-  - Stages: Stage 12 (APK-UX) [MISSING-OUTPUT] (2026-09-12).
-  - State: [MISSING-OUTPUT]
+  - Stages: Stage 12 (APK-UX) [RESOLVED - monitor] (2026-09-13).
+  - State: [RESOLVED - monitor]
   - Symptom: No published coverage log entry for 2026-09-12 in 12-apk-ux-coverage.log at audit time.
-  - Root Cause: UNOBSERVABLE without authenticated session evidence. Ledger shows state EXPECTED for 2026-09-12.
-  - Recommended Fix: Monitor subsequent run for automatic recovery or session completion. Pipeline intervention rate for 2026-09-12: 0/11 (0.0%).
+  - Root Cause: Session completion/publication occurred post-audit.
+  - Resolution Details: Stage 12 recovered on September 13, 2026, publishing PR #1796 with a CLEAN coverage log entry.
+
+* Watchdog Recovery Nudge Interventions on 2026-09-13:
+  - Stages: Stage 6 (TSDoc), Stage 11 (APK-Optimization)
+  - State: [RESCUED - monitor] (2026-09-13)
+  - Sessions: Stage 6 `sessions/6231708758029026538`, Stage 11 `sessions/1384581169674080644`
+  - Symptom: Stage 6 session required watchdog nudge (`nudgedAt: 2026-09-13T05:20:12.481Z`), published PR #1802. Stage 11 session required watchdog nudge (`nudgedAt: 2026-09-13T10:36:08.041Z`), published PR #1808.
+  - Root Cause: Sessions entered prolonged post-commit or finalization reserves prior to watchdog recovery dispatch.
+  - Resolution Details: Watchdog nudges successfully recovered both sessions (`ok: true`). Stage 6 published PR #1802 (CLEAN) and Stage 11 published PR #1808 (RECOVERABLE). Pipeline intervention rate for 2026-09-13: 2/11 (18.2%).
 
 ## Section 2: Cross-Stage Coherence Bugs (Priority 2)
 
@@ -427,53 +435,53 @@
 ## Section 3: No-Diff and Low-Value Audit (Priority 3)
 
 * Stage 1 (Harden):
-  - Consecutive No-Diff Days: 19 (CLEAN logged on 2026-09-11 [merged via PR #1784 at 23:18Z]; audit duration: 6m)
+  - Consecutive No-Diff Days: 21 (CLEAN logged on 2026-09-13 [merged via PR #1797]; audit duration: 5m)
   - Analysis: Completed runtime integrity audit pass with zero threat vectors across Edge Functions and schema boundaries.
 
 * Stage 2 (Verify):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-09-12 in useProgressiveList.spec.ts; audit duration: 19m)
-  - Analysis: Expanded unit test coverage for useProgressiveList composable.
+  - Consecutive No-Diff Days: 1 (CLEAN logged on 2026-09-13 [merged via PR #1798]; audit duration: 7m)
+  - Analysis: Unit tests verified clean with 0 test failures or regressions.
 
 * Stage 3 (Baseline Consolidation):
-  - Consecutive No-Diff Days: 3 (CLEAN logged on 2026-09-12; audit duration: 4m)
-  - Analysis: Baseline current across 32 migrations with 0 pending. Read-only audit confirmed RLS compliance, search_path isolation, and zero formatting deviations.
+  - Consecutive No-Diff Days: 4 (CLEAN logged on 2026-09-13 [merged via PR #1799]; audit duration: 3m)
+  - Analysis: Baseline current across 32 migrations with 0 pending. Read-only audit confirmed RLS compliance and search_path isolation.
 
 * Stage 4 (Optimization):
-  - Consecutive No-Diff Days: 7 (CLEAN logged on 2026-09-12; audit duration: 5m)
-  - Analysis: Audited Edge Function SQL view usage and L1 performance composables (useProgressiveList.ts, protocol.ts); confirmed 56 changed files inspected with 0 code mutations required. Note: Flagged historical 0m zero-minute audit on 2026-09-07 ("Audited Edge Function SQL view usage...").
+  - Consecutive No-Diff Days: 8 (CLEAN logged on 2026-09-13 [merged via PR #1800]; audit duration: 6m)
+  - Analysis: Audited Edge Function SQL view usage and L1/L0 performance composables (useProgressiveList.ts, StorageService.ts); widened calibration scan across 64 changed files and confirmed all 6 known database views remain unreferenced.
 
 * Stage 5 (README):
-  - Consecutive No-Diff Days: 1 (CLEAN logged on 2026-09-12; audit duration: 4m)
-  - Analysis: Audited useConsoleController.ts against core services README; verified accurate and no drift present.
+  - Consecutive No-Diff Days: 2 (CLEAN logged on 2026-09-13 [merged via PR #1801]; audit duration: 5m)
+  - Analysis: Audited protocol.ts and useProgressiveList.ts against adjacent READMEs; verified accurate and no drift present.
 
 * Stage 6 (TSDoc):
-  - Consecutive No-Diff Days: 1 (CLEAN logged on 2026-09-12; audit duration: 5m)
-  - Analysis: Audited useConsoleController.ts interface contracts and inline decision logs; all annotations synchronized with recent stage updates.
+  - Consecutive No-Diff Days: 2 (CLEAN logged on 2026-09-13 [merged via PR #1802]; audit duration: 4m)
+  - Analysis: Audited protocol.ts and useProgressiveList.ts for doc debt; verified interface contracts and annotations are synchronized.
 
 * Stage 7 (Version Integrity):
-  - Consecutive No-Diff Days: 132 (CLEAN logged on 2026-09-12; audit duration: 4m)
-  - Analysis: Monorepo package versions and catalog references verified across all targets (ground truth ground-truth compliant, 0 drift).
+  - Consecutive No-Diff Days: 133 (CLEAN logged on 2026-09-13 [merged via PR #1803]; audit duration: 6m)
+  - Analysis: Scanned catalog usage across Frontend-PWA/Backend package.json, verified version 14.50.66 in root, Frontend-PWA, and Backend, and ran pnpm audit:version confirming zero drift across all 10 tracked manifests.
 
 * Stage 8 (Dependency Audit):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-09-12 in Backend/package.json; audit duration: 7m)
-  - Analysis: Bumped p-limit from 7.3.1 to 7.3.2 and updated major version watchlist.
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-09-13 in pnpm-lock.yaml; audit duration: 5m)
+  - Analysis: Bumped @supabase/supabase-js to ^2.116.0 in workspace catalog and updated major version watchlist.
 
 * Stage 9 (Refactor):
-  - Consecutive No-Diff Days: 2 (CLEAN logged on 2026-09-12; audit duration: 6m)
-  - Analysis: Target A/B/C structural scan and defect hunt verified 0 depcruise violations across 64 candidate files.
+  - Consecutive No-Diff Days: 3 (CLEAN logged on 2026-09-13 [merged via PR #1805]; audit duration: 7m)
+  - Analysis: Structural scan found 64 candidate files in changed-files.txt and 0 dep violations (consecutive-clean 2). Defect hunt verified protocol rate-limiting.
 
 * Stage 10 (APK-Integrity):
-  - Consecutive No-Diff Days: 65 (CLEAN logged on 2026-09-12; audit duration: 6m)
-  - Analysis: Verified APK and PWA wrapper integrity across asset links, manifest parity, version code/name sync, release metadata, and security policy.
+  - Consecutive No-Diff Days: 66 (CLEAN logged on 2026-09-13 [merged via PR #1806]; audit duration: 4m)
+  - Analysis: Verified PWA and APK wrapper integrity across asset links, manifest parity, version code/name sync, release metadata, and security cleartext policy.
 
 * Stage 11 (APK-Optimization):
-  - Consecutive No-Diff Days: 55 (CLEAN logged on 2026-09-12; audit duration: 4m)
-  - Analysis: Verified MainActivity.java, sw.ts, and vite.config.ts WebView, SW route, and bundle chunking configurations.
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-09-13 in Frontend-PWA/vite.config.ts; audit duration: 5m)
+  - Analysis: Excluded social sharing card asset from PWA precache footprint.
 
 * Stage 12 (APK-UX):
-  - Consecutive No-Diff Days: 12 (MISSING-OUTPUT on 2026-09-12; previous CLEAN on 2026-09-11; audit duration: 2m)
-  - Analysis: No published coverage log entry for 2026-09-12 at audit time. Note: Flagged historical 0m zero-minute audit on 2026-09-08 ("No UX issues found across 75 examined files in 10 UX categories"). Calibration due flag set to NO.
+  - Consecutive No-Diff Days: 1 (CLEAN logged on 2026-09-13 [merged via PR #1807]; audit duration: 5m)
+  - Analysis: Automated hybrid shell UX sweep completed across 75 files with 0 candidate violations.
 
 * Stage 13 (Self-Healing):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-09-12; audit duration: 4m)
-  - Analysis: Completed daily self-healing audit pass for 2026-09-12: recorded Stage 12 MISSING-OUTPUT event, verified 0 watchdog nudges (intervention rate 0/11 = 0.0%), flagged two historical 0m zero-minute audits (S04 on 2026-09-07 and S12 on 2026-09-08), verified zero unfinalized sentinels or failure classes across preceding merged stages, and updated Section 3 metrics.
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-09-13; audit duration: 4m)
+  - Analysis: Completed daily self-healing audit pass for 2026-09-13: recorded Stage 6 and Stage 11 watchdog recovery dispatches (intervention rate 2/11 = 18.2%), marked 2026-09-12 Stage 12 MISSING-OUTPUT event as resolved following PR #1796 merge, verified zero unfinalized sentinels or failure classes across preceding merged stages, and updated Section 3 metrics.
