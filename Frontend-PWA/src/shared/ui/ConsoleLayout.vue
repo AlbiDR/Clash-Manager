@@ -142,18 +142,25 @@ onUnmounted(() => {
 
 <template>
   <div class="view-container">
+    <!-- [DECISION LOG] THE PULL STATE LIVES ON THE SCROLLER, NOT THE SPINNER:
+         All three pull-to-refresh rules are written against an ancestor
+         (`.view-content.is-pulling` for the content follow, `.is-pulling
+         .ptr-indicator` for the reveal, `.is-refreshing .ptr-icon` for the
+         spin), and these classes used to be bound one level too deep, on the
+         indicator itself. Two of the three could therefore never match: the
+         content never followed the finger and the indicator never rose above
+         `opacity: 0`. The gesture itself always worked, which is why this
+         survived - a pull did refresh the list, in complete silence. -->
     <div
       class="view-content"
+      :class="{ 'is-refreshing': props.isRefreshing, 'is-pulling': isPulling }"
       :style="ptrStyle"
       @touchstart="onTouchStart"
       @touchmove="onTouchMove"
       @touchend="onTouchEnd"
     >
       <!-- Pull to Refresh Indicator -->
-      <div
-        class="ptr-indicator"
-        :class="{ 'is-refreshing': props.isRefreshing, 'is-pulling': isPulling }"
-      >
+      <div class="ptr-indicator">
         <div class="ptr-spinner">
           <Icon
             v-if="!props.isRefreshing"
@@ -173,7 +180,6 @@ onUnmounted(() => {
         :current-sort="props.currentSort"
         :loading="displayLoading"
         :remote-info="props.remoteInfo"
-        reserve-extra-space
         @update:search="(searchQueryCandidate: string) => emit('update:search', searchQueryCandidate)"
         @update:sort="(targetSortValue: string) => emit('update:sort', targetSortValue)"
         @refresh="emit('refresh')"

@@ -55,7 +55,14 @@ export const componentStyles = `
   transform: scale(0.95);
 }
 
-.header-wrapper.is-scrolled .view-title { font-size: var(--sys-typescale-title-sm); }
+/* The collapsing console header. is-scrolled is bound on .console-header
+   (ConsoleHeader.vue), never on a .header-wrapper - no such class exists
+   anywhere in the app - so this rule has never matched and the header shrank
+   its padding and radius around a title that stayed at full size. .view-title
+   already carries the transition this was written to animate.
+   NOTE: this file is a template literal, so comments here must never contain a
+   backtick or a dollar-brace. */
+.console-header.is-scrolled .view-title { font-size: var(--sys-typescale-title-sm); }
 
 /* =========================================
    LINKS & INTERACTION

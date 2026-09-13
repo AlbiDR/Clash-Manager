@@ -32,8 +32,10 @@ describe("StatusPill", () => {
         await wrapper.trigger("click");
       }
       
-      const expectedText = type === "loading" ? "Syncing..." : `Status ${type}`;
-      expect(wrapper.text()).toContain(expectedText);
+      // Every type renders the caller's own `text`, loading included. This
+      // used to expect a hardcoded "Syncing..." for the loading branch, which
+      // recorded the defect rather than the contract.
+      expect(wrapper.text()).toContain(`Status ${type}`);
       expect(wrapper.classes()).toContain(type);
       expect(wrapper.find(".status-dot").exists()).toBe(true);
       
@@ -77,7 +79,17 @@ describe("StatusPill", () => {
       props: { type: "loading", text: "Loading", nominal: true },
     });
     expect(wrapper.find(".base-label").exists()).toBe(true);
-    expect(wrapper.text()).toContain("Syncing...");
+    expect(wrapper.text()).toContain("Loading");
+  });
+
+  it("speaks the caller's loading label rather than a hardcoded one", () => {
+    // Laboratory authors "Scanning Vault..." and "Computing Trajectory...", and
+    // Settings distinguishes "Connecting..." from "Syncing...". All four were
+    // discarded while this branch rendered a literal.
+    const wrapper = mount(StatusPill, {
+      props: { type: "loading", text: "Scanning Vault...", nominal: false },
+    });
+    expect(wrapper.find(".base-label").text()).toBe("Scanning Vault...");
   });
 
   it("displays SUPABASE source when remoteInfo.source is SUPABASE", async () => {

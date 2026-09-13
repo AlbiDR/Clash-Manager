@@ -106,15 +106,15 @@ const { targets, isRefreshing, refresh } = useBackendRefresher();
 </template>
 
 <style scoped>
-.no-padding {
-  padding: 0 !important;
-}
-
+/* Horizontal inset matches `.card-body`'s var(--sys-space-16), so these rows
+   line up with every other settings card while their dividers still run the
+   full width of the card. `.no-padding` itself now lives in SettingsCard,
+   which owns the element it applies to. */
 .refresh-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 20px;
+  padding: var(--sys-space-16);
   border-bottom: 1px solid rgba(0, 0, 0, 0.05);
   user-select: none; /* Text Selection Containment (Target A.3) */
   -webkit-user-select: none;

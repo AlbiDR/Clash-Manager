@@ -74,10 +74,16 @@ const {
     <div class="pill-content-wrapper">
       <div class="pill-content">
         <!-- BASE LABEL -->
+        <!-- [THREAT:] This branch used to hardcode "Syncing...", so the `text`
+             prop was silently discarded for every loading state on every
+             console. Laboratory authored "Scanning Vault..." and "Computing
+             Trajectory..." and neither ever appeared, and Settings' distinct
+             "Connecting..." state was reported to the operator as "Syncing...",
+             which is a different claim about what the app is doing. -->
         <span
           v-if="props.type === 'loading'"
           class="status-label technical base-label"
-        >Syncing...</span>
+        >{{ displayText }}</span>
         <span
           v-else
           class="status-label technical base-label"

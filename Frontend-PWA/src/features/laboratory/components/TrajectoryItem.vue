@@ -240,13 +240,6 @@ defineProps<{
   text-overflow: ellipsis;
 }
 
-.efficiency-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 8px;
-}
-
 .efficiency-slab {
   display: inline-flex;
   align-items: center;
@@ -284,12 +277,6 @@ defineProps<{
   height: 12px;
   object-fit: contain;
   filter: drop-shadow(0 1px 2px rgba(0,0,0,0.1));
-}
-
-.eff-divider {
-  opacity: 0.3;
-  font-size: 10px;
-  font-weight: 700;
 }
 
 .eff-val {

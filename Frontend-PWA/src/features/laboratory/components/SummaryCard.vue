@@ -376,42 +376,5 @@ const engineStatus = computed(() => {
 }
 
 
-.efficiency-strip {
-  margin-top: 32px;
-  background: var(--sys-color-surface-container-highest);
-  padding: 16px;
-  border-radius: var(--sys-shape-corner-large);
-  border: 1px solid var(--sys-color-outline-variant);
-}
-
-.track {
-  height: 8px;
-  background: rgba(0,0,0,0.1);
-  border-radius: 4px;
-  overflow: hidden;
-  margin-bottom: 12px;
-}
-
-.fill {
-  height: 100%;
-  background: linear-gradient(90deg, var(--sys-color-primary), var(--sys-color-success));
-  border-radius: 4px;
-  transition: width 1s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-.efficiency-details {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-size: 11px;
-  font-weight: 850;
-  color: var(--sys-color-on-surface-variant);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.efficiency-details b {
-  color: var(--sys-color-success);
-}
 
 </style>

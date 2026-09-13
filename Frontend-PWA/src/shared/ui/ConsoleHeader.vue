@@ -23,7 +23,6 @@ const props = defineProps<{
   currentSort?: string;
   loading?: boolean;
   remoteInfo?: ConsoleRemoteInfo;
-  reserveExtraSpace?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -63,7 +62,7 @@ const handleOpenDashboard = () => {
 <template>
   <header
     class="console-header"
-    :class="{ 'is-scrolled': unref(isScrolled), 'has-extra': props.reserveExtraSpace }"
+    :class="{ 'is-scrolled': unref(isScrolled) }"
   >
     <div class="header-main">
       <div class="title-row">

@@ -107,12 +107,18 @@ const {
   box-shadow: var(--sys-elevation-1);
 }
 
-.mode-master-container.active .toggle-row .row-label {
-  color: var(--sys-color-on-primary-container) !important;
+/* [THREAT:] These were written as `.toggle-row .row-label`, naming a class
+   that exists nowhere - SettingRow's root is `.setting-row` - and even with
+   the right name a scoped block cannot reach into a child component without
+   `:deep()`. Both conditions failed at once, so the active master container
+   painted its own background while the row inside it kept resting-surface ink
+   on top of it. */
+.mode-master-container.active :deep(.row-label) {
+  color: var(--sys-color-on-primary-container);
 }
 
-.mode-master-container.active .toggle-row .row-desc {
-  color: var(--sys-color-on-primary-container) !important;
+.mode-master-container.active :deep(.row-desc) {
+  color: var(--sys-color-on-primary-container);
   opacity: 0.7;
 }
 

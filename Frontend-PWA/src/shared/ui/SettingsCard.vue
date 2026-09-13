@@ -151,6 +151,18 @@ const toggleCollapse = () => {
   padding: var(--sys-space-16);
 }
 
+/* [DECISION LOG] THE bodyClass CONTRACT IS HONOURED HERE:
+   `bodyClass` lands on `.card-body`, which this component owns, so a modifier
+   for it has to be declared in this scoped block. BackendRefresher declared
+   its own `.no-padding` and passed the name across, where Vue's scoped
+   attribute made it unmatchable - the card kept its inset and the rows it
+   meant to run edge to edge sat 20px in from every other settings card's 16px.
+   Full-bleed rows with dividers that reach the card edges is a settings
+   pattern worth having, so the modifier lives here rather than being deleted. */
+.card-body.no-padding {
+  padding: 0;
+}
+
 /* Collapse Transition */
 .collapse-enter-active,
 .collapse-leave-active {
