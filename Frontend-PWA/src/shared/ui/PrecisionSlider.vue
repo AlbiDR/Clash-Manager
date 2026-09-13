@@ -334,7 +334,7 @@ function handleTrackKeyDown(keyboardEvent: KeyboardEvent): void {
   font-family: var(--sys-font-family-mono);
   font-variant-numeric: tabular-nums;
   font-size: var(--ps-readout-size);
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: -0.01em;
   color: var(--sys-color-on-surface);
 }

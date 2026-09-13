@@ -96,7 +96,7 @@ const isRetryInteractionActive = ref(false);
   background: var(--sys-surface-glass);
 
   color: var(--sys-color-on-error-container);
-  border-radius: 32px;
+  border-radius: var(--sys-shape-corner-extra-large);
   border: 1px solid var(--sys-surface-glass-border);
   box-shadow: var(--sys-elevation-3);
   margin: 20px 0;

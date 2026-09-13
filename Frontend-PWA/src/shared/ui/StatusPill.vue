@@ -272,7 +272,7 @@ const {
 .technical {
   font-family: var(--sys-font-family-mono);
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: 0.02em;
   text-transform: uppercase;
   line-height: 1;

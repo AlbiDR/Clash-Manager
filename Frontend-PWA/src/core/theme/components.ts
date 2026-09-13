@@ -120,7 +120,7 @@ a { text-decoration: underline; color: inherit; }
   align-items: center;
   justify-content: center;
   font-size: var(--sys-typescale-label-md);
-  font-weight: 800;
+  font-weight: 700;
   color: var(--sys-color-on-surface);
   font-family: var(--sys-font-family-mono);
   text-transform: uppercase;
@@ -172,7 +172,7 @@ a { text-decoration: underline; color: inherit; }
 
 .stat-score {
   font-size: var(--sys-typescale-score);
-  font-weight: 950;
+  font-weight: 700;
   font-family: var(--sys-font-family-mono);
   letter-spacing: var(--sys-tracking-tightest);
   z-index: 1;
@@ -238,7 +238,7 @@ a { text-decoration: underline; color: inherit; }
   border-radius: var(--sys-shape-corner-input);
   color: var(--sys-color-on-surface);
   font-family: var(--sys-font-family-mono);
-  font-weight: 800;
+  font-weight: 700;
   outline: none;
   transition: border-color var(--sys-motion-duration-200) ease,
     box-shadow var(--sys-motion-duration-200) ease;

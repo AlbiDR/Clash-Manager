@@ -79,7 +79,7 @@ const { active, resolve } = useConfirm();
   max-width: 360px;
   background: var(--sys-surface-glass);
   border: 1px solid var(--sys-surface-glass-border);
-  border-radius: 28px;
+  border-radius: var(--sys-shape-corner-extra-large);
   padding: 24px;
   box-shadow: var(--sys-elevation-4);
   display: flex;

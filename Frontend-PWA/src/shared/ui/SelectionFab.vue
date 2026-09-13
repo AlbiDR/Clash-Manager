@@ -243,7 +243,7 @@ function handleFabAbortHarvest() {
 .blast-label {
   font-family: var(--sys-font-family-mono);
   font-size: 13px;
-  font-weight: 800;
+  font-weight: 700;
   color: var(--sys-color-on-surface);
 }
 

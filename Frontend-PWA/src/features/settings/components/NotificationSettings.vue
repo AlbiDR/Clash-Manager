@@ -243,7 +243,7 @@ const threshold = computed(() => modules.notificationThreshold);
   background: transparent;
   color: var(--sys-color-outline);
   border-radius: 6px;
-  font-weight: 850;
+  font-weight: 700;
   font-size: 13px;
   font-family: var(--sys-font-family-mono);
   cursor: pointer;

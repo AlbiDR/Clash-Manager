@@ -303,7 +303,7 @@ const shouldShowBanner = computed(() => {
 
 .crown-value {
   font-size: 16px;
-  font-weight: 900;
+  font-weight: 700;
   font-family: var(--sys-font-family-mono);
   color: var(--sys-color-primary);
 }
@@ -331,7 +331,7 @@ const shouldShowBanner = computed(() => {
 
 .crown-target-single {
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 700;
   font-family: var(--sys-font-family-mono);
   color: #f59e0b;
 }
@@ -344,7 +344,7 @@ const shouldShowBanner = computed(() => {
 
 .countdown {
   font-size: 10px;
-  font-weight: 800;
+  font-weight: 700;
   font-family: var(--sys-font-family-mono);
   color: var(--sys-color-outline);
   letter-spacing: 0.04em;
@@ -417,7 +417,7 @@ const shouldShowBanner = computed(() => {
   right: 0;
   top: -18px;
   font-size: 10px;
-  font-weight: 900;
+  font-weight: 700;
   font-family: var(--sys-font-family-mono);
   color: var(--sys-color-primary);
   opacity: 0.7;

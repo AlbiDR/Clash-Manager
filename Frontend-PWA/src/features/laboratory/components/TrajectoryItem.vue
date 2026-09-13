@@ -198,7 +198,7 @@ defineProps<{
   border-radius: 6px;
   font-family: var(--sys-font-family-mono);
   font-size: 11px;
-  font-weight: 850;
+  font-weight: 700;
   border: 1px solid var(--sys-color-outline-variant);
 }
 
@@ -250,7 +250,7 @@ defineProps<{
   border: 1px solid var(--sys-color-outline-variant);
   font-family: var(--sys-font-family-mono);
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 700;
   width: fit-content;
 }
 
@@ -301,7 +301,7 @@ defineProps<{
   gap: 10px;
   font-family: var(--sys-font-family-mono);
   font-size: 15px;
-  font-weight: 850;
+  font-weight: 700;
   text-align: right;
 }
 

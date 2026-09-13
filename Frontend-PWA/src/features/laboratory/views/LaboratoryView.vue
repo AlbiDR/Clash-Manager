@@ -139,7 +139,6 @@ const { data: globalData } = storeToRefs(clashDataStore);
   display: flex;
   flex-direction: column;
   gap: 20px;
-  padding: 0 4px;
 }
 
 .dashboard-sidebar {

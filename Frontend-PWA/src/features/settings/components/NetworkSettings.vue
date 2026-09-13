@@ -250,7 +250,7 @@ function saveApiUrl() {
 }
 .stat-item .value {
   font-size: 13px;
-  font-weight: 800;
+  font-weight: 700;
   font-family: var(--sys-font-family-mono);
   color: var(--sys-color-primary);
 }

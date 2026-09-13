@@ -276,7 +276,7 @@ function handleTrackKeyDown(keyboardEvent: KeyboardEvent): void {
 .mode-symbol {
   font-family: var(--sys-font-family-mono);
   font-size: 18px;
-  font-weight: 900;
+  font-weight: 700;
 }
 
 /* The entire remaining footprint is the drag surface; there is no separate
@@ -308,7 +308,7 @@ function handleTrackKeyDown(keyboardEvent: KeyboardEvent): void {
   font-family: var(--sys-font-family-mono);
   font-variant-numeric: tabular-nums;
   font-size: 15px;
-  font-weight: 900;
+  font-weight: 700;
   line-height: 1;
   min-width: 3ch;
   text-align: center;

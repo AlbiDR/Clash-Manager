@@ -152,7 +152,7 @@ const getSelectedLabel = () => {
   background: var(--sys-color-surface-container);
   border: 1px solid rgba(128, 128, 128, 0.15);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
-  border-radius: 10px;
+  border-radius: var(--sys-shape-corner-input);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -197,7 +197,7 @@ const getSelectedLabel = () => {
   backdrop-filter: var(--sys-surface-glass-blur);
   -webkit-backdrop-filter: var(--sys-surface-glass-blur);
   border: 1px solid var(--sys-surface-glass-border, var(--sys-color-outline-variant));
-  border-radius: 12px;
+  border-radius: var(--sys-shape-corner-input);
   box-shadow: var(--sys-elevation-3);
   z-index: 110;
   overflow: hidden;

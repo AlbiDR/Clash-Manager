@@ -279,7 +279,7 @@ onMounted(() => {
   color: var(--apk-state-on-container);
   font-family: var(--sys-font-family-mono);
   font-size: var(--sys-typescale-label-sm);
-  font-weight: 850;
+  font-weight: 700;
 }
 
 .apk-version-grid {
@@ -327,7 +327,7 @@ onMounted(() => {
   color: var(--sys-color-on-surface-variant);
   font-family: var(--sys-font-family-mono);
   font-size: var(--sys-typescale-label-sm);
-  font-weight: 750;
+  font-weight: 700;
   line-height: 1.3;
   text-overflow: ellipsis;
   white-space: nowrap;

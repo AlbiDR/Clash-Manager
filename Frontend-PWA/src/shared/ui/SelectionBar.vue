@@ -168,7 +168,7 @@ const {
   width: 84px;
   padding: 0;
   justify-content: center;
-  border-radius: 12px;
+  border-radius: var(--sys-shape-corner-medium);
   border: none;
   display: flex;
   align-items: center;
@@ -208,9 +208,9 @@ const {
   padding: 0 16px;
   background: var(--sys-color-surface-container-highest);
   color: var(--sys-color-on-surface);
-  border-radius: 24px;
+  border-radius: var(--sys-shape-corner-medium);
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 700;
   font-family: var(--sys-font-family-mono);
   border: 1px solid var(--sys-color-outline-variant);
 }

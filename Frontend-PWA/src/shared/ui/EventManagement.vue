@@ -179,7 +179,7 @@ const pillClass = computed(() => {
 
 .summary-value {
   font-size: 13px;
-  font-weight: 800;
+  font-weight: 700;
   font-family: var(--sys-font-family-mono);
 }
 

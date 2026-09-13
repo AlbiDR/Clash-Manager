@@ -141,7 +141,7 @@ function reset() {
   background: var(--sys-surface-glass);
 
   padding: 40px;
-  border-radius: 32px;
+  border-radius: var(--sys-shape-corner-extra-large);
   text-align: center;
   max-width: 440px;
   width: 100%;

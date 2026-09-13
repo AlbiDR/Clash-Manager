@@ -191,7 +191,7 @@ const delta = computed(() =>
 
 .bc-simple-value {
   font-size: var(--sys-typescale-body-md);
-  font-weight: 900;
+  font-weight: 700;
   font-family: var(--sys-font-family-mono);
   color: var(--sys-color-on-surface);
 }
@@ -292,14 +292,14 @@ const delta = computed(() =>
 
 .bc-stat {
   font-size: var(--sys-typescale-footer);
-  font-weight: 800;
+  font-weight: 700;
   font-family: var(--sys-font-family-mono);
   color: var(--sys-color-on-surface-variant);
 }
 
 .bc-delta {
   font-size: var(--sys-typescale-body-sm);
-  font-weight: 900;
+  font-weight: 700;
   font-family: var(--sys-font-family-mono);
 }
 .bc-delta.better {

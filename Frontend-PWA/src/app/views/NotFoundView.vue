@@ -135,7 +135,7 @@ const attemptedPath = computed(() => {
   color: var(--sys-color-primary);
   font-family: var(--sys-font-family-mono);
   font-size: var(--sys-typescale-label-sm);
-  font-weight: 900;
+  font-weight: 700;
   letter-spacing: var(--sys-tracking-wide);
   text-transform: uppercase;
 }

@@ -360,7 +360,7 @@ watch([inviteX, inviteY, closeX, closeY], saveCoordinates);
 .coord-input {
   background: var(--sys-color-surface-container);
   border: 1px solid var(--sys-color-outline-variant);
-  border-radius: var(--sys-shape-corner-small);
+  border-radius: var(--sys-shape-corner-input);
   color: var(--sys-color-on-surface);
   font-size: var(--sys-typescale-body-sm);
   font-weight: 600;

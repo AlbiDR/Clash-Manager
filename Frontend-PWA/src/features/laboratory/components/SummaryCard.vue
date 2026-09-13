@@ -224,7 +224,7 @@ const engineStatus = computed(() => {
 .projection-badge .value {
   font-family: var(--sys-font-family-mono);
   font-size: 13px;
-  font-weight: 850;
+  font-weight: 700;
 }
 
 /* Sections */
@@ -349,7 +349,7 @@ const engineStatus = computed(() => {
 .res-meta .val {
   font-family: var(--sys-font-family-mono);
   font-size: 16px;
-  font-weight: 850;
+  font-weight: 700;
   color: var(--sys-color-on-surface);
 }
 

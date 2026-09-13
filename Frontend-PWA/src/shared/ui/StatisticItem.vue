@@ -90,7 +90,7 @@ const { benchmarkTooltipContent } = useBenchmarkedStat(
 
 .value {
   font-size: var(--sys-typescale-body-md);
-  font-weight: 900;
+  font-weight: 700;
   color: var(--sys-color-on-surface);
   font-family: var(--sys-font-family-mono);
   line-height: var(--sys-leading-none);
