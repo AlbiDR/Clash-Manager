@@ -62,11 +62,17 @@ function handleFabAbortHarvest() {
 
 <template>
   <!-- Dismiss Button (Always Visible) -->
+  <!-- [DECISION LOG] THE NAME CONTAINS THE WORD ON THE BUTTON:
+       In its resting state this button renders the word "Clear" and was named
+       "Dismiss Selection", sharing no word with it. Voice control matches on the
+       accessible name, so "click Clear" could not activate the control a person
+       was looking at (WCAG 2.5.3, Label in Name). The other two states render no
+       text, so their names are free to describe the action instead. -->
   <button
     v-tactile
     class="fab-btn danger"
     :class="{ compact: fabState.isBlasting || (fabState.selectionCount ?? 0) > 0 || fabState.isHarvesting }"
-    :aria-label="fabState.isHarvesting ? 'Abort Harvest' : fabState.isBlasting ? 'Cancel Blitz' : 'Dismiss Selection'"
+    :aria-label="fabState.isHarvesting ? 'Abort Harvest' : fabState.isBlasting ? 'Cancel Blitz' : 'Clear selection'"
     @click="fabState.isHarvesting ? handleFabAbortHarvest() : handleFabDismiss()"
   >
     <Icon
@@ -225,11 +231,22 @@ function handleFabAbortHarvest() {
   color: var(--sys-color-on-error-container);
 }
 
+/* [DECISION LOG] BLITZ GETS A ROLE, NOT A PALETTE OF ITS OWN:
+   Every other action in this dock names a semantic role - .primary is
+   primary/on-primary, .danger is error-container/on-error-container - and this
+   one carried a dark purple gradient with pale pink ink that appears nowhere
+   else in the app. Being outside the token set, it did not follow the theme:
+   in light mode a near-black purple slab with #f2daff text sat on the dock's
+   pale glass, which is the one place a stray palette is most obvious.
+
+   secondary-container is the role that means "a distinct action, not the
+   primary one", which is exactly what Blitz is beside Harvest. It stays
+   visually separate from .primary in both themes without inventing a colour. */
 .fab-btn.blitz {
-  background: linear-gradient(135deg, #6b5778, #4a3b55);
-  color: #f2daff;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 0 12px rgba(107, 87, 120, 0.4);
+  background: var(--sys-color-secondary-container);
+  color: var(--sys-color-on-secondary-container);
+  border: 1px solid var(--sys-color-outline-variant);
+  box-shadow: var(--sys-elevation-2);
 }
 
 .blast-status {
@@ -257,11 +274,13 @@ function handleFabAbortHarvest() {
   opacity: 0.6;
 }
 
+/* The three fallbacks here were from the same off-token purple set and could
+   never be reached, since every --sys-color-* is declared on :root. */
 .fab-btn.secondary-harvest {
-  background: var(--sys-color-surface-container-highest, #2a2233);
-  color: var(--sys-color-on-surface, #f2daff);
-  border: 1px solid var(--sys-color-outline-variant, rgba(255, 255, 255, 0.1));
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  background: var(--sys-color-surface-container-highest);
+  color: var(--sys-color-on-surface);
+  border: 1px solid var(--sys-color-outline-variant);
+  box-shadow: var(--sys-elevation-2);
 }
 .fab-btn.secondary-harvest:active {
   background: rgba(255, 255, 255, 0.05);
