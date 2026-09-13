@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-12
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-13] PR #1805 [Stage 9]: Structural scan found 64 candidate files in changed-files.txt and 0 dep-violations. consecutive-clean: 2. Inspected protocol.ts, profiler.ts, VoyageBanner.vue, StatusPill.vue, SummaryCard.vue. Defect hunt verified protocol rate-limiting.
+**Domain:** architecture | **Commit:** aa35db2e | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1805)
+**Files:** .github/nightly-logs/09-refactor-proposals-coverage.log, .github/nightly-logs/09-refactor-proposals-pr-body.md
+**Why:** CleanStack ADR alignment is fully satisfied across all feature components, composables, and edge function services. Monorepo tests (195 PWA test files / 1829 tests, 25 Backend test files / 277 tests) pass cleanly.
+**Change:** Structural scan found 64 candidate files in changed-files.txt and 0 dep-violations. consecutive-clean: 2. Inspected protocol.ts, profiler.ts, VoyageBanner.vue, StatusPill.vue, SummaryCard.vue. Defect hunt verified protocol rate-limiting.
+**Result:** PASS: Frontend-PWA tests (195/195 files, 1829/1829 tests), Backend tests (25/25 files, 277/277 tests), depcruise (0 violations), vue-tsc type-check (clean).
+**Nudges:** 0
+
+
 ### [2026-09-13] PR #1803 [Stage 7]: Scanned catalog usage across Frontend-PWA/Backend package.json, verified version 14.50.66 in root, Frontend-PWA, and Backend, and ran pnpm audit:version confirming zero drift across all 10 tracked manifests and derived declarations.
 **Domain:** versioning | **Commit:** 5887c664 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1803)
 **Files:** .github/nightly-logs/07-version-integrity-coverage.log, .github/nightly-logs/07-version-integrity-pr-body.md
