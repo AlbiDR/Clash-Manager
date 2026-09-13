@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-12
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-13] PR #1798 [Stage 2]: Added Data Perfection Governance unit tests in protocol.spec.ts
+**Domain:** verification | **Commit:** 91b4de1f | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1798)
+**Files:** .github/nightly-logs/02-verification-coverage.log, .github/nightly-logs/02-verification-pr-body.md, Backend/supabase/functions/_shared/shared-tests/protocol.spec.ts
+**Why:** To verify isDataPerfect calculation and validation_report construction under all conditions
+**Change:** Added Data Perfection Governance unit tests in protocol.spec.ts
+**Result:** 277 backend unit tests passed including 3 new protocol spec tests. Proven via mutation testing on protocol.ts.
+**Nudges:** 0
+
+
 ### [2026-09-12] PR #1797 [Stage 1]: Audited Edge Function endpoints, in-memory state, Valibot boundaries, and cross-layer constraints; zero threat vectors found
 **Domain:** hardening | **Commit:** 607fba65 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1797)
 **Files:** .github/nightly-logs/00-pr-history.md, .github/nightly-logs/01-hardening-coverage.log, .github/nightly-logs/01-hardening-pr-body.md
