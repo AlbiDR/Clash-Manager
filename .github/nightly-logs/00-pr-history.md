@@ -16,6 +16,23 @@ LAST_AGED:   2026-09-12
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-13] PR #1803 [Stage 7]: Scanned catalog usage across Frontend-PWA/Backend package.json, verified version 14.50.66 in root, Frontend-PWA, and Backend, and ran pnpm audit:version confirming zero drift across all 10 tracked manifests and derived declarations.
+**Domain:** versioning | **Commit:** 5887c664 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1803)
+**Files:** .github/nightly-logs/07-version-integrity-coverage.log, .github/nightly-logs/07-version-integrity-pr-body.md
+**Why:** Catalog protocol adherence and package versions are fully reconciled with ground truth version 14.50.66, and pnpm audit:version confirmed no drift in derived files or badges.
+**Change:** Scanned catalog usage across Frontend-PWA/Backend package.json, verified version 14.50.66 in root, Frontend-PWA, and Backend, and ran pnpm audit:version confirming zero drift across all 10 tracked manifests and derived declarations.
+**Result:** pnpm audit:version reported 0 drift lines across 10 tracked manifests and derived declarations.
+**Nudges:** 0
+
+### [2026-09-13] PR #1804 [Stage 8]: Bumped @supabase/supabase-js to ^2.116.0 in workspace catalog and updated major version watchlist.
+**Domain:** dependencies | **Commit:** 8144da8a | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1804)
+**Files:** .github/nightly-logs/08-dependency-audit-coverage.log, .github/nightly-logs/08-dependency-audit-pr-body.md, pnpm-lock.yaml, pnpm-workspace.yaml
+**Why:** Routine Tier 1 dependency patch update and persistent watchlist sync.
+**Change:** Bumped @supabase/supabase-js to ^2.116.0 in workspace catalog and updated major version watchlist.
+**Result:** pnpm test passed 1829 tests across 195 test files
+**Nudges:** 1
+
+
 ### [2026-09-13] PR #1802 [Stage 6]: Audited protocol.ts and useProgressiveList.ts for doc debt; verified interface contracts and annotations are synchronized
 **Domain:** documentation | **Commit:** 9312114d | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1802)
 **Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, .github/nightly-logs/06-documentation-tsdoc-pr-body.md
