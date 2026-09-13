@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: GPL-3.0-only -->
 <!-- Copyright (C) 2026 AlbiDR -->
 <script setup lang="ts" generic="T extends string | number">
-import { ref, useTemplateRef, onMounted, onUnmounted } from "vue";
+import { computed, ref, useId, useTemplateRef, onMounted, onUnmounted } from "vue";
 import { vTactile } from "../directives/vTactile";
 import Icon from "./Icon.vue";
 
@@ -52,16 +52,123 @@ const modelValue = defineModel<T>({ required: true });
 
 const isOpen = ref(false);
 const selectRef = useTemplateRef<HTMLElement>("selectRef");
+const triggerRef = useTemplateRef<HTMLButtonElement>("triggerRef");
+
+const listboxId = useId();
+
+/**
+ * Index of the option the keyboard is currently on.
+ *
+ * @remarks
+ * [DECISION LOG] A ROVING POINTER, NOT ROVING FOCUS:
+ * This component documented itself as "a keyboard-accessible replacement for
+ * native HTML select" and implemented no keyboard interaction beyond opening.
+ * The options were non-focusable list items carrying only a click handler, so
+ * anyone arriving by keyboard could open the menu and then had no way to choose
+ * an option or to close it again. The sort control on every console is this
+ * component.
+ *
+ * Focus stays on the trigger and `aria-activedescendant` points at the current
+ * option, which is the combobox pattern. Moving real focus into the list would
+ * fight the outside-click handler and lose the trigger's own key bindings.
+ */
+const activeIndex = ref(-1);
+
+/** Index of the currently selected option, or -1 when nothing matches. */
+const selectedIndex = computed(() =>
+  props.options.findIndex((option) => option.value === modelValue.value),
+);
+
+/** DOM id of the active option, for `aria-activedescendant`. */
+const activeDescendantId = computed(() =>
+  isOpen.value && activeIndex.value >= 0 ? `${listboxId}-${activeIndex.value}` : undefined,
+);
+
+/**
+ * Finds the next selectable option, skipping disabled ones.
+ *
+ * @param from - Index to start from.
+ * @param step - Direction to walk, 1 or -1.
+ * @returns The next enabled index, or the original when none exists.
+ */
+function nextEnabledIndex(from: number, step: number): number {
+  for (let offset = 1; offset <= props.options.length; offset++) {
+    const candidate = from + step * offset;
+    if (candidate < 0 || candidate >= props.options.length) break;
+    if (!props.options[candidate]?.disabled) return candidate;
+  }
+  return from;
+}
+
+/** Opens the list with the highlight on the current selection. */
+function openDropdown(): void {
+  isOpen.value = true;
+  activeIndex.value = selectedIndex.value >= 0
+    ? selectedIndex.value
+    : nextEnabledIndex(-1, 1);
+}
+
+/** Closes the list and returns focus to the trigger. */
+function closeDropdown(): void {
+  isOpen.value = false;
+  activeIndex.value = -1;
+  triggerRef.value?.focus();
+}
 
 const toggleDropdown = () => {
-  isOpen.value = !isOpen.value;
+  if (isOpen.value) closeDropdown();
+  else openDropdown();
 };
 
 const selectOption = (option: Option<T>) => {
   if (option.disabled) return;
   modelValue.value = option.value;
-  isOpen.value = false;
+  closeDropdown();
 };
+
+/**
+ * The listbox keyboard contract, handled on the trigger.
+ *
+ * @param keyboardEvent - The originating keyboard event.
+ */
+function handleKeyDown(keyboardEvent: KeyboardEvent): void {
+  const { key } = keyboardEvent;
+
+  if (!isOpen.value) {
+    // Space and Enter already activate a native button, which toggles the list.
+    if (key === "ArrowDown" || key === "ArrowUp") {
+      keyboardEvent.preventDefault();
+      openDropdown();
+    }
+    return;
+  }
+
+  if (key === "Escape") {
+    keyboardEvent.preventDefault();
+    closeDropdown();
+    return;
+  }
+
+  if (key === "Enter" || key === " ") {
+    keyboardEvent.preventDefault();
+    const option = props.options[activeIndex.value];
+    if (option) selectOption(option);
+    return;
+  }
+
+  if (key === "ArrowDown" || key === "ArrowUp") {
+    keyboardEvent.preventDefault();
+    activeIndex.value = nextEnabledIndex(activeIndex.value, key === "ArrowDown" ? 1 : -1);
+    return;
+  }
+
+  if (key === "Home" || key === "End") {
+    keyboardEvent.preventDefault();
+    activeIndex.value = key === "Home"
+      ? nextEnabledIndex(-1, 1)
+      : nextEnabledIndex(props.options.length, -1);
+  }
+}
 
 const handleClickOutside = (event: MouseEvent) => {
   if (selectRef.value && !selectRef.value.contains(event.target as Node)) {
@@ -89,12 +196,17 @@ const getSelectedLabel = () => {
     class="custom-select"
   >
     <button
+      ref="triggerRef"
       v-tactile
       type="button"
       class="select-trigger"
       :aria-label="props.ariaLabel"
       :aria-expanded="isOpen"
+      aria-haspopup="listbox"
+      :aria-controls="listboxId"
+      :aria-activedescendant="activeDescendantId"
       @click="toggleDropdown"
+      @keydown="handleKeyDown"
     >
       <span class="trigger-label">{{ getSelectedLabel() }}</span>
       <Icon
@@ -111,20 +223,24 @@ const getSelectedLabel = () => {
         class="options-dropdown"
       >
         <ul
+          :id="listboxId"
           role="listbox"
           class="options-list"
         >
           <li
-            v-for="option in props.options"
+            v-for="(option, optionIndex) in props.options"
+            :id="`${listboxId}-${optionIndex}`"
             :key="option.value"
             v-tactile
             role="option"
             :aria-selected="option.value === modelValue"
+            :aria-disabled="option.disabled ? 'true' : undefined"
             class="option-item"
             :class="[
               option.class || '',
               {
                 active: option.value === modelValue,
+                'is-keyboard-active': optionIndex === activeIndex,
                 disabled: option.disabled
               }
             ]"
@@ -142,6 +258,14 @@ const getSelectedLabel = () => {
 .custom-select {
   position: relative;
   width: 100%;
+}
+
+/* The row the keyboard is on. Distinct from `.active`, which marks the current
+   selection: while arrowing, the two are usually different rows and a reader
+   has to be able to tell which one Enter will take. */
+.option-item.is-keyboard-active {
+  outline: 2px solid var(--sys-color-primary);
+  outline-offset: calc(-1 * var(--sys-space-2));
 }
 
 .select-trigger {
