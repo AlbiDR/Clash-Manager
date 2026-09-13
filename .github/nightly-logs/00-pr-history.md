@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-12
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-13] PR #1806 [Stage 10]: PWA & APK wrapper audit completed with no source modifications required. Verified asset links, manifest parity, version code/name sync, release metadata, and cleartext security policy.
+**Domain:** apk | **Commit:** 9193f902 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1806)
+**Files:** .github/nightly-logs/10-apk-integrity-coverage.log, .github/nightly-logs/10-apk-integrity-pr-body.md
+**Why:** All Android native wrapper configuration files, assetlinks, twa-manifest, and AndroidManifest match web PWA definitions and meet security standards.
+**Change:** PWA & APK wrapper audit completed with no source modifications required. Verified asset links, manifest parity, version code/name sync, release metadata, and cleartext security policy.
+**Result:** Verified with pnpm audit:apk, pnpm apk:verify:source, pnpm apk:verify, pnpm test:apk-ux-audit, and pnpm test:apk-performance.
+**Nudges:** 0
+
+
 ### [2026-09-13] PR #1805 [Stage 9]: Structural scan found 64 candidate files in changed-files.txt and 0 dep-violations. consecutive-clean: 2. Inspected protocol.ts, profiler.ts, VoyageBanner.vue, StatusPill.vue, SummaryCard.vue. Defect hunt verified protocol rate-limiting.
 **Domain:** architecture | **Commit:** aa35db2e | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1805)
 **Files:** .github/nightly-logs/09-refactor-proposals-coverage.log, .github/nightly-logs/09-refactor-proposals-pr-body.md
