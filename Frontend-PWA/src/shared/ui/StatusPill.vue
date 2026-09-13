@@ -9,6 +9,7 @@
  * ----------------------------------------------------------------------------
  */
 
+import { watch } from "vue";
 import { useStatusPill } from "../composables/useStatusPill";
 import { vTactile } from "../directives/vTactile";
 import type { ConsoleRemoteInfo } from "@core/types";
@@ -23,6 +24,23 @@ const props = withDefaults(defineProps<{
   direction: "right"
 });
 
+/**
+ * Announces the open/closed state of the detail.
+ *
+ * [DECISION LOG] A host needs this because opening the detail changes how much
+ * room the pill wants, and on a narrow viewport that decides the header's
+ * layout. The alternative was for the host to reach into this component's root
+ * element and read `.is-expanded` off it with `:has()`. That works, since a
+ * child root does carry the parent's scope id, but it makes the class name a
+ * public contract that nothing here would protect: rename it and a rule in a
+ * file this component has never heard of stops matching, in silence. An event
+ * is the part that is meant to be depended on.
+ */
+const emit = defineEmits<{
+  /** Fires whenever the detail opens or closes, with the new state. */
+  "update:expanded": [expanded: boolean];
+}>();
+
 const {
   isExpanded,
   isDB,
@@ -30,6 +48,12 @@ const {
   displaySource,
   handleToggle
 } = useStatusPill(props);
+
+// immediate, so a host is correct from the first render rather than from the
+// first toggle. The pill can already be open at mount when the composable
+// restores a previous state, and a host that only learned about changes would
+// spend that first render laying out for a closed pill.
+watch(isExpanded, (expanded) => emit("update:expanded", expanded), { immediate: true });
 
 </script>
 

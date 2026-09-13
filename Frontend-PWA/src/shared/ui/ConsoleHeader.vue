@@ -1,13 +1,20 @@
 <!-- SPDX-License-Identifier: GPL-3.0-only -->
 <!-- Copyright (C) 2026 AlbiDR -->
 <script setup lang="ts">
-import { computed, unref } from "vue";
+import { computed, ref, unref } from "vue";
 import { useHaptics } from "../composables/useHaptics";
 import { useHeaderScroll } from "../composables/useHeaderScroll";
 import StatusPill from "./StatusPill.vue";
 import Icon from "./Icon.vue";
 import BaseSelect from "./BaseSelect.vue";
 import type { ConsoleRemoteInfo, HubHealth } from "@core/types";
+
+/**
+ * Whether the status pill currently has its detail open. Reported by the pill
+ * itself, not read off its DOM, so the header can react to a state it does not
+ * own without depending on the pill's internal class names.
+ */
+const isStatusDetailOpen = ref(false);
 
 const props = defineProps<{
   title: string;
@@ -86,7 +93,10 @@ const handleOpenDashboard = () => {
           </div>
         </div>
 
-        <div class="action-group">
+        <div
+          class="action-group"
+          :class="{ 'is-detail-open': isStatusDetailOpen }"
+        >
           <StatusPill
             v-if="props.status && !props.loading"
             :type="props.status.type"
@@ -94,6 +104,7 @@ const handleOpenDashboard = () => {
             :nominal="props.status.nominal"
             :remote-info="props.remoteInfo"
             direction="left"
+            @update:expanded="isStatusDetailOpen = $event"
             @refresh="emit('refresh')"
           />
         </div>
@@ -300,6 +311,45 @@ const handleOpenDashboard = () => {
   /* Holds it against the right edge on the line it lands on, whether that is
      beside the title or wrapped beneath it. */
   margin-left: auto;
+}
+
+/* [DECISION LOG] A WRAPPED DETAIL FILLS ITS LINE INSTEAD OF FLOATING IN IT:
+   Opening the status detail on a phone makes it too wide to sit beside the
+   title, so it takes the line below. Whether that reads as designed or as a
+   bug turned out to depend entirely on how much the pill had to say. A stale
+   clan expands to "SYNCED 16M AGO; SOURCE DATA 34M AGO - STALE", which happens
+   to span the line and looks deliberate. A healthy one expands to "27M AGO -
+   DB" and left a short chip adrift at the right of an otherwise empty line,
+   which is what was reported.
+
+   Filling the line removes the difference: the detail is the same width either
+   way, and it lines up with the search field directly beneath it rather than
+   hanging above it. space-between then pins the reading order to both edges -
+   the text to the left, the state dot to the right - so a short message spaces
+   out rather than clumping in one corner.
+
+   Scoped to the phone width on purpose. On a wide viewport the detail still
+   fits beside the title and never wraps, so stretching it there would trade a
+   real layout for a very long stadium and a header that changes height on tap.
+
+   :has() is the honest way to say "when the thing inside is open". Where it is
+   unsupported the rule is skipped and the result is today's behaviour, so the
+   floor is what shipped rather than something broken. */
+@media (max-width: 600px) {
+  .action-group.is-detail-open {
+    width: 100%;
+  }
+
+  /* StatusPill declares flex-shrink: 0, which is right while it is a chip
+     sitting beside other things and wrong once it owns the line: its expanded
+     content measured 321px against a 313px line and the extra 8px ate into the
+     card's right padding, so the bar looked mis-set rather than full width.
+     On its own line it shrinks to the line instead. */
+  .action-group.is-detail-open :deep(.status-pill) {
+    flex: 1 1 auto;
+    min-width: 0;
+    justify-content: space-between;
+  }
 }
 
 .search-sort-row {
