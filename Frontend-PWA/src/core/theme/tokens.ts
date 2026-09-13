@@ -69,6 +69,39 @@ export interface ThemeTokens {
     glass: string;
     glassBorder: string;
     glassBlur: string;
+
+    // Voyage lifecycle. Three distinct states, not a severity ramp, which is
+    // why they are not folded into warning.
+    voyageVictory: string;
+    voyagePending: string;
+    voyageAwaiting: string;
+
+    // History chart series. Thin marks that must stay legible against the
+    // chart's own ground, so they differ per theme.
+    chartPositive: string;
+    chartNegative: string;
+    chartAccent: string;
+    chartNeutral: string;
+
+    // History chart bar fills, as gradient stop pairs.
+    chartBarPrimaryTo: string;
+    chartBarHitFrom: string;
+    chartBarHitTo: string;
+    chartBarWinFrom: string;
+    chartBarWinTo: string;
+
+    // Card rarity. Game identity rather than app palette, so both themes share
+    // one set - see RARITY_PALETTE.
+    rarityCommon: string;
+    rarityRare: string;
+    rarityEpic: string;
+    rarityLegendary: string;
+    rarityChampion: string;
+
+    // Game resources. Identity, like rarity - see RESOURCE_PALETTE.
+    resourceXp: string;
+    resourceGold: string;
+    resourceGems: string;
   };
   elevation: {
     level1: string;
@@ -89,6 +122,40 @@ export interface ThemeTokens {
     fillSecondary: string;
   };
 }
+
+/**
+ * Game resource colours, as the game itself uses them.
+ *
+ * @remarks
+ * SummaryCard coloured its XP, gold and gem slabs from these three, and
+ * TrajectoryItem coloured its efficiency slab from the same gold, separately.
+ * These identify a resource rather than decorate a surface, so both themes
+ * share one set: declared once and spread into each rather than typed twice.
+ */
+const RESOURCE_PALETTE = {
+  resourceXp: '#00d2ff',
+  resourceGold: '#ffcc00',
+  resourceGems: '#00ff88',
+} as const;
+
+/**
+ * Card rarity colours, as the game itself uses them.
+ *
+ * @remarks
+ * Identity rather than palette, for the same reason as the resources above.
+ * TrajectoryItem drew its left border from these five and VaultCard drew its
+ * focus ring from the same five, independently, and VaultCard additionally
+ * re-derived each one's RGB triplet by hand for its focus shadow -
+ * `rgba(165, 177, 194, 0.2)` is `#A5B1C2` transcribed. They are in
+ * RGB_COMPANIONS now, so that triplet is generated rather than transcribed.
+ */
+const RARITY_PALETTE = {
+  rarityCommon: '#A5B1C2',
+  rarityRare: '#D35400',
+  rarityEpic: '#8E44AD',
+  rarityLegendary: '#00D2D3',
+  rarityChampion: '#F1C40F',
+} as const;
 
 /**
  * Authoritative light theme substrate.
@@ -142,6 +209,24 @@ export const lightTokens: ThemeTokens = {
     glass: 'rgba(255, 255, 255, 0.9)',
     glassBorder: 'rgba(0, 0, 0, 0.08)',
     glassBlur: 'blur(24px) saturate(180%)',
+
+    voyageVictory: '#8a6100',
+    voyagePending: '#7d5700',
+    voyageAwaiting: '#8f3e00',
+
+    chartPositive: '#1b7a3a',
+    chartNegative: '#b3261e',
+    chartAccent: '#00687d',
+    chartNeutral: '#5a6472',
+
+    chartBarPrimaryTo: '#6750a4',
+    chartBarHitFrom: '#0891b2',
+    chartBarHitTo: '#06b6d4',
+    chartBarWinFrom: '#0284c7',
+    chartBarWinTo: '#22d3ee',
+
+    ...RARITY_PALETTE,
+    ...RESOURCE_PALETTE,
   },
   elevation: {
     level1: '0 2px 6px -2px rgba(0, 0, 0, 0.06), 0 1px 3px -1px rgba(0, 0, 0, 0.03)',
@@ -210,6 +295,24 @@ export const darkTokens: ThemeTokens = {
     glass: 'rgba(20, 24, 32, 0.94)',
     glassBorder: 'rgba(255, 255, 255, 0.12)',
     glassBlur: 'blur(24px) saturate(180%)',
+
+    voyageVictory: '#fbbf24',
+    voyagePending: '#f59e0b',
+    voyageAwaiting: '#f97316',
+
+    chartPositive: '#4ade80',
+    chartNegative: '#f87171',
+    chartAccent: '#22d3ee',
+    chartNeutral: '#94a3b8',
+
+    chartBarPrimaryTo: '#6750a4',
+    chartBarHitFrom: '#0891b2',
+    chartBarHitTo: '#06b6d4',
+    chartBarWinFrom: '#0284c7',
+    chartBarWinTo: '#22d3ee',
+
+    ...RARITY_PALETTE,
+    ...RESOURCE_PALETTE,
   },
   elevation: {
     level1: '0 4px 8px -2px rgba(0, 0, 0, 0.4), 0 2px 4px -2px rgba(0, 0, 0, 0.3)',
@@ -246,6 +349,11 @@ const RGB_COMPANIONS = [
   'success',
   'outline',
   'outlineVariant',
+  'rarityCommon',
+  'rarityRare',
+  'rarityEpic',
+  'rarityLegendary',
+  'rarityChampion',
 ] as const;
 
 // Automated camelCase to kebab-case transformation to ensure alignment with

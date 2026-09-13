@@ -176,7 +176,7 @@ const { chartData } = useBaseHistoryChart({
 
 /* Theme: WAR - Positive State: Vibrant Green */
 .theme-war .trend-path.positive {
-  stroke: #4ade80;
+  stroke: var(--sys-color-chart-positive);
   filter: drop-shadow(0 0 4px rgba(74, 222, 128, 0.4));
   stroke-dasharray: 4 2;
   animation: dash-move var(--sys-motion-ambient-drift) linear infinite;
@@ -184,7 +184,7 @@ const { chartData } = useBaseHistoryChart({
 
 /* Theme: WAR - Negative State: Coral Red */
 .theme-war .trend-path.negative {
-  stroke: #f87171;
+  stroke: var(--sys-color-chart-negative);
   filter: drop-shadow(0 0 3px rgba(248, 113, 113, 0.3));
   stroke-dasharray: 4 2;
   animation: dash-move var(--sys-motion-ambient-drift) linear infinite;
@@ -192,7 +192,7 @@ const { chartData } = useBaseHistoryChart({
 
 /* Theme: VOYAGE - Positive State: Cyan */
 .theme-voyage .trend-path.positive {
-  stroke: #22d3ee;
+  stroke: var(--sys-color-chart-accent);
   filter: drop-shadow(0 0 4px rgba(34, 211, 238, 0.4));
   stroke-dasharray: 4 2;
   animation: dash-move var(--sys-motion-ambient-drift) linear infinite;
@@ -200,7 +200,7 @@ const { chartData } = useBaseHistoryChart({
 
 /* Theme: VOYAGE - Negative State: Slate */
 .theme-voyage .trend-path.negative {
-  stroke: #94a3b8;
+  stroke: var(--sys-color-chart-neutral);
   filter: drop-shadow(0 0 3px rgba(148, 163, 184, 0.3));
   stroke-dasharray: 4 2;
   animation: dash-move var(--sys-motion-ambient-drift) linear infinite;
@@ -232,20 +232,20 @@ const { chartData } = useBaseHistoryChart({
 
 /* Theme dots */
 .theme-war .chart-dot.projected.positive {
-  background: #4ade80;
+  background: var(--sys-color-chart-positive);
   box-shadow: 0 0 8px rgba(74, 222, 128, 0.5);
 }
 .theme-war .chart-dot.projected.negative {
-  background: #f87171;
+  background: var(--sys-color-chart-negative);
   box-shadow: 0 0 8px rgba(248, 113, 113, 0.5);
 }
 
 .theme-voyage .chart-dot.projected.positive {
-  background: #22d3ee;
+  background: var(--sys-color-chart-accent);
   box-shadow: 0 0 8px rgba(34, 211, 238, 0.5);
 }
 .theme-voyage .chart-dot.projected.negative {
-  background: #94a3b8;
+  background: var(--sys-color-chart-neutral);
   box-shadow: 0 0 8px rgba(148, 163, 184, 0.5);
 }
 
@@ -295,17 +295,17 @@ const { chartData } = useBaseHistoryChart({
   opacity: 0.8;
 }
 .theme-war .bar-win {
-  background: linear-gradient(to top, var(--sys-color-primary), #6750a4);
+  background: linear-gradient(to top, var(--sys-color-primary), var(--sys-color-chart-bar-primary-to));
   box-shadow: 0 0 4px rgba(var(--sys-color-primary-rgb), 0.4);
 }
 
 /* Theme: Voyage Bar Colors */
 .theme-voyage .bar-hit {
-  background: linear-gradient(to top, #0891b2, #06b6d4);
+  background: linear-gradient(to top, var(--sys-color-chart-bar-hit-from), var(--sys-color-chart-bar-hit-to));
   opacity: 0.8;
 }
 .theme-voyage .bar-win {
-  background: linear-gradient(to top, #0284c7, #22d3ee);
+  background: linear-gradient(to top, var(--sys-color-chart-bar-win-from), var(--sys-color-chart-accent));
   box-shadow: 0 0 4px rgba(34, 211, 238, 0.4);
 }
 

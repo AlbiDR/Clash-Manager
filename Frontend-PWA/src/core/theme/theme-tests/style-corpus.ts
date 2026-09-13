@@ -91,6 +91,25 @@ export function styleBodies(path: string): StyleBody[] {
 }
 
 /**
+ * Blanks CSS block comments while preserving line structure.
+ *
+ * @param css - A style body.
+ * @returns The same text with every comment replaced by spaces, so line and
+ *   column numbers still line up with the file.
+ *
+ * @remarks
+ * A decision log that names the value it replaced - "its light green #166534
+ * against --sys-color-success" - is documentation, not a declaration, and a
+ * check that cannot tell the difference punishes the comments that explain
+ * themselves best.
+ */
+export function stripComments(css: string): string {
+  return css.replace(/\/\*[\s\S]*?\*\//g, (comment) =>
+    comment.replace(/[^\n]/g, ' '),
+  );
+}
+
+/**
  * Reads the numeric values a token group declares, in declaration order.
  *
  * @param tokenSource - Contents of the module declaring the tokens.

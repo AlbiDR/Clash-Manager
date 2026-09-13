@@ -176,11 +176,11 @@ const pillClass = computed(() => {
 }
 
 .summary-value.primary { color: var(--sys-color-primary); }
-.summary-value.victory { color: #fbbf24; }
+.summary-value.victory { color: var(--sys-color-voyage-victory); }
 .summary-value.timer { color: var(--sys-color-outline); }
 .summary-value.timer.ended { color: var(--sys-color-error); }
-.summary-value.pending-timer { color: #f59e0b; }
-.summary-value.awaiting-text { color: #f97316; }
+.summary-value.pending-timer { color: var(--sys-color-voyage-pending); }
+.summary-value.awaiting-text { color: var(--sys-color-voyage-awaiting); }
 
 .section-divider {
   height: 1px;
@@ -196,8 +196,8 @@ const pillClass = computed(() => {
 }
 
 .status-pill.idle        { color: var(--sys-color-outline); }
-.status-pill.pending     { color: #f59e0b; }
-.status-pill.active      { color: #22c55e; animation: pulse-pill var(--sys-motion-ambient-pulse) infinite; }
+.status-pill.pending     { color: var(--sys-color-voyage-pending); }
+.status-pill.active      { color: var(--sys-color-success); animation: pulse-pill var(--sys-motion-ambient-pulse) infinite; }
 .status-pill.completed   { color: var(--sys-color-primary); }
 
 @keyframes pulse-pill {

@@ -342,15 +342,15 @@ const engineStatus = computed(() => {
 
 /* Color Coding for Slabs */
 .res-slab.xp {
-  border-left: 3px solid #00d2ff;
+  border-left: 3px solid var(--sys-color-resource-xp);
   background: rgba(0, 210, 255, 0.02);
 }
 .res-slab.gold {
-  border-left: 3px solid #ffcc00;
+  border-left: 3px solid var(--sys-color-resource-gold);
   background: rgba(255, 204, 0, 0.02);
 }
 .res-slab.gems {
-  border-left: 3px solid #00ff88;
+  border-left: 3px solid var(--sys-color-resource-gems);
   background: rgba(0, 255, 136, 0.02);
 }
 

@@ -191,12 +191,11 @@ onMounted(() => {
 
 .app-shell.showcase-frame {
   --safe-frame-offset: 1px;
-  outline: 1px solid #000000;
+  /* on-surface is black on the light ground and white on the dark one, which
+     is precisely what the pair of rules here used to spell out by hand. */
+  outline: 1px solid var(--sys-color-on-surface);
   outline-offset: -1px;
   z-index: var(--sys-z-frame);
-}
-:root.dark .app-shell.showcase-frame {
-  outline: 1px solid #ffffff;
 }
 
 .app-container {

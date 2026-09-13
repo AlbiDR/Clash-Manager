@@ -146,26 +146,26 @@ defineProps<{
 
 /* Rarity Highlights - Enhanced Visual Hierarchy */
 .trajectory-item.common { 
-  border-left-color: #A5B1C2; 
+  border-left-color: var(--sys-color-rarity-common); 
   background: var(--sys-color-surface-container-low);
 }
 .trajectory-item.rare { 
-  border-left-color: #D35400; 
-  background: linear-gradient(90deg, var(--sys-color-surface-container-low) 0%, rgba(211, 84, 0, 0.05) 100%);
+  border-left-color: var(--sys-color-rarity-rare); 
+  background: linear-gradient(90deg, var(--sys-color-surface-container-low) 0%, rgba(var(--sys-color-rarity-rare-rgb), 0.05) 100%);
 }
 .trajectory-item.epic { 
-  border-left-color: #8E44AD; 
-  background: linear-gradient(90deg, var(--sys-color-surface-container-low) 0%, rgba(142, 68, 173, 0.08) 100%);
+  border-left-color: var(--sys-color-rarity-epic); 
+  background: linear-gradient(90deg, var(--sys-color-surface-container-low) 0%, rgba(var(--sys-color-rarity-epic-rgb), 0.08) 100%);
 }
 .trajectory-item.legendary { 
-  border-left-color: #00D2D3;
-  background: linear-gradient(90deg, var(--sys-color-surface-container-low) 0%, rgba(0, 210, 211, 0.12) 100%);
-  box-shadow: 0 4px 20px -8px rgba(0, 210, 211, 0.3);
+  border-left-color: var(--sys-color-rarity-legendary);
+  background: linear-gradient(90deg, var(--sys-color-surface-container-low) 0%, rgba(var(--sys-color-rarity-legendary-rgb), 0.12) 100%);
+  box-shadow: 0 4px 20px -8px rgba(var(--sys-color-rarity-legendary-rgb), 0.3);
 }
 .trajectory-item.champion { 
-  border-left-color: #F1C40F; 
-  background: linear-gradient(90deg, var(--sys-color-surface-container-low) 0%, rgba(241, 196, 15, 0.18) 100%);
-  box-shadow: 0 4px 28px -8px rgba(241, 196, 15, 0.5);
+  border-left-color: var(--sys-color-rarity-champion); 
+  background: linear-gradient(90deg, var(--sys-color-surface-container-low) 0%, rgba(var(--sys-color-rarity-champion-rgb), 0.18) 100%);
+  box-shadow: 0 4px 28px -8px rgba(var(--sys-color-rarity-champion-rgb), 0.5);
 }
 
 .trajectory-item:hover {
@@ -243,7 +243,7 @@ defineProps<{
 }
 
 .efficiency-slab.gold {
-  border-left: 2px solid #ffcc00;
+  border-left: 2px solid var(--sys-color-resource-gold);
   background: rgba(255, 204, 0, 0.03);
 }
 
@@ -267,11 +267,10 @@ defineProps<{
   filter: drop-shadow(0 1px 2px var(--sys-overlay-dark-soft));
 }
 
+/* on-surface is this exact pair, resolved by the theme. The two rules below
+   were a private re-implementation of it, the same shape MomentumPill had. */
 .eff-val {
-  color: #000000;
-}
-:root.dark .eff-val {
-  color: #FFFFFF;
+  color: var(--sys-color-on-surface);
 }
 
 .cost-stack {

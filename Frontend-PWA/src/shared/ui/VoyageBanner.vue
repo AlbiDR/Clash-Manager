@@ -259,15 +259,15 @@ const shouldShowBanner = computed(() => {
 }
 
 .victory-label {
-  color: #fbbf24;
+  color: var(--sys-color-voyage-victory);
 }
 
 .pre-event-label {
-  color: #f59e0b;
+  color: var(--sys-color-voyage-pending);
 }
 
 .awaiting-label {
-  color: #f97316;
+  color: var(--sys-color-voyage-awaiting);
 }
 
 /* --- Meta (Crowns + Countdown) --- */
@@ -292,11 +292,11 @@ const shouldShowBanner = computed(() => {
 }
 
 .is-victory .crown-value {
-  color: #fbbf24;
+  color: var(--sys-color-voyage-victory);
 }
 
 .is-pre-event .crown-value {
-  color: #f59e0b;
+  color: var(--sys-color-voyage-pending);
 }
 
 .crown-sep {
@@ -316,7 +316,7 @@ const shouldShowBanner = computed(() => {
   font-size: 12px;
   font-weight: 700;
   font-family: var(--sys-font-family-mono);
-  color: #f59e0b;
+  color: var(--sys-color-voyage-pending);
 }
 
 .crown-icon {
@@ -338,11 +338,11 @@ const shouldShowBanner = computed(() => {
 }
 
 .countdown.pending {
-  color: #f59e0b;
+  color: var(--sys-color-voyage-pending);
 }
 
 .countdown.awaiting {
-  color: #f97316;
+  color: var(--sys-color-voyage-awaiting);
   font-weight: 900;
   animation: pulse-pill var(--sys-motion-ambient-pulse) infinite;
 }
@@ -387,11 +387,11 @@ const shouldShowBanner = computed(() => {
 }
 
 .progress-fill.is-victory {
-  background: linear-gradient(90deg, #fbbf24, #10b981);
+  background: linear-gradient(90deg, var(--sys-color-voyage-victory), var(--sys-color-success));
 }
 
 .progress-fill.is-victory::after {
-  background: #fbbf24;
+  background: var(--sys-color-voyage-victory);
   box-shadow: 0 0 12px rgba(251, 191, 36, 0.8);
 }
 
