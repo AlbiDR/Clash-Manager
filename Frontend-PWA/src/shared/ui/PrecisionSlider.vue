@@ -329,7 +329,7 @@ function handleTrackKeyDown(keyboardEvent: KeyboardEvent): void {
   display: flex;
   align-items: baseline;
   justify-content: flex-end;
-  gap: 3px;
+  gap: var(--sys-space-4);
   flex-shrink: 0;
   font-family: var(--sys-font-family-mono);
   font-variant-numeric: tabular-nums;
@@ -397,7 +397,7 @@ function handleTrackKeyDown(keyboardEvent: KeyboardEvent): void {
   height: var(--ps-tick-height);
   margin-left: calc(var(--ps-tick-width) / -2);
   transform: translateY(-50%);
-  border-radius: 1px;
+  border-radius: var(--sys-shape-corner-hairline);
   background: var(--sys-color-outline-variant);
   pointer-events: none;
   transition:
@@ -428,8 +428,8 @@ function handleTrackKeyDown(keyboardEvent: KeyboardEvent): void {
   border-radius: 50%;
   background: var(--sys-color-primary);
   box-shadow:
-    0 1px 2px rgba(0, 0, 0, 0.28),
-    0 2px 6px rgba(0, 0, 0, 0.12);
+    0 1px 2px var(--sys-overlay-dark-strong),
+    0 2px 6px var(--sys-overlay-dark-soft);
   pointer-events: none;
 }
 
@@ -491,7 +491,7 @@ function handleTrackKeyDown(keyboardEvent: KeyboardEvent): void {
 .ps-scale {
   position: relative;
   height: 13px;
-  margin-top: -2px;
+  margin-top: -var(--sys-space-2);
   font-family: var(--sys-font-family-mono);
   font-variant-numeric: tabular-nums;
   font-size: 10px;
@@ -519,17 +519,20 @@ function handleTrackKeyDown(keyboardEvent: KeyboardEvent): void {
 
 .ps-chip {
   flex-shrink: 0;
-  padding: 3px 7px;
+  padding: var(--sys-space-4) var(--sys-space-8);
   border-radius: var(--sys-shape-corner-badge);
   background: var(--sys-color-surface-container-highest);
   font-family: var(--sys-font-family-mono);
   color: var(--sys-color-on-surface-variant);
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .ps-tick,
-  .ps-thumb::after {
-    transition-duration: 0.01ms;
-  }
-}
+/* [DECISION LOG] REDUCED MOTION IS HANDLED ONCE, GLOBALLY, AND NOT LIKE THIS:
+   A local block here set transition-duration to 0.01ms under the preference.
+   animations.ts already documents why that is the wrong answer - a change that
+   takes no time does not read as calm, it reads as a rendering fault, and
+   [THREAT:] a near-zero duration suppresses transitionend, so any handler
+   waiting on it never resumes. The global block substitutes a fade instead, by
+   dropping transform from transition-property while leaving opacity and the
+   durations alone, and it already covers these two selectors. This was a second
+   implementation of a solved problem, disagreeing with the first. */
 </style>

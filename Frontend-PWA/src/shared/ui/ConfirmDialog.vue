@@ -120,12 +120,12 @@ function handleKeyDown(keyboardEvent: KeyboardEvent): void {
 .confirm-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.4);
+  background: var(--sys-overlay-dark-strong);
   z-index: 3000;
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 24px;
+  padding: var(--sys-space-24);
   touch-action: none;
 }
 
@@ -135,11 +135,11 @@ function handleKeyDown(keyboardEvent: KeyboardEvent): void {
   background: var(--sys-surface-glass);
   border: 1px solid var(--sys-surface-glass-border);
   border-radius: var(--sys-shape-corner-extra-large);
-  padding: 24px;
+  padding: var(--sys-space-24);
   box-shadow: var(--sys-elevation-4);
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--sys-space-12);
 }
 
 .confirm-card h3 {
@@ -161,8 +161,8 @@ function handleKeyDown(keyboardEvent: KeyboardEvent): void {
 .confirm-actions {
   display: flex;
   justify-content: flex-end;
-  gap: 8px;
-  margin-top: 8px;
+  gap: var(--sys-space-8);
+  margin-top: var(--sys-space-8);
 }
 
 .confirm-btn {
@@ -206,7 +206,7 @@ function handleKeyDown(keyboardEvent: KeyboardEvent): void {
 
 .console-expand-enter-active,
 .console-expand-leave-active {
-  transition: opacity 0.3s ease;
+  transition: opacity var(--sys-motion-duration-300) ease;
 }
 .console-expand-enter-from,
 .console-expand-leave-to {
@@ -214,7 +214,7 @@ function handleKeyDown(keyboardEvent: KeyboardEvent): void {
 }
 .console-expand-enter-active .confirm-card,
 .console-expand-leave-active .confirm-card {
-  transition: transform 0.35s var(--sys-motion-spring), opacity 0.3s ease;
+  transition: transform var(--sys-motion-duration-300) var(--sys-motion-spring), opacity var(--sys-motion-duration-300) ease;
 }
 .console-expand-enter-from .confirm-card {
   transform: scale(0.92);

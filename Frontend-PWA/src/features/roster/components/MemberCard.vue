@@ -247,14 +247,14 @@ const memberAccessibilityLabel = computed(() => {
 }
 
 .lifetime-grid-margin {
-  margin-top: 16px;
+  margin-top: var(--sys-space-16);
 }
 
 .chart-toggle-margin {
-  margin-top: 16px;
+  margin-top: var(--sys-space-16);
 }
 
 .card-actions-margin {
-  margin-top: 16px;
+  margin-top: var(--sys-space-16);
 }
 </style>

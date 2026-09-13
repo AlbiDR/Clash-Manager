@@ -98,13 +98,13 @@ watch(
 .info-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.4);
+  background: var(--sys-overlay-dark-strong);
 
   z-index: 2000;
   display: flex;
   justify-content: center;
   align-items: flex-start;
-  padding: 16px;
+  padding: var(--sys-space-16);
   padding-top: calc(16px + env(safe-area-inset-top));
   touch-action: none;
 }
@@ -117,11 +117,11 @@ watch(
   background: var(--sys-surface-glass);
   border: 1px solid var(--sys-surface-glass-border);
   border-radius: var(--sys-shape-corner-extra-large);
-  padding: 24px;
+  padding: var(--sys-space-24);
   box-shadow: var(--sys-elevation-4);
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: var(--sys-space-16);
   transform-origin: top;
   position: relative;
   overflow: hidden;
@@ -137,7 +137,7 @@ watch(
 .expansion-title-group {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--sys-space-12);
 }
 
 .ext-icon {
@@ -157,7 +157,7 @@ watch(
   line-height: 1.7;
   color: var(--sys-color-on-surface-variant);
   overflow-y: auto;
-  padding-right: 12px;
+  padding-right: var(--sys-space-12);
   -webkit-overflow-scrolling: touch;
   flex: 1;
   user-select: text !important;
@@ -177,7 +177,7 @@ watch(
 }
 .expansion-content::-webkit-scrollbar-thumb {
   background: var(--sys-color-outline-variant);
-  border-radius: 10px;
+  border-radius: var(--sys-shape-corner-stat);
 }
 
 :deep(.desc-section-title) {
@@ -186,8 +186,8 @@ watch(
   text-transform: uppercase;
   font-size: 11px;
   letter-spacing: 0.08em;
-  margin-top: 24px;
-  margin-bottom: 12px;
+  margin-top: var(--sys-space-24);
+  margin-bottom: var(--sys-space-12);
   display: flex;
   align-items: center;
 }
@@ -196,14 +196,14 @@ watch(
   flex: 1;
   height: 1px;
   background: var(--sys-color-outline-variant);
-  margin-left: 12px;
+  margin-left: var(--sys-space-12);
   opacity: 0.3;
 }
 
 :deep(.bullet-item) {
-  margin-left: 4px;
-  margin-bottom: 8px;
-  padding-left: 20px;
+  margin-left: var(--sys-space-4);
+  margin-bottom: var(--sys-space-8);
+  padding-left: var(--sys-space-20);
   position: relative;
 }
 :deep(.bullet-item)::before {
@@ -216,7 +216,7 @@ watch(
 }
 
 :deep(.desc-list) {
-  margin: 12px 0;
+  margin: var(--sys-space-12) 0;
   padding: 0;
   list-style-type: none;
 }
@@ -237,7 +237,7 @@ watch(
   justify-content: center;
   color: var(--sys-color-on-surface);
   cursor: pointer;
-  transition: 0.2s;
+  transition: var(--sys-motion-duration-200);
 }
 .close-btn-round:active {
   transform: scale(0.9);
@@ -246,8 +246,8 @@ watch(
 .console-expand-enter-active,
 .console-expand-leave-active {
   transition:
-    opacity 0.4s ease,
-    transform 0.4s var(--sys-motion-spring);
+    opacity var(--sys-motion-duration-400) ease,
+    transform var(--sys-motion-duration-400) var(--sys-motion-spring);
 }
 .console-expand-enter-from,
 .console-expand-leave-to {
@@ -255,7 +255,7 @@ watch(
   transform: translateY(-20px) scaleY(0.95);
 }
 .console-expand-enter-active .info-card-expanded {
-  transition: transform 0.5s var(--sys-motion-spring);
+  transition: transform var(--sys-motion-duration-500) var(--sys-motion-spring);
 }
 .console-expand-enter-from .info-card-expanded {
   transform: translateY(-100%);

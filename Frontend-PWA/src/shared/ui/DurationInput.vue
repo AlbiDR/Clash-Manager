@@ -128,7 +128,7 @@ function onInput(event: Event, durationUnitKey: keyof DurationModel) {
 .duration-input {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--sys-space-8);
 }
 
 /* .glass-input is a global field-surface primitive in @core/theme/components.ts.
@@ -137,7 +137,7 @@ function onInput(event: Event, durationUnitKey: keyof DurationModel) {
 .t2t-group {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--sys-space-6);
 }
 
 .t2t-unit {
@@ -145,7 +145,7 @@ function onInput(event: Event, durationUnitKey: keyof DurationModel) {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
+  gap: var(--sys-space-4);
 }
 
 .t2t-input {
@@ -161,6 +161,6 @@ function onInput(event: Event, durationUnitKey: keyof DurationModel) {
   font-size: var(--sys-typescale-title-md);
   font-weight: 900;
   opacity: 0.2;
-  padding-bottom: 16px;
+  padding-bottom: var(--sys-space-16);
 }
 </style>

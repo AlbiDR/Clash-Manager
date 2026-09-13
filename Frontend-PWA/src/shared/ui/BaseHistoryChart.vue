@@ -123,13 +123,13 @@ const { chartData } = useBaseHistoryChart({
   height: 48px;
   overflow-x: auto;
   overflow-y: hidden;
-  margin: 12px 0;
+  margin: var(--sys-space-12) 0;
   display: flex;
   align-items: flex-end;
   scroll-behavior: smooth;
   scrollbar-width: thin;
   scrollbar-color: rgba(var(--sys-color-primary-rgb), 0.3) transparent;
-  padding-top: 10px;
+  padding-top: var(--sys-space-10);
   position: relative; /* Ensure stacking context */
 }
 
@@ -142,7 +142,7 @@ const { chartData } = useBaseHistoryChart({
 }
 .chart-container::-webkit-scrollbar-thumb {
   background: rgba(var(--sys-color-primary-rgb), 0.3);
-  border-radius: 2px;
+  border-radius: var(--sys-shape-corner-hairline);
 }
 
 .base-chart {
@@ -150,7 +150,7 @@ const { chartData } = useBaseHistoryChart({
   align-items: flex-end;
   height: 100%;
   min-width: 100%;
-  gap: 2px;
+  gap: var(--sys-space-2);
   position: relative;
   z-index: 1;
 }
@@ -171,39 +171,39 @@ const { chartData } = useBaseHistoryChart({
   fill: none;
   stroke-width: 1.5px;
   opacity: 0.9;
-  transition: all 0.3s ease;
+  transition: all var(--sys-motion-duration-300) ease;
 }
 
 /* Theme: WAR - Positive State: Vibrant Green */
 .theme-war .trend-path.positive {
-  stroke: #4ade80;
+  stroke: var(--sys-color-chart-positive);
   filter: drop-shadow(0 0 4px rgba(74, 222, 128, 0.4));
   stroke-dasharray: 4 2;
-  animation: dash-move 2s linear infinite;
+  animation: dash-move var(--sys-motion-ambient-drift) linear infinite;
 }
 
 /* Theme: WAR - Negative State: Coral Red */
 .theme-war .trend-path.negative {
-  stroke: #f87171;
+  stroke: var(--sys-color-chart-negative);
   filter: drop-shadow(0 0 3px rgba(248, 113, 113, 0.3));
   stroke-dasharray: 4 2;
-  animation: dash-move 2s linear infinite;
+  animation: dash-move var(--sys-motion-ambient-drift) linear infinite;
 }
 
 /* Theme: VOYAGE - Positive State: Cyan */
 .theme-voyage .trend-path.positive {
-  stroke: #22d3ee;
+  stroke: var(--sys-color-chart-accent);
   filter: drop-shadow(0 0 4px rgba(34, 211, 238, 0.4));
   stroke-dasharray: 4 2;
-  animation: dash-move 2s linear infinite;
+  animation: dash-move var(--sys-motion-ambient-drift) linear infinite;
 }
 
 /* Theme: VOYAGE - Negative State: Slate */
 .theme-voyage .trend-path.negative {
-  stroke: #94a3b8;
+  stroke: var(--sys-color-chart-neutral);
   filter: drop-shadow(0 0 3px rgba(148, 163, 184, 0.3));
   stroke-dasharray: 4 2;
-  animation: dash-move 2s linear infinite;
+  animation: dash-move var(--sys-motion-ambient-drift) linear infinite;
 }
 
 
@@ -227,25 +227,25 @@ const { chartData } = useBaseHistoryChart({
   width: 6px;
   height: 6px;
   border: 1px solid var(--sys-color-surface-container);
-  transition: background-color 0.3s;
+  transition: background-color var(--sys-motion-duration-300);
 }
 
 /* Theme dots */
 .theme-war .chart-dot.projected.positive {
-  background: #4ade80;
+  background: var(--sys-color-chart-positive);
   box-shadow: 0 0 8px rgba(74, 222, 128, 0.5);
 }
 .theme-war .chart-dot.projected.negative {
-  background: #f87171;
+  background: var(--sys-color-chart-negative);
   box-shadow: 0 0 8px rgba(248, 113, 113, 0.5);
 }
 
 .theme-voyage .chart-dot.projected.positive {
-  background: #22d3ee;
+  background: var(--sys-color-chart-accent);
   box-shadow: 0 0 8px rgba(34, 211, 238, 0.5);
 }
 .theme-voyage .chart-dot.projected.negative {
-  background: #94a3b8;
+  background: var(--sys-color-chart-neutral);
   box-shadow: 0 0 8px rgba(148, 163, 184, 0.5);
 }
 
@@ -258,9 +258,9 @@ const { chartData } = useBaseHistoryChart({
     calc((100% - var(--bar-count, 52) * 2px) / var(--bar-count, 52))
   );
   min-height: 4px;
-  border-radius: 2px;
+  border-radius: var(--sys-shape-corner-hairline);
   opacity: 0.9;
-  transition: all 0.2s ease;
+  transition: all var(--sys-motion-duration-200) ease;
   background-color: var(--sys-color-surface-container-highest);
   position: relative;
 }
@@ -295,17 +295,17 @@ const { chartData } = useBaseHistoryChart({
   opacity: 0.8;
 }
 .theme-war .bar-win {
-  background: linear-gradient(to top, var(--sys-color-primary), #6750a4);
+  background: linear-gradient(to top, var(--sys-color-primary), var(--sys-color-chart-bar-primary-to));
   box-shadow: 0 0 4px rgba(var(--sys-color-primary-rgb), 0.4);
 }
 
 /* Theme: Voyage Bar Colors */
 .theme-voyage .bar-hit {
-  background: linear-gradient(to top, #0891b2, #06b6d4);
+  background: linear-gradient(to top, var(--sys-color-chart-bar-hit-from), var(--sys-color-chart-bar-hit-to));
   opacity: 0.8;
 }
 .theme-voyage .bar-win {
-  background: linear-gradient(to top, #0284c7, #22d3ee);
+  background: linear-gradient(to top, var(--sys-color-chart-bar-win-from), var(--sys-color-chart-accent));
   box-shadow: 0 0 4px rgba(34, 211, 238, 0.4);
 }
 
@@ -337,22 +337,22 @@ const { chartData } = useBaseHistoryChart({
   justify-content: center;
   align-items: center;
   background-color: transparent; /* Reset for skeleton */
-  border-radius: 8px;
-  gap: 2px; /* Gap between skeleton bars */
-  padding: 4px;
+  border-radius: var(--sys-shape-corner-small);
+  gap: var(--sys-space-2); /* Gap between skeleton bars */
+  padding: var(--sys-space-4);
   box-sizing: border-box;
 }
 
 .sk-chart-area {
   background: var(--sk-fill-secondary); /* Use secondary skeleton color */
-  border-radius: 8px;
-  padding: 4px; /* Internal padding for bars */
+  border-radius: var(--sys-shape-corner-small);
+  padding: var(--sys-space-4); /* Internal padding for bars */
 }
 
 .sk-chart-bar {
   width: 8px; /* Fixed width for skeleton bars */
   background: var(--sk-fill); /* Primary skeleton color for bars */
-  border-radius: 2px;
+  border-radius: var(--sys-shape-corner-hairline);
   opacity: 0.7;
   height: var(--bar-height); /* Dynamic height set in template */
 }

@@ -73,7 +73,7 @@ function selectOption(targetValue: T) {
   display: flex;
   background: var(--sys-color-surface-container);
   border-radius: var(--sys-shape-corner-medium);
-  padding: 2px;
+  padding: var(--sys-space-2);
   border: 1px solid var(--sys-color-outline-variant);
   width: 100%;
 }
@@ -87,7 +87,7 @@ function selectOption(targetValue: T) {
   background: transparent;
   border: none;
   border-radius: var(--sys-shape-corner-small);
-  padding: 10px 12px;
+  padding: var(--sys-space-10) var(--sys-space-12);
   font-size: 13px;
   font-weight: 800;
   color: var(--sys-color-on-surface);
@@ -106,24 +106,24 @@ function selectOption(targetValue: T) {
 
 /* COMPACT VARIANT (Used in Cards) */
 .segmented-control.compact {
-  border-radius: 8px;
+  border-radius: var(--sys-shape-corner-small);
   border: none;
   background: var(--sys-color-surface-container);
 }
 
 .segmented-control.compact .segment-btn {
-  padding: 6px 12px;
+  padding: var(--sys-space-6) var(--sys-space-12);
   font-size: 11px;
   font-weight: 600;
   text-transform: uppercase;
   color: var(--sys-color-on-surface-variant);
-  border-radius: 6px;
+  border-radius: var(--sys-shape-corner-badge);
 }
 
 .segmented-control.compact .segment-btn.active {
   color: var(--sys-color-on-surface);
   background: var(--sys-color-surface-container-highest);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 1px 2px var(--sys-overlay-dark-medium);
 }
 
 /* [UX] TOUCH TARGET COMPLIANCE

@@ -9,6 +9,7 @@
  * ----------------------------------------------------------------------------
  */
 
+import { watch } from "vue";
 import { useStatusPill } from "../composables/useStatusPill";
 import { vTactile } from "../directives/vTactile";
 import type { ConsoleRemoteInfo } from "@core/types";
@@ -23,6 +24,23 @@ const props = withDefaults(defineProps<{
   direction: "right"
 });
 
+/**
+ * Announces the open/closed state of the detail.
+ *
+ * [DECISION LOG] A host needs this because opening the detail changes how much
+ * room the pill wants, and on a narrow viewport that decides the header's
+ * layout. The alternative was for the host to reach into this component's root
+ * element and read `.is-expanded` off it with `:has()`. That works, since a
+ * child root does carry the parent's scope id, but it makes the class name a
+ * public contract that nothing here would protect: rename it and a rule in a
+ * file this component has never heard of stops matching, in silence. An event
+ * is the part that is meant to be depended on.
+ */
+const emit = defineEmits<{
+  /** Fires whenever the detail opens or closes, with the new state. */
+  "update:expanded": [expanded: boolean];
+}>();
+
 const {
   isExpanded,
   isDB,
@@ -30,6 +48,12 @@ const {
   displaySource,
   handleToggle
 } = useStatusPill(props);
+
+// immediate, so a host is correct from the first render rather than from the
+// first toggle. The pill can already be open at mount when the composable
+// restores a previous state, and a host that only learned about changes would
+// spend that first render laying out for a closed pill.
+watch(isExpanded, (expanded) => emit("update:expanded", expanded), { immediate: true });
 
 </script>
 
@@ -149,12 +173,12 @@ const {
   display: inline-flex;
   align-items: center;
   min-height: 48px; /* 48px Mobile Footprint (Target B.2) */
-  padding: 0 8px;
-  border-radius: 24px;
+  padding: 0 var(--sys-space-8);
+  border-radius: var(--sys-shape-corner-l);
   background: var(--sys-color-surface-container);
   border: 1px solid var(--sys-color-outline);
   cursor: pointer;
-  transition: all 0.5s var(--sys-motion-spring);
+  transition: all var(--sys-motion-duration-500) var(--sys-motion-spring);
   user-select: none;
   position: relative;
   z-index: 50;
@@ -190,10 +214,10 @@ const {
 
 /* Ensure symmetric padding so width animation is flawless */
 .status-pill.is-expanded.expand-right {
-  padding-right: 6px;
+  padding-right: var(--sys-space-6);
 }
 .status-pill.is-expanded.expand-left {
-  padding-left: 6px;
+  padding-left: var(--sys-space-6);
 }
 
 /* Color Tones */
@@ -223,16 +247,16 @@ const {
   border-radius: 50%;
   background: currentColor;
   z-index: 2;
-  transition: all 0.3s cubic-bezier(0.25, 1, 0.3, 1);
+  transition: all var(--sys-motion-duration-300) cubic-bezier(0.25, 1, 0.3, 1);
 }
 
 
 .dot-nucleus.breath {
-  animation: breath 4s ease-in-out infinite;
+  animation: breath var(--sys-motion-ambient-breath) ease-in-out infinite;
 }
 
 .dot-nucleus.pulse {
-  animation: pulse 2s infinite;
+  animation: pulse var(--sys-motion-ambient-pulse) infinite;
 }
 
 .dot-halo {
@@ -242,19 +266,19 @@ const {
   background: currentColor;
   transform: scale(0.6);
   opacity: 0.4;
-  animation: halo-pulse 2.5s infinite;
+  animation: halo-pulse var(--sys-motion-ambient-pulse) infinite;
 }
 
 .pill-content-wrapper {
   display: flex;
   align-items: center;
-  margin-left: 2px;
-  margin-right: 4px;
+  margin-left: var(--sys-space-2);
+  margin-right: var(--sys-space-4);
 }
 
 .status-pill.expand-left .pill-content-wrapper {
-  margin-left: 4px;
-  margin-right: 2px;
+  margin-left: var(--sys-space-4);
+  margin-right: var(--sys-space-2);
   flex-direction: row-reverse;
 }
 
@@ -281,8 +305,8 @@ const {
 .base-label {
   display: flex;
   align-items: center;
-  gap: 4px;
-  transition: opacity 0.3s ease;
+  gap: var(--sys-space-4);
+  transition: opacity var(--sys-motion-duration-300) ease;
 }
 
 .status-label.is-db {
@@ -290,7 +314,7 @@ const {
 }
 
 .icon-bolt {
-  animation: bolt-flicker 3s infinite;
+  animation: bolt-flicker var(--sys-motion-ambient-breath) infinite;
 }
 
 /* EXPANDED SECTION GRID TRANSITION */
@@ -298,8 +322,8 @@ const {
   display: grid;
   grid-template-columns: 0fr;
   opacity: 0;
-  transition: grid-template-columns 0.5s var(--sys-motion-spring, cubic-bezier(0.175, 0.885, 0.32, 1.275)), 
-              opacity 0.4s ease;
+  transition: grid-template-columns var(--sys-motion-duration-500) var(--sys-motion-spring, cubic-bezier(0.175, 0.885, 0.32, 1.275)), 
+              opacity var(--sys-motion-duration-400) ease;
 }
 
 .expanded-section.is-open {
@@ -311,7 +335,7 @@ const {
   overflow: hidden;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--sys-space-8);
 }
 
 .status-pill.expand-left .expanded-inner {
@@ -323,21 +347,21 @@ const {
   height: 4px;
   border-radius: 50%;
   background: var(--sys-color-outline-variant);
-  margin: 0 4px;
+  margin: 0 var(--sys-space-4);
   flex-shrink: 0;
 }
 
 .hub-details {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--sys-space-6);
 }
 
 .source-tag {
   display: flex;
   align-items: center;
-  padding: 2px 5px;
-  border-radius: 5px;
+  padding: var(--sys-space-2) var(--sys-space-6);
+  border-radius: var(--sys-shape-corner-badge);
   background: var(--sys-color-surface-container-highest);
   color: var(--sys-color-on-surface-variant);
   font-size: 8px;
@@ -374,7 +398,7 @@ const {
   background: var(--sys-color-surface-container-high);
   color: var(--sys-color-primary);
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.25, 1, 0.3, 1);
+  transition: all var(--sys-motion-duration-300) cubic-bezier(0.25, 1, 0.3, 1);
   flex-shrink: 0;
 }
 
@@ -398,11 +422,11 @@ const {
   width: 18px;
   height: 18px;
   flex-shrink: 0;
-  animation: rotate 1.5s linear infinite;
+  animation: rotate var(--sys-motion-ambient-spin) linear infinite;
 }
 
 .is-spinning {
-  animation: rotate 0.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  animation: rotate var(--sys-motion-ambient-spin) cubic-bezier(0.4, 0, 0.2, 1) infinite;
 }
 
 @keyframes bolt-flicker {

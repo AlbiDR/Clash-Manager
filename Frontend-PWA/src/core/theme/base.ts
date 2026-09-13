@@ -10,12 +10,21 @@ export const staticTokens = `
 :root {
   /* ── LAYOUT ── */
   --sys-layout-max-width: 720px;
+  /* What the list must clear to sit above the dock. A measurement of another
+     element, not a step on the spacing scale, so it is named rather than
+     rounded onto one - 112px snapped to the nearest step would have put eight
+     pixels of dead air under every list. */
+  --sys-layout-dock-clearance: 112px;
 
   /* ── FONTS ── */
   --sys-font-family-body: "Inter", system-ui, sans-serif;
   --sys-font-family-mono: "JetBrains Mono", monospace;
 
   /* ── SHAPE CORNERS (ascending order) ── */
+  /* Seven marks take a radius small enough only to stop a corner looking cut:
+     chart bars, skeleton bars, slider ticks. They were split between 1px and
+     2px, which nobody can tell apart. */
+  --sys-shape-corner-hairline:     2px;
   --sys-shape-corner-extra-small:  4px;
   --sys-shape-corner-badge:        6px;
   --sys-shape-corner-small:        8px;
@@ -29,6 +38,12 @@ export const staticTokens = `
   --sys-shape-corner-full:        9999px;
 
   /* ── SPACING SCALE (pixel-named, 4px atomic grid) ── */
+  /* Below the grid on purpose. Six places nudge by a single pixel to sit an
+     icon on a text baseline or pull a border back under its neighbour - Toast
+     aligns its glyphs to the first line this way. Those are optical
+     corrections, not spacing decisions, and snapping them to 2px would undo
+     the alignment they exist to make. */
+  --sys-space-1:    1px;
   --sys-space-2:    2px;
   --sys-space-4:    4px;
   --sys-space-6:    6px;
@@ -67,13 +82,68 @@ export const staticTokens = `
   --sys-typescale-title-md: 20px;
   --sys-typescale-title-lg: 24px;
 
-  /* ── MOTION DURATIONS ── */
+  /* ── SURFACE OVERLAYS ──
+     Translucent black and white laid over whatever is beneath: hover tints,
+     hairline borders, inset highlights, shadow alphas. Pure black and pure
+     white are theme-independent by definition, which is why these are static
+     rather than living beside the palette - a component picks the direction,
+     the theme does not pick it for them.
+
+     [DECISION LOG] These four steps and three replace twenty-three distinct
+     alphas found across the components on 2026-09-14: fifteen blacks running
+     0.02, 0.04, 0.05, 0.08, 0.1, 0.12, 0.15, 0.2, 0.28, 0.3, 0.4, and eight
+     whites running 0.03 through 0.16 with several pairs a single hundredth
+     apart. Nothing there was a decision; it was twenty-three separate guesses
+     at the same few intentions, and the pairs that sit a hundredth apart are
+     the proof - no one can see 0.05 against 0.06, so no one chose between
+     them. The steps below sit at the centre of each cluster, so a shadow keeps
+     the geometry it was authored with and only its alpha moves onto the scale.
+
+     Naming is by weight rather than by number so that a reader picking one is
+     asked what they mean, not what they measured. */
+  --sys-overlay-dark-subtle:   rgba(0, 0, 0, 0.04);
+  --sys-overlay-dark-soft:     rgba(0, 0, 0, 0.08);
+  --sys-overlay-dark-medium:   rgba(0, 0, 0, 0.16);
+  --sys-overlay-dark-strong:   rgba(0, 0, 0, 0.32);
+  --sys-overlay-light-subtle:  rgba(255, 255, 255, 0.04);
+  --sys-overlay-light-soft:    rgba(255, 255, 255, 0.08);
+  --sys-overlay-light-medium:  rgba(255, 255, 255, 0.16);
+
+  /* ── MOTION DURATIONS (interaction) ── */
   --sys-motion-duration-100: 0.1s;
   --sys-motion-duration-200: 0.2s;
   --sys-motion-duration-250: 0.25s;
   --sys-motion-duration-300: 0.3s;
   --sys-motion-duration-400: 0.4s;
+  /* Five components reached for half a second independently - the status pill,
+     its expanding section, the appearance slider, the header overlay and the
+     selection bar's morph button - which is a step the scale was missing rather
+     than five mistakes. Same reasoning as title-md above. */
+  --sys-motion-duration-500: 0.5s;
   --sys-motion-duration-800: 0.8s;
+
+  /* ── MOTION DURATIONS (ambient) ──
+     Loops that run unattended: spinners, skeleton breathing, travelling chart
+     marks, decorative glow. They are named rather than numbered because they
+     are chosen by character, not by position on the interaction scale above,
+     the same way the easings below are named. An interaction is measured
+     against the reader's patience; a loop is measured against how often it is
+     allowed to draw the eye.
+
+     [DECISION LOG] Before these existed the app used thirteen unmanaged
+     timings between 1s and 4s - 1s and 1.5s for the same spinner gesture in
+     three different components, 2s and 2.5s and 3s and 4s for four different
+     slow pulses - so nothing in the app breathed in step with anything else.
+     That is the kind of drift nobody reports and everybody feels. */
+  --sys-motion-ambient-spin:   1s;
+  --sys-motion-ambient-pulse:  1.5s;
+  --sys-motion-ambient-drift:  2s;
+  --sys-motion-ambient-breath: 3s;
+
+  /* The interval between one staggered item starting and the next, not a
+     duration. TrajectoryItem multiplies it by its index; the Laboratory
+     skeleton counts it out by hand in three inline styles. */
+  --sys-motion-stagger-step: 0.05s;
 
   /* ── MOTION EASINGS ── */
   --sys-motion-spring:                 cubic-bezier(0.175, 0.885, 0.32, 1.15);
@@ -254,10 +324,27 @@ input, textarea, [contenteditable], .selectable {
   user-select: text;
 }
 
-* { -webkit-touch-callout: none; }
+/* [DECISION LOG] THE TAP HIGHLIGHT IS OFF EVERYWHERE, NOT ON THE TAG LIST:
+   Android's WebView paints its tap highlight as a filled rectangle of the
+   element's border box and ignores border-radius entirely, so a rounded control
+   flashes a hard-cornered box around itself the moment it is touched. The reset
+   below used to be scoped to the interactive TAGS, which quietly excluded every
+   clickable div - nine components mount one, StatusPill among them - and those
+   are exactly the rounded pills where a square flash is most visible. It was
+   reported from a phone against the status pill and the Select button.
+
+   Scoping a reset to tags is the wrong shape for the rule: whether a square
+   flashes is a property of being touchable, and this app decides that with a
+   click handler, not with an element name. Every press already has a designed
+   response through v-tactile and the :active rules, so the platform highlight
+   has nothing left to contribute on any element. touch-action stays on the tag
+   list, where it belongs: it governs gesture handling, not painting. */
+*, *::before, *::after {
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
 
 button, a, [role="button"], [role="link"], input, select, textarea {
-  -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
 }
 

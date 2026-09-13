@@ -185,8 +185,8 @@ onUnmounted(() => {
   border-radius: var(--sys-shape-corner-m);
   width: 200px;
   z-index: var(--sys-z-tooltip);
-  border: 0.5px solid rgba(255, 255, 255, 0.15);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 0.5px solid var(--sys-overlay-light-medium);
+  box-shadow: 0 8px 32px var(--sys-overlay-dark-soft), 0 2px 8px var(--sys-overlay-dark-soft);
   pointer-events: none;
   contain: content;
 }
@@ -204,7 +204,7 @@ onUnmounted(() => {
 .bc-sheet-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.4);
+  background: var(--sys-overlay-dark-strong);
   z-index: var(--sys-z-overlay);
   display: flex;
   align-items: flex-end;

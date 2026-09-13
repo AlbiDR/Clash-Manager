@@ -99,6 +99,6 @@ const {
 
 <style scoped>
 .btn-primary {
-  margin-top: 16px;
+  margin-top: var(--sys-space-16);
 }
 </style>

@@ -1,13 +1,20 @@
 <!-- SPDX-License-Identifier: GPL-3.0-only -->
 <!-- Copyright (C) 2026 AlbiDR -->
 <script setup lang="ts">
-import { computed, unref } from "vue";
+import { computed, ref, unref } from "vue";
 import { useHaptics } from "../composables/useHaptics";
 import { useHeaderScroll } from "../composables/useHeaderScroll";
 import StatusPill from "./StatusPill.vue";
 import Icon from "./Icon.vue";
 import BaseSelect from "./BaseSelect.vue";
 import type { ConsoleRemoteInfo, HubHealth } from "@core/types";
+
+/**
+ * Whether the status pill currently has its detail open. Reported by the pill
+ * itself, not read off its DOM, so the header can react to a state it does not
+ * own without depending on the pill's internal class names.
+ */
+const isStatusDetailOpen = ref(false);
 
 const props = defineProps<{
   title: string;
@@ -86,7 +93,10 @@ const handleOpenDashboard = () => {
           </div>
         </div>
 
-        <div class="action-group">
+        <div
+          class="action-group"
+          :class="{ 'is-detail-open': isStatusDetailOpen }"
+        >
           <StatusPill
             v-if="props.status && !props.loading"
             :type="props.status.type"
@@ -94,6 +104,7 @@ const handleOpenDashboard = () => {
             :nominal="props.status.nominal"
             :remote-info="props.remoteInfo"
             direction="left"
+            @update:expanded="isStatusDetailOpen = $event"
             @refresh="emit('refresh')"
           />
         </div>
@@ -188,11 +199,28 @@ const handleOpenDashboard = () => {
   margin-top: var(--sys-space-12);
 }
 
+/* [DECISION LOG] THE VIEW'S NAME IS NEVER WHAT GETS CUT:
+   Every element in this row declared flex-shrink: 0 except the title, so the
+   title absorbed one hundred percent of any overflow and did it silently.
+   Measured at 375px: expanding the status pill grows .action-group from 82px
+   to 233px, and all 151 of those pixels came out of the title, which reached
+   clientWidth: 0 - the view's own name erased, with no ellipsis left to show
+   it had happened. "Roster" needs 72px and survived; "Headhunter" needs about
+   130px and read "Headhu...".
+
+   Wrapping fixes it without a breakpoint or a hidden word. The row now grows a
+   second line when the first cannot hold everything, so the name and the count
+   keep their full width and the status pill moves below them, still right
+   aligned. Nothing is hidden and nothing is truncated: a narrow viewport costs
+   one line of height instead of the title. Roster still fits on one line and is
+   unchanged, and an expanded pill takes its own line, which is the right answer
+   for a deliberate reveal. */
 .title-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: var(--sys-space-12);
+  flex-wrap: wrap;
 }
 
 .title-group {
@@ -200,14 +228,23 @@ const handleOpenDashboard = () => {
   align-items: center;
   gap: var(--sys-space-12);
   flex: 1;
-  min-width: 0;
+  /* Refusing to shrink below the name plus the count is what actually makes the
+     row wrap. Without it the row has nothing to wrap - the shortfall is inside
+     this group, not between it and the status pill - so the group stayed one
+     line and its contents spilled over the pill instead. Measured at 375px:
+     "Headhunter" plus "48 Members" needs 218px against the 168px this group was
+     being handed, and the count chip overlapped the pill by 38px. */
+  min-width: max-content;
 }
 
 .title-main {
   display: flex;
   align-items: baseline;
   gap: var(--sys-space-8);
-  flex-wrap: nowrap;
+  /* Last resort for a viewport too narrow to hold the name and the count on one
+     line at all, narrower than any phone this ships to. The count drops below
+     the name rather than either being cut. */
+  flex-wrap: wrap;
   min-width: 0;
   flex: 1;
 }
@@ -224,7 +261,12 @@ const handleOpenDashboard = () => {
   text-overflow: ellipsis;
   transition: all var(--sys-motion-duration-200) var(--sys-motion-spring);
   min-width: 0;
-  flex-shrink: 1;
+  /* The name takes the width it needs and the row wraps around it. The ellipsis
+     above stays as a last resort for a title longer than a whole line, which no
+     current view has; max-width keeps that case inside the header rather than
+     widening the page. */
+  flex-shrink: 0;
+  max-width: 100%;
 }
 
 .view-title.is-link {
@@ -266,6 +308,48 @@ const handleOpenDashboard = () => {
   align-items: center;
   gap: var(--sys-space-8);
   flex-shrink: 0;
+  /* Holds it against the right edge on the line it lands on, whether that is
+     beside the title or wrapped beneath it. */
+  margin-left: auto;
+}
+
+/* [DECISION LOG] A WRAPPED DETAIL FILLS ITS LINE INSTEAD OF FLOATING IN IT:
+   Opening the status detail on a phone makes it too wide to sit beside the
+   title, so it takes the line below. Whether that reads as designed or as a
+   bug turned out to depend entirely on how much the pill had to say. A stale
+   clan expands to "SYNCED 16M AGO; SOURCE DATA 34M AGO - STALE", which happens
+   to span the line and looks deliberate. A healthy one expands to "27M AGO -
+   DB" and left a short chip adrift at the right of an otherwise empty line,
+   which is what was reported.
+
+   Filling the line removes the difference: the detail is the same width either
+   way, and it lines up with the search field directly beneath it rather than
+   hanging above it. space-between then pins the reading order to both edges -
+   the text to the left, the state dot to the right - so a short message spaces
+   out rather than clumping in one corner.
+
+   Scoped to the phone width on purpose. On a wide viewport the detail still
+   fits beside the title and never wraps, so stretching it there would trade a
+   real layout for a very long stadium and a header that changes height on tap.
+
+   :has() is the honest way to say "when the thing inside is open". Where it is
+   unsupported the rule is skipped and the result is today's behaviour, so the
+   floor is what shipped rather than something broken. */
+@media (max-width: 600px) {
+  .action-group.is-detail-open {
+    width: 100%;
+  }
+
+  /* StatusPill declares flex-shrink: 0, which is right while it is a chip
+     sitting beside other things and wrong once it owns the line: its expanded
+     content measured 321px against a 313px line and the extra 8px ate into the
+     card's right padding, so the bar looked mis-set rather than full width.
+     On its own line it shrinks to the line instead. */
+  .action-group.is-detail-open :deep(.status-pill) {
+    flex: 1 1 auto;
+    min-width: 0;
+    justify-content: space-between;
+  }
 }
 
 .search-sort-row {
@@ -295,7 +379,7 @@ const handleOpenDashboard = () => {
   padding: 0 var(--sys-space-14);
   gap: var(--sys-space-12);
   border: 1px solid rgba(128, 128, 128, 0.15);
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.02);
+  box-shadow: inset 0 2px 4px var(--sys-overlay-dark-subtle);
   transition: all var(--sys-motion-duration-200) ease;
 }
 

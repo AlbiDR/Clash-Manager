@@ -122,7 +122,7 @@ function handleKeydown(keyboardEvent: KeyboardEvent) {
 .target-picker {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--sys-space-8);
   flex: 1;
   min-width: 140px;
 }
@@ -137,7 +137,7 @@ function handleKeydown(keyboardEvent: KeyboardEvent) {
   padding: 0 var(--sys-space-4) 0 var(--sys-space-12);
   gap: var(--sys-space-8);
   border: 1px solid rgba(128, 128, 128, 0.15);
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.02);
+  box-shadow: inset 0 2px 4px var(--sys-overlay-dark-subtle);
   transition: all var(--sys-motion-duration-200) ease;
   flex: 1;
 }
@@ -237,7 +237,7 @@ function handleKeydown(keyboardEvent: KeyboardEvent) {
 }
 
 .is-fetching .lock-btn :deep(svg) {
-  animation: rotate 1s linear infinite;
+  animation: rotate var(--sys-motion-ambient-spin) linear infinite;
 }
 
 @keyframes rotate {

@@ -4173,6 +4173,11 @@ $function$;
 DROP VIEW IF EXISTS features.scoring_view CASCADE;
 CREATE OR REPLACE VIEW features.scoring_view AS
  WITH
+  active_members AS (
+      SELECT m.player_tag
+        FROM drivers.members m
+       WHERE m.is_active = true
+  ),
   -- -- Voyage pipeline -----------------------------------------------------------
   voyage_history AS (
       -- Source A: individual rows still in the live contributions table.
@@ -4185,6 +4190,7 @@ CREATE OR REPLACE VIEW features.scoring_view AS
         FROM drivers.clan_voyage_contributions c
           JOIN drivers.clan_voyage v ON v.id = c.voyage_id
        WHERE v.status = 'COMPLETED'::text
+         AND c.player_tag IN (SELECT am.player_tag FROM active_members am)
 
       UNION ALL
 
@@ -4199,6 +4205,7 @@ CREATE OR REPLACE VIEW features.scoring_view AS
         FROM   drivers.player_voyage_history pvh
         CROSS  JOIN LATERAL unnest(string_to_array(pvh.history, ',')) AS entry
        WHERE   pvh.history <> ''
+         AND   pvh.player_tag IN (SELECT am.player_tag FROM active_members am)
   ),
   voyage_ranked AS (
       SELECT
@@ -4208,7 +4215,7 @@ CREATE OR REPLACE VIEW features.scoring_view AS
           end_at,
           voyage_id,
           row_number() OVER (
-              PARTITION BY player_tag ORDER BY end_at DESC
+              PARTITION BY player_tag ORDER BY end_at DESC, voyage_id DESC, crowns DESC
           ) AS recency_rank
         FROM voyage_history
   ),
@@ -4221,13 +4228,13 @@ CREATE OR REPLACE VIEW features.scoring_view AS
              ( SELECT string_agg(
                            sub.crowns::text || ' ' || TO_CHAR(sub.end_at, 'YYYY-MM-DD'),
                            ' | '
-                           ORDER BY sub.end_at DESC
+                           ORDER BY sub.end_at DESC, sub.voyage_id DESC, sub.crowns DESC
                        )
                FROM (
-                   SELECT crowns, end_at
+                   SELECT crowns, end_at, voyage_id
                      FROM voyage_ranked vh_sub
                     WHERE vh_sub.player_tag = vh.player_tag
-                    ORDER BY end_at DESC
+                    ORDER BY end_at DESC, voyage_id DESC, crowns DESC
                     LIMIT 52
                ) sub
              ) AS v_hist
@@ -4244,6 +4251,7 @@ CREATE OR REPLACE VIEW features.scoring_view AS
              avg(wa.decks_used) / 16.0 * 100.0 AS decks_pct,
              max(wa.recorded_at)               AS max_recorded
         FROM drivers.war_activity wa
+       WHERE wa.player_tag IN (SELECT am.player_tag FROM active_members am)
        GROUP BY wa.player_tag, wa.week_id
   ),
   -- Level 2: assign recency rank (1 = most recent section)
@@ -4254,7 +4262,7 @@ CREATE OR REPLACE VIEW features.scoring_view AS
              decks_pct,
              max_recorded,
              row_number() OVER (
-                 PARTITION BY player_tag ORDER BY max_recorded DESC
+                 PARTITION BY player_tag ORDER BY max_recorded DESC, week_id DESC
              ) AS recency_rank
         FROM war_weekly
   ),
@@ -4264,7 +4272,7 @@ CREATE OR REPLACE VIEW features.scoring_view AS
              count(*)                                                                          AS recorded_weeks,
              substrate.weighted_avg(ARRAY_AGG(fame::numeric      ORDER BY recency_rank))               AS avg_fame,
              substrate.weighted_avg(ARRAY_AGG(decks_pct           ORDER BY recency_rank))               AS avg_war_rate,
-             string_agg(fame::text || ' ' || week_id, ' | ' ORDER BY max_recorded DESC)       AS hist
+             string_agg(fame::text || ' ' || week_id, ' | ' ORDER BY max_recorded DESC, week_id DESC) AS hist
         FROM war_ranked
        GROUP BY player_tag
   ),
@@ -4276,6 +4284,7 @@ CREATE OR REPLACE VIEW features.scoring_view AS
              DATE_TRUNC('week', snapshot_date) AS week_start,
              MAX(donations)                    AS max_donations
         FROM drivers.member_snapshots
+       WHERE player_tag IN (SELECT am.player_tag FROM active_members am)
        GROUP BY player_tag, DATE_TRUNC('week', snapshot_date)
   ),
   -- Level 2: assign recency rank (1 = most recent calendar week)
@@ -4524,11 +4533,12 @@ CREATE OR REPLACE VIEW features.roster_view AS
           WHERE ((m.is_active = true) AND (m.player_tag ~ '^#[0289CGJLPQRUVY]+$'::text))
         ),
      battle_stats AS (
-         SELECT player_tag,
+         SELECT pb.player_tag,
                 count(*) AS battle_count,
-                count(*) FILTER (WHERE win_status) AS wins
-           FROM drivers.player_battles
-          GROUP BY player_tag
+                count(*) FILTER (WHERE pb.win_status) AS wins
+           FROM drivers.player_battles pb
+          WHERE pb.player_tag IN (SELECT rs_tags.player_tag FROM roster_source rs_tags)
+          GROUP BY pb.player_tag
         )
  SELECT player_name,
     role,

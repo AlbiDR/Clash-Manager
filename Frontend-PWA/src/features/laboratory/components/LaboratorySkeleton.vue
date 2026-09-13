@@ -69,7 +69,7 @@ const trajectoryLevelPill = computed(() => px(getBone("TrajectoryItem", "levelPi
               >
                 <div
                   class="sk-box"
-                  style="width: 32px; height: 32px; border-radius: 6px;"
+                  style="width: 32px; height: 32px; border-radius: var(--sys-shape-corner-badge);"
                 />
                 <div
                   class="sk-input"
@@ -103,12 +103,12 @@ const trajectoryLevelPill = computed(() => px(getBone("TrajectoryItem", "levelPi
             />
             <div
               class="sk-input"
-              style="height: 80px; border-radius: 8px;"
+              style="height: 80px; border-radius: var(--sys-shape-corner-small);"
             />
             
             <div
               class="sk-label-box"
-              style="width: 100px; margin-top: 8px;"
+              style="width: 100px; margin-top: var(--sys-space-8);"
             />
             <div
               class="sk-input"
@@ -118,7 +118,7 @@ const trajectoryLevelPill = computed(() => px(getBone("TrajectoryItem", "levelPi
             <div class="sk-toggle-row">
               <div
                 class="sk-vstack"
-                style="gap: 4px;"
+                style="gap: var(--sys-space-4);"
               >
                 <div
                   class="sk-text-line-m"
@@ -161,7 +161,7 @@ const trajectoryLevelPill = computed(() => px(getBone("TrajectoryItem", "levelPi
         </div>
         <div
           class="sk-label-box"
-          style="width: 100px; margin-top: 16px; margin-bottom: 8px;"
+          style="width: 100px; margin-top: var(--sys-space-16); margin-bottom: var(--sys-space-8);"
         />
         <div class="sk-progression-row">
           <div
@@ -180,14 +180,14 @@ const trajectoryLevelPill = computed(() => px(getBone("TrajectoryItem", "levelPi
 
         <div
           class="sk-label-box"
-          style="width: 120px; margin-top: 24px; margin-bottom: 8px;"
+          style="width: 120px; margin-top: var(--sys-space-24); margin-bottom: var(--sys-space-8);"
         />
         <div class="sk-grid-3">
           <div
             v-for="i in 3"
             :key="i"
             class="sk-input"
-            style="height: 60px; border-radius: 16px;"
+            style="height: 60px; border-radius: var(--sys-shape-corner-large);"
           />
         </div>
       </div>
@@ -230,7 +230,7 @@ const trajectoryLevelPill = computed(() => px(getBone("TrajectoryItem", "levelPi
               </div>
               <div
                 class="sk-pill"
-                style="width: 80px; height: 24px; border-radius: 6px; margin-top: 4px;"
+                style="width: 80px; height: 24px; border-radius: var(--sys-shape-corner-badge); margin-top: var(--sys-space-4);"
               />
             </div>
             <div class="sk-cost-stack">
@@ -256,20 +256,20 @@ const trajectoryLevelPill = computed(() => px(getBone("TrajectoryItem", "levelPi
 
 <style scoped>
 .laboratory-skeleton {
-  padding-bottom: 120px;
+  padding-bottom: var(--sys-space-120);
 }
 
 .dashboard-grid {
   display: flex;
   flex-direction: column;
-  gap: 20px;
-  padding: 0 4px;
+  gap: var(--sys-space-20);
+  padding: 0 var(--sys-space-4);
 }
 
 .dashboard-sidebar {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 16px;
+  gap: var(--sys-space-16);
 }
 
 @media (min-width: 640px) {
@@ -279,9 +279,9 @@ const trajectoryLevelPill = computed(() => px(getBone("TrajectoryItem", "levelPi
 }
 
 /* [THREAT:] This block used to restate the global `.surface-panel` primitive
-   (core/theme/components.ts) with `padding: 18px` in place of its
+   (core/theme/components.ts) with `padding: var(--sys-space-18)` in place of its
    `var(--sys-space-20)` and no elevation at all. Vue's scoped attribute beats
-   the global rule, so every Laboratory panel sat 2px tighter on each edge and
+   the global rule, so every Laboratory panel sat var(--sys-space-2) tighter on each edge and
    flat until the real panels replaced it, then grew and lifted. The elements
    already carry `surface-panel`, so the primitive supplies all of that; only
    the skeleton's own column layout belongs here. */
@@ -293,20 +293,20 @@ const trajectoryLevelPill = computed(() => px(getBone("TrajectoryItem", "levelPi
 .sk-panel-header {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 24px;
+  gap: var(--sys-space-8);
+  margin-bottom: var(--sys-space-24);
 }
 
 .sk-grid-2 {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 16px;
+  gap: var(--sys-space-16);
 }
 
 .sk-grid-3 {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
+  gap: var(--sys-space-12);
 }
 
 @media (max-width: 640px) {
@@ -318,29 +318,29 @@ const trajectoryLevelPill = computed(() => px(getBone("TrajectoryItem", "levelPi
 .sk-res-col {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--sys-space-8);
 }
 
 .sk-wc-section {
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  padding-top: 16px;
+  gap: var(--sys-space-14);
+  padding-top: var(--sys-space-16);
   border-top: 1px solid var(--sys-color-outline-variant);
-  margin-top: 24px;
+  margin-top: var(--sys-space-24);
 }
 
 .sk-wc-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: var(--sys-space-10);
 }
 
 .sk-wc-col {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: var(--sys-space-8);
   flex: 1;
   min-width: 50px;
 }
@@ -348,16 +348,16 @@ const trajectoryLevelPill = computed(() => px(getBone("TrajectoryItem", "levelPi
 .sk-vstack {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--sys-space-12);
 }
 
 .sk-toggle-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 0;
+  padding: var(--sys-space-12) 0;
   border-top: 1px solid var(--sys-color-outline-variant);
-  margin-top: 8px;
+  margin-top: var(--sys-space-8);
 }
 
 .sk-summary-header {
@@ -369,51 +369,51 @@ const trajectoryLevelPill = computed(() => px(getBone("TrajectoryItem", "levelPi
 .sk-progression-row {
   display: flex;
   align-items: center;
-  gap: 24px;
+  gap: var(--sys-space-24);
 }
 
 .section-title {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin: 12px 0;
-  padding: 0 8px;
+  gap: var(--sys-space-10);
+  margin: var(--sys-space-12) 0;
+  padding: 0 var(--sys-space-8);
 }
 
 .sk-trajectory-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--sys-space-8);
 }
 
 .sk-traj-item {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: var(--sys-space-16);
   background: var(--sk-fill);
   border: 1px solid var(--sys-color-outline-variant);
   border-radius: var(--sys-shape-corner-large);
-  padding: 14px 18px;
+  padding: var(--sys-space-14) var(--sys-space-18);
 }
 
 .sk-traj-info {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--sys-space-6);
 }
 
 .sk-traj-row {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--sys-space-10);
 }
 
 .sk-cost-stack {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 8px;
+  gap: var(--sys-space-8);
   min-width: 80px;
 }
 </style>

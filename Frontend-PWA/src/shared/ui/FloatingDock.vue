@@ -53,8 +53,8 @@ const { isDesktop } = useViewport();
   display: flex;
   gap: var(--sys-space-6);
   box-shadow:
-    0 12px 40px rgba(0, 0, 0, 0.3),
-    0 0 0 1px rgba(255, 255, 255, 0.05);
+    0 12px 40px var(--sys-overlay-dark-strong),
+    0 0 0 1px var(--sys-overlay-light-subtle);
   z-index: var(--sys-z-dock);
   /* Disable double-tap zoom delay */
   touch-action: manipulation;
@@ -74,7 +74,7 @@ const { isDesktop } = useViewport();
 @media (hover: hover) and (pointer: fine) {
   .dock-container:hover {
     bottom: calc(var(--sys-space-28) + env(safe-area-inset-bottom) + var(--safe-frame-offset, 0px));
-    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 16px 48px var(--sys-overlay-dark-strong);
   }
 }
 

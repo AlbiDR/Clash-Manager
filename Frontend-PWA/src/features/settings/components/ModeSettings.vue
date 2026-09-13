@@ -99,13 +99,13 @@ const {
 }
 
 .mode-master-container {
-  border-radius: 8px;
+  border-radius: var(--sys-shape-corner-small);
   background: transparent;
   border: 1px solid transparent;
   transition:
-    background 0.3s var(--sys-motion-spring),
-    border-color 0.3s var(--sys-motion-spring),
-    box-shadow 0.3s var(--sys-motion-spring);
+    background var(--sys-motion-duration-300) var(--sys-motion-spring),
+    border-color var(--sys-motion-duration-300) var(--sys-motion-spring),
+    box-shadow var(--sys-motion-duration-300) var(--sys-motion-spring);
 }
 
 .mode-master-container.active {
@@ -134,8 +134,8 @@ const {
   font-weight: 950;
   background: var(--sys-color-primary);
   color: var(--sys-color-on-primary);
-  padding: 2px 6px;
-  border-radius: 99px;
+  padding: var(--sys-space-2) var(--sys-space-6);
+  border-radius: var(--sys-shape-corner-full);
   letter-spacing: 0.04em;
 }
 

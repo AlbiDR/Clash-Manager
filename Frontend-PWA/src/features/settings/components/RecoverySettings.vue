@@ -161,8 +161,8 @@ onMounted(() => {
   font-weight: 900;
   color: var(--sys-color-primary);
   background: var(--sys-color-surface-container-highest);
-  padding: 2px 6px;
-  border-radius: 4px;
+  padding: var(--sys-space-2) var(--sys-space-6);
+  border-radius: var(--sys-shape-corner-extra-small);
   letter-spacing: 0.05em;
 }
 
@@ -179,12 +179,12 @@ onMounted(() => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: var(--sys-space-8);
   height: 84px;
-  padding: 8px 4px;
+  padding: var(--sys-space-8) var(--sys-space-4);
   background: var(--sys-color-surface-container-high);
   border: none;
-  border-radius: 8px;
+  border-radius: var(--sys-shape-corner-small);
   color: var(--sys-color-primary);
   font-size: 11px;
   font-weight: 800;
@@ -192,7 +192,7 @@ onMounted(() => {
   text-align: center;
   line-height: 1.2;
   cursor: pointer;
-  transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1), opacity 0.2s, background-color 0.2s;
+  transition: transform var(--sys-motion-duration-200) cubic-bezier(0.2, 0, 0, 1), opacity var(--sys-motion-duration-200), background-color var(--sys-motion-duration-200);
 }
 .trouble-btn:active {
   transform: scale(0.92);
@@ -209,20 +209,20 @@ onMounted(() => {
   --apk-state-on-container: var(--sys-color-on-surface);
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  margin-top: 10px;
-  padding: 10px;
+  gap: var(--sys-space-8);
+  margin-top: var(--sys-space-10);
+  padding: var(--sys-space-10);
   border: 1px solid color-mix(in srgb, var(--apk-state-color) 18%, var(--sys-color-outline-variant));
   border-radius: var(--sys-shape-corner-small);
   background: color-mix(in srgb, var(--sys-color-surface-container) 82%, transparent);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  box-shadow: inset 0 1px 0 var(--sys-overlay-light-subtle);
 }
 
 .apk-status-row {
   display: grid;
   grid-template-columns: 6px minmax(0, 1fr) auto;
   align-items: center;
-  gap: 8px;
+  gap: var(--sys-space-8);
   min-height: 22px;
 }
 
@@ -273,7 +273,7 @@ onMounted(() => {
 .apk-status-time {
   justify-self: end;
   min-width: max-content;
-  padding: 2px 6px;
+  padding: var(--sys-space-2) var(--sys-space-6);
   border-radius: var(--sys-shape-corner-full);
   background: var(--apk-state-container);
   color: var(--apk-state-on-container);
@@ -285,14 +285,14 @@ onMounted(() => {
 .apk-version-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
+  gap: var(--sys-space-10);
 }
 
 .apk-version-cell {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 2px;
+  gap: var(--sys-space-2);
   min-width: 0;
   color: var(--sys-color-on-surface);
 }
@@ -333,7 +333,7 @@ onMounted(() => {
 .apk-feed-source {
   margin: 0;
   overflow: hidden;
-  padding: 4px 6px;
+  padding: var(--sys-space-4) var(--sys-space-6);
   border-radius: var(--sys-shape-corner-badge);
   background: color-mix(in srgb, var(--sys-color-error) 10%, transparent);
   text-overflow: ellipsis;
@@ -345,12 +345,12 @@ onMounted(() => {
 
 @media (max-width: 430px) {
   .apk-diagnostics {
-    gap: 7px;
-    padding: 9px;
+    gap: var(--sys-space-8);
+    padding: var(--sys-space-10);
   }
 
   .apk-version-grid {
-    gap: 8px;
+    gap: var(--sys-space-8);
   }
 }
 </style>

@@ -129,25 +129,25 @@ const handleInput = (inputEvent: Event, resourceKey: string) => {
 .resource-grid {
   display: flex;
   flex-direction: column;
-  gap: 28px;
+  gap: var(--sys-space-28);
 }
 
 .resource-item {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--sys-space-8);
 }
 
 .res-meta {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--sys-space-8);
 }
 
 .resource-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 16px;
+  gap: var(--sys-space-16);
 }
 
 .res-label {
@@ -160,7 +160,7 @@ const handleInput = (inputEvent: Event, resourceKey: string) => {
   background: var(--sys-color-surface-container);
   border: 1px solid var(--sys-color-outline-variant);
   border-radius: var(--sys-shape-corner-input);
-  padding: 12px 14px;
+  padding: var(--sys-space-12) var(--sys-space-14);
   font-family: var(--sys-font-family-mono);
   font-size: 16px;
   font-weight: 700;
@@ -183,28 +183,28 @@ const handleInput = (inputEvent: Event, resourceKey: string) => {
 .wildcards-section {
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  padding-top: 16px;
+  gap: var(--sys-space-14);
+  padding-top: var(--sys-space-16);
   border-top: 1px solid var(--sys-color-outline-variant);
 }
 
 .section-meta {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--sys-space-4);
 }
 
 .wildcards-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: var(--sys-space-10);
 }
 
 .wc-item {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: var(--sys-space-8);
   flex: 1;
   min-width: 50px;
 }
@@ -213,7 +213,7 @@ const handleInput = (inputEvent: Event, resourceKey: string) => {
   width: 32px;
   height: 32px;
   object-fit: contain;
-  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.2));
+  filter: drop-shadow(0 4px 8px var(--sys-overlay-dark-medium));
 }
 
 .wc-input {
@@ -228,21 +228,21 @@ const handleInput = (inputEvent: Event, resourceKey: string) => {
   width: 100%;
   height: var(--sys-space-48); /* 48px Mobile Footprint (Target B.2) */
   text-align: center;
-  transition: all 0.2s ease;
+  transition: all var(--sys-motion-duration-200) ease;
 }
 
 /* Rarity-specific border colors */
-.wc-item.common .wc-input { border-color: rgba(165, 177, 194, 0.4); }
-.wc-item.rare .wc-input { border-color: rgba(211, 84, 0, 0.4); }
-.wc-item.epic .wc-input { border-color: rgba(142, 68, 173, 0.4); }
-.wc-item.legendary .wc-input { border-color: rgba(0, 210, 211, 0.4); }
-.wc-item.champion .wc-input { border-color: rgba(241, 196, 15, 0.5); }
+.wc-item.common .wc-input { border-color: rgba(var(--sys-color-rarity-common-rgb), 0.4); }
+.wc-item.rare .wc-input { border-color: rgba(var(--sys-color-rarity-rare-rgb), 0.4); }
+.wc-item.epic .wc-input { border-color: rgba(var(--sys-color-rarity-epic-rgb), 0.4); }
+.wc-item.legendary .wc-input { border-color: rgba(var(--sys-color-rarity-legendary-rgb), 0.4); }
+.wc-item.champion .wc-input { border-color: rgba(var(--sys-color-rarity-champion-rgb), 0.5); }
 
-.wc-item.common .wc-input:focus { border-color: #A5B1C2; box-shadow: 0 0 0 2px rgba(165, 177, 194, 0.2); }
-.wc-item.rare .wc-input:focus { border-color: #D35400; box-shadow: 0 0 0 2px rgba(211, 84, 0, 0.2); }
-.wc-item.epic .wc-input:focus { border-color: #8E44AD; box-shadow: 0 0 0 2px rgba(142, 68, 173, 0.2); }
-.wc-item.legendary .wc-input:focus { border-color: #00D2D3; box-shadow: 0 0 0 2px rgba(0, 210, 211, 0.2); }
-.wc-item.champion .wc-input:focus { border-color: #F1C40F; box-shadow: 0 0 0 2px rgba(241, 196, 15, 0.3); }
+.wc-item.common .wc-input:focus { border-color: var(--sys-color-rarity-common); box-shadow: 0 0 0 2px rgba(var(--sys-color-rarity-common-rgb), 0.2); }
+.wc-item.rare .wc-input:focus { border-color: var(--sys-color-rarity-rare); box-shadow: 0 0 0 2px rgba(var(--sys-color-rarity-rare-rgb), 0.2); }
+.wc-item.epic .wc-input:focus { border-color: var(--sys-color-rarity-epic); box-shadow: 0 0 0 2px rgba(var(--sys-color-rarity-epic-rgb), 0.2); }
+.wc-item.legendary .wc-input:focus { border-color: var(--sys-color-rarity-legendary); box-shadow: 0 0 0 2px rgba(var(--sys-color-rarity-legendary-rgb), 0.2); }
+.wc-item.champion .wc-input:focus { border-color: var(--sys-color-rarity-champion); box-shadow: 0 0 0 2px rgba(var(--sys-color-rarity-champion-rgb), 0.3); }
 
 /* Hide arrows in number inputs */
 input::-webkit-outer-spin-button,

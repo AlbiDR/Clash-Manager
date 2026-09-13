@@ -154,16 +154,16 @@ const shouldShowBanner = computed(() => {
 <style scoped>
 /* --- Base Banner --- */
 .voyage-banner {
-  margin: 0 16px 8px;
-  padding: 12px 16px;
-  border-radius: 20px;
+  margin: 0 var(--sys-space-16) var(--sys-space-8);
+  padding: var(--sys-space-12) var(--sys-space-16);
+  border-radius: var(--sys-shape-corner-m);
   background: rgba(var(--sys-color-primary-rgb), 0.08);
   border: 1px solid rgba(var(--sys-color-primary-rgb), 0.2);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   box-shadow:
     0 4px 24px rgba(var(--sys-color-primary-rgb), 0.12),
-    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    inset 0 1px 0 var(--sys-overlay-light-soft);
   overflow: hidden;
   position: relative;
 }
@@ -172,8 +172,8 @@ const shouldShowBanner = computed(() => {
 .voyage-banner.is-pre-event {
   background: rgba(245, 158, 11, 0.07);
   border-color: rgba(245, 158, 11, 0.25);
-  box-shadow: 0 4px 24px rgba(245, 158, 11, 0.1), inset 0 1px 0 rgba(255,255,255,0.06);
-  animation: pre-event-pulse 3s ease-in-out infinite;
+  box-shadow: 0 4px 24px rgba(245, 158, 11, 0.1), inset 0 1px 0 var(--sys-overlay-light-subtle);
+  animation: pre-event-pulse var(--sys-motion-ambient-pulse) ease-in-out infinite;
 }
 
 @keyframes pre-event-pulse {
@@ -191,13 +191,13 @@ const shouldShowBanner = computed(() => {
   border-color: rgba(251, 191, 36, 0.4);
   box-shadow:
     0 4px 32px rgba(251, 191, 36, 0.2),
-    inset 0 1px 0 rgba(255, 255, 255, 0.12);
-  animation: victory-pulse 2s ease-in-out infinite;
+    inset 0 1px 0 var(--sys-overlay-light-soft);
+  animation: victory-pulse var(--sys-motion-ambient-pulse) ease-in-out infinite;
 }
 
 @keyframes victory-pulse {
-  0%, 100% { box-shadow: 0 4px 32px rgba(251, 191, 36, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.12); }
-  50%       { box-shadow: 0 4px 48px rgba(251, 191, 36, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.16); }
+  0%, 100% { box-shadow: 0 4px 32px rgba(251, 191, 36, 0.2), inset 0 1px 0 var(--sys-overlay-light-soft); }
+  50%       { box-shadow: 0 4px 48px rgba(251, 191, 36, 0.4), inset 0 1px 0 var(--sys-overlay-light-medium); }
 }
 
 /* --- Header Row --- */
@@ -205,8 +205,8 @@ const shouldShowBanner = computed(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 20px;
-  gap: 8px;
+  margin-bottom: var(--sys-space-20);
+  gap: var(--sys-space-8);
 }
 
 .banner-header.no-margin {
@@ -216,7 +216,7 @@ const shouldShowBanner = computed(() => {
 .banner-title-group {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--sys-space-10);
 }
 
 .banner-icon {
@@ -229,7 +229,7 @@ const shouldShowBanner = computed(() => {
 
 .is-victory .banner-icon {
   filter: drop-shadow(0 0 8px rgba(251, 191, 36, 0.8));
-  animation: icon-spin 0.4s ease;
+  animation: icon-spin var(--sys-motion-duration-400) ease;
 }
 
 .is-pre-event .banner-icon {
@@ -244,7 +244,7 @@ const shouldShowBanner = computed(() => {
 .banner-labels {
   display: flex;
   flex-direction: column;
-  gap: 1px;
+  gap: var(--sys-space-1);
 }
 
 .banner-title {
@@ -259,15 +259,15 @@ const shouldShowBanner = computed(() => {
 }
 
 .victory-label {
-  color: #fbbf24;
+  color: var(--sys-color-voyage-victory);
 }
 
 .pre-event-label {
-  color: #f59e0b;
+  color: var(--sys-color-voyage-pending);
 }
 
 .awaiting-label {
-  color: #f97316;
+  color: var(--sys-color-voyage-awaiting);
 }
 
 /* --- Meta (Crowns + Countdown) --- */
@@ -275,13 +275,13 @@ const shouldShowBanner = computed(() => {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 3px;
+  gap: var(--sys-space-4);
 }
 
 .crown-count {
   display: flex;
   align-items: baseline;
-  gap: 3px;
+  gap: var(--sys-space-4);
 }
 
 .crown-value {
@@ -292,11 +292,11 @@ const shouldShowBanner = computed(() => {
 }
 
 .is-victory .crown-value {
-  color: #fbbf24;
+  color: var(--sys-color-voyage-victory);
 }
 
 .is-pre-event .crown-value {
-  color: #f59e0b;
+  color: var(--sys-color-voyage-pending);
 }
 
 .crown-sep {
@@ -316,13 +316,13 @@ const shouldShowBanner = computed(() => {
   font-size: 12px;
   font-weight: 700;
   font-family: var(--sys-font-family-mono);
-  color: #f59e0b;
+  color: var(--sys-color-voyage-pending);
 }
 
 .crown-icon {
   font-size: 12px;
   opacity: 0.6;
-  margin-left: 2px;
+  margin-left: var(--sys-space-2);
 }
 
 .countdown {
@@ -338,13 +338,13 @@ const shouldShowBanner = computed(() => {
 }
 
 .countdown.pending {
-  color: #f59e0b;
+  color: var(--sys-color-voyage-pending);
 }
 
 .countdown.awaiting {
-  color: #f97316;
+  color: var(--sys-color-voyage-awaiting);
   font-weight: 900;
-  animation: pulse-pill 2s infinite;
+  animation: pulse-pill var(--sys-motion-ambient-pulse) infinite;
 }
 
 @keyframes pulse-pill {
@@ -357,19 +357,19 @@ const shouldShowBanner = computed(() => {
   position: relative;
   height: 8px;
   background: rgba(var(--sys-color-primary-rgb), 0.1);
-  border-radius: 99px;
+  border-radius: var(--sys-shape-corner-full);
   overflow: visible;
 }
 
 .progress-fill {
   height: 100%;
-  border-radius: 99px;
+  border-radius: var(--sys-shape-corner-full);
   background: linear-gradient(
     90deg,
     var(--sys-color-primary),
     rgba(var(--sys-color-primary-rgb), 0.7)
   );
-  transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: width var(--sys-motion-duration-800) cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
 }
 
@@ -387,11 +387,11 @@ const shouldShowBanner = computed(() => {
 }
 
 .progress-fill.is-victory {
-  background: linear-gradient(90deg, #fbbf24, #10b981);
+  background: linear-gradient(90deg, var(--sys-color-voyage-victory), var(--sys-color-success));
 }
 
 .progress-fill.is-victory::after {
-  background: #fbbf24;
+  background: var(--sys-color-voyage-victory);
   box-shadow: 0 0 12px rgba(251, 191, 36, 0.8);
 }
 
@@ -408,10 +408,10 @@ const shouldShowBanner = computed(() => {
 
 /* --- Entry Transition --- */
 .banner-slide-enter-active {
-  transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: all var(--sys-motion-duration-400) cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 .banner-slide-leave-active {
-  transition: all 0.25s ease-in;
+  transition: all var(--sys-motion-duration-250) ease-in;
 }
 .banner-slide-enter-from,
 .banner-slide-leave-to {

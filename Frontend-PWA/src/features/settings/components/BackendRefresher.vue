@@ -115,7 +115,7 @@ const { targets, isRefreshing, refresh } = useBackendRefresher();
   align-items: center;
   justify-content: space-between;
   padding: var(--sys-space-16);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  border-bottom: 1px solid var(--sys-overlay-dark-subtle);
   user-select: none; /* Text Selection Containment (Target A.3) */
   -webkit-user-select: none;
 }
@@ -126,7 +126,7 @@ const { targets, isRefreshing, refresh } = useBackendRefresher();
 .row-info {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--sys-space-2);
 }
 /* Row typescale aligned to the SettingRow/LinkRow scale (body-rg over body-sm); these
    were previously hardcoded one step smaller at 14px/12px. */
@@ -147,14 +147,14 @@ const { targets, isRefreshing, refresh } = useBackendRefresher();
   background: var(--sys-color-secondary-container);
   color: var(--sys-color-on-secondary-container);
   border: none;
-  padding: 0 20px;
-  border-radius: 8px;
+  padding: 0 var(--sys-space-20);
+  border-radius: var(--sys-shape-corner-small);
   font-weight: 700;
   font-size: 11px;
   cursor: pointer;
   min-width: 80px;
   height: 48px; /* 48px Mobile Footprint (Target B.2) */
-  transition: all 0.2s;
+  transition: all var(--sys-motion-duration-200);
   position: relative; /* For skeleton overlay */
 }
 .action-btn.skeleton-anim.sk-button-m {
@@ -167,8 +167,8 @@ const { targets, isRefreshing, refresh } = useBackendRefresher();
   position: absolute;
   inset: 0;
   background: var(--sk-fill-secondary); /* Skeleton background */
-  border-radius: 8px;
-  animation: pulse 1.5s infinite ease-in-out;
+  border-radius: var(--sys-shape-corner-small);
+  animation: pulse var(--sys-motion-ambient-pulse) infinite ease-in-out;
 }
 
 .action-btn:hover:not(:disabled) {
@@ -189,7 +189,7 @@ const { targets, isRefreshing, refresh } = useBackendRefresher();
   border: 2px solid currentColor;
   border-top-color: transparent;
   border-radius: 50%;
-  animation: spin 0.8s linear infinite;
+  animation: spin var(--sys-motion-ambient-spin) linear infinite;
   opacity: 0.6;
 }
 

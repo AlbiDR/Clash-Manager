@@ -128,14 +128,14 @@ defineProps<{
 .trajectory-item {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--sys-space-12);
   background: var(--sys-color-surface-container-low);
   border: 1px solid var(--sys-color-outline-variant);
   border-radius: var(--sys-shape-corner-large);
-  padding: 10px 14px;
+  padding: var(--sys-space-10) var(--sys-space-14);
   position: relative;
-  animation: slide-in 0.4s cubic-bezier(0.2, 0, 0, 1) both;
-  animation-delay: calc(min(var(--i), 10) * 0.05s);
+  animation: slide-in var(--sys-motion-duration-400) cubic-bezier(0.2, 0, 0, 1) both;
+  animation-delay: calc(min(var(--i), 10) * var(--sys-motion-stagger-step));
   border-left: 4px solid transparent;
 }
 
@@ -146,26 +146,26 @@ defineProps<{
 
 /* Rarity Highlights - Enhanced Visual Hierarchy */
 .trajectory-item.common { 
-  border-left-color: #A5B1C2; 
+  border-left-color: var(--sys-color-rarity-common); 
   background: var(--sys-color-surface-container-low);
 }
 .trajectory-item.rare { 
-  border-left-color: #D35400; 
-  background: linear-gradient(90deg, var(--sys-color-surface-container-low) 0%, rgba(211, 84, 0, 0.05) 100%);
+  border-left-color: var(--sys-color-rarity-rare); 
+  background: linear-gradient(90deg, var(--sys-color-surface-container-low) 0%, rgba(var(--sys-color-rarity-rare-rgb), 0.05) 100%);
 }
 .trajectory-item.epic { 
-  border-left-color: #8E44AD; 
-  background: linear-gradient(90deg, var(--sys-color-surface-container-low) 0%, rgba(142, 68, 173, 0.08) 100%);
+  border-left-color: var(--sys-color-rarity-epic); 
+  background: linear-gradient(90deg, var(--sys-color-surface-container-low) 0%, rgba(var(--sys-color-rarity-epic-rgb), 0.08) 100%);
 }
 .trajectory-item.legendary { 
-  border-left-color: #00D2D3;
-  background: linear-gradient(90deg, var(--sys-color-surface-container-low) 0%, rgba(0, 210, 211, 0.12) 100%);
-  box-shadow: 0 4px 20px -8px rgba(0, 210, 211, 0.3);
+  border-left-color: var(--sys-color-rarity-legendary);
+  background: linear-gradient(90deg, var(--sys-color-surface-container-low) 0%, rgba(var(--sys-color-rarity-legendary-rgb), 0.12) 100%);
+  box-shadow: 0 4px 20px -8px rgba(var(--sys-color-rarity-legendary-rgb), 0.3);
 }
 .trajectory-item.champion { 
-  border-left-color: #F1C40F; 
-  background: linear-gradient(90deg, var(--sys-color-surface-container-low) 0%, rgba(241, 196, 15, 0.18) 100%);
-  box-shadow: 0 4px 28px -8px rgba(241, 196, 15, 0.5);
+  border-left-color: var(--sys-color-rarity-champion); 
+  background: linear-gradient(90deg, var(--sys-color-surface-container-low) 0%, rgba(var(--sys-color-rarity-champion-rgb), 0.18) 100%);
+  box-shadow: 0 4px 28px -8px rgba(var(--sys-color-rarity-champion-rgb), 0.5);
 }
 
 .trajectory-item:hover {
@@ -179,23 +179,23 @@ defineProps<{
   display: flex;
   flex-direction: column;
   align-items: flex-start; /* Ensure all children are left-aligned and don't stretch */
-  gap: 6px;
+  gap: var(--sys-space-6);
   min-width: 0;
 }
 
 .level-row {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--sys-space-10);
 }
 
 .level-pill {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--sys-space-6);
   background: var(--sys-color-surface-container-high);
-  padding: 2px 8px;
-  border-radius: 6px;
+  padding: var(--sys-space-2) var(--sys-space-8);
+  border-radius: var(--sys-shape-corner-badge);
   font-family: var(--sys-font-family-mono);
   font-size: 11px;
   font-weight: 700;
@@ -209,8 +209,8 @@ defineProps<{
 .tower-badge {
   background: var(--sys-color-surface-container-highest);
   color: var(--sys-color-primary);
-  padding: 1px 4px;
-  border-radius: 4px;
+  padding: var(--sys-space-1) var(--sys-space-4);
+  border-radius: var(--sys-shape-corner-extra-small);
   border: 1px solid rgba(var(--sys-color-primary-rgb), 0.2);
 }
 
@@ -231,10 +231,10 @@ defineProps<{
 .efficiency-slab {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  padding: 2px 6px; /* Reduced padding for tighter fit */
+  gap: var(--sys-space-6);
+  padding: var(--sys-space-2) var(--sys-space-6); /* Reduced padding for tighter fit */
   background: var(--sys-color-surface-container);
-  border-radius: 6px;
+  border-radius: var(--sys-shape-corner-badge);
   border: 1px solid var(--sys-color-outline-variant);
   font-family: var(--sys-font-family-mono);
   font-size: 11px;
@@ -243,7 +243,7 @@ defineProps<{
 }
 
 .efficiency-slab.gold {
-  border-left: 2px solid #ffcc00;
+  border-left: 2px solid var(--sys-color-resource-gold);
   background: rgba(255, 204, 0, 0.03);
 }
 
@@ -264,21 +264,20 @@ defineProps<{
   width: 12px;
   height: 12px;
   object-fit: contain;
-  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.1));
+  filter: drop-shadow(0 1px 2px var(--sys-overlay-dark-soft));
 }
 
+/* on-surface is this exact pair, resolved by the theme. The two rules below
+   were a private re-implementation of it, the same shape MomentumPill had. */
 .eff-val {
-  color: #000000;
-}
-:root.dark .eff-val {
-  color: #FFFFFF;
+  color: var(--sys-color-on-surface);
 }
 
 .cost-stack {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 6px;
+  gap: var(--sys-space-6);
   flex-shrink: 0;
 }
 
@@ -286,7 +285,7 @@ defineProps<{
   display: grid;
   grid-template-columns: 1fr 20px; /* Fixed width for the icon slot */
   align-items: center;
-  gap: 10px;
+  gap: var(--sys-space-10);
   font-family: var(--sys-font-family-mono);
   font-size: 15px;
   font-weight: 700;

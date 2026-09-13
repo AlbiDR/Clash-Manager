@@ -271,11 +271,11 @@ const getSelectedLabel = () => {
 .select-trigger {
   width: 100%;
   height: 48px;
-  padding: 0 14px;
-  padding-right: 36px;
+  padding: 0 var(--sys-space-14);
+  padding-right: var(--sys-space-40);
   background: var(--sys-color-surface-container);
   border: 1px solid rgba(128, 128, 128, 0.15);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+  box-shadow: 0 2px 4px var(--sys-overlay-dark-subtle);
   border-radius: var(--sys-shape-corner-input);
   display: flex;
   align-items: center;
@@ -286,7 +286,7 @@ const getSelectedLabel = () => {
   cursor: pointer;
   outline: none;
   text-align: left;
-  transition: border-color 0.2s var(--sys-motion-spring);
+  transition: border-color var(--sys-motion-duration-200) var(--sys-motion-spring);
 }
 
 .select-trigger:focus-visible {
@@ -305,7 +305,7 @@ const getSelectedLabel = () => {
   top: 50%;
   transform: translateY(-50%);
   color: var(--sys-color-outline);
-  transition: transform 0.2s var(--sys-motion-spring);
+  transition: transform var(--sys-motion-duration-200) var(--sys-motion-spring);
 }
 
 .select-chevron.is-open {
@@ -330,7 +330,7 @@ const getSelectedLabel = () => {
 .options-list {
   max-height: 240px;
   overflow-y: auto;
-  padding: 6px;
+  padding: var(--sys-space-6);
   margin: 0;
   list-style: none;
   scrollbar-width: thin;
@@ -343,17 +343,17 @@ const getSelectedLabel = () => {
 
 .options-list::-webkit-scrollbar-thumb {
   background: var(--sys-color-outline-variant);
-  border-radius: 99px;
+  border-radius: var(--sys-shape-corner-full);
 }
 
 .option-item {
-  padding: 14px 12px;
-  border-radius: 8px;
+  padding: var(--sys-space-14) var(--sys-space-12);
+  border-radius: var(--sys-shape-corner-small);
   font-size: 13px;
   font-weight: 600;
   color: var(--sys-color-on-surface);
   cursor: pointer;
-  transition: all 0.15s var(--sys-motion-spring);
+  transition: all var(--sys-motion-duration-200) var(--sys-motion-spring);
 }
 
 .option-item:hover:not(.disabled) {
@@ -384,8 +384,8 @@ const getSelectedLabel = () => {
 /* Animations */
 .fade-slide-enter-active,
 .fade-slide-leave-active {
-  transition: opacity 0.2s var(--sys-motion-spring),
-              transform 0.2s var(--sys-motion-spring);
+  transition: opacity var(--sys-motion-duration-200) var(--sys-motion-spring),
+              transform var(--sys-motion-duration-200) var(--sys-motion-spring);
 }
 
 .fade-slide-enter-from,

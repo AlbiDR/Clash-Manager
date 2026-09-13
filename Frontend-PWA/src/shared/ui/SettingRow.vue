@@ -218,7 +218,7 @@ const hasDescription = computed(() => Boolean(props.description || slots.descrip
   background: var(--sys-color-surface-container-highest);
   border-radius: var(--sys-shape-corner-full);
   position: relative;
-  /* `rgba(0, 0, 0, 0.1)` was invisible against a dark track. */
+  /* `var(--sys-overlay-dark-soft)` was invisible against a dark track. */
   border: var(--switch-border) solid var(--sys-color-outline-variant);
   flex-shrink: 0;
   transition:

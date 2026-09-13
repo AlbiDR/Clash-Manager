@@ -43,18 +43,18 @@ const containerStyle = computed(() => ({
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: var(--sys-space-8);
   z-index: 1000;
   pointer-events: none; /* Let clicks pass through around toasts */
 
   /* [PERF] PERF: Animate transform only */
-  transition: transform 0.4s var(--sys-motion-spring);
+  transition: transform var(--sys-motion-duration-400) var(--sys-motion-spring);
 }
 
 /* Transitions */
 .toast-enter-active,
 .toast-leave-active {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all var(--sys-motion-duration-300) cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .toast-enter-from {
@@ -69,6 +69,6 @@ const containerStyle = computed(() => ({
 
 /* Ensure smooth list reordering */
 .toast-move {
-  transition: transform 0.3s var(--sys-motion-spring);
+  transition: transform var(--sys-motion-duration-300) var(--sys-motion-spring);
 }
 </style>

@@ -46,7 +46,10 @@
     "Backend/supabase/migrations/20260906170000_tune_autovacuum_churn_tables.sql": "59e10a3a22ed304293d8f919db332191e6a524fc3df50488d22021c8adfdbf90",
     "Backend/supabase/migrations/20260907010000_voyage_activation_gate.sql": "e24b994799b980bceb4805bd805fa4abed8829c9bcea051c90faec537d22453e",
     "Backend/supabase/migrations/20260912190000_restrict_public_vault_secret.sql": "df229efb94c1f9f6f7a06b28f58db63c83cbcbf07fe483e994b1c6a4c4eeccc2",
-    "Backend/supabase/migrations/20260913193000_observable_http_timeouts.sql": "6f89a8ca4b4146457c1707e9dad70d08418d591973e4512f7c7c2eaaae6ed8a8"
+    "Backend/supabase/migrations/20260913193000_observable_http_timeouts.sql": "6f89a8ca4b4146457c1707e9dad70d08418d591973e4512f7c7c2eaaae6ed8a8",
+    "Backend/supabase/migrations/20260913210000_scope_roster_win_rate_to_members.sql": "9be2d625f0789866992e92b1fda418f067568d9bd2b8f3d4a1c8650203d2f151",
+    "Backend/supabase/migrations/20260913223000_scope_scoring_view_to_active_members.sql": "88c552a5ef411f0ef3bae26ef080667361f352b131862b1f4516f9f050eeaa85",
+    "Backend/supabase/migrations/20260914003000_deterministic_scoring_history_order.sql": "d30374ad73a23c4e8bb9062cf4df71e7a38029735dc4b8dbbf22f6d7eafb3a4b"
   },
   "exemptions": []
 }

@@ -194,6 +194,6 @@ const recruitAccessibilityLabel = computed(() => {
 }
 
 .card-actions-margin {
-  margin-top: 16px;
+  margin-top: var(--sys-space-16);
 }
 </style>

@@ -23,7 +23,7 @@ export const animationStyles = `
 }
 
 .animate-pop {
-  animation: pop-in 0.4s var(--sys-motion-spring);
+  animation: pop-in var(--sys-motion-duration-400) var(--sys-motion-spring);
 }
 
 /* [DECISION LOG] REDUCED MOTION SUBSTITUTES A FADE, IT DOES NOT SUBTRACT:

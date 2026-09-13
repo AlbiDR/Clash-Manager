@@ -191,12 +191,11 @@ onMounted(() => {
 
 .app-shell.showcase-frame {
   --safe-frame-offset: 1px;
-  outline: 1px solid #000000;
+  /* on-surface is black on the light ground and white on the dark one, which
+     is precisely what the pair of rules here used to spell out by hand. */
+  outline: 1px solid var(--sys-color-on-surface);
   outline-offset: -1px;
   z-index: var(--sys-z-frame);
-}
-:root.dark .app-shell.showcase-frame {
-  outline: 1px solid #ffffff;
 }
 
 .app-container {
@@ -239,10 +238,10 @@ onMounted(() => {
     transparent
   );
   background-size: 200% 100%;
-  animation: shimmer 1.5s linear infinite;
+  animation: shimmer var(--sys-motion-ambient-drift) linear infinite;
 }
 .connectivity-strip.success-resolve {
-  background: #22c55e;
+  background: var(--sys-color-success);
   opacity: 1;
   transform: scaleY(1.5);
 }
@@ -259,8 +258,8 @@ onMounted(() => {
 .page-enter-active,
 .page-leave-active {
   transition:
-    opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1),
-    transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    opacity var(--sys-motion-duration-250) cubic-bezier(0.4, 0, 0.2, 1),
+    transform var(--sys-motion-duration-250) cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .page-enter-from {

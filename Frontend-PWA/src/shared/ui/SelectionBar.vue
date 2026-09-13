@@ -126,14 +126,14 @@ const {
   justify-content: space-between;
   width: 100%;
   height: 56px;
-  padding: 0 8px;
+  padding: 0 var(--sys-space-8);
   background: var(
     --sys-color-surface-container-low,
     var(--sys-color-surface-container)
   );
-  border-radius: 16px;
-  gap: 8px;
-  transition: all 0.4s var(--sys-motion-spring);
+  border-radius: var(--sys-shape-corner-large);
+  gap: var(--sys-space-8);
+  transition: all var(--sys-motion-duration-400) var(--sys-motion-spring);
   position: relative;
   overflow: hidden;
   box-sizing: border-box;
@@ -152,14 +152,14 @@ const {
 
 .sel-group.strategy {
   flex: 1;
-  gap: 6px;
+  gap: var(--sys-space-6);
   min-width: 0;
 }
 
 .sel-group.management {
   flex: 0 0 auto;
   justify-content: flex-end;
-  gap: 6px;
+  gap: var(--sys-space-6);
 }
 
 .morph-btn {
@@ -172,12 +172,12 @@ const {
   border: none;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--sys-space-8);
   font-size: 11px;
   font-weight: 900;
   cursor: pointer;
   /* Smoother, slightly slower transition */
-  transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: all var(--sys-motion-duration-500) cubic-bezier(0.34, 1.56, 0.64, 1);
   text-transform: uppercase;
   letter-spacing: 0.02em;
 }
@@ -205,7 +205,7 @@ const {
   align-items: center;
   justify-content: center;
   height: 48px;
-  padding: 0 16px;
+  padding: 0 var(--sys-space-16);
   background: var(--sys-color-surface-container-highest);
   color: var(--sys-color-on-surface);
   border-radius: var(--sys-shape-corner-medium);
@@ -217,15 +217,15 @@ const {
 
 /* Transitions */
 .status-pop-enter-active {
-  animation: pop-in 0.4s var(--sys-motion-spring);
+  animation: pop-in var(--sys-motion-duration-400) var(--sys-motion-spring);
 }
 .status-pop-leave-active {
-  animation: pop-in 0.3s var(--sys-motion-spring) reverse;
+  animation: pop-in var(--sys-motion-duration-300) var(--sys-motion-spring) reverse;
 }
 
 .text-morph-enter-active,
 .text-morph-leave-active {
-  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: all var(--sys-motion-duration-200) cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .text-morph-enter-from {

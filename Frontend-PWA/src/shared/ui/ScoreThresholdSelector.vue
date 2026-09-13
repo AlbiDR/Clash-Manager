@@ -305,7 +305,7 @@ function handleTrackKeyDown(keyboardEvent: KeyboardEvent): void {
   justify-content: center;
   flex: 1;
   min-width: 0;
-  gap: 5px;
+  gap: var(--sys-space-6);
   height: 40px;
   padding: 0 var(--sys-space-8);
   border-radius: var(--sys-shape-corner-small);
@@ -336,7 +336,7 @@ function handleTrackKeyDown(keyboardEvent: KeyboardEvent): void {
   position: relative;
   width: 100%;
   height: 3px;
-  border-radius: 2px;
+  border-radius: var(--sys-shape-corner-hairline);
   background: var(--sys-color-outline-variant);
 }
 
@@ -365,7 +365,7 @@ function handleTrackKeyDown(keyboardEvent: KeyboardEvent): void {
   top: 50%;
   width: 2px;
   height: 3px;
-  margin-left: -1px;
+  margin-left: -var(--sys-space-1);
   transform: translateY(-50%);
   background: var(--sys-color-surface-container-highest);
   opacity: 0.9;

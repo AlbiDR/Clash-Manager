@@ -189,7 +189,7 @@ function handleFabAbortHarvest() {
 <style scoped>
 .fab-btn {
   height: 56px;
-  padding: 0 24px;
+  padding: 0 var(--sys-space-24);
   min-height: 56px;
   border-radius: var(--sys-shape-corner-full);
   font-weight: 900;
@@ -198,12 +198,12 @@ function handleFabAbortHarvest() {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: var(--sys-space-10);
   cursor: pointer;
   border: none;
   transition:
-    transform 0.15s cubic-bezier(0.2, 0, 0, 1),
-    background 0.2s;
+    transform var(--sys-motion-duration-200) cubic-bezier(0.2, 0, 0, 1),
+    background var(--sys-motion-duration-200);
   color: var(--sys-color-on-surface);
   white-space: nowrap;
   flex-shrink: 0;
@@ -254,7 +254,7 @@ function handleFabAbortHarvest() {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
+  gap: var(--sys-space-2);
   min-width: 90px;
 }
 .blast-label {
@@ -270,7 +270,7 @@ function handleFabAbortHarvest() {
   border: 2px solid var(--sys-color-primary);
   border-top-color: transparent;
   border-radius: 50%;
-  animation: spin 0.8s linear infinite;
+  animation: spin var(--sys-motion-ambient-spin) linear infinite;
   opacity: 0.6;
 }
 
@@ -283,7 +283,7 @@ function handleFabAbortHarvest() {
   box-shadow: var(--sys-elevation-2);
 }
 .fab-btn.secondary-harvest:active {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--sys-overlay-light-subtle);
 }
 .fab-btn.secondary-harvest:disabled {
   opacity: 0.5;
@@ -292,8 +292,8 @@ function handleFabAbortHarvest() {
 
 @media (max-width: 600px) {
   .fab-btn:not(.compact) {
-    padding: 0 16px;
-    gap: 8px;
+    padding: 0 var(--sys-space-16);
+    gap: var(--sys-space-8);
     font-size: 14px;
   }
 }
