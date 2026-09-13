@@ -282,9 +282,15 @@ const handleOpenDashboard = () => {
   min-width: 0;
 }
 
+/* [DECISION LOG] 48, MATCHING ITS ROW-MATE:
+   This stood at 40px beside a 48px sort control in the same flex row, so two
+   fields that read as a pair were visibly different heights, and it sat under
+   the ADR touch minimum. The input inside it only occupied 23px of that, so
+   the actual target was smaller again; stretching it to the box's full height
+   makes the whole field tappable rather than just the text line. */
 .search-box {
   position: relative;
-  height: 40px;
+  height: var(--sys-space-48);
   background: var(--sys-color-surface-container-high);
   border-radius: var(--sys-shape-corner-input);
   display: flex;
@@ -306,6 +312,7 @@ const handleOpenDashboard = () => {
 
 .search-input {
   flex: 1;
+  align-self: stretch;
   background: none;
   border: none;
   color: var(--sys-color-on-surface);

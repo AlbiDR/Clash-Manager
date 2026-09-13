@@ -318,6 +318,9 @@ function saveApiUrl() {
   /* Compensating padding keeps the visual label small while the tap
      footprint still meets the 48px hybrid touch-target minimum. */
   min-height: var(--sys-space-48);
+  /* The comment above claimed the 48px minimum, and the height met it while the
+     width came out at 47px from the label plus padding. Both axes now. */
+  min-width: var(--sys-space-48);
   padding: 0 var(--sys-space-12);
   display: inline-flex;
   align-items: center;

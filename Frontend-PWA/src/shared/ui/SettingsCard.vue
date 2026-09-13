@@ -148,7 +148,14 @@ const toggleCollapse = () => {
   gap: var(--sys-space-12);
 }
 
+/* [DECISION LOG] AN 18px GLYPH IS NOT A 48px CONTROL:
+   Padding of 4px around an 18px chevron produced a 26x26 button on every card.
+   The whole header is clickable, so a pointer rarely misses, but this button is
+   the focusable element and the keyboard target, and it is what a screen reader
+   moves to. The bleed reaches 48x48 without changing the drawn glyph or
+   disturbing the header's 56px row. */
 .expand-btn {
+  position: relative;
   background: none;
   border: none;
   color: var(--sys-color-outline);
@@ -159,6 +166,14 @@ const toggleCollapse = () => {
   cursor: pointer;
   transition: transform var(--sys-motion-duration-300) var(--sys-motion-easing-standard);
   opacity: 0.5;
+}
+
+.expand-btn::after {
+  content: "";
+  position: absolute;
+  /* 12px rather than the exact 11px needed, because the spacing scale is even
+     numbered. 50x50 clears the minimum; 44 would not have. */
+  inset: calc(-1 * var(--sys-space-12));
 }
 
 .expand-btn.rotated {

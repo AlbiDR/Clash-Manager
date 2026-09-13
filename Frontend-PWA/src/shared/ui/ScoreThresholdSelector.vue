@@ -255,6 +255,7 @@ function handleTrackKeyDown(keyboardEvent: KeyboardEvent): void {
 }
 
 .mode-toggle {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -267,6 +268,21 @@ function handleTrackKeyDown(keyboardEvent: KeyboardEvent): void {
   color: var(--sys-color-on-primary-container);
   cursor: pointer;
   transition: transform var(--sys-motion-duration-200) var(--sys-motion-spring);
+}
+
+/* [DECISION LOG] BLED VERTICALLY, NOT HORIZONTALLY:
+   Both controls sit inside a 48px pill with 4px of padding, so 40px tall is
+   all the box allows and neither can simply grow. Four pixels of vertical
+   bleed reclaims the padding and brings each to the full 48px height.
+   Horizontal bleed is deliberately not applied: these two are siblings 4px
+   apart, so widening both would make their hit areas meet in the gap and a tap
+   there would be ambiguous. A slightly narrow target beats one that activates
+   the wrong control. */
+.mode-toggle::after,
+.sp-slider::after {
+  content: "";
+  position: absolute;
+  inset: calc(-1 * var(--sys-space-4)) 0;
 }
 
 .mode-toggle:active {
@@ -282,6 +298,7 @@ function handleTrackKeyDown(keyboardEvent: KeyboardEvent): void {
 /* The entire remaining footprint is the drag surface; there is no separate
    handle to aim at, which is the only way a slider fits in 48px. */
 .sp-slider {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;

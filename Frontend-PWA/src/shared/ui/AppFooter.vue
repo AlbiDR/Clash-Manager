@@ -53,6 +53,10 @@ const handleReload = () => {
 }
 
 .brand {
+  /* Reloads the application, so it is a real control and carries the touch
+     minimum. It was 18px tall, the height of its own text. */
+  min-height: var(--sys-space-48);
+  padding: 0 var(--sys-space-12);
   font-size: var(--sys-typescale-footer);
   font-weight: 950;
   opacity: 0.8;
