@@ -4,20 +4,20 @@
 
 In plain terms: nothing needed fixing. This run checked the APK UX area and found it already correct, so the only file here is the log recording that the check happened.
 
-**What was checked:** APK UX audit PASS with 0 violations across 75 files examined; 10 UX categories checked
+**What was checked:** Automated hybrid shell UX sweep completed across 75 files with 0 candidate violations
 
-**Why:** Structured audit status PASS and 0 candidate files in Frontend-PWA/src
+**Why:** Structured audit PASS with zero pending candidate files across all 10 hybrid shell UX categories
 
-**Result:** apk-ux-audit-status.txt: PASS, apk-ux-audit.json candidate count: 0 across 75 files examined, 10 categories audited
+**Result:** 75 files examined, status PASS, 0 violations found
 
 **Files changed:** .github/nightly-logs/12-apk-ux-coverage.log
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: ux
-  Why: Structured audit status PASS and 0 candidate files in Frontend-PWA/src
-  Change: APK UX audit PASS with 0 violations across 75 files examined; 10 UX categories checked
-  Result: apk-ux-audit-status.txt: PASS, apk-ux-audit.json candidate count: 0 across 75 files examined, 10 categories audited
+  Why: Structured audit PASS with zero pending candidate files across all 10 hybrid shell UX categories
+  Change: Automated hybrid shell UX sweep completed across 75 files with 0 candidate violations
+  Result: 75 files examined, status PASS, 0 violations found
   Files: .github/nightly-logs/12-apk-ux-coverage.log
   Nudges: 0
 -->
