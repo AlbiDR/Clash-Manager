@@ -101,6 +101,7 @@ export default defineConfig({
         globPatterns: ["**/*.{js,css,html,ico,png,svg,webp,woff2}"],
         globIgnores: [
           "assets/branding/*.webp",
+          "assets/branding/og-card.*",
           "assets/game/*.webp",
           "assets/icons/pwa-apple.png",
           "assets/icons/icon-512.png",
