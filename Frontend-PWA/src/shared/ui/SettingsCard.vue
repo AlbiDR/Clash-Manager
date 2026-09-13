@@ -2,7 +2,7 @@
 <!-- Copyright (C) 2026 AlbiDR -->
 <script setup lang="ts">
 import { Icon, vTactile, useHaptics } from "@shared";
-import { ref, watch } from "vue";
+import { onUnmounted, ref, watch } from "vue";
 const props = defineProps<{
   title: string;
   icon: string;
@@ -10,6 +10,9 @@ const props = defineProps<{
   bodyClass?: string;
   initiallyExpanded?: boolean;
 }>();
+
+/** Follows the body's size while a card opens, so async content is not clipped. */
+let heightTracker: ResizeObserver | null = null;
 
 const haptics = useHaptics();
 const isCollapsed = ref(!props.initiallyExpanded);
@@ -72,6 +75,28 @@ function onCollapseEnter(element: Element): void {
   requestAnimationFrame(() => {
     wrapper.style.height = `${wrapper.scrollHeight}px`;
   });
+
+  // [THREAT:] One frame is enough for content that renders synchronously and
+  // not for content that does not. Event Management draws from a store that
+  // resolves a beat later, so its body really is padding-only when the frame is
+  // measured and several hundred pixels tall immediately after - the card then
+  // animated to 32px and jumped the remaining 350. Following the body's size
+  // for the length of the transition keeps the target honest whenever it
+  // arrives.
+  const body = wrapper.firstElementChild;
+  if (!body || typeof ResizeObserver === "undefined") return;
+
+  stopTrackingHeight();
+  heightTracker = new ResizeObserver(() => {
+    wrapper.style.height = `${wrapper.scrollHeight}px`;
+  });
+  heightTracker.observe(body);
+}
+
+/** Stops following the body's size, once the card is settled or on teardown. */
+function stopTrackingHeight(): void {
+  heightTracker?.disconnect();
+  heightTracker = null;
 }
 
 /**
@@ -80,6 +105,7 @@ function onCollapseEnter(element: Element): void {
  * @param element - The transitioning wrapper.
  */
 function onCollapseAfterEnter(element: Element): void {
+  stopTrackingHeight();
   (element as HTMLElement).style.height = "";
 }
 
@@ -89,11 +115,14 @@ function onCollapseAfterEnter(element: Element): void {
  * @param element - The transitioning wrapper.
  */
 function onCollapseLeave(element: Element): void {
+  stopTrackingHeight();
   const wrapper = element as HTMLElement;
   wrapper.style.height = `${wrapper.scrollHeight}px`;
   void wrapper.offsetHeight;
   wrapper.style.height = "0px";
 }
+
+onUnmounted(stopTrackingHeight);
 
 const toggleCollapse = () => {
   haptics.tap();
