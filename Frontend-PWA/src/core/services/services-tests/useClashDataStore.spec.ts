@@ -217,7 +217,7 @@ describe("useClashDataStore", () => {
       await store.startBackgroundSync();
 
       expect(store.loading).toBe(false);
-      expect(store.syncError).toBe("API Down");
+      expect(store.syncError).toBe("The clan data could not be refreshed");
     });
 
     it("should tolerate up to 2 consecutive failures if data exists", async () => {
@@ -235,7 +235,7 @@ describe("useClashDataStore", () => {
 
       // 3rd failure
       await store.startBackgroundSync();
-      expect(store.syncError).toBe("Transient Error"); // Surfaced
+      expect(store.syncError).toBe("The clan data could not be refreshed"); // Surfaced
     });
 
     it("should reset consecutive failures on success", async () => {
@@ -307,7 +307,7 @@ describe("useClashDataStore", () => {
       await store.refreshFromSupabase();
 
       expect(fetchRemote).toHaveBeenCalledTimes(1);
-      expect(store.syncError).toBe("Supabase Down");
+      expect(store.syncError).toBe("The clan data could not be refreshed");
     });
 
     it("should perform one authoritative attempt when validation fails", async () => {
@@ -317,7 +317,7 @@ describe("useClashDataStore", () => {
       await store.refreshFromSupabase();
 
       expect(fetchRemote).toHaveBeenCalledTimes(1);
-      expect(store.syncError).toBe("Remote data validation failed");
+      expect(store.syncError).toBe("The server sent data this app could not read");
     });
 
     it("should bypass offline guard for manual refresh", async () => {
@@ -339,7 +339,7 @@ describe("useClashDataStore", () => {
 
       await store.refreshFromSupabase();
 
-      expect(store.syncError).toBe("API Down");
+      expect(store.syncError).toBe("The clan data could not be refreshed");
     });
 
     it("should not start if already loading", async () => {

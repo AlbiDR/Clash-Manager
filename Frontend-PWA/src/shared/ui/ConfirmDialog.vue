@@ -2,6 +2,7 @@
 <!-- Copyright (C) 2026 AlbiDR -->
 
 <script setup lang="ts">
+import { nextTick, ref, useId, watch } from "vue";
 import { useConfirm } from "@core";
 import { vTactile } from "../directives/vTactile";
 
@@ -19,6 +20,48 @@ import { vTactile } from "../directives/vTactile";
  * - Satisfaction: Satisfies ADR Section III: Visual Purity.
  */
 const { active, resolve } = useConfirm();
+
+const titleId = useId();
+const messageId = useId();
+const cancelButton = ref<HTMLButtonElement | null>(null);
+const elementBeforeOpen = ref<HTMLElement | null>(null);
+
+/**
+ * [DECISION LOG] A MODAL ANSWERS TO THE KEYBOARD.
+ *
+ * @remarks
+ * This replaced `window.confirm()`, which dismisses on Escape, moves focus into
+ * itself and returns focus afterwards, all for free. None of that survived the
+ * replacement, so the app asks a blocking question that a keyboard cannot
+ * answer or escape from, and a screen reader is never told a dialog opened.
+ *
+ * Escape resolves false, matching the overlay click and the native dialog it
+ * stands in for: dismissing a confirmation must never be read as confirming.
+ */
+watch(active, async (openRequest) => {
+  if (!openRequest) {
+    elementBeforeOpen.value?.focus();
+    elementBeforeOpen.value = null;
+    return;
+  }
+  elementBeforeOpen.value = document.activeElement as HTMLElement | null;
+  await nextTick();
+  cancelButton.value?.focus();
+// `immediate` because a confirm can be requested before this component mounts,
+// in which case `active` is already set and a change-only watcher never runs -
+// the dialog would then appear with focus left behind it.
+}, { immediate: true });
+
+/**
+ * Dismisses the dialog on Escape.
+ *
+ * @param keyboardEvent - The originating keyboard event.
+ */
+function handleKeyDown(keyboardEvent: KeyboardEvent): void {
+  if (keyboardEvent.key !== "Escape") return;
+  keyboardEvent.preventDefault();
+  resolve(false);
+}
 </script>
 
 <template>
@@ -28,11 +71,22 @@ const { active, resolve } = useConfirm();
         v-if="active"
         class="confirm-overlay"
         @click.self="resolve(false)"
+        @keydown="handleKeyDown"
       >
-        <div class="confirm-card glassmorphic">
-          <h3>{{ active.title }}</h3>
+        <div
+          class="confirm-card glassmorphic"
+          role="dialog"
+          aria-modal="true"
+          :aria-labelledby="titleId"
+          :aria-describedby="active.message ? messageId : undefined"
+          tabindex="-1"
+        >
+          <h3 :id="titleId">
+            {{ active.title }}
+          </h3>
           <p
             v-if="active.message"
+            :id="messageId"
             class="confirm-message"
           >
             {{ active.message }}
@@ -40,6 +94,7 @@ const { active, resolve } = useConfirm();
 
           <div class="confirm-actions">
             <button
+              ref="cancelButton"
               v-tactile
               class="confirm-btn cancel-btn"
               @click="resolve(false)"
@@ -112,12 +167,23 @@ const { active, resolve } = useConfirm();
 
 .confirm-btn {
   border: none;
-  border-radius: 100px;
-  padding: 10px 20px;
+  border-radius: var(--sys-shape-corner-full);
+  /* These are the two controls that answer a blocking question, and they sat
+     at 40px against the ADR's 48px minimum. */
+  min-height: var(--sys-space-48);
+  padding: var(--sys-space-10) var(--sys-space-20);
   font-size: 14px;
   font-weight: 800;
   cursor: pointer;
-  transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1), opacity 0.2s, background-color 0.2s;
+  transition:
+    transform var(--sys-motion-duration-200) var(--sys-motion-easing-decelerate),
+    opacity var(--sys-motion-duration-200) var(--sys-motion-easing-standard),
+    background-color var(--sys-motion-duration-200) var(--sys-motion-easing-standard);
+}
+
+.confirm-btn:focus-visible {
+  outline: 2px solid var(--sys-color-primary);
+  outline-offset: var(--sys-space-2);
 }
 .confirm-btn:active {
   transform: scale(0.95);

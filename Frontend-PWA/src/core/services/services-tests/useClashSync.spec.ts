@@ -246,7 +246,45 @@ describe("useClashSync", () => {
 
       await sync.refreshFromSupabase();
 
-      expect(sync.syncError.value).toBe("Network Error");
+      expect(sync.syncError.value).toBe("Could not reach the server");
+    });
+
+    describe("failures are translated before they reach the operator", () => {
+      // [DECISION LOG] The raw exception used to go straight into the
+      // user-facing headline, so a failed sync showed strings like
+      // "TypeError: Failed to fetch" or "JWT expired" as if they explained
+      // something. Each recognised class now gets copy addressed to a person,
+      // and anything unrecognised gets a plain statement rather than a stack
+      // trace fragment.
+      const CLASSES: [string, string][] = [
+        ["TypeError: Failed to fetch", "Could not reach the server"],
+        ["Network Error", "Could not reach the server"],
+        ["The operation was aborted", "The server took too long to answer"],
+        ["JWT expired", "The app is not authorised to read this data"],
+        ["Invalid API key", "The app is not authorised to read this data"],
+        ["503 Service Unavailable", "The server could not answer right now"],
+        ["Invalid type: Expected object", "The server sent data this app could not read"],
+        ["kaboom", "The clan data could not be refreshed"],
+      ];
+
+      it.each(CLASSES)("renders %s as operator copy", async (raw, expected) => {
+        vi.mocked(fetchRemote).mockRejectedValue(new Error(raw));
+        const sync = useClashSync(data);
+
+        await sync.refreshFromSupabase();
+
+        expect(sync.syncError.value).toBe(expected);
+      });
+
+      it("never leaks the raw exception text", async () => {
+        vi.mocked(fetchRemote).mockRejectedValue(new Error("TypeError: Failed to fetch"));
+        const sync = useClashSync(data);
+
+        await sync.refreshFromSupabase();
+
+        expect(sync.syncError.value).not.toContain("TypeError");
+        expect(sync.syncError.value).not.toContain("fetch");
+      });
     });
 
     it("should not create a duplicate retry storm after a manual failure", async () => {
@@ -256,7 +294,7 @@ describe("useClashSync", () => {
       await sync.refreshFromSupabase();
 
       expect(fetchRemote).toHaveBeenCalledTimes(1);
-      expect(sync.syncError.value).toBe("Network Error");
+      expect(sync.syncError.value).toBe("Could not reach the server");
     });
 
     it("should time out a stalled foreground refresh and release loading", async () => {
@@ -271,7 +309,7 @@ describe("useClashSync", () => {
       await refreshPromise;
 
       expect(sync.loading.value).toBe(false);
-      expect(sync.syncError.value).toBe("Sync timed out");
+      expect(sync.syncError.value).toBe("The server took too long to answer");
       expect(requestSignal?.aborted).toBe(true);
     });
   });
@@ -293,7 +331,7 @@ describe("useClashSync", () => {
       const sync = useClashSync(data);
 
       await sync.startBackgroundSync();
-      expect(sync.syncError.value).toBe("Sync failed");
+      expect(sync.syncError.value).toBe("The clan data could not be refreshed");
     });
 
     it("should share single-flight promise between background sync and manual refresh", async () => {
@@ -328,7 +366,7 @@ describe("useClashSync", () => {
 
       // Strike 3
       await sync.startBackgroundSync();
-      expect(sync.syncError.value).toBe("Fail");
+      expect(sync.syncError.value).toBe("The clan data could not be refreshed");
     });
 
     it("should report error immediately if no data exists", async () => {
@@ -336,7 +374,7 @@ describe("useClashSync", () => {
       const sync = useClashSync(data);
 
       await sync.startBackgroundSync();
-      expect(sync.syncError.value).toBe("Fail");
+      expect(sync.syncError.value).toBe("The clan data could not be refreshed");
     });
 
     it("should reset error counter on success", async () => {
@@ -462,7 +500,7 @@ describe("useClashSync", () => {
 
       // A manual refresh exposes the error immediately and sets the count to 1.
       await sync.refreshFromSupabase();
-      expect(sync.syncError.value).toBe("Network Error");
+      expect(sync.syncError.value).toBe("Could not reach the server");
 
       // Now a local-only edit, exactly as a failed mutation's rollback does.
       // The minimal shape WebAppDataSchema accepts. A payload with extra keys
@@ -471,7 +509,7 @@ describe("useClashSync", () => {
       await sync.updateLocalData({ lb: [], hh: [], timestamp: 2000, blacklist: [] });
 
       // The backend has not become reachable, so the evidence must survive.
-      expect(sync.syncError.value).toBe("Network Error");
+      expect(sync.syncError.value).toBe("Could not reach the server");
     });
 
     it("clears the failure state when a remote sync actually succeeds", async () => {
@@ -479,7 +517,7 @@ describe("useClashSync", () => {
       vi.mocked(fetchRemote).mockRejectedValueOnce(new Error("Network Error"));
       const sync = useClashSync(data);
       await sync.refreshFromSupabase();
-      expect(sync.syncError.value).toBe("Network Error");
+      expect(sync.syncError.value).toBe("Could not reach the server");
 
       vi.mocked(fetchRemote).mockResolvedValue({ lb: [], hh: [], timestamp: 3000, blacklist: [] });
       await sync.refreshFromSupabase();
