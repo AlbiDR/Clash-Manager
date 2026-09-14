@@ -11681,7 +11681,7 @@
           }
         },
         "attempts": 1,
-        "lastObservedAt": "2026-09-14T10:57:25.498Z",
+        "lastObservedAt": "2026-09-14T11:33:40.584Z",
         "failureClass": "JULES_SESSION_FAILED"
       },
       "2": {
@@ -11721,7 +11721,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-14T10:57:25.499Z",
+        "lastObservedAt": "2026-09-14T11:33:40.585Z",
         "failureClass": null
       },
       "3": {
@@ -11761,7 +11761,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-14T10:57:25.499Z",
+        "lastObservedAt": "2026-09-14T11:33:40.585Z",
         "failureClass": null
       },
       "4": {
@@ -11801,7 +11801,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-14T10:57:25.499Z",
+        "lastObservedAt": "2026-09-14T11:33:40.586Z",
         "failureClass": null
       },
       "5": {
@@ -11854,7 +11854,7 @@
           }
         },
         "attempts": 1,
-        "lastObservedAt": "2026-09-14T10:57:25.500Z",
+        "lastObservedAt": "2026-09-14T11:33:40.586Z",
         "failureClass": null
       },
       "6": {
@@ -11894,7 +11894,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-14T10:57:25.500Z",
+        "lastObservedAt": "2026-09-14T11:33:40.586Z",
         "failureClass": null
       },
       "7": {
@@ -11938,7 +11938,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-14T10:57:25.500Z",
+        "lastObservedAt": "2026-09-14T11:33:40.587Z",
         "failureClass": null
       },
       "8": {
@@ -11981,7 +11981,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-14T10:57:25.501Z",
+        "lastObservedAt": "2026-09-14T11:33:40.587Z",
         "failureClass": null
       },
       "9": {
@@ -12021,7 +12021,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-14T10:57:25.501Z",
+        "lastObservedAt": "2026-09-14T11:33:40.587Z",
         "failureClass": null
       },
       "10": {
@@ -12064,7 +12064,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-14T10:57:25.501Z",
+        "lastObservedAt": "2026-09-14T11:33:40.588Z",
         "failureClass": null
       },
       "11": {
@@ -12104,7 +12104,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-14T10:57:25.502Z",
+        "lastObservedAt": "2026-09-14T11:33:40.588Z",
         "failureClass": null
       },
       "12": {
@@ -12144,7 +12144,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-14T10:57:25.502Z",
+        "lastObservedAt": "2026-09-14T11:33:40.589Z",
         "failureClass": null
       },
       "13": {
@@ -12152,7 +12152,7 @@
         "stage": 13,
         "expectedAfterUtc": null,
         "deadlineUtc": null,
-        "state": "EXPECTED",
+        "state": "MERGED",
         "evidence": {
           "coverageLog": ".github/nightly-logs/13-self-healing-protocol-coverage.log",
           "notReached": {
@@ -12162,10 +12162,29 @@
             "verdict": "HEALTHY",
             "currentStreak": 0,
             "reason": "no adverse trend"
+          },
+          "tag": "nightly/2026-09-14/stage-13/pr-1821",
+          "session": {
+            "id": "5501749391429236962",
+            "name": "sessions/5501749391429236962",
+            "state": "COMPLETED",
+            "createTime": "2026-09-14T11:19:22.176005713Z",
+            "updateTime": "2026-09-14T11:30:34.349562Z",
+            "lifetimeMinutes": 11.2
+          },
+          "run": {
+            "started": "2026-09-14T11:21:00Z",
+            "terminated": "2026-09-14T11:26:00Z",
+            "durationMinutes": 5
+          },
+          "body": {
+            "pr": 1821,
+            "verdict": "OK",
+            "ok": true
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-14T10:57:25.503Z",
+        "lastObservedAt": "2026-09-14T11:33:40.589Z",
         "failureClass": null
       }
     }
