@@ -27,6 +27,8 @@ const props = defineProps<{
     nominal?: boolean;
   };
   showSearch?: boolean;
+  /** The live query, forwarded so the header's field is controlled. */
+  searchQuery?: string;
   stats?: { label: string; value: string };
   sortOptions?: { label: string; value: string; desc?: string }[];
   loading?: boolean;
@@ -175,6 +177,8 @@ onUnmounted(() => {
         :title="props.title"
         :status="props.status"
         :show-search="props.showSearch"
+        :search-query="props.searchQuery"
+        :pin-expanded="(props.selectedCount ?? 0) > 0"
         :stats="props.stats"
         :sort-options="props.sortOptions"
         :current-sort="props.currentSort"

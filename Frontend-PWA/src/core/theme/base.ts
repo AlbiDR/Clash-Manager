@@ -10,6 +10,25 @@ export const staticTokens = `
 :root {
   /* ── LAYOUT ── */
   --sys-layout-max-width: 720px;
+  /* A search field wider than this stops helping. The queries it takes are
+     player names and tags - a handful of characters - so past roughly twenty
+     of them the extra width is empty box. Without a ceiling the field grew to
+     508px at a 1440px viewport, 77% of its row, to hold an average query of
+     three characters. */
+  /* The narrowest the field can be and still be a field. Its own furniture -
+     icon, gap, padding, clear button - costs about 94px, so below this the
+     text area stops holding a typical player name and the box clips its own
+     contents, which is what it did at 108px on a 320px viewport. Reaching this
+     floor is what makes the row wrap instead of crushing it. */
+  /* The ceiling a collapsing header row animates from. max-height needs a
+     concrete number to transition between, and the tallest these rows measure
+     is 108px - the search-and-sort row at 320px, where the open field takes a
+     line of its own and the sort control drops below it. Sized just above that
+     so nothing is clipped while expanded, and not so far above that the
+     collapse appears to hesitate before it starts. */
+  --sys-layout-header-row-max-height: 120px;
+  --sys-layout-search-min-width: 160px;
+  --sys-layout-search-max-width: 320px;
   /* What the list must clear to sit above the dock. A measurement of another
      element, not a step on the spacing scale, so it is named rather than
      rounded onto one - 112px snapped to the nearest step would have put eight

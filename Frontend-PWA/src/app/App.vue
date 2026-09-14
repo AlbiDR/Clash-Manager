@@ -180,7 +180,20 @@ onMounted(() => {
   min-height: 100vh;
   background-color: var(--sys-color-background);
   color: var(--sys-color-on-surface);
-  overflow-x: hidden;
+  /* [DECISION LOG] clip, NOT hidden - hidden SILENTLY KILLED THE STICKY HEADER:
+     `overflow-x: hidden` cannot stand alone. The spec computes the other axis
+     from `visible` to `auto` when one axis is `hidden`, so this line quietly
+     made the shell a scroll container. A scroll container is what `position:
+     sticky` sticks to, and this one never scrolls - the page does - so the
+     console header, which declares `position: sticky; top: 0`, scrolled away
+     with the list and had done since the line was written. Measured at a
+     scroll depth of 900px: header top at -880, entirely off screen.
+
+     `clip` guards the same axis without becoming a scroll container, so the
+     header now sticks at top: 0 with no horizontal overflow introduced. The
+     `is-scrolled` restyle in ConsoleHeader was collateral: it fired correctly
+     the whole time, against a header nobody could see. */
+  overflow-x: clip;
   transition: outline var(--sys-motion-duration-300) ease;
   display: flex;
   flex-direction: column;

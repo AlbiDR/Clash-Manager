@@ -50,7 +50,10 @@ export function getAppShellStyles(): string {
       margin: 0;
       font-family: var(--sys-font-family-body);
       -webkit-font-smoothing: antialiased;
-      overflow-x: hidden;
+      /* clip rather than hidden: hidden on one axis computes the other from
+         visible to auto, making the body a scroll container and breaking every
+         position: sticky above it. See the note on .app-shell in App.vue. */
+      overflow-x: clip;
       min-height: 100dvh;
     }
 

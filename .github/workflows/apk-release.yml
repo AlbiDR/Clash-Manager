@@ -180,6 +180,20 @@ jobs:
         env:
           VERSION: ${{ steps.version.outputs.val }}
           BUILD_NUMBER: ${{ steps.buildnum.outputs.val }}
+          # The branch Auto Tag fired on, which is the branch this run already
+          # checked out by head_sha. It was hardcoded to Beta, so a Stable-
+          # triggered build pushed its APK at Beta: Stable's own release slot
+          # never advanced (it sat at v14.50.103+391 while Stable was 14.50.104),
+          # and when that push raced a real Beta push it resolved the conflict by
+          # absorbing Beta, producing an 11-file commit with 93 deletions aimed at
+          # Beta on 2026-09-13. That one was rejected non-fast-forward; a winning
+          # race would have published Stable's tree onto Beta.
+          # head_branch is the same half the concurrency group keys on, so a run
+          # can no longer serialise against one branch while pushing to another.
+          # The fallback differs deliberately: the group can use github.ref, but
+          # git needs the bare name, and on workflow_dispatch this now publishes
+          # to the branch it was dispatched from rather than always to Beta.
+          TARGET_BRANCH: ${{ github.event.workflow_run.head_branch || github.ref_name }}
         run: |
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git config user.name "github-actions[bot]"
@@ -222,19 +236,19 @@ jobs:
             git commit -m "chore(apk): update signed release APK to v${VERSION}+${BUILD_NUMBER}"
 
             # Fetch latest remote changes
-            git fetch origin Beta
+            git fetch origin "$TARGET_BRANCH"
 
             # If the remote has moved, reset branch pointer but keep our new APK file intact
-            if [ "$(git rev-parse HEAD~1)" != "$(git rev-parse origin/Beta)" ]; then
+            if [ "$(git rev-parse HEAD~1)" != "$(git rev-parse "origin/$TARGET_BRANCH")" ]; then
               echo "Remote branch moved. Syncing and resolving conflict..."
-              git reset --soft origin/Beta
+              git reset --soft "origin/$TARGET_BRANCH"
               write_release
               git commit --amend -m "chore(apk): update signed release APK to v${VERSION}+${BUILD_NUMBER}"
             fi
 
-            git push origin HEAD:Beta || {
+            git push origin "HEAD:$TARGET_BRANCH" || {
               echo "Push failed. Checking whether this version is already published..."
-              git fetch origin Beta
+              git fetch origin "$TARGET_BRANCH"
               # Match on VERSION alone, never VERSION+BUILD_NUMBER. BUILD_NUMBER
               # is github.run_number, so it is unique to THIS run: grepping for
               # it can only ever match a commit this same run pushed, which is
@@ -244,9 +258,9 @@ jobs:
               # rejected while +269 held the identical signed artifact).
               # The artifact identity is the version; the build number is only
               # provenance.
-              git ls-tree --name-only origin/Beta APK/release/ \
+              git ls-tree --name-only "origin/$TARGET_BRANCH" APK/release/ \
                 | grep -q "clashmanager-v${VERSION}+.*\.apk" \
-                && echo "A signed APK for v${VERSION} is already on Beta; nothing left to publish." \
+                && echo "A signed APK for v${VERSION} is already on $TARGET_BRANCH; nothing left to publish." \
                 || exit 1
             }
           fi

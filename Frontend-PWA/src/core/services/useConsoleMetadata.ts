@@ -32,6 +32,7 @@ import type { HubHealth } from "../types";
 export function useConsoleMetadata(
   statsLabel: string,
   dataCount: ComputedRef<number> | Ref<number>,
+  visibleCount?: ComputedRef<number> | Ref<number>,
 ) {
   const { isShowcaseMode: isShowcase } = useShowcaseMode();
   const { isBlueprintMode } = useBlueprintMode();
@@ -77,6 +78,28 @@ export function useConsoleMetadata(
     }
 
     const badgeLabel = itemCount === 1 ? statsLabel : `${statsLabel}s`;
+
+    /**
+     * [DECISION LOG] THE CHIP STATES THE FILTER RATHER THAN IGNORING IT.
+     * It was fed the total and nothing else, so a filtered console read
+     * "41 Members" above twelve rows and the reader was left to notice the
+     * contradiction. When fewer are showing than exist, the chip says so.
+     *
+     * The count here is the FILTERED length, never the progressively rendered
+     * one: rows arrive in batches of eight, and counting those would make the
+     * number climb on its own while the reader watched.
+     *
+     * Demo modes are excluded because their totals are invented, so a ratio
+     * built from one would be arithmetic on a fiction.
+     */
+    const isDemoMode = isShowcase.value || isBlueprintMode.value;
+    const showing = visibleCount?.value;
+    if (!isDemoMode && showing !== undefined && showing !== itemCount) {
+      return {
+        label: badgeLabel,
+        value: `${showing} of ${itemCount}`,
+      };
+    }
 
     return {
       label: badgeLabel,

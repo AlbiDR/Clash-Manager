@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
-import { ref, computed, watch, type Ref, type ComputedRef } from "vue";
+import { ref, computed, watch, onDeactivated, type Ref, type ComputedRef } from "vue";
 import { sortByNameThenId } from "../utils/sortStrategies";
 
 /**
@@ -58,6 +58,27 @@ export function useListFilter<T extends { id: string; n?: string }>(
 ) {
   const searchQuery = ref("");
   const sortBy = ref(resolveInitialSort(sortStrategies, defaultSort, sortStorageKey));
+
+  /**
+   * [DECISION LOG] THE FILTER DOES NOT FOLLOW THE READER TO ANOTHER VIEW.
+   * App.vue renders the routed views inside <KeepAlive>, so leaving a console
+   * does not unmount it and every ref in here survives the trip. A reader who
+   * searched the roster, went to the Headhunter and came back found the roster
+   * still filtered - measured, not supposed: forty of forty-one rows withheld,
+   * with only the text still sitting in the input to explain it.
+   *
+   * onDeactivated is the hook that matches the cause. onUnmounted never fires
+   * for a kept-alive view, and watching the route would need this service to
+   * know about routing to fix a problem routing did not create. The view being
+   * put away is the event; dropping the filter is the response.
+   *
+   * The sort is deliberately NOT reset: it is a stated preference, persisted
+   * under sortStorageKey, and a preference outliving a view switch is the point
+   * of it. A search is a momentary question about the list in front of you.
+   */
+  onDeactivated(() => {
+    searchQuery.value = "";
+  });
 
   if (sortStorageKey) {
     watch(sortBy, (nextSortKey) => {
