@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-12
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-14] PR #1820 [Stage 12]: Verified 77 frontend source files against 10 hybrid shell UX criteria; zero candidate files or violations found
+**Domain:** ux | **Commit:** b09ef8d7 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1820)
+**Files:** .github/nightly-logs/12-apk-ux-coverage.log, .github/nightly-logs/12-apk-ux-pr-body.md
+**Why:** No layout leaks, native select overlays, or missing haptic/viewport directives found in Frontend-PWA/src
+**Change:** Verified 77 frontend source files against 10 hybrid shell UX criteria; zero candidate files or violations found
+**Result:** apk-ux-audit-status.txt: PASS, apk-ux-audit.json: 77 files examined / 0 candidates / 0 violations across 10 UX categories; 203 unit tests passed
+**Nudges:** 0
+
+
 ### [2026-09-14] PR #1819 [Stage 11]: Audited native WebView settings, Service Worker routes, Vite manualChunks, and asset footprint; zero source changes required.
 **Domain:** apk | **Commit:** 10ae5ee0 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1819)
 **Files:** .github/nightly-logs/11-apk-optimization-coverage.log, .github/nightly-logs/11-apk-optimization-pr-body.md
