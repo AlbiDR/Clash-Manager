@@ -178,6 +178,7 @@ onUnmounted(() => {
         :status="props.status"
         :show-search="props.showSearch"
         :search-query="props.searchQuery"
+        :pin-expanded="(props.selectedCount ?? 0) > 0"
         :stats="props.stats"
         :sort-options="props.sortOptions"
         :current-sort="props.currentSort"

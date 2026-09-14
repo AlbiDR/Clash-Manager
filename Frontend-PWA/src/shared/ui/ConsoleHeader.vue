@@ -32,6 +32,11 @@ const props = defineProps<{
    * state left the stale text sitting in the box.
    */
   searchQuery?: string;
+  /**
+   * Holds the header open regardless of scrolling. Set by the host while
+   * something it owns is mid-task, such as an active selection.
+   */
+  pinExpanded?: boolean;
   dashboardUrl?: string;
   stats?: { label: string; value: string };
   sortOptions?: { label: string; value: string; desc?: string; fullDesc?: string }[];
@@ -47,7 +52,16 @@ const emit = defineEmits<{
 }>();
 
 const haptics = useHaptics();
-const { isScrolled } = useHeaderScroll(10);
+/**
+ * The header condenses while the reader travels away from the top, and refuses
+ * to while any control it hosts is in use - an open search field, or a live
+ * selection its host reports through `pinExpanded`. Taking a working control
+ * away mid-task is the one thing this must never do.
+ */
+const { isScrolled, isCondensed } = useHeaderScroll({
+  threshold: 10,
+  isPinned: () => isSearchOpen.value || props.pinExpanded === true,
+});
 
 /** The field itself, owned here because the element belongs to this template. */
 const searchInput = useTemplateRef<HTMLInputElement>("searchInput");
@@ -84,7 +98,7 @@ const handleOpenDashboard = () => {
 <template>
   <header
     class="console-header"
-    :class="{ 'is-scrolled': unref(isScrolled) }"
+    :class="{ 'is-scrolled': unref(isScrolled), 'is-condensed': unref(isCondensed) }"
   >
     <div class="header-main">
       <div class="title-row">
@@ -259,6 +273,45 @@ const handleOpenDashboard = () => {
 
 .header-extra {
   margin-top: var(--sys-space-12);
+}
+
+/* [DECISION LOG] THE SECONDARY ROWS STAND DOWN WHILE THE READER IS READING:
+   The header is sticky, so on a 812px viewport it held 245px - thirty per cent
+   of the screen - in front of the list for the entire scroll. Travelling away
+   from the top is a good signal that the reader wants the list rather than the
+   controls, so the search, sort and selection rows collapse and the title row
+   stays, which keeps the answer to "where am I" on screen at all times.
+
+   The negative margin cancels the flex gap the collapsed row would otherwise
+   still reserve: a zero-height flex item is still an item, and its gap survives
+   it, leaving twelve pixels of nothing behind.
+
+   [DECISION LOG] overflow is hidden only WHILE condensed, never at rest. The
+   sort control's dropdown is absolutely positioned inside this row, so clipping
+   it permanently would cut the menu off at the header's edge. While condensed
+   the row is inert and the dropdown cannot be open, so clipping is free there.
+   The cost is that expansion is briefly unclipped, which the opacity fade
+   covers.
+
+   Reduced motion needs nothing here: the global rule keeps opacity and height
+   in the transition list and drops transform, so this becomes a fade rather
+   than being deleted. */
+.search-sort-row,
+.header-extra {
+  max-height: var(--sys-layout-header-row-max-height);
+  transition:
+    max-height var(--sys-motion-duration-250) var(--sys-motion-easing-standard),
+    opacity var(--sys-motion-duration-200) var(--sys-motion-easing-standard),
+    margin-top var(--sys-motion-duration-250) var(--sys-motion-easing-standard);
+}
+
+.console-header.is-condensed .search-sort-row,
+.console-header.is-condensed .header-extra {
+  max-height: 0;
+  opacity: 0;
+  margin-top: calc(-1 * var(--sys-space-12));
+  overflow: hidden;
+  pointer-events: none;
 }
 
 /* [DECISION LOG] THE VIEW'S NAME IS NEVER WHAT GETS CUT:
