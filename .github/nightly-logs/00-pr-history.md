@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-12
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-14] PR #1814 [Stage 5]: Audited protocol.ts and useProgressiveList.ts against adjacent READMEs; verified accurate and no drift present
+**Domain:** documentation | **Commit:** db39f3e1 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1814)
+**Files:** .github/nightly-logs/05-documentation-readme-coverage.log, .github/nightly-logs/05-documentation-readme-pr-body.md
+**Why:** doc-debt targets protocol.ts and useProgressiveList.ts prose in Backend/supabase/functions/_shared/README.md and Frontend-PWA/src/core/services/README.md match actual implementation and current version ground truth
+**Change:** Audited protocol.ts and useProgressiveList.ts against adjacent READMEs; verified accurate and no drift present
+**Result:** git diff --check passed with 0 errors and doc debt targets verified accurate
+**Nudges:** 0
+
+
 ### [2026-09-14] PR #1813 [Stage 6]: Audited doc debt files (protocol.ts and useProgressiveList.ts) and recent stage updates; verified interface contracts and decision logs are synchronized with implementation truth.
 **Domain:** documentation | **Commit:** 4e70d54a | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1813)
 **Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, .github/nightly-logs/06-documentation-tsdoc-pr-body.md
