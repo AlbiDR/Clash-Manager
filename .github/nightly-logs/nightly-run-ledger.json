@@ -11681,7 +11681,7 @@
           }
         },
         "attempts": 1,
-        "lastObservedAt": "2026-09-14T05:24:17.688Z",
+        "lastObservedAt": "2026-09-14T05:29:36.385Z",
         "failureClass": "JULES_SESSION_FAILED"
       },
       "2": {
@@ -11721,7 +11721,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-14T05:24:17.689Z",
+        "lastObservedAt": "2026-09-14T05:29:36.386Z",
         "failureClass": null
       },
       "3": {
@@ -11761,7 +11761,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-14T05:24:17.689Z",
+        "lastObservedAt": "2026-09-14T05:29:36.386Z",
         "failureClass": null
       },
       "4": {
@@ -11801,7 +11801,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-14T05:24:17.689Z",
+        "lastObservedAt": "2026-09-14T05:29:36.386Z",
         "failureClass": null
       },
       "5": {
@@ -11854,7 +11854,7 @@
           }
         },
         "attempts": 1,
-        "lastObservedAt": "2026-09-14T05:24:17.690Z",
+        "lastObservedAt": "2026-09-14T05:29:36.387Z",
         "failureClass": null
       },
       "6": {
@@ -11894,7 +11894,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-14T05:24:17.690Z",
+        "lastObservedAt": "2026-09-14T05:29:36.387Z",
         "failureClass": null
       },
       "7": {
@@ -11902,7 +11902,7 @@
         "stage": 7,
         "expectedAfterUtc": null,
         "deadlineUtc": null,
-        "state": "RUNNING",
+        "state": "MERGED",
         "evidence": {
           "coverageLog": ".github/nightly-logs/07-version-integrity-coverage.log",
           "notReached": {
@@ -11920,14 +11920,26 @@
           "session": {
             "id": "5206637153979689409",
             "name": "sessions/5206637153979689409",
-            "state": "IN_PROGRESS",
+            "state": "COMPLETED",
             "createTime": "2026-09-14T05:17:44.927812798Z",
-            "updateTime": "2026-09-14T05:24:01.475439Z",
-            "lifetimeMinutes": 6.3
+            "updateTime": "2026-09-14T05:26:50.125799Z",
+            "lifetimeMinutes": 9.1
+          },
+          "tag": "nightly/2026-09-14/stage-7/pr-1815",
+          "run": {
+            "started": "2026-09-14T05:21:00Z",
+            "terminated": "2026-09-14T05:25:00Z",
+            "durationMinutes": 4
+          },
+          "body": {
+            "pr": 1815,
+            "verdict": "OK",
+            "ok": true,
+            "repairedFrom": "AD_LIBBED"
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-14T05:24:17.691Z",
+        "lastObservedAt": "2026-09-14T05:29:36.388Z",
         "failureClass": null
       },
       "8": {
@@ -11948,7 +11960,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-14T05:24:17.691Z",
+        "lastObservedAt": "2026-09-14T05:29:36.388Z",
         "failureClass": null
       },
       "9": {
@@ -11969,7 +11981,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-14T05:24:17.691Z",
+        "lastObservedAt": "2026-09-14T05:29:36.388Z",
         "failureClass": null
       },
       "10": {
@@ -11990,7 +12002,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-14T05:24:17.692Z",
+        "lastObservedAt": "2026-09-14T05:29:36.389Z",
         "failureClass": null
       },
       "11": {
@@ -12011,7 +12023,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-14T05:24:17.692Z",
+        "lastObservedAt": "2026-09-14T05:29:36.389Z",
         "failureClass": null
       },
       "12": {
@@ -12032,7 +12044,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-14T05:24:17.693Z",
+        "lastObservedAt": "2026-09-14T05:29:36.389Z",
         "failureClass": null
       },
       "13": {
@@ -12053,7 +12065,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-14T05:24:17.693Z",
+        "lastObservedAt": "2026-09-14T05:29:36.390Z",
         "failureClass": null
       }
     }
