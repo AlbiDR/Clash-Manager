@@ -1,23 +1,23 @@
 ### Nightly Stage 4: Optimization - Substrate Hygiene Engineer
 
-**Status:** CLEAN
+**Status:** CHANGED
 
-In plain terms: nothing needed fixing. This run checked the optimization area and found it already correct, so the only file here is the log recording that the check happened.
+In plain terms: this changes 1 code file, so the app's behaviour may be affected. No tests were added or changed alongside it.
 
-**What was checked:** Audited Edge Function SQL view usage and L1/L0 performance composables (useProgressiveList.ts, StorageService.ts); widened calibration scan across 64 changed files and confirmed all 6 known database views remain unreferenced
+**What changed:** Standardized watcher parameter in HeaderInfoOverlay.vue to domain-descriptive identifier isOverlayVisible
 
-**Why:** Substrate hygiene audit and widened calibration scan confirmed zero new orphaned views or logic bottlenecks; 64 candidate files inspected with zero source mutations required
+**Why:** Align with CleanStack ADR Section VII domain-descriptive naming conventions and eliminate anemic variable identifiers in shared UI components.
 
-**Result:** 195 test files passed (1829 tests)
+**Result:** Full monorepo test suite passed (203 test files / 1951 tests) with zero failures.
 
-**Files changed:** .github/nightly-logs/04-optimization-coverage.log
+**Files changed:** .github/nightly-logs/04-optimization-coverage.log, Frontend-PWA/src/shared/ui/HeaderInfoOverlay.vue
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: optimization
-  Why: Substrate hygiene audit and widened calibration scan confirmed zero new orphaned views or logic bottlenecks; 64 candidate files inspected with zero source mutations required
-  Change: Audited Edge Function SQL view usage and L1/L0 performance composables (useProgressiveList.ts, StorageService.ts); widened calibration scan across 64 changed files and confirmed all 6 known database views remain unreferenced
-  Result: 195 test files passed (1829 tests)
-  Files: .github/nightly-logs/04-optimization-coverage.log
+  Why: Align with CleanStack ADR Section VII domain-descriptive naming conventions and eliminate anemic variable identifiers in shared UI components.
+  Change: Standardized watcher parameter in HeaderInfoOverlay.vue to domain-descriptive identifier isOverlayVisible
+  Result: Full monorepo test suite passed (203 test files / 1951 tests) with zero failures.
+  Files: .github/nightly-logs/04-optimization-coverage.log, Frontend-PWA/src/shared/ui/HeaderInfoOverlay.vue
   Nudges: 0
 -->

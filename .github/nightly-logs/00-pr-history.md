@@ -16,6 +16,113 @@ LAST_AGED:   2026-09-12
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-14] PR #1821 [Stage 13]: Mapped September 14 stage executions, recorded Stage 1 session escalation (JULES_SESSION_FAILED) and Stage 5 watchdog recovery nudge (intervention rate 1/11 = 9.1%), and updated Section 3 metrics
+**Domain:** pipeline | **Commit:** cfcb2120 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1821)
+**Files:** .github/nightly-logs/13-self-healing-protocol-coverage.log, .github/nightly-logs/13-self-healing-protocol-pr-body.md, .github/nightly-logs/13-self-healing-protocol.md
+**Why:** Document pipeline stability failure and watchdog recovery intervention on 2026-09-14
+**Change:** Mapped September 14 stage executions, recorded Stage 1 session escalation (JULES_SESSION_FAILED) and Stage 5 watchdog recovery nudge (intervention rate 1/11 = 9.1%), and updated Section 3 metrics
+**Result:** VERIFIED (git diff --check clean)
+**Nudges:** 0
+
+
+### [2026-09-14] PR #1820 [Stage 12]: Verified 77 frontend source files against 10 hybrid shell UX criteria; zero candidate files or violations found
+**Domain:** ux | **Commit:** b09ef8d7 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1820)
+**Files:** .github/nightly-logs/12-apk-ux-coverage.log, .github/nightly-logs/12-apk-ux-pr-body.md
+**Why:** No layout leaks, native select overlays, or missing haptic/viewport directives found in Frontend-PWA/src
+**Change:** Verified 77 frontend source files against 10 hybrid shell UX criteria; zero candidate files or violations found
+**Result:** apk-ux-audit-status.txt: PASS, apk-ux-audit.json: 77 files examined / 0 candidates / 0 violations across 10 UX categories; 203 unit tests passed
+**Nudges:** 0
+
+
+### [2026-09-14] PR #1819 [Stage 11]: Audited native WebView settings, Service Worker routes, Vite manualChunks, and asset footprint; zero source changes required.
+**Domain:** apk | **Commit:** 10ae5ee0 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1819)
+**Files:** .github/nightly-logs/11-apk-optimization-coverage.log, .github/nightly-logs/11-apk-optimization-pr-body.md
+**Why:** Native wrapper in MainActivity.java utilizes established LOAD_CACHE_ELSE_NETWORK, offscreen pre-rastering, safe browsing, and renderer crash recovery. sw.ts contains deduplicated routes and navigation preload. vite.config.ts enforces optimal vendor chunk splitting and precache exclusions.
+**Change:** Audited native WebView settings, Service Worker routes, Vite manualChunks, and asset footprint; zero source changes required.
+**Result:** pnpm audit:apk-perf PASSED (9/9 invariants ok, 6 precached assets 11.1 KB total footprint); pnpm test PASSED (203 test files, 1951 tests); toolchain probe verified gradle / ANDROID_HOME.
+**Nudges:** 0
+
+
+### [2026-09-14] PR #1818 [Stage 10]: Verified APK and PWA wrapper integrity across asset links, manifest, versions, release metadata, and security policies
+**Domain:** apk | **Commit:** 651e3def | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1818)
+**Files:** .github/nightly-logs/10-apk-integrity-coverage.log, .github/nightly-logs/10-apk-integrity-pr-body.md
+**Why:** All wrapper configuration invariants match without drift or mismatches
+**Change:** Verified APK and PWA wrapper integrity across asset links, manifest, versions, release metadata, and security policies
+**Result:** Audit passed via pnpm audit:apk and pnpm apk:verify:source; tested version code and APK UX suites
+**Nudges:** 0
+
+
+### [2026-09-14] PR #1817 [Stage 9]: 85 candidates, 0 dep-violations, knip (7 exp, 3 types, 1 dup), consecutive-clean: 3. Inspected config, roster/index, royaleSchemas, useProgressiveList. Candidate BLITZ_DWELL_MIN floor vs default intentional. Hunt useProgressiveList clean.
+**Domain:** architecture | **Commit:** e177c320 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1817)
+**Files:** .github/nightly-logs/09-refactor-proposals-coverage.log, .github/nightly-logs/09-refactor-proposals-pr-body.md
+**Why:** Structural scan and defect hunt confirmed substrate architecture strictly aligned with CleanStack ADR.
+**Change:** 85 candidates, 0 dep-violations, knip (7 exp, 3 types, 1 dup), consecutive-clean: 3. Inspected config, roster/index, royaleSchemas, useProgressiveList. Candidate BLITZ_DWELL_MIN floor vs default intentional. Hunt useProgressiveList clean.
+**Result:** 0 dep-violations, 203 test files / 1951 unit tests passed.
+**Nudges:** 0
+
+
+### [2026-09-14] PR #1816 [Stage 8]: Bumped @types/node catalog entry from ^26.4.1 to ^26.5.1 and re-locked dependencies
+**Domain:** dependencies | **Commit:** a779dace | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1816)
+**Files:** .github/nightly-logs/08-dependency-audit-coverage.log, .github/nightly-logs/08-dependency-audit-pr-body.md, package.json, pnpm-lock.yaml, pnpm-workspace.yaml
+**Why:** Safe patch update for @types/node within current major version to maintain external health
+**Change:** Bumped @types/node catalog entry from ^26.4.1 to ^26.5.1 and re-locked dependencies
+**Result:** pnpm verify:push passed 203 of 203 test files (1951 tests)
+**Nudges:** 0
+
+
+### [2026-09-14] PR #1815 [Stage 7]: chore(nightly): stage 7 version integrity audit
+**Domain:** pipeline | **Commit:** 884e66ac | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1815)
+**Files:** .github/nightly-logs/07-version-integrity-coverage.log
+**Why:** Automated nightly audit pass.
+**Change:** chore(nightly): stage 7 version integrity audit
+**Result:** Nominal validation with zero regressions.
+
+
+### [2026-09-14] PR #1814 [Stage 5]: Audited protocol.ts and useProgressiveList.ts against adjacent READMEs; verified accurate and no drift present
+**Domain:** documentation | **Commit:** db39f3e1 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1814)
+**Files:** .github/nightly-logs/05-documentation-readme-coverage.log, .github/nightly-logs/05-documentation-readme-pr-body.md
+**Why:** doc-debt targets protocol.ts and useProgressiveList.ts prose in Backend/supabase/functions/_shared/README.md and Frontend-PWA/src/core/services/README.md match actual implementation and current version ground truth
+**Change:** Audited protocol.ts and useProgressiveList.ts against adjacent READMEs; verified accurate and no drift present
+**Result:** git diff --check passed with 0 errors and doc debt targets verified accurate
+**Nudges:** 0
+
+
+### [2026-09-14] PR #1813 [Stage 6]: Audited doc debt files (protocol.ts and useProgressiveList.ts) and recent stage updates; verified interface contracts and decision logs are synchronized with implementation truth.
+**Domain:** documentation | **Commit:** 4e70d54a | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1813)
+**Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, .github/nightly-logs/06-documentation-tsdoc-pr-body.md
+**Why:** Documentation debt files and recent stage changes were audited and confirmed accurate; no documentation gaps or logical drift exist.
+**Change:** Audited doc debt files (protocol.ts and useProgressiveList.ts) and recent stage updates; verified interface contracts and decision logs are synchronized with implementation truth.
+**Result:** vue-tsc type-check 0 errors, pnpm test passed 203 PWA test files (1951 tests)
+**Nudges:** 0
+
+
+### [2026-09-14] PR #1812 [Stage 4]: Standardized watcher parameter in HeaderInfoOverlay.vue to domain-descriptive identifier isOverlayVisible
+**Domain:** optimization | **Commit:** f6810d51 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1812)
+**Files:** .github/nightly-logs/04-optimization-coverage.log, .github/nightly-logs/04-optimization-pr-body.md, Frontend-PWA/src/shared/ui/HeaderInfoOverlay.vue
+**Why:** Align with CleanStack ADR Section VII domain-descriptive naming conventions and eliminate anemic variable identifiers in shared UI components.
+**Change:** Standardized watcher parameter in HeaderInfoOverlay.vue to domain-descriptive identifier isOverlayVisible
+**Result:** Full monorepo test suite passed (203 test files / 1951 tests) with zero failures.
+**Nudges:** 0
+
+
+### [2026-09-14] PR #1811 [Stage 3]: Baseline current (0 pending migrations, 4 clean since calibration). Static migration-quality PASS, fold-state DEGRADED, db-verification DB-UNAVAILABLE. RLS, search_path, and formatting compliant.
+**Domain:** database | **Commit:** e5cfde89 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1811)
+**Files:** .github/nightly-logs/03-baseline-consolidation-coverage.log, .github/nightly-logs/03-baseline-consolidation-pr-body.md
+**Why:** Read-only baseline compliance audit confirmed master migration matches 37 replayed migrations with 0 pending fold targets and 0 structural deviations.
+**Change:** Baseline current (0 pending migrations, 4 clean since calibration). Static migration-quality PASS, fold-state DEGRADED, db-verification DB-UNAVAILABLE. RLS, search_path, and formatting compliant.
+**Result:** PASS (audit:migrations), fold-state DEGRADED, db DB-UNAVAILABLE
+**Nudges:** 0
+
+
+### [2026-09-14] PR #1810 [Stage 2]: Added unit tests for useClashSyncUtils.ts covering empty DTO creation, error normalization, and timeout cancellation
+**Domain:** verification | **Commit:** 8e348c62 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1810)
+**Files:** .github/nightly-logs/02-verification-coverage.log, .github/nightly-logs/02-verification-pr-body.md, Frontend-PWA/src/core/services/services-tests/useClashSyncUtils.spec.ts
+**Why:** Closed zero-coverage gap in L1 Core service utility Frontend-PWA/src/core/services/useClashSyncUtils.ts
+**Change:** Added unit tests for useClashSyncUtils.ts covering empty DTO creation, error normalization, and timeout cancellation
+**Result:** All 7 tests in useClashSyncUtils.spec.ts passed. Proved test efficacy via mutation testing on normalizeSyncError (inverting fallback error message), which caught the mutation with an AssertionError. Reverted mutation and confirmed complete suite passes (203 test files, 1951 tests).
+**Nudges:** 0
+
+
 ### [2026-09-13] PR #1809 [Stage 13]: Mapped September 13 stage executions, recorded Stage 6 and Stage 11 watchdog recovery nudges, and updated Section 3 metrics
 **Domain:** pipeline | **Commit:** 83cb8ea4 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1809)
 **Files:** .github/nightly-logs/13-self-healing-protocol-coverage.log, .github/nightly-logs/13-self-healing-protocol-pr-body.md, .github/nightly-logs/13-self-healing-protocol.md

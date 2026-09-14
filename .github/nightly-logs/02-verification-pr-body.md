@@ -4,20 +4,20 @@
 
 In plain terms: this adds 1 test file in the verification area. No product code changed, so the app behaves exactly as it did before.
 
-**What changed:** Added Data Perfection Governance unit tests in protocol.spec.ts
+**What changed:** Added unit tests for useClashSyncUtils.ts covering empty DTO creation, error normalization, and timeout cancellation
 
-**Why:** To verify isDataPerfect calculation and validation_report construction under all conditions
+**Why:** Closed zero-coverage gap in L1 Core service utility Frontend-PWA/src/core/services/useClashSyncUtils.ts
 
-**Result:** 277 backend unit tests passed including 3 new protocol spec tests. Proven via mutation testing on protocol.ts.
+**Result:** All 7 tests in useClashSyncUtils.spec.ts passed. Proved test efficacy via mutation testing on normalizeSyncError (inverting fallback error message), which caught the mutation with an AssertionError. Reverted mutation and confirmed complete suite passes (203 test files, 1951 tests).
 
-**Files changed:** .github/nightly-logs/02-verification-coverage.log, Backend/supabase/functions/_shared/shared-tests/protocol.spec.ts
+**Files changed:** .github/nightly-logs/02-verification-coverage.log, Frontend-PWA/src/core/services/services-tests/useClashSyncUtils.spec.ts
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: verification
-  Why: To verify isDataPerfect calculation and validation_report construction under all conditions
-  Change: Added Data Perfection Governance unit tests in protocol.spec.ts
-  Result: 277 backend unit tests passed including 3 new protocol spec tests. Proven via mutation testing on protocol.ts.
-  Files: .github/nightly-logs/02-verification-coverage.log, Backend/supabase/functions/_shared/shared-tests/protocol.spec.ts
+  Why: Closed zero-coverage gap in L1 Core service utility Frontend-PWA/src/core/services/useClashSyncUtils.ts
+  Change: Added unit tests for useClashSyncUtils.ts covering empty DTO creation, error normalization, and timeout cancellation
+  Result: All 7 tests in useClashSyncUtils.spec.ts passed. Proved test efficacy via mutation testing on normalizeSyncError (inverting fallback error message), which caught the mutation with an AssertionError. Reverted mutation and confirmed complete suite passes (203 test files, 1951 tests).
+  Files: .github/nightly-logs/02-verification-coverage.log, Frontend-PWA/src/core/services/services-tests/useClashSyncUtils.spec.ts
   Nudges: 0
 -->
