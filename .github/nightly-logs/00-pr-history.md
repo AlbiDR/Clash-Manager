@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-12
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-14] PR #1821 [Stage 13]: Mapped September 14 stage executions, recorded Stage 1 session escalation (JULES_SESSION_FAILED) and Stage 5 watchdog recovery nudge (intervention rate 1/11 = 9.1%), and updated Section 3 metrics
+**Domain:** pipeline | **Commit:** cfcb2120 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1821)
+**Files:** .github/nightly-logs/13-self-healing-protocol-coverage.log, .github/nightly-logs/13-self-healing-protocol-pr-body.md, .github/nightly-logs/13-self-healing-protocol.md
+**Why:** Document pipeline stability failure and watchdog recovery intervention on 2026-09-14
+**Change:** Mapped September 14 stage executions, recorded Stage 1 session escalation (JULES_SESSION_FAILED) and Stage 5 watchdog recovery nudge (intervention rate 1/11 = 9.1%), and updated Section 3 metrics
+**Result:** VERIFIED (git diff --check clean)
+**Nudges:** 0
+
+
 ### [2026-09-14] PR #1820 [Stage 12]: Verified 77 frontend source files against 10 hybrid shell UX criteria; zero candidate files or violations found
 **Domain:** ux | **Commit:** b09ef8d7 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1820)
 **Files:** .github/nightly-logs/12-apk-ux-coverage.log, .github/nightly-logs/12-apk-ux-pr-body.md
