@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-12
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-14] PR #1817 [Stage 9]: 85 candidates, 0 dep-violations, knip (7 exp, 3 types, 1 dup), consecutive-clean: 3. Inspected config, roster/index, royaleSchemas, useProgressiveList. Candidate BLITZ_DWELL_MIN floor vs default intentional. Hunt useProgressiveList clean.
+**Domain:** architecture | **Commit:** e177c320 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1817)
+**Files:** .github/nightly-logs/09-refactor-proposals-coverage.log, .github/nightly-logs/09-refactor-proposals-pr-body.md
+**Why:** Structural scan and defect hunt confirmed substrate architecture strictly aligned with CleanStack ADR.
+**Change:** 85 candidates, 0 dep-violations, knip (7 exp, 3 types, 1 dup), consecutive-clean: 3. Inspected config, roster/index, royaleSchemas, useProgressiveList. Candidate BLITZ_DWELL_MIN floor vs default intentional. Hunt useProgressiveList clean.
+**Result:** 0 dep-violations, 203 test files / 1951 unit tests passed.
+**Nudges:** 0
+
+
 ### [2026-09-14] PR #1816 [Stage 8]: Bumped @types/node catalog entry from ^26.4.1 to ^26.5.1 and re-locked dependencies
 **Domain:** dependencies | **Commit:** a779dace | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1816)
 **Files:** .github/nightly-logs/08-dependency-audit-coverage.log, .github/nightly-logs/08-dependency-audit-pr-body.md, package.json, pnpm-lock.yaml, pnpm-workspace.yaml
