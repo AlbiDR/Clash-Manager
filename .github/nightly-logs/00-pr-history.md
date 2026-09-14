@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-12
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-14] PR #1816 [Stage 8]: Bumped @types/node catalog entry from ^26.4.1 to ^26.5.1 and re-locked dependencies
+**Domain:** dependencies | **Commit:** a779dace | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1816)
+**Files:** .github/nightly-logs/08-dependency-audit-coverage.log, .github/nightly-logs/08-dependency-audit-pr-body.md, package.json, pnpm-lock.yaml, pnpm-workspace.yaml
+**Why:** Safe patch update for @types/node within current major version to maintain external health
+**Change:** Bumped @types/node catalog entry from ^26.4.1 to ^26.5.1 and re-locked dependencies
+**Result:** pnpm verify:push passed 203 of 203 test files (1951 tests)
+**Nudges:** 0
+
+
 ### [2026-09-14] PR #1815 [Stage 7]: chore(nightly): stage 7 version integrity audit
 **Domain:** pipeline | **Commit:** 884e66ac | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1815)
 **Files:** .github/nightly-logs/07-version-integrity-coverage.log
