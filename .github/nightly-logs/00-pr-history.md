@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-12
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-14] PR #1811 [Stage 3]: Baseline current (0 pending migrations, 4 clean since calibration). Static migration-quality PASS, fold-state DEGRADED, db-verification DB-UNAVAILABLE. RLS, search_path, and formatting compliant.
+**Domain:** database | **Commit:** e5cfde89 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1811)
+**Files:** .github/nightly-logs/03-baseline-consolidation-coverage.log, .github/nightly-logs/03-baseline-consolidation-pr-body.md
+**Why:** Read-only baseline compliance audit confirmed master migration matches 37 replayed migrations with 0 pending fold targets and 0 structural deviations.
+**Change:** Baseline current (0 pending migrations, 4 clean since calibration). Static migration-quality PASS, fold-state DEGRADED, db-verification DB-UNAVAILABLE. RLS, search_path, and formatting compliant.
+**Result:** PASS (audit:migrations), fold-state DEGRADED, db DB-UNAVAILABLE
+**Nudges:** 0
+
+
 ### [2026-09-14] PR #1810 [Stage 2]: Added unit tests for useClashSyncUtils.ts covering empty DTO creation, error normalization, and timeout cancellation
 **Domain:** verification | **Commit:** 8e348c62 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1810)
 **Files:** .github/nightly-logs/02-verification-coverage.log, .github/nightly-logs/02-verification-pr-body.md, Frontend-PWA/src/core/services/services-tests/useClashSyncUtils.spec.ts
