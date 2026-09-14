@@ -16,6 +16,14 @@ LAST_AGED:   2026-09-12
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-14] PR #1815 [Stage 7]: chore(nightly): stage 7 version integrity audit
+**Domain:** pipeline | **Commit:** 884e66ac | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1815)
+**Files:** .github/nightly-logs/07-version-integrity-coverage.log
+**Why:** Automated nightly audit pass.
+**Change:** chore(nightly): stage 7 version integrity audit
+**Result:** Nominal validation with zero regressions.
+
+
 ### [2026-09-14] PR #1814 [Stage 5]: Audited protocol.ts and useProgressiveList.ts against adjacent READMEs; verified accurate and no drift present
 **Domain:** documentation | **Commit:** db39f3e1 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1814)
 **Files:** .github/nightly-logs/05-documentation-readme-coverage.log, .github/nightly-logs/05-documentation-readme-pr-body.md
