@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-12
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-14] PR #1812 [Stage 4]: Standardized watcher parameter in HeaderInfoOverlay.vue to domain-descriptive identifier isOverlayVisible
+**Domain:** optimization | **Commit:** f6810d51 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1812)
+**Files:** .github/nightly-logs/04-optimization-coverage.log, .github/nightly-logs/04-optimization-pr-body.md, Frontend-PWA/src/shared/ui/HeaderInfoOverlay.vue
+**Why:** Align with CleanStack ADR Section VII domain-descriptive naming conventions and eliminate anemic variable identifiers in shared UI components.
+**Change:** Standardized watcher parameter in HeaderInfoOverlay.vue to domain-descriptive identifier isOverlayVisible
+**Result:** Full monorepo test suite passed (203 test files / 1951 tests) with zero failures.
+**Nudges:** 0
+
+
 ### [2026-09-14] PR #1811 [Stage 3]: Baseline current (0 pending migrations, 4 clean since calibration). Static migration-quality PASS, fold-state DEGRADED, db-verification DB-UNAVAILABLE. RLS, search_path, and formatting compliant.
 **Domain:** database | **Commit:** e5cfde89 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1811)
 **Files:** .github/nightly-logs/03-baseline-consolidation-coverage.log, .github/nightly-logs/03-baseline-consolidation-pr-body.md
