@@ -42,8 +42,8 @@ const emit = defineEmits<{
 // Lock scroll when overlay is open to enforce focus containment
 watch(
   () => props.show,
-  (val) => {
-    if (val) {
+  (isOverlayVisible) => {
+    if (isOverlayVisible) {
       document.body.style.overflow = "hidden";
     } else {
       document.body.style.overflow = "";
