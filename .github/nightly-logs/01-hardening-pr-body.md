@@ -4,20 +4,20 @@
 
 In plain terms: nothing needed fixing. This run checked the hardening area and found it already correct, so the only file here is the log recording that the check happened.
 
-**What was checked:** Audited Edge Function endpoints, in-memory state, Valibot boundaries, and cross-layer constraints; zero threat vectors found
+**What was checked:** Stage 1 Runtime Integrity Auditor - CLEAN
 
-**Why:** All endpoint ingress controls, state persistence annotations, and Valibot validation layers are fully saturated
+**Why:** Audited Edge Function endpoints, in-memory state, Valibot boundaries, and cross-layer constraints with zero threat vectors found
 
-**Result:** pnpm test PASS (1829 tests passed)
+**Result:** All unit tests passed cleanly with zero regressions and zero depcruise violations
 
 **Files changed:** .github/nightly-logs/00-pr-history.md, .github/nightly-logs/01-hardening-coverage.log
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: hardening
-  Why: All endpoint ingress controls, state persistence annotations, and Valibot validation layers are fully saturated
-  Change: Audited Edge Function endpoints, in-memory state, Valibot boundaries, and cross-layer constraints; zero threat vectors found
-  Result: pnpm test PASS (1829 tests passed)
+  Why: Audited Edge Function endpoints, in-memory state, Valibot boundaries, and cross-layer constraints with zero threat vectors found
+  Change: Stage 1 Runtime Integrity Auditor - CLEAN
+  Result: All unit tests passed cleanly with zero regressions and zero depcruise violations
   Files: .github/nightly-logs/00-pr-history.md, .github/nightly-logs/01-hardening-coverage.log
   Nudges: 0
 -->
