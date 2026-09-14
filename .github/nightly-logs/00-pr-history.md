@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-12
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-14] PR #1810 [Stage 2]: Added unit tests for useClashSyncUtils.ts covering empty DTO creation, error normalization, and timeout cancellation
+**Domain:** verification | **Commit:** 8e348c62 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1810)
+**Files:** .github/nightly-logs/02-verification-coverage.log, .github/nightly-logs/02-verification-pr-body.md, Frontend-PWA/src/core/services/services-tests/useClashSyncUtils.spec.ts
+**Why:** Closed zero-coverage gap in L1 Core service utility Frontend-PWA/src/core/services/useClashSyncUtils.ts
+**Change:** Added unit tests for useClashSyncUtils.ts covering empty DTO creation, error normalization, and timeout cancellation
+**Result:** All 7 tests in useClashSyncUtils.spec.ts passed. Proved test efficacy via mutation testing on normalizeSyncError (inverting fallback error message), which caught the mutation with an AssertionError. Reverted mutation and confirmed complete suite passes (203 test files, 1951 tests).
+**Nudges:** 0
+
+
 ### [2026-09-13] PR #1809 [Stage 13]: Mapped September 13 stage executions, recorded Stage 6 and Stage 11 watchdog recovery nudges, and updated Section 3 metrics
 **Domain:** pipeline | **Commit:** 83cb8ea4 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1809)
 **Files:** .github/nightly-logs/13-self-healing-protocol-coverage.log, .github/nightly-logs/13-self-healing-protocol-pr-body.md, .github/nightly-logs/13-self-healing-protocol.md
