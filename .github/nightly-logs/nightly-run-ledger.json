@@ -11681,7 +11681,7 @@
           }
         },
         "attempts": 1,
-        "lastObservedAt": "2026-09-14T09:38:08.146Z",
+        "lastObservedAt": "2026-09-14T10:19:45.710Z",
         "failureClass": "JULES_SESSION_FAILED"
       },
       "2": {
@@ -11721,7 +11721,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-14T09:38:08.147Z",
+        "lastObservedAt": "2026-09-14T10:19:45.711Z",
         "failureClass": null
       },
       "3": {
@@ -11761,7 +11761,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-14T09:38:08.147Z",
+        "lastObservedAt": "2026-09-14T10:19:45.711Z",
         "failureClass": null
       },
       "4": {
@@ -11801,7 +11801,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-14T09:38:08.148Z",
+        "lastObservedAt": "2026-09-14T10:19:45.711Z",
         "failureClass": null
       },
       "5": {
@@ -11854,7 +11854,7 @@
           }
         },
         "attempts": 1,
-        "lastObservedAt": "2026-09-14T09:38:08.149Z",
+        "lastObservedAt": "2026-09-14T10:19:45.712Z",
         "failureClass": null
       },
       "6": {
@@ -11894,7 +11894,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-14T09:38:08.149Z",
+        "lastObservedAt": "2026-09-14T10:19:45.712Z",
         "failureClass": null
       },
       "7": {
@@ -11938,7 +11938,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-14T09:38:08.150Z",
+        "lastObservedAt": "2026-09-14T10:19:45.713Z",
         "failureClass": null
       },
       "8": {
@@ -11981,7 +11981,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-14T09:38:08.150Z",
+        "lastObservedAt": "2026-09-14T10:19:45.713Z",
         "failureClass": null
       },
       "9": {
@@ -12021,7 +12021,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-14T09:38:08.151Z",
+        "lastObservedAt": "2026-09-14T10:19:45.713Z",
         "failureClass": null
       },
       "10": {
@@ -12064,7 +12064,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-14T09:38:08.152Z",
+        "lastObservedAt": "2026-09-14T10:19:45.714Z",
         "failureClass": null
       },
       "11": {
@@ -12104,7 +12104,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-14T09:38:08.152Z",
+        "lastObservedAt": "2026-09-14T10:19:45.714Z",
         "failureClass": null
       },
       "12": {
@@ -12112,7 +12112,7 @@
         "stage": 12,
         "expectedAfterUtc": null,
         "deadlineUtc": null,
-        "state": "EXPECTED",
+        "state": "MERGED",
         "evidence": {
           "coverageLog": ".github/nightly-logs/12-apk-ux-coverage.log",
           "notReached": {
@@ -12122,10 +12122,29 @@
             "verdict": "HEALTHY",
             "currentStreak": 0,
             "reason": "no adverse trend"
+          },
+          "tag": "nightly/2026-09-14/stage-12/pr-1820",
+          "session": {
+            "id": "16390432221440946577",
+            "name": "sessions/16390432221440946577",
+            "state": "COMPLETED",
+            "createTime": "2026-09-14T10:08:13.905077986Z",
+            "updateTime": "2026-09-14T10:16:20.779218Z",
+            "lifetimeMinutes": 8.1
+          },
+          "run": {
+            "started": "2026-09-14T10:10:00Z",
+            "terminated": "2026-09-14T10:14:00Z",
+            "durationMinutes": 5
+          },
+          "body": {
+            "pr": 1820,
+            "verdict": "OK",
+            "ok": true
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-14T09:38:08.153Z",
+        "lastObservedAt": "2026-09-14T10:19:45.715Z",
         "failureClass": null
       },
       "13": {
@@ -12137,7 +12156,7 @@
         "evidence": {
           "coverageLog": ".github/nightly-logs/13-self-healing-protocol-coverage.log",
           "notReached": {
-            "frontier": 11
+            "frontier": 12
           },
           "health": {
             "verdict": "HEALTHY",
@@ -12146,7 +12165,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-14T09:38:08.153Z",
+        "lastObservedAt": "2026-09-14T10:19:45.715Z",
         "failureClass": null
       }
     }
