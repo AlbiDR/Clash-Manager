@@ -97,7 +97,7 @@ describe("ConsoleHeader", () => {
     expect(wrapper.find(".count-value-compact").text()).toBe("2/38");
   });
 
-  it("orders list controls from refinement to the matching selection action", () => {
+  it("does not reserve a blank filter row before the selection action", () => {
     const wrapper = mount(ConsoleHeader, {
       props: {
         title: "Headhunter",
@@ -114,8 +114,8 @@ describe("ConsoleHeader", () => {
 
     const toolbarClasses = Array.from(wrapper.find(".header-controls").element.children)
       .map((element) => element.className);
-    expect(toolbarClasses).toEqual(["refinement-controls", "selection-actions"]);
-    expect(wrapper.find(".refinement-controls").element.children).toHaveLength(0);
+    expect(toolbarClasses).toEqual(["selection-actions"]);
+    expect(wrapper.find(".refinement-controls").exists()).toBe(false);
 
   });
 

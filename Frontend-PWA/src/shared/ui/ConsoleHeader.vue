@@ -120,11 +120,11 @@ const handleOpenDashboard = () => {
         v-if="hasControls || hasExtra"
         class="header-controls"
       >
-        <div class="refinement-controls">
-          <div
-            v-if="hasFilters"
-            class="filter-slot"
-          >
+        <div
+          v-if="hasFilters"
+          class="refinement-controls"
+        >
+          <div class="filter-slot">
             <slot name="filters" />
           </div>
         </div>

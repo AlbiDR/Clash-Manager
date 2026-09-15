@@ -167,8 +167,11 @@ const {
    The trigger deliberately trails the primary action so Select/Done remains
    the leading, easiest-to-scan decision. */
 .management.has-view-options .morph-btn {
+  order: 1;
   border-radius: var(--sys-shape-corner-medium) 0 0 var(--sys-shape-corner-medium);
 }
+
+.management.has-view-options .view-options-segment { order: 2; }
 
 .selection-bar:not(.is-active) .view-options-segment :deep(.view-options-trigger) {
   color: var(--sys-color-on-primary);
