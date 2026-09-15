@@ -27,8 +27,8 @@ describe("useClashSyncUtils", () => {
   });
 
   describe("SYNC_REQUEST_TIMEOUT_MS", () => {
-    it("should export 15000ms constant", () => {
-      expect(SYNC_REQUEST_TIMEOUT_MS).toBe(15000);
+    it("should export a cold-start-tolerant 25000ms timeout", () => {
+      expect(SYNC_REQUEST_TIMEOUT_MS).toBe(25000);
     });
   });
 
@@ -99,7 +99,7 @@ describe("useClashSyncUtils", () => {
       const fetchPromise = fetchRemoteWithTimeout({ force: false }).catch((err) => err);
 
       // Fast-forward past timeout
-      await vi.advanceTimersByTimeAsync(15000);
+      await vi.advanceTimersByTimeAsync(SYNC_REQUEST_TIMEOUT_MS);
 
       const err = await fetchPromise;
       expect(err).toBeInstanceOf(Error);

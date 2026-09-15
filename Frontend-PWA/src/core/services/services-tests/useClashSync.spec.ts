@@ -13,6 +13,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { nextTick, ref, type Ref } from "vue";
 import { useClashSync } from "../useClashSync";
+import { SYNC_REQUEST_TIMEOUT_MS } from "../useClashSyncUtils";
 import { fetchRemote, lastSyncStatus } from "../../api/SupabaseClient";
 import { loadCache, saveCache } from "../StorageService";
 import { generateMockData } from "../../utils/mockData";
@@ -379,7 +380,7 @@ describe("useClashSync", () => {
       const refreshPromise = sync.refreshFromSupabase();
       const requestSignal = vi.mocked(fetchRemote).mock.calls[0][0]?.signal;
       expect(requestSignal?.aborted).toBe(false);
-      await vi.advanceTimersByTimeAsync(15000);
+      await vi.advanceTimersByTimeAsync(SYNC_REQUEST_TIMEOUT_MS);
       await refreshPromise;
 
       expect(sync.loading.value).toBe(false);

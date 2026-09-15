@@ -33,6 +33,14 @@ import * as v from "valibot";
 export const lastSyncStatus = ref<"TIMEOUT" | "AUTH" | "VALIDATION" | "OFFLINE" | "SUCCESS" | null>(null);
 
 /**
+ * Optional provenance reads must never hold the roster and recruiting payload
+ * hostage. Three seconds is long enough for a healthy PostgREST round trip but
+ * short enough that a degraded heartbeat projection cannot turn into a full
+ * foreground-sync failure.
+ */
+export const OPTIONAL_METADATA_TIMEOUT_MS = 3_000;
+
+/**
  * Specialized error class for network-level failures.
  */
 export class NetworkError extends Error {
@@ -137,6 +145,61 @@ function parseTimestamp(timestamp: string | null | undefined): number | null {
   return Number.isFinite(parsedTimestamp) ? parsedTimestamp : null;
 }
 
+type OptionalQueryResponse = {
+  data: unknown;
+  error: { message: string } | null;
+};
+
+/**
+ * Runs a non-essential query with its own cancellation scope. The authoritative
+ * roster and headhunter views remain strict; heartbeat and blacklist enrichment
+ * can safely degrade because roster timestamps and server-side filtering retain
+ * their core contracts.
+ */
+async function resolveOptionalQuery<T extends OptionalQueryResponse>(
+  label: string,
+  parentSignal: AbortSignal,
+  execute: (signal: AbortSignal) => PromiseLike<T>,
+): Promise<T | null> {
+  const optionalController = new AbortController();
+  const abortFromParent = () => optionalController.abort(parentSignal.reason);
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+
+  if (parentSignal.aborted) {
+    abortFromParent();
+  } else {
+    parentSignal.addEventListener("abort", abortFromParent, { once: true });
+  }
+
+  try {
+    const response = await Promise.race([
+      Promise.resolve(execute(optionalController.signal)),
+      new Promise<null>((resolve) => {
+        timeoutId = setTimeout(() => {
+          const timeoutError = new Error(`${label} metadata timed out`);
+          optionalController.abort(timeoutError);
+          resolve(null);
+        }, OPTIONAL_METADATA_TIMEOUT_MS);
+      }),
+    ]);
+
+    if (response === null) {
+      console.warn(`[Sync] ${label} metadata timed out; continuing without it.`);
+    }
+    return response;
+  } catch (optionalFailure: unknown) {
+    // The parent request's abort must still propagate through the essential
+    // queries. This branch only isolates the optional query itself.
+    if (!parentSignal.aborted) {
+      console.warn(`[Sync] ${label} metadata unavailable; continuing without it.`, optionalFailure);
+    }
+    return null;
+  } finally {
+    if (timeoutId) clearTimeout(timeoutId);
+    parentSignal.removeEventListener("abort", abortFromParent);
+  }
+}
+
 /**
  * Performs a connectivity handshake with the Supabase backend.
  *
@@ -216,19 +279,33 @@ export async function fetchRemote(options?: {
 
   // [ADR] Direct View Access: Bypassing the minimal SW-oriented get_pwa_data RPC
   // to fetch high-fidelity datasets directly from the authoritative feature views.
-  const [rosterResponse, headhunterResponse, heartbeatResponse, blacklistResponse] = await Promise.all([
+  // Roster and headhunter are the product payload and stay fail-closed. The
+  // heartbeat and blacklist are enrichment: a single slow optional projection
+  // must not make an otherwise complete refresh look offline.
+  const rosterRequest =
     supabase.schema('features').from('roster_view').select('*').abortSignal(signal),
+  headhunterRequest =
     supabase.schema('features').from('headhunter_view').select('*').limit(250).abortSignal(signal),
-    heartbeatQueryWithSingle.abortSignal(signal),
+  heartbeatRequest = resolveOptionalQuery("Pipeline heartbeat", signal, (optionalSignal) =>
+    heartbeatQueryWithSingle.abortSignal(optionalSignal),
+  ),
+  blacklistRequest = resolveOptionalQuery("Recruit blacklist", signal, (optionalSignal) =>
     // [FIX] SCHEMA REACHABILITY: was `drivers.recruit_blacklist`, which the Data API
     // does not expose; the warn-and-continue below meant the client-side blacklist was
     // permanently empty. `features.recruit_blacklist_view` also drops lapsed entries.
-    supabase.schema('features').from('recruit_blacklist_view').select('player_tag').abortSignal(signal)
+    supabase.schema('features').from('recruit_blacklist_view').select('player_tag').abortSignal(optionalSignal),
+  );
+
+  const [rosterResponse, headhunterResponse, heartbeatResponse, blacklistResponse] = await Promise.all([
+    rosterRequest,
+    headhunterRequest,
+    heartbeatRequest,
+    blacklistRequest,
   ]);
 
   if (rosterResponse.error) throw new Error(`Roster Fetch Error: ${rosterResponse.error.message}`);
   if (headhunterResponse.error) throw new Error(`Headhunter Fetch Error: ${headhunterResponse.error.message}`);
-  if (blacklistResponse.error) {
+  if (blacklistResponse?.error) {
     console.warn("[Sync] Blacklist fetch failed; continuing with server-filtered recruits.", blacklistResponse.error.message);
   }
   
@@ -262,14 +339,14 @@ export async function fetchRemote(options?: {
   const BlacklistRowSchema = v.object({
     player_tag: v.string(),
   });
-  const rawBlacklistData: unknown = blacklistResponse.error ? [] : blacklistResponse.data ?? [];
+  const rawBlacklistData: unknown = blacklistResponse?.error ? [] : blacklistResponse?.data ?? [];
   const blacklistData = Array.isArray(rawBlacklistData)
     ? rawBlacklistData.flatMap((blacklistRow) => {
       const validation = v.safeParse(BlacklistRowSchema, blacklistRow);
       return validation.success ? [validation.output] : [];
     })
     : [];
-  if (!blacklistResponse.error && (!Array.isArray(rawBlacklistData) || blacklistData.length !== rawBlacklistData.length)) {
+  if (blacklistResponse && !blacklistResponse.error && (!Array.isArray(rawBlacklistData) || blacklistData.length !== rawBlacklistData.length)) {
     console.warn("[Sync] Ignored malformed optional blacklist data.");
   }
   const blacklistTags = blacklistData
@@ -289,10 +366,10 @@ export async function fetchRemote(options?: {
   const HeartbeatRowSchema = v.object({
     last_success_at: v.nullable(v.string()),
   });
-  const heartbeatValidation = heartbeatResponse.error || !heartbeatResponse.data
+  const heartbeatValidation = heartbeatResponse?.error || !heartbeatResponse?.data
     ? null
     : v.safeParse(HeartbeatRowSchema, heartbeatResponse.data);
-  if (heartbeatResponse.error || (heartbeatValidation && !heartbeatValidation.success)) {
+  if (!heartbeatResponse || heartbeatResponse.error || (heartbeatValidation && !heartbeatValidation.success)) {
     console.warn("[Sync] Pipeline heartbeat unavailable; deriving freshness from roster data.");
   }
   const heartbeatTimestamp = heartbeatValidation?.success

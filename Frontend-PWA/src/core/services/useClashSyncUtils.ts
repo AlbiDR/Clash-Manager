@@ -5,14 +5,18 @@ import { fetchRemote } from "../api/SupabaseClient";
 import type { WebAppData } from "../types";
 
 /**
- * Timeout in milliseconds for remote sync network fetch operations (15 seconds).
+ * Timeout in milliseconds for remote sync network fetch operations (25 seconds).
  *
  * @remarks
  * **Architectural Context:**
  * - **Layer:** Layer 1 Core Service Utility (@core).
  * - **Satisfaction:** ADR Section IV (Resilience). Prevents hanging network requests.
  */
-export const SYNC_REQUEST_TIMEOUT_MS = 15000;
+// Keep this aligned with the API handshake budget. A Supabase project can be
+// reachable yet need more than fifteen seconds to wake a cold data path; the
+// old shorter sync budget therefore converted recoverable cold starts into
+// misleading foreground failures.
+export const SYNC_REQUEST_TIMEOUT_MS = 25_000;
 
 /** Short recovery delay before the one bounded transient transport retry. */
 export const SYNC_RETRY_DELAY_MS = 400;

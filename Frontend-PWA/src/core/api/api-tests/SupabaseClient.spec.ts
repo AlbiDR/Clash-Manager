@@ -77,6 +77,7 @@ describe("SupabaseClient", () => {
   });
 
   afterEach(() => {
+    vi.useRealTimers();
     vi.unstubAllGlobals();
     vi.unstubAllEnvs();
   });
@@ -256,6 +257,38 @@ describe("SupabaseClient", () => {
 
       const result = await SupabaseClient.fetchRemote();
       expect(result.blacklist).toEqual([]);
+      expect(SupabaseClient.lastSyncStatus.value).toBe('SUCCESS');
+    });
+
+    it("does not let a stalled optional heartbeat block a complete payload", async () => {
+      vi.useFakeTimers();
+      const stalledHeartbeat = new Promise<never>(() => {});
+      const requestSignals: AbortSignal[] = [];
+      vi.mocked(mockFrom.abortSignal)
+        .mockImplementationOnce((signal: AbortSignal) => {
+          requestSignals.push(signal);
+          return Promise.resolve({ data: [{ player_tag: '#ABC', last_ingested_at: '2026-02-03T04:05:06Z' }], error: null }) as any;
+        })
+        .mockImplementationOnce((signal: AbortSignal) => {
+          requestSignals.push(signal);
+          return Promise.resolve({ data: [], error: null }) as any;
+        })
+        .mockImplementationOnce((signal: AbortSignal) => {
+          requestSignals.push(signal);
+          return stalledHeartbeat as any;
+        })
+        .mockImplementationOnce((signal: AbortSignal) => {
+          requestSignals.push(signal);
+          return Promise.resolve({ data: [], error: null }) as any;
+        });
+
+      const refresh = SupabaseClient.fetchRemote();
+      await vi.advanceTimersByTimeAsync(SupabaseClient.OPTIONAL_METADATA_TIMEOUT_MS);
+
+      const result = await refresh;
+      expect(result.timestamp).toBe(new Date('2026-02-03T04:05:06Z').getTime());
+      expect(result.blacklist).toEqual([]);
+      expect(requestSignals[2]?.aborted).toBe(true);
       expect(SupabaseClient.lastSyncStatus.value).toBe('SUCCESS');
     });
 
