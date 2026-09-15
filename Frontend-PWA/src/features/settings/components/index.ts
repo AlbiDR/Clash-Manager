@@ -3,7 +3,6 @@
 
 export { default as AboutSettings } from "./AboutSettings.vue";
 export { default as AppearanceSettings } from "./AppearanceSettings.vue";
-export { default as AndroidCalibrationSettings } from "./AndroidCalibrationSettings.vue";
 export { default as BackendRefresher } from "./BackendRefresher.vue";
 export { default as FeatureSettings } from "./FeatureSettings.vue";
 export { default as ModeSettings } from "./ModeSettings.vue";
