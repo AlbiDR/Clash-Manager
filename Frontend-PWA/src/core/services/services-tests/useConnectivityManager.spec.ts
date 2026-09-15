@@ -179,11 +179,11 @@ describe("useConnectivityManager", () => {
         type: "warning",
         label: "STALE",
         confidence: 40,
-        diagnosis: "Last synced 30m ago"
+        diagnosis: "Source data 30m ago"
       });
     });
 
-    it("keeps a current client healthy when the upstream snapshot is older", () => {
+    it("warns when the upstream snapshot is older even after a current client fetch", () => {
       const now = Date.now();
       mockStore.currentSource = "SUPABASE";
       mockStore.lastSyncTime = now - (45 * 60 * 1000);
@@ -195,15 +195,16 @@ describe("useConnectivityManager", () => {
       const { hubHealth } = useConnectivityManager();
 
       expect(hubHealth.value).toEqual({
-        type: "success",
-        label: "DB",
-        confidence: 100,
+        type: "warning",
+        label: "STALE",
+        confidence: 40,
+        diagnosis: "Source data 45m ago",
       });
     });
 
-    it("blames the client when this client itself has not fetched recently", () => {
+    it("warns when the client cache has not fetched a fresh source snapshot recently", () => {
       const now = Date.now();
-      mockStore.lastSyncTime = now - (45 * 60 * 1000);
+      mockStore.lastSyncTime = now - (5 * 60 * 1000);
       mockStore.lastFetchedTime = now - (40 * 60 * 1000);
       vi.mocked(timeUtils.formatTimeAgo).mockReturnValue("40m ago");
 
@@ -211,6 +212,23 @@ describe("useConnectivityManager", () => {
 
       expect(hubHealth.value.label).toBe("STALE");
       expect(hubHealth.value.diagnosis).toBe("Last synced 40m ago");
+    });
+
+    it("names both stale conditions when the source and client cache are outdated", () => {
+      const now = Date.now();
+      mockStore.lastSyncTime = now - (45 * 60 * 1000);
+      mockStore.lastFetchedTime = now - (40 * 60 * 1000);
+      vi.mocked(timeUtils.formatTimeAgo).mockImplementation((timestamp: number) =>
+        timestamp === mockStore.lastSyncTime ? "45m ago" : "40m ago"
+      );
+
+      const { hubHealth } = useConnectivityManager();
+
+      expect(hubHealth.value).toMatchObject({
+        type: "warning",
+        label: "STALE",
+        diagnosis: "Source data 45m ago; Last synced 40m ago",
+      });
     });
 
     it("returns STALE state when data is older than 30 minutes", () => {
@@ -224,7 +242,7 @@ describe("useConnectivityManager", () => {
         type: "warning",
         label: "STALE",
         confidence: 40,
-        diagnosis: "Last synced 31m ago"
+        diagnosis: "Source data 31m ago"
       });
     });
 

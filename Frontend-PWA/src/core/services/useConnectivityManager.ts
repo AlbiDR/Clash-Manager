@@ -168,19 +168,28 @@ export function useConnectivityManager() {
       };
     }
 
-    // 3. Stale Client Warning
-    // The pill represents this console's connection state, so freshness must
-    // be based on the last successful client fetch. The source snapshot can be
-    // older while this client is still correctly connected and polling it; that
-    // provenance remains visible in the details popover rather than turning a
-    // healthy DB connection into a permanent warning.
-    const clientAgeMinutes = metadata.value.fetchedMinutes ?? metadata.value.ageMinutes;
-    if (clientAgeMinutes >= DATA_STALENESS_MINUTES) {
+    // 3. Stale Data Warning
+    // A data health pill has two freshness obligations: the payload being shown
+    // must still match the database, and the database snapshot itself must be
+    // recent enough to rely on. A successful client fetch establishes only the
+    // first of those facts; it must not turn a one-hour-old source snapshot into
+    // a green "DB" state.
+    const sourceIsStale = metadata.value.ageMinutes >= DATA_STALENESS_MINUTES;
+    const clientIsStale = metadata.value.fetchedMinutes !== null
+      && metadata.value.fetchedMinutes >= DATA_STALENESS_MINUTES;
+    if (sourceIsStale || clientIsStale) {
+      const sourceDiagnosis = sourceIsStale && metadata.value.age
+        ? `Source data ${metadata.value.age}`
+        : null;
+      const clientDiagnosis = clientIsStale && metadata.value.lastFetched
+        ? `Last synced ${metadata.value.lastFetched}`
+        : null;
+
       return {
         type: "warning",
         label: "STALE",
         confidence: 40,
-        diagnosis: `Last synced ${metadata.value.lastFetched ?? metadata.value.age ?? "a while ago"}`,
+        diagnosis: [sourceDiagnosis, clientDiagnosis].filter(Boolean).join("; ") || "Freshness could not be verified",
       };
     }
 
