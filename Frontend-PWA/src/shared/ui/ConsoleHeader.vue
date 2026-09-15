@@ -339,7 +339,10 @@ const handleOpenDashboard = () => {
 
   .selection-actions :deep(.selection-bar) {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(176px, 280px);
+    /* Select/Done is a concise commitment, not a second primary surface.
+       Leave it enough room for its stable active label plus the trailing View
+       trigger, then return every further pixel to the score drag surface. */
+    grid-template-columns: minmax(0, 1fr) minmax(160px, 208px);
     width: 100%;
     gap: var(--sys-space-12);
   }
