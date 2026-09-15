@@ -45,7 +45,7 @@
     "test:nightly-recap": "node --test .github/scripts/nightly/nightly-recap.test.mjs",
     "test:nightly-history": "node --test .github/scripts/nightly/age-pr-history.test.mts",
     "test:nightly-contract": "node --test .github/scripts/nightly/nightly-contract.test.mjs .github/scripts/nightly/nightly-intervention.test.mjs",
-    "test:nightly-events": "node --test .github/scripts/nightly/nightly-events.test.mjs .github/scripts/nightly/nightly-explain.test.mjs",
+    "test:nightly-events": "node --test .github/scripts/nightly/nightly-events.test.mjs .github/scripts/nightly/nightly-explain.test.mjs .github/scripts/nightly/nightly-provenance.test.mjs",
     "nightly:deploy-check": "node .github/scripts/nightly/nightly-deploy-check.mjs",
     "nightly:recap": "node .github/scripts/nightly/nightly-recap.mjs",
     "nightly:inspect": "node .github/scripts/nightly/nightly-contract.mjs inspect",

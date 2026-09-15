@@ -267,6 +267,9 @@ export function extractMetadata(pr) {
     // anybody looked, so inventing a value for it would destroy the only thing
     // it carries. Null means unmeasured and must stay distinguishable from "0".
     nudges: null,
+    // The Jules checkout that executed the stage. Unlike the merge commit, it
+    // identifies the code the agent inspected before it created its change.
+    execution: null,
   };
 
   if (metaMatch) {
@@ -284,6 +287,7 @@ export function extractMetadata(pr) {
     // survives that test. Anything not a plain count reverts to unmeasured,
     // because a malformed value is not evidence of zero nudges.
     meta.nudges = /^\d+$/.test(String(meta.nudges ?? "")) ? String(meta.nudges) : null;
+    meta.execution = /^[a-f0-9]{7,64}$/i.test(String(meta.execution || "")) ? String(meta.execution) : null;
     return meta;
   }
 
@@ -311,6 +315,7 @@ export function parseTagContent(tagContent) {
     result: TAG_PLACEHOLDERS.result,
     // No placeholder: unmeasured must stay distinguishable from a measured 0.
     nudges: null,
+    execution: null,
   };
 
   for (const line of String(tagContent || "").split("\n")) {
@@ -324,6 +329,10 @@ export function parseTagContent(tagContent) {
       const raw = line.replace("Nudges:", "").trim();
       // A malformed value reverts to unmeasured. It is not evidence of zero.
       parsed.nudges = /^\d+$/.test(raw) ? raw : null;
+    }
+    if (line.startsWith("Execution:")) {
+      const raw = line.replace("Execution:", "").trim();
+      parsed.execution = /^[a-f0-9]{7,64}$/i.test(raw) ? raw : null;
     }
   }
 
@@ -740,6 +749,7 @@ function createStageTag(pr, squashSha, config = CONFIG, stageOverride = null) {
     // Conditional, so a tag written for a run that never measured this carries
     // no line at all rather than a fabricated zero.
     ...(/^\d+$/.test(String(meta.nudges ?? "")) ? [`Nudges: ${sanitizeTagValue(meta.nudges)}`] : []),
+    ...(meta.execution ? [`Execution: ${sanitizeTagValue(meta.execution)}`] : []),
     ...diagnostics,
   ].join("\n");
 

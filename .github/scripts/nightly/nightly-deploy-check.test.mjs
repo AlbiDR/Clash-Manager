@@ -98,6 +98,7 @@ test("the watch list covers the guard and the checker themselves", () => {
 test("the watch list covers the dispatch path the migration will depend on", () => {
   assert.ok(CONTROL_PLANE_FILES.includes(".github/workflows/nightly-dispatch.yml"));
   assert.ok(CONTROL_PLANE_FILES.includes(".github/scripts/nightly/nightly-dispatch.mjs"));
+  assert.ok(CONTROL_PLANE_FILES.includes(".github/scripts/nightly/nightly-provenance.mjs"));
 });
 
 test("the watch list covers the merge attributes the sync depends on", () => {

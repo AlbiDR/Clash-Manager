@@ -6,7 +6,7 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 
 import { buildStageExplanation, renderStageExplanation } from "./nightly-explain.mjs";
-import { createEmptyLedger, upsertStageEntry } from "./nightly-ledger.mjs";
+import { createEmptyLedger, recordCycleExecution, upsertStageEntry } from "./nightly-ledger.mjs";
 import { NIGHTLY_EVENT_SOURCES } from "./nightly-events.mjs";
 
 const registry = JSON.parse(readFileSync(new URL("../../nightly-config/stages.json", import.meta.url), "utf8"));
@@ -23,6 +23,17 @@ function inputsFor(ledger, overrides = {}) {
     // no result is judged rather than left PENDING.
     tags: ["nightly/2026-09-16/stage-2/pr-999"],
     ...overrides,
+  };
+}
+
+function execution() {
+  return {
+    schemaVersion: 1,
+    executionId: "watchdog:123:1",
+    workflow: { name: "Nightly Watchdog", path: ".github/workflows/nightly-watchdog.yml", runId: "123", attempt: 1 },
+    checkout: { branch: "Nightly", sha: "executed-sha" },
+    runtime: { node: "v24.0.0", platform: "linux", arch: "x64", runnerOs: "Linux", runnerImage: "ubuntu" },
+    controlPlane: { registryDigest: "registry", workflowDigest: "workflow" },
   };
 }
 
@@ -73,6 +84,40 @@ test("explain ties a successful recovery to its promotion tag and channel", () =
   assert.equal(explanation.classification.rescued, true);
   assert.equal(explanation.classification.rescuedBy, "watchdog-nudge");
   assert.match(renderStageExplanation(explanation), /Auto-recovered: yes \(watchdog-nudge\)/);
+});
+
+test("explain makes the workflow checkout and lifecycle transition auditable", () => {
+  const ledger = createEmptyLedger();
+  recordCycleExecution(ledger, DATE, execution(), {
+    source: NIGHTLY_EVENT_SOURCES.WATCHDOG_OBSERVER,
+    recordedAt: `${DATE}T00:00:00.000Z`,
+  });
+  upsertStageEntry(ledger, registry, DATE, 3, {
+    state: "RUNNING",
+    evidence: { julesSession: { name: "sessions/3" } },
+    lastObservedAt: `${DATE}T00:01:00.000Z`,
+  }, { source: NIGHTLY_EVENT_SOURCES.WATCHDOG_OBSERVER });
+
+  const explanation = buildStageExplanation(inputsFor(ledger), 3);
+  const rendered = renderStageExplanation(explanation);
+  assert.equal(explanation.executionIntegrity.status, "VERIFIED");
+  assert.equal(explanation.executionSha, "executed-sha");
+  assert.match(rendered, /Execution provenance: VERIFIED/);
+  assert.match(rendered, /Checkout: Nightly @ executed-sha/);
+  assert.match(rendered, /Transition: JULES_SESSION_OBSERVED \(EXPECTED -> RUNNING\)/);
+});
+
+test("explain keeps Jules' stage checkout distinct from the observer checkout", () => {
+  const ledger = createEmptyLedger();
+  upsertStageEntry(ledger, registry, DATE, 6, {
+    state: "MERGED",
+    evidence: { stageExecution: { pr: 456, revision: "jules-execution-sha", source: "pr-body" } },
+    lastObservedAt: `${DATE}T06:00:00.000Z`,
+  });
+
+  const explanation = buildStageExplanation(inputsFor(ledger), 6);
+  assert.equal(explanation.stageExecutionRevision, "jules-execution-sha");
+  assert.match(renderStageExplanation(explanation), /Jules checkout SHA: jules-execution-sha/);
 });
 
 test("explain labels historical rows honestly when no append-only events exist", () => {

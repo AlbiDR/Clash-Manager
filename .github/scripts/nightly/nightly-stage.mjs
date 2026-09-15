@@ -488,6 +488,12 @@ function nudgeMetadataLine(nudges) {
   return Number.isInteger(nudges) && nudges >= 0 ? `\n  Nudges: ${nudges}` : "";
 }
 
+function executionMetadataLine(executionRevision) {
+  return /^[a-f0-9]{7,64}$/i.test(String(executionRevision || ""))
+    ? `\n  Execution: ${executionRevision}`
+    : "";
+}
+
 export function renderPrBody(stage, status, summary, changedPaths, details = {}) {
   const normalizedSummary = cleanSummary(summary);
   const files = changedPaths.join(", ") || stage.coverageLog;
@@ -517,7 +523,7 @@ NIGHTLY_PR_METADATA:
   Why: ${why}
   Change: ${normalizedSummary}
   Result: ${result}
-  Files: ${files}${nudgeMetadataLine(details.nudges)}
+  Files: ${files}${nudgeMetadataLine(details.nudges)}${executionMetadataLine(details.executionRevision)}
 -->
 `;
 }
@@ -815,6 +821,7 @@ function startCommand(repoRoot, registry, stage, dryRun) {
   const worktreeState = startableWorktreeState(repoRoot, stage, date);
   if (!dryRun && worktreeState === "clean") synchronizeNightly(repoRoot);
 
+  const executionRevision = git(repoRoot, ["rev-parse", "HEAD"]);
   const currentFingerprint = lockFingerprint(repoRoot);
   const snapshotFingerprint = readOptional(path.join(targetContextDir, "snapshot-lock.sha256"));
   const refreshDependencies = needsDependencyRefresh(snapshotFingerprint, currentFingerprint);
@@ -826,6 +833,7 @@ function startCommand(repoRoot, registry, stage, dryRun) {
     date,
     cycleId,
     runId,
+    executionRevision,
     contractFingerprint,
     startEpoch,
     workDeadlineEpoch: startEpoch + registry.workBudgetMinutes * 60,
@@ -902,6 +910,7 @@ function startCommand(repoRoot, registry, stage, dryRun) {
     `target-branch: ${registry.targetBranch}`,
     `branch-prefix: ${stage.branchPrefix}`,
     `cycle-id: ${cycleId}`,
+    `execution-revision: ${executionRevision}`,
     `contract-fingerprint: ${contractFingerprint}`,
     `work-deadline-epoch: ${state.workDeadlineEpoch}`,
     `finalize: node .github/scripts/nightly/nightly-stage.mjs finalize --stage ${stage.number} --status <STATUS> --summary <WHAT_CHANGED> --why <RATIONALE> --result <VERIFICATION_RESULT>`,
@@ -1020,7 +1029,13 @@ function finalizeCommand(repoRoot, stage, status, summary, dryRun, details = {})
   const runId = state.runId || randomBytes(4).toString("hex");
   const cycleId = state.cycleId || getCycleId(getCycleDate(stage.number, date));
   const nudges = stateObserved ? (state.resultRefused ? 1 : 0) : null;
-  const prBody = renderPrBody(stage, status, normalizedSummary, paths, { why, result, nudges, cycleId });
+  const prBody = renderPrBody(stage, status, normalizedSummary, paths, {
+    why,
+    result,
+    nudges,
+    cycleId,
+    executionRevision: state.executionRevision,
+  });
   // The handoff no longer carries the body, only the path to it.
   const handoff = renderHandoff(stage, status, normalizedSummary, runId);
 

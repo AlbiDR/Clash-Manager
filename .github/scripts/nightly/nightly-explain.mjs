@@ -10,11 +10,13 @@ import { fileURLToPath } from "node:url";
 import { getContractFingerprint } from "./nightly-contract.mjs";
 import {
   getCanonicalJson,
+  getCycleExecutionEvents,
   getCycleId,
   getProjectedStageEntry,
   getStageEvents,
   validateNightlyEvents,
 } from "./nightly-events.mjs";
+import { validateExecutionProvenance } from "./nightly-provenance.mjs";
 import {
   buildRecap,
   declaredCoverageRecord,
@@ -97,6 +99,53 @@ function getEventIntegrity(ledger, stageEvents, entry) {
   };
 }
 
+function getExecutionIntegrity(ledger, date) {
+  const events = getCycleExecutionEvents(ledger, date);
+  if (events.length === 0) {
+    return {
+      status: "UNRECORDED",
+      verified: false,
+      reason: "No workflow execution provenance was recorded for this cycle.",
+      executions: [],
+    };
+  }
+
+  const executions = events.map(event => ({
+    ...event.payload?.execution,
+    recordedAt: event.recordedAt,
+  }));
+  try {
+    executions.forEach(({ recordedAt: _recordedAt, ...execution }) => validateExecutionProvenance(execution));
+  } catch (error) {
+    return {
+      status: "INVALID",
+      verified: false,
+      reason: `Execution provenance is malformed: ${error.message}`,
+      executions,
+    };
+  }
+
+  const stored = ledger?.cycles?.[date]?.executions || {};
+  const eventExecutionIds = new Set(executions.map(execution => execution.executionId));
+  const matchesSnapshot = executions.every(({ recordedAt: _recordedAt, ...execution }) =>
+    getCanonicalJson(stored[execution.executionId]) === getCanonicalJson(execution),
+  ) && Object.keys(stored).every(executionId => eventExecutionIds.has(executionId));
+  if (!matchesSnapshot) {
+    return {
+      status: "SNAPSHOT_DIVERGED",
+      verified: false,
+      reason: "Execution provenance events do not match the cycle execution snapshot.",
+      executions,
+    };
+  }
+  return {
+    status: "VERIFIED",
+    verified: true,
+    reason: `${executions.length} workflow execution record(s) are anchored in the event stream.`,
+    executions,
+  };
+}
+
 function getOutcomeReason({ classification, declared, entry, progress }) {
   if (classification.outcome === "STUCK" && entry?.state && !["MERGED", "RECOVERABLE"].includes(entry.state)) {
     return `The ledger recorded ${entry.state}${entry.failureClass ? ` with ${entry.failureClass}` : ""}, and no durable merge superseded it.`;
@@ -126,6 +175,8 @@ export function buildStageExplanation(inputs, stageNumber) {
   const entry = inputs.ledger?.runs?.[inputs.date]?.[String(stageNumber)] || null;
   const events = getStageEvents(inputs.ledger, inputs.date, stageNumber);
   const eventIntegrity = getEventIntegrity(inputs.ledger, events, entry);
+  const executionIntegrity = getExecutionIntegrity(inputs.ledger, inputs.date);
+  const latestExecution = executionIntegrity.executions.at(-1) || null;
   const contractFingerprint = getContractFingerprint(stage);
   const recordedContractFingerprints = [...new Set(events.map(event => event.contractFingerprint).filter(Boolean))];
   const contractIntegrity = recordedContractFingerprints.length === 0
@@ -199,6 +250,10 @@ export function buildStageExplanation(inputs, stageNumber) {
     tag,
     coverage: declared,
     historyPr: history?.prNumber || null,
+    executionId: latestExecution?.executionId || null,
+    executionBranch: latestExecution?.checkout?.branch || null,
+    executionSha: latestExecution?.checkout?.sha || null,
+    stageExecutionRevision: entry?.evidence?.stageExecution?.revision || null,
   };
   const projection = {
     version: NIGHTLY_EXPLANATION_VERSION,
@@ -222,6 +277,7 @@ export function buildStageExplanation(inputs, stageNumber) {
     contract: stage.contract,
     contractIntegrity,
     eventIntegrity,
+    executionIntegrity,
     events,
     rules,
     classification: projection.result,
@@ -233,10 +289,15 @@ function renderEvent(event) {
   const before = event.payload?.before?.state || "none";
   const after = event.payload?.after?.state || "unknown";
   const requested = Object.keys(event.payload?.requested || {}).sort();
+  const transition = event.payload?.transition;
+  const dispatch = event.payload?.requested?.evidence?.set?.dispatch;
+  const detail = dispatch?.error ? `Dispatch error: ${dispatch.error}` : null;
   return [
     `  #${event.sequence} ${event.recordedAt} [${event.source}] ${event.type}`,
     `    State: ${before} -> ${after}`,
     `    Requested facts: ${requested.length > 0 ? requested.join(", ") : "initial expectation"}`,
+    `    Transition: ${transition ? `${transition.name} (${transition.from} -> ${transition.to})` : "legacy event"}`,
+    ...(detail ? [`    ${detail}`] : []),
     `    Event: ${event.eventId}`,
   ];
 }
@@ -251,6 +312,7 @@ export function renderStageExplanation(explanation) {
     `Contract: ${explanation.contractFingerprint}`,
     `Recorded contract: ${explanation.contractIntegrity.status}`,
     `Event integrity: ${explanation.eventIntegrity.status} - ${explanation.eventIntegrity.reason}`,
+    `Execution provenance: ${explanation.executionIntegrity.status} - ${explanation.executionIntegrity.reason}`,
     "",
     "Observed facts:",
     `  Ledger state: ${explanation.ledgerState || "absent"}`,
@@ -258,9 +320,24 @@ export function renderStageExplanation(explanation) {
     `  Promotion tag: ${explanation.tag || "absent"}`,
     `  Coverage result: ${explanation.coverage?.status || "absent"}`,
     `  History PR: ${explanation.historyPr || "absent"}`,
+    `  Executed branch: ${explanation.executionBranch || "unrecorded"}`,
+    `  Executed SHA: ${explanation.executionSha || "unrecorded"}`,
+    `  Jules checkout SHA: ${explanation.stageExecutionRevision || "unrecorded"}`,
+    "",
+    "Workflow executions:",
+  ];
+
+  if (explanation.executionIntegrity.executions.length === 0) lines.push("  No execution provenance was recorded for this cycle.");
+  else explanation.executionIntegrity.executions.forEach(execution => {
+    lines.push(`  ${execution.recordedAt} ${execution.workflow?.name || execution.workflow?.path || "unknown workflow"}`);
+    lines.push(`    Run: ${execution.workflow?.runId || "local"} attempt ${execution.workflow?.attempt || "unknown"}`);
+    lines.push(`    Checkout: ${execution.checkout?.branch || "unknown"} @ ${execution.checkout?.sha || "unrecorded"}`);
+  });
+
+  lines.push(
     "",
     "Event timeline:",
-  ];
+  );
 
   if (explanation.events.length === 0) lines.push("  No append-only events were recorded for this stage and cycle.");
   else explanation.events.forEach(event => lines.push(...renderEvent(event)));

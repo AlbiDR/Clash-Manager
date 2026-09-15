@@ -93,6 +93,27 @@ test("watchdog accepts Stage 1 evidence from the previous UTC date", () => {
   assert.equal(entries.every(entry => entry.state === "MERGED"), true);
 });
 
+test("watchdog records the Jules checkout revision from a merged stage body", () => {
+  const date = "2026-08-11";
+  const observed = mergedObserved(date);
+  observed.prs.push({
+    number: 1401,
+    body: `<!--
+NIGHTLY_PR_METADATA:
+  Domain: hardening
+  Execution: deadbeef
+-->`,
+  });
+
+  const entry = evaluateNightlyRun({ registry, date, observed, previousLedger: createEmptyLedger() })
+    .find(candidate => candidate.stage === 1);
+  assert.deepEqual(entry.evidence.stageExecution, {
+    pr: 1401,
+    revision: "deadbeef",
+    source: "pr-body",
+  });
+});
+
 test("watchdog reports malformed open PRs as recoverable", () => {
   const observed = mergedObserved("2026-08-11");
   observed.tags.delete("nightly/2026-08-11/stage-3/pr-1403");

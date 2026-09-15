@@ -7,6 +7,7 @@ export const NIGHTLY_EVENT_SCHEMA_VERSION = 1;
 export const NIGHTLY_EVENT_STREAM_VERSION = 1;
 
 export const NIGHTLY_EVENT_TYPES = Object.freeze({
+  CYCLE_EXECUTION_RECORDED: "CYCLE_EXECUTION_RECORDED",
   STAGE_EXPECTED: "STAGE_EXPECTED",
   STAGE_SNAPSHOT_IMPORTED: "STAGE_SNAPSHOT_IMPORTED",
   STAGE_ENTRY_UPDATED: "STAGE_ENTRY_UPDATED",
@@ -24,6 +25,7 @@ export const NIGHTLY_EVENT_SOURCES = Object.freeze({
 });
 
 const EVENT_TYPE_VALUES = new Set(Object.values(NIGHTLY_EVENT_TYPES));
+const CYCLE_EVENT_TYPES = new Set([NIGHTLY_EVENT_TYPES.CYCLE_EXECUTION_RECORDED]);
 
 function assertEvent(condition, message) {
   if (!condition) throw new Error(message);
@@ -95,7 +97,11 @@ export function validateNightlyEvents(ledger) {
     assertEvent(typeof event.source === "string" && event.source.length > 0, `${label} needs a source.`);
     assertEvent(/^\d{4}-\d{2}-\d{2}$/.test(event.date), `${label} has an invalid date.`);
     assertEvent(event.cycleId === getCycleId(event.date), `${label} has an invalid cycleId.`);
-    assertEvent(Number.isInteger(event.stage) && event.stage >= 1 && event.stage <= 13, `${label} has an invalid stage.`);
+    assertEvent(Number.isInteger(event.stage) && event.stage >= 0 && event.stage <= 13, `${label} has an invalid stage.`);
+    assertEvent(
+      event.stage === 0 ? CYCLE_EVENT_TYPES.has(event.type) : !CYCLE_EVENT_TYPES.has(event.type),
+      `${label} has an invalid cycle/stage event pairing.`,
+    );
     assertEvent(!Number.isNaN(Date.parse(event.recordedAt)), `${label} has an invalid recordedAt.`);
     assertEvent(event.payload && typeof event.payload === "object", `${label} needs a payload.`);
     assertEvent(event.eventId === getNightlyEventId(event), `${label} content does not match its eventId.`);
@@ -127,6 +133,15 @@ export function createNightlyEvent(ledger, {
   if (!Number.isInteger(ledger.eventCount)) ledger.eventCount = ledger.events.length;
   if (ledger.eventHead === undefined) ledger.eventHead = ledger.events.at(-1)?.eventId || null;
 
+  assertEvent(
+    Number.isInteger(stage) && stage >= 0 && stage <= 13,
+    `Invalid nightly event stage: ${stage}`,
+  );
+  assertEvent(
+    Number(stage) === 0 ? CYCLE_EVENT_TYPES.has(type) : !CYCLE_EVENT_TYPES.has(type),
+    `Invalid nightly cycle/stage event pairing for ${type}.`,
+  );
+
   const cycleId = getCycleId(date);
   if (!ledger.cycles[date]) {
     ledger.cycles[date] = { cycleId, date, firstObservedAt: recordedAt };
@@ -156,6 +171,14 @@ export function createNightlyEvent(ledger, {
 
 export function getStageEvents(ledger, date, stageNumber) {
   return (ledger?.events || []).filter(event => event.date === date && event.stage === stageNumber);
+}
+
+export function getCycleExecutionEvents(ledger, date) {
+  return (ledger?.events || []).filter(event =>
+    event.date === date
+    && event.stage === 0
+    && event.type === NIGHTLY_EVENT_TYPES.CYCLE_EXECUTION_RECORDED,
+  );
 }
 
 export function getProjectedStageEntry(events) {

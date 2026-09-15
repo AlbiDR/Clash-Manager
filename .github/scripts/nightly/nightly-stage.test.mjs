@@ -250,6 +250,7 @@ test("metadata and native handoff are complete without pending placeholders", ()
     // renderPrBody was called without a nudge count here, so the field is
     // absent rather than zero. Absence is ignorance, never innocence.
     nudges: null,
+    execution: null,
   });
 
   const handoff = renderHandoff(stage, "CHANGED", "Added loader boundary coverage", "a1b2c3d4");
@@ -382,12 +383,14 @@ test("real startup synchronizes a disposable Nightly branch and writes bounded s
   assert.equal(state.stage, 13);
   assert.equal(state.cycleId, "nightly-cycle/2026-08-08");
   assert.match(state.contractFingerprint, /^[a-f0-9]{64}$/);
+  assert.equal(state.executionRevision, run("git", ["rev-parse", "HEAD"], repoRoot).stdout.trim());
   assert.equal(state.dependencyRefresh, "not-required");
   assert.equal(state.contextRefresh, "current");
   assert.equal(readFileSync(path.join(testContext, "active-lock.sha256"), "utf8").trim(), fingerprint);
   const manifest = readFileSync(path.join(testContext, "stage-manifest.txt"), "utf8");
   assert.match(manifest, /target-branch: Nightly/);
   assert.match(manifest, /cycle-id: nightly-cycle\/2026-08-08/);
+  assert.match(manifest, new RegExp(`execution-revision: ${state.executionRevision}`));
   assert.match(manifest, new RegExp(`contract-fingerprint: ${state.contractFingerprint}`));
   const contract = JSON.parse(readFileSync(path.join(testContext, "stage-contract.json"), "utf8"));
   assert.equal(contract.stage, 13);

@@ -3,13 +3,14 @@
 
 import fs from "node:fs";
 import { spawnSync } from "node:child_process";
-import { classifyNightlyPr, CONFIG } from "./merge-nightly-core.mjs";
-import { FAILURE_CLASSES, ensureRunEntries, loadLedger, prNumberFromTag, saveLedger, stageEntry, upsertStageEntry } from "./nightly-ledger.mjs";
+import { classifyNightlyPr, CONFIG, extractMetadata } from "./merge-nightly-core.mjs";
+import { FAILURE_CLASSES, ensureRunEntries, loadLedger, prNumberFromTag, recordCycleExecution, saveLedger, stageEntry, upsertStageEntry } from "./nightly-ledger.mjs";
 import { createRedactor, redactDeep } from "./nightly-redact.mjs";
 import { buildFallbackPlan, extractSessionPatch, publishFallback } from "./nightly-publish-fallback.mjs";
 import { HEALTH, evaluatePipelineHealth, renderHealthReport } from "./nightly-health.mjs";
 import { getInterventionAttemptCount } from "./nightly-intervention.mjs";
 import { NIGHTLY_EVENT_SOURCES, getCycleId, getEvidenceDate } from "./nightly-events.mjs";
+import { getExecutionProvenance } from "./nightly-provenance.mjs";
 // The composer the stage itself uses, and the parser the recap itself uses.
 // Imported rather than reimplemented: a second copy of either would be a second
 // definition of the pull request body format, and the whole reason a published
@@ -540,6 +541,14 @@ function describePublishedBody(tag, prs) {
   return { pr: number, verdict, ok: verdict === "OK" };
 }
 
+function describeStageExecution(tag, prs) {
+  const number = prNumberFromTag(tag);
+  if (number === null) return null;
+  const pr = (prs || []).find(candidate => Number(candidate.number) === number);
+  const revision = extractMetadata(pr).execution;
+  return revision ? { pr: number, revision, source: "pr-body" } : null;
+}
+
 async function collectObservedState(registry, date, config = CONFIG) {
   runGit(["fetch", "--tags", "origin", config.targetBranch]);
   try {
@@ -883,6 +892,9 @@ export function evaluateNightlyRun({ registry, date, observed, previousLedger, f
           run: observed.runWindows?.get(stage.number) || null,
           // Observation only, never a failure. See classifyPrBody.
           body: describePublishedBody(matchingTags[0], observed.prs),
+          // The revision Jules checked out after its own Nightly fast-forward,
+          // not the later merge commit or the watchdog's observer checkout.
+          stageExecution: describeStageExecution(matchingTags[0], observed.prs),
         },
       });
       continue;
@@ -1717,6 +1729,9 @@ export async function runCli(argv = process.argv.slice(2), config = CONFIG) {
 
   const registry = JSON.parse(fs.readFileSync(config.registryPath, "utf8"));
   const ledger = loadLedger(config.ledgerPath);
+  recordCycleExecution(ledger, date, getExecutionProvenance(), {
+    source: NIGHTLY_EVENT_SOURCES.WATCHDOG_OBSERVER,
+  });
   ensureRunEntries(ledger, registry, date);
 
   let entries;

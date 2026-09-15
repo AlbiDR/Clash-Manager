@@ -211,6 +211,7 @@ NIGHTLY_PR_METADATA:
   Why: Touch targets needed normalization.
   Change: Modernized setting rows.
   Result: Mobile touch compliance restored.
+  Execution: 1234567
 -->`,
   });
 
@@ -224,7 +225,17 @@ NIGHTLY_PR_METADATA:
     // written before the field existed lands here, and reading them as a
     // measured zero would report a guard that never had to fire.
     nudges: null,
+    execution: "1234567",
   });
+});
+
+test("execution revision survives PR metadata and annotated-tag parsing", () => {
+  const absent = extractMetadata({ title: "t", body: NUDGE_BODY("0") });
+  assert.equal(absent.execution, null);
+
+  const parsed = parseTagContent("Execution: deadbeef");
+  assert.equal(parsed.execution, "deadbeef");
+  assert.equal(parseTagContent("Execution: not-a-revision").execution, null);
 });
 
 test("summarizes files without exploding long histories", () => {

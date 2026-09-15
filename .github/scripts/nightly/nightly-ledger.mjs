@@ -14,6 +14,7 @@ import {
   getCycleId,
   validateNightlyEvents,
 } from "./nightly-events.mjs";
+import { validateExecutionProvenance } from "./nightly-provenance.mjs";
 
 export const LEDGER_PATH = path.join(".github", "nightly-logs", "nightly-run-ledger.json");
 
@@ -116,6 +117,23 @@ export function validateLedger(ledger) {
   assertLedger(ledger.runs && typeof ledger.runs === "object", "Nightly ledger runs must be an object.");
   validateNightlyEvents(ledger);
 
+  for (const [date, cycle] of Object.entries(ledger.cycles || {})) {
+    const executions = cycle?.executions;
+    if (executions === undefined) continue;
+    assertLedger(executions && typeof executions === "object" && !Array.isArray(executions), `Nightly cycle ${date} has invalid executions.`);
+    for (const [executionId, execution] of Object.entries(executions)) {
+      validateExecutionProvenance(execution);
+      assertLedger(execution.executionId === executionId, `Nightly cycle ${date} execution key does not match its identity.`);
+      const recorded = (ledger.events || []).some(event =>
+        event.date === date
+        && event.type === NIGHTLY_EVENT_TYPES.CYCLE_EXECUTION_RECORDED
+        && event.payload?.execution?.executionId === executionId
+        && getCanonicalJson(event.payload.execution) === getCanonicalJson(execution),
+      );
+      assertLedger(recorded, `Nightly cycle ${date} execution ${executionId} is not anchored in the event stream.`);
+    }
+  }
+
   for (const [date, stages] of Object.entries(ledger.runs)) {
     assertLedger(/^\d{4}-\d{2}-\d{2}$/.test(date), `Invalid nightly ledger date: ${date}`);
     assertLedger(stages && typeof stages === "object", `Nightly ledger run ${date} must be an object.`);
@@ -215,6 +233,43 @@ export function ensureRunEntries(ledger, registry, date, options = {}) {
     Object.entries(run).sort(([stageA], [stageB]) => Number(stageA) - Number(stageB)),
   );
   return ledger;
+}
+
+/**
+ * Records which workflow and checkout produced a cycle observation.
+ *
+ * A cycle may be observed by dispatch, merge, and watchdog workflows, so the
+ * execution map is keyed by GitHub's stable workflow-run identity rather than
+ * pretending a pipeline cycle has one process. Repeating the same execution is
+ * idempotent; a collision with different facts is corruption, not an update.
+ */
+export function recordCycleExecution(ledger, date, execution, context = {}) {
+  validateExecutionProvenance(execution);
+  assertLedger(/^\d{4}-\d{2}-\d{2}$/.test(date), `Invalid nightly cycle date: ${date}`);
+  const recordedAt = context.recordedAt || new Date().toISOString();
+  const source = context.source || NIGHTLY_EVENT_SOURCES.LEDGER;
+  const existing = ledger.cycles?.[date]?.executions?.[execution.executionId];
+  if (existing) {
+    assertLedger(
+      getCanonicalJson(existing) === getCanonicalJson(execution),
+      `Nightly cycle ${date} execution ${execution.executionId} was recorded with conflicting facts.`,
+    );
+    return { recorded: false, execution: existing };
+  }
+
+  createNightlyEvent(ledger, {
+    date,
+    stage: 0,
+    type: NIGHTLY_EVENT_TYPES.CYCLE_EXECUTION_RECORDED,
+    source,
+    recordedAt,
+    payload: { execution },
+  });
+  const cycle = ledger.cycles[date];
+  cycle.executions = cycle.executions || {};
+  cycle.executions[execution.executionId] = execution;
+  validateLedger(ledger);
+  return { recorded: true, execution };
 }
 
 // Evidence accumulates across observation passes: `upsertStageEntry` merges it
@@ -359,6 +414,28 @@ function getRequestedFacts(patch, current, next, stateGuarded, failureClassGuard
   return requested;
 }
 
+/**
+ * Human-readable lifecycle labels are recorded beside state deltas. They do
+ * not replace the state machine; they make the source and purpose of each
+ * transition visible without requiring a reader to infer it from opaque fields.
+ */
+export function getStageTransition({ current, next, requested, source }) {
+  const evidence = requested.evidence?.set || {};
+  let name = "OBSERVATION_UPDATED";
+  if (source === NIGHTLY_EVENT_SOURCES.DISPATCHER && next.state === "RUNNING") name = "JULES_SESSION_DISPATCHED";
+  else if (source === NIGHTLY_EVENT_SOURCES.DISPATCHER && evidence.dispatch?.error) name = "JULES_DISPATCH_FAILED";
+  else if (source === NIGHTLY_EVENT_SOURCES.DISPATCHER && evidence.dispatch) name = "JULES_DISPATCH_REQUESTED";
+  else if (source === NIGHTLY_EVENT_SOURCES.WATCHDOG_RECOVERY && evidence.recovery) name = "RECOVERY_REQUESTED";
+  else if (source === NIGHTLY_EVENT_SOURCES.WATCHDOG_FALLBACK && evidence.fallbackPublish) name = "FALLBACK_PUBLICATION_REQUESTED";
+  else if (source === NIGHTLY_EVENT_SOURCES.WATCHDOG_BODY_REPAIR) name = "PULL_REQUEST_BODY_REPAIRED";
+  else if (source === NIGHTLY_EVENT_SOURCES.WATCHDOG_HEALTH) name = "HEALTH_EVALUATED";
+  else if (next.state === "PR_OPEN") name = "PULL_REQUEST_OBSERVED";
+  else if (next.state === "MERGED") name = "MERGE_CONFIRMED";
+  else if (["NO_OUTPUT", "BLOCKED", "ESCALATED", "DEGRADED"].includes(next.state)) name = "FAILURE_OBSERVED";
+  else if (next.state === "RUNNING") name = "JULES_SESSION_OBSERVED";
+  return { name, from: current.state, to: next.state };
+}
+
 export function upsertStageEntry(ledger, registry, date, stageNumber, patch = {}, context = {}) {
   const observedAt = patch.lastObservedAt || context.recordedAt || new Date().toISOString();
   const source = context.source || NIGHTLY_EVENT_SOURCES.LEDGER;
@@ -407,6 +484,7 @@ export function upsertStageEntry(ledger, registry, date, stageNumber, patch = {}
           dispatchAttempts: next.dispatchAttempts,
           interventionAttempts: next.interventionAttempts,
         },
+        transition: getStageTransition({ current, next, requested, source }),
         rules: [
           {
             id: "TAGGED_MERGE_IS_DURABLE",

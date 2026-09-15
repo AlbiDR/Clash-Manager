@@ -123,12 +123,17 @@ unverified source edits, and finalize. The work phase ends at 45 minutes so the
 - Every control-plane ledger write belongs to the stable
   `nightly-cycle/YYYY-MM-DD` identity and appends a content-addressed event to
   the ledger's hash chain. Snapshot rows remain the convenient current view;
-  events are the causal record and must never be rewritten or removed.
+  events are the causal record and must never be rewritten or removed. Each
+  dispatch and watchdog invocation also records its workflow run, checked-out
+  branch and SHA, runtime, and control-plane digests before it calls Jules, so
+  an outcome can be tied to the code that actually executed.
 - Use `pnpm nightly:explain --date YYYY-MM-DD --stage N` when a classification
-  needs investigation. It reports the observations, event integrity, rules,
-  contract fingerprint, and projection fingerprint behind the result. A
-  `LEGACY_SNAPSHOT` result means the run predates event recording and must not
-  be presented as a verified timeline.
+  needs investigation. It reports the execution provenance, lifecycle
+  transitions, observations, event integrity, rules, contract fingerprint, and
+  projection fingerprint behind the result. A `LEGACY_SNAPSHOT` result means
+  the run predates event recording and must not be presented as a verified
+  timeline; an `UNRECORDED` execution provenance means the executed code cannot
+  be established from the ledger.
 - A `CLEAN` summary is your lane's only memory of what it has already covered,
   so name the surface precisely enough that your next pass can tell what is
   left. "Codebase" and "all files" identify nothing. The coverage-log target

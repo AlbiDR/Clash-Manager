@@ -62,6 +62,7 @@ jobs:
     timeout-minutes: 30
     steps:
       - name: Checkout repository
+        id: checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -83,6 +84,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           JULES_API_KEY: ${{ secrets.JULES_API_KEY }}
+          NIGHTLY_EXECUTION_BRANCH: Nightly
+          NIGHTLY_EXECUTION_SHA: ${{ steps.checkout.outputs.commit }}
+          NIGHTLY_WORKFLOW_PATH: .github/workflows/nightly-watchdog.yml
         run: |
           # Mask before the script can emit a single line. The repository is
           # public and this job deliberately holds the Jules key so it can

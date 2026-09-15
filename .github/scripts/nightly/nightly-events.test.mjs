@@ -8,6 +8,7 @@ import test from "node:test";
 import {
   createEmptyLedger,
   ensureRunEntries,
+  recordCycleExecution,
   upsertStageEntry,
   validateLedger,
 } from "./nightly-ledger.mjs";
@@ -16,6 +17,7 @@ import {
   getCycleDate,
   getCycleId,
   getEvidenceDate,
+  getCycleExecutionEvents,
   getNightlyEventId,
   getProjectedStageEntry,
   getStageEvents,
@@ -23,6 +25,17 @@ import {
 
 const registry = JSON.parse(readFileSync(new URL("../../nightly-config/stages.json", import.meta.url), "utf8"));
 const DATE = "2026-09-15";
+
+function execution(id = "watchdog:123:1") {
+  return {
+    schemaVersion: 1,
+    executionId: id,
+    workflow: { name: "Nightly Watchdog", path: ".github/workflows/nightly-watchdog.yml", runId: "123", attempt: 1 },
+    checkout: { branch: "Nightly", sha: "abc123" },
+    runtime: { node: "v24.0.0", platform: "linux", arch: "x64", runnerOs: "Linux", runnerImage: "ubuntu" },
+    controlPlane: { registryDigest: "registry", workflowDigest: "workflow" },
+  };
+}
 
 test("cycle identity is stable and Stage 1 maps its previous-day evidence into that cycle", () => {
   assert.equal(getCycleId(DATE), "nightly-cycle/2026-09-15");
@@ -62,6 +75,67 @@ test("stage transitions form one ordered content-addressed hash chain", () => {
   assert.equal(projected.state, ledger.runs[DATE]["3"].state);
   assert.deepEqual(projected.evidence, ledger.runs[DATE]["3"].evidence);
   validateLedger(ledger);
+});
+
+test("cycle execution provenance is hash-chained, snapshot-anchored, and idempotent", () => {
+  const ledger = createEmptyLedger();
+  const first = recordCycleExecution(ledger, DATE, execution(), {
+    source: NIGHTLY_EVENT_SOURCES.WATCHDOG_OBSERVER,
+    recordedAt: `${DATE}T00:00:00.000Z`,
+  });
+  const count = ledger.events.length;
+  const repeated = recordCycleExecution(ledger, DATE, execution(), {
+    source: NIGHTLY_EVENT_SOURCES.WATCHDOG_OBSERVER,
+    recordedAt: `${DATE}T00:01:00.000Z`,
+  });
+
+  assert.equal(first.recorded, true);
+  assert.equal(repeated.recorded, false);
+  assert.equal(ledger.events.length, count);
+  assert.deepEqual(ledger.cycles[DATE].executions[execution().executionId], execution());
+  const [event] = getCycleExecutionEvents(ledger, DATE);
+  assert.equal(event.stage, 0);
+  assert.equal(event.type, "CYCLE_EXECUTION_RECORDED");
+  assert.equal(event.payload.execution.checkout.sha, "abc123");
+  validateLedger(ledger);
+});
+
+test("stage entry events label their lifecycle transition", () => {
+  const ledger = createEmptyLedger();
+  upsertStageEntry(ledger, registry, DATE, 4, {
+    dispatchAttempts: 1,
+    evidence: { dispatch: { requestedAt: `${DATE}T00:00:00.000Z` } },
+    lastObservedAt: `${DATE}T00:00:00.000Z`,
+  }, { source: NIGHTLY_EVENT_SOURCES.DISPATCHER });
+  upsertStageEntry(ledger, registry, DATE, 4, {
+    state: "RUNNING",
+    evidence: { dispatchSessionName: "sessions/4" },
+    lastObservedAt: `${DATE}T00:01:00.000Z`,
+  }, { source: NIGHTLY_EVENT_SOURCES.DISPATCHER });
+
+  const events = getStageEvents(ledger, DATE, 4);
+  assert.deepEqual(events.at(-2).payload.transition, {
+    name: "JULES_DISPATCH_REQUESTED",
+    from: "EXPECTED",
+    to: "EXPECTED",
+  });
+  assert.deepEqual(events.at(-1).payload.transition, {
+    name: "JULES_SESSION_DISPATCHED",
+    from: "EXPECTED",
+    to: "RUNNING",
+  });
+});
+
+test("a rejected dispatch has a distinct lifecycle transition and retained diagnostic", () => {
+  const ledger = createEmptyLedger();
+  upsertStageEntry(ledger, registry, DATE, 2, {
+    evidence: { dispatch: { requestedAt: `${DATE}T00:00:00.000Z`, error: "Jules API 503 Service Unavailable" } },
+    lastObservedAt: `${DATE}T00:00:01.000Z`,
+  }, { source: NIGHTLY_EVENT_SOURCES.DISPATCHER });
+
+  const event = getStageEvents(ledger, DATE, 2).at(-1);
+  assert.equal(event.payload.transition.name, "JULES_DISPATCH_FAILED");
+  assert.equal(event.payload.requested.evidence.set.dispatch.error, "Jules API 503 Service Unavailable");
 });
 
 test("changing any recorded fact breaks event integrity", () => {

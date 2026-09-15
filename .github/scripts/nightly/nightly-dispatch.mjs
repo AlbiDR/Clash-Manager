@@ -20,8 +20,9 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { validateRegistryData } from "./nightly-stage.mjs";
-import { loadLedger, saveLedger, upsertStageEntry } from "./nightly-ledger.mjs";
+import { loadLedger, recordCycleExecution, saveLedger, upsertStageEntry } from "./nightly-ledger.mjs";
 import { NIGHTLY_EVENT_SOURCES } from "./nightly-events.mjs";
+import { getExecutionProvenance } from "./nightly-provenance.mjs";
 import { stageTag } from "./nightly-prose.mjs";
 import { createRedactor } from "./nightly-redact.mjs";
 
@@ -127,15 +128,36 @@ async function main() {
   const date = dateArg || utcToday();
 
   console.log(`[${stageDisplayNumber(stageNumber)}] Creating Jules session for "${stage.name}" (target: ${registry.targetBranch})...`);
-  const session = await createJulesSession(stage, registry, date, redact);
-  console.log(redact(`[${stageDisplayNumber(stageNumber)}] Session created: ${session.name}`));
-
   const ledger = loadLedger();
+  recordCycleExecution(ledger, date, getExecutionProvenance(), {
+    source: NIGHTLY_EVENT_SOURCES.DISPATCHER,
+  });
   const priorAttempts = ledger.runs?.[date]?.[String(stageNumber)]?.dispatchAttempts || 0;
+  const requestedAt = new Date().toISOString();
+  upsertStageEntry(ledger, registry, date, stageNumber, {
+    dispatchAttempts: priorAttempts + 1,
+    evidence: { dispatch: { requestedAt } },
+  }, { source: NIGHTLY_EVENT_SOURCES.DISPATCHER, recordedAt: requestedAt });
+  // Persist before crossing the Jules boundary. The workflow commits this
+  // record even when session creation fails, so a missing session is never
+  // indistinguishable from a dispatch that was never attempted.
+  saveLedger(ledger);
+
+  let session;
+  try {
+    session = await createJulesSession(stage, registry, date, redact);
+  } catch (error) {
+    const failedAt = new Date().toISOString();
+    upsertStageEntry(ledger, registry, date, stageNumber, {
+      evidence: { dispatch: { requestedAt, failedAt, error: redact(error.message || String(error)) } },
+    }, { source: NIGHTLY_EVENT_SOURCES.DISPATCHER, recordedAt: failedAt });
+    saveLedger(ledger);
+    throw error;
+  }
+  console.log(redact(`[${stageDisplayNumber(stageNumber)}] Session created: ${session.name}`));
   const entry = upsertStageEntry(ledger, registry, date, stageNumber, {
     state: "RUNNING",
-    evidence: { dispatchSessionName: session.name },
-    dispatchAttempts: priorAttempts + 1,
+    evidence: { dispatchSessionName: session.name, dispatch: { requestedAt, sessionName: session.name } },
   }, { source: NIGHTLY_EVENT_SOURCES.DISPATCHER });
   saveLedger(ledger);
 
