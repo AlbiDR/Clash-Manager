@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-14
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-15] PR #1825 [Stage 4]: Audited Edge Function SQL view usage and L1/L2 performance composables; zero substrate or logic bottlenecks found
+**Domain:** optimization | **Commit:** db947d19e | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1825)
+**Files:** .github/nightly-logs/04-optimization-coverage.log, .github/nightly-logs/04-optimization-pr-body.md
+**Why:** Audited Edge Function SQL view usage against migration history and inspected 93 changed files; confirmed all 6 known database views remain unreferenced and no code mutations are required.
+**Change:** Audited Edge Function SQL view usage and L1/L2 performance composables; zero substrate or logic bottlenecks found
+**Result:** Vitest unit tests passed (204 test files, 1975 tests); substrate hygiene confirmed.
+**Nudges:** 0
+
+
 ### [2026-09-15] PR #1824 [Stage 3]: Completed read-only baseline consolidation audit. Pending migrations count: 0. Migration quality: PASS. Fold-state: DEGRADED. Database verification: DB-UNAVAILABLE. Clean calibration streak: 5 (since calibration: 0).
 **Domain:** database | **Commit:** 005db13d | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1824)
 **Files:** .github/nightly-logs/03-baseline-consolidation-coverage.log, .github/nightly-logs/03-baseline-consolidation-pr-body.md
