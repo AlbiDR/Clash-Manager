@@ -98,6 +98,7 @@ export function useConsoleMetadata(
       return {
         label: badgeLabel,
         value: `${showing} of ${itemCount}`,
+        compactValue: `${showing}/${itemCount}`,
       };
     }
 

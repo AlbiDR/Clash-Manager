@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: GPL-3.0-only -->
 <!-- Copyright (C) 2026 AlbiDR -->
 <script setup lang="ts">
-import { computed, nextTick, onMounted, onUnmounted, useId, useTemplateRef, watch } from "vue";
+import { computed, nextTick, onMounted, onUnmounted, ref, useId, useTemplateRef, watch } from "vue";
 import { useSearchField } from "../composables/useSearchField";
 import Icon from "./Icon.vue";
 
@@ -24,6 +24,8 @@ const props = defineProps<{
   /** Short, human-readable name of the view being shaped. */
   title: string;
   open: boolean;
+  /** Joins the console's primary Select/Done action as a compact segment. */
+  embedded?: boolean;
   showSearch?: boolean;
   searchQuery?: string;
   sortOptions?: ViewSortOption[];
@@ -41,6 +43,10 @@ const panelRef = useTemplateRef<HTMLElement>("panelRef");
 const searchInput = useTemplateRef<HTMLInputElement>("searchInput");
 const panelId = useId();
 let previouslyFocused: HTMLElement | null = null;
+const dragOffset = ref(0);
+const isDragging = ref(false);
+let dragStartY = 0;
+let didDrag = false;
 
 const defaultSortValue = computed(() => props.sortOptions?.[0]?.value ?? "");
 const activeSort = computed(() =>
@@ -65,12 +71,39 @@ const {
   clearSearchField,
   handleSearchInput,
   handleSearchKeydown,
-  openSearchField,
 } = useSearchField({
   readQuery: () => props.searchQuery ?? "",
   onQueryChange: (query) => emit("update:search", query),
   focusInput: () => searchInput.value?.focus(),
 });
+
+function beginSheetDrag(touchEvent: TouchEvent): void {
+  dragStartY = touchEvent.touches[0]?.clientY ?? 0;
+  didDrag = false;
+  isDragging.value = true;
+}
+
+function trackSheetDrag(touchEvent: TouchEvent): void {
+  if (!isDragging.value) return;
+  const currentY = touchEvent.touches[0]?.clientY ?? dragStartY;
+  dragOffset.value = Math.max(0, currentY - dragStartY);
+  didDrag = dragOffset.value > 0;
+}
+
+function finishSheetDrag(): void {
+  if (!isDragging.value) return;
+  isDragging.value = false;
+  if (dragOffset.value > 80) closeOptions();
+  dragOffset.value = 0;
+}
+
+function handleSheetHandleClick(): void {
+  if (didDrag) {
+    didDrag = false;
+    return;
+  }
+  closeOptions();
+}
 
 function openOptions(): void {
   if (props.open) {
@@ -121,8 +154,7 @@ watch(() => props.open, async (isOpen) => {
   if (isOpen) {
     document.body.style.overflow = "hidden";
     await nextTick();
-    if (props.showSearch) openSearchField();
-    else panelRef.value?.focus();
+    panelRef.value?.focus();
     return;
   }
 
@@ -145,7 +177,7 @@ onUnmounted(() => {
     ref="triggerRef"
     type="button"
     class="view-options-trigger"
-    :class="{ 'is-open': props.open, 'is-modified': isModified }"
+    :class="{ 'is-embedded': props.embedded, 'is-open': props.open, 'is-modified': isModified }"
     :aria-expanded="props.open"
     :aria-controls="panelId"
     aria-haspopup="dialog"
@@ -175,13 +207,26 @@ onUnmounted(() => {
           :id="panelId"
           ref="panelRef"
           class="view-options-panel view-options-sheet"
+          :class="{ 'is-dragging': isDragging }"
           role="dialog"
           aria-modal="true"
           :aria-label="`${props.title} view options`"
+          :style="dragOffset ? { transform: `translateY(${dragOffset}px)` } : undefined"
           tabindex="-1"
           @keydown="handlePanelKeydown"
         >
-          <div class="view-options-sheet-handle" />
+          <button
+            type="button"
+            class="view-options-sheet-handle-target"
+            aria-label="Close view options. Swipe down to dismiss."
+            @click="handleSheetHandleClick"
+            @touchstart.stop="beginSheetDrag"
+            @touchmove.prevent.stop="trackSheetDrag"
+            @touchend.stop="finishSheetDrag"
+            @touchcancel.stop="finishSheetDrag"
+          >
+            <span class="view-options-sheet-handle" />
+          </button>
           <div class="view-options-heading">
             <div>
               <p class="view-options-eyebrow">
@@ -189,17 +234,6 @@ onUnmounted(() => {
               </p>
               <h2>{{ props.title }}</h2>
             </div>
-            <button
-              type="button"
-              class="view-options-close"
-              aria-label="Close view options"
-              @click="closeOptions"
-            >
-              <Icon
-                name="close"
-                size="18"
-              />
-            </button>
           </div>
 
           <div
@@ -213,7 +247,7 @@ onUnmounted(() => {
             <input
               ref="searchInput"
               class="view-options-search-input"
-              type="search"
+              type="text"
               autocomplete="off"
               :placeholder="`Search ${props.title}`"
               aria-label="Search this view"
@@ -338,6 +372,18 @@ onUnmounted(() => {
   font-weight: 800;
 }
 
+/* This variant visually completes the primary action cluster supplied by
+   SelectionBar. It remains the same trigger and same sheet—not a second UI. */
+.view-options-trigger.is-embedded {
+  width: var(--sys-space-48);
+  min-width: var(--sys-space-48);
+  height: var(--sys-space-48);
+  padding: 0;
+  border-radius: var(--sys-shape-corner-medium) 0 0 var(--sys-shape-corner-medium);
+}
+
+.view-options-trigger.is-embedded .view-options-trigger-label { display: none; }
+
 .view-options-active-dot {
   width: var(--sys-space-6);
   height: var(--sys-space-6);
@@ -389,7 +435,6 @@ onUnmounted(() => {
 
 .view-options-eyebrow { margin: 0; }
 
-.view-options-close,
 .view-options-clear {
   display: inline-flex;
   align-items: center;
@@ -408,13 +453,11 @@ onUnmounted(() => {
     transform var(--sys-motion-duration-100) var(--sys-motion-easing-standard);
 }
 
-.view-options-close:hover,
 .view-options-clear:hover {
   color: var(--sys-color-on-surface);
   background: var(--sys-color-surface-container-highest);
 }
 
-.view-options-close:active,
 .view-options-clear:active { transform: scale(0.9); }
 
 .view-options-search {
@@ -589,15 +632,38 @@ onUnmounted(() => {
   position: relative;
   width: 100%;
   max-width: var(--sys-layout-max-width);
-  max-height: min(78vh, 620px);
+  max-height: min(70vh, 560px);
   padding-bottom: calc(var(--sys-space-12) + env(safe-area-inset-bottom));
   border-radius: var(--sys-shape-corner-large) var(--sys-shape-corner-large) 0 0;
+  transition: transform var(--sys-motion-duration-300) var(--sys-motion-spring);
+}
+
+.view-options-sheet.is-dragging { transition: none; }
+
+.view-options-sheet-handle-target {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: var(--sys-space-32);
+  padding: 0;
+  background: transparent;
+  border: 0;
+  cursor: grab;
+  touch-action: none;
+}
+
+.view-options-sheet-handle-target:active { cursor: grabbing; }
+
+.view-options-sheet-handle-target:focus-visible {
+  outline: 2px solid var(--sys-color-primary);
+  outline-offset: calc(-1 * var(--sys-space-4));
 }
 
 .view-options-sheet-handle {
+  display: block;
   width: 36px;
   height: var(--sys-space-4);
-  margin: var(--sys-space-10) auto var(--sys-space-2);
   background: var(--sys-color-outline-variant);
   border-radius: var(--sys-shape-corner-full);
 }

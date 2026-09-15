@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: GPL-3.0-only -->
 <!-- Copyright (C) 2026 AlbiDR -->
 <script setup lang="ts">
-import { watch, onUnmounted, nextTick, toRef, computed, type Component } from "vue";
+import { watch, onUnmounted, nextTick, toRef, computed, ref, type Component } from "vue";
 import {
   useUiCoordinator,
   useShowcaseMode,
@@ -16,6 +16,7 @@ import EmptyState from "./EmptyState.vue";
 import ErrorState from "./ErrorState.vue";
 import Icon from "./Icon.vue";
 import SelectionBar from "./SelectionBar.vue";
+import ViewOptions from "./ViewOptions.vue";
 import AppFooter from "./AppFooter.vue";
 import BaseCardSkeleton from "./BaseCardSkeleton.vue";
 
@@ -27,10 +28,10 @@ const props = defineProps<{
     nominal?: boolean;
   };
   showSearch?: boolean;
-  /** The live query, forwarded so the header's field is controlled. */
+  /** The live query, owned upstream and reflected by the shared view sheet. */
   searchQuery?: string;
-  stats?: { label: string; value: string };
-  sortOptions?: { label: string; value: string; desc?: string }[];
+  stats?: { label: string; value: string; compactValue?: string };
+  sortOptions?: { label: string; value: string; desc?: string; fullDesc?: string }[];
   loading?: boolean;
   isSelectionMode?: boolean;
   selectedCount?: number;
@@ -85,6 +86,7 @@ const { setFabVisible, updateFabState } = useUiCoordinator();
 const { isShowcaseMode } = useShowcaseMode();
 const { isBlueprintMode } = useBlueprintMode();
 const { appVersion, activeBadge } = useSystemInfo();
+const isViewOptionsOpen = ref(false);
 
 const activeFooterBadge = computed(() => {
   if (props.footerBadge !== undefined) return props.footerBadge;
@@ -176,16 +178,10 @@ onUnmounted(() => {
       <ConsoleHeader
         :title="props.title"
         :status="props.status"
-        :show-search="props.showSearch"
-        :search-query="props.searchQuery"
-        :pin-expanded="(props.selectedCount ?? 0) > 0"
+        :pin-expanded="isViewOptionsOpen || (props.selectedCount ?? 0) > 0"
         :stats="props.stats"
-        :sort-options="props.sortOptions"
-        :current-sort="props.currentSort"
         :loading="displayLoading"
         :remote-info="props.remoteInfo"
-        @update:search="(searchQueryCandidate: string) => emit('update:search', searchQueryCandidate)"
-        @update:sort="(targetSortValue: string) => emit('update:sort', targetSortValue)"
         @refresh="emit('refresh')"
       >
         <template #filters>
@@ -203,7 +199,25 @@ onUnmounted(() => {
             @select-score="
               (thresholdValue: number, thresholdMode: 'ge' | 'le') => emit('select-score', thresholdValue, thresholdMode)
             "
-          />
+          >
+            <template
+              v-if="props.showSearch || props.sortOptions?.length"
+              #view-options
+            >
+              <ViewOptions
+                :title="props.title"
+                :open="isViewOptionsOpen"
+                embedded
+                :show-search="props.showSearch"
+                :search-query="props.searchQuery"
+                :sort-options="props.sortOptions"
+                :current-sort="props.currentSort"
+                @update:open="isViewOptionsOpen = $event"
+                @update:search="(searchQueryCandidate) => emit('update:search', searchQueryCandidate)"
+                @update:sort="(targetSortValue) => emit('update:sort', targetSortValue)"
+              />
+            </template>
+          </SelectionBar>
           <slot
             v-else
             name="extra-header"

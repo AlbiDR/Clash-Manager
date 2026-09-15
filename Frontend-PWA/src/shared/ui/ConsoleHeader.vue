@@ -1,11 +1,10 @@
 <!-- SPDX-License-Identifier: GPL-3.0-only -->
 <!-- Copyright (C) 2026 AlbiDR -->
 <script setup lang="ts">
-import { Comment, computed, Fragment, Text, unref, useSlots, ref, type VNode } from "vue";
+import { Comment, computed, Fragment, Text, unref, useSlots, type VNode } from "vue";
 import { useHaptics } from "../composables/useHaptics";
 import { useHeaderScroll } from "../composables/useHeaderScroll";
 import StatusPill from "./StatusPill.vue";
-import ViewOptions from "./ViewOptions.vue";
 import type { ConsoleRemoteInfo, HubHealth } from "@core/types";
 
 const props = defineProps<{
@@ -15,30 +14,18 @@ const props = defineProps<{
     text: HubHealth["label"];
     nominal?: boolean;
   };
-  showSearch?: boolean;
-  /**
-   * The live query, owned by whoever filters the list. Supplying it makes the
-   * input controlled, which is what lets the owner clear it - previously the
-   * field only ever emitted upward and reflected nothing back, so clearing the
-   * state left the stale text sitting in the box.
-   */
-  searchQuery?: string;
   /**
    * Holds the header open regardless of scrolling. Set by the host while
    * something it owns is mid-task, such as an active selection.
    */
   pinExpanded?: boolean;
   dashboardUrl?: string;
-  stats?: { label: string; value: string };
-  sortOptions?: { label: string; value: string; desc?: string; fullDesc?: string }[];
-  currentSort?: string;
+  stats?: { label: string; value: string; compactValue?: string };
   loading?: boolean;
   remoteInfo?: ConsoleRemoteInfo;
 }>();
 
-const emit = defineEmits<{
-  "update:search": [string];
-  "update:sort": [string];
+defineEmits<{
   refresh: [];
 }>();
 
@@ -67,16 +54,15 @@ const hasFilters = computed(() => hasRenderableSlotContent(slots.filters?.() ?? 
 const hasControls = computed(() => hasFilters.value);
 
 const hasExtra = computed(() => hasRenderableSlotContent(slots.extra?.() ?? []));
-const isViewOptionsOpen = ref(false);
 /**
  * The header condenses while the reader travels away from the top, and refuses
- * to while any control it hosts is in use - an open view-options panel, or a live
- * selection its host reports through `pinExpanded`. Taking a working control
+ * to while any control it hosts is in use - a live selection or view-options
+ * panel its host reports through `pinExpanded`. Taking a working control
  * away mid-task is the one thing this must never do.
  */
 const { isScrolled, isCondensed } = useHeaderScroll({
   threshold: 10,
-  isPinned: () => isViewOptionsOpen.value || props.pinExpanded === true,
+  isPinned: () => props.pinExpanded === true,
 });
 
 const handleOpenDashboard = () => {
@@ -106,25 +92,20 @@ const handleOpenDashboard = () => {
           <div
             v-if="props.stats"
             class="title-label"
+            :class="{ 'has-compact-value': props.stats.compactValue }"
           >
-            <span class="count-value">{{ props.stats.value }}</span>
+            <span class="count-value">
+              <span class="count-value-full">{{ props.stats.value }}</span>
+              <span
+                v-if="props.stats.compactValue"
+                class="count-value-compact"
+              >{{ props.stats.compactValue }}</span>
+            </span>
             <span class="count-label label-caption">{{ props.stats.label }}</span>
           </div>
         </div>
 
         <div class="action-group">
-          <ViewOptions
-            v-if="props.showSearch || props.sortOptions?.length"
-            :title="props.title"
-            :open="isViewOptionsOpen"
-            :show-search="props.showSearch"
-            :search-query="props.searchQuery"
-            :sort-options="props.sortOptions"
-            :current-sort="props.currentSort"
-            @update:open="isViewOptionsOpen = $event"
-            @update:search="(query) => emit('update:search', query)"
-            @update:sort="(sortValue) => emit('update:sort', sortValue)"
-          />
           <StatusPill
             v-if="props.status && !props.loading"
             :type="props.status.type"
@@ -290,6 +271,8 @@ const handleOpenDashboard = () => {
   color: var(--sys-color-primary);
 }
 
+.count-value-compact { display: none; }
+
 .count-label {
   color: var(--sys-color-on-surface-variant);
 }
@@ -345,6 +328,11 @@ const handleOpenDashboard = () => {
 }
 
 @media (max-width: 520px) {
+  /* Filtered totals are useful, but a title rail must never break merely to
+     spell "of". The label still provides the unit: `2/38 MEMBERS`. */
+  .count-value-compact { display: inline; }
+  .title-label.has-compact-value .count-value-full { display: none; }
+
   .header-controls {
     display: flex;
     align-items: stretch;

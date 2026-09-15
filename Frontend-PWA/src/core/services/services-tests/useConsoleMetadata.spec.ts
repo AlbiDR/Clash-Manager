@@ -132,6 +132,18 @@ describe("useConsoleMetadata", () => {
         dataCount.value = 10;
         expect(statsBadge.value.value).toBe("10");
       });
+
+      it("offers a compact filtered count for narrow console headers", () => {
+        const dataCount = ref(38);
+        const visibleCount = ref(2);
+        const { statsBadge } = useConsoleMetadata("Member", dataCount, visibleCount);
+
+        expect(statsBadge.value).toEqual({
+          label: "Members",
+          value: "2 of 38",
+          compactValue: "2/38",
+        });
+      });
     });
 
     describe("Showcase Mode", () => {

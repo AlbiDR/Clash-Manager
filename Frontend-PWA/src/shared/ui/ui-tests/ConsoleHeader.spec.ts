@@ -4,7 +4,6 @@
  * @vitest-environment jsdom
  */
 import ConsoleHeader from "../ConsoleHeader.vue";
-import ViewOptions from "../ViewOptions.vue";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { mount } from "@vue/test-utils";
 import { createCommentVNode, Fragment, h, nextTick } from "vue";
@@ -71,7 +70,7 @@ describe("ConsoleHeader", () => {
     windowSpy.mockRestore();
   });
 
-  it("keeps search and order out of the permanent controls row", () => {
+  it("does not create a permanent controls row for search and order", () => {
     const wrapper = mount(ConsoleHeader, {
       props: {
         title: "Search Test",
@@ -83,42 +82,19 @@ describe("ConsoleHeader", () => {
     });
 
     expect(wrapper.find(".header-controls").exists()).toBe(false);
-    expect(wrapper.findComponent(ViewOptions).exists()).toBe(true);
   });
 
-  it("passes the controlled search and order state into the unified view control", () => {
+  it("uses the compact count when a filtered badge reaches a narrow title rail", () => {
     const wrapper = mount(ConsoleHeader, {
       props: {
         title: "Search Test",
-        showSearch: true,
-        searchQuery: "adr",
-        sortOptions: [{ label: "Performance", value: "performance", desc: "Best first." }],
-        currentSort: "performance",
+        stats: { label: "Members", value: "2 of 38", compactValue: "2/38" },
       },
     });
 
-    expect(wrapper.findComponent(ViewOptions).props()).toMatchObject({
-      title: "Search Test",
-      open: false,
-      showSearch: true,
-      searchQuery: "adr",
-      currentSort: "performance",
-    });
-  });
-
-  it("handles sort selection emission", async () => {
-    const sortOptions = [
-      { label: "Name", value: "name" },
-      { label: "Level", value: "level" },
-    ];
-    const wrapper = mount(ConsoleHeader, {
-      props: { title: "Sort Test", showSearch: true, sortOptions, currentSort: "name" },
-    });
-
-    const viewOptions = wrapper.findComponent(ViewOptions);
-    await viewOptions.vm.$emit("update:sort", "level");
-
-    expect(wrapper.emitted("update:sort")?.[0]).toEqual(["level"]);
+    expect(wrapper.find(".title-label").classes()).toContain("has-compact-value");
+    expect(wrapper.find(".count-value-full").text()).toBe("2 of 38");
+    expect(wrapper.find(".count-value-compact").text()).toBe("2/38");
   });
 
   it("orders list controls from refinement to the matching selection action", () => {
@@ -141,11 +117,6 @@ describe("ConsoleHeader", () => {
     expect(toolbarClasses).toEqual(["refinement-controls", "selection-actions"]);
     expect(wrapper.find(".refinement-controls").element.children).toHaveLength(0);
 
-    const viewOptions = wrapper.findComponent(ViewOptions);
-    expect(viewOptions.props("sortOptions")?.[0]).toMatchObject({
-      label: "Potential",
-      desc: "Predicted account quality vs Clan baseline.",
-    });
   });
 
   it("applies scrolled class based on scroll state", async () => {

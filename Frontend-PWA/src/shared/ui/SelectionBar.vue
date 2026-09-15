@@ -69,7 +69,16 @@ const {
 
     <!-- Fixed-width action: the count lives inside the button, so entering
          selection mode cannot move either the button or its parent group. -->
-    <div class="sel-group management">
+    <div
+      class="sel-group management"
+      :class="{ 'has-view-options': $slots['view-options'] }"
+    >
+      <div
+        v-if="$slots['view-options']"
+        class="view-options-segment"
+      >
+        <slot name="view-options" />
+      </div>
       <button
         v-tactile
         class="morph-btn"
@@ -145,7 +154,39 @@ const {
 .sel-group.management {
   flex: 0 0 auto;
   justify-content: flex-end;
-  gap: var(--sys-space-6);
+  gap: 0;
+}
+
+.view-options-segment {
+  display: flex;
+  align-self: stretch;
+}
+
+/* The view trigger and Select/Done are one action cluster: their adjacent
+   edges meet, their heights match, and selection-state colors move together. */
+.management.has-view-options .morph-btn {
+  border-radius: 0 var(--sys-shape-corner-medium) var(--sys-shape-corner-medium) 0;
+}
+
+.selection-bar:not(.is-active) .view-options-segment :deep(.view-options-trigger) {
+  color: var(--sys-color-on-primary);
+  background: var(--sys-color-primary);
+  border-right: 1px solid var(--sys-overlay-light-medium);
+  box-shadow: 0 4px 12px rgba(var(--sys-color-primary-rgb), 0.25);
+}
+
+.selection-bar.is-active .view-options-segment :deep(.view-options-trigger) {
+  color: var(--sys-color-on-surface-variant);
+  background: var(--sys-color-surface-container-highest);
+  border: 1px solid var(--sys-color-outline-variant);
+  border-right: 0;
+  box-shadow: none;
+}
+
+.selection-bar:not(.is-active) .view-options-segment :deep(.view-options-trigger.is-open),
+.selection-bar:not(.is-active) .view-options-segment :deep(.view-options-trigger:hover) {
+  background: var(--sys-color-primary);
+  color: var(--sys-color-on-primary);
 }
 
 .morph-btn {

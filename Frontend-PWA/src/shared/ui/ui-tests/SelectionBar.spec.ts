@@ -34,6 +34,16 @@ describe("SelectionBar", () => {
     expect(wrapper.find(".count-pill").exists()).toBe(false);
   });
 
+  it("joins an optional view control to the Select/Done action cluster", () => {
+    const wrapper = mount(SelectionBar, {
+      props: { count: 0, totalCount: 50 },
+      slots: { "view-options": '<button class="view-options-test-trigger">View</button>' },
+    });
+
+    expect(wrapper.find(".management").classes()).toContain("has-view-options");
+    expect(wrapper.find(".view-options-test-trigger").exists()).toBe(true);
+  });
+
   it("renders counts when active", () => {
     const wrapper = mount(SelectionBar, {
       props: { count: 5, totalCount: 50 },

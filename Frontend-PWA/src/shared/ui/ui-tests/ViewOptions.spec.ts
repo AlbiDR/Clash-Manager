@@ -62,6 +62,18 @@ describe("ViewOptions", () => {
     wrapper.unmount();
   });
 
+  it("opens without summoning the keyboard and exposes only one in-field clear action", async () => {
+    const wrapper = mountOptions({ open: true, searchQuery: "adr" });
+    await nextTick();
+
+    const input = wrapper.find(".view-options-search-input");
+    expect(input.attributes("type")).toBe("text");
+    expect(document.activeElement).not.toBe(input.element);
+    expect(wrapper.findAll('[aria-label="Clear search"]')).toHaveLength(1);
+    expect(wrapper.find(".view-options-close").exists()).toBe(false);
+    wrapper.unmount();
+  });
+
   it("reports an order change and closes after the reader chooses it", async () => {
     const wrapper = mountOptions({ open: true });
 
@@ -105,5 +117,32 @@ describe("ViewOptions", () => {
     expect(document.body.style.overflow).toBe("hidden");
     wrapper.unmount();
     expect(document.body.style.overflow).toBe("");
+  });
+
+  it("offers the sheet handle as an explicit dismiss target", async () => {
+    const wrapper = mountOptions({ open: true });
+
+    await wrapper.find(".view-options-sheet-handle-target").trigger("click");
+
+    expect(wrapper.emitted("update:open")?.[0]).toEqual([false]);
+    wrapper.unmount();
+  });
+
+  it("dismisses when the sheet handle is dragged downward far enough", () => {
+    const wrapper = mountOptions({ open: true });
+    const handle = wrapper.find(".view-options-sheet-handle-target").element;
+
+    const dispatchTouch = (type: string, clientY: number) => {
+      const touchEvent = new Event(type, { bubbles: true, cancelable: true });
+      Object.defineProperty(touchEvent, "touches", { value: [{ clientY }] });
+      handle.dispatchEvent(touchEvent);
+    };
+
+    dispatchTouch("touchstart", 100);
+    dispatchTouch("touchmove", 190);
+    dispatchTouch("touchend", 190);
+
+    expect(wrapper.emitted("update:open")?.[0]).toEqual([false]);
+    wrapper.unmount();
   });
 });
