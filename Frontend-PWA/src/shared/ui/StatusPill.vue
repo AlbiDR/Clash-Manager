@@ -1,457 +1,297 @@
 <!-- SPDX-License-Identifier: GPL-3.0-only -->
 <!-- Copyright (C) 2026 AlbiDR -->
 <script setup lang="ts">
-/**
- * STATUS PILL / CONNECTIVITY HUB (Layer 2 - Shared UI)
- * ----------------------------------------------------------------------------
- * Rationale: Provides a "Command Center" view of application connectivity.
- * Features: Smooth grid-based expansion, horizontal alignment, zero-overlap.
- * ----------------------------------------------------------------------------
- */
-
-import { watch } from "vue";
+import { computed, onMounted, onUnmounted, useId, useTemplateRef } from "vue";
 import { useStatusPill } from "../composables/useStatusPill";
 import { vTactile } from "../directives/vTactile";
+import Icon from "./Icon.vue";
 import type { ConsoleRemoteInfo } from "@core/types";
 
-const props = withDefaults(defineProps<{
+const props = defineProps<{
   type: "success" | "warning" | "error" | "loading";
   text: string;
   nominal?: boolean;
-  direction?: "left" | "right";
   remoteInfo?: ConsoleRemoteInfo;
-}>(), {
-  direction: "right"
-});
-
-/**
- * Announces the open/closed state of the detail.
- *
- * [DECISION LOG] A host needs this because opening the detail changes how much
- * room the pill wants, and on a narrow viewport that decides the header's
- * layout. The alternative was for the host to reach into this component's root
- * element and read `.is-expanded` off it with `:has()`. That works, since a
- * child root does carry the parent's scope id, but it makes the class name a
- * public contract that nothing here would protect: rename it and a rule in a
- * file this component has never heard of stops matching, in silence. An event
- * is the part that is meant to be depended on.
- */
-const emit = defineEmits<{
-  /** Fires whenever the detail opens or closes, with the new state. */
-  "update:expanded": [expanded: boolean];
 }>();
 
-const {
-  isExpanded,
-  isDB,
-  displayText,
-  displaySource,
-  handleToggle
-} = useStatusPill(props);
+const { isExpanded, isDB, displayText, displaySource, handleToggle } = useStatusPill(props);
+const detailsId = useId();
+const statusControl = useTemplateRef<HTMLElement>("statusControl");
 
-// immediate, so a host is correct from the first render rather than from the
-// first toggle. The pill can already be open at mount when the composable
-// restores a previous state, and a host that only learned about changes would
-// spend that first render laying out for a closed pill.
-watch(isExpanded, (expanded) => emit("update:expanded", expanded), { immediate: true });
+const detailsAvailable = computed(() =>
+  props.type !== "loading" && Boolean(displaySource.value || props.remoteInfo?.dataAge || props.remoteInfo?.diagnosis),
+);
 
+const statusLabel = computed(() => {
+  const action = isExpanded.value ? "Hide connection details" : "Show connection details";
+  return detailsAvailable.value ? `${props.text}. ${action}.` : props.text;
+});
+
+function handleKeydown(keyboardEvent: KeyboardEvent) {
+  if (keyboardEvent.key === "Escape" && isExpanded.value) {
+    keyboardEvent.preventDefault();
+    handleToggle();
+  }
+}
+
+function handleClickOutside(mouseEvent: MouseEvent) {
+  if (isExpanded.value && statusControl.value && !statusControl.value.contains(mouseEvent.target as Node)) {
+    handleToggle();
+  }
+}
+
+onMounted(() => document.addEventListener("click", handleClickOutside));
+onUnmounted(() => document.removeEventListener("click", handleClickOutside));
 </script>
 
 <template>
   <div
-    v-tactile
-    class="status-pill"
-    :class="[
-      props.type, 
-      `expand-${props.direction}`,
-      { 'is-expanded': isExpanded, 'is-nominal': props.nominal }
-    ]"
-    @click="handleToggle"
+    ref="statusControl"
+    class="status-control"
+    :class="[`is-${props.type}`, { 'is-expanded': isExpanded }]"
   >
-    <div class="status-dot">
-      <svg
-        v-if="props.type === 'loading'"
-        class="spinner"
-        viewBox="0 0 24 24"
+    <button
+      v-tactile
+      type="button"
+      class="status-trigger"
+      :class="{ 'is-nominal': props.nominal }"
+      :aria-label="statusLabel"
+      :aria-expanded="detailsAvailable ? isExpanded : undefined"
+      :aria-controls="detailsAvailable ? detailsId : undefined"
+      :disabled="!detailsAvailable"
+      @click="handleToggle"
+      @keydown="handleKeydown"
+    >
+      <span
+        class="status-indicator"
+        aria-hidden="true"
       >
-        <circle
-          cx="12"
-          cy="12"
-          r="10"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="3"
-        />
-      </svg>
-      <template v-else>
-        <div
-          class="dot-nucleus"
-          :class="{
-            'breath': props.type === 'success' && !isExpanded,
-            'pulse': true,
-          }"
-        />
-        <div class="dot-halo" />
-      </template>
-    </div>
-
-    <div class="pill-content-wrapper">
-      <div class="pill-content">
-        <!-- BASE LABEL -->
-        <!-- [THREAT:] This branch used to hardcode "Syncing...", so the `text`
-             prop was silently discarded for every loading state on every
-             console. Laboratory authored "Scanning Vault..." and "Computing
-             Trajectory..." and neither ever appeared, and Settings' distinct
-             "Connecting..." state was reported to the operator as "Syncing...",
-             which is a different claim about what the app is doing. -->
-        <span
+        <svg
           v-if="props.type === 'loading'"
-          class="status-label technical base-label"
-        >{{ displayText }}</span>
+          class="spinner"
+          viewBox="0 0 24 24"
+        >
+          <circle
+            cx="12"
+            cy="12"
+            r="9"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="3"
+          />
+        </svg>
         <span
           v-else
-          class="status-label technical base-label"
-          :class="{ 'is-db': isDB }"
-        >
-          <template v-if="isDB">
-            <svg
-              class="icon-bolt"
-              width="10"
-              height="10"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2.5"
-            >
-              <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
-            </svg>
-          </template>
-          {{ displayText }}
-        </span>
+          class="status-dot"
+        />
+      </span>
 
-        <!-- EXPANDED CONTENT (Grid Transition) -->
-        <div
-          class="expanded-section"
-          :class="{ 'is-open': isExpanded && props.type !== 'loading' }"
-        >
-          <div class="expanded-inner">
-            <div class="divider" />
-            
-            <div
-              v-if="displaySource || props.remoteInfo?.dataAge || props.remoteInfo?.diagnosis"
-              class="hub-details"
-            >
-              <span
-                v-if="displaySource"
-                class="source-tag technical"
-                :class="(props.remoteInfo?.source || '').toLowerCase()"
-              >
-                {{ displaySource }}
-              </span>
-              <span
-                v-if="props.remoteInfo?.diagnosis"
-                class="diagnosis-info technical"
-              >
-                {{ props.remoteInfo.diagnosis }}
-              </span>
-              <span
-                v-else-if="props.remoteInfo?.dataAge"
-                class="age-info technical"
-              >
-                {{ props.remoteInfo.dataAge }}
-              </span>
-            </div>
-          </div>
+      <span
+        class="status-label technical"
+        :class="{ 'is-db': isDB }"
+      >{{ displayText }}</span>
+
+      <Icon
+        v-if="detailsAvailable"
+        name="chevron-down"
+        size="14"
+        class="status-chevron"
+        :class="{ 'is-open': isExpanded }"
+        aria-hidden="true"
+      />
+    </button>
+
+    <Transition name="status-popover">
+      <section
+        v-if="isExpanded && detailsAvailable"
+        :id="detailsId"
+        class="status-details"
+        aria-label="Connection details"
+        role="status"
+      >
+        <div class="detail-heading">
+          <span class="detail-label">Connection</span>
+          <span class="detail-state">{{ props.text }}</span>
         </div>
-      </div>
-    </div>
+        <dl class="detail-list">
+          <div v-if="displaySource">
+            <dt>Source</dt>
+            <dd>{{ displaySource }}</dd>
+          </div>
+          <div v-if="props.remoteInfo?.dataAge">
+            <dt>Data age</dt>
+            <dd>{{ props.remoteInfo.dataAge }}</dd>
+          </div>
+          <div
+            v-if="props.remoteInfo?.diagnosis"
+            class="is-diagnosis"
+          >
+            <dt>Notice</dt>
+            <dd>{{ props.remoteInfo.diagnosis }}</dd>
+          </div>
+        </dl>
+      </section>
+    </Transition>
   </div>
 </template>
 
 <style scoped>
-.status-pill {
+.status-control {
+  position: relative;
+  color: var(--sys-color-on-surface-variant);
+  z-index: var(--sys-z-dropdown);
+}
+
+.status-trigger {
   display: inline-flex;
   align-items: center;
-  min-height: 48px; /* 48px Mobile Footprint (Target B.2) */
-  padding: 0 var(--sys-space-8);
-  border-radius: var(--sys-shape-corner-l);
+  justify-content: center;
+  gap: var(--sys-space-6);
+  min-height: 44px;
+  max-width: 152px;
+  padding: 0 var(--sys-space-10);
+  border: 1px solid var(--sys-color-outline-variant);
+  border-radius: var(--sys-shape-corner-full);
   background: var(--sys-color-surface-container);
-  border: 1px solid var(--sys-color-outline);
+  color: inherit;
   cursor: pointer;
-  transition: all var(--sys-motion-duration-500) var(--sys-motion-spring);
-  user-select: none;
-  position: relative;
-  z-index: 50;
-  box-shadow: 0 2px 8px rgba(0,0,0,0);
-  max-width: 100%;
-  flex-shrink: 0;
+  font: inherit;
 }
 
-/* Ensure label text truncates when space is limited */
-.pill-content .status-label {
-  max-width: 120px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.status-trigger.is-nominal { background: transparent; }
+
+.status-trigger:not(:disabled):hover {
+  background: var(--sys-color-surface-container-high);
+  border-color: currentColor;
 }
 
-.status-pill.is-nominal {
-  border-color: transparent;
-  background: transparent;
+.status-trigger:focus-visible {
+  outline: 2px solid var(--sys-color-primary);
+  outline-offset: 2px;
 }
 
-.status-pill.is-expanded {
-  background: var(--sys-surface-glass);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-color: var(--sys-color-outline-variant);
-  box-shadow: var(--sys-elevation-2);
-}
+.status-trigger:disabled { cursor: default; }
 
-.status-pill.expand-left {
-  flex-direction: row-reverse;
-}
-
-/* Ensure symmetric padding so width animation is flawless */
-.status-pill.is-expanded.expand-right {
-  padding-right: var(--sys-space-6);
-}
-.status-pill.is-expanded.expand-left {
-  padding-left: var(--sys-space-6);
-}
-
-/* Color Tones */
-.status-pill.success { color: var(--sys-color-success); }
-.status-pill.warning { color: var(--sys-color-warning); border-color: var(--sys-color-warning); }
-.status-pill.error   { color: var(--sys-color-error); border-color: var(--sys-color-error); }
-.status-pill.loading {
-  border-color: var(--sys-color-primary);
-  color: var(--sys-color-primary);
-  pointer-events: none; /* Interaction Lock during Sync (Target A.2) */
+.status-indicator {
+  display: inline-flex;
+  width: var(--sys-space-12);
+  height: var(--sys-space-12);
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
 }
 
 .status-dot {
-  position: relative;
-  width: 24px;
-  height: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.dot-nucleus {
-  position: relative;
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
+  width: var(--sys-space-8);
+  height: var(--sys-space-8);
+  border-radius: var(--sys-shape-corner-full);
   background: currentColor;
-  z-index: 2;
-  transition: all var(--sys-motion-duration-300) cubic-bezier(0.25, 1, 0.3, 1);
+  box-shadow: 0 0 0 3px color-mix(in srgb, currentColor 16%, transparent);
 }
 
-
-.dot-nucleus.breath {
-  animation: breath var(--sys-motion-ambient-breath) ease-in-out infinite;
-}
-
-.dot-nucleus.pulse {
-  animation: pulse var(--sys-motion-ambient-pulse) infinite;
-}
-
-.dot-halo {
-  position: absolute;
-  inset: 0;
-  border-radius: 50%;
-  background: currentColor;
-  transform: scale(0.6);
-  opacity: 0.4;
-  animation: halo-pulse var(--sys-motion-ambient-pulse) infinite;
-}
-
-.pill-content-wrapper {
-  display: flex;
-  align-items: center;
-  margin-left: var(--sys-space-2);
-  margin-right: var(--sys-space-4);
-}
-
-.status-pill.expand-left .pill-content-wrapper {
-  margin-left: var(--sys-space-4);
-  margin-right: var(--sys-space-2);
-  flex-direction: row-reverse;
-}
-
-.pill-content {
-  display: flex;
-  align-items: center;
-  gap: 0;
+.status-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
+  color: var(--sys-color-on-surface);
 }
 
-.status-pill.expand-left .pill-content {
-  flex-direction: row-reverse;
-}
+.status-label.is-db { color: var(--sys-color-primary); }
 
 .technical {
   font-family: var(--sys-font-family-mono);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.02em;
+  font-size: var(--sys-typescale-meta);
+  font-weight: 750;
+  letter-spacing: var(--sys-tracking-wide);
+  line-height: var(--sys-leading-none);
   text-transform: uppercase;
-  line-height: 1;
 }
 
-.base-label {
-  display: flex;
-  align-items: center;
-  gap: var(--sys-space-4);
-  transition: opacity var(--sys-motion-duration-300) ease;
+.status-chevron {
+  flex: 0 0 auto;
+  color: currentColor;
+  transition: transform var(--sys-motion-duration-200) var(--sys-motion-easing-standard);
 }
 
-.status-label.is-db {
-  color: var(--sys-color-primary);
-}
+.status-chevron.is-open { transform: rotate(180deg); }
 
-.icon-bolt {
-  animation: bolt-flicker var(--sys-motion-ambient-breath) infinite;
-}
-
-/* EXPANDED SECTION GRID TRANSITION */
-.expanded-section {
-  display: grid;
-  grid-template-columns: 0fr;
-  opacity: 0;
-  transition: grid-template-columns var(--sys-motion-duration-500) var(--sys-motion-spring, cubic-bezier(0.175, 0.885, 0.32, 1.275)), 
-              opacity var(--sys-motion-duration-400) ease;
-}
-
-.expanded-section.is-open {
-  grid-template-columns: 1fr;
-  opacity: 1;
-}
-
-.expanded-inner {
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  gap: var(--sys-space-8);
-}
-
-.status-pill.expand-left .expanded-inner {
-  flex-direction: row-reverse;
-}
-
-.divider {
-  width: 4px;
-  height: 4px;
-  border-radius: 50%;
-  background: var(--sys-color-outline-variant);
-  margin: 0 var(--sys-space-4);
-  flex-shrink: 0;
-}
-
-.hub-details {
-  display: flex;
-  align-items: center;
-  gap: var(--sys-space-6);
-}
-
-.source-tag {
-  display: flex;
-  align-items: center;
-  padding: var(--sys-space-2) var(--sys-space-6);
-  border-radius: var(--sys-shape-corner-badge);
-  background: var(--sys-color-surface-container-highest);
-  color: var(--sys-color-on-surface-variant);
-  font-size: 8px;
-  font-weight: 900;
-}
-
-.source-tag.supabase {
-  color: var(--sys-color-primary);
-  background: var(--sys-color-primary-container);
-}
-
-.age-info,
-.diagnosis-info {
-  color: var(--sys-color-on-surface-variant);
-  font-size: 9px;
-}
-
-.diagnosis-info {
-  color: var(--sys-color-warning);
-}
-
-.status-pill.error .diagnosis-info {
-  color: var(--sys-color-error);
-}
-
-.sync-action {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  border: none;
-  background: var(--sys-color-surface-container-high);
-  color: var(--sys-color-primary);
-  cursor: pointer;
-  transition: all var(--sys-motion-duration-300) cubic-bezier(0.25, 1, 0.3, 1);
-  flex-shrink: 0;
-}
-
-.sync-action:hover {
-  background: var(--sys-color-primary);
-  color: var(--sys-color-on-primary);
-  transform: scale(1.1) rotate(15deg);
-}
-
-.sync-action:active {
-  transform: scale(0.9) rotate(-15deg);
-}
-
-.sync-action:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  transform: none;
-}
+.is-success { color: var(--sys-color-success); }
+.is-warning { color: var(--sys-color-warning); }
+.is-error { color: var(--sys-color-error); }
+.is-loading { color: var(--sys-color-primary); }
 
 .spinner {
-  width: 18px;
-  height: 18px;
-  flex-shrink: 0;
+  width: var(--sys-space-12);
+  height: var(--sys-space-12);
   animation: rotate var(--sys-motion-ambient-spin) linear infinite;
 }
 
-.is-spinning {
-  animation: rotate var(--sys-motion-ambient-spin) cubic-bezier(0.4, 0, 0.2, 1) infinite;
+.status-details {
+  position: absolute;
+  top: calc(100% + var(--sys-space-8));
+  right: 0;
+  width: min(288px, calc(100vw - var(--sys-space-48)));
+  padding: var(--sys-space-14);
+  border: 1px solid var(--sys-surface-glass-border);
+  border-radius: var(--sys-shape-corner-medium);
+  background: var(--sys-surface-glass);
+  backdrop-filter: var(--sys-surface-glass-blur);
+  -webkit-backdrop-filter: var(--sys-surface-glass-blur);
+  box-shadow: var(--sys-elevation-3);
+  color: var(--sys-color-on-surface);
 }
 
-@keyframes bolt-flicker {
-  0%, 100% { opacity: 1; filter: drop-shadow(0 0 2px var(--sys-color-primary)); }
-  50% { opacity: 0.7; filter: drop-shadow(0 0 0px transparent); }
+.detail-heading,
+.detail-list > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sys-space-12);
 }
 
-@keyframes rotate {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+.detail-heading {
+  padding-bottom: var(--sys-space-10);
+  border-bottom: 1px solid var(--sys-color-outline-variant);
 }
 
-@keyframes breath {
-  0%, 100% { transform: scale(1); opacity: 0.7; }
-  50% { transform: scale(1.2); opacity: 1; }
+.detail-label,
+.detail-list dt {
+  color: var(--sys-color-on-surface-variant);
+  font-size: var(--sys-typescale-meta);
+  font-weight: 700;
 }
 
-@keyframes pulse {
-  0% { transform: scale(1); box-shadow: 0 0 0 0 currentColor; }
-  70% { transform: scale(1.1); box-shadow: 0 0 0 6px transparent; }
-  100% { transform: scale(1); box-shadow: 0 0 0 0 transparent; }
+.detail-state,
+.detail-list dd {
+  margin: 0;
+  font-family: var(--sys-font-family-mono);
+  font-size: var(--sys-typescale-meta);
+  font-weight: 750;
+  text-align: right;
 }
 
-@keyframes halo-pulse {
-  0% { transform: scale(0.6); opacity: 0.4; }
-  100% { transform: scale(2.8); opacity: 0; }
+.detail-list {
+  display: grid;
+  gap: var(--sys-space-8);
+  margin: var(--sys-space-10) 0 0;
 }
+
+.detail-list .is-diagnosis { align-items: start; }
+.detail-list .is-diagnosis dd { color: var(--sys-color-warning); }
+.is-error .detail-list .is-diagnosis dd { color: var(--sys-color-error); }
+
+.status-popover-enter-active,
+.status-popover-leave-active {
+  transition:
+    opacity var(--sys-motion-duration-200) var(--sys-motion-easing-standard),
+    transform var(--sys-motion-duration-200) var(--sys-motion-easing-standard);
+}
+
+.status-popover-enter-from,
+.status-popover-leave-to {
+  opacity: 0;
+  transform: translateY(calc(-1 * var(--sys-space-4)));
+}
+
+@keyframes rotate { to { transform: rotate(360deg); } }
 </style>

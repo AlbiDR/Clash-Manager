@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: GPL-3.0-only -->
 <!-- Copyright (C) 2026 AlbiDR -->
 <script setup lang="ts">
-import { computed, ref, unref, useTemplateRef } from "vue";
+import { Comment, computed, Fragment, Text, unref, useSlots, useTemplateRef, type VNode } from "vue";
 import { useHaptics } from "../composables/useHaptics";
 import { useSearchField } from "../composables/useSearchField";
 import { useHeaderScroll } from "../composables/useHeaderScroll";
@@ -9,13 +9,6 @@ import StatusPill from "./StatusPill.vue";
 import Icon from "./Icon.vue";
 import BaseSelect from "./BaseSelect.vue";
 import type { ConsoleRemoteInfo, HubHealth } from "@core/types";
-
-/**
- * Whether the status pill currently has its detail open. Reported by the pill
- * itself, not read off its DOM, so the header can react to a state it does not
- * own without depending on the pill's internal class names.
- */
-const isStatusDetailOpen = ref(false);
 
 const props = defineProps<{
   title: string;
@@ -52,6 +45,32 @@ const emit = defineEmits<{
 }>();
 
 const haptics = useHaptics();
+const slots = useSlots();
+
+/**
+ * ConsoleLayout forwards its filters slot even when a view supplies no filter.
+ * A slot function therefore exists in Settings and Headhunter despite producing
+ * only Vue placeholder comments nested inside a Fragment. Treating its
+ * existence as content was the source of an empty header row and spacer.
+ */
+function hasRenderableSlotContent(slotNodes: VNode[]): boolean {
+  return slotNodes.some((slotNode) => {
+    if (slotNode.type === Comment) return false;
+    if (slotNode.type === Text) return typeof slotNode.children === "string" && slotNode.children.trim().length > 0;
+    if (slotNode.type === Fragment && Array.isArray(slotNode.children)) {
+      return hasRenderableSlotContent(slotNode.children as VNode[]);
+    }
+    return true;
+  });
+}
+
+const hasFilters = computed(() => hasRenderableSlotContent(slots.filters?.() ?? []));
+
+const hasControls = computed(() =>
+  props.showSearch === true || hasFilters.value || (props.sortOptions?.length ?? 0) > 0,
+);
+
+const hasExtra = computed(() => hasRenderableSlotContent(slots.extra?.() ?? []));
 /**
  * The header condenses while the reader travels away from the top, and refuses
  * to while any control it hosts is in use - an open search field, or a live
@@ -101,47 +120,39 @@ const handleOpenDashboard = () => {
     :class="{ 'is-scrolled': unref(isScrolled), 'is-condensed': unref(isCondensed) }"
   >
     <div class="header-main">
-      <div class="title-row">
-        <div class="title-group">
-          <div class="title-main">
-            <h1
-              class="view-title"
-              :class="{ 'is-link': props.dashboardUrl }"
-              :title="props.dashboardUrl ? 'Open Supabase Dashboard' : undefined"
-              @click="handleOpenDashboard"
-            >
-              {{ props.title }}
-            </h1>
-            <div
-              v-if="props.stats"
-              class="title-label"
-            >
-              <span class="count-value">{{ props.stats.value }}</span>
-              <span class="count-label label-caption">{{ props.stats.label }}</span>
-            </div>
+      <div class="header-summary">
+        <div class="title-main">
+          <h1
+            class="view-title"
+            :class="{ 'is-link': props.dashboardUrl }"
+            :title="props.dashboardUrl ? 'Open Supabase Dashboard' : undefined"
+            @click="handleOpenDashboard"
+          >
+            {{ props.title }}
+          </h1>
+          <div
+            v-if="props.stats"
+            class="title-label"
+          >
+            <span class="count-value">{{ props.stats.value }}</span>
+            <span class="count-label label-caption">{{ props.stats.label }}</span>
           </div>
         </div>
 
-        <div
-          class="action-group"
-          :class="{ 'is-detail-open': isStatusDetailOpen }"
-        >
+        <div class="action-group">
           <StatusPill
             v-if="props.status && !props.loading"
             :type="props.status.type"
             :text="props.status.text"
             :nominal="props.status.nominal"
             :remote-info="props.remoteInfo"
-            direction="left"
-            @update:expanded="isStatusDetailOpen = $event"
-            @refresh="emit('refresh')"
           />
         </div>
       </div>
 
       <div
-        v-if="props.showSearch || !!$slots.filters"
-        class="search-sort-row"
+        v-if="hasControls || hasExtra"
+        class="header-controls"
       >
         <!-- [DECISION LOG] PROMINENCE TRACKS WHETHER THE CONTROL IS WORKING:
              Idle this is a 48px icon; the moment it holds a query it is a
@@ -211,8 +222,12 @@ const handleOpenDashboard = () => {
           </div>
         </div>
 
-        <!-- Custom Filters / Controls Slot -->
-        <slot name="filters" />
+        <div
+          v-if="hasFilters"
+          class="filter-slot"
+        >
+          <slot name="filters" />
+        </div>
 
         <div
           v-if="props.sortOptions"
@@ -231,14 +246,14 @@ const handleOpenDashboard = () => {
             {{ activeSortDescription }}
           </span>
         </div>
-      </div>
-    </div>
 
-    <div
-      v-if="!!$slots.extra"
-      class="header-extra"
-    >
-      <slot name="extra" />
+        <div
+          v-if="hasExtra"
+          class="header-extra"
+        >
+          <slot name="extra" />
+        </div>
+      </div>
     </div>
   </header>
 </template>
@@ -253,7 +268,7 @@ const handleOpenDashboard = () => {
   -webkit-backdrop-filter: var(--sys-surface-glass-blur);
   border: 1px solid var(--sys-surface-glass-border);
   border-radius: var(--sys-shape-corner-extra-large);
-  padding: var(--sys-space-18) var(--sys-space-18) var(--sys-space-24) var(--sys-space-18);
+  padding: var(--sys-space-16) var(--sys-space-18) var(--sys-space-18);
   margin-bottom: var(--sys-space-24);
   transition: all var(--sys-motion-duration-400) var(--sys-motion-spring);
   box-shadow: var(--sys-elevation-2);
@@ -261,7 +276,7 @@ const handleOpenDashboard = () => {
 
 .console-header.is-scrolled {
   margin-top: var(--sys-space-8);
-  padding: var(--sys-space-12) var(--sys-space-18) var(--sys-space-18) var(--sys-space-18);
+  padding: var(--sys-space-10) var(--sys-space-14);
   border-radius: var(--sys-shape-corner-m);
 }
 
@@ -296,8 +311,7 @@ const handleOpenDashboard = () => {
    Reduced motion needs nothing here: the global rule keeps opacity and height
    in the transition list and drops transform, so this becomes a fade rather
    than being deleted. */
-.search-sort-row,
-.header-extra {
+.header-controls {
   max-height: var(--sys-layout-header-row-max-height);
   transition:
     max-height var(--sys-motion-duration-250) var(--sys-motion-easing-standard),
@@ -305,8 +319,7 @@ const handleOpenDashboard = () => {
     margin-top var(--sys-motion-duration-250) var(--sys-motion-easing-standard);
 }
 
-.console-header.is-condensed .search-sort-row,
-.console-header.is-condensed .header-extra {
+.console-header.is-condensed .header-controls {
   max-height: 0;
   opacity: 0;
   margin-top: calc(-1 * var(--sys-space-12));
@@ -314,42 +327,13 @@ const handleOpenDashboard = () => {
   pointer-events: none;
 }
 
-/* [DECISION LOG] THE VIEW'S NAME IS NEVER WHAT GETS CUT:
-   Every element in this row declared flex-shrink: 0 except the title, so the
-   title absorbed one hundred percent of any overflow and did it silently.
-   Measured at 375px: expanding the status pill grows .action-group from 82px
-   to 233px, and all 151 of those pixels came out of the title, which reached
-   clientWidth: 0 - the view's own name erased, with no ellipsis left to show
-   it had happened. "Roster" needs 72px and survived; "Headhunter" needs about
-   130px and read "Headhu...".
-
-   Wrapping fixes it without a breakpoint or a hidden word. The row now grows a
-   second line when the first cannot hold everything, so the name and the count
-   keep their full width and the status pill moves below them, still right
-   aligned. Nothing is hidden and nothing is truncated: a narrow viewport costs
-   one line of height instead of the title. Roster still fits on one line and is
-   unchanged, and an expanded pill takes its own line, which is the right answer
-   for a deliberate reveal. */
-.title-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+/* The summary has exactly two jobs: establish the view and expose system
+   health. Details belong to the status popover, never to the document flow. */
+.header-summary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
   gap: var(--sys-space-12);
-  flex-wrap: wrap;
-}
-
-.title-group {
-  display: flex;
-  align-items: center;
-  gap: var(--sys-space-12);
-  flex: 1;
-  /* Refusing to shrink below the name plus the count is what actually makes the
-     row wrap. Without it the row has nothing to wrap - the shortfall is inside
-     this group, not between it and the status pill - so the group stayed one
-     line and its contents spilled over the pill instead. Measured at 375px:
-     "Headhunter" plus "48 Members" needs 218px against the 168px this group was
-     being handed, and the count chip overlapped the pill by 38px. */
-  min-width: max-content;
 }
 
 .title-main {
@@ -361,7 +345,6 @@ const handleOpenDashboard = () => {
      the name rather than either being cut. */
   flex-wrap: wrap;
   min-width: 0;
-  flex: 1;
 }
 
 .view-title {
@@ -376,11 +359,7 @@ const handleOpenDashboard = () => {
   text-overflow: ellipsis;
   transition: all var(--sys-motion-duration-200) var(--sys-motion-spring);
   min-width: 0;
-  /* The name takes the width it needs and the row wraps around it. The ellipsis
-     above stays as a last resort for a title longer than a whole line, which no
-     current view has; max-width keeps that case inside the header rather than
-     widening the page. */
-  flex-shrink: 0;
+  flex: 0 1 auto;
   max-width: 100%;
 }
 
@@ -421,62 +400,37 @@ const handleOpenDashboard = () => {
 .action-group {
   display: flex;
   align-items: center;
-  gap: var(--sys-space-8);
   flex-shrink: 0;
-  /* Holds it against the right edge on the line it lands on, whether that is
-     beside the title or wrapped beneath it. */
-  margin-left: auto;
 }
 
-/* [DECISION LOG] A WRAPPED DETAIL FILLS ITS LINE INSTEAD OF FLOATING IN IT:
-   Opening the status detail on a phone makes it too wide to sit beside the
-   title, so it takes the line below. Whether that reads as designed or as a
-   bug turned out to depend entirely on how much the pill had to say. A stale
-   clan expands to "SYNCED 16M AGO; SOURCE DATA 34M AGO - STALE", which happens
-   to span the line and looks deliberate. A healthy one expands to "27M AGO -
-   DB" and left a short chip adrift at the right of an otherwise empty line,
-   which is what was reported.
-
-   Filling the line removes the difference: the detail is the same width either
-   way, and it lines up with the search field directly beneath it rather than
-   hanging above it. space-between then pins the reading order to both edges -
-   the text to the left, the state dot to the right - so a short message spaces
-   out rather than clumping in one corner.
-
-   Scoped to the phone width on purpose. On a wide viewport the detail still
-   fits beside the title and never wraps, so stretching it there would trade a
-   real layout for a very long stadium and a header that changes height on tap.
-
-   :has() is the honest way to say "when the thing inside is open". Where it is
-   unsupported the rule is skipped and the result is today's behaviour, so the
-   floor is what shipped rather than something broken. */
-@media (max-width: 600px) {
-  .action-group.is-detail-open {
-    width: 100%;
-  }
-
-  /* StatusPill declares flex-shrink: 0, which is right while it is a chip
-     sitting beside other things and wrong once it owns the line: its expanded
-     content measured 321px against a 313px line and the extra 8px ate into the
-     card's right padding, so the bar looked mis-set rather than full width.
-     On its own line it shrinks to the line instead. */
-  .action-group.is-detail-open :deep(.status-pill) {
-    flex: 1 1 auto;
-    min-width: 0;
-    justify-content: space-between;
-  }
-}
-
-/* Wraps for the same reason the title row does: when the row cannot hold
-   everything, something takes a second line rather than everything being
-   squeezed. Only the open field can trigger it, and only where there is truly
-   no room - at 375px the field still sits beside the sort control, and at
-   320px it takes the line and the sort drops below. */
-.search-sort-row {
+/* Controls form a distinct, predictable region. They never borrow height from
+   the summary and only a real filter can introduce a third, labelled control
+   line on a narrow device. */
+.header-controls {
   display: flex;
   align-items: center;
   gap: var(--sys-space-12);
-  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.filter-slot {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* Selection is contextual rather than structural. On a wide toolbar it uses
+   the space that search and sort do not need; it no longer earns an otherwise
+   empty row all by itself. */
+.header-extra {
+  display: flex;
+  flex: 1 1 260px;
+  min-width: 220px;
+}
+
+.header-extra :deep(.selection-bar) {
+  width: 100%;
+  height: var(--sys-space-48);
+  border-radius: var(--sys-shape-corner-input);
 }
 
 /* [DECISION LOG] THE CONTROL TAKES THE SPACE IT IS USING, NOT THE SPACE THERE IS:
@@ -608,5 +562,29 @@ const handleOpenDashboard = () => {
 
 .sort-desc {
   display: none;
+}
+
+@media (max-width: 520px) {
+  .header-controls {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .search-bar,
+  .search-bar.is-open {
+    min-width: 0;
+    max-width: none;
+  }
+
+  .filter-slot {
+    grid-column: 1 / -1;
+    order: 3;
+  }
+
+  .header-extra {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    min-width: 0;
+  }
 }
 </style>

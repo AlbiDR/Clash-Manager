@@ -6,7 +6,7 @@
 import ConsoleHeader from "../ConsoleHeader.vue";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { mount } from "@vue/test-utils";
-import { nextTick } from "vue";
+import { createCommentVNode, Fragment, h, nextTick } from "vue";
 
 const { mockTap } = vi.hoisted(() => ({ mockTap: vi.fn() }));
 
@@ -35,6 +35,17 @@ describe("ConsoleHeader", () => {
 
     expect(wrapper.find(".view-title").text()).toBe("Test Feature");
     expect(wrapper.findComponent({ name: "StatusPill" }).exists()).toBe(true);
+  });
+
+  it("does not create a controls region when a view forwards an empty Fragment", () => {
+    const wrapper = mount(ConsoleHeader, {
+      props: { title: "Settings" },
+      slots: {
+        filters: () => [h(Fragment, null, [createCommentVNode("forwarded but empty")])],
+      },
+    });
+
+    expect(wrapper.find(".header-controls").exists()).toBe(false);
   });
 
   it("opens the dashboard URL when the title is clicked", async () => {

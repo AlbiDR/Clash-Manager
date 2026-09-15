@@ -27,29 +27,27 @@ describe("StatusPill", () => {
         props: { type, text: `Status ${type}`, nominal: false },
       });
       
-      // Expand to see text if not loading (loading is auto-expanded)
-      if (type !== "loading") {
-        await wrapper.trigger("click");
-      }
-      
-      // Every type renders the caller's own `text`, loading included. This
-      // used to expect a hardcoded "Syncing..." for the loading branch, which
-      // recorded the defect rather than the contract.
+      // Every type renders the caller's own `text`, loading included.
       expect(wrapper.text()).toContain(`Status ${type}`);
-      expect(wrapper.classes()).toContain(type);
-      expect(wrapper.find(".status-dot").exists()).toBe(true);
+      expect(wrapper.classes()).toContain(`is-${type}`);
+      expect(wrapper.find(".status-trigger").exists()).toBe(true);
       
       if (type === "loading") {
         expect(wrapper.find(".spinner").exists()).toBe(true);
-      } else if (type !== "success") {
-        expect(wrapper.find(".dot-nucleus.pulse").exists()).toBe(true);
+      } else {
+        expect(wrapper.find(".status-dot").exists()).toBe(true);
       }
     }
   });
 
-  it("toggles expanded state and calls haptics via v-tactile", async () => {
+  it("opens details without changing the trigger's document-flow footprint", async () => {
     const wrapper = mount(StatusPill, {
-      props: { type: "success", text: "Ready", nominal: true },
+      props: {
+        type: "success",
+        text: "Ready",
+        nominal: true,
+        remoteInfo: { source: "SUPABASE", dataAge: "2m ago" },
+      },
       global: {
         directives: {
           tactile: {
@@ -62,15 +60,18 @@ describe("StatusPill", () => {
       }
     });
     
-    expect(wrapper.classes()).not.toContain("is-expanded");
+    const trigger = wrapper.find(".status-trigger");
+    expect(trigger.attributes("aria-expanded")).toBe("false");
+    expect(wrapper.find(".status-details").exists()).toBe(false);
     
     // Simulate v-tactile interaction
-    await wrapper.trigger("pointerdown");
-    await wrapper.trigger("pointerup");
-    await wrapper.trigger("click");
+    await trigger.trigger("pointerdown");
+    await trigger.trigger("pointerup");
+    await trigger.trigger("click");
     
     expect(wrapper.classes()).toContain("is-expanded");
-    expect(wrapper.find(".expanded-section").classes()).toContain("is-open");
+    expect(trigger.attributes("aria-expanded")).toBe("true");
+    expect(wrapper.find(".status-details").exists()).toBe(true);
     expect(tapMock).toHaveBeenCalled();
   });
 
@@ -78,7 +79,7 @@ describe("StatusPill", () => {
     const wrapper = mount(StatusPill, {
       props: { type: "loading", text: "Loading", nominal: true },
     });
-    expect(wrapper.find(".base-label").exists()).toBe(true);
+    expect(wrapper.find(".status-label").exists()).toBe(true);
     expect(wrapper.text()).toContain("Loading");
   });
 
@@ -89,7 +90,7 @@ describe("StatusPill", () => {
     const wrapper = mount(StatusPill, {
       props: { type: "loading", text: "Scanning Vault...", nominal: false },
     });
-    expect(wrapper.find(".base-label").text()).toBe("Scanning Vault...");
+    expect(wrapper.find(".status-label").text()).toBe("Scanning Vault...");
   });
 
   it("displays SUPABASE source when remoteInfo.source is SUPABASE", async () => {
@@ -102,7 +103,7 @@ describe("StatusPill", () => {
     });
     
     // Expand
-    await wrapper.trigger("click");
+    await wrapper.find(".status-trigger").trigger("click");
     
     expect(wrapper.text()).toContain("DB");
     expect(wrapper.text()).toContain("10m ago");

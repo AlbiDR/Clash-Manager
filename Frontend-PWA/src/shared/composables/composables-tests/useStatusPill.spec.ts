@@ -1,22 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { useStatusPill, type StatusPillProps } from '../useStatusPill';
-import { reactive, nextTick, ref } from 'vue';
-
-const isMobileNarrow = ref(false);
-
-// No haptics mock: useStatusPill delegates haptics to the v-tactile directive
-// and imports only vue + ./useViewport, so it has no haptics dependency to stub.
-
-// Mock useViewport
-vi.mock('../useViewport', () => ({
-  useViewport: () => ({
-    isDesktop: ref(false),
-    isMobileNarrow,
-  }),
-}));
+import { reactive, nextTick } from 'vue';
 
 describe('useStatusPill', () => {
   let props: StatusPillProps;
@@ -94,16 +81,14 @@ describe('useStatusPill', () => {
     expect(isDB.value).toBe(false);
   });
 
-  it('handles responsive truncation for narrow screens', () => {
+  it('preserves the complete label on narrow screens', () => {
     props.text = 'System Operational';
-    isMobileNarrow.value = true;
     const { displayText } = useStatusPill(props);
-    expect(displayText.value).toBe('Operational');
+    expect(displayText.value).toBe('System Operational');
   });
 
-  it('does not truncate on wide screens', () => {
+  it('preserves the complete label on wide screens', () => {
     props.text = 'System Operational';
-    isMobileNarrow.value = false;
     const { displayText } = useStatusPill(props);
     expect(displayText.value).toBe('System Operational');
   });

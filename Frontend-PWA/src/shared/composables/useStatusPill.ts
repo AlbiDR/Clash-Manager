@@ -2,7 +2,6 @@
 // Copyright (C) 2026 AlbiDR
 
 import { ref, watch, computed, toValue, type MaybeRefOrGetter } from "vue";
-import { useViewport } from "./useViewport";
 
 export interface StatusPillProps {
   type: "success" | "warning" | "error" | "loading";
@@ -30,7 +29,7 @@ export interface StatusPillProps {
  * @returns
  * - `isExpanded`: Reactive toggle for the detailed metadata view.
  * - `isDB`: True if the primary status label is "DB" (cached state).
- * - `displayText`: Viewport-aware label for the pill.
+ * - `displayText`: The caller's label, preserved exactly across viewports.
  * - `displaySource`: Normalized data source label.
  * - `handleToggle`: Expansion orchestrator (haptics are handled by `v-tactile`
  *   on the pill element in `StatusPill.vue`, not here -- see the note below).
@@ -58,19 +57,10 @@ export function useStatusPill(props: MaybeRefOrGetter<StatusPillProps>) {
 
   const isDB = computed(() => toValue(props).text === 'DB');
 
-  // [THREAT:] UI OCCLUSION - Large labels in header clusters cause layout shifts
-  // or overlap on narrow devices.
-  // [DECISION LOG] RESPONSIVE TRUNCATION: On narrow viewports, truncate
-  // to the last word to maintain UI stability in header clusters.
-  const { isMobileNarrow } = useViewport();
-  const displayText = computed(() => {
-    const statusPillPropsSnapshot = toValue(props);
-    if (isMobileNarrow.value) {
-      const parts = statusPillPropsSnapshot.text.split(' ');
-      return parts.length > 1 ? parts[parts.length - 1] : statusPillPropsSnapshot.text;
-    }
-    return statusPillPropsSnapshot.text;
-  });
+  // The control itself owns overflow now, so changing a status from
+  // "System Operational" to just "Operational" based on screen width is no
+  // longer necessary - and it was an information loss, not responsive design.
+  const displayText = computed(() => toValue(props).text);
 
   const displaySource = computed(() => {
     const statusPillPropsSnapshot = toValue(props);
