@@ -56,3 +56,4 @@
 * [2026-09-12] [Stage 2] [00:12Z-00:31Z 19m] CHANGED: Frontend-PWA/src/core/services/services-tests/useProgressiveList.spec.ts -- Expanded useProgressiveList unit test coverage
 * [2026-09-13] [Stage 2] [00:31Z-00:38Z 7m] CHANGED: Backend/supabase/functions/_shared/shared-tests/protocol.spec.ts -- Added Data Perfection Governance unit tests in protocol.spec.ts
 * [2026-09-14] [Stage 2] [00:13Z-00:31Z 18m] CHANGED: Frontend-PWA/src/core/services/services-tests/useClashSyncUtils.spec.ts -- Added unit tests for useClashSyncUtils.ts covering empty DTO creation, error normalization, and timeout cancellation
+* [2026-09-15] [Stage 2] [00:23Z-00:36Z 14m] CHANGED: Frontend-PWA/src/shared/composables/composables-tests/useSearchField.spec.ts -- Frontend-PWA/src/shared/composables/composables-tests/useSearchField.spec.ts -- Extended unit tests for search field keyboard handling, debounce cancellation, and KeepAlive deactivation reset.
