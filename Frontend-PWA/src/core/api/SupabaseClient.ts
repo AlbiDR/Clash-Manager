@@ -40,6 +40,19 @@ export const lastSyncStatus = ref<"TIMEOUT" | "AUTH" | "VALIDATION" | "OFFLINE" 
  */
 export const OPTIONAL_METADATA_TIMEOUT_MS = 3_000;
 
+export type PipelineHealthStatus = "COMPLETED" | "RUNNING" | "FAILED";
+
+/**
+ * A deliberately small, public-safe view of the ingestion heartbeat. This is
+ * diagnostic metadata rather than the payload used to hydrate the app.
+ */
+export interface PipelineHealth {
+  status: PipelineHealthStatus;
+  lastSuccessAt: number | null;
+  lastTriggeredAt: number | null;
+  lastFailureAt: number | null;
+}
+
 /**
  * Specialized error class for network-level failures.
  */
@@ -197,6 +210,62 @@ async function resolveOptionalQuery<T extends OptionalQueryResponse>(
   } finally {
     if (timeoutId) clearTimeout(timeoutId);
     parentSignal.removeEventListener("abort", abortFromParent);
+  }
+}
+
+/**
+ * Retrieves an independently bounded health snapshot for Settings. The data
+ * pipeline indicator must never make Settings appear frozen when its metadata
+ * view is unavailable, and it must remain separate from the payload sync.
+ */
+export async function fetchPipelineHealth(): Promise<PipelineHealth | null> {
+  if (!isConfigured()) return null;
+
+  const controller = new AbortController();
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+
+  try {
+    const healthQuery = createSupabaseClient()
+      .schema("features")
+      .from("pipeline_heartbeat_view")
+      .select("status,last_success_at,last_triggered_at,last_failure_at")
+      .eq("component_id", "ROYALE_DATA_INGESTOR")
+      .single() as unknown as {
+        abortSignal: (signal: AbortSignal) => PromiseLike<{
+          data: {
+            status: string | null;
+            last_success_at: string | null;
+            last_triggered_at: string | null;
+            last_failure_at: string | null;
+          } | null;
+          error: { message: string } | null;
+        }>;
+      };
+
+    const response = await Promise.race([
+      Promise.resolve(healthQuery.abortSignal(controller.signal)),
+      new Promise<null>((resolve) => {
+        timeoutId = setTimeout(() => {
+          controller.abort(new Error("Pipeline health check timed out"));
+          resolve(null);
+        }, OPTIONAL_METADATA_TIMEOUT_MS);
+      }),
+    ]);
+
+    if (!response || response.error || !response.data) return null;
+    const status = response.data.status;
+    if (status !== "COMPLETED" && status !== "RUNNING" && status !== "FAILED") return null;
+
+    return {
+      status,
+      lastSuccessAt: parseTimestamp(response.data.last_success_at),
+      lastTriggeredAt: parseTimestamp(response.data.last_triggered_at),
+      lastFailureAt: parseTimestamp(response.data.last_failure_at),
+    };
+  } catch {
+    return null;
+  } finally {
+    if (timeoutId) clearTimeout(timeoutId);
   }
 }
 

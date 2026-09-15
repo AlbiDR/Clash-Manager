@@ -13,7 +13,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.17"
+    PostgrestVersion: "14.5"
   }
   drivers: {
     Tables: {
@@ -747,6 +747,7 @@ export type Database = {
         Args: { p_crowns: number; p_player_tag: string }
         Returns: Json
       }
+      sync_voyage_activation_job: { Args: never; Returns: undefined }
     }
     Enums: {
       recruit_event_type:
@@ -846,15 +847,24 @@ export type Database = {
       pipeline_heartbeat_view: {
         Row: {
           component_id: string | null
+          last_failure_at: string | null
           last_success_at: string | null
+          last_triggered_at: string | null
+          status: Database["substrate"]["Enums"]["pipeline_status"] | null
         }
         Insert: {
           component_id?: string | null
+          last_failure_at?: string | null
           last_success_at?: string | null
+          last_triggered_at?: string | null
+          status?: Database["substrate"]["Enums"]["pipeline_status"] | null
         }
         Update: {
           component_id?: string | null
+          last_failure_at?: string | null
           last_success_at?: string | null
+          last_triggered_at?: string | null
+          status?: Database["substrate"]["Enums"]["pipeline_status"] | null
         }
         Relationships: []
       }
@@ -1139,6 +1149,57 @@ export type Database = {
         }
         Relationships: []
       }
+      cron_run_daily: {
+        Row: {
+          completed: number
+          duration_avg: string | null
+          duration_max: string | null
+          duration_min: string | null
+          failures: number
+          folded_at: string
+          jobid: number
+          jobname: string
+          last_error: string | null
+          overlapping_runs: number
+          run_date: string
+          runs: number
+          successes: number
+          unfinished: number
+        }
+        Insert: {
+          completed: number
+          duration_avg?: string | null
+          duration_max?: string | null
+          duration_min?: string | null
+          failures: number
+          folded_at?: string
+          jobid: number
+          jobname: string
+          last_error?: string | null
+          overlapping_runs: number
+          run_date: string
+          runs: number
+          successes: number
+          unfinished: number
+        }
+        Update: {
+          completed?: number
+          duration_avg?: string | null
+          duration_max?: string | null
+          duration_min?: string | null
+          failures?: number
+          folded_at?: string
+          jobid?: number
+          jobname?: string
+          last_error?: string | null
+          overlapping_runs?: number
+          run_date?: string
+          runs?: number
+          successes?: number
+          unfinished?: number
+        }
+        Relationships: []
+      }
       discovery_anchors: {
         Row: {
           keyword: string
@@ -1375,11 +1436,42 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      cron_health: {
+        Row: {
+          active: boolean | null
+          fold_lag_days: number | null
+          fold_status: string | null
+          jobid: number | null
+          jobname: string | null
+          last_folded_date: string | null
+          schedule: string | null
+        }
+        Relationships: []
+      }
+      cron_health_trend: {
+        Row: {
+          avg_baseline: string | null
+          avg_recent: string | null
+          duration_ratio: number | null
+          failure_rate_baseline: number | null
+          failure_rate_recent: number | null
+          jobid: number | null
+          jobname: string | null
+          overlapping_recent: number | null
+          runs_per_day_baseline: number | null
+          runs_per_day_recent: number | null
+          throughput_ratio: number | null
+          verdict: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
+      config_int: { Args: { p_key: string }; Returns: number }
+      dispatch_royale_ingestion: { Args: never; Returns: string }
       execute_nightly_maintenance: { Args: never; Returns: undefined }
       finalize_expired_voyages: { Args: never; Returns: number }
+      fold_cron_history: { Args: never; Returns: number }
       format_last_seen: { Args: { p_days: number }; Returns: string }
       format_longevity: { Args: { p_minutes: number }; Returns: string }
       format_tenure: { Args: { p_days: number }; Returns: string }
@@ -1392,6 +1484,7 @@ export type Database = {
       get_vault_secret: { Args: { p_name: string }; Returns: string }
       pipeline_watchdog: { Args: never; Returns: number }
       purge_clanned_recruits: { Args: never; Returns: number }
+      purge_cron_history: { Args: never; Returns: number }
       purge_governance_telemetry: { Args: never; Returns: undefined }
       purge_inactive_members: { Args: never; Returns: undefined }
       purge_orphan_players: { Args: never; Returns: number }
@@ -1454,12 +1547,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1483,11 +1576,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1508,11 +1601,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1533,11 +1626,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1550,11 +1643,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }

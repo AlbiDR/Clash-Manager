@@ -170,6 +170,34 @@ describe("SupabaseClient", () => {
   });
 
   describe("Utilities", () => {
+    it("returns a validated, bounded pipeline health snapshot", async () => {
+      vi.mocked(mockFrom.abortSignal).mockResolvedValue({
+        data: {
+          status: "COMPLETED",
+          last_success_at: "2026-09-15T18:00:00Z",
+          last_triggered_at: "2026-09-15T18:01:00Z",
+          last_failure_at: null,
+        },
+        error: null,
+      });
+
+      await expect(SupabaseClient.fetchPipelineHealth()).resolves.toEqual({
+        status: "COMPLETED",
+        lastSuccessAt: Date.parse("2026-09-15T18:00:00Z"),
+        lastTriggeredAt: Date.parse("2026-09-15T18:01:00Z"),
+        lastFailureAt: null,
+      });
+    });
+
+    it("degrades an invalid pipeline health response to unavailable", async () => {
+      vi.mocked(mockFrom.abortSignal).mockResolvedValue({
+        data: { status: "UNKNOWN" },
+        error: null,
+      });
+
+      await expect(SupabaseClient.fetchPipelineHealth()).resolves.toBeNull();
+    });
+
     it("ping returns success with the backend version when the Edge Function succeeds", async () => {
       vi.mocked(mockClient.functions.invoke).mockResolvedValue({
         data: { success: true, version: '14.45.7' },

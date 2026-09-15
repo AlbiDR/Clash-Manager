@@ -6,6 +6,14 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import NetworkSettings from "../NetworkSettings.vue";
 import { ref } from "vue";
 
+const { fetchPipelineHealth } = vi.hoisted(() => ({
+  fetchPipelineHealth: vi.fn(),
+}));
+
+vi.mock("@core/api/SupabaseClient", () => ({
+  fetchPipelineHealth,
+}));
+
 const mockSettings = {
   apiUrl: ref("https://api.example.com"),
   apiStatus: ref("online"),
@@ -25,6 +33,12 @@ describe("NetworkSettings.vue", () => {
     mockSettings.apiUrl.value = "https://api.example.com";
     mockSettings.apiStatus.value = "online";
     mockSettings.pingData.value = { latency: 42, version: "1.2.3" };
+    fetchPipelineHealth.mockResolvedValue({
+      status: "COMPLETED",
+      lastSuccessAt: Date.now(),
+      lastTriggeredAt: Date.now(),
+      lastFailureAt: null,
+    });
 
     // Mock localStorage
     vi.stubGlobal("localStorage", {
@@ -67,6 +81,32 @@ describe("NetworkSettings.vue", () => {
     expect(wrapper.text()).toContain("42ms");
     expect(wrapper.text()).toContain("v1.2.3");
     expect(wrapper.find(".url-text").text()).toBe("https://api.example.com");
+  });
+
+  it("shows a separate ingestion-health result and can refresh it", async () => {
+    fetchPipelineHealth.mockResolvedValue({
+      status: "FAILED",
+      lastSuccessAt: Date.now() - 3_600_000,
+      lastTriggeredAt: Date.now(),
+      lastFailureAt: Date.now(),
+    });
+    const wrapper = mount(NetworkSettings, {
+      global: {
+        stubs: {
+          Icon: true,
+          SettingsCard: { template: '<div><slot name="header-extra" /><slot /></div>' },
+        },
+      },
+    });
+
+    await Promise.resolve();
+    await wrapper.vm.$nextTick();
+
+    expect(wrapper.find(".pipeline-health").text()).toContain("Needs attention");
+    expect(wrapper.find(".pipeline-health").text()).toContain("Last successful data update");
+
+    await wrapper.find(".refresh-health-btn").trigger("click");
+    expect(fetchPipelineHealth).toHaveBeenCalledTimes(2);
   });
 
   it("handles edit mode and saving new URL via orchestrator", async () => {

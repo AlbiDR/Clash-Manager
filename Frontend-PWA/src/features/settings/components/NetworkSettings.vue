@@ -23,7 +23,9 @@
 <script setup lang="ts">
 import { Icon, SettingsCard, vTactile } from "@shared";
 import { useSettings } from "../composables/useSettings";
-import { ref, computed, watch } from "vue";
+import { fetchPipelineHealth, type PipelineHealth } from "@core/api/SupabaseClient";
+import { formatTimeAgo } from "@core/utils/time";
+import { ref, computed, watch, onMounted } from "vue";
 
 defineProps<{
   initiallyExpanded?: boolean;
@@ -39,6 +41,8 @@ const {
 
 const newApiUrl = ref("");
 const isEditing = ref(false);
+const pipelineHealth = ref<PipelineHealth | null>(null);
+const isPipelineHealthLoading = ref(false);
 
 const hasLocalOverride = computed(() => !!localStorage.getItem("cm_supabase_url"));
 const isChecking = computed(() => apiStatus.value === "checking");
@@ -62,6 +66,37 @@ const LINK_LABELS: Record<string, string> = {
 
 const linkLabel = computed(() => LINK_LABELS[apiStatus.value] ?? "Unknown");
 
+const pipelineHealthLabel = computed(() => {
+  if (isPipelineHealthLoading.value) return "Checking";
+  switch (pipelineHealth.value?.status) {
+    case "COMPLETED": return "Healthy";
+    case "RUNNING": return "Updating";
+    case "FAILED": return "Needs attention";
+    default: return "Unavailable";
+  }
+});
+
+const pipelineHealthDetail = computed(() => {
+  switch (pipelineHealth.value?.status) {
+    case "COMPLETED": return "The latest data ingestion completed successfully.";
+    case "RUNNING": return "A data ingestion is in progress; existing app data remains available.";
+    case "FAILED": return "The most recent ingestion did not complete. Existing data may be older than expected.";
+    default: return "The health check could not be read. This does not block your normal data sync.";
+  }
+});
+
+const lastSuccessfulUpdate = computed(() => formatTimeAgo(pipelineHealth.value?.lastSuccessAt));
+const latestPipelineAttempt = computed(() => formatTimeAgo(pipelineHealth.value?.lastTriggeredAt));
+
+async function refreshPipelineHealth() {
+  isPipelineHealthLoading.value = true;
+  try {
+    pipelineHealth.value = await fetchPipelineHealth();
+  } finally {
+    isPipelineHealthLoading.value = false;
+  }
+}
+
 watch(
   apiStatus,
   (newApiStatus) => {
@@ -79,6 +114,10 @@ watch(
 function saveApiUrl() {
   updateApiUrl(newApiUrl.value);
 }
+
+onMounted(() => {
+  void refreshPipelineHealth();
+});
 </script>
 
 <template>
@@ -138,6 +177,37 @@ function saveApiUrl() {
         </template>
       </div>
     </div>
+
+    <section
+      class="pipeline-health"
+      aria-label="Data pipeline health"
+    >
+      <div class="pipeline-health-heading">
+        <div>
+          <span class="label label-caption">Data pipeline</span>
+          <strong :class="`pipeline-${pipelineHealth?.status?.toLowerCase() ?? 'unavailable'}`">{{ pipelineHealthLabel }}</strong>
+        </div>
+        <button
+          v-tactile
+          class="refresh-health-btn"
+          :disabled="isPipelineHealthLoading"
+          @click="refreshPipelineHealth"
+        >
+          Refresh
+        </button>
+      </div>
+      <p>{{ pipelineHealthDetail }}</p>
+      <dl class="pipeline-health-times">
+        <div>
+          <dt>Last successful data update</dt>
+          <dd>{{ lastSuccessfulUpdate }}</dd>
+        </div>
+        <div>
+          <dt>Latest pipeline attempt</dt>
+          <dd>{{ latestPipelineAttempt }}</dd>
+        </div>
+      </dl>
+    </section>
 
     <div class="url-manager">
       <div class="field-label">
@@ -275,6 +345,78 @@ function saveApiUrl() {
   height: 12px;
   background: var(--sys-color-outline-variant);
   opacity: 0.3;
+}
+
+.pipeline-health {
+  background: var(--sys-color-surface-container-high);
+  border-radius: var(--sys-shape-corner-small);
+  margin-bottom: var(--sys-space-12);
+  padding: var(--sys-space-12);
+}
+.pipeline-health-heading {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  gap: var(--sys-space-12);
+}
+.pipeline-health-heading > div {
+  display: grid;
+  gap: var(--sys-space-4);
+}
+.pipeline-health strong {
+  color: var(--sys-color-primary);
+  font-size: var(--sys-typescale-body-sm);
+}
+.pipeline-health strong.pipeline-completed {
+  color: var(--sys-color-success);
+}
+.pipeline-health strong.pipeline-running,
+.pipeline-health strong.pipeline-failed,
+.pipeline-health strong.pipeline-unavailable {
+  color: var(--sys-color-warning);
+}
+.pipeline-health p {
+  color: var(--sys-color-on-surface-variant);
+  font-size: var(--sys-typescale-body-sm);
+  line-height: 1.4;
+  margin: var(--sys-space-8) 0;
+}
+.refresh-health-btn {
+  background: none;
+  border: 0;
+  color: var(--sys-color-primary);
+  cursor: pointer;
+  font-size: var(--sys-typescale-label-sm);
+  font-weight: 800;
+  min-height: var(--sys-space-48);
+  min-width: var(--sys-space-48);
+  padding: 0 var(--sys-space-8);
+}
+.refresh-health-btn:disabled {
+  cursor: wait;
+  opacity: 0.55;
+}
+.pipeline-health-times {
+  display: grid;
+  gap: var(--sys-space-6);
+  margin: 0;
+}
+.pipeline-health-times div {
+  align-items: baseline;
+  display: flex;
+  justify-content: space-between;
+  gap: var(--sys-space-12);
+}
+.pipeline-health-times dt {
+  color: var(--sys-color-on-surface-variant);
+  font-size: var(--sys-typescale-label-sm);
+}
+.pipeline-health-times dd {
+  color: var(--sys-color-on-surface);
+  font-family: var(--sys-font-family-mono);
+  font-size: var(--sys-typescale-label-sm);
+  font-weight: 700;
+  margin: 0;
 }
 
 /* The label recipe now comes from the global .field-label primitive; only this

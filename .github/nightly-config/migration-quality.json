@@ -50,7 +50,8 @@
     "Backend/supabase/migrations/20260913210000_scope_roster_win_rate_to_members.sql": "9be2d625f0789866992e92b1fda418f067568d9bd2b8f3d4a1c8650203d2f151",
     "Backend/supabase/migrations/20260913223000_scope_scoring_view_to_active_members.sql": "88c552a5ef411f0ef3bae26ef080667361f352b131862b1f4516f9f050eeaa85",
     "Backend/supabase/migrations/20260914003000_deterministic_scoring_history_order.sql": "d30374ad73a23c4e8bb9062cf4df71e7a38029735dc4b8dbbf22f6d7eafb3a4b",
-    "Backend/supabase/migrations/20260915190000_harden_ingestion_delivery_lease.sql": "121a8c89c1f9f4adb537fc2c4dabb5f36cc2624f33af301ef61eed447fbf2705"
+    "Backend/supabase/migrations/20260915190000_harden_ingestion_delivery_lease.sql": "121a8c89c1f9f4adb537fc2c4dabb5f36cc2624f33af301ef61eed447fbf2705",
+    "Backend/supabase/migrations/20260915190011_backend_health_and_safe_maintenance.sql": "f4a7bd61be69063132939204e28cf92f0098bcbc13fe4cd227979f53d345f19b"
   },
   "exemptions": []
 }
