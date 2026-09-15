@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-14
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-15] PR #1833 [Stage 12]: APK UX audit PASS with 0 violations across 77 files examined. Checked all 10 UX categories (selects, tactile, safe-area, touch targets, selection, links, overscroll, keyboard, theme, media).
+**Domain:** ux | **Commit:** 91cfe1d4b | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1833)
+**Files:** .github/nightly-logs/12-apk-ux-coverage.log, .github/nightly-logs/12-apk-ux-pr-body.md
+**Why:** No UX violations or actionable candidates were identified during the global sweep and candidate review.
+**Change:** APK UX audit PASS with 0 violations across 77 files examined. Checked all 10 UX categories (selects, tactile, safe-area, touch targets, selection, links, overscroll, keyboard, theme, media).
+**Result:** Verified PASS status in apk-ux-audit.json (0 violations, 0 candidates, 77 files examined) and passed all 204 Vitest test suites (1975 tests) plus apk-release-invariants.
+**Nudges:** 0
+
+
 ### [2026-09-15] PR #1832 [Stage 11]: Audited native WebView settings, Service Worker routes, Vite manualChunks, and asset footprint; zero source changes required.
 **Domain:** apk | **Commit:** d8e8fa20f | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1832)
 **Files:** .github/nightly-logs/11-apk-optimization-coverage.log, .github/nightly-logs/11-apk-optimization-pr-body.md
