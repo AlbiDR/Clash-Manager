@@ -1,23 +1,23 @@
 ### Nightly Stage 13: Self-Healing Protocol - Pipeline Resilience Auditor
 
-**Status:** CHANGED
+**Status:** CLEAN
 
-In plain terms: no change was made to the project. This run ended as CHANGED and the only file here is the log recording that.
+In plain terms: nothing needed fixing. This run checked the self healing protocol area and found it already correct, so the only file here is the log recording that the check happened.
 
-**What changed:** Mapped September 14 stage executions, recorded Stage 1 session escalation (JULES_SESSION_FAILED) and Stage 5 watchdog recovery nudge (intervention rate 1/11 = 9.1%), and updated Section 3 metrics
+**What was checked:** Checked ledger failure classes JULES_SESSION_FAILED, UNFINALIZED_SENTINEL, OPEN_PR, MERGE_FAILED; coverage logs for 2026-09-15 across Stages 1-12 found 100% operational success (0/12 interventions); consecutive-clean: 0
 
-**Why:** Document pipeline stability failure and watchdog recovery intervention on 2026-09-14
+**Why:** All preceding 12 stages merged cleanly with zero stability failures or coherence bugs
 
-**Result:** VERIFIED (git diff --check clean)
+**Result:** nightly-run-ledger.json confirmed 12/12 stages MERGED with 0 recovery nudges
 
-**Files changed:** .github/nightly-logs/13-self-healing-protocol-coverage.log, .github/nightly-logs/13-self-healing-protocol.md
+**Files changed:** .github/nightly-logs/13-self-healing-protocol-coverage.log
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: pipeline
-  Why: Document pipeline stability failure and watchdog recovery intervention on 2026-09-14
-  Change: Mapped September 14 stage executions, recorded Stage 1 session escalation (JULES_SESSION_FAILED) and Stage 5 watchdog recovery nudge (intervention rate 1/11 = 9.1%), and updated Section 3 metrics
-  Result: VERIFIED (git diff --check clean)
-  Files: .github/nightly-logs/13-self-healing-protocol-coverage.log, .github/nightly-logs/13-self-healing-protocol.md
-  Nudges: 0
+  Why: All preceding 12 stages merged cleanly with zero stability failures or coherence bugs
+  Change: Checked ledger failure classes JULES_SESSION_FAILED, UNFINALIZED_SENTINEL, OPEN_PR, MERGE_FAILED; coverage logs for 2026-09-15 across Stages 1-12 found 100% operational success (0/12 interventions); consecutive-clean: 0
+  Result: nightly-run-ledger.json confirmed 12/12 stages MERGED with 0 recovery nudges
+  Files: .github/nightly-logs/13-self-healing-protocol-coverage.log
+  Nudges: 1
 -->
