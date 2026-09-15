@@ -73,6 +73,33 @@ describe("StatusPill", () => {
     expect(trigger.attributes("aria-expanded")).toBe("true");
     expect(wrapper.find(".status-details").exists()).toBe(true);
     expect(tapMock).toHaveBeenCalled();
+
+    await trigger.trigger("click");
+    expect(trigger.attributes("aria-expanded")).toBe("false");
+    expect(wrapper.find(".status-details").exists()).toBe(false);
+  });
+
+  it("keeps an error compact until its details are explicitly requested", async () => {
+    const wrapper = mount(StatusPill, {
+      props: {
+        type: "error",
+        text: "Sync failed",
+        remoteInfo: {
+          source: "SUPABASE",
+          dataAge: null,
+          diagnosis: "The connection timed out before the latest roster could be fetched.",
+        },
+      },
+    });
+
+    const trigger = wrapper.find(".status-trigger");
+    expect(wrapper.find(".status-details").exists()).toBe(false);
+    expect(trigger.attributes("aria-expanded")).toBe("false");
+
+    await trigger.trigger("click");
+
+    expect(wrapper.find(".status-details").exists()).toBe(true);
+    expect(wrapper.find(".is-diagnosis dd").text()).toContain("timed out");
   });
 
   it("shows label automatically when loading even if nominal", () => {

@@ -398,10 +398,10 @@ const handleOpenDashboard = () => {
    on the right, aligned beneath the connection status. The open centre is then
    intentional whitespace between groups, not a control stretched into a void. */
 .header-controls {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
-  justify-content: space-between;
-  gap: var(--sys-space-12);
+  column-gap: var(--sys-space-12);
   min-width: 0;
 }
 
@@ -409,6 +409,9 @@ const handleOpenDashboard = () => {
   display: flex;
   align-items: center;
   gap: var(--sys-space-12);
+  grid-column: 1;
+  justify-self: start;
+  height: var(--sys-space-48);
   min-width: 0;
 }
 
@@ -421,6 +424,10 @@ const handleOpenDashboard = () => {
    its primary button alone, anchors the right-hand edge. */
 .selection-actions {
   display: flex;
+  grid-column: 3;
+  align-items: center;
+  justify-self: end;
+  height: var(--sys-space-48);
   flex: 0 0 auto;
   min-width: 0;
 }
@@ -561,13 +568,16 @@ const handleOpenDashboard = () => {
 
 @media (max-width: 520px) {
   .header-controls {
+    display: flex;
     align-items: stretch;
     flex-direction: column;
+    gap: var(--sys-space-12);
   }
 
   .refinement-controls {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
+    height: auto;
   }
 
   .search-bar.is-open,
@@ -583,6 +593,7 @@ const handleOpenDashboard = () => {
 
   .selection-actions {
     align-self: flex-start;
+    height: var(--sys-space-48);
   }
 }
 </style>

@@ -264,6 +264,7 @@ onUnmounted(() => document.removeEventListener("click", handleClickOutside));
 .detail-state,
 .detail-list dd {
   margin: 0;
+  min-width: 0;
   font-family: var(--sys-font-family-mono);
   font-size: var(--sys-typescale-meta);
   font-weight: 750;
@@ -276,8 +277,18 @@ onUnmounted(() => document.removeEventListener("click", handleClickOutside));
   margin: var(--sys-space-10) 0 0;
 }
 
-.detail-list .is-diagnosis { align-items: start; }
-.detail-list .is-diagnosis dd { color: var(--sys-color-warning); }
+.detail-list .is-diagnosis {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+}
+
+.detail-list .is-diagnosis dd {
+  color: var(--sys-color-warning);
+  line-height: var(--sys-leading-normal);
+  overflow-wrap: anywhere;
+  text-align: left;
+}
 .is-error .detail-list .is-diagnosis dd { color: var(--sys-color-error); }
 
 .status-popover-enter-active,

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
-import { ref, watch, computed, toValue, type MaybeRefOrGetter } from "vue";
+import { ref, computed, toValue, type MaybeRefOrGetter } from "vue";
 
 export interface StatusPillProps {
   type: "success" | "warning" | "error" | "loading";
@@ -37,14 +37,11 @@ export interface StatusPillProps {
 export function useStatusPill(props: MaybeRefOrGetter<StatusPillProps>) {
   const isExpanded = ref(false);
 
-  // [DECISION LOG] AUTO-EXPANSION: Automatically expand on critical states
-  // (loading/error) to ensure user awareness of background sync or failures.
-  // This satisfies the "Zero-Silence" interaction mandate in the UI Bible.
-  watch(() => toValue(props).type, (newType) => {
-    if (newType === "loading" || newType === "error") {
-      isExpanded.value = true;
-    }
-  }, { immediate: true });
+  // A state change must not take over the console. Error and loading labels are
+  // already visible in the compact control; diagnostic text is a disclosure the
+  // reader opens deliberately. Auto-opening it obscured the very controls that
+  // let someone respond to a failure and made the panel appear impossible to
+  // dismiss when an error state was being refreshed.
 
   const handleToggle = () => {
     const statusPillPropsSnapshot = toValue(props);

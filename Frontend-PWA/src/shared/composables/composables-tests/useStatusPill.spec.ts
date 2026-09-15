@@ -26,18 +26,18 @@ describe('useStatusPill', () => {
     expect(isExpanded.value).toBe(false);
   });
 
-  it('auto-expands when type changes to loading', async () => {
+  it('does not auto-expand when type changes to loading', async () => {
     const { isExpanded } = useStatusPill(props);
     props.type = 'loading';
     await nextTick();
-    expect(isExpanded.value).toBe(true);
+    expect(isExpanded.value).toBe(false);
   });
 
-  it('auto-expands when type changes to error', async () => {
+  it('does not auto-expand when type changes to error', async () => {
     const { isExpanded } = useStatusPill(props);
     props.type = 'error';
     await nextTick();
-    expect(isExpanded.value).toBe(true);
+    expect(isExpanded.value).toBe(false);
   });
 
   it('does not auto-expand when type changes to success', async () => {
@@ -66,10 +66,9 @@ describe('useStatusPill', () => {
   it('prevents toggle when type is loading', () => {
     props.type = 'loading';
     const { isExpanded, handleToggle } = useStatusPill(props);
-    // Already expanded due to watch
-    expect(isExpanded.value).toBe(true);
+    expect(isExpanded.value).toBe(false);
     handleToggle();
-    expect(isExpanded.value).toBe(true); // Should stay true
+    expect(isExpanded.value).toBe(false);
   });
 
   it('identifies DB status correctly', () => {
