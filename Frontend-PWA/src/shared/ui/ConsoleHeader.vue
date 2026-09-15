@@ -663,8 +663,32 @@ const handleOpenDashboard = () => {
   .sort-box :deep(.options-dropdown) { width: 100%; }
 
   .selection-actions {
-    align-self: flex-start;
+    align-self: stretch;
+    width: 100%;
     height: var(--sys-space-48);
   }
+
+  /* On a phone the secondary row is a two-action decision: choose a score
+     band, then apply it. Both controls share the full available width rather
+     than leaving the primary action marooned on the left. */
+  .selection-actions :deep(.selection-bar) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    width: 100%;
+    gap: var(--sys-space-12);
+  }
+
+  .selection-actions :deep(.sel-group) { min-width: 0; }
+
+  .selection-actions :deep(.sel-group.strategy) { width: 100%; }
+
+  .selection-actions :deep(.score-pill-group) {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .selection-actions :deep(.sel-group.management) { width: 100%; }
+
+  .selection-actions :deep(.morph-btn) { width: 100%; }
 }
 </style>
