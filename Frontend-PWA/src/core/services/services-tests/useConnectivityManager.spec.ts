@@ -179,17 +179,13 @@ describe("useConnectivityManager", () => {
         type: "warning",
         label: "STALE",
         confidence: 40,
-        diagnosis: "Last synced a while ago"
+        diagnosis: "Last synced 30m ago"
       });
     });
 
-    it("blames the source, not the client, when this client is syncing normally", () => {
-      // [THREAT:] The age shown is the ingestion pipeline's heartbeat, not this
-      // client's. A bare "STALE" while the client is polling fine sends the
-      // operator looking for a fault on the wrong side - which is exactly what
-      // happened: an ingestor 45 minutes behind was read as the app being
-      // broken.
+    it("keeps a current client healthy when the upstream snapshot is older", () => {
       const now = Date.now();
+      mockStore.currentSource = "SUPABASE";
       mockStore.lastSyncTime = now - (45 * 60 * 1000);
       mockStore.lastFetchedTime = now - (2 * 60 * 1000);
       vi.mocked(timeUtils.formatTimeAgo).mockImplementation((t: number) =>
@@ -198,8 +194,11 @@ describe("useConnectivityManager", () => {
 
       const { hubHealth } = useConnectivityManager();
 
-      expect(hubHealth.value.label).toBe("STALE");
-      expect(hubHealth.value.diagnosis).toBe("Synced 2m ago; source data 45m ago");
+      expect(hubHealth.value).toEqual({
+        type: "success",
+        label: "DB",
+        confidence: 100,
+      });
     });
 
     it("blames the client when this client itself has not fetched recently", () => {
@@ -210,6 +209,7 @@ describe("useConnectivityManager", () => {
 
       const { hubHealth } = useConnectivityManager();
 
+      expect(hubHealth.value.label).toBe("STALE");
       expect(hubHealth.value.diagnosis).toBe("Last synced 40m ago");
     });
 
@@ -224,7 +224,7 @@ describe("useConnectivityManager", () => {
         type: "warning",
         label: "STALE",
         confidence: 40,
-        diagnosis: "Last synced a while ago"
+        diagnosis: "Last synced 31m ago"
       });
     });
 

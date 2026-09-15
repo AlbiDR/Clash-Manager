@@ -119,7 +119,7 @@ onUnmounted(() => document.removeEventListener("click", handleClickOutside));
             <dd>{{ displaySource }}</dd>
           </div>
           <div v-if="props.remoteInfo?.dataAge">
-            <dt>Data age</dt>
+            <dt>Source age</dt>
             <dd>{{ props.remoteInfo.dataAge }}</dd>
           </div>
           <div

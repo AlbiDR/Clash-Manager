@@ -249,7 +249,7 @@ const getSelectedLabel = () => {
             @click="selectOption(option)"
           >
             <span class="option-copy">
-              <span>{{ option.label }}</span>
+              <span class="option-label">{{ option.label }}</span>
               <span
                 v-if="option.description"
                 class="option-description"
@@ -355,10 +355,11 @@ const getSelectedLabel = () => {
 }
 
 .option-item {
-  padding: var(--sys-space-14) var(--sys-space-12);
+  display: flex;
+  align-items: center;
+  min-height: var(--sys-space-48);
+  padding: var(--sys-space-10) var(--sys-space-12);
   border-radius: var(--sys-shape-corner-small);
-  font-size: 13px;
-  font-weight: 600;
   color: var(--sys-color-on-surface);
   cursor: pointer;
   transition: all var(--sys-motion-duration-200) var(--sys-motion-spring);
@@ -366,7 +367,14 @@ const getSelectedLabel = () => {
 
 .option-copy {
   display: grid;
-  gap: var(--sys-space-2);
+  gap: var(--sys-space-4);
+  min-width: 0;
+}
+
+.option-label {
+  font-size: 13px;
+  font-weight: 700;
+  line-height: var(--sys-leading-tight);
 }
 
 .option-description {
@@ -375,6 +383,7 @@ const getSelectedLabel = () => {
   font-weight: 500;
   line-height: var(--sys-leading-tight);
   text-transform: none;
+  text-wrap: pretty;
 }
 
 .option-item.active .option-description {

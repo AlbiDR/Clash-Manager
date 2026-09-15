@@ -102,6 +102,21 @@ describe("BaseSelect.vue", () => {
     expect(milestoneOption.text()).toBe("Milestone Option");
   });
 
+  it("presents an option's explanation as secondary copy", async () => {
+    const wrapper = createWrapper({
+      options: [{
+        label: "Performance",
+        value: 1,
+        description: "Hybrid ranking of reliability and contribution.",
+      }],
+    });
+
+    await wrapper.find(".select-trigger").trigger("click");
+
+    expect(wrapper.find(".option-label").text()).toBe("Performance");
+    expect(wrapper.find(".option-description").text()).toBe("Hybrid ranking of reliability and contribution.");
+  });
+
   it("handles empty options gracefully", () => {
     const wrapper = createWrapper({ options: [], modelValue: null });
     expect(wrapper.find(".trigger-label").text()).toBe("Select...");

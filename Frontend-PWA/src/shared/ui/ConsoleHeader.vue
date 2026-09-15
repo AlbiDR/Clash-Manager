@@ -611,6 +611,14 @@ const handleOpenDashboard = () => {
   box-shadow: none;
 }
 
+/* The field stays compact; the explanatory menu does not. Giving option
+   descriptions a readable measure keeps them instructional rather than a
+   stack of cramped fragments beneath each sort label. */
+.sort-box :deep(.options-dropdown) {
+  width: min(320px, calc(100vw - var(--sys-space-32)));
+  right: auto;
+}
+
 /* The leaving sort stays over the expanding search field for the first beat,
    then lifts and fades away. Its absolute position means this is visual only:
    neither the toolbar nor the primary selection action reflows. */
@@ -651,6 +659,8 @@ const handleOpenDashboard = () => {
 
   .filter-slot,
   .search-bar { min-width: 0; }
+
+  .sort-box :deep(.options-dropdown) { width: 100%; }
 
   .selection-actions {
     align-self: flex-start;
