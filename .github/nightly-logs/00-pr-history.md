@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-14
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-15] PR #1834 [Stage 13]: Checked ledger failure classes JULES_SESSION_FAILED, UNFINALIZED_SENTINEL, OPEN_PR, MERGE_FAILED; coverage logs for 2026-09-15 across Stages 1-12 found 100% operational success (0/12 interventions); consecutive-clean: 0
+**Domain:** pipeline | **Commit:** 4f28099c5 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1834)
+**Files:** .github/nightly-logs/13-self-healing-protocol-coverage.log, .github/nightly-logs/13-self-healing-protocol-pr-body.md
+**Why:** All preceding 12 stages merged cleanly with zero stability failures or coherence bugs
+**Change:** Checked ledger failure classes JULES_SESSION_FAILED, UNFINALIZED_SENTINEL, OPEN_PR, MERGE_FAILED; coverage logs for 2026-09-15 across Stages 1-12 found 100% operational success (0/12 interventions); consecutive-clean: 0
+**Result:** nightly-run-ledger.json confirmed 12/12 stages MERGED with 0 recovery nudges
+**Nudges:** 1
+
+
 ### [2026-09-15] PR #1833 [Stage 12]: APK UX audit PASS with 0 violations across 77 files examined. Checked all 10 UX categories (selects, tactile, safe-area, touch targets, selection, links, overscroll, keyboard, theme, media).
 **Domain:** ux | **Commit:** 91cfe1d4b | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1833)
 **Files:** .github/nightly-logs/12-apk-ux-coverage.log, .github/nightly-logs/12-apk-ux-pr-body.md
