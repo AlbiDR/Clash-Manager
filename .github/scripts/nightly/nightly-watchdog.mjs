@@ -8,6 +8,8 @@ import { FAILURE_CLASSES, ensureRunEntries, loadLedger, prNumberFromTag, saveLed
 import { createRedactor, redactDeep } from "./nightly-redact.mjs";
 import { buildFallbackPlan, extractSessionPatch, publishFallback } from "./nightly-publish-fallback.mjs";
 import { HEALTH, evaluatePipelineHealth, renderHealthReport } from "./nightly-health.mjs";
+import { getInterventionAttemptCount } from "./nightly-intervention.mjs";
+import { NIGHTLY_EVENT_SOURCES, getCycleId, getEvidenceDate } from "./nightly-events.mjs";
 // The composer the stage itself uses, and the parser the recap itself uses.
 // Imported rather than reimplemented: a second copy of either would be a second
 // definition of the pull request body format, and the whole reason a published
@@ -39,6 +41,7 @@ function errorLine(message) {
 // so it must both appear in the escalation issue and fail the workflow run.
 const PASS_STATES = new Set(["MERGED", "RECOVERABLE"]);
 const JULES_API_BASE = "https://jules.googleapis.com/v1alpha";
+export const JULES_LIST_RETRY_DELAYS_MS = [250, 1_000];
 const IN_FLIGHT_JULES_STATES = new Set([
   "QUEUED",
   "PLANNING",
@@ -169,8 +172,7 @@ function utcDayOffset(offsetDays = 0, now = new Date()) {
 }
 
 export function expectedEvidenceDate(stageNumber, date) {
-  if (stageNumber === 1) return utcDayOffset(-1, new Date(`${date}T00:00:00.000Z`));
-  return date;
+  return getEvidenceDate(stageNumber, date);
 }
 
 function runGit(args) {
@@ -242,7 +244,21 @@ async function fetchPullRequestFiles(prNumber, config = CONFIG) {
 // does. A single unpaginated GET here would leave any session past the first
 // page invisible to matchJulesSession, silently downgrading a recoverable
 // stuck session to the unrecoverable NO_PUBLISHED_OUTPUT class.
-export async function fetchJulesSessions(config = CONFIG, fetchImpl = fetch) {
+function isRetryableJulesStatus(status) {
+  return status === 429 || status >= 500;
+}
+
+function retryDelayFromResponse(response, fallback) {
+  const header = response.headers?.get?.("retry-after");
+  const seconds = Number(header);
+  return Number.isFinite(seconds) && seconds >= 0 ? seconds * 1_000 : fallback;
+}
+
+export async function fetchJulesSessions(
+  config = CONFIG,
+  fetchImpl = fetch,
+  { sleepImpl = ms => new Promise(resolve => setTimeout(resolve, ms)), retryDelaysMs = JULES_LIST_RETRY_DELAYS_MS } = {},
+) {
   if (!config.julesApiKey) {
     errorLine("JULES_API_KEY is not configured; session evidence is unavailable for this run.");
     return { sessions: [], available: false, error: "JULES_API_KEY is not configured." };
@@ -250,15 +266,34 @@ export async function fetchJulesSessions(config = CONFIG, fetchImpl = fetch) {
   try {
     const sessions = [];
     let pageToken = "";
+    const seenPageTokens = new Set();
     do {
+      if (seenPageTokens.has(pageToken)) {
+        throw new Error(`Jules API repeated page token ${pageToken || "<empty>"}.`);
+      }
+      seenPageTokens.add(pageToken);
       const url = new URL(`${JULES_API_BASE}/sessions`);
       url.searchParams.set("pageSize", "100");
       if (pageToken) url.searchParams.set("pageToken", pageToken);
-      const res = await fetchImpl(url.toString(), {
-        headers: { "X-Goog-Api-Key": config.julesApiKey },
-      });
+      let res;
+      let attempt = 0;
+      while (true) {
+        try {
+          res = await fetchImpl(url.toString(), {
+            headers: { "X-Goog-Api-Key": config.julesApiKey },
+          });
+        } catch (error) {
+          if (attempt >= retryDelaysMs.length) throw error;
+          await sleepImpl(retryDelaysMs[attempt]);
+          attempt += 1;
+          continue;
+        }
+        if (res.ok || !isRetryableJulesStatus(res.status) || attempt >= retryDelaysMs.length) break;
+        await sleepImpl(retryDelayFromResponse(res, retryDelaysMs[attempt]));
+        attempt += 1;
+      }
       if (!res.ok) {
-        const error = `Jules API ${res.status} ${res.statusText}`;
+        const error = `Jules API ${res.status} ${res.statusText}${attempt > 0 ? ` after ${attempt + 1} attempts` : ""}`;
         errorLine(`${error}; session evidence is unavailable for this run.`);
         return { sessions: [], available: false, error };
       }
@@ -310,7 +345,7 @@ export function hasDanglingSentinel(content, stageNumber, date) {
   return String(content || "").includes(sentinel);
 }
 
-export function matchJulesSession(sessions, stage, date) {
+export function matchJulesSession(sessions, stage, date, preferredSessionName = null) {
   const evidenceDate = expectedEvidenceDate(stage.number, date);
   const compactHeader = `S${String(stage.number).padStart(2, "0")}:`;
   const legacyHeader = `[Stage ${stage.number}]`;
@@ -322,9 +357,14 @@ export function matchJulesSession(sessions, stage, date) {
         session.prompt.includes(legacyHeader) ||
         session.prompt.includes(legacyPaddedHeader);
     })
-    .filter(session => String(session.createTime || "").slice(0, 10) === evidenceDate)
     .sort((a, b) => String(b.createTime || "").localeCompare(String(a.createTime || "")));
-  return matches[0] || null;
+  if (preferredSessionName) {
+    const preferredPath = julesSessionPath({ name: preferredSessionName });
+    const exact = matches.find(session => julesSessionPath(session) === preferredPath);
+    if (exact) return exact;
+  }
+  const dated = matches.filter(session => String(session.createTime || "").slice(0, 10) === evidenceDate);
+  return dated[0] || null;
 }
 
 // Pure half, so the alarm threshold is testable without a git checkout.
@@ -413,7 +453,7 @@ export const REPAIRABLE_BODY_VERDICTS = new Set(["AD_LIBBED", "EMPTY", "MARKER_L
  * Pure so the decision is testable without a network: the caller does the
  * fetching and the PATCH.
  */
-export function buildBodyRepair({ stage, verdict, declared, files, sidecar }) {
+export function buildBodyRepair({ stage, verdict, declared, files, sidecar, cycleId }) {
   if (!stage) return { ok: false, reason: "no stage supplied" };
   if (!REPAIRABLE_BODY_VERDICTS.has(verdict)) {
     return { ok: false, reason: `Stage ${stage.number}: body verdict ${verdict || "unknown"} is not repairable` };
@@ -457,7 +497,7 @@ export function buildBodyRepair({ stage, verdict, declared, files, sidecar }) {
     // existed in the lost message. That is precisely the gap the sidecar above
     // closes, and why a reconstruction is the second-best outcome rather than
     // an equivalent one.
-    body: renderPrBody(stage, declared.status, declared.summary, paths),
+    body: renderPrBody(stage, declared.status, declared.summary, paths, { cycleId }),
   };
 }
 
@@ -786,7 +826,7 @@ export function sessionTelemetry(session) {
  *
  * Returns 0 when the run has produced nothing at all.
  */
-export function runFrontier({ registry, date, observed }) {
+export function runFrontier({ registry, date, observed, previousLedger = null }) {
   const prs = (observed.prs || []).map(normalizePr);
   let frontier = 0;
   for (const stage of registry.stages) {
@@ -804,11 +844,12 @@ export function runFrontier({ registry, date, observed }) {
     // was due, on the first night this fix was deployed. The recap read
     // correctly throughout, because its own frontier never consulted pull
     // requests, which is exactly why nobody saw it.
+    const preferredSessionName = previousLedger?.runs?.[date]?.[String(stage.number)]?.evidence?.dispatchSessionName || null;
     const reached = [...(observed.tags || [])].some(tag => tag.startsWith(`nightly/${evidenceDate}/stage-${stage.number}/pr-`))
       || observed.coverageStages.has(stage.number)
       || prs.some(pr => prDateMatchesStage(pr, stage.number, date)
         && classifyNightlyPr(pr, registry, CONFIG).stage === stage.number)
-      || Boolean(matchJulesSession(observed.julesSessions, stage, date));
+      || Boolean(matchJulesSession(observed.julesSessions, stage, date, preferredSessionName));
     if (reached) frontier = Math.max(frontier, stage.number);
   }
   return frontier;
@@ -817,7 +858,7 @@ export function runFrontier({ registry, date, observed }) {
 export function evaluateNightlyRun({ registry, date, observed, previousLedger, final = false }) {
   const entries = [];
   const julesAvailable = observed.julesAvailable ?? true;
-  const frontier = runFrontier({ registry, date, observed });
+  const frontier = runFrontier({ registry, date, observed, previousLedger });
 
   for (const stage of registry.stages) {
     const evidenceDate = expectedEvidenceDate(stage.number, date);
@@ -832,7 +873,12 @@ export function evaluateNightlyRun({ registry, date, observed, previousLedger, f
           tag: matchingTags[0] || null,
           coverageLog: stage.coverageLog,
           // Recorded on success too; see sessionTelemetry for why.
-          session: sessionTelemetry(matchJulesSession(observed.julesSessions, stage, date)),
+          session: sessionTelemetry(matchJulesSession(
+            observed.julesSessions,
+            stage,
+            date,
+            previousLedger?.runs?.[date]?.[String(stage.number)]?.evidence?.dispatchSessionName || null,
+          )),
           // The stage's own clock, not Jules'. See parseRunWindow.
           run: observed.runWindows?.get(stage.number) || null,
           // Observation only, never a failure. See classifyPrBody.
@@ -884,7 +930,12 @@ export function evaluateNightlyRun({ registry, date, observed, previousLedger, f
       continue;
     }
 
-    const julesMatch = matchJulesSession(observed.julesSessions, stage, date);
+    const julesMatch = matchJulesSession(
+      observed.julesSessions,
+      stage,
+      date,
+      previousLedger?.runs?.[date]?.[String(stage.number)]?.evidence?.dispatchSessionName || null,
+    );
     if (julesMatch && IN_FLIGHT_JULES_STATES.has(julesMatch.state)) {
       entries.push({
         stage: stage.number,
@@ -1055,7 +1106,7 @@ export function selectFallbackCandidates(entries, ledger, date) {
     // Publishing a second time would open a duplicate pull request for work
     // that already landed once.
     if (recorded?.evidence?.fallbackPublish) return false;
-    return (recorded?.attempts ?? 0) >= MAX_RECOVERY_ATTEMPTS;
+    return getInterventionAttemptCount(recorded) >= MAX_RECOVERY_ATTEMPTS;
   });
 }
 
@@ -1074,7 +1125,7 @@ export function selectRecoveryCandidates(entries, ledger, date) {
     if (!RECOVERABLE_FAILURE_CLASSES.has(entry.failureClass)) return false;
     if (!entry.evidence?.julesSession) return false;
     const recorded = stageEntry(ledger, date, entry.stage);
-    return (recorded?.attempts ?? 0) < MAX_RECOVERY_ATTEMPTS;
+    return getInterventionAttemptCount(recorded) < MAX_RECOVERY_ATTEMPTS;
   });
 }
 
@@ -1113,7 +1164,7 @@ export async function recoverStuckStages({
     // two delivery failures permanently disable recovery for the date even
     // though no attempt was ever made against the stuck session itself.
     upsertStageEntry(ledger, registry, date, entry.stage, {
-      attempts: (recorded?.attempts ?? 0) + (result.ok ? 1 : 0),
+      interventionAttempts: getInterventionAttemptCount(recorded) + (result.ok ? 1 : 0),
       evidence: {
         recovery: {
           nudgedAt: new Date().toISOString(),
@@ -1122,7 +1173,7 @@ export async function recoverStuckStages({
           error: result.error,
         },
       },
-    });
+    }, { source: NIGHTLY_EVENT_SOURCES.WATCHDOG_RECOVERY });
 
     if (result.ok) {
       logLine(`Stage ${entry.stage}: nudged stuck Jules session ${session.name || session.id}.`);
@@ -1168,7 +1219,7 @@ export async function recoverStuckStages({
         state: "RECOVERABLE",
         failureClass: FAILURE_CLASSES.RECOVERED_AFTER_NUDGE,
         evidence: { prNumber: match.pr.number, prUrl: match.pr.html_url },
-      });
+      }, { source: NIGHTLY_EVENT_SOURCES.WATCHDOG_RECOVERY });
       recovered.push({ stage: stageNumber, prNumber: match.pr.number });
       pending.delete(stageNumber);
     }
@@ -1236,6 +1287,7 @@ export async function repairPublishedBodies({
       declared: observed.declaredOutcomes?.get(entry.stage) || null,
       sidecar: observed.prBodySidecars?.get(entry.stage) || null,
       files: await safePullRequestFiles(number, config, filesImpl),
+      cycleId: getCycleId(date),
     });
     if (!plan.ok) {
       skipped.push({ stage: entry.stage, pr: number, reason: plan.reason });
@@ -1248,7 +1300,7 @@ export async function repairPublishedBodies({
       // and so the repair itself is auditable rather than invisible.
       upsertStageEntry(ledger, registry, date, entry.stage, {
         evidence: { body: { pr: number, verdict: "OK", ok: true, repairedFrom: verdict } },
-      });
+      }, { source: NIGHTLY_EVENT_SOURCES.WATCHDOG_BODY_REPAIR });
       repaired.push({ stage: entry.stage, pr: number, from: verdict });
       logLine(`Stage ${entry.stage}: rebuilt PR #${number} description (was ${verdict}).`);
     } catch (error) {
@@ -1303,7 +1355,7 @@ async function safePullRequestFiles(number, config = CONFIG, filesImpl = fetchPu
  * A stage whose session holds no patch is not evidence in either direction and
  * is reported as unrehearsable rather than counted as a pass.
  */
-export function rehearseFallbackPublisher({ registry, date, observed }) {
+export function rehearseFallbackPublisher({ registry, date, observed, ledger = null }) {
   const results = [];
   // Counted separately, because "nothing to rehearse" and "everything that
   // should have been rehearsable was not" are opposite facts that the original
@@ -1334,7 +1386,12 @@ export function rehearseFallbackPublisher({ registry, date, observed }) {
   // no mention of the eighth, which was the only stage that actually lost work.
   const unrehearsable = [];
   for (const stage of registry.stages) {
-    const session = matchJulesSession(observed?.julesSessions, stage, date);
+    const session = matchJulesSession(
+      observed?.julesSessions,
+      stage,
+      date,
+      ledger?.runs?.[date]?.[String(stage.number)]?.evidence?.dispatchSessionName || null,
+    );
     if (!session) continue;
     const finished = String(session.state || "").toUpperCase() === "COMPLETED";
     if (finished) finishedSessions += 1;
@@ -1449,7 +1506,12 @@ export async function publishStrandedWork({
     const stage = registry.stages.find(item => item.number === entry.stage);
     // Re-matched from the full session list: the ledger only records a session's
     // id, name and state, never the change set, so evidence alone cannot publish.
-    const session = matchJulesSession(julesSessions, stage, date);
+    const session = matchJulesSession(
+      julesSessions,
+      stage,
+      date,
+      ledger?.runs?.[date]?.[String(entry.stage)]?.evidence?.dispatchSessionName || null,
+    );
     const plan = buildFallbackPlan({ stage, session, date: expectedEvidenceDate(entry.stage, date) });
 
     if (!plan.ok) {
@@ -1470,7 +1532,7 @@ export async function publishStrandedWork({
             headRef: result.branch,
             fallbackPublish: { at: new Date().toISOString(), sessionName: plan.sessionName, status: plan.status },
           },
-        });
+        }, { source: NIGHTLY_EVENT_SOURCES.WATCHDOG_FALLBACK });
         published.push({ stage: entry.stage, prNumber: result.prNumber });
       }
     } catch (error) {
@@ -1581,7 +1643,7 @@ export function recordObserverFailure({ ledger, registry, date, error }) {
       state: "BLOCKED",
       failureClass: FAILURE_CLASSES.WATCHDOG_OBSERVER_FAILURE,
       evidence: redactDeep({ reason: error?.message ?? String(error) }, redact),
-    });
+    }, { source: NIGHTLY_EVENT_SOURCES.WATCHDOG_OBSERVER });
   }
   return Object.values(ledger.runs[date]);
 }
@@ -1694,7 +1756,7 @@ export async function runCli(argv = process.argv.slice(2), config = CONFIG) {
       // The ledger is committed to a public branch, so evidence is scrubbed
       // before it is ever written, not before it is printed.
       evidence: redactDeep(entry.evidence, redact),
-    });
+    }, { source: NIGHTLY_EVENT_SOURCES.WATCHDOG_OBSERVER });
   }
 
   if (!options.get("dry-run") && !options.get("no-recover")) {
@@ -1740,7 +1802,7 @@ export async function runCli(argv = process.argv.slice(2), config = CONFIG) {
   // Costs no writes and no network, so it runs on every pass. See
   // rehearseFallbackPublisher for why an unexercised rung two does not stay
   // working.
-  const rehearsal = observed ? rehearseFallbackPublisher({ registry, date, observed }) : null;
+  const rehearsal = observed ? rehearseFallbackPublisher({ registry, date, observed, ledger }) : null;
 
   // Evaluated after the recovery pass so tonight's rescues are already recorded
   // and counted. A stage rescued moments ago still needed rescuing.
@@ -1748,7 +1810,7 @@ export async function runCli(argv = process.argv.slice(2), config = CONFIG) {
   for (const stage of health.stages) {
     upsertStageEntry(ledger, registry, date, stage.stage, {
       evidence: { health: { verdict: stage.verdict, currentStreak: stage.currentStreak ?? 0, reason: stage.reason } },
-    });
+    }, { source: NIGHTLY_EVENT_SOURCES.WATCHDOG_HEALTH });
   }
 
   const promotionReport = renderPromotionSummary(promotion);

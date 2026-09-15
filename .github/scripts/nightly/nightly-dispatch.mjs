@@ -21,6 +21,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { validateRegistryData } from "./nightly-stage.mjs";
 import { loadLedger, saveLedger, upsertStageEntry } from "./nightly-ledger.mjs";
+import { NIGHTLY_EVENT_SOURCES } from "./nightly-events.mjs";
 import { stageTag } from "./nightly-prose.mjs";
 import { createRedactor } from "./nightly-redact.mjs";
 
@@ -130,15 +131,15 @@ async function main() {
   console.log(redact(`[${stageDisplayNumber(stageNumber)}] Session created: ${session.name}`));
 
   const ledger = loadLedger();
-  const priorAttempts = ledger.runs?.[date]?.[String(stageNumber)]?.attempts || 0;
+  const priorAttempts = ledger.runs?.[date]?.[String(stageNumber)]?.dispatchAttempts || 0;
   const entry = upsertStageEntry(ledger, registry, date, stageNumber, {
     state: "RUNNING",
     evidence: { dispatchSessionName: session.name },
-    attempts: priorAttempts + 1,
-  });
+    dispatchAttempts: priorAttempts + 1,
+  }, { source: NIGHTLY_EVENT_SOURCES.DISPATCHER });
   saveLedger(ledger);
 
-  console.log(`[${stageDisplayNumber(stageNumber)}] Ledger updated: state=${entry.state}, attempts=${entry.attempts}`);
+  console.log(`[${stageDisplayNumber(stageNumber)}] Ledger updated: state=${entry.state}, dispatchAttempts=${entry.dispatchAttempts}`);
 }
 
 const isMain = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);

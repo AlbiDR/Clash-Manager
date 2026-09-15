@@ -16,7 +16,40 @@
       "commitScope": "harden",
       "baselineTests": false,
       "dependencyCruiser": false,
-      "historyAging": true
+      "historyAging": true,
+      "contract": {
+        "schemaVersion": 1,
+        "purpose": "Find and close one concrete runtime, security, data-integrity, or architecture-isolation failure class.",
+        "detects": [
+          "Unauthenticated privileged Edge Function endpoints and unvalidated public payloads.",
+          "User-facing module state without durable persistence or an explicit ephemeral-state contract.",
+          "Missing Valibot validation at external data boundaries and unsafe any-typed inputs.",
+          "Dead critical-path code and cross-layer or cross-feature dependency violations."
+        ],
+        "doesNotDetect": [
+          "Test-suite completeness, documentation drift, dependency freshness, or version-declaration drift."
+        ],
+        "mayChange": [
+          "One stage-owned application or tracked migration source target required to prevent the selected failure class.",
+          "Stage 1 coverage evidence and the mechanically aged pull-request history."
+        ],
+        "mustNotChange": [
+          "Product features or behavior unrelated to a named failure mode.",
+          "Version declarations or dependency catalog ownership assigned to Stages 7 and 8.",
+          "Remote database state through Supabase tools or any untracked schema mutation.",
+          "Formatting, cosmetic naming, or style with no runtime or contractual effect."
+        ],
+        "selection": "Choose the highest-severity, lowest-ambiguity threat in the declared priority order, stop after one viable target, and widen only when clean calibration is due.",
+        "verification": [
+          "Run the nearest relevant test for the selected target.",
+          "Run a package build only when the change crosses a runtime or public-contract boundary."
+        ],
+        "evidence": [
+          "Priority families and changed-file or fallback surface inspected.",
+          "Threat statement, root cause, blast radius, and preventive-action rationale.",
+          "Exact verification command or source check and its concrete result."
+        ]
+      }
     },
     {
       "number": 2,
@@ -29,7 +62,36 @@
       "commitScope": "verify",
       "baselineTests": true,
       "dependencyCruiser": false,
-      "historyAging": false
+      "historyAging": false,
+      "contract": {
+        "schemaVersion": 1,
+        "purpose": "Increase executable proof of existing behavior without changing application behavior.",
+        "detects": [
+          "Application modules with no corresponding Vitest specification.",
+          "Existing specifications missing meaningful boundary, failure, cancellation, or state-transition cases.",
+          "Validation contracts whose valid and invalid branches are not both exercised."
+        ],
+        "doesNotDetect": [
+          "Production defects outside the selected test surface, database drift, dependency health, or documentation accuracy."
+        ],
+        "mayChange": [
+          "Only *.spec.ts test files and Stage 2 coverage evidence."
+        ],
+        "mustNotChange": [
+          "Application source, runtime behavior, configuration, migrations, or production dependencies.",
+          "Tests that merely restate behavior already pinned by the existing suite."
+        ],
+        "selection": "Choose one highest-value uncovered behavior, preferring a demonstrable regression escape over additional breadth on an already protected surface.",
+        "verification": [
+          "Run exactly the selected Frontend-PWA or Backend specification.",
+          "Demonstrate that new assertions fail under a relevant temporary mutation when the prompt requires efficacy proof."
+        ],
+        "evidence": [
+          "The source behavior and uncovered branch selected.",
+          "Test count and exact selected-spec outcome.",
+          "Mutation or equivalent efficacy proof when performed."
+        ]
+      }
     },
     {
       "number": 3,
@@ -42,7 +104,38 @@
       "commitScope": "database",
       "baselineTests": false,
       "dependencyCruiser": false,
-      "historyAging": false
+      "historyAging": false,
+      "contract": {
+        "schemaVersion": 1,
+        "purpose": "Keep the master database baseline equivalent to the chronological migration history without erasing that history.",
+        "detects": [
+          "Unfolded schema objects and structural drift between incremental migrations and the master baseline.",
+          "Baseline ordering, idempotency, RLS, search_path, and migration-format violations.",
+          "Semantic baseline drift when a database verification environment is available."
+        ],
+        "doesNotDetect": [
+          "Application runtime defects, frontend architecture, dependency health, or database behavior absent from migration history."
+        ],
+        "mayChange": [
+          "The authoritative master baseline declarations required to fold pending migrations.",
+          "Stage 3 coverage evidence."
+        ],
+        "mustNotChange": [
+          "Historical incremental migrations.",
+          "Schema behavior or indexes not already declared by migration history.",
+          "Remote database state."
+        ],
+        "selection": "Use the precomputed pending-migrations and fold-state evidence; fold the oldest unresolved schema transition first, or perform the bounded clean audit when none remain.",
+        "verification": [
+          "Run pnpm audit:migrations and the fold-state checker.",
+          "Run pnpm test:database-baseline only when database verification is available; otherwise record DB-UNAVAILABLE."
+        ],
+        "evidence": [
+          "Pending migration count and migration-quality and fold-state statuses.",
+          "Database verification availability.",
+          "RLS, search_path, formatting, and semantic verification outcomes that actually ran."
+        ]
+      }
     },
     {
       "number": 4,
@@ -55,7 +148,39 @@
       "commitScope": "optimize",
       "baselineTests": false,
       "dependencyCruiser": false,
-      "historyAging": false
+      "historyAging": false,
+      "contract": {
+        "schemaVersion": 1,
+        "purpose": "Remove one high-impact, low-risk source inefficiency or structural rot without changing product intent.",
+        "detects": [
+          "Dead or orphaned logic, redundant helpers, and obsolete styles.",
+          "Unreferenced SQL views identified through source-level usage checks.",
+          "Blatantly duplicated logic and misplaced stateful or stateless behavior.",
+          "Legacy JavaScript surfaces with an unambiguous TypeScript migration path."
+        ],
+        "doesNotDetect": [
+          "Test adequacy, documentation drift, dependency freshness, version consistency, or security ownership assigned to other stages."
+        ],
+        "mayChange": [
+          "One application, build, migration, or Edge Function target required for the selected optimization.",
+          "Stage 4 coverage evidence."
+        ],
+        "mustNotChange": [
+          "Remote database state through Supabase tools.",
+          "CSS framework strategy or broad visual styling.",
+          "Formatting-only or speculative abstractions."
+        ],
+        "selection": "Inspect structural rot, substrate hygiene, then duplicate logic; stop at the first viable high-impact target and widen only for clean calibration.",
+        "verification": [
+          "Run the nearest relevant specification for the changed file.",
+          "Run the full monorepo suite only when a shared contract changed."
+        ],
+        "evidence": [
+          "Candidate source, priority family, and audited surface.",
+          "Refactoring hypothesis and ADR boundary check.",
+          "Exact verification command and outcome."
+        ]
+      }
     },
     {
       "number": 5,
@@ -68,7 +193,36 @@
       "commitScope": "docs",
       "baselineTests": false,
       "dependencyCruiser": false,
-      "historyAging": false
+      "historyAging": false,
+      "contract": {
+        "schemaVersion": 1,
+        "purpose": "Keep README-level architecture and behavior descriptions synchronized with repository truth.",
+        "detects": [
+          "README behavior, command, signature, path, and architecture descriptions that drifted from implementation.",
+          "Major subsystem directories whose purpose or constraints are not documented."
+        ],
+        "doesNotDetect": [
+          "Inline documentation gaps, runtime defects, test adequacy, or whether documented behavior is itself correct."
+        ],
+        "mayChange": [
+          "Existing README.md files, or one necessary README.md for a major undocumented directory.",
+          "Stage 5 coverage evidence."
+        ],
+        "mustNotChange": [
+          "Application source, tests, configuration, inline comments, or TSDoc.",
+          "Narrative expansion that does not correct or add architectural truth."
+        ],
+        "selection": "Prioritize documentation debt and READMEs adjacent to recent code changes, then root and subsystem READMEs, stopping after one material truth gap.",
+        "verification": [
+          "Verify every changed path, symbol, and command directly against repository source.",
+          "Run git diff --check."
+        ],
+        "evidence": [
+          "Implementation source compared with the README.",
+          "Specific drift or missing contract corrected.",
+          "Source verification and git diff --check outcomes."
+        ]
+      }
     },
     {
       "number": 6,
@@ -81,7 +235,36 @@
       "commitScope": "docs",
       "baselineTests": false,
       "dependencyCruiser": false,
-      "historyAging": false
+      "historyAging": false,
+      "contract": {
+        "schemaVersion": 1,
+        "purpose": "Keep source-level interface contracts, decision comments, threat annotations, and license headers synchronized with code behavior.",
+        "detects": [
+          "Stale or missing TSDoc on exported stores, composables, Edge Functions, and RPC-facing contracts.",
+          "Complex branches whose decision rationale or guarded threat is undocumented.",
+          "Missing GPL license headers on eligible TypeScript and Vue files."
+        ],
+        "doesNotDetect": [
+          "README-level documentation drift, runtime correctness, test adequacy, or package health."
+        ],
+        "mayChange": [
+          "Only license headers, TSDoc blocks, and inline comments in source files.",
+          "Stage 6 coverage evidence."
+        ],
+        "mustNotChange": [
+          "README files.",
+          "Runtime logic, signatures, data flow, or behavior."
+        ],
+        "selection": "Resolve computed documentation debt first, then inspect recent changes, missing interface contracts, complex decision branches, and finally missing license headers.",
+        "verification": [
+          "Run the narrowest package type-check that parses the changed file."
+        ],
+        "evidence": [
+          "Documentation-debt status and target source inspected.",
+          "The interface or decision contract reconciled with implementation.",
+          "Exact type-check command and result."
+        ]
+      }
     },
     {
       "number": 7,
@@ -94,7 +277,37 @@
       "commitScope": "version",
       "baselineTests": false,
       "dependencyCruiser": false,
-      "historyAging": false
+      "historyAging": false,
+      "contract": {
+        "schemaVersion": 1,
+        "purpose": "Reconcile catalog usage and every derived version declaration to the highest manifest version without choosing a new version.",
+        "detects": [
+          "Shared dependencies bypassing the root pnpm catalog.",
+          "Version drift across root, Frontend-PWA, and Backend manifests.",
+          "Derived version declarations reported by the authoritative version audit."
+        ],
+        "doesNotDetect": [
+          "Whether the current semantic version is appropriate, whether dependencies are current, or whether runtime behavior is correct."
+        ],
+        "mayChange": [
+          "Catalog references and version declarations enumerated by the authoritative version audit.",
+          "Stage 7 coverage evidence."
+        ],
+        "mustNotChange": [
+          "The highest declared version or semantic-versioning policy.",
+          "External dependency versions.",
+          "Application behavior, database schema, or runtime engines."
+        ],
+        "selection": "Check catalog adherence, manifest agreement, then every derived declaration reported by pnpm audit:version; reconcile one unambiguous drift class or finalize clean.",
+        "verification": [
+          "Run CI=true DEBIAN_FRONTEND=noninteractive pnpm audit:version."
+        ],
+        "evidence": [
+          "Catalog and package-version scans performed.",
+          "Manifests and derived declarations compared.",
+          "Exact audit:version drift count and outcome."
+        ]
+      }
     },
     {
       "number": 8,
@@ -107,7 +320,38 @@
       "commitScope": "deps",
       "baselineTests": false,
       "dependencyCruiser": false,
-      "historyAging": false
+      "historyAging": false,
+      "contract": {
+        "schemaVersion": 1,
+        "purpose": "Contain dependency rot through one safe patch or minor maintenance action while surfacing major upgrades for human review.",
+        "detects": [
+          "Available patch and minor dependency updates within the current major.",
+          "Node type declarations misaligned with the declared runtime.",
+          "Development-only or unused dependencies declared incorrectly.",
+          "Major versions requiring a migration watchlist entry."
+        ],
+        "doesNotDetect": [
+          "Application correctness, internal semantic-version drift, documentation accuracy, or database integrity."
+        ],
+        "mayChange": [
+          "One dependency declaration, the lockfile, and related manifest classification per run.",
+          "The Stage 8 major-version watchlist and coverage evidence."
+        ],
+        "mustNotChange": [
+          "Major dependency versions, runtime engine versions, or internal application version declarations.",
+          "Application source or remote database state."
+        ],
+        "selection": "Scan manifests in prompt priority order and stop after one actionable dependency; record major upgrades without applying them.",
+        "verification": [
+          "Regenerate the lockfile with a non-interactive pnpm install for Tier 1 changes.",
+          "Run the affected package tests after a Tier 1 change."
+        ],
+        "evidence": [
+          "Package, old version, available version, and tier.",
+          "Codebase-specific major-version impact when watchlisted.",
+          "Install and affected-package test outcomes for applied changes."
+        ]
+      }
     },
     {
       "number": 9,
@@ -121,7 +365,39 @@
       "commitScope": "refactor",
       "baselineTests": false,
       "dependencyCruiser": true,
-      "historyAging": false
+      "historyAging": false,
+      "contract": {
+        "schemaVersion": 1,
+        "purpose": "Correct one structural architecture defect, or one reproducible behavior defect after the structural surface is clean.",
+        "detects": [
+          "Cross-feature duplication and reusable UI trapped inside a feature.",
+          "Oversized modules, hardcoded configuration, magic numbers, and dependency-boundary violations.",
+          "Behavior defects that can be reproduced by a failing automated test."
+        ],
+        "doesNotDetect": [
+          "Missing test breadth, documentation drift, dependency updates, security hardening, or database schema improvements."
+        ],
+        "mayChange": [
+          "One complete refactor and all callers required to preserve atomicity.",
+          "One minimal behavior fix backed by a reproducing test when structural targets are exhausted.",
+          "Stage 9 coverage evidence."
+        ],
+        "mustNotChange": [
+          "Dependencies, authentication or security ownership, database schema, scoring semantics, or stored-value meaning.",
+          "Partial moves, proxy-only re-exports, or speculative cleanup without contractual effect."
+        ],
+        "selection": "Prefer feature decoupling, then structural smells; enter the defect hunt only after both are clean and select nothing that cannot first be reproduced by a failing test.",
+        "verification": [
+          "Run the PWA type-check for TypeScript or Vue changes.",
+          "Run the nearest package tests and dependency-cruiser.",
+          "For defect hunts, preserve the failing-before and passing-after proof."
+        ],
+        "evidence": [
+          "Structural candidate counts and dependency violations.",
+          "Selected refactor boundary or reproducing test for a defect.",
+          "Type-check, test, and dependency-cruiser outcomes."
+        ]
+      }
     },
     {
       "number": 10,
@@ -134,7 +410,37 @@
       "commitScope": "apk",
       "baselineTests": false,
       "dependencyCruiser": false,
-      "historyAging": false
+      "historyAging": false,
+      "contract": {
+        "schemaVersion": 1,
+        "purpose": "Keep the PWA and Android wrapper aligned, installable, correctly versioned, and defensively configured.",
+        "detects": [
+          "Digital Asset Links and web-manifest divergence from the native wrapper.",
+          "Target SDK, wrapper version, release pointer, filename, and build-number drift.",
+          "Cleartext traffic exposure and unnecessary Android permissions."
+        ],
+        "doesNotDetect": [
+          "Wrapper performance tuning, hybrid-shell interaction quality, application logic defects, or database correctness."
+        ],
+        "mayChange": [
+          "Tracked APK, PWA manifest, release metadata, and wrapper configuration required to restore parity.",
+          "Stage 10 coverage evidence."
+        ],
+        "mustNotChange": [
+          "Signing keys, credentials, or keystore material.",
+          "Database state or unrelated application behavior."
+        ],
+        "selection": "Run the wrapper integrity audit, choose one concrete mismatch in the declared target order, and otherwise record every invariant checked as clean.",
+        "verification": [
+          "Run pnpm audit:apk and pnpm apk:verify:source or the narrowest relevant wrapper check.",
+          "Probe Android toolchain capability before any build and use the declared source-level fallback when unavailable."
+        ],
+        "evidence": [
+          "Asset links, manifest parity, version synchronization, release metadata, and security policy results.",
+          "Toolchain capability state.",
+          "Exact build, audit, or source-level verification result."
+        ]
+      }
     },
     {
       "number": 11,
@@ -147,7 +453,38 @@
       "commitScope": "apk",
       "baselineTests": false,
       "dependencyCruiser": false,
-      "historyAging": false
+      "historyAging": false,
+      "contract": {
+        "schemaVersion": 1,
+        "purpose": "Reduce native wrapper, WebView, service-worker, and packaged-asset overhead without rearchitecting application logic.",
+        "detects": [
+          "Missing minification, resource shrinking, and redundant native wrapper dependencies.",
+          "Suboptimal WebView caching, hardware acceleration, storage, and bridge settings.",
+          "Oversized precache payloads, static assets, and bundle chunks."
+        ],
+        "doesNotDetect": [
+          "Wrapper identity or signing integrity, hybrid-shell UX defects, domain behavior, or database correctness."
+        ],
+        "mayChange": [
+          "APK build options, wrapper performance configuration, PWA caching parameters, and static-asset settings.",
+          "Stage 11 coverage evidence."
+        ],
+        "mustNotChange": [
+          "Core application logic, domain architecture, signing properties, credentials, or keys.",
+          "Performance changes whose effect cannot be verified with available tools or authoritative source checks."
+        ],
+        "selection": "Run the computed APK performance audit first, inspect its candidate evidence and recent intelligence, and stop after one measurable optimization target.",
+        "verification": [
+          "Run pnpm audit:apk-perf.",
+          "Probe Android toolchain capability before compilation and use source-level verification when unavailable.",
+          "Compile or build only when a changed target and available toolchain require it."
+        ],
+        "evidence": [
+          "Named performance invariants and asset-footprint measurements.",
+          "Selected target and expected performance mechanism.",
+          "Toolchain state and exact audit, build, or source-level result."
+        ]
+      }
     },
     {
       "number": 12,
@@ -160,7 +497,38 @@
       "commitScope": "apk-ux",
       "baselineTests": false,
       "dependencyCruiser": false,
-      "historyAging": false
+      "historyAging": false,
+      "contract": {
+        "schemaVersion": 1,
+        "purpose": "Correct one hybrid-shell presentation defect inside Frontend-PWA source without changing application logic or native code.",
+        "detects": [
+          "Raw native dropdowns, missing tactile feedback, text-selection leaks, and unsafe external navigation.",
+          "Safe-area, touch-target, overscroll, and keyboard-viewport violations.",
+          "Theme synchronization and media layout or loading defects."
+        ],
+        "doesNotDetect": [
+          "Native wrapper integrity, APK build performance, domain behavior, API correctness, or database state."
+        ],
+        "mayChange": [
+          "Component structure, input types, tactile directives, and layout spacing under Frontend-PWA/src.",
+          "Stage 12 coverage evidence."
+        ],
+        "mustNotChange": [
+          "Native wrapper, Gradle, Android resources, manifests, Java, or Kotlin.",
+          "Business logic, data flow, API configuration, color tokens, or animation definitions."
+        ],
+        "selection": "Use the computed UX audit and candidate list, then select the first viable violation in the ten-category priority order.",
+        "verification": [
+          "Run the nearest component specification.",
+          "For CSS-only changes without a specification, run the PWA type-check and a source-level layout review.",
+          "Run dependency-cruiser only when imports changed."
+        ],
+        "evidence": [
+          "APK UX audit status, files examined, candidate count, and categories checked.",
+          "Selected component and violation category.",
+          "Exact specification, type-check, dependency, or source-review result."
+        ]
+      }
     },
     {
       "number": 13,
@@ -174,7 +542,37 @@
       "commitScope": "pipeline",
       "baselineTests": false,
       "dependencyCruiser": false,
-      "historyAging": false
+      "historyAging": false,
+      "contract": {
+        "schemaVersion": 1,
+        "purpose": "Turn observed pipeline failures, cross-stage incoherence, and repeated low-value runs into class-level preventive recommendations.",
+        "detects": [
+          "Failed or incorrectly terminated Jules sessions and recurring shared-environment patterns.",
+          "Cross-stage sequencing, evidence, and ownership contradictions.",
+          "Repeated no-diff behavior that indicates either justified saturation or a scoping defect."
+        ],
+        "doesNotDetect": [
+          "Product defects or domain-specific audit gaps that preceding stages did not emit as pipeline evidence."
+        ],
+        "mayChange": [
+          "The Stage 13 self-healing protocol document and Stage 13 coverage evidence."
+        ],
+        "mustNotChange": [
+          "Pipeline scripts, prompts, workflows, shared intelligence, or application source.",
+          "Speculative root causes not supported by ledger, session, tag, history, or coverage evidence.",
+          "All-clear journal entries that add no actionable intelligence."
+        ],
+        "selection": "Prioritize stability failures, then cross-stage coherence, then no-diff value; update only findings supported by current evidence and prefer preventive actions over monitoring requests.",
+        "verification": [
+          "Run git diff --check and re-read only the changed protocol blocks.",
+          "Do not run the project test suite."
+        ],
+        "evidence": [
+          "Run date, stage, session, ledger state, and failure class used.",
+          "Corroborating tags, pull-request history, and coverage records.",
+          "Root cause confidence, recurrence evidence, and preventive-action rationale."
+        ]
+      }
     }
   ]
 }

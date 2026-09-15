@@ -301,6 +301,29 @@ test("matchJulesSession accepts compact SNN prompt headers", () => {
   assert.equal(match.id, "compact");
 });
 
+test("matchJulesSession prefers the dispatched resource over a newer duplicate", () => {
+  const stage = registry.stages.find(entry => entry.number === 6);
+  const sessions = [
+    {
+      id: "dispatched",
+      name: "sessions/dispatched",
+      state: "COMPLETED",
+      createTime: "2026-08-11T02:00:00Z",
+      prompt: "# S06: Documentation TSDoc - Interface Contract Architect",
+    },
+    {
+      id: "duplicate",
+      name: "sessions/duplicate",
+      state: "IN_PROGRESS",
+      createTime: "2026-08-11T03:00:00Z",
+      prompt: "# S06: Documentation TSDoc - Interface Contract Architect",
+    },
+  ];
+
+  const match = matchJulesSession(sessions, stage, "2026-08-11", "sessions/dispatched");
+  assert.equal(match.id, "dispatched");
+});
+
 // --------------------------------------------------------------------------
 // Recovery pass: a COMPLETED Jules session with no published PR is holding a
 // finished change set. The watchdog must nudge it rather than only log it.
@@ -366,7 +389,7 @@ test("selectRecoveryCandidates only picks stuck sessions under the attempt cap",
   ensureRunEntries(ledger, registry, date);
   assert.deepEqual(selectRecoveryCandidates(entries, ledger, date).map(e => e.stage), [3]);
 
-  upsertStageEntry(ledger, registry, date, 3, { state: "NO_OUTPUT", attempts: 2 });
+  upsertStageEntry(ledger, registry, date, 3, { state: "NO_OUTPUT", interventionAttempts: 2 });
   assert.deepEqual(selectRecoveryCandidates(entries, ledger, date).map(e => e.stage), []);
 });
 
@@ -444,7 +467,7 @@ test("recoverStuckStages nudges, records the attempt, and marks recovery on a ne
   assert.deepEqual(result.recovered, [{ stage: 3, prNumber: 1480 }]);
 
   const row = ledger.runs[date]["3"];
-  assert.equal(row.attempts, 1);
+  assert.equal(row.interventionAttempts, 1);
   assert.equal(row.state, "RECOVERABLE");
   assert.equal(row.failureClass, "RECOVERED_AFTER_NUDGE");
   assert.equal(row.evidence.recovery.ok, true);
@@ -487,7 +510,7 @@ test("recoverStuckStages does not spend the attempt budget on a failed nudge del
 
   assert.equal(result.failed.length, 1);
   const row = ledger.runs[date]["3"];
-  assert.equal(row.attempts, 0);
+  assert.equal(row.interventionAttempts, 0);
   assert.equal(row.evidence.recovery.ok, false);
 
   // A second failed delivery must still leave the budget untouched, so a
@@ -504,7 +527,7 @@ test("recoverStuckStages does not spend the attempt budget on a failed nudge del
     pollAttempts: 0,
     pollIntervalMs: 0,
   });
-  assert.equal(ledger.runs[date]["3"].attempts, 0);
+  assert.equal(ledger.runs[date]["3"].interventionAttempts, 0);
   assert.deepEqual(selectRecoveryCandidates(entries, ledger, date).map(entry => entry.stage), [3]);
 });
 
@@ -534,6 +557,45 @@ test("fetchJulesSessions follows nextPageToken instead of returning only the fir
   assert.equal(calls.length, 2);
   assert.equal(result.available, true);
   assert.deepEqual(result.sessions.map(session => session.id), ["page-1-session", "page-2-session"]);
+});
+
+test("fetchJulesSessions retries transient Jules list failures and remains single-shot for permanent failures", async () => {
+  let calls = 0;
+  let sleeps = 0;
+  const recovered = await fetchJulesSessions(
+    { julesApiKey: "k" },
+    async () => {
+      calls += 1;
+      if (calls === 1) return { ok: false, status: 503, statusText: "Unavailable", headers: { get: () => null } };
+      return { ok: true, json: async () => ({ sessions: [] }) };
+    },
+    { retryDelaysMs: [0], sleepImpl: async () => { sleeps += 1; } },
+  );
+  assert.equal(recovered.available, true);
+  assert.equal(calls, 2);
+  assert.equal(sleeps, 1);
+
+  calls = 0;
+  const rejected = await fetchJulesSessions(
+    { julesApiKey: "k" },
+    async () => {
+      calls += 1;
+      return { ok: false, status: 401, statusText: "Unauthorized", headers: { get: () => null } };
+    },
+    { retryDelaysMs: [0, 0], sleepImpl: async () => {} },
+  );
+  assert.equal(rejected.available, false);
+  assert.equal(calls, 1);
+});
+
+test("fetchJulesSessions refuses a repeated pagination token instead of looping forever", async () => {
+  const result = await fetchJulesSessions(
+    { julesApiKey: "k" },
+    async () => ({ ok: true, json: async () => ({ sessions: [], nextPageToken: "same" }) }),
+    { retryDelaysMs: [], sleepImpl: async () => {} },
+  );
+  assert.equal(result.available, false);
+  assert.match(result.error, /repeated page token/);
 });
 
 // --------------------------------------------------------------------------
@@ -1188,7 +1250,7 @@ test("the fallback publisher is reachable from every exit of the nudge ladder", 
   // Exit 1: the retry budget is spent, so no stage is eligible for a nudge.
   const exhausted = createEmptyLedger();
   ensureRunEntries(exhausted, registry, date);
-  upsertStageEntry(exhausted, registry, date, 3, { attempts: 2 });
+  upsertStageEntry(exhausted, registry, date, 3, { interventionAttempts: 2 });
   const spent = await recoverStuckStages({
     entries, ledger: exhausted, registry, date, config,
     fetchImpl: async () => { throw new Error("must not nudge an exhausted stage"); },
@@ -1223,7 +1285,7 @@ test("a stage already published by the fallback is never published twice", async
   const ledger = createEmptyLedger();
   ensureRunEntries(ledger, registry, date);
   upsertStageEntry(ledger, registry, date, 3, {
-    attempts: 2,
+    interventionAttempts: 2,
     evidence: { fallbackPublish: { prNumber: 1500, publishedAt: "2026-08-15T04:00:00.000Z" } },
   });
 

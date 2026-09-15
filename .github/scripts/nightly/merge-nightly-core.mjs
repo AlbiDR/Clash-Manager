@@ -21,6 +21,7 @@ import path from "path";
 import os from "os";
 import { spawnSync } from "child_process";
 import { FAILURE_CLASSES, loadLedger, saveLedger, upsertStageEntry } from "./nightly-ledger.mjs";
+import { NIGHTLY_EVENT_SOURCES } from "./nightly-events.mjs";
 import { METADATA_PLACEHOLDERS, TAG_PLACEHOLDERS, isPlaceholderField } from "./nightly-prose.mjs";
 import { prBodySidecarPath } from "./nightly-stage.mjs";
 
@@ -1347,7 +1348,7 @@ export async function run(config = CONFIG) {
               headRef: failure.pr.head?.ref,
               reason: failure.errorMessage,
             },
-          });
+          }, { source: NIGHTLY_EVENT_SOURCES.MERGE_COORDINATOR });
         }
         saveLedger(ledger, config.ledgerPath);
       } catch (error) {

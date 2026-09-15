@@ -4,6 +4,17 @@
 import fs from "node:fs";
 import path from "node:path";
 
+import { getContractFingerprint } from "./nightly-contract.mjs";
+import {
+  NIGHTLY_EVENT_SOURCES,
+  NIGHTLY_EVENT_STREAM_VERSION,
+  NIGHTLY_EVENT_TYPES,
+  createNightlyEvent,
+  getCanonicalJson,
+  getCycleId,
+  validateNightlyEvents,
+} from "./nightly-events.mjs";
+
 export const LEDGER_PATH = path.join(".github", "nightly-logs", "nightly-run-ledger.json");
 
 export const LEDGER_STATES = new Set([
@@ -73,6 +84,11 @@ export const FAILURE_CLASSES = Object.freeze({
 export function createEmptyLedger() {
   return {
     schemaVersion: 1,
+    eventStreamVersion: NIGHTLY_EVENT_STREAM_VERSION,
+    eventCount: 0,
+    eventHead: null,
+    cycles: {},
+    events: [],
     runs: {},
   };
 }
@@ -81,10 +97,24 @@ function assertLedger(condition, message) {
   if (!condition) throw new Error(message);
 }
 
+function getEventAfter(entry) {
+  return {
+    state: entry.state,
+    failureClass: entry.failureClass,
+    expectedAfterUtc: entry.expectedAfterUtc ?? null,
+    deadlineUtc: entry.deadlineUtc ?? null,
+    evidence: entry.evidence || {},
+    attempts: entry.attempts ?? 0,
+    dispatchAttempts: entry.dispatchAttempts ?? 0,
+    interventionAttempts: entry.interventionAttempts ?? 0,
+  };
+}
+
 export function validateLedger(ledger) {
   assertLedger(ledger && typeof ledger === "object", "Nightly ledger must be an object.");
   assertLedger(ledger.schemaVersion === 1, "Nightly ledger schemaVersion must be 1.");
   assertLedger(ledger.runs && typeof ledger.runs === "object", "Nightly ledger runs must be an object.");
+  validateNightlyEvents(ledger);
 
   for (const [date, stages] of Object.entries(ledger.runs)) {
     assertLedger(/^\d{4}-\d{2}-\d{2}$/.test(date), `Invalid nightly ledger date: ${date}`);
@@ -93,7 +123,17 @@ export function validateLedger(ledger) {
       assertLedger(/^(?:[1-9]|1[0-3])$/.test(stageKey), `Invalid nightly ledger stage: ${stageKey}`);
       assertLedger(entry.date === date, `Nightly ledger entry ${date}/${stageKey} has mismatched date.`);
       assertLedger(entry.stage === Number(stageKey), `Nightly ledger entry ${date}/${stageKey} has mismatched stage.`);
+      assertLedger(
+        entry.cycleId === undefined || entry.cycleId === getCycleId(date),
+        `Nightly ledger entry ${date}/${stageKey} has mismatched cycleId.`,
+      );
       assertLedger(LEDGER_STATES.has(entry.state), `Nightly ledger entry ${date}/${stageKey} has invalid state.`);
+      for (const counter of ["attempts", "dispatchAttempts", "interventionAttempts"]) {
+        assertLedger(
+          entry[counter] === undefined || (Number.isInteger(entry[counter]) && entry[counter] >= 0),
+          `Nightly ledger entry ${date}/${stageKey} has invalid ${counter}.`,
+        );
+      }
     }
   }
 
@@ -116,21 +156,59 @@ export function ensureRunEntries(ledger, registry, date, options = {}) {
   assertLedger(/^\d{4}-\d{2}-\d{2}$/.test(date), `Invalid nightly ledger date: ${date}`);
   const run = ledger.runs[date] || {};
   const now = options.now || new Date().toISOString();
+  const cycleId = getCycleId(date);
 
   for (const stage of registry.stages) {
     const key = String(stage.number);
-    if (run[key]) continue;
+    if (run[key]) {
+      if (!run[key].cycleId) run[key].cycleId = cycleId;
+      if (!run[key].evidence) run[key].evidence = {};
+      if (!Number.isInteger(run[key].attempts)) run[key].attempts = 0;
+      const hasStageEvent = (ledger.events || []).some(event => event.date === date && event.stage === stage.number);
+      if (!hasStageEvent) {
+        createNightlyEvent(ledger, {
+          date,
+          stage: stage.number,
+          type: NIGHTLY_EVENT_TYPES.STAGE_SNAPSHOT_IMPORTED,
+          source: options.source || NIGHTLY_EVENT_SOURCES.LEDGER,
+          recordedAt: now,
+          contractFingerprint: stage.contract ? getContractFingerprint(stage) : null,
+          payload: {
+            after: getEventAfter(run[key]),
+            rules: [{ id: "IMPORT_LEGACY_SNAPSHOT", outcome: "APPLIED" }],
+          },
+        });
+      }
+      continue;
+    }
     run[key] = {
       date,
       stage: stage.number,
+      cycleId,
       expectedAfterUtc: options.expectedAfterUtc?.[stage.number] || null,
       deadlineUtc: options.deadlineUtc?.[stage.number] || null,
       state: "EXPECTED",
       evidence: {},
+      dispatchAttempts: 0,
+      interventionAttempts: 0,
+      // Legacy intervention counter retained while existing ledger rows age
+      // out. New writers use the two single-purpose counters above.
       attempts: 0,
       lastObservedAt: now,
       failureClass: null,
     };
+    createNightlyEvent(ledger, {
+      date,
+      stage: stage.number,
+      type: NIGHTLY_EVENT_TYPES.STAGE_EXPECTED,
+      source: options.source || NIGHTLY_EVENT_SOURCES.LEDGER,
+      recordedAt: now,
+      contractFingerprint: stage.contract ? getContractFingerprint(stage) : null,
+      payload: {
+        after: getEventAfter(run[key]),
+        rules: [{ id: "INITIALIZE_STAGE_EXPECTATION", outcome: "APPLIED" }],
+      },
+    });
   }
 
   ledger.runs[date] = Object.fromEntries(
@@ -257,8 +335,34 @@ function guardTaggedRow(current, patch) {
   return guarded;
 }
 
-export function upsertStageEntry(ledger, registry, date, stageNumber, patch = {}) {
-  ensureRunEntries(ledger, registry, date);
+function getChangedEvidence(before = {}, after = {}) {
+  const set = {};
+  const removed = [];
+  for (const key of new Set([...Object.keys(before), ...Object.keys(after)])) {
+    if (getCanonicalJson(before[key]) === getCanonicalJson(after[key])) continue;
+    if (Object.prototype.hasOwnProperty.call(after, key)) set[key] = after[key];
+    else removed.push(key);
+  }
+  return { set, removed: removed.sort() };
+}
+
+function getRequestedFacts(patch, current, next, stateGuarded, failureClassGuarded) {
+  const requested = {};
+  for (const [key, value] of Object.entries(patch)) {
+    if (["lastObservedAt", "evidence"].includes(key)) continue;
+    if (key === "state" && stateGuarded) requested[key] = value;
+    else if (key === "failureClass" && failureClassGuarded) requested[key] = value;
+    else if (getCanonicalJson(current[key]) !== getCanonicalJson(next[key])) requested[key] = value;
+  }
+  const evidence = getChangedEvidence(current.evidence, next.evidence);
+  if (Object.keys(evidence.set).length > 0 || evidence.removed.length > 0) requested.evidence = evidence;
+  return requested;
+}
+
+export function upsertStageEntry(ledger, registry, date, stageNumber, patch = {}, context = {}) {
+  const observedAt = patch.lastObservedAt || context.recordedAt || new Date().toISOString();
+  const source = context.source || NIGHTLY_EVENT_SOURCES.LEDGER;
+  ensureRunEntries(ledger, registry, date, { now: observedAt, source });
   const key = String(stageNumber);
   const current = ledger.runs[date][key];
   const effective = guardTaggedRow(current, patch);
@@ -267,13 +371,54 @@ export function upsertStageEntry(ledger, registry, date, stageNumber, patch = {}
     ...effective,
     date,
     stage: Number(stageNumber),
-    lastObservedAt: effective.lastObservedAt || new Date().toISOString(),
+    cycleId: getCycleId(date),
+    lastObservedAt: observedAt,
   };
   // Resolved after the spread so it sees the state and failure class this write
   // actually lands, not the ones the entry held before it.
   next.evidence = resolveEvidence(current.evidence, effective.evidence, next.state, next.failureClass);
   assertLedger(LEDGER_STATES.has(next.state), `Nightly ledger entry ${date}/${key} has invalid state.`);
   ledger.runs[date][key] = next;
+  const stage = registry.stages.find(candidate => candidate.number === Number(stageNumber));
+  const stateGuarded = Boolean(patch.state && patch.state !== effective.state);
+  const failureClassGuarded = Boolean(patch.failureClass && patch.failureClass !== effective.failureClass);
+  const requested = getRequestedFacts(patch, current, next, stateGuarded, failureClassGuarded);
+  if (Object.keys(requested).length > 0 || stateGuarded || failureClassGuarded) {
+    createNightlyEvent(ledger, {
+      date,
+      stage: Number(stageNumber),
+      type: NIGHTLY_EVENT_TYPES.STAGE_ENTRY_UPDATED,
+      source,
+      recordedAt: observedAt,
+      contractFingerprint: stage?.contract ? getContractFingerprint(stage) : null,
+      payload: {
+        before: {
+          state: current.state,
+          failureClass: current.failureClass,
+          attempts: current.attempts,
+          dispatchAttempts: current.dispatchAttempts,
+          interventionAttempts: current.interventionAttempts,
+        },
+        requested,
+        after: {
+          state: next.state,
+          failureClass: next.failureClass,
+          attempts: next.attempts,
+          dispatchAttempts: next.dispatchAttempts,
+          interventionAttempts: next.interventionAttempts,
+        },
+        rules: [
+          {
+            id: "TAGGED_MERGE_IS_DURABLE",
+            outcome: stateGuarded || failureClassGuarded ? "APPLIED" : "NOT_APPLICABLE",
+            stateGuarded,
+            failureClassGuarded,
+          },
+          { id: "EVIDENCE_ACCUMULATES", outcome: "APPLIED" },
+        ],
+      },
+    });
+  }
   return next;
 }
 

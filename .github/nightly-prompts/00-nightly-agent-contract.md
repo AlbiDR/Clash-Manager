@@ -4,8 +4,12 @@
 # Clash Manager Nightly Agent Contract
 
 This file is the single shared operating contract for the 13 unattended Jules
-stages. Stage prompts define only their own scope and verification. When rules
-conflict, this contract wins.
+stages. The `contract` object for each stage in
+`.github/nightly-config/stages.json` is the machine-readable authority for what
+that stage detects, does not detect, may change, must not change, how it selects
+work, how it verifies work, and which evidence it must leave. Stage prompts add
+the domain procedure needed to execute that contract but may not expand or
+contradict it. When lifecycle rules conflict, this contract wins.
 
 ## 1. Required Outcome
 
@@ -116,6 +120,15 @@ unverified source edits, and finalize. The work phase ends at 45 minutes so the
 - Every finalization summary names the audited target, the verification method,
   and the result. A claim such as "audit complete" without those facts is not
   sufficient evidence for later stages.
+- Every control-plane ledger write belongs to the stable
+  `nightly-cycle/YYYY-MM-DD` identity and appends a content-addressed event to
+  the ledger's hash chain. Snapshot rows remain the convenient current view;
+  events are the causal record and must never be rewritten or removed.
+- Use `pnpm nightly:explain --date YYYY-MM-DD --stage N` when a classification
+  needs investigation. It reports the observations, event integrity, rules,
+  contract fingerprint, and projection fingerprint behind the result. A
+  `LEGACY_SNAPSHOT` result means the run predates event recording and must not
+  be presented as a verified timeline.
 - A `CLEAN` summary is your lane's only memory of what it has already covered,
   so name the surface precisely enough that your next pass can tell what is
   left. "Codebase" and "all files" identify nothing. The coverage-log target

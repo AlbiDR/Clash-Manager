@@ -328,6 +328,8 @@ test("dry-run startup and real finalization are isolated in a disposable reposit
   assert.match(readFileSync(logPath, "utf8"), /CLEAN: Codebase -- No coverage gap found/);
   const prBody = readFileSync(path.join(testContext, "pr-body.md"), "utf8");
   assert.match(prBody, /NIGHTLY_PR_METADATA:/);
+  assert.match(prBody, /  Cycle: nightly-cycle\/2026-08-08/);
+  assert.match(prBody, /  Contract: [a-f0-9]{64}/);
   assert.match(prBody, /\*\*Why:\*\* The selected verification slice already covered the audited behavior\./);
   assert.match(prBody, /\*\*Result:\*\* No source change was required after the focused audit\./);
   // No session state was written by this path, so the refusal count is UNKNOWN
@@ -378,10 +380,20 @@ test("real startup synchronizes a disposable Nightly branch and writes bounded s
   );
   const state = JSON.parse(readFileSync(path.join(testContext, "session-state.json"), "utf8"));
   assert.equal(state.stage, 13);
+  assert.equal(state.cycleId, "nightly-cycle/2026-08-08");
+  assert.match(state.contractFingerprint, /^[a-f0-9]{64}$/);
   assert.equal(state.dependencyRefresh, "not-required");
   assert.equal(state.contextRefresh, "current");
   assert.equal(readFileSync(path.join(testContext, "active-lock.sha256"), "utf8").trim(), fingerprint);
-  assert.match(readFileSync(path.join(testContext, "stage-manifest.txt"), "utf8"), /target-branch: Nightly/);
+  const manifest = readFileSync(path.join(testContext, "stage-manifest.txt"), "utf8");
+  assert.match(manifest, /target-branch: Nightly/);
+  assert.match(manifest, /cycle-id: nightly-cycle\/2026-08-08/);
+  assert.match(manifest, new RegExp(`contract-fingerprint: ${state.contractFingerprint}`));
+  const contract = JSON.parse(readFileSync(path.join(testContext, "stage-contract.json"), "utf8"));
+  assert.equal(contract.stage, 13);
+  assert.equal(contract.cycleId, state.cycleId);
+  assert.equal(contract.fingerprint, state.contractFingerprint);
+  assert.deepEqual(contract.contract, getStage(registry, 13).contract);
 });
 
 test("a commit subject never doubles its prefix or severs a word", () => {

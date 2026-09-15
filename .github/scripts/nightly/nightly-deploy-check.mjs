@@ -29,6 +29,10 @@ export const CONTROL_PLANE_FILES = [
   ".github/scripts/nightly/nightly-publish-fallback.mjs",
   ".github/scripts/nightly/nightly-health.mjs",
   ".github/scripts/nightly/nightly-recap.mjs",
+  ".github/scripts/nightly/nightly-contract.mjs",
+  ".github/scripts/nightly/nightly-intervention.mjs",
+  ".github/scripts/nightly/nightly-events.mjs",
+  ".github/scripts/nightly/nightly-explain.mjs",
   // Owns the wording both human-facing surfaces use. Drift here desynchronises
   // the PR body from the recap, which is exactly the inconsistency it exists to
   // prevent, so it is watched like any other control-plane file.

@@ -106,12 +106,49 @@ test("a stage rescued by a nudge is reported as merged AND as having needed help
 test("a stage rescued by the fallback publisher is distinguished from a nudge", () => {
   const result = classifyStage({
     stage: stageOf(5),
-    entry: { state: "RECOVERABLE", failureClass: "RECOVERED_BY_FALLBACK_PUBLISH", attempts: 2, evidence: { fallbackPublish: { status: "CLEAN" } } },
-    tag: null,
+    entry: { state: "MERGED", failureClass: "RECOVERED_BY_FALLBACK_PUBLISH", attempts: 2, evidence: { fallbackPublish: { status: "CLEAN" } } },
+    tag: "nightly/2026-08-27/stage-5/pr-1581",
     declared: { status: "CLEAN", target: "Codebase", summary: "x" },
     history: null,
   });
+  assert.equal(result.rescued, true);
   assert.equal(result.rescuedBy, "fallback-publish");
+});
+
+test("2026-09-14 Stage 1 is an accepted but ineffective nudge, never an auto-recovery", () => {
+  const result = classifyStage({
+    stage: stageOf(1),
+    entry: {
+      state: "ESCALATED",
+      failureClass: "JULES_SESSION_FAILED",
+      attempts: 1,
+      evidence: {
+        recovery: { nudgedAt: "2026-09-14T00:34:17.132Z", ok: true, error: null },
+        session: { state: "FAILED" },
+      },
+    },
+    tag: null,
+    declared: null,
+    history: null,
+    progress: { frontier: 13, over: true },
+  });
+
+  assert.equal(result.outcome, "STUCK");
+  assert.equal(result.rescued, false);
+  assert.equal(result.rescuedBy, null);
+  assert.equal(result.intervention.outcome, "ACCEPTED_NO_DELIVERY");
+
+  const text = renderRecap(singleStage(result, {
+    merged: 0,
+    clean: 0,
+    stuck: 1,
+    rescued: 0,
+    grade: 7,
+    rationale: "Partial block: one stage failed or got stuck.",
+  }));
+  assert.match(text, /nudge was accepted, but no pull request followed/);
+  assert.doesNotMatch(text, /finished the work/);
+  assert.doesNotMatch(text, /auto-recovered[^\n]*1/);
 });
 
 test("a stage with no evidence at all is STUCK", () => {

@@ -63,7 +63,9 @@ import { parseCoverageLog } from "./coverage-log-line.mjs";
 import { spawnSync } from "node:child_process";
 
 import { HEALTH, PACE, evaluatePipelineHealth, isObserved } from "./nightly-health.mjs";
+import { INTERVENTION_OUTCOMES, classifyIntervention } from "./nightly-intervention.mjs";
 import { prNumberFromTag } from "./nightly-ledger.mjs";
+import { getEvidenceDate } from "./nightly-events.mjs";
 import {
   FAILURE_PHRASES,
   PLAIN_PREFIX,
@@ -99,10 +101,7 @@ export function readAtRef(path, ref = SOURCE_REF) {
 
 /** Stage 1 logs under the previous calendar day; see expectedEvidenceDate in the watchdog. */
 export function evidenceDateFor(stageNumber, runDate) {
-  if (stageNumber !== 1) return runDate;
-  const d = new Date(`${runDate}T00:00:00.000Z`);
-  d.setUTCDate(d.getUTCDate() - 1);
-  return d.toISOString().slice(0, 10);
+  return getEvidenceDate(stageNumber, runDate);
 }
 
 // Delegates to coverage-log-line.mjs. This module used to carry its own regex
@@ -198,9 +197,8 @@ export function runProgress({ registry, ledger, date, coverageByStage, tags }) {
  */
 export function classifyStage({ stage, entry, tag, declared, history, progress }) {
   const merged = Boolean(tag) || entry?.state === "MERGED";
-  const rescued = Boolean(entry?.evidence?.recovery) || Boolean(entry?.evidence?.fallbackPublish)
-    || (entry?.attempts ?? 0) > 0
-    || ["RECOVERED_AFTER_NUDGE", "RECOVERED_BY_FALLBACK_PUBLISH"].includes(entry?.failureClass);
+  const intervention = classifyIntervention(entry, { merged });
+  const rescued = intervention.effective;
 
   // A stage the run has not reached yet is not stuck, and the difference is not
   // cosmetic: the 13 stages fire in order across roughly twelve hours, so any
@@ -242,8 +240,8 @@ export function classifyStage({ stage, entry, tag, declared, history, progress }
     // row, so without this flag an absent row is indistinguishable from an
     // observed clean run and reads as "nobody intervened".
     observed: isObserved(entry),
-    rescuedBy: entry?.evidence?.fallbackPublish ? "fallback-publish"
-      : entry?.evidence?.recovery ? "watchdog-nudge" : null,
+    rescuedBy: rescued ? intervention.channel : null,
+    intervention,
     state: entry?.state ?? null,
     failureClass: entry?.failureClass ?? null,
     attempts: entry?.attempts ?? 0,
@@ -558,6 +556,12 @@ function stageNotes(stage) {
     notes.push(stage.rescuedBy === "watchdog-nudge"
       ? "Its Jules session finished the work but never opened the PR. The watchdog nudged it automatically; nobody had to do anything."
       : `This stage could not finish unaided and was recovered via ${stage.rescuedBy || "retry"}.`);
+  } else if (stage.intervention?.outcome === INTERVENTION_OUTCOMES.ACCEPTED_NO_DELIVERY) {
+    notes.push(stage.intervention.channel === "watchdog-nudge"
+      ? "The watchdog nudge was accepted, but no pull request followed; this stage was not recovered."
+      : "The fallback publication attempt was accepted, but no merged result followed; this stage was not recovered.");
+  } else if (stage.intervention?.outcome === INTERVENTION_OUTCOMES.REQUEST_REJECTED) {
+    notes.push("The automatic recovery request failed before it reached the stage; this stage was not recovered.");
   }
   // A malformed description does not mean the work was wrong: in all five cases
   // on 2026-09-03 the code, tests and coverage log landed correctly.

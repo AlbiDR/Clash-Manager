@@ -13,6 +13,8 @@ import {
 } from "node:fs";
 import path from "node:path";
 import { PLAIN_PREFIX, RESULT_LABEL, WHY_LABEL, changeLabel, countOf, displayArea, evidenceResidue, isBareVerdict, placeholderResult, placeholderWhy } from "./nightly-prose.mjs";
+import { getContractFingerprint, validateStageContract } from "./nightly-contract.mjs";
+import { getCycleDate, getCycleId } from "./nightly-events.mjs";
 import { fileURLToPath } from "node:url";
 
 const FINAL_STATUSES = new Set(["CHANGED", "CLEAN", "SKIPPED", "PARTIAL-RUN"]);
@@ -96,6 +98,7 @@ export function validateRegistryData(registry) {
       `Stage ${expectedNumber} dependencyCruiser must be boolean.`,
     );
     invariant(typeof stage.historyAging === "boolean", `Stage ${expectedNumber} historyAging must be boolean.`);
+    validateStageContract(stage);
     // Optional. A stage only declares one when its mandate genuinely needs more
     // room than the default, and it may only ever raise the floor: a stage that
     // could quietly lower its own budget would pass validation by shrinking the
@@ -509,6 +512,8 @@ ${plain}
 <!--
 NIGHTLY_PR_METADATA:
   Domain: ${stage.domain}
+  Cycle: ${details.cycleId || "unrecorded"}
+  Contract: ${getContractFingerprint(stage)}
   Why: ${why}
   Change: ${normalizedSummary}
   Result: ${result}
@@ -803,6 +808,8 @@ function startCommand(repoRoot, registry, stage, dryRun) {
   const startEpoch = epochSeconds();
   const targetContextDir = contextDir();
   const runId = randomBytes(4).toString("hex");
+  const contractFingerprint = getContractFingerprint(stage);
+  const cycleId = getCycleId(getCycleDate(stage.number, date));
 
   verifyCoreTools(repoRoot);
   const worktreeState = startableWorktreeState(repoRoot, stage, date);
@@ -817,7 +824,9 @@ function startCommand(repoRoot, registry, stage, dryRun) {
     stage: stage.number,
     slug: stage.slug,
     date,
+    cycleId,
     runId,
+    contractFingerprint,
     startEpoch,
     workDeadlineEpoch: startEpoch + registry.workBudgetMinutes * 60,
     sessionDeadlineEpoch: startEpoch + registry.sessionBudgetMinutes * 60,
@@ -849,6 +858,16 @@ function startCommand(repoRoot, registry, stage, dryRun) {
   mkdirSync(targetContextDir, { recursive: true });
   atomicWrite(path.join(targetContextDir, "TODAY"), `${date}\n`);
   atomicWrite(path.join(targetContextDir, "session-state.json"), `${JSON.stringify(state, null, 2)}\n`);
+  atomicWrite(
+    path.join(targetContextDir, "stage-contract.json"),
+    `${JSON.stringify({
+      stage: stage.number,
+      slug: stage.slug,
+      cycleId,
+      fingerprint: contractFingerprint,
+      contract: stage.contract,
+    }, null, 2)}\n`,
+  );
   appendSentinel(path.join(repoRoot, stage.coverageLog), sentinelLine(date, stage.number));
 
   if (refreshDependencies) {
@@ -882,6 +901,8 @@ function startCommand(repoRoot, registry, stage, dryRun) {
     `coverage-log: ${stage.coverageLog}`,
     `target-branch: ${registry.targetBranch}`,
     `branch-prefix: ${stage.branchPrefix}`,
+    `cycle-id: ${cycleId}`,
+    `contract-fingerprint: ${contractFingerprint}`,
     `work-deadline-epoch: ${state.workDeadlineEpoch}`,
     `finalize: node .github/scripts/nightly/nightly-stage.mjs finalize --stage ${stage.number} --status <STATUS> --summary <WHAT_CHANGED> --why <RATIONALE> --result <VERIFICATION_RESULT>`,
   ].join("\n");
@@ -997,8 +1018,9 @@ function finalizeCommand(repoRoot, stage, status, summary, dryRun, details = {})
   const replacement = replaceSentinel(readFileSync(logPath, "utf8"), sentinel, finalLine);
   invariant(!state.stage || state.stage === stage.number, "Session state belongs to a different stage.");
   const runId = state.runId || randomBytes(4).toString("hex");
+  const cycleId = state.cycleId || getCycleId(getCycleDate(stage.number, date));
   const nudges = stateObserved ? (state.resultRefused ? 1 : 0) : null;
-  const prBody = renderPrBody(stage, status, normalizedSummary, paths, { why, result, nudges });
+  const prBody = renderPrBody(stage, status, normalizedSummary, paths, { why, result, nudges, cycleId });
   // The handoff no longer carries the body, only the path to it.
   const handoff = renderHandoff(stage, status, normalizedSummary, runId);
 
@@ -1020,7 +1042,7 @@ function finalizeCommand(repoRoot, stage, status, summary, dryRun, details = {})
   atomicWrite(path.join(contextDir(), "final-handoff.txt"), handoff);
   atomicWrite(
     statePath,
-    `${JSON.stringify({ ...state, stage: stage.number, runId, finalizedStatus: status, finalizedEpoch: epochSeconds() }, null, 2)}\n`,
+    `${JSON.stringify({ ...state, stage: stage.number, cycleId, runId, finalizedStatus: status, finalizedEpoch: epochSeconds() }, null, 2)}\n`,
   );
   console.log(handoff);
 }

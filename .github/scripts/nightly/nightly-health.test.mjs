@@ -29,7 +29,7 @@ test("a rescued stage counts as having needed rescuing", () => {
   // is still a stage that could not finish by itself.
   assert.equal(neededIntervention({ state: "RECOVERABLE", failureClass: "RECOVERED_AFTER_NUDGE" }), true);
   assert.equal(neededIntervention({ state: "RECOVERABLE", failureClass: "RECOVERED_BY_FALLBACK_PUBLISH" }), true);
-  assert.equal(neededIntervention({ state: "MERGED", attempts: 1 }), true);
+  assert.equal(neededIntervention({ state: "MERGED", attempts: 1 }), false, "dispatch attempts are not interventions");
   assert.equal(neededIntervention({ state: "MERGED", evidence: { recovery: { ok: true } } }), true);
   assert.equal(neededIntervention({ state: "MERGED", evidence: { fallbackPublish: {} } }), true);
   assert.equal(neededIntervention({ state: "NO_OUTPUT" }), true);

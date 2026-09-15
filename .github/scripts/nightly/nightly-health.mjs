@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
+import { hasInterventionEvidence } from "./nightly-intervention.mjs";
+
 // Cross-run health intelligence for the nightly pipeline.
 //
 // THE BLIND SPOT THIS CLOSES
@@ -38,7 +40,6 @@ const MIN_OBSERVATIONS_PER_HALF = 2;
 // A stage "needed intervention" when it did not reach a merged pull request by
 // itself. Both the rescued and the lost cases count: the whole point is that a
 // rescue is not the same as not needing one.
-const RESCUED_CLASSES = new Set(["RECOVERED_AFTER_NUDGE", "RECOVERED_BY_FALLBACK_PUBLISH"]);
 const SELF_SUFFICIENT_STATES = new Set(["MERGED"]);
 
 // States that mean the observer never reached a verdict, NOT that the stage
@@ -71,10 +72,7 @@ export const HEALTH = {
 /** Did this stage reach a merged result on its own that day? */
 export function neededIntervention(entry) {
   if (!entry) return false;
-  if ((entry.attempts ?? 0) > 0) return true;
-  if (entry.evidence?.recovery) return true;
-  if (entry.evidence?.fallbackPublish) return true;
-  if (RESCUED_CLASSES.has(entry.failureClass)) return true;
+  if (hasInterventionEvidence(entry)) return true;
   return !SELF_SUFFICIENT_STATES.has(entry.state);
 }
 
