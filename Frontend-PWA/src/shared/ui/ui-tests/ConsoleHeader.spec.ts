@@ -4,6 +4,7 @@
  * @vitest-environment jsdom
  */
 import ConsoleHeader from "../ConsoleHeader.vue";
+import ViewOptions from "../ViewOptions.vue";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { mount } from "@vue/test-utils";
 import { createCommentVNode, Fragment, h, nextTick } from "vue";
@@ -70,28 +71,7 @@ describe("ConsoleHeader", () => {
     windowSpy.mockRestore();
   });
 
-  it("opens the search field on demand and debounces what is typed into it", async () => {
-    vi.useFakeTimers();
-    const wrapper = mount(ConsoleHeader, {
-      props: { title: "Search Test", showSearch: true, searchQuery: "" },
-    });
-
-    // Idle, the control is an icon: there is no field to type into yet.
-    expect(wrapper.find(".search-input").exists()).toBe(false);
-    expect(wrapper.find(".search-trigger").exists()).toBe(true);
-
-    await wrapper.find(".search-trigger").trigger("click");
-    expect(wrapper.find(".search-input").exists()).toBe(true);
-
-    await wrapper.find(".search-input").setValue("clash");
-    expect(wrapper.emitted("update:search")).toBeUndefined();
-
-    vi.advanceTimersByTime(300);
-    expect(wrapper.emitted("update:search")?.[0]).toEqual(["clash"]);
-    vi.useRealTimers();
-  });
-
-  it("lets search take over the fixed refinement stage without keeping sort in the way", async () => {
+  it("keeps search and order out of the permanent controls row", () => {
     const wrapper = mount(ConsoleHeader, {
       props: {
         title: "Search Test",
@@ -102,64 +82,28 @@ describe("ConsoleHeader", () => {
       },
     });
 
-    expect(wrapper.find(".sort-box").exists()).toBe(true);
-
-    await wrapper.find(".search-trigger").trigger("click");
-
-    expect(wrapper.find(".search-sort-control").classes()).toContain("is-search-open");
-    expect(wrapper.find(".search-input").exists()).toBe(true);
-    expect(wrapper.find(".sort-box").exists()).toBe(false);
+    expect(wrapper.find(".header-controls").exists()).toBe(false);
+    expect(wrapper.findComponent(ViewOptions).exists()).toBe(true);
   });
 
-  it("keeps the field open while a query stands, so a filter can never hide", async () => {
-    // The reader never opened it; the query alone is enough to pin it open.
+  it("passes the controlled search and order state into the unified view control", () => {
     const wrapper = mount(ConsoleHeader, {
-      props: { title: "Search Test", showSearch: true, searchQuery: "adr" },
+      props: {
+        title: "Search Test",
+        showSearch: true,
+        searchQuery: "adr",
+        sortOptions: [{ label: "Performance", value: "performance", desc: "Best first." }],
+        currentSort: "performance",
+      },
     });
 
-    expect(wrapper.find(".search-input").exists()).toBe(true);
-    expect(wrapper.find(".search-trigger").exists()).toBe(false);
-
-    // A blur must not be able to dismiss it either.
-    await wrapper.find(".search-input").trigger("blur");
-    expect(wrapper.find(".search-input").exists()).toBe(true);
-  });
-
-  it("reflects the query it is given rather than keeping its own copy", () => {
-    const wrapper = mount(ConsoleHeader, {
-      props: { title: "Search Test", showSearch: true, searchQuery: "leandro" },
+    expect(wrapper.findComponent(ViewOptions).props()).toMatchObject({
+      title: "Search Test",
+      open: false,
+      showSearch: true,
+      searchQuery: "adr",
+      currentSort: "performance",
     });
-
-    expect((wrapper.find(".search-input").element as HTMLInputElement).value).toBe("leandro");
-  });
-
-  it("clears the query on Escape and reports it immediately", async () => {
-    vi.useFakeTimers();
-    const wrapper = mount(ConsoleHeader, {
-      props: { title: "Search Test", showSearch: true, searchQuery: "adr" },
-    });
-
-    await wrapper.find(".search-input").trigger("keydown", { key: "Escape" });
-
-    // Immediately, without waiting out the debounce - a clear is not a keystroke.
-    expect(wrapper.emitted("update:search")?.[0]).toEqual([""]);
-    vi.useRealTimers();
-  });
-
-  it("offers a clear affordance only while there is something to clear", async () => {
-    const idle = mount(ConsoleHeader, {
-      props: { title: "Search Test", showSearch: true, searchQuery: "" },
-    });
-    await idle.find(".search-trigger").trigger("click");
-    expect(idle.find(".search-clear").exists()).toBe(false);
-
-    const active = mount(ConsoleHeader, {
-      props: { title: "Search Test", showSearch: true, searchQuery: "adr" },
-    });
-    expect(active.find(".search-clear").exists()).toBe(true);
-
-    await active.find(".search-clear").trigger("click");
-    expect(active.emitted("update:search")?.[0]).toEqual([""]);
   });
 
   it("handles sort selection emission", async () => {
@@ -171,8 +115,8 @@ describe("ConsoleHeader", () => {
       props: { title: "Sort Test", showSearch: true, sortOptions, currentSort: "name" },
     });
 
-    const select = wrapper.findComponent({ name: "BaseSelect" });
-    await select.vm.$emit("update:modelValue", "level");
+    const viewOptions = wrapper.findComponent(ViewOptions);
+    await viewOptions.vm.$emit("update:sort", "level");
 
     expect(wrapper.emitted("update:sort")?.[0]).toEqual(["level"]);
   });
@@ -194,16 +138,13 @@ describe("ConsoleHeader", () => {
 
     const toolbarClasses = Array.from(wrapper.find(".header-controls").element.children)
       .map((element) => element.className);
-    const refinementClasses = Array.from(wrapper.find(".refinement-controls").element.children)
-      .map((element) => element.className);
-
     expect(toolbarClasses).toEqual(["refinement-controls", "selection-actions"]);
-    expect(refinementClasses).toEqual(["search-sort-control"]);
+    expect(wrapper.find(".refinement-controls").element.children).toHaveLength(0);
 
-    const select = wrapper.findComponent({ name: "BaseSelect" });
-    expect(select.props("options")[0]).toMatchObject({
+    const viewOptions = wrapper.findComponent(ViewOptions);
+    expect(viewOptions.props("sortOptions")?.[0]).toMatchObject({
       label: "Potential",
-      description: "Predicted account quality vs Clan baseline.",
+      desc: "Predicted account quality vs Clan baseline.",
     });
   });
 

@@ -1,13 +1,11 @@
 <!-- SPDX-License-Identifier: GPL-3.0-only -->
 <!-- Copyright (C) 2026 AlbiDR -->
 <script setup lang="ts">
-import { Comment, computed, Fragment, Text, unref, useSlots, useTemplateRef, type VNode } from "vue";
+import { Comment, computed, Fragment, Text, unref, useSlots, ref, type VNode } from "vue";
 import { useHaptics } from "../composables/useHaptics";
-import { useSearchField } from "../composables/useSearchField";
 import { useHeaderScroll } from "../composables/useHeaderScroll";
 import StatusPill from "./StatusPill.vue";
-import Icon from "./Icon.vue";
-import BaseSelect from "./BaseSelect.vue";
+import ViewOptions from "./ViewOptions.vue";
 import type { ConsoleRemoteInfo, HubHealth } from "@core/types";
 
 const props = defineProps<{
@@ -66,49 +64,20 @@ function hasRenderableSlotContent(slotNodes: VNode[]): boolean {
 
 const hasFilters = computed(() => hasRenderableSlotContent(slots.filters?.() ?? []));
 
-const hasControls = computed(() =>
-  props.showSearch === true || hasFilters.value || (props.sortOptions?.length ?? 0) > 0,
-);
+const hasControls = computed(() => hasFilters.value);
 
 const hasExtra = computed(() => hasRenderableSlotContent(slots.extra?.() ?? []));
+const isViewOptionsOpen = ref(false);
 /**
  * The header condenses while the reader travels away from the top, and refuses
- * to while any control it hosts is in use - an open search field, or a live
+ * to while any control it hosts is in use - an open view-options panel, or a live
  * selection its host reports through `pinExpanded`. Taking a working control
  * away mid-task is the one thing this must never do.
  */
 const { isScrolled, isCondensed } = useHeaderScroll({
   threshold: 10,
-  isPinned: () => isSearchOpen.value || props.pinExpanded === true,
+  isPinned: () => isViewOptionsOpen.value || props.pinExpanded === true,
 });
-
-/** The field itself, owned here because the element belongs to this template. */
-const searchInput = useTemplateRef<HTMLInputElement>("searchInput");
-
-const {
-  isOpen: isSearchOpen,
-  hasQuery: hasSearchQuery,
-  openSearchField,
-  closeSearchField,
-  clearSearchField,
-  handleSearchInput,
-  handleSearchKeydown,
-} = useSearchField({
-  readQuery: () => props.searchQuery ?? "",
-  onQueryChange: (query) => emit("update:search", query),
-  focusInput: () => searchInput.value?.focus(),
-  blurInput: () => searchInput.value?.blur(),
-});
-
-const activeSortDescription = computed(() => {
-  if (!props.sortOptions || !props.currentSort) return "";
-  const activeSortOption = props.sortOptions.find((optionCandidate) => optionCandidate.value === props.currentSort);
-  return activeSortOption?.desc || "";
-});
-
-const selectSortOptions = computed(() =>
-  props.sortOptions?.map(({ desc, ...sortOption }) => ({ ...sortOption, description: desc })) ?? [],
-);
 
 const handleOpenDashboard = () => {
   if (props.dashboardUrl) {
@@ -144,6 +113,18 @@ const handleOpenDashboard = () => {
         </div>
 
         <div class="action-group">
+          <ViewOptions
+            v-if="props.showSearch || props.sortOptions?.length"
+            :title="props.title"
+            :open="isViewOptionsOpen"
+            :show-search="props.showSearch"
+            :search-query="props.searchQuery"
+            :sort-options="props.sortOptions"
+            :current-sort="props.currentSort"
+            @update:open="isViewOptionsOpen = $event"
+            @update:search="(query) => emit('update:search', query)"
+            @update:sort="(sortValue) => emit('update:sort', sortValue)"
+          />
           <StatusPill
             v-if="props.status && !props.loading"
             :type="props.status.type"
@@ -159,87 +140,6 @@ const handleOpenDashboard = () => {
         class="header-controls"
       >
         <div class="refinement-controls">
-          <!-- [DECISION LOG] PROMINENCE TRACKS WHETHER THE CONTROL IS WORKING:
-               Idle this is a 48px icon; the moment it holds a query it is a
-               field, and it cannot be dismissed back to an icon while that query
-               stands. -->
-          <div
-            v-if="props.showSearch || props.sortOptions"
-            class="search-sort-control"
-            :class="{ 'is-search-open': isSearchOpen }"
-          >
-            <div
-              v-if="props.showSearch"
-              class="search-bar"
-              :class="{ 'is-open': isSearchOpen }"
-            >
-              <button
-                v-if="!isSearchOpen"
-                type="button"
-                class="search-trigger"
-                aria-label="Search"
-                :aria-expanded="false"
-                @click="openSearchField"
-              >
-                <Icon
-                  name="search"
-                  size="18"
-                />
-              </button>
-
-              <div
-                v-else
-                class="search-box"
-              >
-                <Icon
-                  name="search"
-                  size="18"
-                  class="search-icon"
-                />
-                <input
-                  ref="searchInput"
-                  type="text"
-                  class="search-input"
-                  placeholder="Search..."
-                  autocomplete="off"
-                  aria-label="Search"
-                  :value="props.searchQuery ?? ''"
-                  @input="handleSearchInput"
-                  @keydown="handleSearchKeydown"
-                  @blur="closeSearchField"
-                >
-                <button
-                  v-if="hasSearchQuery"
-                  type="button"
-                  class="search-clear"
-                  aria-label="Clear search"
-                  @mousedown.prevent
-                  @click="clearSearchField"
-                >
-                  <Icon
-                    name="close"
-                    size="16"
-                  />
-                </button>
-              </div>
-            </div>
-
-            <Transition name="sort-yield">
-              <div
-                v-if="props.sortOptions && !isSearchOpen"
-                class="sort-box"
-                :title="activeSortDescription || undefined"
-              >
-                <BaseSelect
-                  :model-value="props.currentSort || ''"
-                  :options="selectSortOptions"
-                  :aria-label="activeSortDescription ? `Sort by. ${activeSortDescription}` : 'Sort by'"
-                  @update:model-value="(targetSortValue) => emit('update:sort', targetSortValue)"
-                />
-              </div>
-            </Transition>
-          </div>
-
           <div
             v-if="hasFilters"
             class="filter-slot"
@@ -291,19 +191,13 @@ const handleOpenDashboard = () => {
    The header is sticky, so on a 812px viewport it held 245px - thirty per cent
    of the screen - in front of the list for the entire scroll. Travelling away
    from the top is a good signal that the reader wants the list rather than the
-   controls, so the search, sort and selection rows collapse and the title row
-   stays, which keeps the answer to "where am I" on screen at all times.
+   controls, so view-specific filters and selection rows collapse while the
+   title rail stays. Search and order are an on-demand sheet, so they do not
+   consume sticky-header space at all.
 
    The negative margin cancels the flex gap the collapsed row would otherwise
    still reserve: a zero-height flex item is still an item, and its gap survives
    it, leaving twelve pixels of nothing behind.
-
-   [DECISION LOG] overflow is hidden only WHILE condensed, never at rest. The
-   sort control's dropdown is absolutely positioned inside this row, so clipping
-   it permanently would cut the menu off at the header's edge. While condensed
-   the row is inert and the dropdown cannot be open, so clipping is free there.
-   The cost is that expansion is briefly unclipped, which the opacity fade
-   covers.
 
    Reduced motion needs nothing here: the global rule keeps opacity and height
    in the transition list and drops transform, so this becomes a fade rather
@@ -404,13 +298,13 @@ const handleOpenDashboard = () => {
   display: flex;
   align-items: center;
   height: var(--sys-space-32);
+  gap: var(--sys-space-6);
   flex-shrink: 0;
 }
 
-/* A console toolbar has two independent jobs. Refinement belongs on the left,
-   where a reader starts shaping the list; selection is a separate action group
-   on the right, aligned beneath the connection status. The open centre is then
-   intentional whitespace between groups, not a control stretched into a void. */
+/* A console toolbar only appears for view-specific filters or selection. Search
+   and order live behind the title-rail View button, so this grid never reserves
+   a second row for controls that the reader is not actively using. */
 .header-controls {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
@@ -427,25 +321,6 @@ const handleOpenDashboard = () => {
   justify-self: start;
   height: var(--sys-space-48);
   min-width: 0;
-}
-
-/* Search and sort are distinct keyboard actions sharing one fixed stage. When
-   search opens, sort yields its segment instead of making the whole toolbar
-   wider, so the score and selection actions never move. */
-.search-sort-control {
-  position: relative;
-  width: 200px;
-  height: var(--sys-space-48);
-  overflow: visible;
-  border: 1px solid var(--sys-color-outline-variant);
-  border-radius: var(--sys-shape-corner-input);
-  background: var(--sys-color-surface-container-high);
-  box-shadow: inset 0 2px 4px var(--sys-overlay-dark-subtle);
-  transition: border-color var(--sys-motion-duration-200) var(--sys-motion-easing-standard);
-}
-
-.search-sort-control:focus-within {
-  border-color: rgba(var(--sys-color-primary-rgb), 0.3);
 }
 
 .filter-slot {
@@ -469,173 +344,6 @@ const handleOpenDashboard = () => {
   height: var(--sys-space-48);
 }
 
-/* [DECISION LOG] THE CONTROL TAKES THE SPACE IT IS USING, NOT THE SPACE THERE IS:
-   Idle it is a fixed 48px icon that yields every spare pixel to its row-mates.
-   Open it grows, but only to a ceiling, because the queries it takes are player
-   names of a few characters. The old rule was a flat `flex: 1`, which made the
-   field a hostage to the viewport in both directions: crushed to 108px and
-   clipping its own contents at 320px, ballooned to 508px at 1440px. */
-.search-bar {
-  position: absolute;
-  z-index: 1;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  width: var(--sys-space-48);
-  min-width: 0;
-  overflow: hidden;
-  transition: width var(--sys-motion-duration-250) var(--sys-motion-easing-standard);
-}
-
-.search-bar.is-open {
-  width: 100%;
-}
-
-/* Square, so the icon sits in the middle of a target that already meets the
-   ADR's 48px minimum without a pseudo-element widening it. */
-.search-trigger {
-  width: var(--sys-space-48);
-  height: var(--sys-space-48);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: transparent;
-  border: none;
-  border-right: 1px solid var(--sys-color-outline-variant);
-  border-radius: var(--sys-shape-corner-input) 0 0 var(--sys-shape-corner-input);
-  color: var(--sys-color-on-surface-variant);
-  cursor: pointer;
-  transition:
-    color var(--sys-motion-duration-200) var(--sys-motion-easing-standard),
-    background-color var(--sys-motion-duration-200) var(--sys-motion-easing-standard);
-}
-
-.search-trigger:hover {
-  color: var(--sys-color-on-surface);
-  background: var(--sys-color-surface-container-highest);
-}
-
-.search-trigger:active {
-  transform: scale(0.96);
-}
-
-/* Only appears while there is something to clear, so it never occupies the
-   field as dead weight. mousedown is prevented on it in the template: without
-   that the input blurs first, and a blur that closed the field would take the
-   button out from under the finger before the click landed. */
-.search-clear {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: var(--sys-space-4);
-  border-radius: var(--sys-shape-corner-full);
-  background: none;
-  border: none;
-  color: var(--sys-color-on-surface-variant);
-  cursor: pointer;
-  transition: color var(--sys-motion-duration-200) var(--sys-motion-easing-standard);
-}
-
-.search-clear::after {
-  content: "";
-  position: absolute;
-  inset: calc(-1 * var(--sys-space-12));
-}
-
-.search-clear:hover {
-  color: var(--sys-color-on-surface);
-}
-
-/* [DECISION LOG] 48, MATCHING ITS ROW-MATE:
-   This stood at 40px beside a 48px sort control in the same flex row, so two
-   fields that read as a pair were visibly different heights, and it sat under
-   the ADR touch minimum. The input inside it only occupied 23px of that, so
-   the actual target was smaller again; stretching it to the box's full height
-   makes the whole field tappable rather than just the text line. */
-.search-box {
-  position: relative;
-  height: var(--sys-space-48);
-  width: 100%;
-  background: transparent;
-  border-radius: var(--sys-shape-corner-input);
-  display: flex;
-  align-items: center;
-  padding: 0 var(--sys-space-14);
-  gap: var(--sys-space-12);
-  border: none;
-  box-shadow: none;
-  transition: none;
-}
-
-.search-icon {
-  color: var(--sys-color-on-surface-variant);
-}
-
-/* [DECISION LOG] min-width: 0 IS WHY THE FIELD USED TO CLIP:
-   An <input> carries an intrinsic minimum width from its default size="20", so
-   as a flex item under the initial `min-width: auto` it simply refuses to
-   shrink below roughly 170px. Measured: a 161px box holding a 170px input, a
-   53px shortfall, with the overflow hidden behind the box's own rounding. That
-   is what crushed the old always-open field at 320px, and no amount of space
-   granted to the parent fixes it - the child was never willing to fit. */
-.search-input {
-  flex: 1;
-  min-width: 0;
-  align-self: stretch;
-  background: none;
-  border: none;
-  color: var(--sys-color-on-surface);
-  font-size: var(--sys-typescale-body-rg);
-  outline: none;
-}
-
-.sort-box {
-  position: absolute;
-  z-index: 2;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  width: 152px;
-}
-
-.sort-box :deep(.custom-select),
-.sort-box :deep(.select-trigger) {
-  height: 100%;
-}
-
-.sort-box :deep(.select-trigger) {
-  border: none;
-  border-radius: 0 var(--sys-shape-corner-input) var(--sys-shape-corner-input) 0;
-  background: transparent;
-  box-shadow: none;
-}
-
-/* The field stays compact; the explanatory menu does not. Giving option
-   descriptions a readable measure keeps them instructional rather than a
-   stack of cramped fragments beneath each sort label. */
-.sort-box :deep(.options-dropdown) {
-  width: min(320px, calc(100vw - var(--sys-space-32)));
-  right: auto;
-}
-
-/* The leaving sort stays over the expanding search field for the first beat,
-   then lifts and fades away. Its absolute position means this is visual only:
-   neither the toolbar nor the primary selection action reflows. */
-.sort-yield-enter-active,
-.sort-yield-leave-active {
-  transform-origin: right center;
-  transition:
-    opacity var(--sys-motion-duration-200) var(--sys-motion-easing-standard),
-    transform var(--sys-motion-duration-250) var(--sys-motion-easing-standard);
-}
-
-.sort-yield-enter-from,
-.sort-yield-leave-to {
-  opacity: 0;
-  transform: translateX(var(--sys-space-8)) scaleX(0.94);
-}
-
 @media (max-width: 520px) {
   .header-controls {
     display: flex;
@@ -650,17 +358,6 @@ const handleOpenDashboard = () => {
     flex-direction: column;
     height: auto;
   }
-
-  .search-sort-control,
-  .search-sort-control.is-search-open,
-  .search-bar.is-open {
-    width: 100%;
-  }
-
-  .filter-slot,
-  .search-bar { min-width: 0; }
-
-  .sort-box :deep(.options-dropdown) { width: 100%; }
 
   .selection-actions {
     align-self: stretch;
