@@ -327,6 +327,37 @@ const handleOpenDashboard = () => {
   height: var(--sys-space-48);
 }
 
+@media (min-width: 521px) {
+  /* Desktop has room for the score drag surface to become genuinely useful.
+     The action cluster grows only to a calm ceiling; every further pixel goes
+     to the slider, where it improves precision rather than creating dead air. */
+  .selection-actions {
+    grid-column: 1 / -1;
+    justify-self: stretch;
+    width: 100%;
+  }
+
+  .selection-actions :deep(.selection-bar) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(176px, 280px);
+    width: 100%;
+    gap: var(--sys-space-12);
+  }
+
+  .selection-actions :deep(.sel-group.strategy),
+  .selection-actions :deep(.score-pill-group),
+  .selection-actions :deep(.sel-group.management) {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .selection-actions :deep(.morph-btn) {
+    flex: 1;
+    width: auto;
+    min-width: 0;
+  }
+}
+
 @media (max-width: 520px) {
   /* Filtered totals are useful, but a title rail must never break merely to
      spell "of". The label still provides the unit: `2/38 MEMBERS`. */
@@ -374,6 +405,10 @@ const handleOpenDashboard = () => {
 
   .selection-actions :deep(.sel-group.management) { width: 100%; }
 
-  .selection-actions :deep(.morph-btn) { width: 100%; }
+  .selection-actions :deep(.morph-btn) {
+    flex: 1;
+    width: auto;
+    min-width: 0;
+  }
 }
 </style>

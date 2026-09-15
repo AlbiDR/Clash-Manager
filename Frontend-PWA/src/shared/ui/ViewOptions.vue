@@ -684,6 +684,26 @@ onUnmounted(() => {
 .view-options-sheet-enter-from .view-options-sheet,
 .view-options-sheet-leave-to .view-options-sheet { transform: translateY(100%); }
 
+@media (min-width: 521px) {
+  /* A fixed desktop sheet height makes the scrollport unambiguous: wheel and
+     trackpad input always continue through the remaining order options rather
+     than falling through to the page behind the modal. */
+  .view-options-sheet {
+    height: min(70vh, 560px);
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    scrollbar-color: var(--sys-color-outline-variant) transparent;
+  }
+
+  .view-options-sheet::-webkit-scrollbar { width: var(--sys-space-4); }
+  .view-options-sheet::-webkit-scrollbar-thumb {
+    background: var(--sys-color-outline-variant);
+    border-radius: var(--sys-shape-corner-full);
+  }
+}
+
 @media (max-width: 520px) {
   .view-options-trigger {
     width: var(--sys-space-48);
