@@ -224,18 +224,20 @@ const handleOpenDashboard = () => {
               </div>
             </div>
 
-            <div
-              v-if="props.sortOptions"
-              class="sort-box"
-              :title="activeSortDescription || undefined"
-            >
-              <BaseSelect
-                :model-value="props.currentSort || ''"
-                :options="selectSortOptions"
-                :aria-label="activeSortDescription ? `Sort by. ${activeSortDescription}` : 'Sort by'"
-                @update:model-value="(targetSortValue) => emit('update:sort', targetSortValue)"
-              />
-            </div>
+            <Transition name="sort-yield">
+              <div
+                v-if="props.sortOptions && !isSearchOpen"
+                class="sort-box"
+                :title="activeSortDescription || undefined"
+              >
+                <BaseSelect
+                  :model-value="props.currentSort || ''"
+                  :options="selectSortOptions"
+                  :aria-label="activeSortDescription ? `Sort by. ${activeSortDescription}` : 'Sort by'"
+                  @update:model-value="(targetSortValue) => emit('update:sort', targetSortValue)"
+                />
+              </div>
+            </Transition>
           </div>
 
           <div
@@ -427,12 +429,11 @@ const handleOpenDashboard = () => {
   min-width: 0;
 }
 
-/* Search and sort are distinct keyboard actions in one compound refinement
-   control. The shared frame makes the icon discoverable without giving a
-   single-purpose square its own disconnected island in the toolbar. */
+/* Search and sort are distinct keyboard actions sharing one fixed stage. When
+   search opens, sort yields its segment instead of making the whole toolbar
+   wider, so the score and selection actions never move. */
 .search-sort-control {
-  display: flex;
-  align-items: center;
+  position: relative;
   width: 200px;
   height: var(--sys-space-48);
   overflow: visible;
@@ -440,13 +441,7 @@ const handleOpenDashboard = () => {
   border-radius: var(--sys-shape-corner-input);
   background: var(--sys-color-surface-container-high);
   box-shadow: inset 0 2px 4px var(--sys-overlay-dark-subtle);
-  transition:
-    width var(--sys-motion-duration-200) var(--sys-motion-easing-standard),
-    border-color var(--sys-motion-duration-200) var(--sys-motion-easing-standard);
-}
-
-.search-sort-control.is-search-open {
-  width: 320px;
+  transition: border-color var(--sys-motion-duration-200) var(--sys-motion-easing-standard);
 }
 
 .search-sort-control:focus-within {
@@ -481,20 +476,19 @@ const handleOpenDashboard = () => {
    field a hostage to the viewport in both directions: crushed to 108px and
    clipping its own contents at 320px, ballooned to 508px at 1440px. */
 .search-bar {
-  flex: 0 0 auto;
+  position: absolute;
+  z-index: 1;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: var(--sys-space-48);
   min-width: 0;
+  overflow: hidden;
+  transition: width var(--sys-motion-duration-250) var(--sys-motion-easing-standard);
 }
 
 .search-bar.is-open {
-  flex: 1 1 var(--sys-layout-search-min-width);
-  min-width: var(--sys-layout-search-min-width);
-  max-width: var(--sys-layout-search-max-width);
-}
-
-.search-sort-control .search-bar.is-open {
-  flex: 1 1 auto;
-  min-width: 0;
-  max-width: none;
+  width: 100%;
 }
 
 /* Square, so the icon sits in the middle of a target that already meets the
@@ -562,14 +556,14 @@ const handleOpenDashboard = () => {
 .search-box {
   position: relative;
   height: var(--sys-space-48);
+  width: 100%;
   background: transparent;
-  border-radius: var(--sys-shape-corner-input) 0 0 var(--sys-shape-corner-input);
+  border-radius: var(--sys-shape-corner-input);
   display: flex;
   align-items: center;
   padding: 0 var(--sys-space-14);
   gap: var(--sys-space-12);
   border: none;
-  border-right: 1px solid var(--sys-color-outline-variant);
   box-shadow: none;
   transition: none;
 }
@@ -597,17 +591,41 @@ const handleOpenDashboard = () => {
 }
 
 .sort-box {
-  flex-shrink: 0;
+  position: absolute;
+  z-index: 2;
+  top: 0;
+  right: 0;
+  bottom: 0;
   width: 152px;
+}
+
+.sort-box :deep(.custom-select),
+.sort-box :deep(.select-trigger) {
   height: 100%;
 }
 
 .sort-box :deep(.select-trigger) {
-  height: 100%;
   border: none;
   border-radius: 0 var(--sys-shape-corner-input) var(--sys-shape-corner-input) 0;
   background: transparent;
   box-shadow: none;
+}
+
+/* The leaving sort stays over the expanding search field for the first beat,
+   then lifts and fades away. Its absolute position means this is visual only:
+   neither the toolbar nor the primary selection action reflows. */
+.sort-yield-enter-active,
+.sort-yield-leave-active {
+  transform-origin: right center;
+  transition:
+    opacity var(--sys-motion-duration-200) var(--sys-motion-easing-standard),
+    transform var(--sys-motion-duration-250) var(--sys-motion-easing-standard);
+}
+
+.sort-yield-enter-from,
+.sort-yield-leave-to {
+  opacity: 0;
+  transform: translateX(var(--sys-space-8)) scaleX(0.94);
 }
 
 @media (max-width: 520px) {
@@ -626,16 +644,13 @@ const handleOpenDashboard = () => {
   }
 
   .search-sort-control,
-  .search-sort-control.is-search-open {
+  .search-sort-control.is-search-open,
+  .search-bar.is-open {
     width: 100%;
   }
 
   .filter-slot,
-  .search-bar,
-  .search-bar.is-open {
-    min-width: 0;
-    max-width: none;
-  }
+  .search-bar { min-width: 0; }
 
   .selection-actions {
     align-self: flex-start;

@@ -91,6 +91,26 @@ describe("ConsoleHeader", () => {
     vi.useRealTimers();
   });
 
+  it("lets search take over the fixed refinement stage without keeping sort in the way", async () => {
+    const wrapper = mount(ConsoleHeader, {
+      props: {
+        title: "Search Test",
+        showSearch: true,
+        searchQuery: "",
+        sortOptions: [{ label: "Performance", value: "performance" }],
+        currentSort: "performance",
+      },
+    });
+
+    expect(wrapper.find(".sort-box").exists()).toBe(true);
+
+    await wrapper.find(".search-trigger").trigger("click");
+
+    expect(wrapper.find(".search-sort-control").classes()).toContain("is-search-open");
+    expect(wrapper.find(".search-input").exists()).toBe(true);
+    expect(wrapper.find(".sort-box").exists()).toBe(false);
+  });
+
   it("keeps the field open while a query stands, so a filter can never hide", async () => {
     // The reader never opened it; the query alone is enough to pin it open.
     const wrapper = mount(ConsoleHeader, {
