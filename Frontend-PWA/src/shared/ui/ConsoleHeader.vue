@@ -411,4 +411,13 @@ const handleOpenDashboard = () => {
     min-width: 0;
   }
 }
+
+@media (min-width: 481px) and (max-width: 520px) {
+  /* Once a phone has room beyond the safe narrow layout, the joined action
+     cluster stops growing at a practical ceiling. The slider receives the
+     surplus because horizontal travel is its actual interaction budget. */
+  .selection-actions :deep(.selection-bar) {
+    grid-template-columns: minmax(0, 1fr) minmax(176px, 184px);
+  }
+}
 </style>
