@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-14
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-15] PR #1831 [Stage 10]: Verified asset links, manifest parity, version code/name sync, release metadata, and cleartext traffic security policy across PWA and APK configuration files.
+**Domain:** apk | **Commit:** 01b491c69 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1831)
+**Files:** .github/nightly-logs/10-apk-integrity-coverage.log, .github/nightly-logs/10-apk-integrity-pr-body.md
+**Why:** Ensure PWA and Android native wrapper configurations are strictly synchronized and security constraints are preserved.
+**Change:** Verified asset links, manifest parity, version code/name sync, release metadata, and cleartext traffic security policy across PWA and APK configuration files.
+**Result:** Passed pnpm audit:apk, pnpm apk:verify:source, pnpm test:apk-release, and pnpm apk:verify with zero mismatches across all wrapper invariants.
+**Nudges:** 0
+
+
 ### [2026-09-15] PR #1830 [Stage 9]: Removed dead AndroidCalibrationSettings re-export from settings components barrel
 **Domain:** architecture | **Commit:** f1f961a5e | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1830)
 **Files:** .github/nightly-logs/09-refactor-proposals-coverage.log, .github/nightly-logs/09-refactor-proposals-pr-body.md, Frontend-PWA/src/features/settings/components/index.ts
