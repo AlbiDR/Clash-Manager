@@ -71,6 +71,22 @@ describe("useApiState", () => {
     expect(apiStatus.value).toBe("stale");
   });
 
+  it("cancels a scheduled retry when an explicit check succeeds", async () => {
+    vi.mocked(ping)
+      .mockRejectedValueOnce(new Error("Transient failure"))
+      .mockResolvedValueOnce({ status: "success", version: "1.0", modules: {} });
+    const { apiStatus, checkApiStatus } = useApiState();
+
+    await checkApiStatus();
+    expect(apiStatus.value).toBe("stale");
+
+    await checkApiStatus();
+    expect(apiStatus.value).toBe("online");
+
+    await vi.advanceTimersByTimeAsync(2100);
+    expect(ping).toHaveBeenCalledTimes(2);
+  });
+
   it("sets status to offline only after consecutive failures (Soft Fail)", async () => {
     // @ts-expect-error -- test mock/state does not satisfy the full type
     vi.mocked(ping).mockRejectedValue(new Error("Network Error"));
@@ -161,9 +177,13 @@ describe("useApiState", () => {
   });
 
   it("handshake times out after 25 seconds", async () => {
+    let requestSignal: AbortSignal | undefined;
     // ping never resolves
     // @ts-expect-error -- test mock/state does not satisfy the full type
-    vi.mocked(ping).mockImplementation(() => new Promise(() => {}));
+    vi.mocked(ping).mockImplementation(({ signal }) => {
+      requestSignal = signal;
+      return new Promise(() => {});
+    });
 
     const { apiStatus, checkApiStatus } = useApiState();
 
@@ -175,6 +195,33 @@ describe("useApiState", () => {
 
     // Timeout should trigger handleFailure -> stale
     expect(apiStatus.value).toBe("stale");
+    expect(requestSignal?.aborted).toBe(true);
+  });
+
+  it("rechecks immediately when the browser comes back online", async () => {
+    const listeners = new Map<string, EventListener>();
+    vi.stubGlobal("window", {
+      addEventListener: vi.fn((event: string, listener: EventListener) => {
+        listeners.set(event, listener);
+      }),
+      removeEventListener: vi.fn((event: string) => {
+        listeners.delete(event);
+      }),
+    });
+    const navigatorState = { onLine: false };
+    vi.stubGlobal("navigator", navigatorState);
+    vi.mocked(ping).mockRejectedValueOnce(new Error("Offline"));
+
+    const { apiStatus, init } = useApiState();
+    init();
+    await vi.waitFor(() => expect(apiStatus.value).toBe("offline"));
+
+    navigatorState.onLine = true;
+    vi.mocked(ping).mockResolvedValueOnce({ status: "success", version: "1.0", modules: {} });
+    listeners.get("online")?.(new Event("online"));
+
+    await vi.waitFor(() => expect(apiStatus.value).toBe("online"));
+    expect(ping).toHaveBeenCalledTimes(2);
   });
 
   it("cancels and replaces pending handshake when checkApiStatus is called twice", async () => {

@@ -157,6 +157,17 @@ export function useConnectivityManager() {
       };
     }
 
+    // 2.5 Remote data whose source clock could not be established is usable,
+    // but must never be presented with 100% freshness confidence.
+    if (!unref(store.lastSyncTime) && unref(store.currentSource) === "SUPABASE") {
+      return {
+        type: "warning",
+        label: "UNVERIFIED",
+        confidence: 25,
+        diagnosis: "Backend data loaded; source freshness unavailable"
+      };
+    }
+
     // 3. Stale Data Warning
     // [THREAT: Silent Data Stale Drift] Data older than DATA_STALENESS_MINUTES is considered STALE,
     // signaling that a refresh is recommended before relying on cached analytics.

@@ -155,16 +155,58 @@ describe("idbKernel", () => {
       resetDBPromise();
       const onUpgrade = vi.fn();
 
-      openDB("db", 1, onUpgrade);
+      const openPromise = openDB("db", 1, onUpgrade);
 
       const openCall = vi.mocked(indexedDB.open).mock.calls.find(call => call[0] === "db");
       const callIndex = vi.mocked(indexedDB.open).mock.calls.indexOf(openCall!);
       const req = vi.mocked(indexedDB.open).mock.results[callIndex].value;
 
-      const mockDb = { name: "mock-db" };
+      const mockDb = { name: "mock-db", close: vi.fn(), onversionchange: null as any };
+      req.result = mockDb;
       req.onupgradeneeded({ target: { result: mockDb } });
+      req.onsuccess();
 
       expect(onUpgrade).toHaveBeenCalledWith(mockDb);
+      await openPromise;
+    });
+
+    it("openDB rejects a blocked request after the storage deadline", async () => {
+      vi.useFakeTimers();
+      const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+      vi.stubGlobal("indexedDB", mockIndexedDB);
+      const { openDB, resetDBPromise } = await import("../idbKernel");
+      resetDBPromise();
+
+      const openPromise = openDB("blocked-db", 1, () => {});
+      const openCall = vi.mocked(indexedDB.open).mock.calls.findIndex((call) => call[0] === "blocked-db");
+      const request = vi.mocked(indexedDB.open).mock.results[openCall].value;
+      request.onblocked();
+      const rejection = expect(openPromise).rejects.toThrow("IndexedDB open timed out for blocked-db");
+
+      await vi.advanceTimersByTimeAsync(3000);
+      await rejection;
+      expect(consoleSpy).toHaveBeenCalled();
+      vi.useRealTimers();
+    });
+
+    it("closes a connection when another context requests a version change", async () => {
+      const close = vi.fn();
+      const database = { close, onversionchange: null as null | (() => void) };
+      vi.stubGlobal("indexedDB", {
+        open: vi.fn((name) => {
+          const request = createMockRequest(database);
+          if (name === "versioned-db") setTimeout(() => request.onsuccess?.(), 0);
+          return request;
+        }),
+        deleteDatabase: vi.fn(() => createMockRequest()),
+      });
+      const { openDB, resetDBPromise } = await import("../idbKernel");
+      resetDBPromise();
+
+      await openDB("versioned-db", 1, () => {});
+      database.onversionchange?.();
+
+      expect(close).toHaveBeenCalledTimes(1);
     });
 
     it("openDB should handle onSuccess failure gracefully", async () => {
@@ -222,6 +264,15 @@ describe("idbKernel", () => {
       expect(val).toBe("v1");
     });
 
+    it.each([0, false, ""])("preserves the falsy memory value %j", async (storedValue) => {
+      const { idbCore, memoryStore, forceMemoryMode } = await import("../idbKernel");
+      forceMemoryMode();
+      memoryStore.set("falsy", storedValue);
+
+      await expect(idbCore.get("falsy", async () => ({} as any), "store"))
+        .resolves.toBe(storedValue);
+    });
+
     it("idbCore.get should work with IndexedDB", async () => {
       vi.stubGlobal("indexedDB", mockIndexedDB);
       const kernel = await import("../idbKernel");
@@ -252,21 +303,75 @@ describe("idbKernel", () => {
       expect(kernel.useMemoryStore).toBe(true);
     });
 
+    it("idbCore.set resolves only after its transaction commits", async () => {
+      vi.stubGlobal("indexedDB", mockIndexedDB);
+      const kernel = await import("../idbKernel");
+      const request = createMockRequest();
+      const store = { put: vi.fn(() => request) };
+      const transaction = {
+        objectStore: vi.fn(() => store),
+        oncomplete: null as null | (() => void),
+        onerror: null as null | (() => void),
+        onabort: null as null | (() => void),
+        error: null,
+        abort: vi.fn(),
+      };
+      const database = { transaction: vi.fn(() => transaction) };
+      let resolved = false;
+
+      const writePromise = kernel.idbCore.set("durable", "value", async () => database as any, "store");
+      void writePromise.then(() => { resolved = true; });
+      await vi.waitFor(() => expect(transaction.oncomplete).toEqual(expect.any(Function)));
+
+      expect(resolved).toBe(false);
+      transaction.oncomplete?.();
+      await writePromise;
+      expect(resolved).toBe(true);
+      expect(store.put).toHaveBeenCalledWith("value", "durable");
+    });
+
+    it("idbCore.set preserves the value in memory when the transaction aborts", async () => {
+      vi.stubGlobal("indexedDB", mockIndexedDB);
+      const kernel = await import("../idbKernel");
+      const request = createMockRequest();
+      const store = { put: vi.fn(() => request) };
+      const transaction = {
+        objectStore: vi.fn(() => store),
+        oncomplete: null as null | (() => void),
+        onerror: null as null | (() => void),
+        onabort: null as null | (() => void),
+        error: new Error("Transaction aborted"),
+        abort: vi.fn(),
+      };
+      const database = { transaction: vi.fn(() => transaction) };
+
+      const writePromise = kernel.idbCore.set("recoverable", "value", async () => database as any, "store");
+      await vi.waitFor(() => expect(transaction.onabort).toEqual(expect.any(Function)));
+      transaction.onabort?.();
+      await writePromise;
+
+      expect(kernel.useMemoryStore).toBe(true);
+      expect(kernel.memoryStore.get("recoverable")).toBe("value");
+    });
+
     it("idbCore.del should work with IndexedDB", async () => {
       vi.stubGlobal("indexedDB", mockIndexedDB);
       const kernel = await import("../idbKernel");
       const req = createMockRequest();
       const store = { delete: vi.fn(() => req) };
-      const tx = { objectStore: vi.fn(() => store) };
+      const tx = {
+        objectStore: vi.fn(() => store),
+        oncomplete: null as null | (() => void),
+        onerror: null as null | (() => void),
+        onabort: null as null | (() => void),
+        error: null,
+      };
       const mockDb = { transaction: vi.fn(() => tx) };
 
       const promise = kernel.idbCore.del("k1", async () => mockDb as any, "store");
 
-      await vi.waitFor(() => {
-        if (!req.onsuccess) req.onsuccess = () => {};
-      }, { timeout: 2000 });
-
-      req.onsuccess();
+      await vi.waitFor(() => expect(tx.oncomplete).toEqual(expect.any(Function)));
+      tx.oncomplete?.();
       await promise;
       expect(store.delete).toHaveBeenCalledWith("k1");
     });
@@ -276,16 +381,19 @@ describe("idbKernel", () => {
       const kernel = await import("../idbKernel");
       const req = createMockRequest();
       const store = { clear: vi.fn(() => req) };
-      const tx = { objectStore: vi.fn(() => store) };
+      const tx = {
+        objectStore: vi.fn(() => store),
+        oncomplete: null as null | (() => void),
+        onerror: null as null | (() => void),
+        onabort: null as null | (() => void),
+        error: null,
+      };
       const mockDb = { transaction: vi.fn(() => tx) };
 
       const promise = kernel.idbCore.clear(async () => mockDb as any, "store");
 
-      await vi.waitFor(() => {
-        if (!req.onsuccess) req.onsuccess = () => {};
-      }, { timeout: 2000 });
-
-      req.onsuccess();
+      await vi.waitFor(() => expect(tx.oncomplete).toEqual(expect.any(Function)));
+      tx.oncomplete?.();
       await promise;
       expect(store.clear).toHaveBeenCalled();
     });
@@ -307,7 +415,8 @@ describe("idbKernel", () => {
       req.error = new Error("IDB Error");
       req.onerror();
 
-      await expect(promise).rejects.toThrow("IDB Error");
+      await expect(promise).resolves.toBeNull();
+      expect(kernel.useMemoryStore).toBe(true);
     });
   });
 });

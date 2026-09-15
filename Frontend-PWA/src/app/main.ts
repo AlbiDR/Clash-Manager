@@ -198,12 +198,11 @@ async function bootstrap() {
 
       // PERFORMANCE: High-Speed SUPABASE Fetch fallback
       // Rationale: If the initial refresh failed or was delayed, ensure background sync proceeds once online.
-      const unwatch = watch(
+      watch(
         () => apiState.apiStatus.value,
         (apiStatus) => {
           if (apiStatus === "online") {
             clashDataStore.startBackgroundSync();
-            unwatch(); // Run once per session
           }
         },
         { immediate: true }

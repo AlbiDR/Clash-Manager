@@ -14,6 +14,52 @@ import type { WebAppData } from "../types";
  */
 export const SYNC_REQUEST_TIMEOUT_MS = 15000;
 
+/** Short recovery delay before the one bounded transient transport retry. */
+export const SYNC_RETRY_DELAY_MS = 400;
+
+const TRANSIENT_SYNC_FAILURE = /failed to fetch|network(?:\s+request)?(?:\s+error|\s+failed)?|load failed|\b408\b|\b429\b|\b50\d\b|bad gateway|service unavailable/i;
+const UNDICI_TRANSIENT_FETCH_FAILURE = /\bfetch failed\b/i;
+
+function isTransientSyncFailure(syncFailure: unknown): boolean {
+  if (!(syncFailure instanceof Error)) return false;
+  return TRANSIENT_SYNC_FAILURE.test(`${syncFailure.name} ${syncFailure.message}`)
+    || (syncFailure.name === "TypeError" && UNDICI_TRANSIENT_FETCH_FAILURE.test(syncFailure.message));
+}
+
+function waitForRetry(signal: AbortSignal): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if (signal.aborted) {
+      reject(signal.reason);
+      return;
+    }
+
+    const finish = () => {
+      signal.removeEventListener("abort", abort);
+      resolve();
+    };
+    const timeout = setTimeout(finish, SYNC_RETRY_DELAY_MS);
+    const abort = () => {
+      clearTimeout(timeout);
+      signal.removeEventListener("abort", abort);
+      reject(signal.reason);
+    };
+    signal.addEventListener("abort", abort, { once: true });
+  });
+}
+
+async function fetchRemoteWithTransientRetry(
+  force: boolean,
+  signal: AbortSignal,
+): Promise<unknown> {
+  try {
+    return await fetchRemote({ force, signal });
+  } catch (firstFailure: unknown) {
+    if (signal.aborted || !isTransientSyncFailure(firstFailure)) throw firstFailure;
+    await waitForRetry(signal);
+    return fetchRemote({ force, signal });
+  }
+}
+
 /**
  * Initializes a default, empty WebAppData state object.
  *
@@ -47,15 +93,27 @@ export function createEmptyWebAppData(): WebAppData {
  * @returns Unvalidated raw payload resolved from Supabase fetch.
  * @throws Error if network request fails or exceeds SYNC_REQUEST_TIMEOUT_MS.
  */
-export async function fetchRemoteWithTimeout(options: { force: boolean }): Promise<unknown> {
+export async function fetchRemoteWithTimeout(options: {
+  force: boolean;
+  signal?: AbortSignal;
+}): Promise<unknown> {
   const requestController = new AbortController();
   let timeoutId: ReturnType<typeof setTimeout> | undefined;
+  const abortFromCaller = () => {
+    requestController.abort(options.signal?.reason);
+  };
   try {
+    if (options.signal?.aborted) {
+      abortFromCaller();
+    } else {
+      options.signal?.addEventListener("abort", abortFromCaller, { once: true });
+    }
+
     // [THREAT:] Unbounded network requests can cause UI hanging or memory leaks.
     // [DECISION LOG] Race network fetch against a SYNC_REQUEST_TIMEOUT_MS timeout timer
     // and explicitly signal cancellation via AbortController on timeout trigger.
     return await Promise.race([
-      fetchRemote({ ...options, signal: requestController.signal }),
+      fetchRemoteWithTransientRetry(options.force, requestController.signal),
       new Promise<never>((_, reject) => {
         timeoutId = setTimeout(() => {
           const timeoutError = new Error("Sync timed out");
@@ -66,6 +124,7 @@ export async function fetchRemoteWithTimeout(options: { force: boolean }): Promi
     ]);
   } finally {
     if (timeoutId) clearTimeout(timeoutId);
+    options.signal?.removeEventListener("abort", abortFromCaller);
   }
 }
 

@@ -44,12 +44,47 @@ const pingData = ref<PingResponse | null>(null);
 let isInitialized = false;
 let consecutiveFailures = 0; // Track consecutive failures for soft-fail
 let handshakeController: AbortController | null = null;
+let retryTimer: ReturnType<typeof setTimeout> | null = null;
+let connectivityListenersRegistered = false;
+
+const HANDSHAKE_TIMEOUT_MS = 25000;
+
+function clearRetryTimer() {
+  if (retryTimer !== null) {
+    clearTimeout(retryTimer);
+    retryTimer = null;
+  }
+}
+
+function handleBrowserOffline() {
+  clearRetryTimer();
+  handshakeController?.abort("Browser went offline");
+  apiStatus.value = "offline";
+  isInitialized = true;
+}
+
+function handleBrowserOnline() {
+  void checkApiStatus();
+}
+
+function registerConnectivityRecovery() {
+  if (connectivityListenersRegistered || typeof window === "undefined") return;
+
+  window.addEventListener("offline", handleBrowserOffline);
+  window.addEventListener("online", handleBrowserOnline);
+  connectivityListenersRegistered = true;
+}
 
 /**
  * Internal logic for checking API availability.
  * Handles configuration discovery, ping handshakes, and failure recovery.
  */
 async function checkApiStatus() {
+  // An explicit check supersedes any delayed retry. Without this cancellation,
+  // focus, polling, and browser-online recovery could each leave a timer behind
+  // and repeatedly replace one another's handshakes.
+  clearRetryTimer();
+
   // [DECISION LOG] FLICKER MITIGATION
   // Rationale: Only show "checking" on the very first cold start to avoid UI
   // instability during background retries or waking transitions.
@@ -74,12 +109,14 @@ async function checkApiStatus() {
   }
   handshakeController = new AbortController();
   const signal = handshakeController.signal;
+  let handshakeTimedOut = false;
+  let timeoutId: ReturnType<typeof setTimeout> | null = null;
 
   try {
     // [DECISION LOG] WAKING STATE
     // Rationale: Provides visual feedback that the system is attempting recovery
     // after a failure, distinguishing it from a standard background sync.
-    if (consecutiveFailures > 0) {
+    if (consecutiveFailures > 0 || apiStatus.value === "offline") {
       apiStatus.value = "waking";
     }
 
@@ -90,9 +127,15 @@ async function checkApiStatus() {
     // (Project Waking) while ensuring the UI eventually hard-fails if unreachable.
     const response = await Promise.race([
       ping({ signal }),
-      new Promise<PingResponse>((_, reject) =>
-        setTimeout(() => reject(new DOMException("Handshake Timeout", "AbortError")), 25000),
-      ),
+      new Promise<PingResponse>((_, reject) => {
+        timeoutId = setTimeout(() => {
+          handshakeTimedOut = true;
+          if (handshakeController?.signal === signal) {
+            handshakeController.abort("Handshake timed out");
+          }
+          reject(new DOMException("Handshake Timeout", "AbortError"));
+        }, HANDSHAKE_TIMEOUT_MS);
+      }),
     ]);
     // [DECISION LOG] PERFORMANCE TELEMETRY
     // Rationale: Tracking handshake latency allows the UI to diagnose
@@ -108,18 +151,19 @@ async function checkApiStatus() {
       consecutiveFailures = 0;
       isInitialized = true;
     } else {
-      handleFailure(signal);
+      handleFailure(handshakeTimedOut ? undefined : signal);
     }
   } catch (handshakeError: unknown) {
     // [DECISION LOG] ABORT RESILIENCE
     // Rationale: AbortErrors triggered by our own cancellation logic are
     // non-fatal and should not trigger the failure recovery path.
-    if (handshakeError instanceof Error && handshakeError.name === "AbortError" && signal.aborted) {
+    if (handshakeError instanceof Error && handshakeError.name === "AbortError" && signal.aborted && !handshakeTimedOut) {
        return;
     }
     console.warn("API Handshake Failed:", handshakeError);
-    handleFailure(signal);
+    handleFailure(handshakeTimedOut ? undefined : signal);
   } finally {
+    if (timeoutId !== null) clearTimeout(timeoutId);
     if (handshakeController?.signal === signal) {
       handshakeController = null;
     }
@@ -155,7 +199,10 @@ function handleFailure(signal?: AbortSignal) {
     // slamming the backend or API proxy during an outage.
     apiStatus.value = "stale";
     const delay = Math.min(consecutiveFailures * 2000, 10000);
-    setTimeout(checkApiStatus, delay);
+    retryTimer = setTimeout(() => {
+      retryTimer = null;
+      void checkApiStatus();
+    }, delay);
   }
 }
 
@@ -184,8 +231,9 @@ function handleFailure(signal?: AbortSignal) {
  */
 export function useApiState() {
   function init() {
+    registerConnectivityRecovery();
     if (!isInitialized) {
-      checkApiStatus();
+      void checkApiStatus();
       isInitialized = true;
     }
   }
@@ -210,8 +258,18 @@ export function useApiState() {
  */
 export function resetApiState() {
   if (import.meta.env.TEST) {
+    clearRetryTimer();
+    handshakeController?.abort("Test state reset");
+    handshakeController = null;
+    if (connectivityListenersRegistered && typeof window !== "undefined") {
+      window.removeEventListener("offline", handleBrowserOffline);
+      window.removeEventListener("online", handleBrowserOnline);
+    }
+    connectivityListenersRegistered = false;
     isInitialized = false;
     consecutiveFailures = 0;
+    apiUrl.value = "";
+    apiConfigured.value = false;
     apiStatus.value = "checking";
     pingData.value = null;
   }

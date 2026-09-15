@@ -330,6 +330,17 @@ export const BLITZ_BATCH_SHIFT_DELAY = 150;
 export const STORAGE_DELETE_TIMEOUT = 1500;
 
 /**
+ * Maximum time allowed for an IndexedDB open request or transaction.
+ *
+ * @remarks
+ * [THREAT:] BLOCKED OR STALLED STORAGE:
+ * Browser upgrades, abandoned tabs, storage pressure, and WebView faults can
+ * leave IndexedDB requests pending without success or error events. Hydration
+ * must always reach a terminal state so remote synchronization can continue.
+ */
+export const STORAGE_REQUEST_TIMEOUT = 3000;
+
+/**
  * Notification tag used to deduplicate and manage recruit push notifications.
  * Must be kept in sync with the PWA manifest shortcut and sw.ts routing.
  */

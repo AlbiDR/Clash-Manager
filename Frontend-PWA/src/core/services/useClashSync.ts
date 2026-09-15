@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
-import { ref, type Ref } from "vue";
+import { ref, watch, type Ref } from "vue";
 import * as v from "valibot";
 import { useConnectionStatus } from "./useConnectionStatus";
 import { lastSyncStatus } from "../api/SupabaseClient";
@@ -36,6 +36,7 @@ const SYNC_FAILURE_VISIBILITY_THRESHOLD = 3;
  * first.
  */
 const SYNC_FAILURE_COPY: readonly { pattern: RegExp; headline: string }[] = [
+  { pattern: /network connection lost|offline/i, headline: "No network connection" },
   { pattern: /abort|timeout|timed out/i, headline: "The server took too long to answer" },
   { pattern: /jwt|401|403|unauthor|apikey|invalid api key/i, headline: "The app is not authorised to read this data" },
   { pattern: /50\d|internal server|bad gateway|unavailable/i, headline: "The server could not answer right now" },
@@ -64,6 +65,17 @@ type SyncIntent = "background" | "manual";
 type SyncAttemptResult =
   | { success: true }
   | { success: false; error: Error; failureCount: number };
+
+function classifySyncFailure(error: Error, online: boolean) {
+  const rawFailure = `${error.name} ${error.message}`;
+  if (!online || /offline|network connection lost|failed to fetch|fetch failed|network\s*error|load failed/i.test(rawFailure)) {
+    return "OFFLINE" as const;
+  }
+  if (/abort|timeout|timed out/i.test(rawFailure)) return "TIMEOUT" as const;
+  if (/jwt|401|403|unauthor|apikey|invalid api key/i.test(rawFailure)) return "AUTH" as const;
+  if (/validation|invalid type|expected|payload was not an array/i.test(rawFailure)) return "VALIDATION" as const;
+  return "OFFLINE" as const;
+}
 
 /**
  * CLASH SYNC SERVICE (Layer 1)
@@ -110,6 +122,9 @@ export function useClashSync(data: Ref<WebAppData | null>) {
   /** The single authoritative in-flight remote synchronization attempt. */
   let activeSyncPromise: Promise<SyncAttemptResult> | null = null;
 
+  /** Cancellation authority for the active remote transport. */
+  let activeSyncController: AbortController | null = null;
+
   /** Indicates the provenance of the dataset (SUPABASE). */
   const dataSource = ref<"SUPABASE" | null>(null);
 
@@ -129,6 +144,15 @@ export function useClashSync(data: Ref<WebAppData | null>) {
   const { isSyntheticMode } = useSyntheticMode();
   const { isOnline } = useConnectionStatus();
 
+  // A physical disconnect invalidates the active transport immediately. This
+  // releases the single-flight lock promptly and lets the first reconnect
+  // refresh establish a new request instead of joining a doomed old one.
+  watch(isOnline, (online) => {
+    if (!online && activeSyncController && !activeSyncController.signal.aborted) {
+      activeSyncController.abort(new Error("Network connection lost"));
+    }
+  });
+
   // --- ACTIONS ---
 
   /**
@@ -146,6 +170,23 @@ export function useClashSync(data: Ref<WebAppData | null>) {
     commitOptions: { skipSave?: boolean; remoteSuccess?: boolean } = {},
   ) {
     const { skipSave = false, remoteSuccess = false } = commitOptions;
+
+    // A reachable backend can still return an older snapshot during replica
+    // lag, rollback, or a delayed request. Preserve monotonic source data while
+    // retaining the new client-fetch timestamp as evidence of connectivity.
+    if (
+      remoteSuccess
+      && webAppDataSnapshot
+      && data.value
+      && webAppDataSnapshot.timestamp < data.value.timestamp
+    ) {
+      console.warn("[Sync] Ignored remote snapshot older than the current dataset.");
+      webAppDataSnapshot = {
+        ...data.value,
+        lastFetched: webAppDataSnapshot.lastFetched ?? Date.now(),
+      };
+    }
+
     data.value = webAppDataSnapshot;
 
     if (webAppDataSnapshot) {
@@ -236,7 +277,12 @@ export function useClashSync(data: Ref<WebAppData | null>) {
       }
     } catch (hydrationError: unknown) {
       console.error("[Sync] Cache hydration failed:", hydrationError instanceof Error ? hydrationError.message : String(hydrationError));
-      await commitSyncResult(createEmptyWebAppData(), { skipSave: true });
+      // A cache failure can race a successful remote refresh when multiple route
+      // loaders are active. Never let the lower-authority cache path erase live
+      // data that arrived while IndexedDB was still settling.
+      if (!data.value) {
+        await commitSyncResult(createEmptyWebAppData(), { skipSave: true });
+      }
     }
   }
 
@@ -270,7 +316,12 @@ export function useClashSync(data: Ref<WebAppData | null>) {
     // [DECISION LOG] Single-Flight Promise Lock: Deduplicate concurrent sync calls.
     // Re-use active in-flight sync promise if execution is already underway to eliminate
     // duplicate network requests and race conditions on reactive state commitment.
-    if (activeSyncPromise) return activeSyncPromise;
+    if (activeSyncPromise) {
+      if (activeSyncController?.signal.aborted) {
+        return activeSyncPromise.then(() => executeRemoteSync(force));
+      }
+      return activeSyncPromise;
+    }
     if (loading.value) {
       return Promise.resolve({
         success: false,
@@ -279,10 +330,15 @@ export function useClashSync(data: Ref<WebAppData | null>) {
       });
     }
 
+    const requestController = new AbortController();
+    activeSyncController = requestController;
     const syncPromise = (async (): Promise<SyncAttemptResult> => {
       loading.value = true;
       try {
-        const remoteData = await fetchRemoteWithTimeout({ force });
+        const remoteData = await fetchRemoteWithTimeout({
+          force,
+          signal: requestController.signal,
+        });
         const remoteDataValidation = v.safeParse(WebAppDataSchema, remoteData);
 
         if (!remoteDataValidation.success) {
@@ -292,10 +348,12 @@ export function useClashSync(data: Ref<WebAppData | null>) {
 
         await yieldToInteractionFrame();
         await commitSyncResult(remoteDataValidation.output, { remoteSuccess: true });
+        lastSyncStatus.value = "SUCCESS";
         return { success: true };
       } catch (syncFailure: unknown) {
         consecutiveSyncFailures.value++;
         const normalizedSyncError = normalizeSyncError(syncFailure);
+        lastSyncStatus.value = classifySyncFailure(normalizedSyncError, isOnline.value);
         console.warn(`[Sync] Remote sync failed (Attempt ${consecutiveSyncFailures.value}):`, normalizedSyncError);
         return {
           success: false,
@@ -309,7 +367,10 @@ export function useClashSync(data: Ref<WebAppData | null>) {
 
     activeSyncPromise = syncPromise;
     void syncPromise.finally(() => {
-      if (activeSyncPromise === syncPromise) activeSyncPromise = null;
+      if (activeSyncPromise === syncPromise) {
+        activeSyncPromise = null;
+        activeSyncController = null;
+      }
     });
     return syncPromise;
   }
@@ -327,7 +388,10 @@ export function useClashSync(data: Ref<WebAppData | null>) {
       return;
     }
 
-    if (syncIntent === "background" && !isOnline.value && !force) return;
+    if (syncIntent === "background" && !isOnline.value && !force) {
+      lastSyncStatus.value = "OFFLINE";
+      return;
+    }
 
     const syncResult = await executeRemoteSync(force);
     if (syncResult.success) return;
@@ -337,6 +401,7 @@ export function useClashSync(data: Ref<WebAppData | null>) {
     // to avoid user notification noise, while immediately exposing manual or unhydrated errors.
     const shouldExposeFailure = syncIntent === "manual"
       || !data.value
+      || data.value.timestamp === 0
       || syncResult.failureCount >= SYNC_FAILURE_VISIBILITY_THRESHOLD;
 
     if (shouldExposeFailure) syncError.value = describeSyncFailure(syncResult.error);

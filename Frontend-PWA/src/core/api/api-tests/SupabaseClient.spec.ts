@@ -142,6 +142,20 @@ describe("SupabaseClient", () => {
       expect(SupabaseClient.getApiUrl()).toBe('https://xyz.supabase.co');
     });
 
+    it("uses the operator endpoint override as the transport URL", () => {
+      vi.stubGlobal("window", {
+        localStorage: {
+          getItem: vi.fn((key: string) => key === "cm_supabase_url"
+            ? "  https://override.supabase.co  "
+            : null),
+        },
+      });
+
+      expect(SupabaseClient.getSupabaseUrl()).toBe("https://override.supabase.co");
+      expect(SupabaseClient.getApiUrl()).toBe("https://override.supabase.co");
+      expect(SupabaseClient.isConfigured()).toBe(true);
+    });
+
     it("getApiUrl returns fallback when unconfigured", () => {
       vi.stubEnv('VITE_SUPABASE_URL', '');
       vi.stubGlobal('import.meta', {
@@ -245,7 +259,7 @@ describe("SupabaseClient", () => {
       expect(SupabaseClient.lastSyncStatus.value).toBe('SUCCESS');
     });
 
-    it("fetchRemote defaults to Date.now() if heartbeat query fails", async () => {
+    it("does not forge a fresh timestamp if heartbeat and roster freshness are unavailable", async () => {
       const now = 123456789;
       vi.useFakeTimers();
       vi.setSystemTime(now);
@@ -257,7 +271,8 @@ describe("SupabaseClient", () => {
         .mockResolvedValueOnce({ data: [], error: null }); // Blacklist
 
       const result = await SupabaseClient.fetchRemote();
-      expect(result.timestamp).toBe(now);
+      expect(result.timestamp).toBe(0);
+      expect(result.lastFetched).toBe(now);
 
       vi.useRealTimers();
     });
@@ -270,10 +285,43 @@ describe("SupabaseClient", () => {
         .mockResolvedValueOnce({ data: [], error: null });
 
       const result = await SupabaseClient.fetchRemote();
-      expect(result.timestamp).toBeNaN(); // Current behavior: new Date('invalid').getTime() is NaN
+      expect(result.timestamp).toBe(0);
     });
 
-    it("fetchRemote throws Valibot error if blacklist player_tag is not a string", async () => {
+    it("derives freshness from valid roster ingestion timestamps when heartbeat is unavailable", async () => {
+      vi.mocked(mockFrom.abortSignal)
+        .mockResolvedValueOnce({ data: [{ player_tag: '#ABC', last_ingested_at: '2026-02-03T04:05:06Z' }], error: null })
+        .mockResolvedValueOnce({ data: [], error: null })
+        .mockResolvedValueOnce({ data: null, error: { message: 'Heartbeat Error' } } as any)
+        .mockResolvedValueOnce({ data: [], error: null });
+
+      const result = await SupabaseClient.fetchRemote();
+      expect(result.timestamp).toBe(new Date('2026-02-03T04:05:06Z').getTime());
+    });
+
+    it("drops one malformed roster row without discarding valid rows", async () => {
+      vi.mocked(mockFrom.abortSignal)
+        .mockResolvedValueOnce({ data: [{ player_tag: '#ABC' }, { player_tag: { invalid: true } }], error: null })
+        .mockResolvedValueOnce({ data: [], error: null })
+        .mockResolvedValueOnce({ data: { last_success_at: '2026-01-01T00:00:00Z' }, error: null })
+        .mockResolvedValueOnce({ data: [], error: null });
+
+      const result = await SupabaseClient.fetchRemote();
+      expect(result.lb).toHaveLength(1);
+      expect(result.lb[0].id).toBe('ABC');
+    });
+
+    it("rejects a roster payload when every returned row is malformed", async () => {
+      vi.mocked(mockFrom.abortSignal)
+        .mockResolvedValueOnce({ data: [{ player_tag: { invalid: true } }], error: null })
+        .mockResolvedValueOnce({ data: [], error: null })
+        .mockResolvedValueOnce({ data: null, error: null })
+        .mockResolvedValueOnce({ data: [], error: null });
+
+      await expect(SupabaseClient.fetchRemote()).rejects.toThrow('Roster validation failed for every row');
+    });
+
+    it("fetchRemote isolates invalid optional blacklist rows", async () => {
       const MOCK_INVALID_TAG_NUM = 12345;
       vi.mocked(mockFrom.abortSignal)
         .mockResolvedValueOnce({ data: [], error: null }) // Roster
@@ -281,10 +329,11 @@ describe("SupabaseClient", () => {
         .mockResolvedValueOnce({ data: null, error: null }) // Heartbeat
         .mockResolvedValueOnce({ data: [{ player_tag: MOCK_INVALID_TAG_NUM }], error: null }); // Blacklist with number instead of string
 
-      await expect(SupabaseClient.fetchRemote()).rejects.toThrow();
+      const result = await SupabaseClient.fetchRemote();
+      expect(result.blacklist).toEqual([]);
     });
 
-    it("fetchRemote throws Valibot error if heartbeat last_success_at is not a string or null", async () => {
+    it("fetchRemote degrades invalid heartbeat metadata without discarding datasets", async () => {
       const MOCK_INVALID_HEARTBEAT_NUM = 99999;
       vi.mocked(mockFrom.abortSignal)
         .mockResolvedValueOnce({ data: [], error: null }) // Roster
@@ -292,7 +341,8 @@ describe("SupabaseClient", () => {
         .mockResolvedValueOnce({ data: { last_success_at: MOCK_INVALID_HEARTBEAT_NUM }, error: null }) // Heartbeat with number instead of string
         .mockResolvedValueOnce({ data: [], error: null }); // Blacklist
 
-      await expect(SupabaseClient.fetchRemote()).rejects.toThrow();
+      const result = await SupabaseClient.fetchRemote();
+      expect(result.timestamp).toBe(0);
     });
   });
 });

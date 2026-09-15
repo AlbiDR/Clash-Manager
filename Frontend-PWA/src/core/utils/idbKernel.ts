@@ -15,7 +15,7 @@
  * - **Satisfaction:** ADR Section II (Layer 1: Core) and Section IV (Tiered Caching Protocol).
  */
 
-import { STORAGE_DELETE_TIMEOUT } from "@core/config";
+import { STORAGE_DELETE_TIMEOUT, STORAGE_REQUEST_TIMEOUT } from "@core/config";
 
 /**
  * Fallback in-memory storage for environments where IndexedDB is unavailable or failing.
@@ -108,27 +108,66 @@ export async function openDB(
 ): Promise<IDBDatabase> {
   if (dbPromise) return dbPromise;
 
-  dbPromise = new Promise((resolve, reject) => {
-    // [THREAT:] Attempting to open IDB in unsupported environments triggers uncaught errors.
-    // [DECISION LOG] Guarding the open request with useMemoryStore ensures we never
-    // attempt a native call when the kernel has degraded.
-    if (useMemoryStore || typeof indexedDB === "undefined") {
-      dbPromise = null;
-      return reject(new Error("IDB Unsupported"));
-    }
+  // [THREAT:] Attempting to open IDB in unsupported environments triggers uncaught errors.
+  // [DECISION LOG] Guarding the open request with useMemoryStore ensures we never
+  // attempt a native call when the kernel has degraded.
+  if (useMemoryStore || typeof indexedDB === "undefined") {
+    throw new Error("IDB Unsupported");
+  }
 
-    const idbOpenRequest = indexedDB.open(dbName, version);
+  let idbOpenRequest: IDBOpenDBRequest;
+  try {
+    idbOpenRequest = indexedDB.open(dbName, version);
+  } catch (openError: unknown) {
+    useMemoryStore = true;
+    throw openError;
+  }
+
+  const openingPromise = new Promise<IDBDatabase>((resolve, reject) => {
+    let settled = false;
+    const openTimeout = setTimeout(() => {
+      fail(new Error(`IndexedDB open timed out for ${dbName}`));
+    }, STORAGE_REQUEST_TIMEOUT);
+
+    function fail(openError: unknown) {
+      if (settled) return;
+      settled = true;
+      clearTimeout(openTimeout);
+      if (dbPromise === openingPromise) dbPromise = null;
+      reject(openError);
+    }
 
     // [THREAT:] Race conditions or schema conflicts during upgrade can corrupt persistence.
     // [DECISION LOG] Upgrade logic is encapsulated in a dedicated callback to ensure
     // structural integrity before the connection is marked successful.
     idbOpenRequest.onupgradeneeded = (dbUpgradeEvent) => {
       const db = (dbUpgradeEvent.target as IDBOpenDBRequest).result;
-      onUpgrade(db);
+      try {
+        onUpgrade(db);
+      } catch (upgradeError: unknown) {
+        try {
+          idbOpenRequest.transaction?.abort();
+        } catch {
+          // The transaction may already have been aborted by the browser.
+        }
+        fail(upgradeError);
+      }
     };
 
     idbOpenRequest.onsuccess = async () => {
       const db = idbOpenRequest.result;
+      if (settled) {
+        db.close();
+        return;
+      }
+
+      // Cooperate with schema upgrades from another tab instead of keeping the
+      // newer version blocked indefinitely. The next operation opens a fresh DB.
+      db.onversionchange = () => {
+        db.close();
+        if (dbPromise === openingPromise) dbPromise = null;
+      };
+
       if (onSuccess) {
         try {
           await onSuccess(db);
@@ -136,26 +175,42 @@ export async function openDB(
           console.warn("[IDB-Kernel] onSuccess hook failed:", postConnectionHookError);
         }
       }
+
+      if (settled) {
+        db.close();
+        return;
+      }
+      settled = true;
+      clearTimeout(openTimeout);
       resolve(db);
     };
 
     idbOpenRequest.onerror = (dbOpeningError) => {
-      dbPromise = null;
-      reject(idbOpenRequest.error || dbOpeningError);
+      fail(idbOpenRequest.error || dbOpeningError);
+    };
+
+    idbOpenRequest.onblocked = () => {
+      console.warn(`[IDB-Kernel] Open blocked for ${dbName}; waiting for the bounded fallback.`);
     };
   });
 
-  return dbPromise;
+  dbPromise = openingPromise;
+  return openingPromise;
 }
 
 /**
  * Closes the active database connection and resets the singleton promise.
  */
 export async function closeDB() {
-  if (dbPromise) {
-    const db = await dbPromise;
+  const activeDbPromise = dbPromise;
+  dbPromise = null;
+  if (!activeDbPromise) return;
+
+  try {
+    const db = await activeDbPromise;
     db.close();
-    dbPromise = null;
+  } catch {
+    // A failed or timed-out open has no live connection to close.
   }
 }
 
@@ -165,6 +220,94 @@ export async function closeDB() {
  */
 export function resetDBPromise() {
   dbPromise = null;
+}
+
+function readMemoryValue<T>(key: string): T | null {
+  return memoryStore.has(key) ? memoryStore.get(key) as T : null;
+}
+
+/**
+ * Waits for a read request with a hard terminal deadline.
+ */
+function readFromStore<T>(db: IDBDatabase, storeName: string, key: string): Promise<T | null> {
+  return new Promise((resolve, reject) => {
+    let settled = false;
+    const timeout = setTimeout(() => {
+      fail(new Error(`IndexedDB read timed out for ${key}`));
+    }, STORAGE_REQUEST_TIMEOUT);
+
+    function finish(value: T | null) {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timeout);
+      resolve(value);
+    }
+
+    function fail(readError: unknown) {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timeout);
+      reject(readError);
+    }
+
+    try {
+      const transaction = db.transaction(storeName, "readonly");
+      const request = transaction.objectStore(storeName).get(key);
+      request.onsuccess = () => finish((request.result as T) ?? null);
+      request.onerror = () => fail(request.error || new Error(`IndexedDB read failed for ${key}`));
+      transaction.onabort = () => fail(transaction.error || new Error(`IndexedDB read aborted for ${key}`));
+    } catch (readError: unknown) {
+      fail(readError);
+    }
+  });
+}
+
+/**
+ * Resolves only after the containing write transaction commits.
+ */
+function commitStoreMutation(
+  db: IDBDatabase,
+  storeName: string,
+  operation: string,
+  mutate: (store: IDBObjectStore) => IDBRequest,
+): Promise<void> {
+  return new Promise((resolve, reject) => {
+    let settled = false;
+    let transaction: IDBTransaction | null = null;
+    const timeout = setTimeout(() => {
+      try {
+        transaction?.abort();
+      } catch {
+        // A completed transaction cannot be aborted and is settled below.
+      }
+      fail(new Error(`IndexedDB ${operation} timed out`));
+    }, STORAGE_REQUEST_TIMEOUT);
+
+    function finish() {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timeout);
+      resolve();
+    }
+
+    function fail(writeError: unknown) {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timeout);
+      reject(writeError);
+    }
+
+    try {
+      transaction = db.transaction(storeName, "readwrite");
+      transaction.oncomplete = finish;
+      transaction.onerror = () => fail(transaction?.error || new Error(`IndexedDB ${operation} failed`));
+      transaction.onabort = () => fail(transaction?.error || new Error(`IndexedDB ${operation} aborted`));
+      const request = mutate(transaction.objectStore(storeName));
+      request.onerror = () => fail(request.error || new Error(`IndexedDB ${operation} request failed`));
+    } catch (writeError: unknown) {
+      fail(writeError);
+    }
+  });
 }
 
 /**
@@ -184,24 +327,16 @@ export const idbCore = {
    * @returns A promise resolving to the retrieved value of type T or null.
    */
   async get<T>(key: string, getDB: () => Promise<IDBDatabase>, storeName: string): Promise<T | null> {
-    if (useMemoryStore) return (memoryStore.get(key) as T) || null;
+    if (useMemoryStore) return readMemoryValue<T>(key);
     try {
       const db = await getDB();
-      return new Promise((resolve, reject) => {
-        try {
-          const idbTransaction = db.transaction(storeName, "readonly");
-          const idbStore = idbTransaction.objectStore(storeName);
-          const idbGetRequest = idbStore.get(key);
-          idbGetRequest.onsuccess = () => resolve((idbGetRequest.result as T) || null);
-          idbGetRequest.onerror = () => reject(idbGetRequest.error);
-        } catch (readOperationError: unknown) { reject(readOperationError); }
-      });
+      return await readFromStore<T>(db, storeName, key);
     } catch {
       // [THREAT:] Silent runtime failures in IDB operations can stall the UI thread.
       // [DECISION LOG] Runtime failures in IDB trigger an immediate degradation
       // to memory-only mode to preserve application responsiveness.
       useMemoryStore = true;
-      return (memoryStore.get(key) as T) || null;
+      return readMemoryValue<T>(key);
     }
   },
 
@@ -217,15 +352,7 @@ export const idbCore = {
     if (useMemoryStore) { memoryStore.set(key, value); return; }
     try {
       const db = await getDB();
-      return new Promise((resolve, reject) => {
-        try {
-          const idbTransaction = db.transaction(storeName, "readwrite");
-          const idbStore = idbTransaction.objectStore(storeName);
-          const idbSetRequest = idbStore.put(value, key);
-          idbSetRequest.onsuccess = () => resolve();
-          idbSetRequest.onerror = () => reject(idbSetRequest.error);
-        } catch (writeOperationError: unknown) { reject(writeOperationError); }
-      });
+      await commitStoreMutation(db, storeName, `write for ${key}`, (store) => store.put(value, key));
     } catch {
       // [THREAT:] Storage exhaustion or IO failures must not prevent UI state commitment.
       // [DECISION LOG] Fall back to memoryStore to ensure that the user's latest interactions
@@ -246,15 +373,7 @@ export const idbCore = {
     if (useMemoryStore) { memoryStore.delete(key); return; }
     try {
       const db = await getDB();
-      return new Promise((resolve, reject) => {
-        try {
-          const idbTransaction = db.transaction(storeName, "readwrite");
-          const idbStore = idbTransaction.objectStore(storeName);
-          const idbDelRequest = idbStore.delete(key);
-          idbDelRequest.onsuccess = () => resolve();
-          idbDelRequest.onerror = () => reject(idbDelRequest.error);
-        } catch (deleteOperationError: unknown) { reject(deleteOperationError); }
-      });
+      await commitStoreMutation(db, storeName, `delete for ${key}`, (store) => store.delete(key));
     } catch {
       useMemoryStore = true;
       memoryStore.delete(key);
@@ -271,15 +390,7 @@ export const idbCore = {
     if (useMemoryStore) { memoryStore.clear(); return; }
     try {
       const db = await getDB();
-      return new Promise((resolve, reject) => {
-        try {
-          const idbTransaction = db.transaction(storeName, "readwrite");
-          const idbStore = idbTransaction.objectStore(storeName);
-          const idbClearRequest = idbStore.clear();
-          idbClearRequest.onsuccess = () => resolve();
-          idbClearRequest.onerror = () => reject(idbClearRequest.error);
-        } catch (clearOperationError: unknown) { reject(clearOperationError); }
-      });
+      await commitStoreMutation(db, storeName, "clear", (store) => store.clear());
     } catch {
       useMemoryStore = true;
       memoryStore.clear();

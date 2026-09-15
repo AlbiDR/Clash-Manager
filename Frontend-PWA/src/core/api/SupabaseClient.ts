@@ -44,7 +44,23 @@ export class NetworkError extends Error {
 }
 
 // Supabase Configuration
-export const getSupabaseUrl = () => import.meta.env.VITE_SUPABASE_URL || "";
+export const getSupabaseUrl = () => {
+  // Settings deliberately stores an operator-selected endpoint in localStorage
+  // and reloads the app. Bootstrap already treats that value as valid
+  // configuration, so the transport must resolve the same source of truth.
+  // Guard the browser global for tests, SSR, and build-time evaluation.
+  let localOverride = "";
+  if (typeof window !== "undefined") {
+    try {
+      localOverride = window.localStorage.getItem("cm_supabase_url")?.trim() || "";
+    } catch {
+      // Storage can be denied in hardened/private browser contexts. The build
+      // configuration remains a valid, deterministic fallback in that case.
+    }
+  }
+
+  return localOverride || import.meta.env.VITE_SUPABASE_URL || "";
+};
 export const getSupabaseKey = () => import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || "";
 
 /**
@@ -113,6 +129,12 @@ export function isConfigured(): boolean {
  */
 export function getApiUrl(): string {
   return getSupabaseUrl() || "(not configured)";
+}
+
+function parseTimestamp(timestamp: string | null | undefined): number | null {
+  if (!timestamp) return null;
+  const parsedTimestamp = Date.parse(timestamp);
+  return Number.isFinite(parsedTimestamp) ? parsedTimestamp : null;
 }
 
 /**
@@ -211,16 +233,45 @@ export async function fetchRemote(options?: {
   }
   
   // [GUARD] VALIDATION BOUNDARY: Harden external view data before domain mapping.
-  // [THREAT:] Processing unvalidated raw data or using 'any' can cause runtime crashes if the DB schema shifts.
-  const rosterData = v.parse(v.array(SbRosterRowSchema), rosterResponse.data || []);
-  const headhunterData = v.parse(v.array(SbHeadhunterRowSchema), headhunterResponse.data || []);
+  // One malformed row must not discard every valid member or recruit, but a
+  // wholly malformed payload is still rejected rather than certified as empty.
+  const rawRosterData: unknown = rosterResponse.data ?? [];
+  const rawHeadhunterData: unknown = headhunterResponse.data ?? [];
+  if (!Array.isArray(rawRosterData)) throw new Error("Roster payload was not an array");
+  if (!Array.isArray(rawHeadhunterData)) throw new Error("Headhunter payload was not an array");
+
+  const rosterData = rawRosterData.flatMap((rosterRow) => {
+    const validation = v.safeParse(SbRosterRowSchema, rosterRow);
+    return validation.success ? [validation.output] : [];
+  });
+  const headhunterData = rawHeadhunterData.flatMap((headhunterRow) => {
+    const validation = v.safeParse(SbHeadhunterRowSchema, headhunterRow);
+    return validation.success ? [validation.output] : [];
+  });
+  const rejectedRosterRows = rawRosterData.length - rosterData.length;
+  const rejectedHeadhunterRows = rawHeadhunterData.length - headhunterData.length;
+  if (rejectedRosterRows > 0) console.warn(`[Sync] Dropped ${rejectedRosterRows} invalid roster row(s).`);
+  if (rejectedHeadhunterRows > 0) console.warn(`[Sync] Dropped ${rejectedHeadhunterRows} invalid headhunter row(s).`);
+  if (rawRosterData.length > 0 && rosterData.length === 0) {
+    throw new Error("Roster validation failed for every row");
+  }
+  if (rawHeadhunterData.length > 0 && headhunterData.length === 0) {
+    throw new Error("Headhunter validation failed for every row");
+  }
 
   const BlacklistRowSchema = v.object({
     player_tag: v.string(),
   });
-  const blacklistData = blacklistResponse.error
-    ? []
-    : v.parse(v.array(BlacklistRowSchema), blacklistResponse.data || []);
+  const rawBlacklistData: unknown = blacklistResponse.error ? [] : blacklistResponse.data ?? [];
+  const blacklistData = Array.isArray(rawBlacklistData)
+    ? rawBlacklistData.flatMap((blacklistRow) => {
+      const validation = v.safeParse(BlacklistRowSchema, blacklistRow);
+      return validation.success ? [validation.output] : [];
+    })
+    : [];
+  if (!blacklistResponse.error && (!Array.isArray(rawBlacklistData) || blacklistData.length !== rawBlacklistData.length)) {
+    console.warn("[Sync] Ignored malformed optional blacklist data.");
+  }
   const blacklistTags = blacklistData
     .map((blacklistRow) => {
       const observedPlayerTag = blacklistRow.player_tag;
@@ -238,12 +289,22 @@ export async function fetchRemote(options?: {
   const HeartbeatRowSchema = v.object({
     last_success_at: v.nullable(v.string()),
   });
-  const heartbeatData = heartbeatResponse.data
-    ? v.parse(HeartbeatRowSchema, heartbeatResponse.data)
+  const heartbeatValidation = heartbeatResponse.error || !heartbeatResponse.data
+    ? null
+    : v.safeParse(HeartbeatRowSchema, heartbeatResponse.data);
+  if (heartbeatResponse.error || (heartbeatValidation && !heartbeatValidation.success)) {
+    console.warn("[Sync] Pipeline heartbeat unavailable; deriving freshness from roster data.");
+  }
+  const heartbeatTimestamp = heartbeatValidation?.success
+    ? parseTimestamp(heartbeatValidation.output.last_success_at)
     : null;
-  const timestamp = heartbeatData?.last_success_at
-    ? new Date(heartbeatData.last_success_at).getTime()
-    : Date.now();
+  const rosterTimestamps = rosterData
+    .map((rosterRow) => parseTimestamp(rosterRow.last_ingested_at))
+    .filter((rosterTimestamp): rosterTimestamp is number => rosterTimestamp !== null);
+  const rosterTimestamp = rosterTimestamps.length > 0 ? Math.max(...rosterTimestamps) : null;
+  // Never replace unknown freshness with the client's current clock. Doing so
+  // makes arbitrarily old source data appear freshly ingested.
+  const timestamp = heartbeatTimestamp ?? rosterTimestamp ?? 0;
   
   const webAppData: WebAppData = {
     lb: leaderboardMembers,

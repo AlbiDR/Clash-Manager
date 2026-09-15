@@ -145,6 +145,21 @@ describe("useConnectivityManager", () => {
       });
     });
 
+    it("does not certify remote data when source freshness is unknown", () => {
+      mockStore.currentSource = "SUPABASE";
+      mockStore.lastSyncTime = 0;
+      mockStore.isStale = true;
+
+      const { hubHealth } = useConnectivityManager();
+
+      expect(hubHealth.value).toEqual({
+        type: "warning",
+        label: "UNVERIFIED",
+        confidence: 25,
+        diagnosis: "Backend data loaded; source freshness unavailable"
+      });
+    });
+
     it("evaluates staleness exactly at the DATA_STALENESS_MINUTES threshold", () => {
       const now = Date.now();
 

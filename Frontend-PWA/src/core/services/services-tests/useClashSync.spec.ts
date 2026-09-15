@@ -11,7 +11,7 @@
  * and immediately - remove this docblock if that is intentional.
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { ref, type Ref } from "vue";
+import { nextTick, ref, type Ref } from "vue";
 import { useClashSync } from "../useClashSync";
 import { fetchRemote, lastSyncStatus } from "../../api/SupabaseClient";
 import { loadCache, saveCache } from "../StorageService";
@@ -178,6 +178,28 @@ describe("useClashSync", () => {
       });
       expect(consoleSpy).toHaveBeenCalled();
     });
+
+    it("does not let a late cache failure erase live data", async () => {
+      let rejectCache: (error: Error) => void = () => {};
+      vi.mocked(loadCache).mockReturnValue(new Promise((_, reject) => {
+        rejectCache = reject;
+      }));
+      const remotePayload: WebAppData = {
+        lb: [], hh: [], timestamp: 5000, dataSource: "SUPABASE", blacklist: [],
+      };
+      vi.mocked(fetchRemote).mockResolvedValue(remotePayload);
+      const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+      const sync = useClashSync(data);
+
+      const hydration = sync.loadLocal();
+      await sync.refreshFromSupabase();
+      rejectCache(new Error("IndexedDB became unavailable"));
+      await hydration;
+
+      expect(data.value).toEqual(remotePayload);
+      expect(sync.lastSync.value).toBe(5000);
+      expect(consoleSpy).toHaveBeenCalled();
+    });
   });
 
   describe("updateLocalData", () => {
@@ -210,6 +232,30 @@ describe("useClashSync", () => {
 
       expect(sync.loading.value).toBe(false);
       expect(data.value).toEqual(remotePayload);
+    });
+
+    it("does not roll a newer dataset back when the backend response is older", async () => {
+      const currentPayload: WebAppData = {
+        lb: [], hh: [], timestamp: 5000, dataSource: "SUPABASE", lastFetched: 5001, blacklist: [],
+      };
+      const olderRemotePayload: WebAppData = {
+        lb: [], hh: [], timestamp: 4000, dataSource: "SUPABASE", lastFetched: 6000, blacklist: [],
+      };
+      data.value = currentPayload;
+      vi.mocked(fetchRemote).mockResolvedValue(olderRemotePayload);
+      const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+      const sync = useClashSync(data);
+
+      await sync.refreshFromSupabase();
+
+      expect(data.value?.timestamp).toBe(5000);
+      expect(data.value?.lastFetched).toBe(6000);
+      expect(saveCache).toHaveBeenCalledWith(expect.objectContaining({
+        timestamp: 5000,
+        lastFetched: 6000,
+      }));
+      expect(consoleSpy).toHaveBeenCalledWith("[Sync] Ignored remote snapshot older than the current dataset.");
+      expect(lastSyncStatus.value).toBe("SUCCESS");
     });
 
     it("should coalesce concurrent callers into one remote attempt", async () => {
@@ -247,6 +293,7 @@ describe("useClashSync", () => {
       await sync.refreshFromSupabase();
 
       expect(sync.syncError.value).toBe("Could not reach the server");
+      expect(lastSyncStatus.value).toBe("OFFLINE");
     });
 
     describe("failures are translated before they reach the operator", () => {
@@ -287,14 +334,41 @@ describe("useClashSync", () => {
       });
     });
 
-    it("should not create a duplicate retry storm after a manual failure", async () => {
+    it("bounds a persistent transient failure to one retry", async () => {
       vi.mocked(fetchRemote).mockRejectedValue(new Error("Network Error"));
 
       const sync = useClashSync(data);
       await sync.refreshFromSupabase();
 
-      expect(fetchRemote).toHaveBeenCalledTimes(1);
+      expect(fetchRemote).toHaveBeenCalledTimes(2);
       expect(sync.syncError.value).toBe("Could not reach the server");
+    });
+
+    it("recovers from a transient transport failure on the bounded retry", async () => {
+      const remotePayload: WebAppData = {
+        lb: [], hh: [], timestamp: 4600, dataSource: "SUPABASE", blacklist: [],
+      };
+      vi.mocked(fetchRemote)
+        .mockRejectedValueOnce(new TypeError("Failed to fetch"))
+        .mockResolvedValueOnce(remotePayload);
+      const sync = useClashSync(data);
+
+      await sync.refreshFromSupabase();
+
+      expect(fetchRemote).toHaveBeenCalledTimes(2);
+      expect(data.value).toEqual(remotePayload);
+      expect(sync.syncError.value).toBeNull();
+    });
+
+    it("does not retry a permanent authorization failure", async () => {
+      vi.mocked(fetchRemote).mockRejectedValue(new Error("JWT expired"));
+      const sync = useClashSync(data);
+
+      await sync.refreshFromSupabase();
+
+      expect(fetchRemote).toHaveBeenCalledTimes(1);
+      expect(sync.syncError.value).toBe("The app is not authorised to read this data");
+      expect(lastSyncStatus.value).toBe("AUTH");
     });
 
     it("should time out a stalled foreground refresh and release loading", async () => {
@@ -310,6 +384,7 @@ describe("useClashSync", () => {
 
       expect(sync.loading.value).toBe(false);
       expect(sync.syncError.value).toBe("The server took too long to answer");
+      expect(lastSyncStatus.value).toBe("TIMEOUT");
       expect(requestSignal?.aborted).toBe(true);
     });
   });
@@ -321,6 +396,7 @@ describe("useClashSync", () => {
 
       await sync.startBackgroundSync();
       expect(fetchRemote).not.toHaveBeenCalled();
+      expect(lastSyncStatus.value).toBe("OFFLINE");
 
       await sync.startBackgroundSync(true);
       expect(fetchRemote).toHaveBeenCalledWith(expect.objectContaining({ force: true }));
@@ -351,6 +427,32 @@ describe("useClashSync", () => {
       expect(data.value).toEqual(remotePayload);
     });
 
+    it("aborts a doomed request and starts a fresh sync after reconnect", async () => {
+      const recoveredPayload: WebAppData = {
+        lb: [], hh: [], timestamp: 4300, dataSource: "SUPABASE", blacklist: [],
+      };
+      vi.mocked(fetchRemote)
+        .mockImplementationOnce(({ signal }) => new Promise((_, reject) => {
+          signal?.addEventListener("abort", () => reject(signal.reason), { once: true });
+        }))
+        .mockResolvedValueOnce(recoveredPayload);
+      const sync = useClashSync(data);
+
+      const disconnectedAttempt = sync.startBackgroundSync();
+      const firstRequestSignal = vi.mocked(fetchRemote).mock.calls[0][0]?.signal;
+      mockConnectionStatus.isOnline.value = false;
+      await nextTick();
+      expect(firstRequestSignal?.aborted).toBe(true);
+
+      mockConnectionStatus.isOnline.value = true;
+      const reconnectAttempt = sync.refreshFromSupabase();
+      await Promise.all([disconnectedAttempt, reconnectAttempt]);
+
+      expect(fetchRemote).toHaveBeenCalledTimes(2);
+      expect(data.value).toEqual(recoveredPayload);
+      expect(sync.syncError.value).toBeNull();
+    });
+
     it("should implement 3-strike rule for error reporting", async () => {
       vi.mocked(fetchRemote).mockRejectedValue(new Error("Fail"));
       const sync = useClashSync(data);
@@ -375,6 +477,18 @@ describe("useClashSync", () => {
 
       await sync.startBackgroundSync();
       expect(sync.syncError.value).toBe("The clan data could not be refreshed");
+    });
+
+    it("reports the first failure after an empty-cache hydration", async () => {
+      vi.mocked(loadCache).mockResolvedValue(null);
+      vi.mocked(fetchRemote).mockRejectedValue(new Error("Network Error"));
+      const sync = useClashSync(data);
+
+      await sync.loadLocal();
+      await sync.startBackgroundSync();
+
+      expect(data.value).toEqual({ lb: [], hh: [], timestamp: 0, blacklist: [] });
+      expect(sync.syncError.value).toBe("Could not reach the server");
     });
 
     it("should reset error counter on success", async () => {
@@ -514,7 +628,9 @@ describe("useClashSync", () => {
 
     it("clears the failure state when a remote sync actually succeeds", async () => {
       // The other half: gating the clear must not strand syncError forever.
-      vi.mocked(fetchRemote).mockRejectedValueOnce(new Error("Network Error"));
+      vi.mocked(fetchRemote)
+        .mockRejectedValueOnce(new Error("Network Error"))
+        .mockRejectedValueOnce(new Error("Network Error"));
       const sync = useClashSync(data);
       await sync.refreshFromSupabase();
       expect(sync.syncError.value).toBe("Could not reach the server");
