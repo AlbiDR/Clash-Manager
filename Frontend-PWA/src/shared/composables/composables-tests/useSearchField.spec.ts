@@ -6,7 +6,7 @@
  * component it was started in.
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { defineComponent, h, ref, nextTick } from "vue";
+import { defineComponent, h, ref, nextTick, KeepAlive } from "vue";
 import { mount } from "@vue/test-utils";
 import { useSearchField } from "../useSearchField";
 
@@ -128,6 +128,66 @@ describe("useSearchField", () => {
 
     // [THREAT:] the reason the cleanup exists - typing and leaving immediately
     // used to leave a timer that woke up inside a component that was gone.
+    expect(onQueryChange).not.toHaveBeenCalled();
+  });
+
+  it("settles query immediately on Enter keypress and cancels pending debounce", () => {
+    const { controller, onQueryChange } = mountSearchField("");
+    controller.handleSearchInput({ target: { value: "settled" } } as unknown as Event);
+
+    const event = { key: "Enter", target: { value: "settled" }, preventDefault: vi.fn() } as unknown as KeyboardEvent;
+    controller.handleSearchKeydown(event);
+
+    expect(event.preventDefault).toHaveBeenCalled();
+    expect(onQueryChange).toHaveBeenCalledWith("settled");
+
+    // Fast-forward remaining debounce time to confirm it does not trigger a duplicate call
+    vi.advanceTimersByTime(500);
+    expect(onQueryChange).toHaveBeenCalledOnce();
+  });
+
+  it("ignores unhandled keys without preventing default", () => {
+    const { controller } = mountSearchField("");
+    const event = { key: "Tab", preventDefault: vi.fn() } as unknown as KeyboardEvent;
+    controller.handleSearchKeydown(event);
+
+    expect(event.preventDefault).not.toHaveBeenCalled();
+  });
+
+  it("resets revealed state and cancels pending debounce on deactivation under KeepAlive", async () => {
+    const query = ref("");
+    const onQueryChange = vi.fn();
+    let controller!: ReturnType<typeof useSearchField>;
+
+    const Child = defineComponent({
+      setup() {
+        controller = useSearchField({
+          readQuery: () => query.value,
+          onQueryChange,
+        });
+        return () => h("div");
+      },
+    });
+
+    const active = ref(true);
+    const Parent = defineComponent({
+      setup() {
+        return () => h(KeepAlive, null, [active.value ? h(Child, { key: "child" }) : null]);
+      },
+    });
+
+    mount(Parent);
+    controller.openSearchField();
+    expect(controller.isOpen.value).toBe(true);
+
+    controller.handleSearchInput({ target: { value: "pending" } } as unknown as Event);
+
+    active.value = false;
+    await nextTick();
+
+    expect(controller.isOpen.value).toBe(false);
+
+    vi.advanceTimersByTime(1000);
     expect(onQueryChange).not.toHaveBeenCalled();
   });
 });
