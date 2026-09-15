@@ -418,19 +418,18 @@ const handleOpenDashboard = () => {
   min-width: 0;
 }
 
-/* Selection is contextual rather than structural. On a wide toolbar it uses
-   the space that search and sort do not need; it no longer earns an otherwise
-   empty row all by itself. */
+/* The score threshold and its Select action are one operation, so they stay
+   compact and immediately adjacent after the search and sort controls. A
+   toolbar must not invent a broad container just to push a related button to
+   the opposite edge. */
 .header-extra {
   display: flex;
-  flex: 1 1 260px;
-  min-width: 220px;
+  flex: 0 0 auto;
+  min-width: 0;
 }
 
 .header-extra :deep(.selection-bar) {
-  width: 100%;
   height: var(--sys-space-48);
-  border-radius: var(--sys-shape-corner-input);
 }
 
 /* [DECISION LOG] THE CONTROL TAKES THE SPACE IT IS USING, NOT THE SPACE THERE IS:
@@ -556,8 +555,7 @@ const handleOpenDashboard = () => {
 
 .sort-box {
   flex-shrink: 0;
-  width: auto;
-  min-width: 110px;
+  width: 152px;
 }
 
 .sort-desc {
@@ -583,7 +581,6 @@ const handleOpenDashboard = () => {
 
   .header-extra {
     grid-column: 1 / -1;
-    grid-row: 2;
     min-width: 0;
   }
 }

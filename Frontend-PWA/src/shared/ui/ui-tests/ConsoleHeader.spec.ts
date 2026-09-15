@@ -157,6 +157,23 @@ describe("ConsoleHeader", () => {
     expect(wrapper.emitted("update:sort")?.[0]).toEqual(["level"]);
   });
 
+  it("orders list controls from refinement to the matching selection action", () => {
+    const wrapper = mount(ConsoleHeader, {
+      props: {
+        title: "Headhunter",
+        showSearch: true,
+        sortOptions: [{ label: "Potential", value: "potential" }],
+        currentSort: "potential",
+      },
+      slots: { extra: '<div class="selection-tools-test" />' },
+    });
+
+    const controlClasses = Array.from(wrapper.find(".header-controls").element.children)
+      .map((element) => element.className);
+
+    expect(controlClasses).toEqual(["search-bar", "sort-box", "header-extra"]);
+  });
+
   it("applies scrolled class based on scroll state", async () => {
     const wrapper = mount(ConsoleHeader, {
       props: { title: "Scroll Test" },

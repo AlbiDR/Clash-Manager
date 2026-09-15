@@ -123,25 +123,21 @@ const {
 .selection-bar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  height: 56px;
-  padding: 0 var(--sys-space-8);
-  background: var(
-    --sys-color-surface-container-low,
-    var(--sys-color-surface-container)
-  );
-  border-radius: var(--sys-shape-corner-large);
+  justify-content: flex-start;
+  width: auto;
+  height: 48px;
+  padding: 0;
+  background: transparent;
+  border-radius: 0;
   gap: var(--sys-space-8);
   transition: all var(--sys-motion-duration-400) var(--sys-motion-spring);
   position: relative;
-  overflow: hidden;
+  overflow: visible;
   box-sizing: border-box;
 }
 
 .selection-bar.is-active {
-  background: var(--sys-color-surface-container-high);
-  box-shadow: inset 0 0 0 1px rgba(var(--sys-color-primary-rgb), 0.12);
+  box-shadow: none;
 }
 
 .sel-group {
@@ -151,7 +147,7 @@ const {
 }
 
 .sel-group.strategy {
-  flex: 1;
+  flex: 0 0 auto;
   gap: var(--sys-space-6);
   min-width: 0;
 }
