@@ -154,102 +154,96 @@ const handleOpenDashboard = () => {
         v-if="hasControls || hasExtra"
         class="header-controls"
       >
-        <!-- [DECISION LOG] PROMINENCE TRACKS WHETHER THE CONTROL IS WORKING:
-             Idle this is a 48px icon; the moment it holds a query it is a
-             field, and it cannot be dismissed back to an icon while that query
-             stands. That rule is what makes collapsing safe here, because the
-             query outlives a view switch, so a collapsed control with a live
-             filter is reachable in ordinary use rather than hypothetical.
-
-             It also settles both size extremes the old always-open field got
-             wrong. At 320px it had been crushed to 108px and was clipping its
-             own contents; at 1440px it ballooned to 508px, 77% of the row, for
-             a list of forty-odd rows. An icon has one size and an open field
-             has a ceiling. -->
-        <div
-          v-if="props.showSearch"
-          class="search-bar"
-          :class="{ 'is-open': isSearchOpen }"
-        >
-          <button
-            v-if="!isSearchOpen"
-            type="button"
-            class="search-trigger"
-            aria-label="Search"
-            :aria-expanded="false"
-            @click="openSearchField"
-          >
-            <Icon
-              name="search"
-              size="18"
-            />
-          </button>
-
+        <div class="refinement-controls">
+          <!-- [DECISION LOG] PROMINENCE TRACKS WHETHER THE CONTROL IS WORKING:
+               Idle this is a 48px icon; the moment it holds a query it is a
+               field, and it cannot be dismissed back to an icon while that query
+               stands. -->
           <div
-            v-else
-            class="search-box"
+            v-if="props.showSearch"
+            class="search-bar"
+            :class="{ 'is-open': isSearchOpen }"
           >
-            <Icon
-              name="search"
-              size="18"
-              class="search-icon"
-            />
-            <input
-              ref="searchInput"
-              type="text"
-              class="search-input"
-              placeholder="Search..."
-              autocomplete="off"
-              aria-label="Search"
-              :value="props.searchQuery ?? ''"
-              @input="handleSearchInput"
-              @keydown="handleSearchKeydown"
-              @blur="closeSearchField"
-            >
             <button
-              v-if="hasSearchQuery"
+              v-if="!isSearchOpen"
               type="button"
-              class="search-clear"
-              aria-label="Clear search"
-              @mousedown.prevent
-              @click="clearSearchField"
+              class="search-trigger"
+              aria-label="Search"
+              :aria-expanded="false"
+              @click="openSearchField"
             >
               <Icon
-                name="close"
-                size="16"
+                name="search"
+                size="18"
               />
             </button>
+
+            <div
+              v-else
+              class="search-box"
+            >
+              <Icon
+                name="search"
+                size="18"
+                class="search-icon"
+              />
+              <input
+                ref="searchInput"
+                type="text"
+                class="search-input"
+                placeholder="Search..."
+                autocomplete="off"
+                aria-label="Search"
+                :value="props.searchQuery ?? ''"
+                @input="handleSearchInput"
+                @keydown="handleSearchKeydown"
+                @blur="closeSearchField"
+              >
+              <button
+                v-if="hasSearchQuery"
+                type="button"
+                class="search-clear"
+                aria-label="Clear search"
+                @mousedown.prevent
+                @click="clearSearchField"
+              >
+                <Icon
+                  name="close"
+                  size="16"
+                />
+              </button>
+            </div>
+          </div>
+
+          <div
+            v-if="hasFilters"
+            class="filter-slot"
+          >
+            <slot name="filters" />
+          </div>
+
+          <div
+            v-if="props.sortOptions"
+            class="sort-box"
+          >
+            <BaseSelect
+              :model-value="props.currentSort || ''"
+              :options="props.sortOptions"
+              aria-label="Sort by"
+              @update:model-value="(targetSortValue) => emit('update:sort', targetSortValue)"
+            />
+            <span
+              v-if="activeSortDescription"
+              class="sort-desc"
+            >
+              {{ activeSortDescription }}
+            </span>
           </div>
         </div>
 
         <div
-          v-if="hasFilters"
-          class="filter-slot"
-        >
-          <slot name="filters" />
-        </div>
-
-        <div
-          v-if="props.sortOptions"
-          class="sort-box"
-        >
-          <BaseSelect
-            :model-value="props.currentSort || ''"
-            :options="props.sortOptions"
-            aria-label="Sort by"
-            @update:model-value="(targetSortValue) => emit('update:sort', targetSortValue)"
-          />
-          <span
-            v-if="activeSortDescription"
-            class="sort-desc"
-          >
-            {{ activeSortDescription }}
-          </span>
-        </div>
-
-        <div
           v-if="hasExtra"
-          class="header-extra"
+          class="selection-actions"
         >
           <slot name="extra" />
         </div>
@@ -284,10 +278,6 @@ const handleOpenDashboard = () => {
   display: flex;
   flex-direction: column;
   gap: var(--sys-space-12);
-}
-
-.header-extra {
-  margin-top: var(--sys-space-12);
 }
 
 /* [DECISION LOG] THE SECONDARY ROWS STAND DOWN WHILE THE READER IS READING:
@@ -403,10 +393,19 @@ const handleOpenDashboard = () => {
   flex-shrink: 0;
 }
 
-/* Controls form a distinct, predictable region. They never borrow height from
-   the summary and only a real filter can introduce a third, labelled control
-   line on a narrow device. */
+/* A console toolbar has two independent jobs. Refinement belongs on the left,
+   where a reader starts shaping the list; selection is a separate action group
+   on the right, aligned beneath the connection status. The open centre is then
+   intentional whitespace between groups, not a control stretched into a void. */
 .header-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sys-space-12);
+  min-width: 0;
+}
+
+.refinement-controls {
   display: flex;
   align-items: center;
   gap: var(--sys-space-12);
@@ -418,17 +417,15 @@ const handleOpenDashboard = () => {
   min-width: 0;
 }
 
-/* The score threshold and its Select action are one operation, so they stay
-   compact and immediately adjacent after the search and sort controls. A
-   toolbar must not invent a broad container just to push a related button to
-   the opposite edge. */
-.header-extra {
+/* Score threshold and Select remain a compact pair. This group, rather than
+   its primary button alone, anchors the right-hand edge. */
+.selection-actions {
   display: flex;
   flex: 0 0 auto;
   min-width: 0;
 }
 
-.header-extra :deep(.selection-bar) {
+.selection-actions :deep(.selection-bar) {
   height: var(--sys-space-48);
 }
 
@@ -564,8 +561,18 @@ const handleOpenDashboard = () => {
 
 @media (max-width: 520px) {
   .header-controls {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .refinement-controls {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .search-bar.is-open,
+  .filter-slot {
+    grid-column: 1 / -1;
   }
 
   .search-bar,
@@ -574,14 +581,8 @@ const handleOpenDashboard = () => {
     max-width: none;
   }
 
-  .filter-slot {
-    grid-column: 1 / -1;
-    order: 3;
-  }
-
-  .header-extra {
-    grid-column: 1 / -1;
-    min-width: 0;
+  .selection-actions {
+    align-self: flex-start;
   }
 }
 </style>

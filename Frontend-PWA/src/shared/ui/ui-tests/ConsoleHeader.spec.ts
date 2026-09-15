@@ -168,10 +168,13 @@ describe("ConsoleHeader", () => {
       slots: { extra: '<div class="selection-tools-test" />' },
     });
 
-    const controlClasses = Array.from(wrapper.find(".header-controls").element.children)
+    const toolbarClasses = Array.from(wrapper.find(".header-controls").element.children)
+      .map((element) => element.className);
+    const refinementClasses = Array.from(wrapper.find(".refinement-controls").element.children)
       .map((element) => element.className);
 
-    expect(controlClasses).toEqual(["search-bar", "sort-box", "header-extra"]);
+    expect(toolbarClasses).toEqual(["refinement-controls", "selection-actions"]);
+    expect(refinementClasses).toEqual(["search-bar", "sort-box"]);
   });
 
   it("applies scrolled class based on scroll state", async () => {
