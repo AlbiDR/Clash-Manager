@@ -12223,7 +12223,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-15T02:29:01.275Z",
+        "lastObservedAt": "2026-09-15T03:13:37.152Z",
         "failureClass": null
       },
       "2": {
@@ -12260,7 +12260,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-15T02:29:01.276Z",
+        "lastObservedAt": "2026-09-15T03:13:37.153Z",
         "failureClass": null
       },
       "3": {
@@ -12300,7 +12300,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-15T02:29:01.276Z",
+        "lastObservedAt": "2026-09-15T03:13:37.154Z",
         "failureClass": null
       },
       "4": {
@@ -12340,7 +12340,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-15T02:29:01.276Z",
+        "lastObservedAt": "2026-09-15T03:13:37.154Z",
         "failureClass": null
       },
       "5": {
@@ -12348,7 +12348,7 @@
         "stage": 5,
         "expectedAfterUtc": null,
         "deadlineUtc": null,
-        "state": "EXPECTED",
+        "state": "RECOVERABLE",
         "evidence": {
           "coverageLog": ".github/nightly-logs/05-documentation-readme-coverage.log",
           "notReached": {
@@ -12356,13 +12356,17 @@
           },
           "health": {
             "verdict": "HEALTHY",
-            "currentStreak": 1,
+            "currentStreak": 2,
             "reason": "no adverse trend"
-          }
+          },
+          "prNumber": 1826,
+          "prUrl": "https://github.com/AlbiDR/Clash-Manager/pull/1826",
+          "headRef": "nightly/stage-5-documentation-readme-f2ed7d68-9109234811960605419",
+          "reason": "canonical nightly stage branch"
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-15T02:29:01.276Z",
-        "failureClass": null
+        "lastObservedAt": "2026-09-15T03:13:37.155Z",
+        "failureClass": "OPEN_PR"
       },
       "6": {
         "date": "2026-09-15",
@@ -12373,7 +12377,7 @@
         "evidence": {
           "coverageLog": ".github/nightly-logs/06-documentation-tsdoc-coverage.log",
           "notReached": {
-            "frontier": 4
+            "frontier": 5
           },
           "health": {
             "verdict": "HEALTHY",
@@ -12382,7 +12386,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-15T02:29:01.276Z",
+        "lastObservedAt": "2026-09-15T03:13:37.156Z",
         "failureClass": null
       },
       "7": {
@@ -12394,7 +12398,7 @@
         "evidence": {
           "coverageLog": ".github/nightly-logs/07-version-integrity-coverage.log",
           "notReached": {
-            "frontier": 4
+            "frontier": 5
           },
           "health": {
             "verdict": "HEALTHY",
@@ -12403,7 +12407,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-15T02:29:01.277Z",
+        "lastObservedAt": "2026-09-15T03:13:37.156Z",
         "failureClass": null
       },
       "8": {
@@ -12415,7 +12419,7 @@
         "evidence": {
           "coverageLog": ".github/nightly-logs/08-dependency-audit-coverage.log",
           "notReached": {
-            "frontier": 4
+            "frontier": 5
           },
           "health": {
             "verdict": "HEALTHY",
@@ -12424,7 +12428,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-15T02:29:01.277Z",
+        "lastObservedAt": "2026-09-15T03:13:37.157Z",
         "failureClass": null
       },
       "9": {
@@ -12436,7 +12440,7 @@
         "evidence": {
           "coverageLog": ".github/nightly-logs/09-refactor-proposals-coverage.log",
           "notReached": {
-            "frontier": 4
+            "frontier": 5
           },
           "health": {
             "verdict": "HEALTHY",
@@ -12445,7 +12449,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-15T02:29:01.278Z",
+        "lastObservedAt": "2026-09-15T03:13:37.157Z",
         "failureClass": null
       },
       "10": {
@@ -12457,7 +12461,7 @@
         "evidence": {
           "coverageLog": ".github/nightly-logs/10-apk-integrity-coverage.log",
           "notReached": {
-            "frontier": 4
+            "frontier": 5
           },
           "health": {
             "verdict": "HEALTHY",
@@ -12466,7 +12470,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-15T02:29:01.278Z",
+        "lastObservedAt": "2026-09-15T03:13:37.158Z",
         "failureClass": null
       },
       "11": {
@@ -12478,7 +12482,7 @@
         "evidence": {
           "coverageLog": ".github/nightly-logs/11-apk-optimization-coverage.log",
           "notReached": {
-            "frontier": 4
+            "frontier": 5
           },
           "health": {
             "verdict": "HEALTHY",
@@ -12487,7 +12491,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-15T02:29:01.278Z",
+        "lastObservedAt": "2026-09-15T03:13:37.158Z",
         "failureClass": null
       },
       "12": {
@@ -12499,7 +12503,7 @@
         "evidence": {
           "coverageLog": ".github/nightly-logs/12-apk-ux-coverage.log",
           "notReached": {
-            "frontier": 4
+            "frontier": 5
           },
           "health": {
             "verdict": "HEALTHY",
@@ -12508,7 +12512,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-15T02:29:01.279Z",
+        "lastObservedAt": "2026-09-15T03:13:37.159Z",
         "failureClass": null
       },
       "13": {
@@ -12520,7 +12524,7 @@
         "evidence": {
           "coverageLog": ".github/nightly-logs/13-self-healing-protocol-coverage.log",
           "notReached": {
-            "frontier": 4
+            "frontier": 5
           },
           "health": {
             "verdict": "HEALTHY",
@@ -12529,7 +12533,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-15T02:29:01.279Z",
+        "lastObservedAt": "2026-09-15T03:13:37.159Z",
         "failureClass": null
       }
     }
