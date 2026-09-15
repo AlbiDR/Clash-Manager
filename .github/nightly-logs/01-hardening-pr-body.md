@@ -15,9 +15,12 @@ In plain terms: nothing needed fixing. This run checked the hardening area and f
 <!--
 NIGHTLY_PR_METADATA:
   Domain: hardening
+  Cycle: nightly-cycle/2026-09-16
+  Contract: b8cc17977cd40f02490c220999b57dcbf99eb8b7a2175f40feb87a2655548621
   Why: Audited Edge Function endpoints, in-memory state, Valibot boundaries, and cross-layer constraints with zero threat vectors found
   Change: Stage 1 Runtime Integrity Auditor - CLEAN
   Result: All unit tests passed cleanly with zero regressions and zero depcruise violations
   Files: .github/nightly-logs/00-pr-history.md, .github/nightly-logs/01-hardening-coverage.log
   Nudges: 0
+  Execution: 22a9c8a903e4e9bd8a3d5f34d06a4cac16c335f4
 -->
