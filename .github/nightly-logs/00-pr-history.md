@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-14
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-15] PR #1828 [Stage 7]: Monorepo version declarations and catalog protocol usage fully synchronized.
+**Domain:** versioning | **Commit:** 67fb6ba9a | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1828)
+**Files:** .github/nightly-logs/07-version-integrity-coverage.log, .github/nightly-logs/07-version-integrity-pr-body.md
+**Why:** Catalog scan across Frontend-PWA/package.json and Backend/package.json and package version scan across root, Frontend-PWA, and Backend package.json files and 10 derived targets verified ground truth version 14.50.108 with zero drift.
+**Change:** Monorepo version declarations and catalog protocol usage fully synchronized.
+**Result:** pnpm audit:version passed with zero drift or catalog violations.
+**Nudges:** 0
+
+
 ### [2026-09-15] PR #1827 [Stage 6]: Audited doc debt files (protocol.ts and useProgressiveList.ts) and verified interface contracts are synchronized with implementation truth.
 **Domain:** documentation | **Commit:** 8996aaf6e | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1827)
 **Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, .github/nightly-logs/06-documentation-tsdoc-pr-body.md
