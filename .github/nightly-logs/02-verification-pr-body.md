@@ -4,20 +4,20 @@
 
 In plain terms: this adds 1 test file in the verification area. No product code changed, so the app behaves exactly as it did before.
 
-**What changed:** Added unit tests for useClashSyncUtils.ts covering empty DTO creation, error normalization, and timeout cancellation
+**What changed:** Frontend-PWA/src/shared/composables/composables-tests/useSearchField.spec.ts -- Extended unit tests for search field keyboard handling, debounce cancellation, and KeepAlive deactivation reset.
 
-**Why:** Closed zero-coverage gap in L1 Core service utility Frontend-PWA/src/core/services/useClashSyncUtils.ts
+**Why:** Recent-Change Priority: covered search field composables modified in current pipeline cycle.
 
-**Result:** All 7 tests in useClashSyncUtils.spec.ts passed. Proved test efficacy via mutation testing on normalizeSyncError (inverting fallback error message), which caught the mutation with an AssertionError. Reverted mutation and confirmed complete suite passes (203 test files, 1951 tests).
+**Result:** Passed 1975 tests in 204 specs. Mutation proof: inverting Enter key check caught by Enter key test; commenting isRevealed reset in onDeactivated caught by KeepAlive test.
 
-**Files changed:** .github/nightly-logs/02-verification-coverage.log, Frontend-PWA/src/core/services/services-tests/useClashSyncUtils.spec.ts
+**Files changed:** .github/nightly-logs/02-verification-coverage.log, Frontend-PWA/src/shared/composables/composables-tests/useSearchField.spec.ts
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: verification
-  Why: Closed zero-coverage gap in L1 Core service utility Frontend-PWA/src/core/services/useClashSyncUtils.ts
-  Change: Added unit tests for useClashSyncUtils.ts covering empty DTO creation, error normalization, and timeout cancellation
-  Result: All 7 tests in useClashSyncUtils.spec.ts passed. Proved test efficacy via mutation testing on normalizeSyncError (inverting fallback error message), which caught the mutation with an AssertionError. Reverted mutation and confirmed complete suite passes (203 test files, 1951 tests).
-  Files: .github/nightly-logs/02-verification-coverage.log, Frontend-PWA/src/core/services/services-tests/useClashSyncUtils.spec.ts
+  Why: Recent-Change Priority: covered search field composables modified in current pipeline cycle.
+  Change: Frontend-PWA/src/shared/composables/composables-tests/useSearchField.spec.ts -- Extended unit tests for search field keyboard handling, debounce cancellation, and KeepAlive deactivation reset.
+  Result: Passed 1975 tests in 204 specs. Mutation proof: inverting Enter key check caught by Enter key test; commenting isRevealed reset in onDeactivated caught by KeepAlive test.
+  Files: .github/nightly-logs/02-verification-coverage.log, Frontend-PWA/src/shared/composables/composables-tests/useSearchField.spec.ts
   Nudges: 0
 -->

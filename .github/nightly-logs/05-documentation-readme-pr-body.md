@@ -6,18 +6,18 @@ In plain terms: nothing needed fixing. This run checked the documentation README
 
 **What was checked:** Audited protocol.ts and useProgressiveList.ts against adjacent READMEs; verified accurate and no drift present
 
-**Why:** doc-debt targets protocol.ts and useProgressiveList.ts prose in Backend/supabase/functions/_shared/README.md and Frontend-PWA/src/core/services/README.md match actual implementation and current version ground truth
+**Why:** doc-debt targets protocol.ts and useProgressiveList.ts prose match actual implementation and current version ground truth
 
-**Result:** git diff --check passed with 0 errors and doc debt targets verified accurate
+**Result:** git diff --check passed with 0 errors and pnpm test passed 204/204 test files (1975 tests)
 
 **Files changed:** .github/nightly-logs/05-documentation-readme-coverage.log
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: documentation
-  Why: doc-debt targets protocol.ts and useProgressiveList.ts prose in Backend/supabase/functions/_shared/README.md and Frontend-PWA/src/core/services/README.md match actual implementation and current version ground truth
+  Why: doc-debt targets protocol.ts and useProgressiveList.ts prose match actual implementation and current version ground truth
   Change: Audited protocol.ts and useProgressiveList.ts against adjacent READMEs; verified accurate and no drift present
-  Result: git diff --check passed with 0 errors and doc debt targets verified accurate
+  Result: git diff --check passed with 0 errors and pnpm test passed 204/204 test files (1975 tests)
   Files: .github/nightly-logs/05-documentation-readme-coverage.log
   Nudges: 0
 -->

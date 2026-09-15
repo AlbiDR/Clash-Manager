@@ -4,20 +4,20 @@
 
 In plain terms: nothing needed fixing. This run checked the version integrity area and found it already correct, so the only file here is the log recording that the check happened.
 
-**What was checked:** Scanned catalog usage across Frontend-PWA/Backend package.json, verified version 14.50.66 in root, Frontend-PWA, and Backend, and ran pnpm audit:version confirming zero drift across all 10 tracked manifests and derived declarations.
+**What was checked:** Monorepo version declarations and catalog protocol usage fully synchronized.
 
-**Why:** Catalog protocol adherence and package versions are fully reconciled with ground truth version 14.50.66, and pnpm audit:version confirmed no drift in derived files or badges.
+**Why:** Catalog scan across Frontend-PWA/package.json and Backend/package.json and package version scan across root, Frontend-PWA, and Backend package.json files and 10 derived targets verified ground truth version 14.50.108 with zero drift.
 
-**Result:** pnpm audit:version reported 0 drift lines across 10 tracked manifests and derived declarations.
+**Result:** pnpm audit:version passed with zero drift or catalog violations.
 
 **Files changed:** .github/nightly-logs/07-version-integrity-coverage.log
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: versioning
-  Why: Catalog protocol adherence and package versions are fully reconciled with ground truth version 14.50.66, and pnpm audit:version confirmed no drift in derived files or badges.
-  Change: Scanned catalog usage across Frontend-PWA/Backend package.json, verified version 14.50.66 in root, Frontend-PWA, and Backend, and ran pnpm audit:version confirming zero drift across all 10 tracked manifests and derived declarations.
-  Result: pnpm audit:version reported 0 drift lines across 10 tracked manifests and derived declarations.
+  Why: Catalog scan across Frontend-PWA/package.json and Backend/package.json and package version scan across root, Frontend-PWA, and Backend package.json files and 10 derived targets verified ground truth version 14.50.108 with zero drift.
+  Change: Monorepo version declarations and catalog protocol usage fully synchronized.
+  Result: pnpm audit:version passed with zero drift or catalog violations.
   Files: .github/nightly-logs/07-version-integrity-coverage.log
   Nudges: 0
 -->
