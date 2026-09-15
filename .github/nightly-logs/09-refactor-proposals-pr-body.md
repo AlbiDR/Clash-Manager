@@ -1,23 +1,23 @@
 ### Nightly Stage 9: Refactor - Structural Surgery Engineer
 
-**Status:** CLEAN
+**Status:** CHANGED
 
-In plain terms: nothing needed fixing. This run checked the refactor area and found it already correct, so the only file here is the log recording that the check happened.
+In plain terms: this changes 1 code file, so the app's behaviour may be affected. No tests were added or changed alongside it.
 
-**What was checked:** 85 candidates, 0 dep-violations, knip (7 exp, 3 types, 1 dup), consecutive-clean: 3. Inspected config, roster/index, royaleSchemas, useProgressiveList. Candidate BLITZ_DWELL_MIN floor vs default intentional. Hunt useProgressiveList clean.
+**What changed:** Removed dead AndroidCalibrationSettings re-export from settings components barrel
 
-**Why:** Structural scan and defect hunt confirmed substrate architecture strictly aligned with CleanStack ADR.
+**Why:** Target B.4: AndroidCalibrationSettings is imported directly by FeatureSettings.vue and not used through the settings components barrel
 
-**Result:** 0 dep-violations, 203 test files / 1951 unit tests passed.
+**Result:** pnpm -F clash-manager-pwa type-check PASS; vitest PASS; depcruise PASS
 
-**Files changed:** .github/nightly-logs/09-refactor-proposals-coverage.log
+**Files changed:** .github/nightly-logs/09-refactor-proposals-coverage.log, Frontend-PWA/src/features/settings/components/index.ts
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: architecture
-  Why: Structural scan and defect hunt confirmed substrate architecture strictly aligned with CleanStack ADR.
-  Change: 85 candidates, 0 dep-violations, knip (7 exp, 3 types, 1 dup), consecutive-clean: 3. Inspected config, roster/index, royaleSchemas, useProgressiveList. Candidate BLITZ_DWELL_MIN floor vs default intentional. Hunt useProgressiveList clean.
-  Result: 0 dep-violations, 203 test files / 1951 unit tests passed.
-  Files: .github/nightly-logs/09-refactor-proposals-coverage.log
+  Why: Target B.4: AndroidCalibrationSettings is imported directly by FeatureSettings.vue and not used through the settings components barrel
+  Change: Removed dead AndroidCalibrationSettings re-export from settings components barrel
+  Result: pnpm -F clash-manager-pwa type-check PASS; vitest PASS; depcruise PASS
+  Files: .github/nightly-logs/09-refactor-proposals-coverage.log, Frontend-PWA/src/features/settings/components/index.ts
   Nudges: 0
 -->
