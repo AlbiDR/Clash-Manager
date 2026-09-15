@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-14
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-15] PR #1824 [Stage 3]: Completed read-only baseline consolidation audit. Pending migrations count: 0. Migration quality: PASS. Fold-state: DEGRADED. Database verification: DB-UNAVAILABLE. Clean calibration streak: 5 (since calibration: 0).
+**Domain:** database | **Commit:** 005db13d | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1824)
+**Files:** .github/nightly-logs/03-baseline-consolidation-coverage.log, .github/nightly-logs/03-baseline-consolidation-pr-body.md
+**Why:** Master migration baseline is up to date with 0 pending migrations and passed all RLS, search_path, and formatting audits.
+**Change:** Completed read-only baseline consolidation audit. Pending migrations count: 0. Migration quality: PASS. Fold-state: DEGRADED. Database verification: DB-UNAVAILABLE. Clean calibration streak: 5 (since calibration: 0).
+**Result:** Static audit PASS, fold-state DEGRADED (semantic DO patch requirement in DB-UNAVAILABLE environment).
+**Nudges:** 0
+
+
 ### [2026-09-15] PR #1823 [Stage 2]: Frontend-PWA/src/shared/composables/composables-tests/useSearchField.spec.ts -- Extended unit tests for search field keyboard handling, debounce cancellation, and KeepAlive deactivation reset.
 **Domain:** verification | **Commit:** 3cc27c48 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1823)
 **Files:** .github/nightly-logs/02-verification-coverage.log, .github/nightly-logs/02-verification-pr-body.md, Frontend-PWA/src/shared/composables/composables-tests/useSearchField.spec.ts
