@@ -12223,7 +12223,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-15T09:33:11.926Z",
+        "lastObservedAt": "2026-09-15T10:24:51.259Z",
         "failureClass": null
       },
       "2": {
@@ -12260,7 +12260,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-15T09:33:11.926Z",
+        "lastObservedAt": "2026-09-15T10:24:51.259Z",
         "failureClass": null
       },
       "3": {
@@ -12300,7 +12300,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-15T09:33:11.926Z",
+        "lastObservedAt": "2026-09-15T10:24:51.259Z",
         "failureClass": null
       },
       "4": {
@@ -12340,7 +12340,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-15T09:33:11.926Z",
+        "lastObservedAt": "2026-09-15T10:24:51.260Z",
         "failureClass": null
       },
       "5": {
@@ -12383,7 +12383,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-15T09:33:11.926Z",
+        "lastObservedAt": "2026-09-15T10:24:51.260Z",
         "failureClass": null
       },
       "6": {
@@ -12423,7 +12423,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-15T09:33:11.927Z",
+        "lastObservedAt": "2026-09-15T10:24:51.260Z",
         "failureClass": null
       },
       "7": {
@@ -12466,7 +12466,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-15T09:33:11.927Z",
+        "lastObservedAt": "2026-09-15T10:24:51.261Z",
         "failureClass": null
       },
       "8": {
@@ -12506,7 +12506,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-15T09:33:11.927Z",
+        "lastObservedAt": "2026-09-15T10:24:51.261Z",
         "failureClass": null
       },
       "9": {
@@ -12549,7 +12549,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-15T09:33:11.927Z",
+        "lastObservedAt": "2026-09-15T10:24:51.262Z",
         "failureClass": null
       },
       "10": {
@@ -12592,7 +12592,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-15T09:33:11.927Z",
+        "lastObservedAt": "2026-09-15T10:24:51.262Z",
         "failureClass": null
       },
       "11": {
@@ -12600,7 +12600,7 @@
         "stage": 11,
         "expectedAfterUtc": null,
         "deadlineUtc": null,
-        "state": "RECOVERABLE",
+        "state": "MERGED",
         "evidence": {
           "coverageLog": ".github/nightly-logs/11-apk-optimization-coverage.log",
           "notReached": {
@@ -12608,17 +12608,35 @@
           },
           "health": {
             "verdict": "HEALTHY",
-            "currentStreak": 1,
+            "currentStreak": 0,
             "reason": "no adverse trend"
           },
           "prNumber": 1832,
           "prUrl": "https://github.com/AlbiDR/Clash-Manager/pull/1832",
           "headRef": "nightly/stage-11-apk-optimization-f67af0c3-16708526404565847235",
-          "reason": "canonical nightly stage branch"
+          "tag": "nightly/2026-09-15/stage-11/pr-1832",
+          "session": {
+            "id": "16708526404565847235",
+            "name": "sessions/16708526404565847235",
+            "state": "COMPLETED",
+            "createTime": "2026-09-15T09:27:02.496502076Z",
+            "updateTime": "2026-09-15T09:33:06.785208Z",
+            "lifetimeMinutes": 6.1
+          },
+          "run": {
+            "started": "2026-09-15T09:28:00Z",
+            "terminated": "2026-09-15T09:30:00Z",
+            "durationMinutes": 2
+          },
+          "body": {
+            "pr": 1832,
+            "verdict": "OK",
+            "ok": true
+          }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-15T09:33:11.927Z",
-        "failureClass": "OPEN_PR"
+        "lastObservedAt": "2026-09-15T10:24:51.262Z",
+        "failureClass": null
       },
       "12": {
         "date": "2026-09-15",
@@ -12638,7 +12656,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-15T09:33:11.927Z",
+        "lastObservedAt": "2026-09-15T10:24:51.263Z",
         "failureClass": null
       },
       "13": {
@@ -12659,7 +12677,7 @@
           }
         },
         "attempts": 0,
-        "lastObservedAt": "2026-09-15T09:33:11.927Z",
+        "lastObservedAt": "2026-09-15T10:24:51.263Z",
         "failureClass": null
       }
     }
