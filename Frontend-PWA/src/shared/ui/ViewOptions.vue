@@ -379,7 +379,7 @@ onUnmounted(() => {
   min-width: var(--sys-space-48);
   height: var(--sys-space-48);
   padding: 0;
-  border-radius: var(--sys-shape-corner-medium) 0 0 var(--sys-shape-corner-medium);
+  border-radius: 0 var(--sys-shape-corner-medium) var(--sys-shape-corner-medium) 0;
 }
 
 .view-options-trigger.is-embedded .view-options-trigger-label { display: none; }

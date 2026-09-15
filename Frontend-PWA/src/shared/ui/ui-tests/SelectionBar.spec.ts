@@ -42,6 +42,9 @@ describe("SelectionBar", () => {
 
     expect(wrapper.find(".management").classes()).toContain("has-view-options");
     expect(wrapper.find(".view-options-test-trigger").exists()).toBe(true);
+    const managementChildren = wrapper.find(".management").element.children;
+    expect(managementChildren[0]?.classList).toContain("morph-btn");
+    expect(managementChildren[1]?.classList).toContain("view-options-segment");
   });
 
   it("renders counts when active", () => {

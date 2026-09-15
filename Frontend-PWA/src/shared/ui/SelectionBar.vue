@@ -73,12 +73,6 @@ const {
       class="sel-group management"
       :class="{ 'has-view-options': $slots['view-options'] }"
     >
-      <div
-        v-if="$slots['view-options']"
-        class="view-options-segment"
-      >
-        <slot name="view-options" />
-      </div>
       <button
         v-tactile
         class="morph-btn"
@@ -106,6 +100,12 @@ const {
           >Done · {{ props.count }}</span>
         </Transition>
       </button>
+      <div
+        v-if="$slots['view-options']"
+        class="view-options-segment"
+      >
+        <slot name="view-options" />
+      </div>
     </div>
 
     <!-- Skeleton Overlays -->
@@ -163,15 +163,17 @@ const {
 }
 
 /* The view trigger and Select/Done are one action cluster: their adjacent
-   edges meet, their heights match, and selection-state colors move together. */
+   edges meet, their heights match, and selection-state colors move together.
+   The trigger deliberately trails the primary action so Select/Done remains
+   the leading, easiest-to-scan decision. */
 .management.has-view-options .morph-btn {
-  border-radius: 0 var(--sys-shape-corner-medium) var(--sys-shape-corner-medium) 0;
+  border-radius: var(--sys-shape-corner-medium) 0 0 var(--sys-shape-corner-medium);
 }
 
 .selection-bar:not(.is-active) .view-options-segment :deep(.view-options-trigger) {
   color: var(--sys-color-on-primary);
   background: var(--sys-color-primary);
-  border-right: 1px solid var(--sys-overlay-light-medium);
+  border-left: 1px solid var(--sys-overlay-light-medium);
   box-shadow: 0 4px 12px rgba(var(--sys-color-primary-rgb), 0.25);
 }
 
@@ -179,7 +181,7 @@ const {
   color: var(--sys-color-on-surface-variant);
   background: var(--sys-color-surface-container-highest);
   border: 1px solid var(--sys-color-outline-variant);
-  border-right: 0;
+  border-left: 0;
   box-shadow: none;
 }
 
