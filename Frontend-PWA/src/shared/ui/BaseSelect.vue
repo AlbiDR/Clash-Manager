@@ -33,6 +33,8 @@ interface Option<V> {
   disabled?: boolean;
   /** Custom CSS classes to apply to this option. */
   class?: string;
+  /** Optional concise explanation rendered beneath the option label. */
+  description?: string;
 }
 
 /**
@@ -246,7 +248,13 @@ const getSelectedLabel = () => {
             ]"
             @click="selectOption(option)"
           >
-            {{ option.label }}
+            <span class="option-copy">
+              <span>{{ option.label }}</span>
+              <span
+                v-if="option.description"
+                class="option-description"
+              >{{ option.description }}</span>
+            </span>
           </li>
         </ul>
       </div>
@@ -354,6 +362,24 @@ const getSelectedLabel = () => {
   color: var(--sys-color-on-surface);
   cursor: pointer;
   transition: all var(--sys-motion-duration-200) var(--sys-motion-spring);
+}
+
+.option-copy {
+  display: grid;
+  gap: var(--sys-space-2);
+}
+
+.option-description {
+  color: var(--sys-color-on-surface-variant);
+  font-size: var(--sys-typescale-meta);
+  font-weight: 500;
+  line-height: var(--sys-leading-tight);
+  text-transform: none;
+}
+
+.option-item.active .option-description {
+  color: var(--sys-color-on-primary);
+  opacity: 0.82;
 }
 
 .option-item:hover:not(.disabled) {

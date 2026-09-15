@@ -106,6 +106,10 @@ const activeSortDescription = computed(() => {
   return activeSortOption?.desc || "";
 });
 
+const selectSortOptions = computed(() =>
+  props.sortOptions?.map(({ desc, ...sortOption }) => ({ ...sortOption, description: desc })) ?? [],
+);
+
 const handleOpenDashboard = () => {
   if (props.dashboardUrl) {
     haptics.tap();
@@ -160,58 +164,77 @@ const handleOpenDashboard = () => {
                field, and it cannot be dismissed back to an icon while that query
                stands. -->
           <div
-            v-if="props.showSearch"
-            class="search-bar"
-            :class="{ 'is-open': isSearchOpen }"
+            v-if="props.showSearch || props.sortOptions"
+            class="search-sort-control"
+            :class="{ 'is-search-open': isSearchOpen }"
           >
-            <button
-              v-if="!isSearchOpen"
-              type="button"
-              class="search-trigger"
-              aria-label="Search"
-              :aria-expanded="false"
-              @click="openSearchField"
-            >
-              <Icon
-                name="search"
-                size="18"
-              />
-            </button>
-
             <div
-              v-else
-              class="search-box"
+              v-if="props.showSearch"
+              class="search-bar"
+              :class="{ 'is-open': isSearchOpen }"
             >
-              <Icon
-                name="search"
-                size="18"
-                class="search-icon"
-              />
-              <input
-                ref="searchInput"
-                type="text"
-                class="search-input"
-                placeholder="Search..."
-                autocomplete="off"
-                aria-label="Search"
-                :value="props.searchQuery ?? ''"
-                @input="handleSearchInput"
-                @keydown="handleSearchKeydown"
-                @blur="closeSearchField"
-              >
               <button
-                v-if="hasSearchQuery"
+                v-if="!isSearchOpen"
                 type="button"
-                class="search-clear"
-                aria-label="Clear search"
-                @mousedown.prevent
-                @click="clearSearchField"
+                class="search-trigger"
+                aria-label="Search"
+                :aria-expanded="false"
+                @click="openSearchField"
               >
                 <Icon
-                  name="close"
-                  size="16"
+                  name="search"
+                  size="18"
                 />
               </button>
+
+              <div
+                v-else
+                class="search-box"
+              >
+                <Icon
+                  name="search"
+                  size="18"
+                  class="search-icon"
+                />
+                <input
+                  ref="searchInput"
+                  type="text"
+                  class="search-input"
+                  placeholder="Search..."
+                  autocomplete="off"
+                  aria-label="Search"
+                  :value="props.searchQuery ?? ''"
+                  @input="handleSearchInput"
+                  @keydown="handleSearchKeydown"
+                  @blur="closeSearchField"
+                >
+                <button
+                  v-if="hasSearchQuery"
+                  type="button"
+                  class="search-clear"
+                  aria-label="Clear search"
+                  @mousedown.prevent
+                  @click="clearSearchField"
+                >
+                  <Icon
+                    name="close"
+                    size="16"
+                  />
+                </button>
+              </div>
+            </div>
+
+            <div
+              v-if="props.sortOptions"
+              class="sort-box"
+              :title="activeSortDescription || undefined"
+            >
+              <BaseSelect
+                :model-value="props.currentSort || ''"
+                :options="selectSortOptions"
+                :aria-label="activeSortDescription ? `Sort by. ${activeSortDescription}` : 'Sort by'"
+                @update:model-value="(targetSortValue) => emit('update:sort', targetSortValue)"
+              />
             </div>
           </div>
 
@@ -220,24 +243,6 @@ const handleOpenDashboard = () => {
             class="filter-slot"
           >
             <slot name="filters" />
-          </div>
-
-          <div
-            v-if="props.sortOptions"
-            class="sort-box"
-          >
-            <BaseSelect
-              :model-value="props.currentSort || ''"
-              :options="props.sortOptions"
-              aria-label="Sort by"
-              @update:model-value="(targetSortValue) => emit('update:sort', targetSortValue)"
-            />
-            <span
-              v-if="activeSortDescription"
-              class="sort-desc"
-            >
-              {{ activeSortDescription }}
-            </span>
           </div>
         </div>
 
@@ -322,13 +327,19 @@ const handleOpenDashboard = () => {
 .header-summary {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  align-items: start;
+  align-items: center;
+  min-height: var(--sys-space-32);
   gap: var(--sys-space-12);
 }
 
 .title-main {
   display: flex;
-  align-items: baseline;
+  align-items: center;
+  /* The title and connection state occupy one 32px visual rail. Keeping the
+     rail explicit prevents a larger interactive hit area on the pill from
+     pulling the status visibly above the view title. */
+  height: var(--sys-space-32);
+  min-height: var(--sys-space-32);
   gap: var(--sys-space-8);
   /* Last resort for a viewport too narrow to hold the name and the count on one
      line at all, narrower than any phone this ships to. The count drops below
@@ -390,6 +401,7 @@ const handleOpenDashboard = () => {
 .action-group {
   display: flex;
   align-items: center;
+  height: var(--sys-space-32);
   flex-shrink: 0;
 }
 
@@ -413,6 +425,32 @@ const handleOpenDashboard = () => {
   justify-self: start;
   height: var(--sys-space-48);
   min-width: 0;
+}
+
+/* Search and sort are distinct keyboard actions in one compound refinement
+   control. The shared frame makes the icon discoverable without giving a
+   single-purpose square its own disconnected island in the toolbar. */
+.search-sort-control {
+  display: flex;
+  align-items: center;
+  width: 200px;
+  height: var(--sys-space-48);
+  overflow: visible;
+  border: 1px solid var(--sys-color-outline-variant);
+  border-radius: var(--sys-shape-corner-input);
+  background: var(--sys-color-surface-container-high);
+  box-shadow: inset 0 2px 4px var(--sys-overlay-dark-subtle);
+  transition:
+    width var(--sys-motion-duration-200) var(--sys-motion-easing-standard),
+    border-color var(--sys-motion-duration-200) var(--sys-motion-easing-standard);
+}
+
+.search-sort-control.is-search-open {
+  width: 320px;
+}
+
+.search-sort-control:focus-within {
+  border-color: rgba(var(--sys-color-primary-rgb), 0.3);
 }
 
 .filter-slot {
@@ -453,6 +491,12 @@ const handleOpenDashboard = () => {
   max-width: var(--sys-layout-search-max-width);
 }
 
+.search-sort-control .search-bar.is-open {
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: none;
+}
+
 /* Square, so the icon sits in the middle of a target that already meets the
    ADR's 48px minimum without a pseudo-element widening it. */
 .search-trigger {
@@ -461,9 +505,10 @@ const handleOpenDashboard = () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--sys-color-surface-container-high);
-  border: 1px solid var(--sys-color-outline-variant);
-  border-radius: var(--sys-shape-corner-input);
+  background: transparent;
+  border: none;
+  border-right: 1px solid var(--sys-color-outline-variant);
+  border-radius: var(--sys-shape-corner-input) 0 0 var(--sys-shape-corner-input);
   color: var(--sys-color-on-surface-variant);
   cursor: pointer;
   transition:
@@ -517,22 +562,16 @@ const handleOpenDashboard = () => {
 .search-box {
   position: relative;
   height: var(--sys-space-48);
-  background: var(--sys-color-surface-container-high);
-  border-radius: var(--sys-shape-corner-input);
+  background: transparent;
+  border-radius: var(--sys-shape-corner-input) 0 0 var(--sys-shape-corner-input);
   display: flex;
   align-items: center;
   padding: 0 var(--sys-space-14);
   gap: var(--sys-space-12);
-  /* Was rgba(128, 128, 128, 0.15): a grey mixed by hand, frozen across both
-     themes and invisible to the overlay firewall, which polices pure black and
-     white only. outline-variant is this line's actual role. */
-  border: 1px solid var(--sys-color-outline-variant);
-  box-shadow: inset 0 2px 4px var(--sys-overlay-dark-subtle);
-  transition: all var(--sys-motion-duration-200) ease;
-}
-
-.search-box:focus-within {
-  border-color: rgba(var(--sys-color-primary-rgb), 0.3);
+  border: none;
+  border-right: 1px solid var(--sys-color-outline-variant);
+  box-shadow: none;
+  transition: none;
 }
 
 .search-icon {
@@ -560,10 +599,15 @@ const handleOpenDashboard = () => {
 .sort-box {
   flex-shrink: 0;
   width: 152px;
+  height: 100%;
 }
 
-.sort-desc {
-  display: none;
+.sort-box :deep(.select-trigger) {
+  height: 100%;
+  border: none;
+  border-radius: 0 var(--sys-shape-corner-input) var(--sys-shape-corner-input) 0;
+  background: transparent;
+  box-shadow: none;
 }
 
 @media (max-width: 520px) {
@@ -575,16 +619,18 @@ const handleOpenDashboard = () => {
   }
 
   .refinement-controls {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
+    display: flex;
+    align-items: stretch;
+    flex-direction: column;
     height: auto;
   }
 
-  .search-bar.is-open,
-  .filter-slot {
-    grid-column: 1 / -1;
+  .search-sort-control,
+  .search-sort-control.is-search-open {
+    width: 100%;
   }
 
+  .filter-slot,
   .search-bar,
   .search-bar.is-open {
     min-width: 0;

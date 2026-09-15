@@ -67,19 +67,9 @@ const {
       />
     </div>
 
-    <!-- Right Cluster: Morphing Primary Action -->
+    <!-- Fixed-width action: the count lives inside the button, so entering
+         selection mode cannot move either the button or its parent group. -->
     <div class="sel-group management">
-      <!-- Count Bubble (Active Only) -->
-      <Transition name="status-pop">
-        <div
-          v-if="isActive"
-          class="count-pill"
-        >
-          {{ props.count }}/{{ props.totalCount }}
-        </div>
-      </Transition>
-
-      <!-- Persistent Button Frame -->
       <button
         v-tactile
         class="morph-btn"
@@ -104,7 +94,7 @@ const {
           <span
             v-else
             key="done"
-          >Done</span>
+          >Done · {{ props.count }}</span>
         </Transition>
       </button>
     </div>
@@ -160,8 +150,9 @@ const {
 
 .morph-btn {
   height: 48px;
-  /* Fixed width to prevent twitchy resizing between "Select" and "Done" */
-  width: 84px;
+  /* The wider active label is reserved while idle, so this action never moves
+     when a row is selected or cleared. */
+  width: 112px;
   padding: 0;
   justify-content: center;
   border-radius: var(--sys-shape-corner-medium);
@@ -193,30 +184,6 @@ const {
 
 .morph-btn:active {
   transform: scale(0.92);
-}
-
-/* Count Pill */
-.count-pill {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 48px;
-  padding: 0 var(--sys-space-16);
-  background: var(--sys-color-surface-container-highest);
-  color: var(--sys-color-on-surface);
-  border-radius: var(--sys-shape-corner-medium);
-  font-size: 12px;
-  font-weight: 700;
-  font-family: var(--sys-font-family-mono);
-  border: 1px solid var(--sys-color-outline-variant);
-}
-
-/* Transitions */
-.status-pop-enter-active {
-  animation: pop-in var(--sys-motion-duration-400) var(--sys-motion-spring);
-}
-.status-pop-leave-active {
-  animation: pop-in var(--sys-motion-duration-300) var(--sys-motion-spring) reverse;
 }
 
 .text-morph-enter-active,

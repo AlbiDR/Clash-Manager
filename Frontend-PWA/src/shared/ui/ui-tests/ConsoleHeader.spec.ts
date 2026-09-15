@@ -162,7 +162,11 @@ describe("ConsoleHeader", () => {
       props: {
         title: "Headhunter",
         showSearch: true,
-        sortOptions: [{ label: "Potential", value: "potential" }],
+        sortOptions: [{
+          label: "Potential",
+          value: "potential",
+          desc: "Predicted account quality vs Clan baseline.",
+        }],
         currentSort: "potential",
       },
       slots: { extra: '<div class="selection-tools-test" />' },
@@ -174,7 +178,13 @@ describe("ConsoleHeader", () => {
       .map((element) => element.className);
 
     expect(toolbarClasses).toEqual(["refinement-controls", "selection-actions"]);
-    expect(refinementClasses).toEqual(["search-bar", "sort-box"]);
+    expect(refinementClasses).toEqual(["search-sort-control"]);
+
+    const select = wrapper.findComponent({ name: "BaseSelect" });
+    expect(select.props("options")[0]).toMatchObject({
+      label: "Potential",
+      description: "Predicted account quality vs Clan baseline.",
+    });
   });
 
   it("applies scrolled class based on scroll state", async () => {

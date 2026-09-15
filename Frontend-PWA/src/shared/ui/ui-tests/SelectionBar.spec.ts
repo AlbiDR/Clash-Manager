@@ -38,8 +38,8 @@ describe("SelectionBar", () => {
     const wrapper = mount(SelectionBar, {
       props: { count: 5, totalCount: 50 },
     });
-    expect(wrapper.text()).toContain("5/50");
-    expect(wrapper.text()).toContain("Done");
+    expect(wrapper.text()).toContain("Done · 5");
+    expect(wrapper.find(".count-pill").exists()).toBe(false);
   });
 
   it("emits select-score on mode toggle", async () => {

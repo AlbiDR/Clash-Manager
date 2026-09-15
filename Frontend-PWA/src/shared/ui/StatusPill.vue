@@ -143,11 +143,16 @@ onUnmounted(() => document.removeEventListener("click", handleClickOutside));
 }
 
 .status-trigger {
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: var(--sys-space-6);
-  min-height: 44px;
+  /* Visual controls in the summary rail are 32px high. The transparent halo
+     below preserves the 44px pointer target without making this small status
+     token look like a second header row. */
+  height: var(--sys-space-32);
+  min-height: var(--sys-space-32);
   max-width: 152px;
   padding: 0 var(--sys-space-10);
   border: 1px solid var(--sys-color-outline-variant);
@@ -156,6 +161,12 @@ onUnmounted(() => document.removeEventListener("click", handleClickOutside));
   color: inherit;
   cursor: pointer;
   font: inherit;
+}
+
+.status-trigger::after {
+  content: "";
+  position: absolute;
+  inset: calc(-1 * var(--sys-space-6));
 }
 
 .status-trigger.is-nominal { background: transparent; }
