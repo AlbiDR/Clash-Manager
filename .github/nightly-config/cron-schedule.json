@@ -14,9 +14,9 @@
   "dailyBudget": 600,
   "jobs": [
     { "name": "nightly-maintenance",       "schedule": "0 3 * * *",     "command": "SELECT substrate.execute_nightly_maintenance()" },
-    { "name": "pipeline-watchdog",         "schedule": "5 * * * *",     "command": "SELECT substrate.pipeline_watchdog()" },
+    { "name": "pipeline-watchdog",         "schedule": "*/10 * * * *",  "command": "SELECT substrate.pipeline_watchdog()" },
     { "name": "rotate-recruits-cron",      "schedule": "55 * * * *",    "command": "SELECT substrate.rotate_recruits()" },
-    { "name": "ingest-royale-data-cron",   "schedule": "0,30 * * * *",  "command": "SELECT substrate.run_ingest_royale_data()" },
+    { "name": "ingest-royale-data-cron",   "schedule": "0,30 * * * *",  "command": "SELECT substrate.dispatch_royale_ingestion()" },
     { "name": "headhunter-scanner-cron",   "schedule": "15,45 * * * *", "command": "SELECT substrate.run_headhunter_scanner()" },
     { "name": "voyage-auto-activate-cron", "schedule": "*/5 * * * *",   "command": "SELECT drivers.auto_activate_pending_voyages()",
       "dormantWhenIdle": true, "scheduleFrom": "VOYAGE_ACTIVATION_SCHEDULE",
