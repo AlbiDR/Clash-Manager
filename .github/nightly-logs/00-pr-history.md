@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-15
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-16] PR #1847 [Stage 13]: Checked ledger failure classes JULES_SESSION_FAILED, UNFINALIZED_SENTINEL, OPEN_PR, MERGE_FAILED; coverage logs for 2026-09-16 across Stages 1-12 found 100% operational success (0/12 interventions); consecutive-clean: 1
+**Domain:** pipeline | **Commit:** 130970a6e | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1847)
+**Files:** .github/nightly-logs/13-self-healing-protocol-coverage.log, .github/nightly-logs/13-self-healing-protocol-pr-body.md
+**Why:** Audit completed with zero pipeline failures, zero unfinalized sentinels, and zero protocol amendments required
+**Change:** Checked ledger failure classes JULES_SESSION_FAILED, UNFINALIZED_SENTINEL, OPEN_PR, MERGE_FAILED; coverage logs for 2026-09-16 across Stages 1-12 found 100% operational success (0/12 interventions); consecutive-clean: 1
+**Result:** nightly-run-ledger.json and coverage logs for 2026-09-16 verified across Stages 1-12 with 0 interventions, git diff --check reported 0 whitespace or formatting errors
+**Nudges:** 1
+
+
 ### [2026-09-16] PR #1846 [Stage 12]: Audit complete with 0 candidate violations across 77 files
 **Domain:** ux | **Commit:** 589bd09f4 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1846)
 **Files:** .github/nightly-logs/12-apk-ux-coverage.log, .github/nightly-logs/12-apk-ux-pr-body.md
