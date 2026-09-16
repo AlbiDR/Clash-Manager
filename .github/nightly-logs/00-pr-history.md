@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-15
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-16] PR #1846 [Stage 12]: Audit complete with 0 candidate violations across 77 files
+**Domain:** ux | **Commit:** 589bd09f4 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1846)
+**Files:** .github/nightly-logs/12-apk-ux-coverage.log, .github/nightly-logs/12-apk-ux-pr-body.md
+**Why:** Automated and manual APK UX sweep confirmed full compliance with hybrid shell directives
+**Change:** Audit complete with 0 candidate violations across 77 files
+**Result:** 77 files verified pass
+**Nudges:** 0
+
+
 ### [2026-09-16] PR #1845 [Stage 11]: Audited native WebView settings, Service Worker routes, Vite manualChunks, and precache asset footprint.
 **Domain:** apk | **Commit:** 5bf190518 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1845)
 **Files:** .github/nightly-logs/11-apk-optimization-coverage.log, .github/nightly-logs/11-apk-optimization-pr-body.md
