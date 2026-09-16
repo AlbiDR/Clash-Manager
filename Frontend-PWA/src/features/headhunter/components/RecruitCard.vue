@@ -16,9 +16,16 @@
  * Headhunter feature.
  *
  * **Architectural Context:**
- * - **Layer:** Layer 3 (@features)
+ * - **Layer:** Layer 3 Features (@features/headhunter)
+ * - **Satisfaction:** Satisfies ADR Section II: Unified Layout and ADR Section III: Validation Boundaries.
  * - **Import Boundaries:** Consumes @shared UI primitives and @core utilities.
  *   Strictly isolated from other features (e.g., Roster, Laboratory).
+ *
+ * **Decision Log - Accessibility & Text Containment:**
+ * - Computes spoken description combining name, rounded potential score, and discovery age.
+ * - Applies `user-select: none` text selection containment to player names
+ *   to prevent accidental text highlights during swipe gestures in Android WebView.
+ * - Enforces explicit top margin on card actions within expanded view.
  */
 import {
   BaseCard,
@@ -35,6 +42,13 @@ import { computed } from "vue";
 import type { Recruit, ConsoleCardMetadata } from "@core/types";
 import { formatTimeAgo, formatNumber } from "@core";
 
+/**
+ * Component Props Interface Definition.
+ *
+ * @remarks
+ * Extends `ConsoleCardMetadata` to include card state (expanded, selected, selectionMode, isTagged)
+ * along with recruit identification and authoritative payload data.
+ */
 const props = defineProps<ConsoleCardMetadata & {
   /** Unique identifier for the recruit (Player Tag). */
   id: string;
@@ -42,6 +56,12 @@ const props = defineProps<ConsoleCardMetadata & {
   recruit: Recruit;
 }>();
 
+/**
+ * Component Event Emission Contract.
+ *
+ * @remarks
+ * Defines strict typed events emitted to parent headhunter view controllers.
+ */
 const emit = defineEmits<{
   /** Triggers card expansion/collapse when not in selection mode. */
   toggle: [];
@@ -51,19 +71,25 @@ const emit = defineEmits<{
 
 /**
  * ACCESSIBILITY RESOLVER
- * Uses the authoritative longevity label provided by the backend.
+ *
+ * @remarks
+ * Uses the authoritative longevity label provided by the backend when present,
+ * falling back to calculating formatted time-ago from `recruit.d.ago`.
+ *
+ * @returns Formatted human-readable duration string indicating discovery age.
  */
 const timeAgo = computed(() => props.recruit.longevityLabel || formatTimeAgo(props.recruit.d.ago));
 
 /**
- * Spoken description of the recruit.
+ * Spoken description of the recruit for accessibility screen readers and overlays.
  *
  * @remarks
  * [DECISION LOG] Mirrors `memberAccessibilityLabel` in MemberCard, which is the
- * sibling row on the other console. RecruitCard passed nothing, so every row
- * announced as a bare "article" with no name, no score and no way to tell one
- * from the next. The score is rounded for the same reason it is there: a
- * decimal read aloud is noise.
+ * sibling row on the roster console. RecruitCard previously lacked card-label,
+ * causing screen readers to announce bare articles without player details.
+ * Rounds potential score to whole numbers for clear speech synthesis without decimal noise.
+ *
+ * @returns Formatted accessibility string combining player name, potential score, and discovery age.
  */
 const recruitAccessibilityLabel = computed(() => {
   const roundedPotentialScore = Math.round(props.recruit.potentialScore ?? 0);

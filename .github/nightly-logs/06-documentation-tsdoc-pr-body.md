@@ -1,23 +1,26 @@
 ### Nightly Stage 6: Documentation TSDoc - Interface Contract Architect
 
-**Status:** CLEAN
+**Status:** CHANGED
 
-In plain terms: nothing needed fixing. This run checked the documentation TSDoc area and found it already correct, so the only file here is the log recording that the check happened.
+In plain terms: this changes 1 code file, so the app's behaviour may be affected. No tests were added or changed alongside it.
 
-**What was checked:** Audited doc debt files (protocol.ts and useProgressiveList.ts) and verified interface contracts are synchronized with implementation truth.
+**What changed:** docs(tsdoc): harden RecruitCard interface contracts and inline logic annotations
 
-**Why:** Documentation audit revealed no prose drift or contract mismatches; code reality aligns with existing annotations.
+**Why:** Reconciles RecruitCard JSDoc/TSDoc interface contracts, ADR Section II/III mappings, and inline decision logs following recent accessibility test additions
 
-**Result:** PASS: doc debt verification clean
+**Result:** PASS: vue-tsc and Vitest test suite clean
 
-**Files changed:** .github/nightly-logs/06-documentation-tsdoc-coverage.log
+**Files changed:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, Frontend-PWA/src/features/headhunter/components/RecruitCard.vue
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: documentation
-  Why: Documentation audit revealed no prose drift or contract mismatches; code reality aligns with existing annotations.
-  Change: Audited doc debt files (protocol.ts and useProgressiveList.ts) and verified interface contracts are synchronized with implementation truth.
-  Result: PASS: doc debt verification clean
-  Files: .github/nightly-logs/06-documentation-tsdoc-coverage.log
+  Cycle: nightly-cycle/2026-09-16
+  Contract: a9f522cc73babe487aa3df1b083524daba64c0dd03c9e1b446dd4bd70c376bae
+  Why: Reconciles RecruitCard JSDoc/TSDoc interface contracts, ADR Section II/III mappings, and inline decision logs following recent accessibility test additions
+  Change: docs(tsdoc): harden RecruitCard interface contracts and inline logic annotations
+  Result: PASS: vue-tsc and Vitest test suite clean
+  Files: .github/nightly-logs/06-documentation-tsdoc-coverage.log, Frontend-PWA/src/features/headhunter/components/RecruitCard.vue
   Nudges: 0
+  Execution: b7ab1dce95777623c80ab8c06c2ab58cf8079b7a
 -->
