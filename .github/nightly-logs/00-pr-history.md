@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-15
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-16] PR #1840 [Stage 6]: docs(tsdoc): harden RecruitCard interface contracts and inline logic annotations
+**Domain:** documentation | **Commit:** 6ee580b9d | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1840)
+**Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, .github/nightly-logs/06-documentation-tsdoc-pr-body.md, Frontend-PWA/src/features/headhunter/components/RecruitCard.vue
+**Why:** Reconciles RecruitCard JSDoc/TSDoc interface contracts, ADR Section II/III mappings, and inline decision logs following recent accessibility test additions
+**Change:** docs(tsdoc): harden RecruitCard interface contracts and inline logic annotations
+**Result:** PASS: vue-tsc and Vitest test suite clean
+**Nudges:** 0
+
+
 ### [2026-09-16] PR #1839 [Stage 5]: Reconciled RecruitCard screen-reader accessibility labeling and MemberCard parity in headhunter README
 **Domain:** documentation | **Commit:** b6b36a227 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1839)
 **Files:** .github/nightly-logs/05-documentation-readme-coverage.log, .github/nightly-logs/05-documentation-readme-pr-body.md, Frontend-PWA/src/features/headhunter/README.md
