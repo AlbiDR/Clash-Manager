@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-15
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-16] PR #1839 [Stage 5]: Reconciled RecruitCard screen-reader accessibility labeling and MemberCard parity in headhunter README
+**Domain:** documentation | **Commit:** b6b36a227 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1839)
+**Files:** .github/nightly-logs/05-documentation-readme-coverage.log, .github/nightly-logs/05-documentation-readme-pr-body.md, Frontend-PWA/src/features/headhunter/README.md
+**Why:** Document RecruitCard accessibility announcements and MemberCard parity following recent test suite expansion
+**Change:** Reconciled RecruitCard screen-reader accessibility labeling and MemberCard parity in headhunter README
+**Result:** 204 test suites passed (2005 tests), git diff --check clean
+**Nudges:** 0
+
+
 ### [2026-09-16] PR #1838 [Stage 4]: Audited Edge Function SQL view usage and L1 performance composables (useProgressiveList.ts); confirmed 125 changed files inspected with 0 code mutations required and all 6 known database views remain unreferenced
 **Domain:** optimization | **Commit:** 803507fba | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1838)
 **Files:** .github/nightly-logs/04-optimization-coverage.log, .github/nightly-logs/04-optimization-pr-body.md
