@@ -208,4 +208,49 @@ describe("RecruitCard.vue", () => {
     expect(winRateItem).toBeDefined();
     expect(winRateItem!.props("value")).toBe("100%");
   });
+
+  it("handles missing longevityLabel and falls back to formatTimeAgo(recruit.d.ago)", () => {
+    const recruitWithoutLongevityLabel = {
+      ...mockRecruit,
+      longevityLabel: undefined,
+    };
+
+    const wrapper = mountRecruitCard({ recruit: recruitWithoutLongevityLabel });
+
+    expect(wrapper.find(".badge.time").text()).toBe("Time ago: 2d");
+  });
+
+  it("handles undefined potentialScore in accessibility label and score section", () => {
+    const recruitWithoutScore = {
+      ...mockRecruit,
+      potentialScore: undefined,
+    };
+
+    const wrapper = mountRecruitCard({ recruit: recruitWithoutScore });
+
+    expect(wrapper.findComponent({ name: "BaseCard" }).props("cardLabel"))
+      .toBe("Test Recruit, potential 0, found Time ago: 2d");
+    expect(wrapper.find(".stat-score").text()).toBe("0");
+  });
+
+  it("defaults stats to 0 when recruit activity properties are missing", () => {
+    const recruitWithMissingStats = {
+      ...mockRecruit,
+      d: {
+        winRate: 0,
+        ago: "1d",
+      },
+    };
+
+    const wrapper = mountRecruitCard({ recruit: recruitWithMissingStats, expanded: true });
+
+    const statItems = wrapper.findAllComponents({ name: "StatisticItem" });
+    const donItem = statItems.find(item => item.props("label") === "Donations");
+    const cardsItem = statItems.find(item => item.props("label") === "Cards Won");
+    const warItem = statItems.find(item => item.props("label") === "War Wins");
+
+    expect(donItem?.props("value")).toBe(0);
+    expect(cardsItem?.props("value")).toBe(0);
+    expect(warItem?.props("value")).toBe(0);
+  });
 });
