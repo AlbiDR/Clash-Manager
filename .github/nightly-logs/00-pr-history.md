@@ -16,6 +16,23 @@ LAST_AGED:   2026-09-15
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-16] PR #1841 [Stage 7]: No version drift or catalog violations detected
+**Domain:** versioning | **Commit:** 9a5dd1302 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1841)
+**Files:** .github/nightly-logs/07-version-integrity-coverage.log, .github/nightly-logs/07-version-integrity-pr-body.md
+**Why:** Audit confirmed full consistency across package manifests and derived files
+**Change:** No version drift or catalog violations detected
+**Result:** pnpm audit:version PASSED
+**Nudges:** 0
+
+### [2026-09-16] PR #1842 [Stage 8]: package.json -- Bumped supabase devDependency from ^2.116.0 to ^2.117.0 in catalog
+**Domain:** dependencies | **Commit:** 2443e985e | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1842)
+**Files:** .github/nightly-logs/08-dependency-audit-coverage.log, .github/nightly-logs/08-dependency-audit-pr-body.md, package.json, pnpm-lock.yaml, pnpm-workspace.yaml
+**Why:** Applied safe autonomous minor/patch version bump within current major range
+**Change:** package.json -- Bumped supabase devDependency from ^2.116.0 to ^2.117.0 in catalog
+**Result:** pnpm test passed 2005 of 2005 tests across 204 files; pnpm test:nightly-control-plane passed 122 tests
+**Nudges:** 0
+
+
 ### [2026-09-16] PR #1840 [Stage 6]: docs(tsdoc): harden RecruitCard interface contracts and inline logic annotations
 **Domain:** documentation | **Commit:** 6ee580b9d | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1840)
 **Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, .github/nightly-logs/06-documentation-tsdoc-pr-body.md, Frontend-PWA/src/features/headhunter/components/RecruitCard.vue
