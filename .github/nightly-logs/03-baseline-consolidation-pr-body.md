@@ -4,20 +4,23 @@
 
 In plain terms: nothing needed fixing. This run checked the baseline consolidation area and found it already correct, so the only file here is the log recording that the check happened.
 
-**What was checked:** Completed read-only baseline consolidation audit. Pending migrations count: 0. Migration quality: PASS. Fold-state: DEGRADED. Database verification: DB-UNAVAILABLE. Clean calibration streak: 5 (since calibration: 0).
+**What was checked:** 0 pending migrations; read-only baseline RLS/search_path/formatting audit CLEAN
 
-**Why:** Master migration baseline is up to date with 0 pending migrations and passed all RLS, search_path, and formatting audits.
+**Why:** Master migration fully accounts for all 38 historical migrations
 
-**Result:** Static audit PASS, fold-state DEGRADED (semantic DO patch requirement in DB-UNAVAILABLE environment).
+**Result:** migration-quality PASS, fold-state DEGRADED (dynamic DO patch), DB-UNAVAILABLE, calibration-due NO
 
 **Files changed:** .github/nightly-logs/03-baseline-consolidation-coverage.log
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: database
-  Why: Master migration baseline is up to date with 0 pending migrations and passed all RLS, search_path, and formatting audits.
-  Change: Completed read-only baseline consolidation audit. Pending migrations count: 0. Migration quality: PASS. Fold-state: DEGRADED. Database verification: DB-UNAVAILABLE. Clean calibration streak: 5 (since calibration: 0).
-  Result: Static audit PASS, fold-state DEGRADED (semantic DO patch requirement in DB-UNAVAILABLE environment).
+  Cycle: nightly-cycle/2026-09-16
+  Contract: fce15bf60f686eba9489d1297c90bb03fbaaff69d64886cf62eb35d47f90f307
+  Why: Master migration fully accounts for all 38 historical migrations
+  Change: 0 pending migrations; read-only baseline RLS/search_path/formatting audit CLEAN
+  Result: migration-quality PASS, fold-state DEGRADED (dynamic DO patch), DB-UNAVAILABLE, calibration-due NO
   Files: .github/nightly-logs/03-baseline-consolidation-coverage.log
   Nudges: 0
+  Execution: 9336f0c1c63bff52aac70ff2c26d056c81cafc14
 -->
