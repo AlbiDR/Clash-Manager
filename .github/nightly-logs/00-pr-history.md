@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-15
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-16] PR #1837 [Stage 3]: 0 pending migrations; read-only baseline RLS/search_path/formatting audit CLEAN
+**Domain:** database | **Commit:** 4d4a4459f | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1837)
+**Files:** .github/nightly-logs/03-baseline-consolidation-coverage.log, .github/nightly-logs/03-baseline-consolidation-pr-body.md
+**Why:** Master migration fully accounts for all 38 historical migrations
+**Change:** 0 pending migrations; read-only baseline RLS/search_path/formatting audit CLEAN
+**Result:** migration-quality PASS, fold-state DEGRADED (dynamic DO patch), DB-UNAVAILABLE, calibration-due NO
+**Nudges:** 0
+
+
 ### [2026-09-16] PR #1836 [Stage 2]: Expanded RecruitCard unit test suite with edge cases
 **Domain:** verification | **Commit:** a6e015f60 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1836)
 **Files:** .github/nightly-logs/02-verification-coverage.log, .github/nightly-logs/02-verification-pr-body.md, Frontend-PWA/src/features/headhunter/components/components-tests/RecruitCard.spec.ts
