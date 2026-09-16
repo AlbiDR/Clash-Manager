@@ -20,7 +20,7 @@
 | Path | Role |
 | :--- | :--- |
 | `views/HeadhunterView.vue` | The console view and empty-state "Scan Again" action. |
-| `components/RecruitCard.vue` | A recruit row: identity, potential score, expandable stats. |
+| `components/RecruitCard.vue` | A recruit row: identity, potential score, expandable stats, and screen-reader accessibility announcements (`recruitAccessibilityLabel`). |
 | `composables/useRecruiter.ts` | The main engine: list config, manual and background sync, Blitz setup. |
 | `composables/useHeadhunter.ts` | The dismissal lifecycle, optimistic state rollbacks, recruit injection deduplication, and realtime/broadcast sync. |
 | `composables/useLeaderboardScraper.ts` | On-demand global/local leaderboard harvesting via [`query-royale-api`](../../../../Backend/supabase/functions/query-royale-api/README.md). |
@@ -29,7 +29,7 @@
 ## How it works, and why
 
 1. `useRecruiter` syncs the recruit pool (scored server-side in the headhunter view).
-2. Recruits are filtered against local tombstones and rendered in the shared list layout. Deduplication and descending potential score ordering during candidate injection are handled via `injectRecruits`.
+2. Recruits are filtered against local tombstones and rendered in the shared list layout. Deduplication and descending potential score ordering during candidate injection are handled via `injectRecruits`. Screen-reader accessibility labeling (`recruitAccessibilityLabel`) announces player name, rounded potential score, and discovery duration in parity with `MemberCard`.
 3. Dismissing a recruit injects an optimistic tombstone, sends the Supabase request, and broadcasts to other tabs (`useBroadcastChannel`).
 4. On dismissal failure, `useHeadhunter` handles state rollbacks gracefully: requests interrupted by navigation (`AbortError`) roll back local state silently without raising toast alerts, whereas network or RPC errors surface user toasts before restoring original state.
 5. Evaluating incoming data deltas surfaces pluralized system notifications when multiple elite candidates cross the notification threshold simultaneously.
