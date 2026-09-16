@@ -21,7 +21,14 @@ export const SYNC_REQUEST_TIMEOUT_MS = 25_000;
 /** Short recovery delay before the one bounded transient transport retry. */
 export const SYNC_RETRY_DELAY_MS = 400;
 
-const TRANSIENT_SYNC_FAILURE = /failed to fetch|network(?:\s+request)?(?:\s+error|\s+failed)?|load failed|\b408\b|\b429\b|\b50\d\b|bad gateway|service unavailable/i;
+// [FIX] STATEMENT TIMEOUT: the free-tier backend occasionally can't service
+// even a fast, healthy query within Postgres's own statement_timeout during
+// brief resource contention -- the query itself normally completes in well
+// under a second. That surfaces as "canceling statement due to statement
+// timeout", not any of the transport-level patterns below, so it fell
+// through as a hard failure with zero retry. It is exactly as transient as
+// the other entries here.
+const TRANSIENT_SYNC_FAILURE = /failed to fetch|network(?:\s+request)?(?:\s+error|\s+failed)?|load failed|\b408\b|\b429\b|\b50\d\b|bad gateway|service unavailable|statement timeout/i;
 const UNDICI_TRANSIENT_FETCH_FAILURE = /\bfetch failed\b/i;
 
 function isTransientSyncFailure(syncFailure: unknown): boolean {

@@ -361,6 +361,24 @@ describe("useClashSync", () => {
       expect(sync.syncError.value).toBeNull();
     });
 
+    it("recovers from a backend statement-timeout on the bounded retry", async () => {
+      // A cold client (no cached data to fall back on) has zero tolerance for
+      // even one such blip, so this must resolve without a visible error.
+      const remotePayload: WebAppData = {
+        lb: [], hh: [], timestamp: 4600, dataSource: "SUPABASE", blacklist: [],
+      };
+      vi.mocked(fetchRemote)
+        .mockRejectedValueOnce(new Error("Roster Fetch Error: canceling statement due to statement timeout"))
+        .mockResolvedValueOnce(remotePayload);
+      const sync = useClashSync(data);
+
+      await sync.refreshFromSupabase();
+
+      expect(fetchRemote).toHaveBeenCalledTimes(2);
+      expect(data.value).toEqual(remotePayload);
+      expect(sync.syncError.value).toBeNull();
+    });
+
     it("does not retry a permanent authorization failure", async () => {
       vi.mocked(fetchRemote).mockRejectedValue(new Error("JWT expired"));
       const sync = useClashSync(data);
