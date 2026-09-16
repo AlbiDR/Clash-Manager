@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-15
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-16] PR #1836 [Stage 2]: Expanded RecruitCard unit test suite with edge cases
+**Domain:** verification | **Commit:** a6e015f60 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1836)
+**Files:** .github/nightly-logs/02-verification-coverage.log, .github/nightly-logs/02-verification-pr-body.md, Frontend-PWA/src/features/headhunter/components/components-tests/RecruitCard.spec.ts
+**Why:** Saturates edge case coverage for recruit accessibility descriptions, missing longevity labels, and activity metric zero-fallbacks
+**Change:** Expanded RecruitCard unit test suite with edge cases
+**Result:** 204 test files and 2005 tests passed cleanly with proven failure under mutation
+**Nudges:** 0
+
+
 ### [2026-09-15] PR #1835 [Stage 1]: Stage 1 Runtime Integrity Auditor - CLEAN
 **Domain:** hardening | **Commit:** 51559ffbb | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1835)
 **Files:** .github/nightly-logs/00-pr-history.md, .github/nightly-logs/01-hardening-coverage.log, .github/nightly-logs/01-hardening-pr-body.md
