@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-15
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-16] PR #1844 [Stage 10]: Verified PWA/APK wrapper integrity, assetlinks, manifest parity, version code/name sync, release metadata, and cleartext traffic policy
+**Domain:** apk | **Commit:** 8d7d958a3 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1844)
+**Files:** .github/nightly-logs/10-apk-integrity-coverage.log, .github/nightly-logs/10-apk-integrity-pr-body.md
+**Why:** All 5 wrapper invariants satisfied with zero mismatches
+**Change:** Verified PWA/APK wrapper integrity, assetlinks, manifest parity, version code/name sync, release metadata, and cleartext traffic policy
+**Result:** pnpm audit:apk, pnpm apk:verify:source, pnpm audit:version, and pnpm test:apk-release all passed
+**Nudges:** 0
+
+
 ### [2026-09-16] PR #1843 [Stage 9]: Codebase -- 125 candidates, 0 dep-violations, knip (6 exp, 3 types, 1 dup), consecutive-clean: 0. Inspected protocol.ts, config/index.ts, royaleSchemas.ts. Candidate BLITZ_DWELL_DEFAULT intentional. Hunt query-royale-api harvester clean.
 **Domain:** architecture | **Commit:** db38366aa | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1843)
 **Files:** .github/nightly-logs/09-refactor-proposals-coverage.log, .github/nightly-logs/09-refactor-proposals-pr-body.md
