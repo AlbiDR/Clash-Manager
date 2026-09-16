@@ -4,20 +4,23 @@
 
 In plain terms: nothing needed fixing. This run checked the APK optimization area and found it already correct, so the only file here is the log recording that the check happened.
 
-**What was checked:** Audited native WebView settings, Service Worker routes, Vite manualChunks, and asset footprint; zero source changes required.
+**What was checked:** Audited native WebView settings, Service Worker routes, Vite manualChunks, and precache asset footprint.
 
-**Why:** Native wrapper in MainActivity.java utilizes established LOAD_CACHE_ELSE_NETWORK, offscreen pre-rastering, safe browsing, and renderer crash recovery. sw.ts contains deduplicated routes and navigation preload. vite.config.ts enforces optimal vendor chunk splitting and precache exclusions.
+**Why:** All 9 performance invariants pass cleanly and precache footprint is optimal (6 files, 11.1 KB total).
 
-**Result:** pnpm audit:apk-perf PASSED (9/9 invariants ok, 6 precached assets 11.1 KB total footprint); pnpm audit:apk PASSED; toolchain probe verified gradle / ANDROID_HOME.
+**Result:** Verified via pnpm audit:apk-perf and workspace tests pass cleanly.
 
 **Files changed:** .github/nightly-logs/11-apk-optimization-coverage.log
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: apk
-  Why: Native wrapper in MainActivity.java utilizes established LOAD_CACHE_ELSE_NETWORK, offscreen pre-rastering, safe browsing, and renderer crash recovery. sw.ts contains deduplicated routes and navigation preload. vite.config.ts enforces optimal vendor chunk splitting and precache exclusions.
-  Change: Audited native WebView settings, Service Worker routes, Vite manualChunks, and asset footprint; zero source changes required.
-  Result: pnpm audit:apk-perf PASSED (9/9 invariants ok, 6 precached assets 11.1 KB total footprint); pnpm audit:apk PASSED; toolchain probe verified gradle / ANDROID_HOME.
+  Cycle: nightly-cycle/2026-09-16
+  Contract: 63c0229fe16cf4c98e352282307edbee4830cff68ea2d93c5c967a1f5cbd30ea
+  Why: All 9 performance invariants pass cleanly and precache footprint is optimal (6 files, 11.1 KB total).
+  Change: Audited native WebView settings, Service Worker routes, Vite manualChunks, and precache asset footprint.
+  Result: Verified via pnpm audit:apk-perf and workspace tests pass cleanly.
   Files: .github/nightly-logs/11-apk-optimization-coverage.log
   Nudges: 0
+  Execution: fe3e80b1d79f269d91b592983b69f9c69fccbd21
 -->
