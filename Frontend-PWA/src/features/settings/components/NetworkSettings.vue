@@ -23,7 +23,7 @@
 <script setup lang="ts">
 import { Icon, SettingsCard, vTactile } from "@shared";
 import { useSettings } from "../composables/useSettings";
-import { fetchPipelineHealth, type PipelineHealth } from "@core/api/SupabaseClient";
+import { fetchPipelineHealth, type PipelineHealth, fetchResourcePressure, type ResourcePressureWarning } from "@core/api/SupabaseClient";
 import { formatTimeAgo } from "@core/utils/time";
 import { ref, computed, watch, onMounted } from "vue";
 
@@ -43,6 +43,8 @@ const newApiUrl = ref("");
 const isEditing = ref(false);
 const pipelineHealth = ref<PipelineHealth | null>(null);
 const isPipelineHealthLoading = ref(false);
+const resourcePressure = ref<ResourcePressureWarning | null>(null);
+const isResourcePressureLoading = ref(false);
 
 const hasLocalOverride = computed(() => !!localStorage.getItem("cm_supabase_url"));
 const isChecking = computed(() => apiStatus.value === "checking");
@@ -97,6 +99,15 @@ async function refreshPipelineHealth() {
   }
 }
 
+async function refreshResourcePressure() {
+  isResourcePressureLoading.value = true;
+  try {
+    resourcePressure.value = await fetchResourcePressure();
+  } finally {
+    isResourcePressureLoading.value = false;
+  }
+}
+
 watch(
   apiStatus,
   (newApiStatus) => {
@@ -117,6 +128,7 @@ function saveApiUrl() {
 
 onMounted(() => {
   void refreshPipelineHealth();
+  void refreshResourcePressure();
 });
 </script>
 
@@ -205,6 +217,43 @@ onMounted(() => {
         <div>
           <dt>Latest pipeline attempt</dt>
           <dd>{{ latestPipelineAttempt }}</dd>
+        </div>
+      </dl>
+    </section>
+
+    <section
+      class="pipeline-health"
+      aria-label="Database resource health"
+    >
+      <div class="pipeline-health-heading">
+        <div>
+          <span class="label label-caption">Database health</span>
+          <strong :class="resourcePressure ? 'pipeline-failed' : 'pipeline-completed'">
+            {{ isResourcePressureLoading ? "Checking" : (resourcePressure ? "Needs attention" : "Healthy") }}
+          </strong>
+        </div>
+        <button
+          v-tactile
+          class="refresh-health-btn"
+          :disabled="isResourcePressureLoading"
+          @click="refreshResourcePressure"
+        >
+          Refresh
+        </button>
+      </div>
+      <p v-if="resourcePressure">
+        {{ resourcePressure.message }}
+      </p>
+      <p v-else>
+        No connection or storage pressure warnings in the last 48 hours.
+      </p>
+      <dl
+        v-if="resourcePressure"
+        class="pipeline-health-times"
+      >
+        <div>
+          <dt>Detected</dt>
+          <dd>{{ formatTimeAgo(resourcePressure.createdAt) }}</dd>
         </div>
       </dl>
     </section>

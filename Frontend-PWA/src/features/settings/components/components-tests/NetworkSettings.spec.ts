@@ -6,12 +6,14 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import NetworkSettings from "../NetworkSettings.vue";
 import { ref } from "vue";
 
-const { fetchPipelineHealth } = vi.hoisted(() => ({
+const { fetchPipelineHealth, fetchResourcePressure } = vi.hoisted(() => ({
   fetchPipelineHealth: vi.fn(),
+  fetchResourcePressure: vi.fn(),
 }));
 
 vi.mock("@core/api/SupabaseClient", () => ({
   fetchPipelineHealth,
+  fetchResourcePressure,
 }));
 
 const mockSettings = {
@@ -33,6 +35,7 @@ describe("NetworkSettings.vue", () => {
     mockSettings.apiUrl.value = "https://api.example.com";
     mockSettings.apiStatus.value = "online";
     mockSettings.pingData.value = { latency: 42, version: "1.2.3" };
+    fetchResourcePressure.mockResolvedValue(null);
     fetchPipelineHealth.mockResolvedValue({
       status: "COMPLETED",
       lastSuccessAt: Date.now(),
@@ -107,6 +110,32 @@ describe("NetworkSettings.vue", () => {
 
     await wrapper.find(".refresh-health-btn").trigger("click");
     expect(fetchPipelineHealth).toHaveBeenCalledTimes(2);
+  });
+
+  it("shows a resource-pressure warning and can refresh it independently", async () => {
+    fetchResourcePressure.mockResolvedValue({
+      message: "Database size 420 MB is at or above the 400 MB warning threshold.",
+      createdAt: Date.now(),
+    });
+    const wrapper = mount(NetworkSettings, {
+      global: {
+        stubs: {
+          Icon: true,
+          SettingsCard: { template: '<div><slot name="header-extra" /><slot /></div>' },
+        },
+      },
+    });
+
+    await Promise.resolve();
+    await wrapper.vm.$nextTick();
+
+    const sections = wrapper.findAll(".pipeline-health");
+    expect(sections).toHaveLength(2);
+    expect(sections[1].text()).toContain("Needs attention");
+    expect(sections[1].text()).toContain("Database size 420 MB is at or above the 400 MB warning threshold.");
+
+    await sections[1].find(".refresh-health-btn").trigger("click");
+    expect(fetchResourcePressure).toHaveBeenCalledTimes(2);
   });
 
   it("handles edit mode and saving new URL via orchestrator", async () => {

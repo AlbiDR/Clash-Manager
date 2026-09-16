@@ -270,6 +270,65 @@ export async function fetchPipelineHealth(): Promise<PipelineHealth | null> {
 }
 
 /**
+ * A recent free-tier resource-pressure warning (connection saturation or
+ * database size), as logged by substrate.check_resource_pressure(). Null
+ * means either no warning in the last 48h, or the check itself is unreachable
+ * -- both read the same to this optional metadata read.
+ */
+export interface ResourcePressureWarning {
+  message: string;
+  createdAt: number | null;
+}
+
+/**
+ * Retrieves the most recent resource-pressure warning, if any, for Settings.
+ * Bounded and best-effort for the same reason as fetchPipelineHealth: this is
+ * diagnostic metadata and must never block or stall the Settings view.
+ */
+export async function fetchResourcePressure(): Promise<ResourcePressureWarning | null> {
+  if (!isConfigured()) return null;
+
+  const controller = new AbortController();
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+
+  try {
+    const healthQuery = createSupabaseClient()
+      .schema("features")
+      .from("resource_health_view")
+      .select("message,created_at")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle() as unknown as {
+        abortSignal: (signal: AbortSignal) => PromiseLike<{
+          data: { message: string | null; created_at: string | null } | null;
+          error: { message: string } | null;
+        }>;
+      };
+
+    const response = await Promise.race([
+      Promise.resolve(healthQuery.abortSignal(controller.signal)),
+      new Promise<null>((resolve) => {
+        timeoutId = setTimeout(() => {
+          controller.abort(new Error("Resource pressure check timed out"));
+          resolve(null);
+        }, OPTIONAL_METADATA_TIMEOUT_MS);
+      }),
+    ]);
+
+    if (!response || response.error || !response.data || !response.data.message) return null;
+
+    return {
+      message: response.data.message,
+      createdAt: parseTimestamp(response.data.created_at),
+    };
+  } catch {
+    return null;
+  } finally {
+    if (timeoutId) clearTimeout(timeoutId);
+  }
+}
+
+/**
  * Performs a connectivity handshake with the Supabase backend.
  *
  * @param options - Optional configuration including AbortSignal.
