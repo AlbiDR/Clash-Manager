@@ -1,23 +1,26 @@
 ### Nightly Stage 5: Documentation README - Architecture Truth Architect
 
-**Status:** CLEAN
+**Status:** CHANGED
 
-In plain terms: nothing needed fixing. This run checked the documentation README area and found it already correct, so the only file here is the log recording that the check happened.
+In plain terms: this is a documentation change to 1 file in the documentation README area. Nothing about how the app runs is affected.
 
-**What was checked:** Audited protocol.ts and useProgressiveList.ts against adjacent READMEs; verified accurate and no drift present
+**What changed:** Reconciled RecruitCard screen-reader accessibility labeling and MemberCard parity in headhunter README
 
-**Why:** doc-debt targets protocol.ts and useProgressiveList.ts prose match actual implementation and current version ground truth
+**Why:** Document RecruitCard accessibility announcements and MemberCard parity following recent test suite expansion
 
-**Result:** git diff --check passed with 0 errors and pnpm test passed 204/204 test files (1975 tests)
+**Result:** 204 test suites passed (2005 tests), git diff --check clean
 
-**Files changed:** .github/nightly-logs/05-documentation-readme-coverage.log
+**Files changed:** .github/nightly-logs/05-documentation-readme-coverage.log, Frontend-PWA/src/features/headhunter/README.md
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: documentation
-  Why: doc-debt targets protocol.ts and useProgressiveList.ts prose match actual implementation and current version ground truth
-  Change: Audited protocol.ts and useProgressiveList.ts against adjacent READMEs; verified accurate and no drift present
-  Result: git diff --check passed with 0 errors and pnpm test passed 204/204 test files (1975 tests)
-  Files: .github/nightly-logs/05-documentation-readme-coverage.log
+  Cycle: nightly-cycle/2026-09-16
+  Contract: cea68a5bbba1bd2cbc6d3bdfe2639f37f3935b571beab59f5da1501b1180b22d
+  Why: Document RecruitCard accessibility announcements and MemberCard parity following recent test suite expansion
+  Change: Reconciled RecruitCard screen-reader accessibility labeling and MemberCard parity in headhunter README
+  Result: 204 test suites passed (2005 tests), git diff --check clean
+  Files: .github/nightly-logs/05-documentation-readme-coverage.log, Frontend-PWA/src/features/headhunter/README.md
   Nudges: 0
+  Execution: 7928c1409cbda393809d161734139280b056e289
 -->
