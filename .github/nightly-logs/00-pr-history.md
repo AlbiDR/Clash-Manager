@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-15
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-16] PR #1845 [Stage 11]: Audited native WebView settings, Service Worker routes, Vite manualChunks, and precache asset footprint.
+**Domain:** apk | **Commit:** 5bf190518 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1845)
+**Files:** .github/nightly-logs/11-apk-optimization-coverage.log, .github/nightly-logs/11-apk-optimization-pr-body.md
+**Why:** All 9 performance invariants pass cleanly and precache footprint is optimal (6 files, 11.1 KB total).
+**Change:** Audited native WebView settings, Service Worker routes, Vite manualChunks, and precache asset footprint.
+**Result:** Verified via pnpm audit:apk-perf and workspace tests pass cleanly.
+**Nudges:** 0
+
+
 ### [2026-09-16] PR #1844 [Stage 10]: Verified PWA/APK wrapper integrity, assetlinks, manifest parity, version code/name sync, release metadata, and cleartext traffic policy
 **Domain:** apk | **Commit:** 8d7d958a3 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1844)
 **Files:** .github/nightly-logs/10-apk-integrity-coverage.log, .github/nightly-logs/10-apk-integrity-pr-body.md
