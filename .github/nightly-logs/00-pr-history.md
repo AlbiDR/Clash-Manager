@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-16
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-17] PR #1857 [Stage 10]: PWA and APK wrapper integrity verified with no mismatches found.
+**Domain:** apk | **Commit:** 433dbca43 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1857)
+**Files:** .github/nightly-logs/10-apk-integrity-coverage.log, .github/nightly-logs/10-apk-integrity-pr-body.md
+**Why:** Audit of asset links, manifest parity, version codes/names sync, release metadata, and cleartext security policies showed full compliance across all invariants.
+**Change:** PWA and APK wrapper integrity verified with no mismatches found.
+**Result:** Verified with pnpm audit:apk, pnpm test:apk-release, pnpm test:apk-ux-audit, pnpm test:apk-performance, and APK/verify-apk-integrity.mjs.
+**Nudges:** 0
+
+
 ### [2026-09-17] PR #1856 [Stage 9]: Removed internal-only dead exports across Backend and Frontend-PWA
 **Domain:** architecture | **Commit:** bb5888475 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1856)
 **Files:** .github/nightly-logs/*, Backend/supabase/functions/_shared/*, Frontend-PWA/src/core/theme/theme-tests/* (6 files)
