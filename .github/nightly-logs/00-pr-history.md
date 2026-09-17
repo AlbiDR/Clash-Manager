@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-16
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-17] PR #1850 [Stage 3]: Audited master_migration.sql baseline with 0 pending migrations; verified RLS compliance (29 directives on tables), search_path isolation, and formatting; fold-state DEGRADED, migration-quality FAIL, database DB-UNAVAILABLE.
+**Domain:** database | **Commit:** b7d041bf2 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1850)
+**Files:** .github/nightly-logs/03-baseline-consolidation-coverage.log, .github/nightly-logs/03-baseline-consolidation-pr-body.md
+**Why:** Baseline current with 0 pending migrations; read-only audit confirmed master_migration.sql compliance.
+**Change:** Audited master_migration.sql baseline with 0 pending migrations; verified RLS compliance (29 directives on tables), search_path isolation, and formatting; fold-state DEGRADED, migration-quality FAIL, database DB-UNAVAILABLE.
+**Result:** Static fold-state DEGRADED (exit 2, 0 pending migrations), migration-quality FAIL (6 historical violations), database DB-UNAVAILABLE.
+**Nudges:** 0
+
+
 ### [2026-09-17] PR #1849 [Stage 2]: useHeaderScroll KeepAlive lifecycle verification
 **Domain:** verification | **Commit:** f7fc63887 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1849)
 **Files:** .github/nightly-logs/02-verification-coverage.log, .github/nightly-logs/02-verification-pr-body.md, Frontend-PWA/src/shared/composables/composables-tests/useHeaderScroll.spec.ts
