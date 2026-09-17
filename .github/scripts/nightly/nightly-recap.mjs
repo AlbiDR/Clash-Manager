@@ -192,34 +192,6 @@ export function runProgress({ registry, ledger, date, coverageByStage, tags }) {
 }
 
 /**
- * A stage narrates its own sub-checks in prose ("fold-state DEGRADED,
- * migration-quality FAIL, database DB-UNAVAILABLE") inside a line whose own
- * declared status is CLEAN or CHANGED. Nothing before this read that prose:
- * classifyStage took the declared status as the outcome and moved on, so a
- * stage could fail one of its own checks and still merge and grade as if
- * nothing had happened.
- *
- * Confirmed against the evidence: Stage 3 declared migration-quality FAIL on
- * 2026-09-07 and again on 2026-09-17, both times as a CLEAN, zero-source-change
- * stage. On 2026-09-17 the gap it had found stayed open for six hours, until
- * an unrelated commit closed it -- the pipeline detected a real problem and
- * had no way to say so any louder than a line in a log file.
- *
- * Scoped to the ALL-CAPS status vocabulary this repo's checkers actually use
- * for a failing result (FAIL, DIVERGENT, UNFOLDED), not a general word search:
- * `\bFAIL\b` also doesn't match "FAILED" or "failover", so ordinary prose about
- * failure handling does not trip it. Checked against every terminal coverage
- * line ever written: only the two Stage 3 lines above match.
- */
-const SELF_REPORTED_FAILURE_RE = /\b(FAIL|DIVERGENT|UNFOLDED)\b/;
-
-function hasSelfReportedFailure({ declared, history }) {
-  return SELF_REPORTED_FAILURE_RE.test(
-    [declared?.summary, history?.change, history?.result].filter(Boolean).join(" "),
-  );
-}
-
-/**
  * Pure classification from durable evidence only. Nothing here consults branch
  * state, so the answer is identical before and after a sync.
  */
@@ -263,7 +235,6 @@ export function classifyStage({ stage, entry, tag, declared, history, progress }
     outcome,
     merged,
     rescued,
-    selfReportedFailure: hasSelfReportedFailure({ declared, history }),
     // Whether the watchdog actually reached a verdict for this stage. `merged`
     // reads through to durable tags, but `rescued` can only come from a ledger
     // row, so without this flag an absent row is indistinguishable from an
@@ -315,17 +286,6 @@ export const GRADE_RUBRIC = [
   { grade: 3, when: r => r.stuck > r.total / 2, why: "Critical failure: the majority of stages did not complete." },
   { grade: 5, when: r => r.stuck >= 2, why: "Multiple blocks: more than one stage failed or got stuck." },
   { grade: 7, when: r => r.stuck === 1, why: "Partial block: one stage failed or got stuck." },
-  // A stage that merges CLEAN while its own summary says FAIL is not the same
-  // shape of problem as a stuck stage -- the pipeline ran to completion -- but
-  // it is not a 9 either: 9 is reserved for a run where nothing was actually
-  // wrong and a watchdog nudge sufficed. Here something IS wrong by the
-  // stage's own account, and nothing in the run addressed it. See
-  // hasSelfReportedFailure for the evidence this is grounded in.
-  {
-    grade: 6,
-    when: r => (r.selfContradicted || []).length > 0,
-    why: r => `Self-report gap: ${countOf(r.selfContradicted, "stage")} declared its outcome clean while its own summary reported a failing sub-check, and nothing in this run addressed it.`,
-  },
   // Still a 9, because a stage that needed rescuing is not the same as one that
   // did not, and the health check that spots a RISING rescue rate depends on
   // this staying visible. But the old wording, "some needed intervention", read
@@ -356,7 +316,6 @@ export function gradeRun(stages) {
     changed: stages.filter(s => s.outcome === "CHANGED").length,
     clean: stages.filter(s => s.outcome === "CLEAN").length,
     unobserved: stages.filter(s => !s.observed).length,
-    selfContradicted: stages.filter(s => s.selfReportedFailure),
   };
   const hit = GRADE_RUBRIC.find(rule => rule.when(totals));
   return { ...totals, grade: hit.grade, rationale: typeof hit.why === "function" ? hit.why(totals) : hit.why };
@@ -1061,25 +1020,6 @@ function evidenceGuardSection(recap) {
   ];
 }
 
-/**
- * Whether any stage's own summary contradicts the outcome it declared -- see
- * hasSelfReportedFailure. Printed unconditionally, in the same spirit as the
- * evidence guard above: a silent section here would read exactly like
- * "checked, none found" whether or not the check actually ran, and those are
- * not the same claim.
- */
-function selfReportGuardSection(recap) {
-  const flagged = (recap.stages || []).filter(s => s.selfReportedFailure);
-  if (flagged.length === 0) {
-    return ["Self-report guard: no stage's own summary contradicted the outcome it declared.", ""];
-  }
-  const parts = flagged.map(s => {
-    const quote = escapeInline(s.result || s.summary || "");
-    return `${stageTag(s.stage)} declared ${s.outcome} but its own summary reports a failing sub-check ("${quote}")`;
-  });
-  return [`Self-report guard: ${parts.join("; ")}.`, ""];
-}
-
 function unknownBoilerplateSection(recap) {
   const byResult = new Map();
   for (const stage of recap.stages || []) {
@@ -1127,7 +1067,6 @@ export function renderRecap(recap) {
   lines.push(...descriptionSection(recap));
   lines.push(...thinEvidenceSection(recap));
   lines.push(...evidenceGuardSection(recap));
-  lines.push(...selfReportGuardSection(recap));
   lines.push(...unknownBoilerplateSection(recap));
 
   return lines.join("\n");

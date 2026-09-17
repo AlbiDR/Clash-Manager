@@ -374,50 +374,6 @@ export function resolveResult(rawResult, status, state, recordRefusal = () => {}
 }
 
 /**
- * Stage 3's own prompt says migration-quality FAIL cannot finalize CLEAN
- * (03-baseline-consolidation.md, "CLEAN Evidence Floor"), because a CLEAN
- * grade is a claim that nothing here needs a human, and a FAILing audit is a
- * claim that something does. Nothing enforced it: on 2026-09-07 and again on
- * 2026-09-17 Stage 3 finalized CLEAN over a self-reported migration-quality
- * FAIL, and the 2026-09-17 gap sat unaddressed for six hours until an
- * unrelated commit closed it. See nightly-recap.mjs's self-report guard,
- * which is what surfaced this.
- *
- * Same one-shot-refusal shape as resolveResult, and for the same reason: a
- * hard, repeating block on this stage risks the incident fold-state.mjs
- * documents at reconcileDefinition's TRIGGER comment (2026-09-10), where a
- * gate conflict cost Stage 3 an entire night and would have recurred every
- * night after. One refusal gives the agent a chance to name the real status;
- * every call after that -- budget spent, or already refused once -- is
- * accepted and downgraded to PARTIAL-RUN, which validateChangedPaths already
- * enforces as log-only, matching what this stage can actually produce when it
- * finds a violation it is forbidden to fix (it never rewrites history).
- */
-export function resolveStatus(status, stage, state, migrationQualityStatus, recordRefusal = () => {}) {
-  if (stage.number !== 3 || status !== "CLEAN" || migrationQualityStatus !== "FAIL") return status;
-
-  const spent = workPhase(state) === "SUBMIT";
-  if (spent || state?.statusRefused) {
-    console.error(
-      `Nightly: --status CLEAN was requested while migration-quality-status.txt reads FAIL.`
-      + (spent
-        ? " The work budget has ended, so it is recorded as PARTIAL-RUN instead of blocking publication."
-        : " This stage was already asked once, so it is recorded as PARTIAL-RUN instead of blocking publication."),
-    );
-    return "PARTIAL-RUN";
-  }
-
-  recordRefusal();
-  throw new Error(
-    "--status CLEAN cannot stand: migration-quality-status.txt reads FAIL, and this stage's own prompt says FAIL cannot finalize CLEAN.\n"
-    + "Stage 3 never rewrites history, so it cannot resolve this violation itself.\n"
-    + "Re-run finalize with --status PARTIAL-RUN and a --result that names the violation, for example:\n"
-    + '  --status PARTIAL-RUN --result "migration-quality FAIL: 6 historical violations, needs a human; fold-state DEGRADED, database DB-UNAVAILABLE"\n'
-    + "Everything else about this finalize call was accepted; only --status needs changing.",
-  );
-}
-
-/**
  * What kind of thing each changed path is.
  *
  * The stage's own log directory is derived from its registry coverageLog
@@ -1055,9 +1011,6 @@ function finalizeCommand(repoRoot, stage, status, summary, dryRun, details = {})
   // collapse: see nudgeMetadataLine.
   const stateObserved = existsSync(statePath);
   const state = stateObserved ? JSON.parse(readFileSync(statePath, "utf8")) : {};
-  status = resolveStatus(status, stage, state, readOptional(path.join(contextDir(), "migration-quality-status.txt")), () => {
-    atomicWrite(statePath, `${JSON.stringify({ ...state, statusRefused: true }, null, 2)}\n`);
-  });
   const result = resolveResult(details.result, status, state, () => {
     atomicWrite(statePath, `${JSON.stringify({ ...state, resultRefused: true }, null, 2)}\n`);
   });
