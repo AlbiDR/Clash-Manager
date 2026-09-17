@@ -1,7 +1,21 @@
 <!-- SPDX-License-Identifier: GPL-3.0-only -->
 <!-- Copyright (C) 2026 AlbiDR -->
 <script setup lang="ts">
-import { Comment, computed, Fragment, Text, unref, useSlots, type VNode } from "vue";
+import {
+  Comment,
+  computed,
+  Fragment,
+  nextTick,
+  onMounted,
+  onUnmounted,
+  ref,
+  Text,
+  unref,
+  useSlots,
+  useTemplateRef,
+  watch,
+  type VNode,
+} from "vue";
 import { useHaptics } from "../composables/useHaptics";
 import { useHeaderScroll } from "../composables/useHeaderScroll";
 import StatusPill from "./StatusPill.vue";
@@ -31,6 +45,48 @@ defineEmits<{
 
 const haptics = useHaptics();
 const slots = useSlots();
+const headerSummary = useTemplateRef<HTMLElement>("headerSummary");
+const viewTitle = useTemplateRef<HTMLElement>("viewTitle");
+
+/**
+ * The title rail has five information states. It advances only when the title
+ * would otherwise be visibly ellipsized, then re-measures before considering
+ * the next concession. This makes compression depend on actual content width
+ * (including long status/error labels), rather than an arbitrary viewport.
+ */
+const pressureStage = ref(0);
+const FINAL_PRESSURE_STAGE = 4;
+let resizeObserver: ResizeObserver | undefined;
+let pressureRun = 0;
+let pressureScheduled = false;
+
+function titleWouldTruncate() {
+  const titleElement = viewTitle.value;
+  const summaryElement = headerSummary.value;
+  // JSDOM has no layout; leave component tests at the complete default state.
+  if (!titleElement || !summaryElement || summaryElement.getBoundingClientRect().width === 0) return false;
+  return titleElement.scrollWidth > titleElement.clientWidth + 1;
+}
+
+async function resolveHeaderPressure() {
+  const run = ++pressureRun;
+  pressureStage.value = 0;
+  await nextTick();
+
+  while (run === pressureRun && pressureStage.value < FINAL_PRESSURE_STAGE && titleWouldTruncate()) {
+    pressureStage.value++;
+    await nextTick();
+  }
+}
+
+function scheduleHeaderPressureResolution() {
+  if (pressureScheduled) return;
+  pressureScheduled = true;
+  queueMicrotask(() => {
+    pressureScheduled = false;
+    void resolveHeaderPressure();
+  });
+}
 
 /**
  * ConsoleLayout forwards its filters slot even when a view supplies no filter.
@@ -71,17 +127,49 @@ const handleOpenDashboard = () => {
     window.open(props.dashboardUrl, "_blank");
   }
 };
+
+watch(
+  () => [props.title, props.stats?.value, props.stats?.label, props.status?.text, props.loading],
+  scheduleHeaderPressureResolution,
+  { flush: "post" },
+);
+
+onMounted(() => {
+  if (headerSummary.value && typeof ResizeObserver !== "undefined") {
+    resizeObserver = new ResizeObserver(scheduleHeaderPressureResolution);
+    resizeObserver.observe(headerSummary.value);
+  }
+  // A late web-font resolution can change the title's intrinsic width without
+  // changing the summary container's size, so it needs one final measurement.
+  void document.fonts?.ready.then(scheduleHeaderPressureResolution);
+  scheduleHeaderPressureResolution();
+});
+
+onUnmounted(() => {
+  pressureRun++;
+  resizeObserver?.disconnect();
+});
 </script>
 
 <template>
   <header
     class="console-header"
-    :class="{ 'is-scrolled': unref(isScrolled), 'is-condensed': unref(isCondensed) }"
+    :class="[
+      {
+        'is-scrolled': unref(isScrolled),
+        'is-condensed': unref(isCondensed),
+      },
+      `is-pressure-stage-${pressureStage}`,
+    ]"
   >
     <div class="header-main">
-      <div class="header-summary">
+      <div
+        ref="headerSummary"
+        class="header-summary"
+      >
         <div class="title-main">
           <h1
+            ref="viewTitle"
             class="view-title"
             :class="{ 'is-link': props.dashboardUrl }"
             :title="props.dashboardUrl ? 'Open Supabase Dashboard' : undefined"
@@ -119,6 +207,7 @@ const handleOpenDashboard = () => {
             :text="props.status.text"
             :nominal="props.status.nominal"
             :remote-info="props.remoteInfo"
+            :compression-stage="pressureStage"
           />
         </div>
       </div>
@@ -173,9 +262,6 @@ const handleOpenDashboard = () => {
   display: flex;
   flex-direction: column;
   gap: var(--sys-space-12);
-  /* Responsive priority belongs to the usable header rail, not to the viewport:
-     a desktop window can be narrower than a phone content column. */
-  container: console-header / inline-size;
 }
 
 /* [DECISION LOG] THE SECONDARY ROWS STAND DOWN WHILE THE READER IS READING:
@@ -297,33 +383,22 @@ const handleOpenDashboard = () => {
 /*
  * Header pressure ladder
  * ----------------------
- * Keep the actual view name readable for as long as possible. As this single
- * rail contracts, lower-priority context gives way in a fixed order:
- *   1. status text (the semantic state remains available through its label),
- *   2. the members/recruits noun,
- *   3. the final status dot,
- *   4. the numeric count,
- *   5. only then does the title ellipsize.
- *
- * This is deliberately container-based, so a resized desktop window follows
- * the same calm rule as a very narrow handset.
+ * `pressureStage` is resolved from actual title overflow, resetting to the
+ * complete state before every measurement. Each stage is therefore earned by
+ * a real collision, regardless of whether it comes from a small viewport, a
+ * resized desktop window, a longer title, or an error-shaped status label.
  */
-@container console-header (max-width: 600px) {
-  .action-group { gap: 0; }
-}
+.console-header.is-pressure-stage-2 .title-label,
+.console-header.is-pressure-stage-3 .title-label,
+.console-header.is-pressure-stage-4 .title-label { gap: 0; }
 
-@container console-header (max-width: 440px) {
-  .title-label { gap: 0; }
-  .count-label { display: none; }
-}
+.console-header.is-pressure-stage-2 .count-label,
+.console-header.is-pressure-stage-3 .count-label,
+.console-header.is-pressure-stage-4 .count-label { display: none; }
 
-@container console-header (max-width: 360px) {
-  .action-group { display: none; }
-}
-
-@container console-header (max-width: 330px) {
-  .title-label { display: none; }
-}
+.console-header.is-pressure-stage-3 .action-group,
+.console-header.is-pressure-stage-4 .action-group { display: none; }
+.console-header.is-pressure-stage-4 .title-label { display: none; }
 
 /* A console toolbar only appears for view-specific filters or selection. Search
    and order live behind the title-rail View button, so this grid never reserves

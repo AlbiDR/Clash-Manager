@@ -12,6 +12,8 @@ const props = defineProps<{
   text: string;
   nominal?: boolean;
   remoteInfo?: ConsoleRemoteInfo;
+  /** Stage 1 keeps only the status color; later stages are handled by the host. */
+  compressionStage?: number;
 }>();
 
 const { isExpanded, isDB, displayText, displaySource, handleToggle } = useStatusPill(props);
@@ -48,7 +50,13 @@ onUnmounted(() => document.removeEventListener("click", handleClickOutside));
   <div
     ref="statusControl"
     class="status-control"
-    :class="[`is-${props.type}`, { 'is-expanded': isExpanded }]"
+    :class="[
+      `is-${props.type}`,
+      {
+        'is-expanded': isExpanded,
+        'is-compact': (props.compressionStage ?? 0) >= 1,
+      },
+    ]"
   >
     <button
       v-tactile
@@ -226,23 +234,19 @@ onUnmounted(() => document.removeEventListener("click", handleClickOutside));
 
 .status-chevron.is-open { transform: rotate(180deg); }
 
-/* The ConsoleHeader owns the named inline-size container. Its compression
-   ladder removes text before information-bearing color, leaving a compact dot
-   with the same accessible name and tap target. At the next stage the header
-   removes the whole status affordance, after every higher-priority title cue
-   has already been preserved. */
-@container console-header (max-width: 600px) {
-  .status-trigger {
-    width: var(--sys-space-32);
-    min-width: var(--sys-space-32);
-    padding: 0;
-    border-color: transparent;
-    background: transparent;
-  }
-
-  .status-label,
-  .status-chevron { display: none; }
+/* Stage 1 removes text before information-bearing color, leaving a compact dot
+   with the same accessible name and tap target. The host removes the complete
+   status affordance only after its higher-priority title cues are preserved. */
+.status-control.is-compact .status-trigger {
+  width: var(--sys-space-32);
+  min-width: var(--sys-space-32);
+  padding: 0;
+  border-color: transparent;
+  background: transparent;
 }
+
+.status-control.is-compact .status-label,
+.status-control.is-compact .status-chevron { display: none; }
 
 .is-success { color: var(--sys-color-success); }
 .is-warning { color: var(--sys-color-warning); }
