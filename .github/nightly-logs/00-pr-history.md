@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-16
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-17] PR #1854 [Stage 7]: Audited catalog protocol and package version consistency across monorepo manifests and derived files; no drift detected.
+**Domain:** versioning | **Commit:** a14bdb63f | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1854)
+**Files:** .github/nightly-logs/07-version-integrity-coverage.log, .github/nightly-logs/07-version-integrity-pr-body.md
+**Why:** Ground truth version 14.50.108 and catalog: usage are fully synchronized across all package manifests and derived files.
+**Change:** Audited catalog protocol and package version consistency across monorepo manifests and derived files; no drift detected.
+**Result:** Catalog scan verified catalog: usage in Frontend-PWA/package.json and Backend/package.json. Version scan compared root package.json, Frontend-PWA/package.json, Backend/package.json, and derived declarations (README badges, useProgressiveList.ts, protocol.ts, apktool.yml, twa-manifest.json). pnpm audit:version passed with 0 drift or catalog violations.
+**Nudges:** 0
+
+
 ### [2026-09-17] PR #1853 [Stage 6]: Harden SupabaseClient TSDoc interface contracts and inline logic annotations
 **Domain:** documentation | **Commit:** bb5bd89b9 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1853)
 **Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, .github/nightly-logs/06-documentation-tsdoc-pr-body.md, Frontend-PWA/src/core/api/SupabaseClient.ts
