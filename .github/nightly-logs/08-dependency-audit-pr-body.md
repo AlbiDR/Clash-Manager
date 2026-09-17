@@ -4,23 +4,23 @@
 
 In plain terms: this updates dependencies only. No project code was written or changed, though the app should be re-tested before release.
 
-**What changed:** package.json -- Bumped supabase devDependency from ^2.116.0 to ^2.117.0 in catalog
+**What changed:** Bumped knip to ^6.36.0 and updated major version watchlist
 
-**Why:** Applied safe autonomous minor/patch version bump within current major range
+**Why:** Tier 1 minor bump maintenance
 
-**Result:** pnpm test passed 2005 of 2005 tests across 204 files; pnpm test:nightly-control-plane passed 122 tests
+**Result:** pnpm test in Frontend-PWA passed 2017 tests across 205 files
 
-**Files changed:** .github/nightly-logs/08-dependency-audit-coverage.log, package.json, pnpm-lock.yaml, pnpm-workspace.yaml
+**Files changed:** .github/nightly-logs/08-dependency-audit-coverage.log, package.json
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: dependencies
-  Cycle: nightly-cycle/2026-09-16
+  Cycle: nightly-cycle/2026-09-17
   Contract: b865578f1a0b5d4e90f264b4dbb792c4d309c9bbea08fd314cf47cef940ff9b8
-  Why: Applied safe autonomous minor/patch version bump within current major range
-  Change: package.json -- Bumped supabase devDependency from ^2.116.0 to ^2.117.0 in catalog
-  Result: pnpm test passed 2005 of 2005 tests across 204 files; pnpm test:nightly-control-plane passed 122 tests
-  Files: .github/nightly-logs/08-dependency-audit-coverage.log, package.json, pnpm-lock.yaml, pnpm-workspace.yaml
+  Why: Tier 1 minor bump maintenance
+  Change: Bumped knip to ^6.36.0 and updated major version watchlist
+  Result: pnpm test in Frontend-PWA passed 2017 tests across 205 files
+  Files: .github/nightly-logs/08-dependency-audit-coverage.log, package.json
   Nudges: 0
-  Execution: fa4691b5db4f3a98e72baa94aead90d3b02924b6
+  Execution: fde77ef9b478cf710e93bb4ef914c3eeb590eb1d
 -->

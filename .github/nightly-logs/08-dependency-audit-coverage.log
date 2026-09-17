@@ -438,3 +438,4 @@
 * [2026-09-14] [Stage 8] [06:02Z-06:09Z 7m] CHANGED: package.json -- Bumped @types/node catalog entry from ^26.4.1 to ^26.5.1 and re-locked dependencies
 * [2026-09-15] [Stage 8] [06:04Z-06:15Z 11m] CHANGED: package.json -- Bumped dependency-cruiser to ^18.3.1 and updated lockfile
 * [2026-09-16] [Stage 8] [06:28Z-06:34Z 6m] CHANGED: package.json -- package.json -- Bumped supabase devDependency from ^2.116.0 to ^2.117.0 in catalog
+* [2026-09-17] [Stage 8] [06:30Z-06:30Z 0m] CHANGED: package.json -- Bumped knip to ^6.36.0 and updated major version watchlist
