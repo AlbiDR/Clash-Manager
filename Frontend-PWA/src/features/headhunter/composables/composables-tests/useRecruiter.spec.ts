@@ -231,6 +231,13 @@ describe("useRecruiter", () => {
     expect(mockHide).toHaveBeenCalledWith(["1"]);
   });
 
+  it("names its destructive dock action separately from clearing a selection", () => {
+    const [{ fabState }] = withSetup(() => useRecruiter());
+
+    expect(fabState.value.dismissLabel).toBe("Dismiss selected recruits");
+    expect(fabState.value.dismissIcon).toBe("trash");
+  });
+
   it("handles search updates", () => {
     const [{ handleSearch, searchQuery }] = withSetup(() => useRecruiter());
     handleSearch("Recruit A");

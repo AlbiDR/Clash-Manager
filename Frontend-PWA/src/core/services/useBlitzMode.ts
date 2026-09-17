@@ -106,6 +106,7 @@ export function useBlitzMode(
         selectionCount: 0,
         blitzEnabled: false,
         dismissIcon: "trash",
+        dismissLabel: "Clear selection",
       };
     }
 
@@ -140,6 +141,7 @@ export function useBlitzMode(
       selectionCount: totalSelectedCount,
       blitzEnabled: isBlitzEnabled.value,
       dismissIcon: "trash",
+      dismissLabel: "Clear selection",
     };
   });
 

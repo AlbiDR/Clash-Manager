@@ -35,6 +35,8 @@ const fabState = reactive({
   harvestEnabled: false,
   /** The icon name for the dismiss/close button. */
   dismissIcon: "close",
+  /** The accessible name for the dismiss action. */
+  dismissLabel: "Clear selection",
   // Callbacks - set by the view that owns the selection
   /** Callback for the primary action button. */
   onAction: null as ((event: MouseEvent) => void) | null,

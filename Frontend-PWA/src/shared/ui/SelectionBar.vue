@@ -39,7 +39,6 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: "select-all"): void;
   (e: "clear"): void;
-  (e: "done"): void;
   (e: "select-score", threshold: number, mode: "ge" | "le"): void;
 }>();
 
@@ -67,8 +66,8 @@ const {
       />
     </div>
 
-    <!-- Fixed-width action: the count lives inside the button, so entering
-         selection mode cannot move either the button or its parent group. -->
+    <!-- Fixed-width action: selection exit and score selection share the same
+         anchor, so the row never shifts as the state changes. -->
     <div
       class="sel-group management"
       :class="{ 'has-view-options': $slots['view-options'] }"
@@ -80,6 +79,8 @@ const {
           'is-active-sel': isActive,
           'is-idle-sel': !isActive,
         }"
+        :aria-label="isActive ? `Clear ${props.count} selected` : 'Select by score threshold'"
+        :title="isActive ? `Clear ${props.count} selected` : 'Select by score threshold'"
         @click="
           isActive
             ? emit('clear')
@@ -96,8 +97,8 @@ const {
           >Select</span>
           <span
             v-else
-            key="done"
-          >Done · {{ props.count }}</span>
+            key="clear"
+          >Clear · {{ props.count }}</span>
         </Transition>
       </button>
       <div

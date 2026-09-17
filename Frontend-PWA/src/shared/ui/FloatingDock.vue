@@ -30,11 +30,28 @@ const { isDesktop } = useViewport();
       'is-desktop': isDesktop
     }"
   >
-    <!-- Navigation Dock Mode -->
-    <NavigationDock v-if="dockVisible" />
+    <Transition
+      name="dock-swap"
+      mode="out-in"
+    >
+      <!-- Navigation Dock Mode -->
+      <div
+        v-if="dockVisible"
+        key="navigation"
+        class="dock-mode"
+      >
+        <NavigationDock />
+      </div>
 
-    <!-- Selection FAB Mode -->
-    <SelectionFab v-else />
+      <!-- Selection FAB Mode -->
+      <div
+        v-else
+        key="selection"
+        class="dock-mode"
+      >
+        <SelectionFab />
+      </div>
+    </Transition>
   </div>
 </template>
 
@@ -86,6 +103,25 @@ const { isDesktop } = useViewport();
   flex-wrap: nowrap;
 }
 
+.dock-mode {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.dock-swap-enter-active,
+.dock-swap-leave-active {
+  transition:
+    opacity var(--sys-motion-duration-200) var(--sys-motion-easing-decelerate),
+    transform var(--sys-motion-duration-200) var(--sys-motion-easing-decelerate);
+}
+
+.dock-swap-enter-from,
+.dock-swap-leave-to {
+  opacity: 0;
+  transform: translateY(8px) scale(0.97);
+}
+
 @media (max-width: 600px) {
   .dock-container {
     width: calc(100% - var(--sys-space-32));
@@ -98,6 +134,18 @@ const { isDesktop } = useViewport();
     width: auto;
     max-width: calc(100% - 32px);
     justify-content: center;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dock-swap-enter-active,
+  .dock-swap-leave-active {
+    transition: opacity var(--sys-motion-duration-200) linear;
+  }
+
+  .dock-swap-enter-from,
+  .dock-swap-leave-to {
+    transform: none;
   }
 }
 </style>

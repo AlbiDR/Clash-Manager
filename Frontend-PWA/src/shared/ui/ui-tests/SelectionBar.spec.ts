@@ -51,7 +51,8 @@ describe("SelectionBar", () => {
     const wrapper = mount(SelectionBar, {
       props: { count: 5, totalCount: 50 },
     });
-    expect(wrapper.text()).toContain("Done · 5");
+    expect(wrapper.text()).toContain("Clear · 5");
+    expect(wrapper.find(".morph-btn").attributes("aria-label")).toBe("Clear 5 selected");
     expect(wrapper.find(".count-pill").exists()).toBe(false);
   });
 

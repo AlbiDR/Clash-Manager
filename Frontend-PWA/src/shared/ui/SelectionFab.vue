@@ -1,6 +1,7 @@
 <!-- SPDX-License-Identifier: GPL-3.0-only -->
 <!-- Copyright (C) 2026 AlbiDR -->
 <script setup lang="ts">
+import { computed } from "vue";
 import Icon from "./Icon.vue";
 import { useUiCoordinator } from "@core";
 import { vTactile } from "../directives/vTactile";
@@ -21,6 +22,13 @@ import { vTactile } from "../directives/vTactile";
  */
 
 const { fabState } = useUiCoordinator();
+
+const selectedCount = computed(() => fabState.selectionCount ?? 0);
+const dismissLabel = computed(() => fabState.dismissLabel || "Clear selection");
+const dismissAriaLabel = computed(() => {
+  if (selectedCount.value === 0) return dismissLabel.value;
+  return `${dismissLabel.value} (${selectedCount.value})`;
+});
 
 /**
  * [DECISION LOG] ACTION DELEGATION: All handlers verify the existence of
@@ -61,129 +69,144 @@ function handleFabAbortHarvest() {
 </script>
 
 <template>
-  <!-- Dismiss Button (Always Visible) -->
-  <!-- [DECISION LOG] THE NAME CONTAINS THE WORD ON THE BUTTON:
+  <div class="selection-fab">
+    <Transition name="selection-summary">
+      <div
+        v-if="selectedCount > 0 && !fabState.isBlasting"
+        class="selection-summary"
+        role="status"
+        aria-live="polite"
+      >
+        <strong>{{ selectedCount }}</strong>
+        <span>selected</span>
+      </div>
+    </Transition>
+
+    <!-- Dismiss Button (Always Visible) -->
+    <!-- [DECISION LOG] THE NAME CONTAINS THE WORD ON THE BUTTON:
        In its resting state this button renders the word "Clear" and was named
        "Dismiss Selection", sharing no word with it. Voice control matches on the
        accessible name, so "click Clear" could not activate the control a person
        was looking at (WCAG 2.5.3, Label in Name). The other two states render no
        text, so their names are free to describe the action instead. -->
-  <button
-    v-tactile
-    class="fab-btn danger"
-    :class="{ compact: fabState.isBlasting || (fabState.selectionCount ?? 0) > 0 || fabState.isHarvesting }"
-    :aria-label="fabState.isHarvesting ? 'Abort Harvest' : fabState.isBlasting ? 'Cancel Blitz' : 'Clear selection'"
-    @click="fabState.isHarvesting ? handleFabAbortHarvest() : handleFabDismiss()"
-  >
-    <Icon
-      :name="fabState.dismissIcon || 'close'"
-      size="18"
-    />
-    <span v-if="!fabState.selectionCount && !fabState.isBlasting && !fabState.isHarvesting">Clear</span>
-  </button>
-
-  <!-- Blasting State: Progress Indicator -->
-  <template v-if="fabState.isBlasting">
-    <div class="blast-status">
-      <div class="spinner-small" />
-      <span class="blast-label">{{ fabState.label }}</span>
-    </div>
-
     <button
       v-tactile
-      class="fab-btn primary compact"
-      aria-label="Open Next Profile"
-      @click="handleFabAction"
+      class="fab-btn danger"
+      :class="{ compact: fabState.isBlasting || (fabState.selectionCount ?? 0) > 0 || fabState.isHarvesting }"
+      :aria-label="fabState.isHarvesting ? 'Abort Harvest' : fabState.isBlasting ? 'Cancel Blitz' : dismissAriaLabel"
+      :title="fabState.isHarvesting ? 'Abort Harvest' : fabState.isBlasting ? 'Cancel Blitz' : dismissAriaLabel"
+      @click="fabState.isHarvesting ? handleFabAbortHarvest() : handleFabDismiss()"
     >
       <Icon
-        name="chevron_right"
-        size="20"
+        :name="fabState.dismissIcon || 'close'"
+        size="18"
       />
+      <span v-if="!fabState.selectionCount && !fabState.isBlasting && !fabState.isHarvesting">Clear</span>
     </button>
-  </template>
 
-  <!-- Normal Selection State -->
-  <template v-else>
-    <!-- Harvest & Blitz Button Group (If Blitz is enabled) -->
-    <template v-if="fabState.blitzEnabled">
-      <!-- Main Blitz Button -->
+    <!-- Blasting State: Progress Indicator -->
+    <template v-if="fabState.isBlasting">
+      <div class="blast-status">
+        <div class="spinner-small" />
+        <span class="blast-label">{{ fabState.label }}</span>
+      </div>
+
       <button
         v-tactile
-        class="fab-btn blitz"
-        :disabled="fabState.isHarvesting || (fabState.selectionCount ?? 0) === 0"
-        aria-label="Start Blitz Mode"
-        @click="handleFabBlitz"
+        class="fab-btn primary compact"
+        aria-label="Open Next Profile"
+        @click="handleFabAction"
       >
         <Icon
-          name="lightning"
-          size="18"
+          name="chevron_right"
+          size="20"
         />
-        <span>Blitz</span>
       </button>
+    </template>
 
-      <!-- Harvest scouts external clanless players from the leaderboard for
+    <!-- Normal Selection State -->
+    <template v-else>
+      <!-- Harvest & Blitz Button Group (If Blitz is enabled) -->
+      <template v-if="fabState.blitzEnabled">
+        <!-- Main Blitz Button -->
+        <button
+          v-tactile
+          class="fab-btn blitz"
+          :disabled="fabState.isHarvesting || (fabState.selectionCount ?? 0) === 0"
+          aria-label="Start Blitz Mode"
+          @click="handleFabBlitz"
+        >
+          <Icon
+            name="lightning"
+            size="18"
+          />
+          <span>Blitz</span>
+        </button>
+
+        <!-- Harvest scouts external clanless players from the leaderboard for
            recruiting, which only applies to views wired up for it
            (Headhunter). Gated separately from blitzEnabled so views that
            share this FAB (e.g. Roster) don't show a button that silently
            does nothing. -->
-      <template v-if="fabState.harvestEnabled">
-        <!-- Global Harvest Button (Globe) -->
-        <button
-          v-tactile
-          class="fab-btn compact secondary-harvest"
-          :class="{ loading: fabState.isHarvesting && fabState.activeHarvester === 'global' }"
-          :disabled="fabState.isHarvesting"
-          aria-label="Global Harvest"
-          @click="handleFabGlobalHarvest"
-        >
-          <div
-            v-if="fabState.isHarvesting && fabState.activeHarvester === 'global'"
-            class="spinner-small"
-          />
-          <Icon
-            v-else
-            name="globe"
-            size="18"
-          />
-        </button>
+        <template v-if="fabState.harvestEnabled">
+          <!-- Global Harvest Button (Globe) -->
+          <button
+            v-tactile
+            class="fab-btn compact secondary-harvest"
+            :class="{ loading: fabState.isHarvesting && fabState.activeHarvester === 'global' }"
+            :disabled="fabState.isHarvesting"
+            aria-label="Global Harvest"
+            @click="handleFabGlobalHarvest"
+          >
+            <div
+              v-if="fabState.isHarvesting && fabState.activeHarvester === 'global'"
+              class="spinner-small"
+            />
+            <Icon
+              v-else
+              name="globe"
+              size="18"
+            />
+          </button>
 
-        <!-- Local Harvest Button (Map-Pin) -->
-        <button
-          v-tactile
-          class="fab-btn compact secondary-harvest"
-          :class="{ loading: fabState.isHarvesting && fabState.activeHarvester === 'local' }"
-          :disabled="fabState.isHarvesting"
-          aria-label="Local Harvest"
-          @click="handleFabLocalHarvest"
-        >
-          <div
-            v-if="fabState.isHarvesting && fabState.activeHarvester === 'local'"
-            class="spinner-small"
-          />
-          <Icon
-            v-else
-            name="map_pin"
-            size="18"
-          />
-        </button>
+          <!-- Local Harvest Button (Map-Pin) -->
+          <button
+            v-tactile
+            class="fab-btn compact secondary-harvest"
+            :class="{ loading: fabState.isHarvesting && fabState.activeHarvester === 'local' }"
+            :disabled="fabState.isHarvesting"
+            aria-label="Local Harvest"
+            @click="handleFabLocalHarvest"
+          >
+            <div
+              v-if="fabState.isHarvesting && fabState.activeHarvester === 'local'"
+              class="spinner-small"
+            />
+            <Icon
+              v-else
+              name="map_pin"
+              size="18"
+            />
+          </button>
+        </template>
       </template>
-    </template>
 
-    <!-- Action Button (Only if Blitz is NOT enabled) -->
-    <button
-      v-else
-      v-tactile
-      class="fab-btn primary"
-      :aria-label="fabState.label || 'Open'"
-      @click="handleFabAction"
-    >
-      <Icon
-        name="check"
-        size="18"
-      />
-      <span :key="fabState.label">{{ fabState.label }}</span>
-    </button>
-  </template>
+      <!-- Action Button (Only if Blitz is NOT enabled) -->
+      <button
+        v-else
+        v-tactile
+        class="fab-btn primary"
+        :aria-label="fabState.label || 'Open'"
+        @click="handleFabAction"
+      >
+        <Icon
+          name="check"
+          size="18"
+        />
+        <span :key="fabState.label">{{ fabState.label }}</span>
+      </button>
+    </template>
+  </div>
 </template>
 
 <style scoped>
@@ -208,6 +231,49 @@ function handleFabAbortHarvest() {
   white-space: nowrap;
   flex-shrink: 0;
   font-variant-numeric: tabular-nums;
+}
+
+.selection-fab {
+  display: flex;
+  align-items: center;
+  gap: var(--sys-space-6);
+  min-width: 0;
+}
+
+.selection-summary {
+  min-height: 40px;
+  padding: 0 var(--sys-space-12);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sys-space-6);
+  border: 1px solid var(--sys-color-outline-variant);
+  border-radius: var(--sys-shape-corner-full);
+  background: var(--sys-color-surface-container-high);
+  color: var(--sys-color-on-surface-variant);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.selection-summary strong {
+  color: var(--sys-color-primary);
+  font-size: 15px;
+  font-weight: 900;
+}
+
+.selection-summary-enter-active,
+.selection-summary-leave-active {
+  transition:
+    opacity var(--sys-motion-duration-200) var(--sys-motion-easing-decelerate),
+    transform var(--sys-motion-duration-200) var(--sys-motion-easing-decelerate);
+}
+
+.selection-summary-enter-from,
+.selection-summary-leave-to {
+  opacity: 0;
+  transform: scale(0.9);
 }
 
 .fab-btn:active {
@@ -291,10 +357,29 @@ function handleFabAbortHarvest() {
 }
 
 @media (max-width: 600px) {
+  /* The console header already carries the live `Clear · N` state. On a
+     recruiting selection the dock can contain four actions; keeping a second
+     count here would push the final harvest action beyond the safe viewport. */
+  .selection-summary {
+    display: none;
+  }
+
   .fab-btn:not(.compact) {
     padding: 0 var(--sys-space-16);
     gap: var(--sys-space-8);
     font-size: 14px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .selection-summary-enter-active,
+  .selection-summary-leave-active {
+    transition: opacity var(--sys-motion-duration-200) linear;
+  }
+
+  .selection-summary-enter-from,
+  .selection-summary-leave-to {
+    transform: none;
   }
 }
 </style>

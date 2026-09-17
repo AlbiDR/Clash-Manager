@@ -209,6 +209,12 @@ export interface ConsoleFabState {
   activeHarvester?: "global" | "local" | null;
   /** Optional icon override for the dismiss/close button. */
   dismissIcon?: string;
+  /**
+   * Accessible name for the dismiss action. Must describe the operation it
+   * actually performs: clearing a selection and dismissing records are not
+   * interchangeable outcomes.
+   */
+  dismissLabel?: string;
 }
 
 /**

@@ -25,6 +25,7 @@ describe("useUiCoordinator", () => {
       isBlasting: false,
       selectionCount: 0,
       blitzEnabled: false,
+      dismissLabel: "Clear selection",
       onAction: undefined,
       onBlitz: undefined,
       onDismiss: undefined,
@@ -41,6 +42,7 @@ describe("useUiCoordinator", () => {
     expect(isFabVisible.value).toBe(false);
     expect(dockVisible.value).toBe(true);
     expect(fabState.label).toBe("Open");
+    expect(fabState.dismissLabel).toBe("Clear selection");
   });
 
   it("should update FAB visibility and dock visibility accordingly", () => {

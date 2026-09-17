@@ -19,6 +19,7 @@ const fabState = reactive({
   selectionCount: 0,
   blitzEnabled: false,
   harvestEnabled: false,
+  dismissLabel: "Clear selection",
   onAction: vi.fn(),
   onBlitz: vi.fn(),
   onDismiss: vi.fn(),
@@ -44,6 +45,7 @@ describe("SelectionFab.vue", () => {
     fabState.selectionCount = 0;
     fabState.blitzEnabled = false;
     fabState.harvestEnabled = false;
+    fabState.dismissLabel = "Clear selection";
   });
 
   const mountFab = () => {
@@ -75,6 +77,17 @@ describe("SelectionFab.vue", () => {
       const dismissBtn = wrapper.find(".fab-btn.danger");
       expect(dismissBtn.text()).not.toContain("Clear");
       expect(dismissBtn.classes()).toContain("compact");
+      expect(dismissBtn.attributes("aria-label")).toBe("Clear selection (3)");
+      expect(wrapper.find(".selection-summary").text()).toBe("3selected");
+    });
+
+    it("uses the feature-provided name for a non-clear dismiss action", () => {
+      fabState.selectionCount = 2;
+      fabState.dismissLabel = "Dismiss selected recruits";
+      const wrapper = mountFab();
+
+      expect(wrapper.find(".fab-btn.danger").attributes("aria-label"))
+        .toBe("Dismiss selected recruits (2)");
     });
 
     it("calls onDismiss when clicked in normal mode", async () => {

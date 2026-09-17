@@ -101,7 +101,14 @@ export function useRecruiter() {
     // Royale leaderboard, which only makes sense on this recruiting view — not
     // on Roster, which manages existing clan members. Roster shares this same
     // Blitz FAB but must not advertise Harvest as available.
-    fabState: computed(() => ({ ...blitz.fabState.value, harvestEnabled: true })),
+    fabState: computed(() => ({
+      ...blitz.fabState.value,
+      harvestEnabled: true,
+      dismissIcon: "trash",
+      // Unlike Roster, this action persists a dismissal. Its name must stay
+      // distinct from the harmless Clear action in the console header.
+      dismissLabel: "Dismiss selected recruits",
+    })),
     layoutEvents: computed(() => ({
       "fab-action": blitz.handleAction,
       "fab-blitz": blitz.handleBlitz,
