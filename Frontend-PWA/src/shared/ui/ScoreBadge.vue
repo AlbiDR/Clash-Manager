@@ -2,6 +2,7 @@
 // Copyright (C) 2026 AlbiDR
 
 <script setup lang="ts">
+import { computed } from "vue";
 import MomentumPill from "./MomentumPill.vue";
 import { useBenchmarkedStat } from "../composables/useBenchmarkedStat";
 
@@ -26,10 +27,23 @@ const { benchmarkTooltipContent } = useBenchmarkedStat(
   "score",
   () => props.score
 );
+
+/**
+ * A score is much more useful when it carries its relative standing. The
+ * detailed benchmark remains available in the tooltip; this compact tier is
+ * the immediate scan cue for a list of otherwise similar scores.
+ */
+const scoreTier = computed(() => benchmarkTooltipContent.value?.tier);
 </script>
 
 <template>
   <div class="score-badge-wrapper">
+    <span
+      v-if="scoreTier"
+      class="score-tier"
+      :class="`is-${scoreTier.toLowerCase().replace(/\\s+/g, '-')}`"
+      aria-hidden="true"
+    >{{ scoreTier }}</span>
     <span
       v-tooltip="benchmarkTooltipContent"
       class="stat-score"
@@ -55,7 +69,7 @@ const { benchmarkTooltipContent } = useBenchmarkedStat(
 
 .stat-score {
   position: absolute;
-  top: 50%;
+  top: 54%;
   left: 50%;
   transform: translate(-50%, -50%);
   font-size: var(--sys-typescale-score);
@@ -63,6 +77,28 @@ const { benchmarkTooltipContent } = useBenchmarkedStat(
   font-family: var(--sys-font-family-mono);
   line-height: var(--sys-leading-none);
 }
+
+.score-tier {
+  position: absolute;
+  top: 5px;
+  left: 50%;
+  max-width: calc(100% - var(--sys-space-8));
+  overflow: hidden;
+  color: currentColor;
+  font-family: var(--sys-font-family-mono);
+  font-size: 7px;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  line-height: 1;
+  text-align: center;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  opacity: 0.7;
+}
+
+.score-tier.is-under { opacity: 0.58; }
 
 .momentum-overlay {
   position: absolute;

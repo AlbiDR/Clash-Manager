@@ -126,7 +126,7 @@ describe("BaseCard.vue", () => {
       });
     });
 
-    it("triggers handleScoreClick and emits score-click", async () => {
+  it("triggers handleScoreClick and emits score-click", async () => {
       const wrapper = mountBaseCard();
       const scoreSection = wrapper.find(".score-section");
 
@@ -134,10 +134,20 @@ describe("BaseCard.vue", () => {
       await scoreSection.trigger("click", mockEvent);
 
       expect(mockHandlers.handleScoreClick).toHaveBeenCalled();
-      expect(wrapper.emitted("score-click")).toBeTruthy();
+    expect(wrapper.emitted("score-click")).toBeTruthy();
+  });
+
+  it("explains what the score control represents before asking for selection", () => {
+    const wrapper = mountBaseCard({
+      cardName: "ADR",
+      scoreSummary: "Performance score 96",
     });
 
-    it("triggers internalExpandClick on expand button click", async () => {
+    expect(wrapper.find(".score-section").attributes("aria-label"))
+      .toBe("Select ADR. Performance score 96");
+  });
+
+  it("triggers internalExpandClick on expand button click", async () => {
       const wrapper = mountBaseCard();
       const expandBtn = wrapper.find(".expand-btn");
 

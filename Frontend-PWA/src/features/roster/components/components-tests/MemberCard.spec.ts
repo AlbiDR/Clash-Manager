@@ -66,7 +66,7 @@ describe("MemberCard.vue", () => {
         stubs: {
           BaseCard: {
             name: "BaseCard",
-            props: ["id", "expanded", "selected", "selectionMode", "isTagged", "score", "cardLabel", "cardName"],
+            props: ["id", "expanded", "selected", "selectionMode", "isTagged", "score", "cardLabel", "cardName", "scoreSummary"],
             template: `
               <div :aria-label="cardLabel">
                 <slot name="identity-meta"></slot>
@@ -171,6 +171,13 @@ describe("MemberCard.vue", () => {
     expect(wrapper.findComponent({ name: "BaseCard" }).props("cardName")).toBe("Test Player");
   });
 
+  it("names the roster score as performance for the shared score control", () => {
+    const wrapper = mountMemberCard();
+
+    expect(wrapper.findComponent({ name: "BaseCard" }).props("scoreSummary"))
+      .toBe("Performance score 85");
+  });
+
   it("renders expanded content when expanded is true", () => {
     const wrapper = mountMemberCard({ expanded: true });
 
@@ -215,8 +222,8 @@ describe("MemberCard.vue", () => {
     const headings = wrapper.findAll(".stats-section-heading").map((heading) => heading.text());
 
     expect(headings).toEqual([
-      "Current performanceClan contribution",
-      "Score foundationsLonger-run signal",
+      "Score driversCurrent clan contribution",
+      "Score foundationsDurable profile",
     ]);
   });
 

@@ -108,6 +108,7 @@ const memberAccessibilityLabel = computed(() => {
     :score="props.member.performanceScore"
     :card-label="memberAccessibilityLabel"
     :card-name="props.member.n"
+    :score-summary="`Performance score ${Math.round(props.member.performanceScore)}`"
     @toggle="emit('toggle')"
     @toggle-select="emit('toggle-select')"
   >
@@ -148,8 +149,8 @@ const memberAccessibilityLabel = computed(() => {
       <StatsGrid
         :columns="2"
         :loading="props.appIsRefreshing"
-        label="Current performance"
-        detail="Clan contribution"
+        label="Score drivers"
+        detail="Current clan contribution"
       >
         <StatisticItem
           label="War Rate"
@@ -192,7 +193,7 @@ const memberAccessibilityLabel = computed(() => {
         :loading="props.appIsRefreshing"
         class="lifetime-grid-margin"
         label="Score foundations"
-        detail="Longer-run signal"
+        detail="Durable profile"
       >
         <StatisticItem
           label="RPeS"

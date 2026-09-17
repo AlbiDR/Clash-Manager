@@ -28,7 +28,7 @@ const vTooltip = {
 describe("ScoreBadge.vue", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockGetSafeBenchmark.mockReturnValue("Mocked Benchmark Tooltip");
+    mockGetSafeBenchmark.mockReturnValue({ tier: "ELITE" });
   });
 
   const createWrapper = (props = {}) => {
@@ -73,6 +73,14 @@ describe("ScoreBadge.vue", () => {
   it("renders correctly with a valid score", () => {
     const wrapper = createWrapper({ score: 150 });
     expect(wrapper.find(".stat-score").text()).toBe("150");
+    expect(wrapper.find(".score-tier").text()).toBe("ELITE");
+  });
+
+  it("does not invent a comparative tier when benchmarking is unavailable", () => {
+    mockGetSafeBenchmark.mockReturnValue(null);
+    const wrapper = createWrapper();
+
+    expect(wrapper.find(".score-tier").exists()).toBe(false);
   });
 
   it("rounds float scores correctly", () => {
@@ -94,12 +102,13 @@ describe("ScoreBadge.vue", () => {
   });
 
   it("binds the tooltip directive to the benchmark value", () => {
-    mockGetSafeBenchmark.mockReturnValue("Expected Tooltip Text");
+    const benchmark = { tier: "TOP TIER" };
+    mockGetSafeBenchmark.mockReturnValue(benchmark);
     createWrapper();
 
     expect(vTooltip.mounted).toHaveBeenCalled();
     const call = vTooltip.mounted.mock.calls[0];
-    expect(call[1].value).toBe("Expected Tooltip Text");
+    expect(call[1].value).toBe(benchmark);
   });
 
   it("renders MomentumPill when context is 'lb' and scoreDelta is provided", () => {
