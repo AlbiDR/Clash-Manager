@@ -8,7 +8,7 @@ import type { BenchmarkData } from "../../core";
  * Snapshot of an active ghost-benchmark popup: the content to render, and the
  * anchor rect (captured at show-time) used to position the desktop popover.
  */
-export interface GhostBenchmarkEntry {
+interface GhostBenchmarkEntry {
   content: BenchmarkData | string;
   anchorRect: DOMRect;
 }

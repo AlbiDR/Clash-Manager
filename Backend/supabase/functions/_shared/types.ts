@@ -97,7 +97,7 @@ export interface ScannerStats {
 /**
  * Authoritative recruitment statuses.
  */
-export type RecruitStatus = "ACTIVE" | "BENCHED" | "QUEUE";
+type RecruitStatus = "ACTIVE" | "BENCHED" | "QUEUE";
 
 /**
  * Authoritative discovery sources.

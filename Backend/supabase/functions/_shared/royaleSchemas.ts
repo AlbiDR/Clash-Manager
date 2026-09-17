@@ -335,7 +335,7 @@ export const RoyaleWarLogItemSchema = v.object({
  * @remarks
  * Satisfies ADR Section III: Validation Boundaries.
  */
-export const RoyaleClanRankingItemSchema = v.object({
+const RoyaleClanRankingItemSchema = v.object({
     tag: v.string(),
     name: v.string(),
     rank: v.number(),
@@ -372,7 +372,7 @@ export const RoyaleClanDetailSchema = v.intersect([
  * @remarks
  * Satisfies ADR Section III: Validation Boundaries.
  */
-export const RoyaleRankingItemSchema = v.object({
+const RoyaleRankingItemSchema = v.object({
     tag: v.string(),
     name: v.string(),
     rank: v.number(),
