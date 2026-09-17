@@ -12,7 +12,7 @@ export function hexToRgb(hex: string): [number, number, number] {
   return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
 }
 
-export function relativeLuminance([r, g, b]: [number, number, number]): number {
+function relativeLuminance([r, g, b]: [number, number, number]): number {
   const [lr, lg, lb] = [r, g, b].map((c) => {
     const s = c / 255;
     return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
