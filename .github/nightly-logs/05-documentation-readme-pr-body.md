@@ -4,23 +4,23 @@
 
 In plain terms: this is a documentation change to 1 file in the documentation README area. Nothing about how the app runs is affected.
 
-**What changed:** Reconciled RecruitCard screen-reader accessibility labeling and MemberCard parity in headhunter README
+**What changed:** Reconciled useHeaderScroll.ts hysteresis, pin veto, and KeepAlive lifecycle rules in shared composables README
 
-**Why:** Document RecruitCard accessibility announcements and MemberCard parity following recent test suite expansion
+**Why:** Document recent KeepAlive lifecycle verification and composable behavior in Frontend-PWA/src/shared/composables/README.md
 
-**Result:** 204 test suites passed (2005 tests), git diff --check clean
+**Result:** All 15 useHeaderScroll tests passed, git diff --check clean
 
-**Files changed:** .github/nightly-logs/05-documentation-readme-coverage.log, Frontend-PWA/src/features/headhunter/README.md
+**Files changed:** .github/nightly-logs/05-documentation-readme-coverage.log, Frontend-PWA/src/shared/composables/README.md
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: documentation
-  Cycle: nightly-cycle/2026-09-16
+  Cycle: nightly-cycle/2026-09-17
   Contract: cea68a5bbba1bd2cbc6d3bdfe2639f37f3935b571beab59f5da1501b1180b22d
-  Why: Document RecruitCard accessibility announcements and MemberCard parity following recent test suite expansion
-  Change: Reconciled RecruitCard screen-reader accessibility labeling and MemberCard parity in headhunter README
-  Result: 204 test suites passed (2005 tests), git diff --check clean
-  Files: .github/nightly-logs/05-documentation-readme-coverage.log, Frontend-PWA/src/features/headhunter/README.md
+  Why: Document recent KeepAlive lifecycle verification and composable behavior in Frontend-PWA/src/shared/composables/README.md
+  Change: Reconciled useHeaderScroll.ts hysteresis, pin veto, and KeepAlive lifecycle rules in shared composables README
+  Result: All 15 useHeaderScroll tests passed, git diff --check clean
+  Files: .github/nightly-logs/05-documentation-readme-coverage.log, Frontend-PWA/src/shared/composables/README.md
   Nudges: 0
-  Execution: 7928c1409cbda393809d161734139280b056e289
+  Execution: 821c1f223dd76b9a4a46c1fd4479494bd9ecfcef
 -->
