@@ -122,3 +122,4 @@
 * [2026-09-14] [Stage 6] [04:29Z-04:35Z 6m] CLEAN: Codebase -- Audited doc debt files (protocol.ts and useProgressiveList.ts) and recent stage updates; verified interface contracts and decision logs are synchronized with implementation truth.
 * [2026-09-15] [Stage 6] [04:02Z-04:07Z 5m] CLEAN: Codebase -- Audited doc debt files (protocol.ts and useProgressiveList.ts) and verified interface contracts are synchronized with implementation truth.
 * [2026-09-16] [Stage 6] [04:02Z-04:09Z 8m] CHANGED: Frontend-PWA/src/features/headhunter/components/RecruitCard.vue -- docs(tsdoc): harden RecruitCard interface contracts and inline logic annotations
+* [2026-09-17] [Stage 6] [04:28Z-04:35Z 6m] CHANGED: Frontend-PWA/src/core/api/SupabaseClient.ts -- Harden SupabaseClient TSDoc interface contracts and inline logic annotations
