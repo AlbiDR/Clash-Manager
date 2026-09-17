@@ -187,6 +187,13 @@ export async function checkFoldState({ migrationsDir = path.join(REPO_ROOT, 'Bac
     }
   }
   const counts = Object.fromEntries(['folded', 'reconciled', 'unfolded', 'semantic-only'].map(status => [status, objects.filter(item => item.status === status).length]));
+  // DEGRADED means "a human or a disposable database needs to look", not
+  // "something is wrong". The nightly runner has no database credentials (see
+  // Stage 3's prompt: db-verification is recorded as DB-UNAVAILABLE, never
+  // attempted), so a migration set containing any semantic-only statement
+  // (a DO block, a cron schedule) makes this the permanent nightly ceiling
+  // regardless of actual schema health. Treat consecutive DEGRADED nights as
+  // expected, not as a chronic condition to chase.
   const status = unsupported.length || counts['semantic-only'] ? 'DEGRADED' : counts.unfolded ? 'UNFOLDED' : 'FOLDED';
   return { version: 1, status, baseline: baselineName, migrationsReplayed: migrationNames.length, counts, objects, unsupported };
 }

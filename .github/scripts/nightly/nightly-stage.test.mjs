@@ -20,6 +20,7 @@ import {
   renderPlainSummary,
   renderPrBody,
   resolveResult,
+  resolveStatus,
   workPhase,
   replaceSentinel,
   sentinelLine,
@@ -756,6 +757,78 @@ test("evidence offered after a refusal is accepted in full", () => {
   const asked = { startEpoch: now - 60, workDeadlineEpoch: now + 1800, resultRefused: true };
   const stated = "pnpm audit:version reported 0 drift lines across 3 manifests";
   assert.equal(resolveResult(stated, "CLEAN", asked), stated);
+});
+
+// --- resolveStatus: Stage 3's own "FAIL cannot finalize CLEAN" rule, enforced ---
+//
+// Stage 3 finalized CLEAN over a self-reported migration-quality FAIL on
+// 2026-09-07 and again on 2026-09-17 (.github/nightly-logs/
+// 03-baseline-consolidation-coverage.log), even though its own prompt
+// (03-baseline-consolidation.md, "CLEAN Evidence Floor") already forbids it.
+// The prompt was never mechanically enforced; this closes that gap using the
+// same one-shot-refusal shape as resolveResult, above.
+
+test("Stage 3 CLEAN is refused while migration-quality reads FAIL and budget remains", () => {
+  const stage = getStage(registry, 3);
+  const now = Math.floor(Date.now() / 1000);
+  const working = { startEpoch: now - 60, workDeadlineEpoch: now + 1800 };
+  assert.throws(
+    () => resolveStatus("CLEAN", stage, working, "FAIL"),
+    error => {
+      assert.match(error.message, /--status CLEAN cannot stand/);
+      assert.match(error.message, /PARTIAL-RUN/);
+      return true;
+    },
+  );
+});
+
+test("a FAILing migration-quality status does not touch any other stage or status", () => {
+  const now = Math.floor(Date.now() / 1000);
+  const working = { startEpoch: now - 60, workDeadlineEpoch: now + 1800 };
+  assert.equal(resolveStatus("CLEAN", getStage(registry, 4), working, "FAIL"), "CLEAN");
+  assert.equal(resolveStatus("CHANGED", getStage(registry, 3), working, "FAIL"), "CHANGED");
+  assert.equal(resolveStatus("CLEAN", getStage(registry, 3), working, "PASS"), "CLEAN");
+  assert.equal(resolveStatus("CLEAN", getStage(registry, 3), working, "DEGRADED"), "CLEAN");
+  assert.equal(resolveStatus("CLEAN", getStage(registry, 3), working, ""), "CLEAN");
+});
+
+test("past the budget, a FAILing CLEAN is downgraded rather than blocked", () => {
+  const stage = getStage(registry, 3);
+  const now = Math.floor(Date.now() / 1000);
+  const spent = { startEpoch: now - 3600, workDeadlineEpoch: now - 900 };
+  const errors = [];
+  const originalError = console.error;
+  console.error = message => errors.push(String(message));
+  try {
+    assert.equal(resolveStatus("CLEAN", stage, spent, "FAIL"), "PARTIAL-RUN");
+  } finally {
+    console.error = originalError;
+  }
+  assert.equal(errors.length, 1, "a downgrade must say so out loud");
+  assert.match(errors[0], /migration-quality-status\.txt reads FAIL/);
+});
+
+test("Stage 3 is asked once, never twice, for the same FAILing CLEAN", () => {
+  const stage = getStage(registry, 3);
+  const now = Math.floor(Date.now() / 1000);
+  const working = { startEpoch: now - 60, workDeadlineEpoch: now + 1800 };
+  const refusals = [];
+  const record = () => refusals.push(true);
+
+  assert.throws(() => resolveStatus("CLEAN", stage, working, "FAIL", record));
+  assert.equal(refusals.length, 1);
+
+  const asked = { ...working, statusRefused: true };
+  const errors = [];
+  const originalError = console.error;
+  console.error = message => errors.push(String(message));
+  try {
+    assert.equal(resolveStatus("CLEAN", stage, asked, "FAIL", record), "PARTIAL-RUN");
+  } finally {
+    console.error = originalError;
+  }
+  assert.equal(refusals.length, 1, "a second refusal was recorded");
+  assert.match(errors[0], /already asked once/);
 });
 
 

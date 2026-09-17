@@ -163,14 +163,76 @@ test("a stage with no evidence at all is STUCK", () => {
   assert.equal(result.merged, false);
 });
 
+// --- Self-report guard -------------------------------------------------------
+//
+// Stage 3 declared migration-quality FAIL inside a CLEAN, zero-source-change
+// coverage line on 2026-09-07 and again on 2026-09-17 (see
+// .github/nightly-logs/03-baseline-consolidation-coverage.log). Both times the
+// gap it found stayed open until an unrelated commit closed it hours later.
+// classifyStage used to read only `declared.status`, so a stage could fail one
+// of its own checks and merge and grade as though nothing had happened.
+
+test("a stage that declares CLEAN while its own summary reports a FAIL is flagged", () => {
+  const result = classifyStage({
+    stage: stageOf(3),
+    entry: { state: "MERGED", failureClass: null, attempts: 0, evidence: {} },
+    tag: "nightly/2026-09-17/stage-3/pr-1850",
+    declared: {
+      status: "CLEAN",
+      target: "Codebase",
+      summary: "fold-state DEGRADED, migration-quality FAIL, database DB-UNAVAILABLE",
+    },
+    history: null,
+  });
+  assert.equal(result.outcome, "CLEAN");
+  assert.equal(result.selfReportedFailure, true);
+});
+
+test("DEGRADED alone, without FAIL or DIVERGENT, is not a self-reported failure", () => {
+  // DEGRADED means the static checker needs a database it structurally cannot
+  // reach on the nightly runner (see fold-state.mjs) -- it is a ceiling, not an
+  // alarm, and flagging it here would make this guard fire every single night.
+  const result = classifyStage({
+    stage: stageOf(3),
+    entry: { state: "MERGED", failureClass: null, attempts: 0, evidence: {} },
+    tag: "nightly/2026-08-27/stage-3/pr-1700",
+    declared: { status: "CLEAN", target: "Codebase", summary: "fold-state DEGRADED, database DB-UNAVAILABLE" },
+    history: null,
+  });
+  assert.equal(result.selfReportedFailure, false);
+});
+
+test("ordinary prose about failure handling does not trip the guard", () => {
+  const result = classifyStage({
+    stage: stageOf(1),
+    entry: { state: "MERGED", failureClass: null, attempts: 0, evidence: {} },
+    tag: "nightly/2026-08-27/stage-1/pr-1701",
+    declared: { status: "CHANGED", target: "Codebase", summary: "hardened the retry path so a timeout does not fail over silently" },
+    history: null,
+  });
+  assert.equal(result.selfReportedFailure, false);
+});
+
 test("the grade rubric is applied in severity order", () => {
   const at = totals => GRADE_RUBRIC.find(r => r.when({ total: 13, merged: 13, stuck: 0, rescued: 0, ...totals })).grade;
   assert.equal(at({ merged: 0 }), 1);
   assert.equal(at({ stuck: 9 }), 3);
   assert.equal(at({ stuck: 3 }), 5);
   assert.equal(at({ stuck: 1 }), 7);
+  assert.equal(at({ selfContradicted: [{}] }), 6);
   assert.equal(at({ rescued: 1 }), 9);
   assert.equal(at({}), 10);
+});
+
+test("a single self-contradicted stage caps the grade at 6, worse than a rescue and better than a stuck stage", () => {
+  const stage = (outcome, extra = {}) => ({ outcome, merged: true, rescued: false, observed: true, ...extra });
+  const contradicted = [
+    ...Array.from({ length: 12 }, () => stage("CLEAN")),
+    stage("CLEAN", { selfReportedFailure: true }),
+  ];
+  const graded = gradeRun(contradicted);
+  assert.equal(graded.grade, 6);
+  assert.match(graded.rationale, /Self-report gap: 1 stage declared its outcome clean/);
 });
 
 test("a perfect run grades 10 and a rescued one grades 9", () => {
@@ -307,6 +369,8 @@ test("a whole recap is assembled and rendered from evidence alone", () => {
     // had to fire, which is the happy answer, so a measurement that stopped
     // working would look like success.
     "Evidence guard: not measured on any of the 13 merged stages, so this run cannot say whether any stage was asked to restate a contentless result.",
+    "",
+    "Self-report guard: no stage's own summary contradicted the outcome it declared.",
     "",
   ].join("\n"));
 });
@@ -1352,4 +1416,25 @@ test("partial coverage reports the stages it could not see", () => {
   });
   assert.match(text, /1 of 1 measured stages were asked/);
   assert.match(text, /Measured on 1 of 2 merged stages; the rest either predate the field or could not read their own session state\./);
+});
+
+test("a clean run says the self-report guard found nothing to flag", () => {
+  const text = renderRecap(singleStage({
+    stage: 1, slug: "hardening", outcome: "CLEAN", prNumber: 1900, merged: true,
+    summary: "no threats found", selfReportedFailure: false,
+  }));
+  assert.match(text, /Self-report guard: no stage's own summary contradicted the outcome it declared\./);
+});
+
+test("the self-report guard names the stage and quotes the contradicting result", () => {
+  const text = renderRecap(singleStage({
+    stage: 3, slug: "baseline-consolidation", outcome: "CLEAN", prNumber: 1850, merged: true,
+    summary: "fold-state DEGRADED, migration-quality FAIL, database DB-UNAVAILABLE",
+    result: "Static fold-state DEGRADED, migration-quality FAIL (6 historical violations), database DB-UNAVAILABLE.",
+    selfReportedFailure: true,
+  }));
+  assert.match(
+    text,
+    /Self-report guard: S03 declared CLEAN but its own summary reports a failing sub-check \("Static fold-state DEGRADED, migration-quality FAIL \(6 historical violations\), database DB-UNAVAILABLE\."\)\./,
+  );
 });
