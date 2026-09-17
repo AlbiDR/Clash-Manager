@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-16
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-17] PR #1853 [Stage 6]: Harden SupabaseClient TSDoc interface contracts and inline logic annotations
+**Domain:** documentation | **Commit:** bb5bd89b9 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1853)
+**Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, .github/nightly-logs/06-documentation-tsdoc-pr-body.md, Frontend-PWA/src/core/api/SupabaseClient.ts
+**Why:** Document optional metadata timeouts, pipeline health structures, and header merging strategies without altering code logic
+**Change:** Harden SupabaseClient TSDoc interface contracts and inline logic annotations
+**Result:** All 26 SupabaseClient unit tests passed and monorepo test suite verified
+**Nudges:** 0
+
+
 ### [2026-09-17] PR #1852 [Stage 5]: Reconciled useHeaderScroll.ts hysteresis, pin veto, and KeepAlive lifecycle rules in shared composables README
 **Domain:** documentation | **Commit:** 561085803 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1852)
 **Files:** .github/nightly-logs/05-documentation-readme-coverage.log, .github/nightly-logs/05-documentation-readme-pr-body.md, Frontend-PWA/src/shared/composables/README.md
