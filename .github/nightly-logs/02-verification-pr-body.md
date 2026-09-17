@@ -4,23 +4,23 @@
 
 In plain terms: this adds 1 test file in the verification area. No product code changed, so the app behaves exactly as it did before.
 
-**What changed:** Expanded RecruitCard unit test suite with edge cases
+**What changed:** useHeaderScroll KeepAlive lifecycle verification
 
-**Why:** Saturates edge case coverage for recruit accessibility descriptions, missing longevity labels, and activity metric zero-fallbacks
+**Why:** Ensure sticky header scroll event listeners attach on activation and remove on deactivation under Vue KeepAlive
 
-**Result:** 204 test files and 2005 tests passed cleanly with proven failure under mutation
+**Result:** 205 test files, 2017 tests passed. Proved mutation failure when deactivation unlistener assertion inverted.
 
-**Files changed:** .github/nightly-logs/02-verification-coverage.log, Frontend-PWA/src/features/headhunter/components/components-tests/RecruitCard.spec.ts
+**Files changed:** .github/nightly-logs/02-verification-coverage.log, Frontend-PWA/src/shared/composables/composables-tests/useHeaderScroll.spec.ts
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: verification
-  Cycle: nightly-cycle/2026-09-16
+  Cycle: nightly-cycle/2026-09-17
   Contract: b2e927ebff4e2ca5a343609133745d050f07d22fd9bf3e42481440c1d14079f0
-  Why: Saturates edge case coverage for recruit accessibility descriptions, missing longevity labels, and activity metric zero-fallbacks
-  Change: Expanded RecruitCard unit test suite with edge cases
-  Result: 204 test files and 2005 tests passed cleanly with proven failure under mutation
-  Files: .github/nightly-logs/02-verification-coverage.log, Frontend-PWA/src/features/headhunter/components/components-tests/RecruitCard.spec.ts
+  Why: Ensure sticky header scroll event listeners attach on activation and remove on deactivation under Vue KeepAlive
+  Change: useHeaderScroll KeepAlive lifecycle verification
+  Result: 205 test files, 2017 tests passed. Proved mutation failure when deactivation unlistener assertion inverted.
+  Files: .github/nightly-logs/02-verification-coverage.log, Frontend-PWA/src/shared/composables/composables-tests/useHeaderScroll.spec.ts
   Nudges: 0
-  Execution: d015e5ec1b4e656cc56755fc3039163861bf60b7
+  Execution: 0c251b3a2b4e1dbe557a4a277037554589e1a139
 -->
