@@ -1,11 +1,7 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 -- Copyright (C) 2026 AlbiDR
--- Fix inverted sort in purge_worst_recruits() (was deleting the best-scoring
--- bench candidates and keeping the worst); externalize governance_telemetry
--- retention to config and cut it from 30 to 7 days (it is the largest table
--- in the database, driven mostly by every purge job logging into it); add a
--- retention purge for member_snapshots, which previously had none and grew
--- unbounded. Rationale in the commit message.
+-- Fix inverted recruit-purge sort; externalize governance_telemetry
+-- retention to config; add retention for member_snapshots. Rationale in the commit message.
 
 BEGIN;
 

@@ -52,7 +52,14 @@
     "Backend/supabase/migrations/20260914003000_deterministic_scoring_history_order.sql": "d30374ad73a23c4e8bb9062cf4df71e7a38029735dc4b8dbbf22f6d7eafb3a4b",
     "Backend/supabase/migrations/20260915190000_harden_ingestion_delivery_lease.sql": "121a8c89c1f9f4adb537fc2c4dabb5f36cc2624f33af301ef61eed447fbf2705",
     "Backend/supabase/migrations/20260915190011_backend_health_and_safe_maintenance.sql": "f4a7bd61be69063132939204e28cf92f0098bcbc13fe4cd227979f53d345f19b",
-    "Backend/supabase/migrations/20260915192014_remove_redundant_policies_and_legacy_queue_access.sql": "8e9200aaa01776e5a89f096beb6620c50037f5e3d1b7c7529f3926826be35fa6"
+    "Backend/supabase/migrations/20260915192014_remove_redundant_policies_and_legacy_queue_access.sql": "8e9200aaa01776e5a89f096beb6620c50037f5e3d1b7c7529f3926826be35fa6",
+    "Backend/supabase/migrations/20260916205030_fix_recruit_purge_sort_and_add_retention_config.sql": "37e764422ddf24b078d9cc7501d8673bb49894135a7ac726f2d38a34df558c96",
+    "Backend/supabase/migrations/20260916205234_lock_down_member_snapshot_purge_execute.sql": "a19c2b47f49b8c6fc3c5eeb326ee000d4e19533e0f9ca725eb2ea6b755355739",
+    "Backend/supabase/migrations/20260916213333_capture_member_snapshots_on_ingest_and_resource_pressure_check.sql": "4051d3cdc7e4b1307e9a636f78fd88364c2ae93d3d6577d8ff7eb4513a449580",
+    "Backend/supabase/migrations/20260916221814_add_resource_health_view.sql": "d8df86dc65e1dd58f3015601f6200af7b19c70e68ece15f642e753409e49e96c",
+    "Backend/supabase/migrations/20260917070416_smart_fold_player_battles.sql": "ab706bbdb5fa1c619b4726fbd447f37b19551cab4b471a16a30c242ad7b23bce",
+    "Backend/supabase/migrations/20260917070530_roster_view_uses_battle_stats_function.sql": "97f6325f9889759d5cea443fd02ba5eb75710d8b971f6654fd1b628bfec35103",
+    "Backend/supabase/migrations/20260917070640_fix_battle_stats_today_branch_sargable.sql": "0e658110464eeb865002b92276a828de6fc5930ed3c6042dcb07188384a2d0c4"
   },
   "exemptions": []
 }

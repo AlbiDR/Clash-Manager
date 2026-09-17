@@ -344,6 +344,50 @@ export type Database = {
           },
         ]
       }
+      player_battle_daily: {
+        Row: {
+          battle_date: string
+          battle_type: string
+          battles: number
+          fame_earned_sum: number
+          folded_at: string
+          opponent_crowns_sum: number
+          player_tag: string
+          team_crowns_sum: number
+          wins: number
+        }
+        Insert: {
+          battle_date: string
+          battle_type: string
+          battles?: number
+          fame_earned_sum?: number
+          folded_at?: string
+          opponent_crowns_sum?: number
+          player_tag: string
+          team_crowns_sum?: number
+          wins?: number
+        }
+        Update: {
+          battle_date?: string
+          battle_type?: string
+          battles?: number
+          fame_earned_sum?: number
+          folded_at?: string
+          opponent_crowns_sum?: number
+          player_tag?: string
+          team_crowns_sum?: number
+          wins?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "player_battle_daily_player_fkey"
+            columns: ["player_tag"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["player_tag"]
+          },
+        ]
+      }
       player_battles: {
         Row: {
           battle_time: string
@@ -720,6 +764,17 @@ export type Database = {
         Args: { p_days_to_ban?: number; p_tag: string }
         Returns: undefined
       }
+      get_player_battle_stats: {
+        Args: { p_days?: number; p_player_tags?: string[] }
+        Returns: {
+          battles: number
+          fame_earned_sum: number
+          opponent_crowns_sum: number
+          player_tag: string
+          team_crowns_sum: number
+          wins: number
+        }[]
+      }
       get_rolling_voyage_performance: {
         Args: { p_tag: string }
         Returns: number
@@ -877,6 +932,13 @@ export type Database = {
         }
         Update: {
           player_tag?: string | null
+        }
+        Relationships: []
+      }
+      resource_health_view: {
+        Row: {
+          created_at: string | null
+          message: string | null
         }
         Relationships: []
       }
@@ -1467,11 +1529,13 @@ export type Database = {
       }
     }
     Functions: {
+      check_resource_pressure: { Args: never; Returns: undefined }
       config_int: { Args: { p_key: string }; Returns: number }
       dispatch_royale_ingestion: { Args: never; Returns: string }
       execute_nightly_maintenance: { Args: never; Returns: undefined }
       finalize_expired_voyages: { Args: never; Returns: number }
       fold_cron_history: { Args: never; Returns: number }
+      fold_player_battles: { Args: never; Returns: number }
       format_last_seen: { Args: { p_days: number }; Returns: string }
       format_longevity: { Args: { p_minutes: number }; Returns: string }
       format_tenure: { Args: { p_days: number }; Returns: string }
@@ -1485,6 +1549,7 @@ export type Database = {
       pipeline_watchdog: { Args: never; Returns: number }
       purge_clanned_recruits: { Args: never; Returns: number }
       purge_cron_history: { Args: never; Returns: number }
+      purge_folded_player_battles: { Args: never; Returns: number }
       purge_governance_telemetry: { Args: never; Returns: undefined }
       purge_inactive_members: { Args: never; Returns: undefined }
       purge_orphan_players: { Args: never; Returns: number }
@@ -1496,6 +1561,7 @@ export type Database = {
       purge_stale_battles: { Args: never; Returns: number }
       purge_stale_discovery_cache: { Args: never; Returns: undefined }
       purge_stale_heritage: { Args: never; Returns: number }
+      purge_stale_member_snapshots: { Args: never; Returns: number }
       purge_stale_recruits: { Args: never; Returns: number }
       purge_worst_recruits: { Args: never; Returns: number }
       report_anchor_yield: {

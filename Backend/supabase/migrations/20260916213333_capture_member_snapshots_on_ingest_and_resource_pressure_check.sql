@@ -1,22 +1,8 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 -- Copyright (C) 2026 AlbiDR
--- Two independent fixes:
---
--- 1. drivers.member_snapshots had no writer anywhere in the codebase (the
---    9/16 cleanup emptied it entirely, since every row was backfill debris
---    older than its 90-day retention). substrate.shred_clan_members() already
---    fires on every roster ingestion (every 30 min) and already has each
---    member's trophies/donations/last_seen in hand, so it now also captures
---    one snapshot per member per real calendar day there -- driven by actual
---    ingestion events, not a new blind-schedule cron job.
---
--- 2. Resource-pressure early warning. Host-level CPU/swap isn't visible from
---    SQL, but connection saturation and total DB size are visible proxies for
---    the same free-tier memory ceiling that caused the 9/16 outage. Wired
---    into the existing pipeline_watchdog cadence (already cron'd every 10
---    minutes) instead of adding a new scheduled job, and logged into the
---    existing governance_telemetry trail with a cooldown so a sustained
---    breach doesn't spam it. Rationale in the commit message.
+-- Two fixes: capture member_snapshots on real ingestion (had no writer at
+-- all), and a resource-pressure warning wired into the existing watchdog
+-- cadence. Rationale in the commit message.
 
 BEGIN;
 
