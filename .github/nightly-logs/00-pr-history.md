@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-16
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-17] PR #1859 [Stage 12]: No APK UX issues found across 78 files examined and 1 candidate file
+**Domain:** ux | **Commit:** ce8a43dcc | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1859)
+**Files:** .github/nightly-logs/12-apk-ux-coverage.log, .github/nightly-logs/12-apk-ux-pr-body.md
+**Why:** Audit status PASS with 0 violations; candidate review of ViewOptions.vue confirmed full compliance
+**Change:** No APK UX issues found across 78 files examined and 1 candidate file
+**Result:** Audit PASS; candidate review CLEAN; ViewOptions.spec.ts passed
+**Nudges:** 0
+
+
 ### [2026-09-17] PR #1858 [Stage 11]: Audited native WebView settings, Service Worker caching, and Vite manualChunks; zero source changes required
 **Domain:** apk | **Commit:** 4ac6f28de | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1858)
 **Files:** .github/nightly-logs/11-apk-optimization-coverage.log, .github/nightly-logs/11-apk-optimization-pr-body.md
