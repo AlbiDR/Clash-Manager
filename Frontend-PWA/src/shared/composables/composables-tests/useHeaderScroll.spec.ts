@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { defineComponent } from "vue";
+import { defineComponent, ref, nextTick } from "vue";
 import { mount } from "@vue/test-utils";
 import { useHeaderScroll } from "../useHeaderScroll";
 
@@ -213,5 +213,68 @@ describe("useHeaderScroll condensing", () => {
     wrapper.unmount();
     expect(removeSpy).toHaveBeenCalledWith("scroll", expect.any(Function));
     removeSpy.mockRestore();
+  });
+});
+
+/**
+ * [SPEC] KEEPALIVE LIFECYCLE RE-ACTIVATION BEHAVIOUR
+ * Verifies that useHeaderScroll attaches and detaches event listeners appropriately
+ * when a component wrapped in <KeepAlive> is activated or deactivated.
+ */
+describe("useHeaderScroll KeepAlive integration", () => {
+  beforeEach(() => {
+    vi.stubGlobal("scrollY", 0);
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
+
+  it("registers scroll listener on initial mount/activation and removes it on deactivation", async () => {
+    const addListenerSpy = vi.spyOn(window, "addEventListener");
+    const removeListenerSpy = vi.spyOn(window, "removeEventListener");
+
+    const ChildComponent = defineComponent({
+      name: "ChildComponent",
+      setup() {
+        const { isScrolled } = useHeaderScroll(20);
+        return { isScrolled };
+      },
+      template: `<div>{{ isScrolled ? 'Scrolled' : 'Top' }}</div>`
+    });
+
+    const Host = defineComponent({
+      components: { ChildComponent },
+      setup() {
+        const active = ref(true);
+        return { active };
+      },
+      template: `
+        <KeepAlive>
+          <ChildComponent v-if="active" />
+        </KeepAlive>
+      `
+    });
+
+    const wrapper = mount(Host);
+    expect(addListenerSpy).toHaveBeenCalledWith("scroll", expect.any(Function), { passive: true });
+
+    addListenerSpy.mockClear();
+    removeListenerSpy.mockClear();
+
+    // Deactivate component inside KeepAlive
+    wrapper.vm.active = false;
+    await nextTick();
+
+    expect(removeListenerSpy).toHaveBeenCalledWith("scroll", expect.any(Function));
+
+    removeListenerSpy.mockClear();
+
+    // Reactivate component inside KeepAlive
+    wrapper.vm.active = true;
+    await nextTick();
+
+    expect(addListenerSpy).toHaveBeenCalledWith("scroll", expect.any(Function), { passive: true });
   });
 });

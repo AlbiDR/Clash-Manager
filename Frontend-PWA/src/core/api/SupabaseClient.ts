@@ -33,23 +33,34 @@ import * as v from "valibot";
 export const lastSyncStatus = ref<"TIMEOUT" | "AUTH" | "VALIDATION" | "OFFLINE" | "SUCCESS" | null>(null);
 
 /**
- * Optional provenance reads must never hold the roster and recruiting payload
+ * [DECISION LOG] OPTIONAL METADATA TIMEOUT
+ * Rationale: Optional provenance reads must never hold the roster and recruiting payload
  * hostage. Three seconds is long enough for a healthy PostgREST round trip but
  * short enough that a degraded heartbeat projection cannot turn into a full
  * foreground-sync failure.
  */
 export const OPTIONAL_METADATA_TIMEOUT_MS = 3_000;
 
+/**
+ * Status indicator for backend ingestion pipeline execution.
+ */
 export type PipelineHealthStatus = "COMPLETED" | "RUNNING" | "FAILED";
 
 /**
- * A deliberately small, public-safe view of the ingestion heartbeat. This is
- * diagnostic metadata rather than the payload used to hydrate the app.
+ * A deliberately small, public-safe view of the ingestion heartbeat.
+ *
+ * @remarks
+ * Serves as diagnostic metadata for Settings rather than the payload used to hydrate the app.
+ * Satisfies CleanStack Architecture ADR Section III for health reporting.
  */
 export interface PipelineHealth {
+  /** Current state of the ingestion pipeline */
   status: PipelineHealthStatus;
+  /** Unix timestamp (ms) of the last successful ingestion pass */
   lastSuccessAt: number | null;
+  /** Unix timestamp (ms) of the last triggered ingestion pass */
   lastTriggeredAt: number | null;
+  /** Unix timestamp (ms) of the last failed ingestion pass */
   lastFailureAt: number | null;
 }
 
@@ -64,17 +75,23 @@ export class NetworkError extends Error {
   }
 }
 
-// Supabase Configuration
-export const getSupabaseUrl = () => {
-  // Settings deliberately stores an operator-selected endpoint in localStorage
-  // and reloads the app. Bootstrap already treats that value as valid
-  // configuration, so the transport must resolve the same source of truth.
-  // Guard the browser global for tests, SSR, and build-time evaluation.
+/**
+ * Resolves the active Supabase endpoint URL, incorporating operator overrides.
+ *
+ * @remarks
+ * [DECISION LOG] ENDPOINT OVERRIDE RESOLUTION
+ * Settings stores an operator-selected endpoint in localStorage and reloads the app.
+ * Bootstrap treats that value as valid configuration, so transport resolves the same SSOT.
+ *
+ * @returns Resolved Supabase endpoint URL string or empty string if unconfigured.
+ */
+export const getSupabaseUrl = (): string => {
   let localOverride = "";
   if (typeof window !== "undefined") {
     try {
       localOverride = window.localStorage.getItem("cm_supabase_url")?.trim() || "";
     } catch {
+      // [THREAT: STORAGE ACCESS DENIED]
       // Storage can be denied in hardened/private browser contexts. The build
       // configuration remains a valid, deterministic fallback in that case.
     }
@@ -82,20 +99,32 @@ export const getSupabaseUrl = () => {
 
   return localOverride || import.meta.env.VITE_SUPABASE_URL || "";
 };
-export const getSupabaseKey = () => import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || "";
 
 /**
- * Builds the merged headers via `new Request(input, init).headers` rather than
- * manually copying `input`'s headers and then `init`'s on top, so the spec's own
- * merge algorithm runs instead of a hand-rolled one. `input` itself is still what
- * gets fetched, unchanged.
+ * Resolves the active Supabase publishable key from environment configuration.
+ *
+ * @returns The publishable API key string.
+ */
+export const getSupabaseKey = (): string => import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || "";
+
+/**
+ * Fetch wrapper overriding default browser cache headers for fresh PostgREST queries.
+ *
+ * @remarks
+ * [DECISION LOG] SPEC-CORRECT HEADER MERGE
+ * Builds merged headers via `new Request(input, init).headers` rather than manually
+ * copying headers, ensuring Fetch API spec header merging logic executes natively.
+ *
+ * @param input - Fetch URL or RequestInfo object.
+ * @param init - Optional RequestInit configuration options.
+ * @returns Promise resolving to the network Response.
  */
 async function fetchSupabaseFresh(
   input: RequestInfo | URL,
   init: RequestInit = {},
 ): Promise<Response> {
-  // Only used to obtain a spec-correct merge of input's and init's headers;
-  // the original `input` (not this intermediate Request) is still what gets fetched.
+  // [THREAT: STALE_HTTP_CACHE]
+  // Bypasses HTTP browser cache layer to prevent stale PostgREST/Supabase queries.
   const headers = new Headers(new Request(input, init).headers);
   headers.set("Cache-Control", "no-cache");
   headers.set("Pragma", "no-cache");
@@ -214,9 +243,15 @@ async function resolveOptionalQuery<T extends OptionalQueryResponse>(
 }
 
 /**
- * Retrieves an independently bounded health snapshot for Settings. The data
- * pipeline indicator must never make Settings appear frozen when its metadata
+ * Retrieves an independently bounded health snapshot for Settings.
+ *
+ * @remarks
+ * [DECISION LOG] METADATA DECOUPLING
+ * The data pipeline indicator must never make Settings appear frozen when its metadata
  * view is unavailable, and it must remain separate from the payload sync.
+ * Satisfies CleanStack Architecture ADR Section III: Diagnostic Isolation.
+ *
+ * @returns Promise resolving to PipelineHealth or null if unreachable/unconfigured.
  */
 export async function fetchPipelineHealth(): Promise<PipelineHealth | null> {
   if (!isConfigured()) return null;
@@ -270,20 +305,28 @@ export async function fetchPipelineHealth(): Promise<PipelineHealth | null> {
 }
 
 /**
- * A recent free-tier resource-pressure warning (connection saturation or
- * database size), as logged by substrate.check_resource_pressure(). Null
- * means either no warning in the last 48h, or the check itself is unreachable
- * -- both read the same to this optional metadata read.
+ * Diagnostic summary for free-tier resource-pressure events.
+ *
+ * @remarks
+ * Logged by substrate.check_resource_pressure(). Null means no warning in the last 48h
+ * or unreachable check.
  */
 export interface ResourcePressureWarning {
+  /** Warning message detail */
   message: string;
+  /** Timestamp (ms) when warning was recorded */
   createdAt: number | null;
 }
 
 /**
  * Retrieves the most recent resource-pressure warning, if any, for Settings.
+ *
+ * @remarks
+ * [DECISION LOG] DIAGNOSTIC BOUNDARY
  * Bounded and best-effort for the same reason as fetchPipelineHealth: this is
  * diagnostic metadata and must never block or stall the Settings view.
+ *
+ * @returns Promise resolving to ResourcePressureWarning or null if clear/unreachable.
  */
 export async function fetchResourcePressure(): Promise<ResourcePressureWarning | null> {
   if (!isConfigured()) return null;
