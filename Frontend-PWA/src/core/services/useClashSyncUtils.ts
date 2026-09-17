@@ -18,8 +18,18 @@ import type { WebAppData } from "../types";
 // misleading foreground failures.
 export const SYNC_REQUEST_TIMEOUT_MS = 25_000;
 
-/** Short recovery delay before the one bounded transient transport retry. */
-export const SYNC_RETRY_DELAY_MS = 400;
+/**
+ * Backoff delays (ms) for the bounded transient transport retry sequence.
+ *
+ * @remarks
+ * [FIX] STORM-LENGTH CONTENTION: a single 400ms retry recovers an isolated
+ * blip, but free-tier resource contention sometimes runs as a multi-second
+ * storm (observed: 8 statement-timeouts across ~27s in one burst). Three
+ * escalating attempts give a request landing at the start of a storm a real
+ * chance to land again once it clears, while the total (400+2000+5000=7.4s
+ * of waiting, plus request time) stays well inside SYNC_REQUEST_TIMEOUT_MS.
+ */
+export const SYNC_RETRY_DELAYS_MS = [400, 2_000, 5_000];
 
 // [FIX] STATEMENT TIMEOUT: the free-tier backend occasionally can't service
 // even a fast, healthy query within Postgres's own statement_timeout during
@@ -37,7 +47,7 @@ function isTransientSyncFailure(syncFailure: unknown): boolean {
     || (syncFailure.name === "TypeError" && UNDICI_TRANSIENT_FETCH_FAILURE.test(syncFailure.message));
 }
 
-function waitForRetry(signal: AbortSignal): Promise<void> {
+function waitForRetry(signal: AbortSignal, delayMs: number): Promise<void> {
   return new Promise((resolve, reject) => {
     if (signal.aborted) {
       reject(signal.reason);
@@ -48,7 +58,7 @@ function waitForRetry(signal: AbortSignal): Promise<void> {
       signal.removeEventListener("abort", abort);
       resolve();
     };
-    const timeout = setTimeout(finish, SYNC_RETRY_DELAY_MS);
+    const timeout = setTimeout(finish, delayMs);
     const abort = () => {
       clearTimeout(timeout);
       signal.removeEventListener("abort", abort);
@@ -62,13 +72,18 @@ async function fetchRemoteWithTransientRetry(
   force: boolean,
   signal: AbortSignal,
 ): Promise<unknown> {
-  try {
-    return await fetchRemote({ force, signal });
-  } catch (firstFailure: unknown) {
-    if (signal.aborted || !isTransientSyncFailure(firstFailure)) throw firstFailure;
-    await waitForRetry(signal);
-    return fetchRemote({ force, signal });
+  let lastFailure: unknown;
+  for (let attempt = 0; attempt <= SYNC_RETRY_DELAYS_MS.length; attempt++) {
+    try {
+      return await fetchRemote({ force, signal });
+    } catch (failure: unknown) {
+      lastFailure = failure;
+      const delayMs = SYNC_RETRY_DELAYS_MS[attempt];
+      if (signal.aborted || delayMs === undefined || !isTransientSyncFailure(failure)) throw failure;
+      await waitForRetry(signal, delayMs);
+    }
   }
+  throw lastFailure;
 }
 
 /**

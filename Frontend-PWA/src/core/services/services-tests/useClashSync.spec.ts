@@ -13,7 +13,10 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { nextTick, ref, type Ref } from "vue";
 import { useClashSync } from "../useClashSync";
-import { SYNC_REQUEST_TIMEOUT_MS } from "../useClashSyncUtils";
+import { SYNC_REQUEST_TIMEOUT_MS, SYNC_RETRY_DELAYS_MS } from "../useClashSyncUtils";
+
+/** Enough fake-timer advancement to exhaust every backoff delay in the bounded retry sequence. */
+const FULL_RETRY_BACKOFF_MS = SYNC_RETRY_DELAYS_MS.reduce((total, delay) => total + delay, 0) + 100;
 import { fetchRemote, lastSyncStatus } from "../../api/SupabaseClient";
 import { loadCache, saveCache } from "../StorageService";
 import { generateMockData } from "../../utils/mockData";
@@ -287,11 +290,14 @@ describe("useClashSync", () => {
     });
 
     it("should surface foreground refresh failure even when cached data exists", async () => {
+      vi.useFakeTimers();
       vi.mocked(fetchRemote).mockRejectedValue(new Error("Network Error"));
       data.value = { lb: [], hh: [], timestamp: 4000, blacklist: [] };
       const sync = useClashSync(data);
 
-      await sync.refreshFromSupabase();
+      const refreshPromise = sync.refreshFromSupabase();
+      await vi.advanceTimersByTimeAsync(FULL_RETRY_BACKOFF_MS);
+      await refreshPromise;
 
       expect(sync.syncError.value).toBe("Could not reach the server");
       expect(lastSyncStatus.value).toBe("OFFLINE");
@@ -316,32 +322,42 @@ describe("useClashSync", () => {
       ];
 
       it.each(CLASSES)("renders %s as operator copy", async (raw, expected) => {
+        vi.useFakeTimers();
         vi.mocked(fetchRemote).mockRejectedValue(new Error(raw));
         const sync = useClashSync(data);
 
-        await sync.refreshFromSupabase();
+        const refreshPromise = sync.refreshFromSupabase();
+        await vi.advanceTimersByTimeAsync(FULL_RETRY_BACKOFF_MS);
+        await refreshPromise;
 
         expect(sync.syncError.value).toBe(expected);
       });
 
       it("never leaks the raw exception text", async () => {
+        vi.useFakeTimers();
         vi.mocked(fetchRemote).mockRejectedValue(new Error("TypeError: Failed to fetch"));
         const sync = useClashSync(data);
 
-        await sync.refreshFromSupabase();
+        const refreshPromise = sync.refreshFromSupabase();
+        await vi.advanceTimersByTimeAsync(FULL_RETRY_BACKOFF_MS);
+        await refreshPromise;
 
         expect(sync.syncError.value).not.toContain("TypeError");
         expect(sync.syncError.value).not.toContain("fetch");
       });
     });
 
-    it("bounds a persistent transient failure to one retry", async () => {
+    it("bounds a persistent transient failure to the backoff sequence, then gives up", async () => {
+      vi.useFakeTimers();
       vi.mocked(fetchRemote).mockRejectedValue(new Error("Network Error"));
 
       const sync = useClashSync(data);
-      await sync.refreshFromSupabase();
+      const refreshPromise = sync.refreshFromSupabase();
+      await vi.advanceTimersByTimeAsync(FULL_RETRY_BACKOFF_MS);
+      await refreshPromise;
 
-      expect(fetchRemote).toHaveBeenCalledTimes(2);
+      // One original attempt plus one retry per configured backoff delay.
+      expect(fetchRemote).toHaveBeenCalledTimes(SYNC_RETRY_DELAYS_MS.length + 1);
       expect(sync.syncError.value).toBe("Could not reach the server");
     });
 
@@ -499,12 +515,15 @@ describe("useClashSync", () => {
     });
 
     it("reports the first failure after an empty-cache hydration", async () => {
+      vi.useFakeTimers();
       vi.mocked(loadCache).mockResolvedValue(null);
       vi.mocked(fetchRemote).mockRejectedValue(new Error("Network Error"));
       const sync = useClashSync(data);
 
       await sync.loadLocal();
-      await sync.startBackgroundSync();
+      const backgroundSyncPromise = sync.startBackgroundSync();
+      await vi.advanceTimersByTimeAsync(FULL_RETRY_BACKOFF_MS);
+      await backgroundSyncPromise;
 
       expect(data.value).toEqual({ lb: [], hh: [], timestamp: 0, blacklist: [] });
       expect(sync.syncError.value).toBe("Could not reach the server");
@@ -628,11 +647,15 @@ describe("useClashSync", () => {
       // updateLocalData(oldData). That very handler then wiped the failure it
       // had just proven, restarting the SYNC_FAILURE_VISIBILITY_THRESHOLD
       // suppression window from zero and hiding the next two failures too.
+      vi.useFakeTimers();
       vi.mocked(fetchRemote).mockRejectedValue(new Error("Network Error"));
       const sync = useClashSync(data);
 
-      // A manual refresh exposes the error immediately and sets the count to 1.
-      await sync.refreshFromSupabase();
+      // A manual refresh exposes the error, after exhausting the bounded
+      // retry backoff, and sets the count to 1.
+      const refreshPromise = sync.refreshFromSupabase();
+      await vi.advanceTimersByTimeAsync(FULL_RETRY_BACKOFF_MS);
+      await refreshPromise;
       expect(sync.syncError.value).toBe("Could not reach the server");
 
       // Now a local-only edit, exactly as a failed mutation's rollback does.
@@ -647,11 +670,15 @@ describe("useClashSync", () => {
 
     it("clears the failure state when a remote sync actually succeeds", async () => {
       // The other half: gating the clear must not strand syncError forever.
-      vi.mocked(fetchRemote)
-        .mockRejectedValueOnce(new Error("Network Error"))
-        .mockRejectedValueOnce(new Error("Network Error"));
+      // One rejection per attempt in the bounded retry sequence (one original
+      // plus one retry per configured backoff delay), so this genuinely
+      // exhausts it rather than falling through to a later default mock.
+      vi.useFakeTimers();
+      vi.mocked(fetchRemote).mockRejectedValue(new Error("Network Error"));
       const sync = useClashSync(data);
-      await sync.refreshFromSupabase();
+      const firstRefreshPromise = sync.refreshFromSupabase();
+      await vi.advanceTimersByTimeAsync(FULL_RETRY_BACKOFF_MS);
+      await firstRefreshPromise;
       expect(sync.syncError.value).toBe("Could not reach the server");
 
       vi.mocked(fetchRemote).mockResolvedValue({ lb: [], hh: [], timestamp: 3000, blacklist: [] });
