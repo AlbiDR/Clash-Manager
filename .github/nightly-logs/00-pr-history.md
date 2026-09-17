@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-16
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-17] PR #1849 [Stage 2]: useHeaderScroll KeepAlive lifecycle verification
+**Domain:** verification | **Commit:** f7fc63887 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1849)
+**Files:** .github/nightly-logs/02-verification-coverage.log, .github/nightly-logs/02-verification-pr-body.md, Frontend-PWA/src/shared/composables/composables-tests/useHeaderScroll.spec.ts
+**Why:** Ensure sticky header scroll event listeners attach on activation and remove on deactivation under Vue KeepAlive
+**Change:** useHeaderScroll KeepAlive lifecycle verification
+**Result:** 205 test files, 2017 tests passed. Proved mutation failure when deactivation unlistener assertion inverted.
+**Nudges:** 0
+
+
 ### [2026-09-16] PR #1848 [Stage 1]: Stage 1 Runtime Integrity Auditor - CLEAN
 **Domain:** hardening | **Commit:** 3724af03e | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1848)
 **Files:** .github/nightly-logs/00-pr-history.md, .github/nightly-logs/01-hardening-coverage.log, .github/nightly-logs/01-hardening-pr-body.md
