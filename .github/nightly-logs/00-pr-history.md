@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-16
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-17] PR #1855 [Stage 8]: Bumped knip to ^6.36.0 and updated major version watchlist
+**Domain:** dependencies | **Commit:** 9dd97d252 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1855)
+**Files:** .github/nightly-logs/08-dependency-audit-coverage.log, .github/nightly-logs/08-dependency-audit-pr-body.md, package.json
+**Why:** Tier 1 minor bump maintenance
+**Change:** Bumped knip to ^6.36.0 and updated major version watchlist
+**Result:** pnpm test in Frontend-PWA passed 2017 tests across 205 files
+**Nudges:** 0
+
+
 ### [2026-09-17] PR #1854 [Stage 7]: Audited catalog protocol and package version consistency across monorepo manifests and derived files; no drift detected.
 **Domain:** versioning | **Commit:** a14bdb63f | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1854)
 **Files:** .github/nightly-logs/07-version-integrity-coverage.log, .github/nightly-logs/07-version-integrity-pr-body.md
