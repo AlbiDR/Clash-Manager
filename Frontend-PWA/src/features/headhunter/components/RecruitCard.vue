@@ -149,6 +149,8 @@ const recruitAccessibilityLabel = computed(() => {
       <StatsGrid
         :columns="2"
         :loading="props.appIsRefreshing"
+        label="Recruiting signals"
+        detail="Recent activity"
       >
         <StatisticItem
           label="Donations"
@@ -168,20 +170,29 @@ const recruitAccessibilityLabel = computed(() => {
         />
 
         <StatisticItem
-          label="Cards Won"
-          :value="props.recruit.d.cards || 0"
-          :loading="props.appIsRefreshing"
-          benchmark-type="hh"
-          benchmark-metric="cardsWon"
-          :benchmark-raw-value="props.recruit.d.cards || 0"
-        />
-        <StatisticItem
           label="War Wins"
           :value="props.recruit.d.war || 0"
           :loading="props.appIsRefreshing"
           benchmark-type="hh"
           benchmark-metric="warWins"
           :benchmark-raw-value="props.recruit.d.war || 0"
+        />
+      </StatsGrid>
+
+      <StatsGrid
+        :columns="2"
+        :loading="props.appIsRefreshing"
+        class="profile-grid-margin"
+        label="Account profile"
+        detail="Depth and history"
+      >
+        <StatisticItem
+          label="Cards Won"
+          :value="props.recruit.d.cards || 0"
+          :loading="props.appIsRefreshing"
+          benchmark-type="hh"
+          benchmark-metric="cardsWon"
+          :benchmark-raw-value="props.recruit.d.cards || 0"
         />
         <StatisticItem
           label="RPoS"
@@ -220,6 +231,10 @@ const recruitAccessibilityLabel = computed(() => {
 }
 
 .card-actions-margin {
+  margin-top: var(--sys-space-16);
+}
+
+.profile-grid-margin {
   margin-top: var(--sys-space-16);
 }
 </style>

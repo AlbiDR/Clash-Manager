@@ -198,7 +198,7 @@ describe("MemberCard.vue", () => {
 
     const grids = wrapper.findAll(".stats-grid");
     expect(grids).toHaveLength(2);
-    expect(grids[1].classes()).toContain("lifetime-grid-margin");
+    expect(wrapper.findAll(".stats-section")[1]?.classes()).toContain("lifetime-grid-margin");
 
     const lifetimeTiles = grids[1].findAllComponents({ name: "StatisticItem" });
     expect(lifetimeTiles).toHaveLength(2);
@@ -208,6 +208,16 @@ describe("MemberCard.vue", () => {
     expect(lifetimeTiles[1].props("label")).toBe("Win Rate");
     expect(lifetimeTiles[1].props("value")).toBe("56.4%"); // formatNumber(winRate, {style:'percent'})
     expect(lifetimeTiles[1].props("benchmarkMetric")).toBe("winRate");
+  });
+
+  it("groups the expanded metrics into current and longer-run performance signals", () => {
+    const wrapper = mountMemberCard({ expanded: true });
+    const headings = wrapper.findAll(".stats-section-heading").map((heading) => heading.text());
+
+    expect(headings).toEqual([
+      "Current performanceClan contribution",
+      "Score foundationsLonger-run signal",
+    ]);
   });
 
   it("shows refreshing state in expanded content", () => {

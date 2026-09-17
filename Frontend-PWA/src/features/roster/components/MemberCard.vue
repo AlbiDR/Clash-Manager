@@ -148,6 +148,8 @@ const memberAccessibilityLabel = computed(() => {
       <StatsGrid
         :columns="2"
         :loading="props.appIsRefreshing"
+        label="Current performance"
+        detail="Clan contribution"
       >
         <StatisticItem
           label="War Rate"
@@ -189,6 +191,8 @@ const memberAccessibilityLabel = computed(() => {
         :columns="2"
         :loading="props.appIsRefreshing"
         class="lifetime-grid-margin"
+        label="Score foundations"
+        detail="Longer-run signal"
       >
         <StatisticItem
           label="RPeS"

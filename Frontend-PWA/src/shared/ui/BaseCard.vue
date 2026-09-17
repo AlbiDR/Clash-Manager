@@ -140,6 +140,10 @@ const expandActionLabel = computed(() => {
   const subject = props.cardName ? ` ${props.cardName}` : " details";
   return props.expanded ? `Collapse${subject}` : `Expand${subject}`;
 });
+
+const detailsRegionLabel = computed(() =>
+  props.cardName ? `Details for ${props.cardName}` : "Card details",
+);
 </script>
 
 <template>
@@ -203,13 +207,22 @@ const expandActionLabel = computed(() => {
       </div>
     </div>
 
-    <!-- Expanded Content -->
-    <div
-      v-if="props.expanded"
-      class="card-body"
-    >
-      <slot name="expanded-content" />
-    </div>
+    <!-- Expanded Content: a contained reveal keeps the surrounding list stable
+         while details arrive, rather than scaling the entire card as a unit. -->
+    <Transition name="card-details">
+      <div
+        v-if="props.expanded"
+        class="card-detail-reveal"
+      >
+        <div
+          class="card-body"
+          role="region"
+          :aria-label="detailsRegionLabel"
+        >
+          <slot name="expanded-content" />
+        </div>
+      </div>
+    </Transition>
   </div>
 </template>
 
@@ -243,22 +256,20 @@ const expandActionLabel = computed(() => {
 
 .card.expanded {
   background: var(--sys-color-surface-container-high);
-  box-shadow: var(--sys-elevation-3);
-  margin-top: var(--sys-space-16);
-  margin-bottom: var(--sys-space-16);
-  transform: scale(1.02);
+  box-shadow: var(--sys-elevation-2);
   border-color: rgba(var(--sys-color-primary-rgb), 0.3);
-  z-index: 10;
-  contain: none;
+  z-index: 1;
+  /* Expanding should reveal information, not move the card's outer edges. */
   content-visibility: visible;
   contain-intrinsic-size: auto 300px;
 }
 
 .card.selected {
   background: var(--sys-color-primary-container) !important;
-  border: 2.5px solid var(--sys-color-primary);
-  transform: scale(0.97);
-  box-shadow: 0 4px 12px rgba(var(--sys-color-primary-rgb), 0.15);
+  border-color: var(--sys-color-primary);
+  box-shadow:
+    inset 0 0 0 1px var(--sys-color-primary),
+    0 4px 12px rgba(var(--sys-color-primary-rgb), 0.15);
 }
 
 .card.tagged:not(.selected) {
@@ -419,21 +430,32 @@ const expandActionLabel = computed(() => {
   opacity: 1;
 }
 
+.card-detail-reveal {
+  display: grid;
+  grid-template-rows: 1fr;
+  overflow: hidden;
+}
+
 .card-body {
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
   margin-top: var(--sys-space-16);
   padding-top: var(--sys-space-16);
   border-top: 1px solid var(--sys-overlay-dark-subtle);
-  animation: fade-in var(--sys-motion-duration-300) ease;
 }
-@keyframes fade-in {
-  from {
-    opacity: 0;
-    transform: translateY(-5px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+
+.card-details-enter-active,
+.card-details-leave-active {
+  transition:
+    grid-template-rows var(--sys-motion-duration-300) var(--sys-motion-easing-decelerate),
+    opacity var(--sys-motion-duration-200) var(--sys-motion-easing-standard);
+}
+
+.card-details-enter-from,
+.card-details-leave-to {
+  grid-template-rows: 0fr;
+  opacity: 0;
 }
 
 /* Shared Hit Target Helper */

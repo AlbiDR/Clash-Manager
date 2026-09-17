@@ -46,4 +46,15 @@ describe("StatsGrid.vue", () => {
     });
     expect(wrapper.find(".stats-grid").attributes("aria-busy")).toBe("false");
   });
+
+  it("presents an optional metric-group heading without changing grid semantics", () => {
+    const wrapper = mount(StatsGrid, {
+      props: { columns: 2, label: "Current performance", detail: "Clan contribution" },
+    });
+
+    expect(wrapper.find(".stats-section").attributes("aria-label")).toBe("Current performance");
+    expect(wrapper.find(".stats-section-heading").text()).toContain("Current performance");
+    expect(wrapper.find(".stats-section-detail").text()).toBe("Clan contribution");
+    expect(wrapper.find(".stats-grid").classes()).toContain("cols-2");
+  });
 });
