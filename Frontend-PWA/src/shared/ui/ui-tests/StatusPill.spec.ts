@@ -135,4 +135,14 @@ describe("StatusPill", () => {
     expect(wrapper.text()).toContain("DB");
     expect(wrapper.text()).toContain("10m ago");
   });
+
+  it("keeps a complete accessible status name when its visual text is condensed", () => {
+    const wrapper = mount(StatusPill, {
+      props: { type: "success", text: "DB", nominal: true },
+    });
+
+    expect(wrapper.find(".status-trigger").attributes("aria-label")).toBe("DB");
+    expect(wrapper.find(".status-indicator").exists()).toBe(true);
+    expect(wrapper.find(".status-label").text()).toBe("DB");
+  });
 });

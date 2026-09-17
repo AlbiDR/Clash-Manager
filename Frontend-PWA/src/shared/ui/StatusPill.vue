@@ -226,6 +226,24 @@ onUnmounted(() => document.removeEventListener("click", handleClickOutside));
 
 .status-chevron.is-open { transform: rotate(180deg); }
 
+/* The ConsoleHeader owns the named inline-size container. Its compression
+   ladder removes text before information-bearing color, leaving a compact dot
+   with the same accessible name and tap target. At the next stage the header
+   removes the whole status affordance, after every higher-priority title cue
+   has already been preserved. */
+@container console-header (max-width: 600px) {
+  .status-trigger {
+    width: var(--sys-space-32);
+    min-width: var(--sys-space-32);
+    padding: 0;
+    border-color: transparent;
+    background: transparent;
+  }
+
+  .status-label,
+  .status-chevron { display: none; }
+}
+
 .is-success { color: var(--sys-color-success); }
 .is-warning { color: var(--sys-color-warning); }
 .is-error { color: var(--sys-color-error); }

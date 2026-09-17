@@ -93,15 +93,22 @@ const handleOpenDashboard = () => {
             v-if="props.stats"
             class="title-label"
             :class="{ 'has-compact-value': props.stats.compactValue }"
+            :aria-label="`${props.stats.value} ${props.stats.label}`"
           >
-            <span class="count-value">
+            <span
+              class="count-value"
+              aria-hidden="true"
+            >
               <span class="count-value-full">{{ props.stats.value }}</span>
               <span
                 v-if="props.stats.compactValue"
                 class="count-value-compact"
               >{{ props.stats.compactValue }}</span>
             </span>
-            <span class="count-label label-caption">{{ props.stats.label }}</span>
+            <span
+              class="count-label label-caption"
+              aria-hidden="true"
+            >{{ props.stats.label }}</span>
           </div>
         </div>
 
@@ -166,6 +173,9 @@ const handleOpenDashboard = () => {
   display: flex;
   flex-direction: column;
   gap: var(--sys-space-12);
+  /* Responsive priority belongs to the usable header rail, not to the viewport:
+     a desktop window can be narrower than a phone content column. */
+  container: console-header / inline-size;
 }
 
 /* [DECISION LOG] THE SECONDARY ROWS STAND DOWN WHILE THE READER IS READING:
@@ -218,10 +228,9 @@ const handleOpenDashboard = () => {
   height: var(--sys-space-32);
   min-height: var(--sys-space-32);
   gap: var(--sys-space-8);
-  /* Last resort for a viewport too narrow to hold the name and the count on one
-     line at all, narrower than any phone this ships to. The count drops below
-     the name rather than either being cut. */
-  flex-wrap: wrap;
+  /* The title rail has one line only. Its information hierarchy is condensed
+     in ordered stages below; it must never create an accidental second row. */
+  flex-wrap: nowrap;
   min-width: 0;
 }
 
@@ -283,6 +292,37 @@ const handleOpenDashboard = () => {
   height: var(--sys-space-32);
   gap: var(--sys-space-6);
   flex-shrink: 0;
+}
+
+/*
+ * Header pressure ladder
+ * ----------------------
+ * Keep the actual view name readable for as long as possible. As this single
+ * rail contracts, lower-priority context gives way in a fixed order:
+ *   1. status text (the semantic state remains available through its label),
+ *   2. the members/recruits noun,
+ *   3. the final status dot,
+ *   4. the numeric count,
+ *   5. only then does the title ellipsize.
+ *
+ * This is deliberately container-based, so a resized desktop window follows
+ * the same calm rule as a very narrow handset.
+ */
+@container console-header (max-width: 600px) {
+  .action-group { gap: 0; }
+}
+
+@container console-header (max-width: 440px) {
+  .title-label { gap: 0; }
+  .count-label { display: none; }
+}
+
+@container console-header (max-width: 360px) {
+  .action-group { display: none; }
+}
+
+@container console-header (max-width: 330px) {
+  .title-label { display: none; }
 }
 
 /* A console toolbar only appears for view-specific filters or selection. Search

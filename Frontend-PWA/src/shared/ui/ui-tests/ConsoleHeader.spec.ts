@@ -97,6 +97,22 @@ describe("ConsoleHeader", () => {
     expect(wrapper.find(".count-value-compact").text()).toBe("2/38");
   });
 
+  it("keeps each header-pressure stage independently addressable", () => {
+    const wrapper = mount(ConsoleHeader, {
+      props: {
+        title: "Headhunter",
+        stats: { label: "Recruits", value: "50" },
+        status: { type: "success", text: "DB", nominal: true },
+      },
+    });
+
+    const titleLabel = wrapper.find(".title-label");
+    expect(titleLabel.attributes("aria-label")).toBe("50 Recruits");
+    expect(titleLabel.find(".count-value").attributes("aria-hidden")).toBe("true");
+    expect(titleLabel.find(".count-label").attributes("aria-hidden")).toBe("true");
+    expect(wrapper.find(".title-main").exists()).toBe(true);
+  });
+
   it("does not reserve a blank filter row before the selection action", () => {
     const wrapper = mount(ConsoleHeader, {
       props: {
