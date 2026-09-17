@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-16
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-17] PR #1852 [Stage 5]: Reconciled useHeaderScroll.ts hysteresis, pin veto, and KeepAlive lifecycle rules in shared composables README
+**Domain:** documentation | **Commit:** 561085803 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1852)
+**Files:** .github/nightly-logs/05-documentation-readme-coverage.log, .github/nightly-logs/05-documentation-readme-pr-body.md, Frontend-PWA/src/shared/composables/README.md
+**Why:** Document recent KeepAlive lifecycle verification and composable behavior in Frontend-PWA/src/shared/composables/README.md
+**Change:** Reconciled useHeaderScroll.ts hysteresis, pin veto, and KeepAlive lifecycle rules in shared composables README
+**Result:** All 15 useHeaderScroll tests passed, git diff --check clean
+**Nudges:** 0
+
+
 ### [2026-09-17] PR #1851 [Stage 4]: Audited Edge Function SQL view usage, recent changed files (85 files), and L1/L2 performance composables; zero substrate or logic bottlenecks found
 **Domain:** optimization | **Commit:** 7d0d49b52 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1851)
 **Files:** .github/nightly-logs/04-optimization-coverage.log, .github/nightly-logs/04-optimization-pr-body.md
