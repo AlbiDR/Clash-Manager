@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-16
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-17] PR #1860 [Stage 13]: Audited pipeline evidence for 2026-09-17 across Stages 1-12: all 12 preceding stages merged cleanly, 0 recovery interventions required, clean streak 2
+**Domain:** pipeline | **Commit:** 506156af3 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1860)
+**Files:** .github/nightly-logs/13-self-healing-protocol-coverage.log, .github/nightly-logs/13-self-healing-protocol-pr-body.md
+**Why:** Pipeline surgeon pass confirmed zero stability failures, cross-stage coherence defects, or new protocol findings on 2026-09-17
+**Change:** Audited pipeline evidence for 2026-09-17 across Stages 1-12: all 12 preceding stages merged cleanly, 0 recovery interventions required, clean streak 2
+**Result:** All 12 preceding stages merged cleanly without interventions; clean calibration streak at 2
+**Nudges:** 0
+
+
 ### [2026-09-17] PR #1859 [Stage 12]: No APK UX issues found across 78 files examined and 1 candidate file
 **Domain:** ux | **Commit:** ce8a43dcc | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1859)
 **Files:** .github/nightly-logs/12-apk-ux-coverage.log, .github/nightly-logs/12-apk-ux-pr-body.md
