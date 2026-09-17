@@ -23,7 +23,7 @@
 | :--- | :--- |
 | `useLongPress.ts` | Long-press detection with haptics. |
 | `usePullToRefresh.ts` | Pull-to-refresh gesture and trigger. |
-| `useHeaderScroll.ts` | Scroll-depth for adaptive headers. |
+| `useHeaderScroll.ts` | Scroll-depth and directional hysteresis for adaptive headers with host pin veto and KeepAlive lifecycle awareness. |
 | `useCardMechanics.ts` | Card squish, selection, and scaling. |
 
 ## Charts and stats
