@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-16
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-17] PR #1856 [Stage 9]: Removed internal-only dead exports across Backend and Frontend-PWA
+**Domain:** architecture | **Commit:** bb5888475 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1856)
+**Files:** .github/nightly-logs/*, Backend/supabase/functions/_shared/*, Frontend-PWA/src/core/theme/theme-tests/* (6 files)
+**Why:** Realignment with SRP and ADR Section II by purging unused internal exports reported by knip
+**Change:** Removed internal-only dead exports across Backend and Frontend-PWA
+**Result:** All 2017 PWA tests and 277 Backend tests passed; 0 depcruise violations
+**Nudges:** 0
+
+
 ### [2026-09-17] PR #1855 [Stage 8]: Bumped knip to ^6.36.0 and updated major version watchlist
 **Domain:** dependencies | **Commit:** 9dd97d252 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1855)
 **Files:** .github/nightly-logs/08-dependency-audit-coverage.log, .github/nightly-logs/08-dependency-audit-pr-body.md, package.json
