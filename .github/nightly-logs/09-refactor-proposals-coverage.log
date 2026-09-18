@@ -116,3 +116,4 @@
 * [2026-09-15] [Stage 9] [07:02Z-07:10Z 8m] CHANGED: Frontend-PWA/src/features/settings/components/index.ts -- Removed dead AndroidCalibrationSettings re-export from settings components barrel
 * [2026-09-16] [Stage 9] [07:14Z-07:20Z 6m] CLEAN: Codebase -- Codebase -- 125 candidates, 0 dep-violations, knip (6 exp, 3 types, 1 dup), consecutive-clean: 0. Inspected protocol.ts, config/index.ts, royaleSchemas.ts. Candidate BLITZ_DWELL_DEFAULT intentional. Hunt query-royale-api harvester clean.
 * [2026-09-17] [Stage 9] [07:02Z-07:13Z 10m] CHANGED: Backend/supabase/functions/_shared/royaleSchemas.ts -- Removed internal-only dead exports across Backend and Frontend-PWA
+* [2026-09-18] [Stage 9] [07:16Z-07:26Z 10m] CLEAN: Codebase -- 86 changed-files, 0 dep-violations, knip: 3 unused exports, 1 type, 1 dup; clean-streak: 0. Scanned NetworkSettings.vue, PrecisionSlider.vue, config/index.ts. NetworkSettings (582L) is template/CSS; PrecisionSlider disabled tests passed.
