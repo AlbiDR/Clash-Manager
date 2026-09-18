@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-17
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-18] PR #1869 [Stage 9]: 86 changed-files, 0 dep-violations, knip: 3 unused exports, 1 type, 1 dup; clean-streak: 0. Scanned NetworkSettings.vue, PrecisionSlider.vue, config/index.ts. NetworkSettings (582L) is template/CSS; PrecisionSlider disabled tests passed.
+**Domain:** architecture | **Commit:** d0d1c16fa | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1869)
+**Files:** .github/nightly-logs/09-refactor-proposals-coverage.log, .github/nightly-logs/09-refactor-proposals-pr-body.md
+**Why:** Substrate complies with CleanStack ADR. No viable structural extraction or defect reproduction found.
+**Change:** 86 changed-files, 0 dep-violations, knip: 3 unused exports, 1 type, 1 dup; clean-streak: 0. Scanned NetworkSettings.vue, PrecisionSlider.vue, config/index.ts. NetworkSettings (582L) is template/CSS; PrecisionSlider disabled tests passed.
+**Result:** pnpm --dir Frontend-PWA type-check and pnpm --dir Frontend-PWA test (205 test files, 2029 tests) passed cleanly.
+**Nudges:** 0
+
+
 ### [2026-09-18] PR #1868 [Stage 8]: package.json -- Bumped @types/node catalog entry to ^26.6.1, re-locked dependencies, and updated major version watchlist
 **Domain:** dependencies | **Commit:** 8b19beb9a | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1868)
 **Files:** .github/nightly-logs/08-dependency-audit-coverage.log, .github/nightly-logs/08-dependency-audit-pr-body.md, package.json, pnpm-lock.yaml, pnpm-workspace.yaml
