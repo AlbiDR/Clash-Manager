@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-17
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-18] PR #1865 [Stage 5]: Reconciled useBlitzMode batch deep-linking pipeline in core services README
+**Domain:** documentation | **Commit:** 548e4ec4e | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1865)
+**Files:** .github/nightly-logs/05-documentation-readme-coverage.log, .github/nightly-logs/05-documentation-readme-pr-body.md, Frontend-PWA/src/core/services/README.md
+**Why:** Document useBlitzMode.ts automated batch deep-linking, FAB state management, safety throttling, and teardown semantics
+**Change:** Reconciled useBlitzMode batch deep-linking pipeline in core services README
+**Result:** Verified git diff --check clean
+**Nudges:** 0
+
+
 ### [2026-09-18] PR #1864 [Stage 4]: Codebase
 **Domain:** optimization | **Commit:** 2467b82fd | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1864)
 **Files:** .github/nightly-logs/04-optimization-coverage.log, .github/nightly-logs/04-optimization-pr-body.md
