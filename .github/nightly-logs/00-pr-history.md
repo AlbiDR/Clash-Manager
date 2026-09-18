@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-17
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-18] PR #1867 [Stage 7]: Calibration CLEAN: verified 0 version drift across 10 manifests/files and 100% catalog adherence
+**Domain:** versioning | **Commit:** 36db5b802 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1867)
+**Files:** .github/nightly-logs/07-version-integrity-coverage.log, .github/nightly-logs/07-version-integrity-pr-body.md
+**Why:** Calibration due (7 runs since last calibration); deep audit confirmed root (14.50.109), PWA (14.50.109), Backend (14.50.109), badges, apktool, twa-manifest, and protocol.ts match with 0 catalog violations
+**Change:** Calibration CLEAN: verified 0 version drift across 10 manifests/files and 100% catalog adherence
+**Result:** pnpm audit:version reported 0 drift lines across 10 manifests/derived files and 0 catalog protocol violations
+**Nudges:** 0
+
+
 ### [2026-09-18] PR #1866 [Stage 6]: docs(tsdoc): harden useHeaderScroll interface contracts and inline logic annotations
 **Domain:** documentation | **Commit:** 4385c41ef | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1866)
 **Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, .github/nightly-logs/06-documentation-tsdoc-pr-body.md, Frontend-PWA/src/shared/composables/useHeaderScroll.ts
