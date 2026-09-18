@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-17
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-18] PR #1862 [Stage 2]: Expanded useBlitzMode unit test suite
+**Domain:** verification | **Commit:** b6f719c34 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1862)
+**Files:** .github/nightly-logs/02-verification-coverage.log, .github/nightly-logs/02-verification-pr-body.md, Frontend-PWA/src/core/services/services-tests/useBlitzMode.spec.ts
+**Why:** Extended useBlitzMode unit tests for FAB zero-selection state, default dwell throttle, manual action advancement, rapid click throttling, and falsy item handling
+**Change:** Expanded useBlitzMode unit test suite
+**Result:** Added 5 unit tests in useBlitzMode.spec.ts. Proven with mutation testing by changing label = 'Select' to 'Select_MUTATED' which caught the failure in useBlitzMode.spec.ts.
+**Nudges:** 0
+
+
 ### [2026-09-17] PR #1861 [Stage 1]: Stage 1 Runtime Integrity Auditor - CLEAN
 **Domain:** hardening | **Commit:** 1b4049fda | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1861)
 **Files:** .github/nightly-logs/00-pr-history.md, .github/nightly-logs/01-hardening-coverage.log, .github/nightly-logs/01-hardening-pr-body.md
