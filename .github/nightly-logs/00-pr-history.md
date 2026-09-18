@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-17
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-18] PR #1866 [Stage 6]: docs(tsdoc): harden useHeaderScroll interface contracts and inline logic annotations
+**Domain:** documentation | **Commit:** 4385c41ef | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1866)
+**Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, .github/nightly-logs/06-documentation-tsdoc-pr-body.md, Frontend-PWA/src/shared/composables/useHeaderScroll.ts
+**Why:** Reconciles useHeaderScroll JSDoc/TSDoc interface contracts, ADR Section II mappings, and inline decision logs following recent KeepAlive verification
+**Change:** docs(tsdoc): harden useHeaderScroll interface contracts and inline logic annotations
+**Result:** PASS: vue-tsc and Vitest test suite clean
+**Nudges:** 0
+
+
 ### [2026-09-18] PR #1865 [Stage 5]: Reconciled useBlitzMode batch deep-linking pipeline in core services README
 **Domain:** documentation | **Commit:** 548e4ec4e | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1865)
 **Files:** .github/nightly-logs/05-documentation-readme-coverage.log, .github/nightly-logs/05-documentation-readme-pr-body.md, Frontend-PWA/src/core/services/README.md
