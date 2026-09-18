@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-17
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-18] PR #1868 [Stage 8]: package.json -- Bumped @types/node catalog entry to ^26.6.1, re-locked dependencies, and updated major version watchlist
+**Domain:** dependencies | **Commit:** 8b19beb9a | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1868)
+**Files:** .github/nightly-logs/08-dependency-audit-coverage.log, .github/nightly-logs/08-dependency-audit-pr-body.md, package.json, pnpm-lock.yaml, pnpm-workspace.yaml
+**Why:** Tier 1 maintenance patch bump for @types/node and Tier 2 watchlist update
+**Change:** package.json -- Bumped @types/node catalog entry to ^26.6.1, re-locked dependencies, and updated major version watchlist
+**Result:** pnpm test passed 205 test files (2029 tests)
+**Nudges:** 1
+
+
 ### [2026-09-18] PR #1867 [Stage 7]: Calibration CLEAN: verified 0 version drift across 10 manifests/files and 100% catalog adherence
 **Domain:** versioning | **Commit:** 36db5b802 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1867)
 **Files:** .github/nightly-logs/07-version-integrity-coverage.log, .github/nightly-logs/07-version-integrity-pr-body.md
