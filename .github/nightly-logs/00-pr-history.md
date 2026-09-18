@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-17
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-18] PR #1863 [Stage 3]: Baseline current across 0 pending migrations; read-only RLS and search_path audit clean.
+**Domain:** database | **Commit:** c000c1034 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1863)
+**Files:** .github/nightly-logs/03-baseline-consolidation-coverage.log, .github/nightly-logs/03-baseline-consolidation-pr-body.md
+**Why:** Zero pending migrations in pending-migrations.txt; master baseline retains full declarative purity and compliance.
+**Change:** Baseline current across 0 pending migrations; read-only RLS and search_path audit clean.
+**Result:** 0 pending migrations, migration-quality PASS, fold-state DEGRADED, database verification DB-UNAVAILABLE.
+**Nudges:** 0
+
+
 ### [2026-09-18] PR #1862 [Stage 2]: Expanded useBlitzMode unit test suite
 **Domain:** verification | **Commit:** b6f719c34 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1862)
 **Files:** .github/nightly-logs/02-verification-coverage.log, .github/nightly-logs/02-verification-pr-body.md, Frontend-PWA/src/core/services/services-tests/useBlitzMode.spec.ts
