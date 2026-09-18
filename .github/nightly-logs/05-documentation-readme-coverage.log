@@ -172,3 +172,4 @@
 * [2026-09-15] [Stage 5] [03:07Z-03:11Z 4m] CLEAN: Codebase -- Audited protocol.ts and useProgressiveList.ts against adjacent READMEs; verified accurate and no drift present
 * [2026-09-16] [Stage 5] [03:03Z-03:09Z 6m] CHANGED: Frontend-PWA/src/features/headhunter/README.md -- Reconciled RecruitCard screen-reader accessibility labeling and MemberCard parity in headhunter README
 * [2026-09-17] [Stage 5] [03:23Z-03:26Z 3m] CHANGED: Frontend-PWA/src/shared/composables/README.md -- Reconciled useHeaderScroll.ts hysteresis, pin veto, and KeepAlive lifecycle rules in shared composables README
+* [2026-09-18] [Stage 5] [03:04Z-03:07Z 4m] CHANGED: Frontend-PWA/src/core/services/README.md -- Reconciled useBlitzMode batch deep-linking pipeline in core services README

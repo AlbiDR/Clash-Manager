@@ -184,6 +184,14 @@ The Native Bridge service coordinates communication between the Web/PWA layer an
 - **Standardized Shell Contracts (`layoutProps` & `layoutEvents`):** Computes reactive props and event handlers tailored for `ConsoleLayout.vue`, bundling status badges, emptiness indicators, remote data provenance, and action handlers with support for feature-specific event overrides (`eventsOverride`).
 - **Card Metadata & List Memoization (`getCardMetadata` & `getMemoKeys`):** Exposes `selectedSet` (O(1) Set lookups) and helper methods (`getCardMetadata`, `getMemoKeys`) to generate stable reactive flags and key arrays for Vue list rendering and memoization.
 
+### Automated Batch Deep-Linking Pipeline (`useBlitzMode.ts`)
+
+`useBlitzMode.ts` orchestrates automated batch deep-linking across console feature views in Layer 1 Core:
+- **Multi-Tier Execution Strategy:** Detects execution environment and delegates batch recruiting/opening either directly to the native `AndroidBridge` JSBridge (when running inside the TWA wrapper container) or to a web-based safety-throttled sequence (`advanceBlitz`).
+- **Floating Action Button (FAB) State:** Computes real-time action labels, deep-link target hrefs, selection counts, and processing indicators for floating action controls across selection modes.
+- **Safety Throttling & Intent Protection:** Guards against OS-level queue saturation, battery drain, and browser popup blocking by clamping deep-link trigger intervals (`throttleMs`) with `BLITZ_SAFETY_DELAY` and resetting auto-advance timers upon manual user interaction.
+- **Queue & Timer Teardown:** Integrates `onUnmounted` teardown and wraps `clearSelection` to ensure pending timers (`blitzOperationTimer`), queue arrays (`batchExecutionQueue`), and active Blitz states (`isBlitzActive`) clear cleanly upon component unmount or selection reset.
+
 ## See also
 
 - [Frontend README](../../../README.md) | [`@core`](../README.md) | [`@core/api`](../api/README.md) | [`@core/utils`](../utils/README.md)
