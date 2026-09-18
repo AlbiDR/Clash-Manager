@@ -16,6 +16,23 @@ LAST_AGED:   2026-09-17
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-18] PR #1873 [Stage 12]: CLEAN: apk-ux-audit PASS, 1 candidate file (ViewOptions.vue) in apk-ux-audit.json. Audited 10 UX categories (selects, haptics, safe-area, touch targets, selection, links, overscroll, keyboard, theme, media).
+**Domain:** ux | **Commit:** 3edf8cd70 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1873)
+**Files:** .github/nightly-logs/12-apk-ux-coverage.log, .github/nightly-logs/12-apk-ux-pr-body.md
+**Why:** Structured APK UX audit status is PASS and bounded review of candidate file ViewOptions.vue confirmed zero hybrid shell UX violations across all 10 categories.
+**Change:** CLEAN: apk-ux-audit PASS, 1 candidate file (ViewOptions.vue) in apk-ux-audit.json. Audited 10 UX categories (selects, haptics, safe-area, touch targets, selection, links, overscroll, keyboard, theme, media).
+**Result:** Verified ViewOptions.vue via bounded manual review and ran component test suite (205 test files, 2029 tests passed).
+**Nudges:** 0
+
+### [2026-09-18] PR #1872 [Stage 13]: Scanned ledger records and coverage logs for 2026-09-18 across Stages 1-11; verified 11/11 merged cleanly with 0 failure classes and 0 watchdog rescues; clean-streak: 3
+**Domain:** pipeline | **Commit:** 5ccc730c1 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1872)
+**Files:** .github/nightly-logs/13-self-healing-protocol-coverage.log, .github/nightly-logs/13-self-healing-protocol-pr-body.md
+**Why:** Pipeline execution on 2026-09-18 operated cleanly with zero stability failures or cross-stage coherence issues; protocol log updates unneeded
+**Change:** Scanned ledger records and coverage logs for 2026-09-18 across Stages 1-11; verified 11/11 merged cleanly with 0 failure classes and 0 watchdog rescues; clean-streak: 3
+**Result:** Audit complete: checked 11 merged stages for date 2026-09-18 in nightly-run-ledger.json and coverage logs; 0 interventions, 0 unfinalized sentinels
+**Nudges:** 0
+
+
 ### [2026-09-18] PR #1871 [Stage 11]: Audited native WebView settings, Service Worker caching, and Vite manualChunks; zero source changes required
 **Domain:** apk | **Commit:** a81b3af56 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1871)
 **Files:** .github/nightly-logs/11-apk-optimization-coverage.log, .github/nightly-logs/11-apk-optimization-pr-body.md
