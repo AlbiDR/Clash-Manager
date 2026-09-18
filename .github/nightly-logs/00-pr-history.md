@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-17
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-18] PR #1864 [Stage 4]: Codebase
+**Domain:** optimization | **Commit:** 2467b82fd | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1864)
+**Files:** .github/nightly-logs/04-optimization-coverage.log, .github/nightly-logs/04-optimization-pr-body.md
+**Why:** Substrate hygiene audit confirmed known unreferenced views and inspected 86 changed files; zero substrate or logic bottlenecks found
+**Change:** Codebase
+**Result:** CONFIRMED: 6 known database views remain unreferenced, resource_health_view in active use, and 205 test files (2029 unit tests) passed cleanly
+**Nudges:** 0
+
+
 ### [2026-09-18] PR #1863 [Stage 3]: Baseline current across 0 pending migrations; read-only RLS and search_path audit clean.
 **Domain:** database | **Commit:** c000c1034 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1863)
 **Files:** .github/nightly-logs/03-baseline-consolidation-coverage.log, .github/nightly-logs/03-baseline-consolidation-pr-body.md
