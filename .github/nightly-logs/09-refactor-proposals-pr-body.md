@@ -1,26 +1,26 @@
 ### Nightly Stage 9: Refactor - Structural Surgery Engineer
 
-**Status:** CHANGED
+**Status:** CLEAN
 
-In plain terms: this changes 3 code files, so the app's behaviour may be affected. It also updates 1 test file.
+In plain terms: nothing needed fixing. This run checked the refactor area and found it already correct, so the only file here is the log recording that the check happened.
 
-**What changed:** Removed internal-only dead exports across Backend and Frontend-PWA
+**What was checked:** 86 changed-files, 0 dep-violations, knip: 3 unused exports, 1 type, 1 dup; clean-streak: 0. Scanned NetworkSettings.vue, PrecisionSlider.vue, config/index.ts. NetworkSettings (582L) is template/CSS; PrecisionSlider disabled tests passed.
 
-**Why:** Realignment with SRP and ADR Section II by purging unused internal exports reported by knip
+**Why:** Substrate complies with CleanStack ADR. No viable structural extraction or defect reproduction found.
 
-**Result:** All 2017 PWA tests and 277 Backend tests passed; 0 depcruise violations
+**Result:** pnpm --dir Frontend-PWA type-check and pnpm --dir Frontend-PWA test (205 test files, 2029 tests) passed cleanly.
 
-**Files changed:** .github/nightly-logs/09-refactor-proposals-coverage.log, Backend/supabase/functions/_shared/royaleSchemas.ts, Backend/supabase/functions/_shared/types.ts, Frontend-PWA/src/core/theme/theme-tests/wcag.ts, Frontend-PWA/src/shared/directives/ghostBenchmarkState.ts
+**Files changed:** .github/nightly-logs/09-refactor-proposals-coverage.log
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: architecture
-  Cycle: nightly-cycle/2026-09-17
+  Cycle: nightly-cycle/2026-09-18
   Contract: 401ccac4d9a8ca083bc5492dd8958aca42a02d1f4857914b074fb6ad6b2e53f1
-  Why: Realignment with SRP and ADR Section II by purging unused internal exports reported by knip
-  Change: Removed internal-only dead exports across Backend and Frontend-PWA
-  Result: All 2017 PWA tests and 277 Backend tests passed; 0 depcruise violations
-  Files: .github/nightly-logs/09-refactor-proposals-coverage.log, Backend/supabase/functions/_shared/royaleSchemas.ts, Backend/supabase/functions/_shared/types.ts, Frontend-PWA/src/core/theme/theme-tests/wcag.ts, Frontend-PWA/src/shared/directives/ghostBenchmarkState.ts
+  Why: Substrate complies with CleanStack ADR. No viable structural extraction or defect reproduction found.
+  Change: 86 changed-files, 0 dep-violations, knip: 3 unused exports, 1 type, 1 dup; clean-streak: 0. Scanned NetworkSettings.vue, PrecisionSlider.vue, config/index.ts. NetworkSettings (582L) is template/CSS; PrecisionSlider disabled tests passed.
+  Result: pnpm --dir Frontend-PWA type-check and pnpm --dir Frontend-PWA test (205 test files, 2029 tests) passed cleanly.
+  Files: .github/nightly-logs/09-refactor-proposals-coverage.log
   Nudges: 0
-  Execution: 902c82e9256592ae771eb794fed931f28b2d7b10
+  Execution: 376aa2af20695544c93c0b704b4464a15c9a24da
 -->
