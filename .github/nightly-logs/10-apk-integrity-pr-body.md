@@ -4,23 +4,23 @@
 
 In plain terms: nothing needed fixing. This run checked the APK integrity area and found it already correct, so the only file here is the log recording that the check happened.
 
-**What was checked:** PWA and APK wrapper integrity verified with no mismatches found.
+**What was checked:** calibration CLEAN: verified asset links, manifest values, release metadata, version codes, and cleartext traffic policy (7 ordinary CLEAN since calibration)
 
-**Why:** Audit of asset links, manifest parity, version codes/names sync, release metadata, and cleartext security policies showed full compliance across all invariants.
+**Why:** All 86 files from recent commits maintained full wrapper integrity without requiring source modifications; calibration due
 
-**Result:** Verified with pnpm audit:apk, pnpm test:apk-release, pnpm test:apk-ux-audit, pnpm test:apk-performance, and APK/verify-apk-integrity.mjs.
+**Result:** Passed full wrapper invariant checks via pnpm audit:apk and pnpm apk:verify:source
 
 **Files changed:** .github/nightly-logs/10-apk-integrity-coverage.log
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: apk
-  Cycle: nightly-cycle/2026-09-17
+  Cycle: nightly-cycle/2026-09-18
   Contract: 4f9b40864d05ffea731090b36800572dd7affedd8532fcd17c8ded8c9e2fbc12
-  Why: Audit of asset links, manifest parity, version codes/names sync, release metadata, and cleartext security policies showed full compliance across all invariants.
-  Change: PWA and APK wrapper integrity verified with no mismatches found.
-  Result: Verified with pnpm audit:apk, pnpm test:apk-release, pnpm test:apk-ux-audit, pnpm test:apk-performance, and APK/verify-apk-integrity.mjs.
+  Why: All 86 files from recent commits maintained full wrapper integrity without requiring source modifications; calibration due
+  Change: calibration CLEAN: verified asset links, manifest values, release metadata, version codes, and cleartext traffic policy (7 ordinary CLEAN since calibration)
+  Result: Passed full wrapper invariant checks via pnpm audit:apk and pnpm apk:verify:source
   Files: .github/nightly-logs/10-apk-integrity-coverage.log
   Nudges: 0
-  Execution: e9a6fe059faff6e7367ca83572c1c7bfc6137256
+  Execution: 806efccfd11db5b03778405ab315824e1c68ba79
 -->
