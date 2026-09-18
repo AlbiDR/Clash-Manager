@@ -15,6 +15,15 @@ LAST_AGED:   2026-09-18
 ---
 
 ## T1 -- Active (last 7 days)
+
+### [2026-09-18] PR #1874 [Stage 1]: Stage 1 Runtime Integrity Auditor - CLEAN
+**Domain:** hardening | **Commit:** 487c740d4 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1874)
+**Files:** .github/nightly-logs/00-pr-history.md, .github/nightly-logs/01-hardening-coverage.log, .github/nightly-logs/01-hardening-pr-body.md
+**Why:** Audited Edge Function endpoints, in-memory state, Valibot boundaries, and cross-layer constraints with zero threat vectors found
+**Change:** Stage 1 Runtime Integrity Auditor - CLEAN
+**Result:** All unit tests passed cleanly (205 test files, 2029 tests green) with zero regressions and zero depcruise violations
+**Nudges:** 0
+
 ### [2026-09-18] PR #1873 [Stage 12]: CLEAN: apk-ux-audit PASS, 1 candidate file (ViewOptions.vue) in apk-ux-audit.json. Audited 10 UX categories (selects, haptics, safe-area, touch targets, selection, links, overscroll, keyboard, theme, media).
 **Domain:** ux | **Commit:** 3edf8cd70 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1873)
 **Files:** .github/nightly-logs/12-apk-ux-coverage.log, .github/nightly-logs/12-apk-ux-pr-body.md
