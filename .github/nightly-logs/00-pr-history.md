@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-17
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-18] PR #1870 [Stage 10]: calibration CLEAN: verified asset links, manifest values, release metadata, version codes, and cleartext traffic policy (7 ordinary CLEAN since calibration)
+**Domain:** apk | **Commit:** 3339979d3 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1870)
+**Files:** .github/nightly-logs/10-apk-integrity-coverage.log, .github/nightly-logs/10-apk-integrity-pr-body.md
+**Why:** All 86 files from recent commits maintained full wrapper integrity without requiring source modifications; calibration due
+**Change:** calibration CLEAN: verified asset links, manifest values, release metadata, version codes, and cleartext traffic policy (7 ordinary CLEAN since calibration)
+**Result:** Passed full wrapper invariant checks via pnpm audit:apk and pnpm apk:verify:source
+**Nudges:** 0
+
+
 ### [2026-09-18] PR #1869 [Stage 9]: 86 changed-files, 0 dep-violations, knip: 3 unused exports, 1 type, 1 dup; clean-streak: 0. Scanned NetworkSettings.vue, PrecisionSlider.vue, config/index.ts. NetworkSettings (582L) is template/CSS; PrecisionSlider disabled tests passed.
 **Domain:** architecture | **Commit:** d0d1c16fa | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1869)
 **Files:** .github/nightly-logs/09-refactor-proposals-coverage.log, .github/nightly-logs/09-refactor-proposals-pr-body.md
