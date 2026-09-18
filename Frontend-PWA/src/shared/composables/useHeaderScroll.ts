@@ -1,15 +1,35 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
+
 import { ref, onMounted, onUnmounted, onActivated, onDeactivated, type Ref } from "vue";
+
+/**
+ * Configuration options for the `useHeaderScroll` composable.
+ */
+export interface HeaderScrollOptions {
+  /** Depth, in pixels, before the header treats the page as scrolled. Defaults to 20. */
+  threshold?: number;
+  /** Travel in one direction, in pixels, before condensing flips. Defaults to 48. */
+  hysteresis?: number;
+  /** Returns true while the header must stay expanded (e.g. search focused or items selected). */
+  isPinned?: () => boolean;
+}
+
+/** Default travel before the header believes a direction change was intended. */
+const DEFAULT_HYSTERESIS_PX = 48;
 
 /**
  * COMPOSABLE: useHeaderScroll
  *
  * @remarks
+ * Satisfies ADR Section II: Shared Substrate Components.
  * Architectural role: Layer 2 (@shared) hardware broker for display APIs.
  * Standardises scroll awareness for sticky headers: how deep the page has
  * travelled, and whether the reader is currently moving away from the top.
  * A passive listener keeps it off the scroll critical path.
+ *
+ * **Side Effects:**
+ * - Attaches/detaches passive `scroll` event listener on `window` bound to Vue lifecycle (`onMounted`, `onUnmounted`, `onActivated`, `onDeactivated`).
  *
  * [DECISION LOG] DIRECTION NEEDS HYSTERESIS OR IT IS A STROBE.
  * Condensing on raw direction means a header that flips on every jitter of a
@@ -35,37 +55,34 @@ import { ref, onMounted, onUnmounted, onActivated, onDeactivated, type Ref } fro
  *   host's veto. A bare number is accepted for the original threshold-only
  *   call signature.
  *
- * @returns
- * - `isScrolled`: the page has travelled past `threshold`.
- * - `isCondensed`: the reader is moving away from the top and nothing is pinned.
+ * @returns Object containing reactive flags:
+ * - `isScrolled`: Reactive Ref indicating whether the page has travelled past `threshold`.
+ * - `isCondensed`: Reactive Ref indicating whether the reader is moving down away from top without host veto.
  */
-export interface HeaderScrollOptions {
-  /** Depth, in pixels, before the header treats the page as scrolled. */
-  threshold?: number;
-  /** Travel in one direction, in pixels, before condensing flips. */
-  hysteresis?: number;
-  /** Returns true while the header must stay expanded. */
-  isPinned?: () => boolean;
-}
-
-/** Default travel before the header believes a direction change was intended. */
-const DEFAULT_HYSTERESIS_PX = 48;
-
 export function useHeaderScroll(
   options: HeaderScrollOptions | number = {},
 ): { isScrolled: Ref<boolean>; isCondensed: Ref<boolean> } {
   const { threshold = 20, hysteresis = DEFAULT_HYSTERESIS_PX, isPinned } =
     typeof options === "number" ? { threshold: options } as HeaderScrollOptions : options;
 
+  /** Indicates if the window scrollY exceeds the specified threshold. */
   const isScrolled = ref(false);
+  /** Indicates if the header should be condensed due to directional scroll travel. */
   const isCondensed = ref(false);
 
   /** Where the current run of travel in one direction began. */
   let anchorY = 0;
   /** The previous sample, used only to tell which way the page moved. */
   let lastY = 0;
+  /** Last detected scroll direction ("up" or "down"). */
   let lastDirection: "up" | "down" | null = null;
 
+  /**
+   * Evaluates current window scroll position against threshold and hysteresis anchors.
+   *
+   * @remarks
+   * Updates `isScrolled` and `isCondensed` refs. Resets anchor tracking when at page top or pinned.
+   */
   const handleScroll = (): void => {
     const currentY = window.scrollY;
     isScrolled.value = currentY > threshold;
@@ -94,12 +111,18 @@ export function useHeaderScroll(
     lastY = currentY;
   };
 
+  /**
+   * Binds the passive scroll listener to `window` and triggers initial position check.
+   */
   const subscribe = (): void => {
     window.addEventListener("scroll", handleScroll, { passive: true });
     // The page may already be scrolled when this view is shown.
     handleScroll();
   };
 
+  /**
+   * Unbinds the scroll listener from `window`.
+   */
   const unsubscribe = (): void => {
     window.removeEventListener("scroll", handleScroll);
   };
