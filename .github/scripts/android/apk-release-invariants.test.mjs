@@ -7,6 +7,17 @@ import test from 'node:test';
 
 const WORKFLOW = readFileSync('.github/workflows/apk-release.yml', 'utf8');
 
+test('Android SDK setup avoids the retired tools package', () => {
+  // setup-android v3 defaults to `tools platform-tools`; Google removed the
+  // legacy `tools` package on 2026-09-14, preventing every APK build before
+  // compilation or signing. v4 defaults to the supported platform-tools.
+  assert.match(
+    WORKFLOW,
+    /android-actions\/setup-android@v4/,
+    'APK releases must use setup-android v4 or newer',
+  );
+});
+
 /**
  * The commit-back step only. The rest of the workflow may legitimately name a
  * branch (the trigger list does), so asserting over the whole file would either

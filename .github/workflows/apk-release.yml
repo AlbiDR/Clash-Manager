@@ -112,7 +112,9 @@ jobs:
           distribution: temurin
           java-version: "17"
 
-      - uses: android-actions/setup-android@v3
+      # v3 installs Android's retired `tools` package, which makes sdkmanager
+      # exit before the APK can be built. v4 uses the supported SDK packages.
+      - uses: android-actions/setup-android@v4
 
       - name: Install Android build-tools ${{ env.BT_VERSION }}
         run: sdkmanager "build-tools;${{ env.BT_VERSION }}"
