@@ -267,6 +267,15 @@ jobs:
             }
           fi
 
+      # Pushes made with this workflow's GITHUB_TOKEN do not start other
+      # push-triggered workflows. Dispatch the PWA deploy explicitly so its
+      # same-origin APK download and latest.json advance with this release.
+      - name: Deploy PWA release assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TARGET_BRANCH: ${{ github.event.workflow_run.head_branch || github.ref_name }}
+        run: gh workflow run deploy-pwa.yml --ref "$TARGET_BRANCH" -R "$GITHUB_REPOSITORY"
+
       - name: Remove decoded keystore
         if: always()
         run: rm -f "$RUNNER_TEMP/release.keystore"
