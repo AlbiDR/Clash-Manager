@@ -57,7 +57,7 @@ describe("RecruitCard.vue", () => {
                 </div>
               </div>
             `,
-            props: ["id", "expanded", "selected", "selectionMode", "isTagged", "score", "cardLabel", "cardName"],
+            props: ["id", "expanded", "selected", "selectionMode", "isTagged", "score", "cardLabel", "cardName", "scoreSummary"],
           },
           TrophyBadge: {
             name: "TrophyBadge",
@@ -135,8 +135,8 @@ describe("RecruitCard.vue", () => {
     const headings = wrapper.findAll(".stats-section-heading").map((heading) => heading.text());
 
     expect(headings).toEqual([
-      "Recruiting signalsRecent activity",
-      "Account profileDepth and history",
+      "Score driversRecent recruitment activity",
+      "Score foundationsAccount depth and history",
     ]);
   });
 
@@ -184,6 +184,13 @@ describe("RecruitCard.vue", () => {
     const wrapper = mountRecruitCard();
 
     expect(wrapper.findComponent({ name: "BaseCard" }).props("cardName")).toBe("Test Recruit");
+  });
+
+  it("names the recruit score as potential for the shared score control", () => {
+    const wrapper = mountRecruitCard();
+
+    expect(wrapper.findComponent({ name: "BaseCard" }).props("scoreSummary"))
+      .toBe("Potential score 92");
   });
 
   it("emits toggle event when BaseCard emits toggle", async () => {

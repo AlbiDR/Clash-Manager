@@ -130,7 +130,7 @@ The PWA lifecycle orchestrator, APK manager, standalone APK resolver, and helper
 ### Single-Flight Sync & Error Thresholding (`useClashSync.ts` & `useClashSyncUtils.ts`)
 
 `useClashSync.ts` and `useClashSyncUtils.ts` orchestrate data synchronization, local persistence, and error tolerance in Layer 1 Core:
-- **Pure Sync Utilities (`useClashSyncUtils.ts`):** Houses stateless sync helpers including bounded timeout network fetching (`fetchRemoteWithTimeout` using `SYNC_REQUEST_TIMEOUT_MS = 15000` and `AbortController`), empty dataset initialization (`createEmptyWebAppData`), and error normalization (`normalizeSyncError`).
+- **Pure Sync Utilities (`useClashSyncUtils.ts`):** Houses stateless sync helpers including bounded timeout network fetching (`fetchRemoteWithTimeout` using `SYNC_REQUEST_TIMEOUT_MS = 25000` and `AbortController`), bounded transient transport retries (`SYNC_RETRY_DELAYS_MS = [400, 2000, 5000]` for transient network failures, HTTP 408/429/50x errors, and Postgres statement timeouts), `AbortSignal` cancellation handling during retry backoff delays, empty dataset initialization (`createEmptyWebAppData`), and error normalization (`normalizeSyncError`).
 - **Single-Flight Synchronization:** Enforces single-flight remote execution (`activeSyncPromise`). Concurrent sync calls join the single active in-flight request promise, eliminating redundant network traffic and avoiding race conditions during batch or automated triggers.
 - **Fault-Tolerance Visibility Thresholding:** Tracks consecutive remote synchronization failures (`consecutiveSyncFailures`). Background sync failures remain suppressed to maintain UI stability until the failure threshold (`SYNC_FAILURE_VISIBILITY_THRESHOLD = 3`) is reached, while manual user-triggered refreshes immediately expose error states (`syncError`).
 - **Remote Success State Preservation:** Internal `commitSyncResult` gates clearing `consecutiveSyncFailures` and `syncError` behind an explicit `remoteSuccess` flag (defaulting to `false`). Purely local commits (such as cache hydration, local edits, or optimistic rollbacks) leave remote failure indicators intact so that local mutations cannot forge proof of backend reachability or suppress pending error visibility windows.
@@ -183,6 +183,14 @@ The Native Bridge service coordinates communication between the Web/PWA layer an
 - **Skeleton Display Priority Rules:** Evaluates `showSkeletons` under three distinct condition gates: explicit Blueprint Mode requests (`isBlueprintMode`), initial unhydrated store boot without sync errors (`!isHydrated && !syncError`), and active background refreshes with empty local data (`isRefreshing && data.length === 0`). Bypasses skeletons in Synthetic and Showcase modes to guarantee deterministic high-fidelity rendering.
 - **Standardized Shell Contracts (`layoutProps` & `layoutEvents`):** Computes reactive props and event handlers tailored for `ConsoleLayout.vue`, bundling status badges, emptiness indicators, remote data provenance, and action handlers with support for feature-specific event overrides (`eventsOverride`).
 - **Card Metadata & List Memoization (`getCardMetadata` & `getMemoKeys`):** Exposes `selectedSet` (O(1) Set lookups) and helper methods (`getCardMetadata`, `getMemoKeys`) to generate stable reactive flags and key arrays for Vue list rendering and memoization.
+
+### Automated Batch Deep-Linking Pipeline (`useBlitzMode.ts`)
+
+`useBlitzMode.ts` orchestrates automated batch deep-linking across console feature views in Layer 1 Core:
+- **Multi-Tier Execution Strategy:** Detects execution environment and delegates batch recruiting/opening either directly to the native `AndroidBridge` JSBridge (when running inside the TWA wrapper container) or to a web-based safety-throttled sequence (`advanceBlitz`).
+- **Floating Action Button (FAB) State:** Computes real-time action labels, deep-link target hrefs, selection counts, and processing indicators for floating action controls across selection modes.
+- **Safety Throttling & Intent Protection:** Guards against OS-level queue saturation, battery drain, and browser popup blocking by clamping deep-link trigger intervals (`throttleMs`) with `BLITZ_SAFETY_DELAY` and resetting auto-advance timers upon manual user interaction.
+- **Queue & Timer Teardown:** Integrates `onUnmounted` teardown and wraps `clearSelection` to ensure pending timers (`blitzOperationTimer`), queue arrays (`batchExecutionQueue`), and active Blitz states (`isBlitzActive`) clear cleanly upon component unmount or selection reset.
 
 ## See also
 

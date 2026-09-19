@@ -156,5 +156,100 @@ describe("useBlitzMode", () => {
 
       delete (window as any).AndroidBridge;
     });
+
+    it("renders FAB state correctly when selection mode is active with zero selected items", () => {
+      selectionStore.setForceSelectionMode(true);
+      selectionStore.selectedIds.value = [];
+
+      const { fabState } = useBlitzMode(selectionStore);
+
+      expect(fabState.value.visible).toBe(true);
+      expect(fabState.value.label).toBe("Select");
+      expect(fabState.value.actionHref).toBeUndefined();
+      expect(fabState.value.selectionCount).toBe(0);
+    });
+
+    it("uses modules.blitzDwellMs as default throttleMs when options.throttleMs is omitted", () => {
+      mockModules.blitzDwellMs = 1500;
+      const { handleBlitz } = useBlitzMode(selectionStore);
+
+      selectionStore.selectAll(["R1"]);
+
+      const mockStartBlitz = vi.fn();
+      (window as any).AndroidBridge = { startBlitz: mockStartBlitz };
+
+      handleBlitz();
+
+      expect(mockStartBlitz).toHaveBeenCalledWith(JSON.stringify(["R1"]), 1500);
+
+      delete (window as any).AndroidBridge;
+      delete mockModules.blitzDwellMs;
+    });
+
+    it("supports manual advancement via handleAction during active blitz sequence", () => {
+      vi.useFakeTimers();
+      const throttleMs = 2000;
+      const { handleBlitz, handleAction, fabState } = useBlitzMode(selectionStore, { throttleMs });
+
+      selectionStore.selectAll(["R1", "R2", "R3"]);
+
+      handleBlitz();
+      expect(fabState.value.label).toBe("1 / 3");
+      expect(mockOpenInGame).toHaveBeenNthCalledWith(1, "R1");
+
+      // Advance past index 0 so that an automated timer is active for index 1 ("R2")
+      vi.advanceTimersByTime(4000);
+      expect(mockOpenInGame).toHaveBeenNthCalledWith(2, "R2");
+      expect(fabState.value.label).toBe("2 / 3");
+
+      const mockEvent = { preventDefault: vi.fn() } as unknown as MouseEvent;
+      // Trigger manual action during active blitz (at index 1)
+      handleAction(mockEvent);
+
+      expect(mockEvent.preventDefault).toHaveBeenCalled();
+      expect(mockOpenInGame).toHaveBeenNthCalledWith(3, "R2");
+      expect(fabState.value.label).toBe("3 / 3");
+
+      // Advance timers by BLITZ_RECOVERY_DELAY / BLITZ_SAFETY_DELAY to trigger the reset timer for index 2 ("R3")
+      vi.advanceTimersByTime(4000);
+      expect(mockOpenInGame).toHaveBeenNthCalledWith(4, "R3");
+    });
+
+    it("throttles rapid handleAction clicks when not blasting", () => {
+      vi.useFakeTimers();
+      const throttleMs = 1000;
+      const { handleAction } = useBlitzMode(selectionStore, { throttleMs });
+
+      selectionStore.selectAll(["A", "B"]);
+      const mockEvent = { preventDefault: vi.fn() } as unknown as MouseEvent;
+
+      handleAction(mockEvent);
+      expect(mockOpenInGame).toHaveBeenCalledTimes(1);
+      expect(mockOpenInGame).toHaveBeenCalledWith("A");
+
+      // Rapid click within throttleMs
+      handleAction(mockEvent);
+      expect(mockEvent.preventDefault).toHaveBeenCalled();
+      expect(mockOpenInGame).toHaveBeenCalledTimes(1); // Throttled!
+    });
+
+    it("skips undefined/falsy items gracefully during blitz sequence", () => {
+      vi.useFakeTimers();
+      const throttleMs = 500;
+      const { handleBlitz, fabState } = useBlitzMode(selectionStore, { throttleMs });
+
+      // Simulate selection array containing a falsy item
+      selectionStore.selectAll(["R1", "", "R3"]);
+
+      handleBlitz();
+      expect(mockOpenInGame).toHaveBeenNthCalledWith(1, "R1");
+
+      // Advance by BLITZ_SAFETY_DELAY (4000ms), which reaches index 1 (""), skips it, and calls "R3" synchronously
+      vi.advanceTimersByTime(4000);
+      expect(mockOpenInGame).toHaveBeenNthCalledWith(2, "R3");
+
+      vi.advanceTimersByTime(2000);
+      expect(fabState.value.isBlasting).toBe(false);
+    });
   });
 });

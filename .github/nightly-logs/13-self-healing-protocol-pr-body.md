@@ -1,26 +1,26 @@
 ### Nightly Stage 13: Self-Healing Protocol - Pipeline Resilience Auditor
 
-**Status:** CLEAN
+**Status:** CHANGED
 
-In plain terms: nothing needed fixing. This run checked the self healing protocol area and found it already correct, so the only file here is the log recording that the check happened.
+In plain terms: no change was made to the project. This run ended as CHANGED and the only file here is the log recording that.
 
-**What was checked:** Audited pipeline evidence for 2026-09-17 across Stages 1-12: all 12 preceding stages merged cleanly, 0 recovery interventions required, clean streak 2
+**What changed:** Updated self-healing protocol log with 2026-09-19 findings
 
-**Why:** Pipeline surgeon pass confirmed zero stability failures, cross-stage coherence defects, or new protocol findings on 2026-09-17
+**Why:** Document Stage 5 watchdog nudge intervention and update Section 3 stage counters and audit durations
 
-**Result:** All 12 preceding stages merged cleanly without interventions; clean calibration streak at 2
+**Result:** PASS: Protocol document updated and verified with git diff --check
 
-**Files changed:** .github/nightly-logs/13-self-healing-protocol-coverage.log
+**Files changed:** .github/nightly-logs/13-self-healing-protocol-coverage.log, .github/nightly-logs/13-self-healing-protocol.md
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: pipeline
-  Cycle: nightly-cycle/2026-09-17
+  Cycle: nightly-cycle/2026-09-19
   Contract: df81a67e6d78a129caa22f2d9d3499a9aaf33de1a9f9c7718ff860013b7a86e1
-  Why: Pipeline surgeon pass confirmed zero stability failures, cross-stage coherence defects, or new protocol findings on 2026-09-17
-  Change: Audited pipeline evidence for 2026-09-17 across Stages 1-12: all 12 preceding stages merged cleanly, 0 recovery interventions required, clean streak 2
-  Result: All 12 preceding stages merged cleanly without interventions; clean calibration streak at 2
-  Files: .github/nightly-logs/13-self-healing-protocol-coverage.log
+  Why: Document Stage 5 watchdog nudge intervention and update Section 3 stage counters and audit durations
+  Change: Updated self-healing protocol log with 2026-09-19 findings
+  Result: PASS: Protocol document updated and verified with git diff --check
+  Files: .github/nightly-logs/13-self-healing-protocol-coverage.log, .github/nightly-logs/13-self-healing-protocol.md
   Nudges: 0
-  Execution: 11867143fe85a98b460f4f2efa3bef7b19adab3a
+  Execution: 2fb382ae2684334e69a75470acda6fe57b200d32
 -->

@@ -82,6 +82,12 @@ const props = defineProps<{
    * an action, so the bare name is carried separately.
    */
   cardName?: string;
+
+  /**
+   * Short explanation of the score control's value, supplied by the feature
+   * that knows whether it represents performance or potential.
+   */
+  scoreSummary?: string;
 }>();
 
 const emit = defineEmits<{
@@ -144,6 +150,11 @@ const expandActionLabel = computed(() => {
 const detailsRegionLabel = computed(() =>
   props.cardName ? `Details for ${props.cardName}` : "Card details",
 );
+
+const scoreActionLabel = computed(() => {
+  const selectionAction = props.cardName ? `Select ${props.cardName}` : "Select card";
+  return props.scoreSummary ? `${selectionAction}. ${props.scoreSummary}` : selectionAction;
+});
 </script>
 
 <template>
@@ -176,7 +187,7 @@ const detailsRegionLabel = computed(() =>
           role="button"
           tabindex="0"
           :aria-pressed="props.selected"
-          :aria-label="props.cardName ? `Select ${props.cardName}` : 'Select card'"
+          :aria-label="scoreActionLabel"
           @click.stop="handleScoreClick"
           @keydown.enter="handleScoreClick"
           @keydown.space.prevent="handleScoreClick"

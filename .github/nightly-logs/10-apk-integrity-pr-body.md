@@ -4,23 +4,23 @@
 
 In plain terms: nothing needed fixing. This run checked the APK integrity area and found it already correct, so the only file here is the log recording that the check happened.
 
-**What was checked:** PWA and APK wrapper integrity verified with no mismatches found.
+**What was checked:** Completed APK & PWA wrapper integrity audit across manifest, asset links, versioning, release metadata, and security policies.
 
-**Why:** Audit of asset links, manifest parity, version codes/names sync, release metadata, and cleartext security policies showed full compliance across all invariants.
+**Why:** All wrapper invariants matched and verified with zero mismatches found.
 
-**Result:** Verified with pnpm audit:apk, pnpm test:apk-release, pnpm test:apk-ux-audit, pnpm test:apk-performance, and APK/verify-apk-integrity.mjs.
+**Result:** pnpm audit:apk and pnpm apk:verify:source passed cleanly.
 
 **Files changed:** .github/nightly-logs/10-apk-integrity-coverage.log
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: apk
-  Cycle: nightly-cycle/2026-09-17
+  Cycle: nightly-cycle/2026-09-19
   Contract: 4f9b40864d05ffea731090b36800572dd7affedd8532fcd17c8ded8c9e2fbc12
-  Why: Audit of asset links, manifest parity, version codes/names sync, release metadata, and cleartext security policies showed full compliance across all invariants.
-  Change: PWA and APK wrapper integrity verified with no mismatches found.
-  Result: Verified with pnpm audit:apk, pnpm test:apk-release, pnpm test:apk-ux-audit, pnpm test:apk-performance, and APK/verify-apk-integrity.mjs.
+  Why: All wrapper invariants matched and verified with zero mismatches found.
+  Change: Completed APK & PWA wrapper integrity audit across manifest, asset links, versioning, release metadata, and security policies.
+  Result: pnpm audit:apk and pnpm apk:verify:source passed cleanly.
   Files: .github/nightly-logs/10-apk-integrity-coverage.log
   Nudges: 0
-  Execution: e9a6fe059faff6e7367ca83572c1c7bfc6137256
+  Execution: 84ba6dd13c4b3999fefb1d1db156ca307ffd4a6f
 -->

@@ -26,6 +26,7 @@ const { benchmarkTooltipContent } = useBenchmarkedStat(
   "score",
   () => props.score
 );
+
 </script>
 
 <template>

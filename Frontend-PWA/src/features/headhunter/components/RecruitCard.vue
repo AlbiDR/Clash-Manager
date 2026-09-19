@@ -108,6 +108,7 @@ const recruitAccessibilityLabel = computed(() => {
     :score="props.recruit.potentialScore"
     :card-label="recruitAccessibilityLabel"
     :card-name="props.recruit.n"
+    :score-summary="`Potential score ${Math.round(props.recruit.potentialScore ?? 0)}`"
     @toggle="emit('toggle')"
     @toggle-select="emit('toggle-select')"
   >
@@ -149,8 +150,8 @@ const recruitAccessibilityLabel = computed(() => {
       <StatsGrid
         :columns="2"
         :loading="props.appIsRefreshing"
-        label="Recruiting signals"
-        detail="Recent activity"
+        label="Score drivers"
+        detail="Recent recruitment activity"
       >
         <StatisticItem
           label="Donations"
@@ -183,8 +184,8 @@ const recruitAccessibilityLabel = computed(() => {
         :columns="2"
         :loading="props.appIsRefreshing"
         class="profile-grid-margin"
-        label="Account profile"
-        detail="Depth and history"
+        label="Score foundations"
+        detail="Account depth and history"
       >
         <StatisticItem
           label="Cards Won"
