@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-18
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-19] PR #1875 [Stage 2]: Frontend-PWA/src/core/services/services-tests/useClashSyncUtils.spec.ts -- Expanded useClashSyncUtils unit test suite with comprehensive tests for transient retry engine, backoff exhaustion, and AbortSignal cancellation handling
+**Domain:** verification | **Commit:** bccca7b90 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1875)
+**Files:** .github/nightly-logs/02-verification-coverage.log, .github/nightly-logs/02-verification-pr-body.md, Frontend-PWA/src/core/services/services-tests/useClashSyncUtils.spec.ts
+**Why:** Close coverage gap for transient retry logic in L1 Core network sync utility
+**Change:** Frontend-PWA/src/core/services/services-tests/useClashSyncUtils.spec.ts -- Expanded useClashSyncUtils unit test suite with comprehensive tests for transient retry engine, backoff exhaustion, and AbortSignal cancellation handling
+**Result:** PASSED (All 2034 tests passed cleanly, mutation proof verified)
+**Nudges:** 0
+
+
 ### [2026-09-18] PR #1874 [Stage 1]: Stage 1 Runtime Integrity Auditor - CLEAN
 **Domain:** hardening | **Commit:** 487c740d4 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1874)
 **Files:** .github/nightly-logs/00-pr-history.md, .github/nightly-logs/01-hardening-coverage.log, .github/nightly-logs/01-hardening-pr-body.md
