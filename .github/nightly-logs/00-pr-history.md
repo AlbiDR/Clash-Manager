@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-18
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-19] PR #1878 [Stage 6]: docs(tsdoc): harden useClashSyncUtils interface contracts and inline logic annotations
+**Domain:** documentation | **Commit:** 208de4aa2 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1878)
+**Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, .github/nightly-logs/06-documentation-tsdoc-pr-body.md, Frontend-PWA/src/core/services/useClashSyncUtils.ts
+**Why:** Reconciles useClashSyncUtils JSDoc/TSDoc interface contracts, ADR Section IV mappings, and inline decision logs following recent Stage 2 sync retry additions
+**Change:** docs(tsdoc): harden useClashSyncUtils interface contracts and inline logic annotations
+**Result:** PASS: Monorepo Vitest suite clean (205 test files, 2034 unit tests passed)
+**Nudges:** 0
+
+
 ### [2026-09-19] PR #1877 [Stage 4]: Audited Edge Function SQL view usage, recent changed files (86 files), and L1/L2 performance composables; zero substrate or logic bottlenecks found
 **Domain:** optimization | **Commit:** a414fbac8 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1877)
 **Files:** .github/nightly-logs/04-optimization-coverage.log, .github/nightly-logs/04-optimization-pr-body.md
