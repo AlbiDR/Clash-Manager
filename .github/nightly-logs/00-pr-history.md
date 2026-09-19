@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-18
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-19] PR #1883 [Stage 10]: Completed APK & PWA wrapper integrity audit across manifest, asset links, versioning, release metadata, and security policies.
+**Domain:** apk | **Commit:** d02c18547 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1883)
+**Files:** .github/nightly-logs/10-apk-integrity-coverage.log, .github/nightly-logs/10-apk-integrity-pr-body.md
+**Why:** All wrapper invariants matched and verified with zero mismatches found.
+**Change:** Completed APK & PWA wrapper integrity audit across manifest, asset links, versioning, release metadata, and security policies.
+**Result:** pnpm audit:apk and pnpm apk:verify:source passed cleanly.
+**Nudges:** 0
+
+
 ### [2026-09-19] PR #1882 [Stage 9]: Un-exported dead SliderDensity type in PrecisionSlider.vue
 **Domain:** architecture | **Commit:** 6266f374a | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1882)
 **Files:** .github/nightly-logs/09-refactor-proposals-coverage.log, .github/nightly-logs/09-refactor-proposals-pr-body.md, Frontend-PWA/src/shared/ui/PrecisionSlider.vue
