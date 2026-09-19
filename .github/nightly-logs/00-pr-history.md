@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-18
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-19] PR #1881 [Stage 8]: Bumped vue to ^3.5.43 in monorepo catalogs and updated lockfile
+**Domain:** dependencies | **Commit:** 80526ebd2 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1881)
+**Files:** .github/nightly-logs/08-dependency-audit-coverage.log, .github/nightly-logs/08-dependency-audit-pr-body.md, package.json, pnpm-lock.yaml, pnpm-workspace.yaml
+**Why:** Safe Tier 1 patch update for vue with verified passing workspace test suite
+**Change:** Bumped vue to ^3.5.43 in monorepo catalogs and updated lockfile
+**Result:** 2034 workspace unit tests passing across all packages
+**Nudges:** 0
+
+
 ### [2026-09-19] PR #1880 [Stage 7]: Audit complete: monorepo package versions (14.50.109) and PNPM catalogs fully synchronized across all manifests and derived declarations
 **Domain:** versioning | **Commit:** 1c3958e0a | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1880)
 **Files:** .github/nightly-logs/07-version-integrity-coverage.log, .github/nightly-logs/07-version-integrity-pr-body.md
