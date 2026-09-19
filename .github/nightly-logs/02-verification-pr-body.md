@@ -4,23 +4,23 @@
 
 In plain terms: this adds 1 test file in the verification area. No product code changed, so the app behaves exactly as it did before.
 
-**What changed:** Expanded useBlitzMode unit test suite
+**What changed:** Frontend-PWA/src/core/services/services-tests/useClashSyncUtils.spec.ts -- Expanded useClashSyncUtils unit test suite with comprehensive tests for transient retry engine, backoff exhaustion, and AbortSignal cancellation handling
 
-**Why:** Extended useBlitzMode unit tests for FAB zero-selection state, default dwell throttle, manual action advancement, rapid click throttling, and falsy item handling
+**Why:** Close coverage gap for transient retry logic in L1 Core network sync utility
 
-**Result:** Added 5 unit tests in useBlitzMode.spec.ts. Proven with mutation testing by changing label = 'Select' to 'Select_MUTATED' which caught the failure in useBlitzMode.spec.ts.
+**Result:** PASSED (All 2034 tests passed cleanly, mutation proof verified)
 
-**Files changed:** .github/nightly-logs/02-verification-coverage.log, Frontend-PWA/src/core/services/services-tests/useBlitzMode.spec.ts
+**Files changed:** .github/nightly-logs/02-verification-coverage.log, Frontend-PWA/src/core/services/services-tests/useClashSyncUtils.spec.ts
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: verification
-  Cycle: nightly-cycle/2026-09-18
+  Cycle: nightly-cycle/2026-09-19
   Contract: b2e927ebff4e2ca5a343609133745d050f07d22fd9bf3e42481440c1d14079f0
-  Why: Extended useBlitzMode unit tests for FAB zero-selection state, default dwell throttle, manual action advancement, rapid click throttling, and falsy item handling
-  Change: Expanded useBlitzMode unit test suite
-  Result: Added 5 unit tests in useBlitzMode.spec.ts. Proven with mutation testing by changing label = 'Select' to 'Select_MUTATED' which caught the failure in useBlitzMode.spec.ts.
-  Files: .github/nightly-logs/02-verification-coverage.log, Frontend-PWA/src/core/services/services-tests/useBlitzMode.spec.ts
+  Why: Close coverage gap for transient retry logic in L1 Core network sync utility
+  Change: Frontend-PWA/src/core/services/services-tests/useClashSyncUtils.spec.ts -- Expanded useClashSyncUtils unit test suite with comprehensive tests for transient retry engine, backoff exhaustion, and AbortSignal cancellation handling
+  Result: PASSED (All 2034 tests passed cleanly, mutation proof verified)
+  Files: .github/nightly-logs/02-verification-coverage.log, Frontend-PWA/src/core/services/services-tests/useClashSyncUtils.spec.ts
   Nudges: 0
-  Execution: 49eab7158a54d16016554950ce412872d5b1fb3e
+  Execution: d1b063da4e5887c8dba3fdee024d51bb1bedda8b
 -->

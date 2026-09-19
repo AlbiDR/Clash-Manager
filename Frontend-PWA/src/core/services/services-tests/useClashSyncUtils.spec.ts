@@ -7,6 +7,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import {
   SYNC_REQUEST_TIMEOUT_MS,
+  SYNC_RETRY_DELAYS_MS,
   createEmptyWebAppData,
   fetchRemoteWithTimeout,
   normalizeSyncError,
@@ -19,7 +20,7 @@ vi.mock("../../api/SupabaseClient", () => ({
 
 describe("useClashSyncUtils", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
   });
 
   afterEach(() => {
@@ -72,7 +73,9 @@ describe("useClashSyncUtils", () => {
 
       const res = await fetchRemoteWithTimeout({ force: true });
       expect(res).toEqual(mockResult);
-      expect(fetchRemote).toHaveBeenCalledWith(
+      expect(fetchRemote).toHaveBeenCalledTimes(1);
+      expect(fetchRemote).toHaveBeenNthCalledWith(
+        1,
         expect.objectContaining({
           force: true,
           signal: expect.any(AbortSignal),
@@ -80,11 +83,12 @@ describe("useClashSyncUtils", () => {
       );
     });
 
-    it("should reject with original error when fetchRemote fails before timeout", async () => {
-      const fetchError = new Error("Fetch failed");
+    it("should reject with original error when fetchRemote fails before timeout with non-transient error", async () => {
+      const fetchError = new Error("401 Unauthorized");
       vi.mocked(fetchRemote).mockRejectedValueOnce(fetchError);
 
-      await expect(fetchRemoteWithTimeout({ force: false })).rejects.toThrow("Fetch failed");
+      await expect(fetchRemoteWithTimeout({ force: false })).rejects.toThrow("401 Unauthorized");
+      expect(fetchRemote).toHaveBeenCalledTimes(1);
     });
 
     it("should reject with 'Sync timed out' error and abort signal when timeout expires", async () => {
@@ -107,6 +111,125 @@ describe("useClashSyncUtils", () => {
       expect(fetchSignal?.aborted).toBe(true);
       expect(fetchSignal?.reason).toBeInstanceOf(Error);
       expect((fetchSignal?.reason as Error).message).toBe("Sync timed out");
+    });
+
+    describe("Transient Retry Engine", () => {
+      it("should retry transient HTTP 503 error after backoff and resolve when second attempt succeeds", async () => {
+        vi.useFakeTimers();
+
+        const mockResult = { lb: [], hh: [], timestamp: 200, blacklist: [] };
+        const transientError = new Error("503 Service Unavailable");
+
+        vi.mocked(fetchRemote)
+          .mockRejectedValueOnce(transientError)
+          .mockResolvedValueOnce(mockResult);
+
+        const fetchPromise = fetchRemoteWithTimeout({ force: true });
+
+        // First attempt failed; now waiting in 400ms backoff
+        await vi.advanceTimersByTimeAsync(SYNC_RETRY_DELAYS_MS[0]);
+
+        const res = await fetchPromise;
+        expect(res).toEqual(mockResult);
+        expect(fetchRemote).toHaveBeenCalledTimes(2);
+        expect(fetchRemote).toHaveBeenNthCalledWith(
+          1,
+          expect.objectContaining({ force: true, signal: expect.any(AbortSignal) })
+        );
+        expect(fetchRemote).toHaveBeenNthCalledWith(
+          2,
+          expect.objectContaining({ force: true, signal: expect.any(AbortSignal) })
+        );
+      });
+
+      it("should retry Undici TypeError fetch failed and statement timeout transient errors", async () => {
+        vi.useFakeTimers();
+
+        const mockResult = { lb: [], hh: [], timestamp: 300, blacklist: [] };
+        const statementTimeoutError = new Error("canceling statement due to statement timeout");
+        const undiciFetchError = new TypeError("fetch failed");
+
+        vi.mocked(fetchRemote)
+          .mockRejectedValueOnce(statementTimeoutError)
+          .mockRejectedValueOnce(undiciFetchError)
+          .mockResolvedValueOnce(mockResult);
+
+        const fetchPromise = fetchRemoteWithTimeout({ force: false });
+
+        // Advance past first backoff delay (400ms)
+        await vi.advanceTimersByTimeAsync(SYNC_RETRY_DELAYS_MS[0]);
+        // Advance past second backoff delay (2000ms)
+        await vi.advanceTimersByTimeAsync(SYNC_RETRY_DELAYS_MS[1]);
+
+        const res = await fetchPromise;
+        expect(res).toEqual(mockResult);
+        expect(fetchRemote).toHaveBeenCalledTimes(3);
+      });
+
+      it("should exhaust all retries when transient error persists and reject with final failure", async () => {
+        vi.useFakeTimers();
+
+        const persistentTransientError = new Error("504 Gateway Timeout");
+
+        vi.mocked(fetchRemote).mockRejectedValue(persistentTransientError);
+
+        const fetchPromise = fetchRemoteWithTimeout({ force: true }).catch((err) => err);
+
+        // Advance through all three backoff delays (400ms, 2000ms, 5000ms)
+        await vi.advanceTimersByTimeAsync(SYNC_RETRY_DELAYS_MS[0]);
+        await vi.advanceTimersByTimeAsync(SYNC_RETRY_DELAYS_MS[1]);
+        await vi.advanceTimersByTimeAsync(SYNC_RETRY_DELAYS_MS[2]);
+
+        const err = await fetchPromise;
+        expect(err).toBe(persistentTransientError);
+        expect(fetchRemote).toHaveBeenCalledTimes(4); // Initial + 3 retries
+      });
+
+      it("should abort retry backoff delay immediately if caller AbortSignal is triggered during backoff", async () => {
+        vi.useFakeTimers();
+
+        const transientError = new Error("Network request failed");
+        vi.mocked(fetchRemote).mockRejectedValueOnce(transientError);
+
+        const controller = new AbortController();
+        const fetchPromise = fetchRemoteWithTimeout({
+          force: false,
+          signal: controller.signal,
+        }).catch((err) => err);
+
+        // Wait a microtask so initial fetch fails and enters waitForRetry
+        await vi.advanceTimersByTimeAsync(0);
+
+        // Abort during backoff delay
+        const abortReason = new Error("User cancelled sync");
+        controller.abort(abortReason);
+
+        const err = await fetchPromise;
+        expect(err).toBe(abortReason);
+        expect(fetchRemote).toHaveBeenCalledTimes(1);
+      });
+
+      it("should handle pre-aborted caller signal and reject with caller abort reason", async () => {
+        const controller = new AbortController();
+        const preAbortReason = new Error("Pre-aborted by caller");
+        controller.abort(preAbortReason);
+
+        vi.mocked(fetchRemote).mockImplementationOnce(({ signal }) => {
+          if (signal?.aborted) {
+            return Promise.reject(signal.reason);
+          }
+          return Promise.resolve({ lb: [], hh: [], timestamp: 0, blacklist: [] });
+        });
+
+        const fetchPromise = fetchRemoteWithTimeout({
+          force: false,
+          signal: controller.signal,
+        }).catch((err) => err);
+
+        const err = await fetchPromise;
+        expect(err).toBe(preAbortReason);
+        expect(fetchRemote).toHaveBeenCalledTimes(1);
+      });
     });
   });
 });
