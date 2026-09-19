@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-18
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-19] PR #1882 [Stage 9]: Un-exported dead SliderDensity type in PrecisionSlider.vue
+**Domain:** architecture | **Commit:** 6266f374a | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1882)
+**Files:** .github/nightly-logs/09-refactor-proposals-coverage.log, .github/nightly-logs/09-refactor-proposals-pr-body.md, Frontend-PWA/src/shared/ui/PrecisionSlider.vue
+**Why:** ADR Priority 4: Dead Export Removal
+**Change:** Un-exported dead SliderDensity type in PrecisionSlider.vue
+**Result:** vue-tsc passed; 2034 vitest tests passed; depcruise 0 violations
+**Nudges:** 0
+
+
 ### [2026-09-19] PR #1881 [Stage 8]: Bumped vue to ^3.5.43 in monorepo catalogs and updated lockfile
 **Domain:** dependencies | **Commit:** 80526ebd2 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1881)
 **Files:** .github/nightly-logs/08-dependency-audit-coverage.log, .github/nightly-logs/08-dependency-audit-pr-body.md, package.json, pnpm-lock.yaml, pnpm-workspace.yaml
