@@ -43,6 +43,7 @@ on:
     branches: ["Beta", "Stable"]
 
 permissions:
+  actions: write
   contents: write
 
 concurrency:

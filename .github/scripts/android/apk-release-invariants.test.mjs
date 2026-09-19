@@ -109,4 +109,9 @@ test('a successful APK publication deploys its PWA release assets', () => {
     /gh workflow run deploy-pwa\.yml --ref "\$TARGET_BRANCH" -R "\$GITHUB_REPOSITORY"/,
     'the PWA workflow must be dispatched for the published APK branch',
   );
+  assert.match(
+    WORKFLOW,
+    /permissions:\n  actions: write\n  contents: write/,
+    'the APK workflow token needs actions: write to dispatch Deploy PWA',
+  );
 });
