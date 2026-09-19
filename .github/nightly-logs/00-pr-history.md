@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-18
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-19] PR #1876 [Stage 3]: 0 pending migrations; fold-state DEGRADED; migration-quality PASS; database-verification DB-UNAVAILABLE; read-only RLS and search_path baseline audit clean
+**Domain:** database | **Commit:** f47c40861 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1876)
+**Files:** .github/nightly-logs/03-baseline-consolidation-coverage.log, .github/nightly-logs/03-baseline-consolidation-pr-body.md
+**Why:** Master baseline remains fully current; no source edits required
+**Change:** 0 pending migrations; fold-state DEGRADED; migration-quality PASS; database-verification DB-UNAVAILABLE; read-only RLS and search_path baseline audit clean
+**Result:** Audit pass with 0 pending migrations and DB-UNAVAILABLE semantic status
+**Nudges:** 0
+
+
 ### [2026-09-19] PR #1875 [Stage 2]: Frontend-PWA/src/core/services/services-tests/useClashSyncUtils.spec.ts -- Expanded useClashSyncUtils unit test suite with comprehensive tests for transient retry engine, backoff exhaustion, and AbortSignal cancellation handling
 **Domain:** verification | **Commit:** bccca7b90 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1875)
 **Files:** .github/nightly-logs/02-verification-coverage.log, .github/nightly-logs/02-verification-pr-body.md, Frontend-PWA/src/core/services/services-tests/useClashSyncUtils.spec.ts
