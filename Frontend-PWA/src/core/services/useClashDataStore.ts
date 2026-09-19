@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
-import { DATA_STALENESS_THRESHOLD } from "../config";
+import { SOURCE_STALENESS_THRESHOLD } from "../config";
 import { useClashSync } from "./useClashSync";
 import { defineStore } from "pinia";
 import { ref, computed } from "vue";
@@ -57,10 +57,14 @@ export const useClashDataStore = defineStore("clashData", () => {
   /** Authoritative remote generation time used to detect stale background sync cycles. */
   const remoteSyncTime = computed(() => data.value?.remoteTimestamp || sync.remoteTimestamp.value);
 
-  /** Logic boundary: Marks data as 'STALE' if older than 30 minutes to prompt background refresh. */
+  /**
+   * Logic boundary for upstream freshness. This intentionally has a grace
+   * window larger than the 30-minute ingestion cadence; see
+   * SOURCE_STALENESS_THRESHOLD for the operational rationale.
+   */
   const isStale = computed(() => {
     if (!sync.lastSync.value) return true;
-    return Date.now() - sync.lastSync.value > DATA_STALENESS_THRESHOLD;
+    return Date.now() - sync.lastSync.value > SOURCE_STALENESS_THRESHOLD;
   });
 
   /** Indicates the store is ready for consumption. Guards components from accessing null `data`. */

@@ -82,8 +82,12 @@ describe("useClashDataStore", () => {
     store.lastSync = now;
     expect(store.isStale).toBe(false);
 
-    // Case 3: Synced 31 minutes ago
-    store.lastSync = now - (1000 * 60 * 31);
+    // Case 3: the regular 30-minute ingest cadence is still healthy.
+    store.lastSync = now - (1000 * 60 * 30);
+    expect(store.isStale).toBe(false);
+
+    // Case 4: a missed upstream cadence exceeds the 45-minute grace window.
+    store.lastSync = now - (1000 * 60 * 46);
     expect(store.isStale).toBe(true);
   });
 
