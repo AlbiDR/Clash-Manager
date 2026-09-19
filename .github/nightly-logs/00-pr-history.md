@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-18
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-19] PR #1886 [Stage 13]: Updated self-healing protocol log with 2026-09-19 findings
+**Domain:** pipeline | **Commit:** 4f7ae58c8 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1886)
+**Files:** .github/nightly-logs/13-self-healing-protocol-coverage.log, .github/nightly-logs/13-self-healing-protocol-pr-body.md, .github/nightly-logs/13-self-healing-protocol.md
+**Why:** Document Stage 5 watchdog nudge intervention and update Section 3 stage counters and audit durations
+**Change:** Updated self-healing protocol log with 2026-09-19 findings
+**Result:** PASS: Protocol document updated and verified with git diff --check
+**Nudges:** 0
+
+
 ### [2026-09-19] PR #1885 [Stage 12]: S12 APK UX audit PASS (1 candidate examined; 7 clean since calibration); checked selects, haptics, insets, 48px targets, select containment, link isolation, overscroll, keyboard, dark mode, media
 **Domain:** ux | **Commit:** df3995a24 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1885)
 **Files:** .github/nightly-logs/12-apk-ux-coverage.log, .github/nightly-logs/12-apk-ux-pr-body.md
