@@ -4,23 +4,23 @@
 
 In plain terms: this updates dependencies only. No project code was written or changed, though the app should be re-tested before release.
 
-**What changed:** package.json -- Bumped @types/node catalog entry to ^26.6.1, re-locked dependencies, and updated major version watchlist
+**What changed:** Bumped vue to ^3.5.43 in monorepo catalogs and updated lockfile
 
-**Why:** Tier 1 maintenance patch bump for @types/node and Tier 2 watchlist update
+**Why:** Safe Tier 1 patch update for vue with verified passing workspace test suite
 
-**Result:** pnpm test passed 205 test files (2029 tests)
+**Result:** 2034 workspace unit tests passing across all packages
 
 **Files changed:** .github/nightly-logs/08-dependency-audit-coverage.log, package.json, pnpm-lock.yaml, pnpm-workspace.yaml
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: dependencies
-  Cycle: nightly-cycle/2026-09-18
+  Cycle: nightly-cycle/2026-09-19
   Contract: b865578f1a0b5d4e90f264b4dbb792c4d309c9bbea08fd314cf47cef940ff9b8
-  Why: Tier 1 maintenance patch bump for @types/node and Tier 2 watchlist update
-  Change: package.json -- Bumped @types/node catalog entry to ^26.6.1, re-locked dependencies, and updated major version watchlist
-  Result: pnpm test passed 205 test files (2029 tests)
+  Why: Safe Tier 1 patch update for vue with verified passing workspace test suite
+  Change: Bumped vue to ^3.5.43 in monorepo catalogs and updated lockfile
+  Result: 2034 workspace unit tests passing across all packages
   Files: .github/nightly-logs/08-dependency-audit-coverage.log, package.json, pnpm-lock.yaml, pnpm-workspace.yaml
-  Nudges: 1
-  Execution: bb10c6bb7f66d99a2fe9b3427039735cd385027a
+  Nudges: 0
+  Execution: bb5881031be7e9cc3e6169cd3787fd329ab856fc
 -->
