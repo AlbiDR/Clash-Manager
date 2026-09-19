@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-18
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-19] PR #1879 [Stage 5]: Reconciled useClashSyncUtils timeout and transient retry engine details in core services README
+**Domain:** documentation | **Commit:** 18669f09d | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1879)
+**Files:** .github/nightly-logs/05-documentation-readme-coverage.log, .github/nightly-logs/05-documentation-readme-pr-body.md, Frontend-PWA/src/core/services/README.md
+**Why:** Document SYNC_REQUEST_TIMEOUT_MS update (25s) and SYNC_RETRY_DELAYS_MS transient transport retry sequence
+**Change:** Reconciled useClashSyncUtils timeout and transient retry engine details in core services README
+**Result:** git diff --check clean and useClashSyncUtils.spec.ts passed 12/12
+**Nudges:** 0
+
+
 ### [2026-09-19] PR #1878 [Stage 6]: docs(tsdoc): harden useClashSyncUtils interface contracts and inline logic annotations
 **Domain:** documentation | **Commit:** 208de4aa2 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1878)
 **Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, .github/nightly-logs/06-documentation-tsdoc-pr-body.md, Frontend-PWA/src/core/services/useClashSyncUtils.ts
