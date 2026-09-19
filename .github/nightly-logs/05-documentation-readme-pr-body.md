@@ -4,23 +4,23 @@
 
 In plain terms: this is a documentation change to 1 file in the documentation README area. Nothing about how the app runs is affected.
 
-**What changed:** Reconciled useBlitzMode batch deep-linking pipeline in core services README
+**What changed:** Reconciled useClashSyncUtils timeout and transient retry engine details in core services README
 
-**Why:** Document useBlitzMode.ts automated batch deep-linking, FAB state management, safety throttling, and teardown semantics
+**Why:** Document SYNC_REQUEST_TIMEOUT_MS update (25s) and SYNC_RETRY_DELAYS_MS transient transport retry sequence
 
-**Result:** Verified git diff --check clean
+**Result:** git diff --check clean and useClashSyncUtils.spec.ts passed 12/12
 
 **Files changed:** .github/nightly-logs/05-documentation-readme-coverage.log, Frontend-PWA/src/core/services/README.md
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: documentation
-  Cycle: nightly-cycle/2026-09-18
+  Cycle: nightly-cycle/2026-09-19
   Contract: cea68a5bbba1bd2cbc6d3bdfe2639f37f3935b571beab59f5da1501b1180b22d
-  Why: Document useBlitzMode.ts automated batch deep-linking, FAB state management, safety throttling, and teardown semantics
-  Change: Reconciled useBlitzMode batch deep-linking pipeline in core services README
-  Result: Verified git diff --check clean
+  Why: Document SYNC_REQUEST_TIMEOUT_MS update (25s) and SYNC_RETRY_DELAYS_MS transient transport retry sequence
+  Change: Reconciled useClashSyncUtils timeout and transient retry engine details in core services README
+  Result: git diff --check clean and useClashSyncUtils.spec.ts passed 12/12
   Files: .github/nightly-logs/05-documentation-readme-coverage.log, Frontend-PWA/src/core/services/README.md
   Nudges: 0
-  Execution: 9b02bfe35ae8a933a00bfa97e6a44584d2245507
+  Execution: 7c81e63fe07be9543df0bf97fb1cd01f649ccf1b
 -->
