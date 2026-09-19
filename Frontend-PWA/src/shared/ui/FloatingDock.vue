@@ -135,6 +135,15 @@ const { isDesktop } = useViewport();
     max-width: calc(100% - 32px);
     justify-content: center;
   }
+
+  /* Navigation renders through an animation wrapper. That wrapper must claim
+     the dock's full mobile width; otherwise its flex children size to their
+     content and leave the rest of the glass rail empty. Selection mode stays
+     deliberately content-sized above. */
+  .dock-container:not(.fab-mode) .dock-mode {
+    flex: 1 1 auto;
+    width: 100%;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
