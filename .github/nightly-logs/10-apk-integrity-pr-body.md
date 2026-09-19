@@ -4,23 +4,23 @@
 
 In plain terms: nothing needed fixing. This run checked the APK integrity area and found it already correct, so the only file here is the log recording that the check happened.
 
-**What was checked:** calibration CLEAN: verified asset links, manifest values, release metadata, version codes, and cleartext traffic policy (7 ordinary CLEAN since calibration)
+**What was checked:** Completed APK & PWA wrapper integrity audit across manifest, asset links, versioning, release metadata, and security policies.
 
-**Why:** All 86 files from recent commits maintained full wrapper integrity without requiring source modifications; calibration due
+**Why:** All wrapper invariants matched and verified with zero mismatches found.
 
-**Result:** Passed full wrapper invariant checks via pnpm audit:apk and pnpm apk:verify:source
+**Result:** pnpm audit:apk and pnpm apk:verify:source passed cleanly.
 
 **Files changed:** .github/nightly-logs/10-apk-integrity-coverage.log
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: apk
-  Cycle: nightly-cycle/2026-09-18
+  Cycle: nightly-cycle/2026-09-19
   Contract: 4f9b40864d05ffea731090b36800572dd7affedd8532fcd17c8ded8c9e2fbc12
-  Why: All 86 files from recent commits maintained full wrapper integrity without requiring source modifications; calibration due
-  Change: calibration CLEAN: verified asset links, manifest values, release metadata, version codes, and cleartext traffic policy (7 ordinary CLEAN since calibration)
-  Result: Passed full wrapper invariant checks via pnpm audit:apk and pnpm apk:verify:source
+  Why: All wrapper invariants matched and verified with zero mismatches found.
+  Change: Completed APK & PWA wrapper integrity audit across manifest, asset links, versioning, release metadata, and security policies.
+  Result: pnpm audit:apk and pnpm apk:verify:source passed cleanly.
   Files: .github/nightly-logs/10-apk-integrity-coverage.log
   Nudges: 0
-  Execution: 806efccfd11db5b03778405ab315824e1c68ba79
+  Execution: 84ba6dd13c4b3999fefb1d1db156ca307ffd4a6f
 -->
