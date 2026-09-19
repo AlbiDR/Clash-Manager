@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-18
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-19] PR #1885 [Stage 12]: S12 APK UX audit PASS (1 candidate examined; 7 clean since calibration); checked selects, haptics, insets, 48px targets, select containment, link isolation, overscroll, keyboard, dark mode, media
+**Domain:** ux | **Commit:** df3995a24 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1885)
+**Files:** .github/nightly-logs/12-apk-ux-coverage.log, .github/nightly-logs/12-apk-ux-pr-body.md
+**Why:** Structured APK UX audit reported status PASS with 0 violations across 78 files examined. Widen bounded candidate review of Frontend-PWA/src/shared/ui/ViewOptions.vue and changed files confirmed full compliance across all 10 hybrid UX categories.
+**Change:** S12 APK UX audit PASS (1 candidate examined; 7 clean since calibration); checked selects, haptics, insets, 48px targets, select containment, link isolation, overscroll, keyboard, dark mode, media
+**Result:** PASSED (ViewOptions.spec.ts verified 205 test files / 2034 tests passing)
+**Nudges:** 0
+
+
 ### [2026-09-19] PR #1884 [Stage 11]: Audited native WebView performance settings, Service Worker cache topology, and Vite bundle chunking; all optimal.
 **Domain:** apk | **Commit:** 0b311ac53 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1884)
 **Files:** .github/nightly-logs/11-apk-optimization-coverage.log, .github/nightly-logs/11-apk-optimization-pr-body.md
