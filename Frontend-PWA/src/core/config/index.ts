@@ -11,8 +11,9 @@
  */
 
 /**
- * Authoritative TTL (Time-To-Live) for clan data staleness.
- * Marks data as 'STALE' if older than 30 minutes to prompt background refresh.
+ * Client-sync TTL (Time-To-Live).
+ * Marks a client that has not refreshed its cached payload for 30 minutes as
+ * overdue for revalidation.
  *
  * @remarks
  * [DECISION LOG] CACHE DURATION:
@@ -22,9 +23,24 @@
 export const DATA_STALENESS_THRESHOLD = 1000 * 60 * 30; // 30 minutes
 
 /**
- * Logical representation of staleness in minutes for UI and status resolution.
+ * Client-sync staleness in minutes, used by the connection status resolution.
  */
 export const DATA_STALENESS_MINUTES = 30;
+
+/**
+ * Maximum acceptable age for the upstream ingestion snapshot.
+ *
+ * The data pipeline is scheduled every 30 minutes and a real ingestion takes
+ * roughly one to two minutes. Treating the schedule interval itself as the
+ * expiry point makes a healthy pipeline look stale for much of every cycle:
+ * the next run has not had time to start and finish when the old snapshot hits
+ * 30 minutes. This grace window still catches a missed run promptly, while a
+ * snapshot from the expected previous cycle remains healthy.
+ */
+export const SOURCE_STALENESS_THRESHOLD = 1000 * 60 * 45; // 45 minutes
+
+/** Logical representation of the upstream-snapshot threshold for UI status. */
+export const SOURCE_STALENESS_MINUTES = 45;
 
 /**
  * Threshold for triggering a background refresh on app visibility change.

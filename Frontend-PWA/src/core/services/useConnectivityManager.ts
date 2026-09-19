@@ -6,7 +6,7 @@ import { useClashDataStore } from "./useClashDataStore";
 import { useConnectionStatus } from "./useConnectionStatus";
 import { useApiState } from "../api/useApiState";
 import { formatTimeAgo } from "../utils/time";
-import { DATA_STALENESS_MINUTES } from "../config";
+import { DATA_STALENESS_MINUTES, SOURCE_STALENESS_MINUTES } from "../config";
 import type { HubHealth, HubMetadata } from "../types";
 
 /**
@@ -174,7 +174,7 @@ export function useConnectivityManager() {
     // recent enough to rely on. A successful client fetch establishes only the
     // first of those facts; it must not turn a one-hour-old source snapshot into
     // a green "DB" state.
-    const sourceIsStale = metadata.value.ageMinutes >= DATA_STALENESS_MINUTES;
+    const sourceIsStale = metadata.value.ageMinutes >= SOURCE_STALENESS_MINUTES;
     const clientIsStale = metadata.value.fetchedMinutes !== null
       && metadata.value.fetchedMinutes >= DATA_STALENESS_MINUTES;
     if (sourceIsStale || clientIsStale) {

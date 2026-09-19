@@ -7,6 +7,17 @@ import test from 'node:test';
 
 const WORKFLOW = readFileSync('.github/workflows/apk-release.yml', 'utf8');
 
+test('Android SDK setup avoids the retired tools package', () => {
+  // setup-android v3 defaults to `tools platform-tools`; Google removed the
+  // legacy `tools` package on 2026-09-14, preventing every APK build before
+  // compilation or signing. v4 defaults to the supported platform-tools.
+  assert.match(
+    WORKFLOW,
+    /android-actions\/setup-android@v4/,
+    'APK releases must use setup-android v4 or newer',
+  );
+});
+
 /**
  * The commit-back step only. The rest of the workflow may legitimately name a
  * branch (the trigger list does), so asserting over the whole file would either
@@ -15,8 +26,16 @@ const WORKFLOW = readFileSync('.github/workflows/apk-release.yml', 'utf8');
 function commitBackStep() {
   const start = WORKFLOW.indexOf('      - name: Commit signed APK back to repository');
   assert.ok(start !== -1, 'the commit-back step must still exist');
+  const end = WORKFLOW.indexOf('      - name: Deploy PWA release assets', start);
+  assert.ok(end !== -1, 'the PWA handoff after the commit-back step must still exist');
+  return WORKFLOW.slice(start, end);
+}
+
+function pwaDeploymentStep() {
+  const start = WORKFLOW.indexOf('      - name: Deploy PWA release assets');
+  assert.ok(start !== -1, 'the PWA deployment step must exist');
   const end = WORKFLOW.indexOf('      - name: Remove decoded keystore', start);
-  assert.ok(end !== -1, 'the step after the commit-back step must still exist');
+  assert.ok(end !== -1, 'the step after the PWA deployment must still exist');
   return WORKFLOW.slice(start, end);
 }
 
@@ -67,5 +86,32 @@ test('the branch reaches the script as an environment variable, never as interpo
   assert.ok(
     !/\$\{\{/.test(runBlock),
     'no GitHub expression may be interpolated into the run body; pass it through env instead',
+  );
+});
+
+test('a successful APK publication deploys its PWA release assets', () => {
+  // GITHUB_TOKEN-created pushes do not trigger Deploy PWA. The APK binary and
+  // latest.json must be explicitly deployed, otherwise users keep downloading
+  // the previous release even though the signed APK is committed to Stable.
+  const step = pwaDeploymentStep();
+  const [envBlock, runBlock] = step.split('        run: ');
+  assert.ok(runBlock, 'the PWA deployment step must have a run command');
+
+  assert.match(envBlock, /GH_TOKEN: \$\{\{ github\.token \}\}/, 'the dispatch needs the workflow token');
+  assert.match(
+    envBlock,
+    /TARGET_BRANCH: \$\{\{ github\.event\.workflow_run\.head_branch \|\| github\.ref_name \}\}/,
+    'the PWA deployment must target the branch that received the APK',
+  );
+  assert.ok(!/\$\{\{/.test(runBlock), 'GitHub expressions must not be interpolated into the command');
+  assert.match(
+    runBlock,
+    /gh workflow run deploy-pwa\.yml --ref "\$TARGET_BRANCH" -R "\$GITHUB_REPOSITORY"/,
+    'the PWA workflow must be dispatched for the published APK branch',
+  );
+  assert.match(
+    WORKFLOW,
+    /permissions:\n  actions: write\n  contents: write/,
+    'the APK workflow token needs actions: write to dispatch Deploy PWA',
   );
 });
