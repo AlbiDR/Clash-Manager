@@ -304,9 +304,9 @@ describe("useConsoleController", () => {
       expect(status.value.text).toBe("OFFLINE");
     });
 
-    it("returns 'Stale' when data is exactly 31 minutes old", () => {
+    it("returns 'Stale' when the upstream snapshot misses its 45-minute grace window", () => {
       const now = Date.now();
-      mockClashStore.lastSyncTime.value = now - 31 * 60000; // 31 minutes ago
+      mockClashStore.lastSyncTime.value = now - 46 * 60000;
       
       const options = createOptions();
       const { status } = useConsoleController(options);
@@ -326,9 +326,9 @@ describe("useConsoleController", () => {
       expect((status.value as any).nominal).toBe(true);
     });
 
-    it("uses lastSyncTime for age calculation", () => {
+    it("uses lastSyncTime for upstream freshness calculation", () => {
       const now = Date.now();
-      mockClashStore.lastSyncTime.value = now - 31 * 60000;   // 31m ago (STALE)
+      mockClashStore.lastSyncTime.value = now - 46 * 60000;
       
       const options = createOptions();
       const { status } = useConsoleController(options);

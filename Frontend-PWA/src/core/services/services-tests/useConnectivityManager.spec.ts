@@ -160,26 +160,26 @@ describe("useConnectivityManager", () => {
       });
     });
 
-    it("evaluates staleness exactly at the DATA_STALENESS_MINUTES threshold", () => {
+    it("allows the scheduled 30-minute ingest cadence and expires a missed cycle", () => {
       const now = Date.now();
 
-      // 29 minutes ago (under 30m threshold -> fresh)
-      mockStore.lastSyncTime = now - (29 * 60 * 1000);
+      // 30 minutes ago is a normal ingestion interval, not a stale source.
+      mockStore.lastSyncTime = now - (30 * 60 * 1000);
       mockStore.currentSource = "SUPABASE";
       const { hubHealth: freshHealth } = useConnectivityManager();
       expect(freshHealth.value.type).toBe("success");
       expect(freshHealth.value.confidence).toBe(100);
 
-      // 30 minutes ago (at 30m threshold -> stale)
-      mockStore.lastSyncTime = now - (30 * 60 * 1000);
-      vi.mocked(timeUtils.formatTimeAgo).mockReturnValue("30m ago");
+      // 45 minutes ago means the expected next run did not complete.
+      mockStore.lastSyncTime = now - (45 * 60 * 1000);
+      vi.mocked(timeUtils.formatTimeAgo).mockReturnValue("45m ago");
       const { hubHealth: staleHealth } = useConnectivityManager();
 
       expect(staleHealth.value).toEqual({
         type: "warning",
         label: "STALE",
         confidence: 40,
-        diagnosis: "Source data 30m ago"
+        diagnosis: "Source data 45m ago"
       });
     });
 
@@ -231,10 +231,10 @@ describe("useConnectivityManager", () => {
       });
     });
 
-    it("returns STALE state when data is older than 30 minutes", () => {
+    it("returns STALE state when the upstream snapshot exceeds its grace window", () => {
       const now = Date.now();
-      mockStore.lastSyncTime = now - (31 * 60 * 1000);
-      vi.mocked(timeUtils.formatTimeAgo).mockReturnValue("31m ago");
+      mockStore.lastSyncTime = now - (46 * 60 * 1000);
+      vi.mocked(timeUtils.formatTimeAgo).mockReturnValue("46m ago");
 
       const { hubHealth } = useConnectivityManager();
 
@@ -242,7 +242,7 @@ describe("useConnectivityManager", () => {
         type: "warning",
         label: "STALE",
         confidence: 40,
-        diagnosis: "Source data 31m ago"
+        diagnosis: "Source data 46m ago"
       });
     });
 

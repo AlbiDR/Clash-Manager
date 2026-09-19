@@ -88,7 +88,11 @@ export default defineConfig({
     vue() as any,
     VitePWA({
       registerType: "autoUpdate",
-      injectRegister: "script-defer",
+      // The app shell owns registration so it can use updateViaCache: "none".
+      // Leaving Vite's injected registerSW.js enabled creates a second,
+      // lower-control registration at window load; that race let a cached
+      // worker win after an app reset and revive an old UI shell.
+      injectRegister: false,
       strategies: "injectManifest",
       srcDir: "src/app",
       filename: "sw.ts",

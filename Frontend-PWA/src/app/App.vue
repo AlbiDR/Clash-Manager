@@ -17,11 +17,10 @@ import {
   useShareTarget,
 } from "@core";
 import { useHaptics } from "@shared";
-import { onMounted, computed, watch, ref } from "vue";
+import { onMounted, computed, watch } from "vue";
 import { RouterView, useRoute } from "vue-router";
 import { useIsDataLoading } from "vue-router/experimental";
 import { useHeadhunter } from "@features/headhunter";
-// import { registerSW } from "virtual:pwa-register";
 
 const clashDataStore = useClashDataStore();
 const { refresh } = clashDataStore;
@@ -78,9 +77,6 @@ watch(isOnline, (online, wasOnline) => {
   }
 });
 
-// SMART UPDATE: Automated PWA registration and update logic
-const updateServiceWorker = ref(() => {});
-
 onMounted(() => {
   // CRITICAL: Bypassing PWA logic in development/showcase mode to prevent
   // headless browser crashes during branding asset generation.
@@ -94,22 +90,22 @@ onMounted(() => {
 
   setTimeout(async () => {
     try {
-      const { registerSW } = await import("virtual:pwa-register");
-      const update = registerSW({
-        immediate: true,
-        onRegistered(registration: ServiceWorkerRegistration | undefined) {
-          // [THREAT:] Silent failure to check for updates can lead to stale app versions.
-          // [DECISION LOG] Implementing an hourly background check for Service Worker
-          // updates to ensure clients are not stuck on legacy code.
-          if (registration) {
-            setInterval(() => registration.update(), 60 * 60 * 1000);
-          }
-        },
-        onNeedRefresh() {
-          console.log("[PWA] Update available");
-        },
+      // [CACHE RECOVERY] Own the one and only registration instead of racing
+      // Vite's generated registerSW.js. `none` bypasses HTTP caches for both
+      // the worker and its imports, which is essential on GitHub Pages where
+      // the stable `/sw.js` URL otherwise permits an old worker to survive a
+      // reset and keep serving its prior app shell.
+      const scope = import.meta.env.BASE_URL;
+      const registration = await navigator.serviceWorker.register(`${scope}sw.js`, {
+        scope,
+        updateViaCache: "none",
       });
-      updateServiceWorker.value = update;
+
+      // Check on every cold start, then periodically for a long-lived shell.
+      // The worker calls skipWaiting and the controllerchange listener below
+      // reloads exactly once when a new version has taken control.
+      await registration.update();
+      setInterval(() => void registration.update(), 60 * 60 * 1000);
     } catch (pwaRegistrationError) {
       console.warn("[PWA] Registration failed", pwaRegistrationError);
     }
