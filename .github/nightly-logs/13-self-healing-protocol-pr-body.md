@@ -1,26 +1,26 @@
 ### Nightly Stage 13: Self-Healing Protocol - Pipeline Resilience Auditor
 
-**Status:** CLEAN
+**Status:** CHANGED
 
-In plain terms: nothing needed fixing. This run checked the self healing protocol area and found it already correct, so the only file here is the log recording that the check happened.
+In plain terms: no change was made to the project. This run ended as CHANGED and the only file here is the log recording that.
 
-**What was checked:** Scanned ledger records and coverage logs for 2026-09-18 across Stages 1-11; verified 11/11 merged cleanly with 0 failure classes and 0 watchdog rescues; clean-streak: 3
+**What changed:** Updated self-healing protocol log with 2026-09-19 findings
 
-**Why:** Pipeline execution on 2026-09-18 operated cleanly with zero stability failures or cross-stage coherence issues; protocol log updates unneeded
+**Why:** Document Stage 5 watchdog nudge intervention and update Section 3 stage counters and audit durations
 
-**Result:** Audit complete: checked 11 merged stages for date 2026-09-18 in nightly-run-ledger.json and coverage logs; 0 interventions, 0 unfinalized sentinels
+**Result:** PASS: Protocol document updated and verified with git diff --check
 
-**Files changed:** .github/nightly-logs/13-self-healing-protocol-coverage.log
+**Files changed:** .github/nightly-logs/13-self-healing-protocol-coverage.log, .github/nightly-logs/13-self-healing-protocol.md
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: pipeline
-  Cycle: nightly-cycle/2026-09-18
+  Cycle: nightly-cycle/2026-09-19
   Contract: df81a67e6d78a129caa22f2d9d3499a9aaf33de1a9f9c7718ff860013b7a86e1
-  Why: Pipeline execution on 2026-09-18 operated cleanly with zero stability failures or cross-stage coherence issues; protocol log updates unneeded
-  Change: Scanned ledger records and coverage logs for 2026-09-18 across Stages 1-11; verified 11/11 merged cleanly with 0 failure classes and 0 watchdog rescues; clean-streak: 3
-  Result: Audit complete: checked 11 merged stages for date 2026-09-18 in nightly-run-ledger.json and coverage logs; 0 interventions, 0 unfinalized sentinels
-  Files: .github/nightly-logs/13-self-healing-protocol-coverage.log
+  Why: Document Stage 5 watchdog nudge intervention and update Section 3 stage counters and audit durations
+  Change: Updated self-healing protocol log with 2026-09-19 findings
+  Result: PASS: Protocol document updated and verified with git diff --check
+  Files: .github/nightly-logs/13-self-healing-protocol-coverage.log, .github/nightly-logs/13-self-healing-protocol.md
   Nudges: 0
-  Execution: 1efa4d03a33ed998ed3310bc5179a99029bf9d02
+  Execution: 2fb382ae2684334e69a75470acda6fe57b200d32
 -->
