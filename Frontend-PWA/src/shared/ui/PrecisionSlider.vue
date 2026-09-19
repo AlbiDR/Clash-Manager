@@ -37,7 +37,7 @@ import {
  */
 
 /** Visual scale of the control. Governs handle, track and touch dimensions. */
-export type SliderDensity = "comfortable" | "compact";
+type SliderDensity = "comfortable" | "compact";
 
 /**
  * Rendered handle diameter per density, in pixels.
