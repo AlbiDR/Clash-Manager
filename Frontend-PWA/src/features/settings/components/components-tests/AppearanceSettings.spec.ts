@@ -14,6 +14,7 @@ vi.mock("../../composables/useSettings", () => ({
 
 describe("AppearanceSettings.vue", () => {
   const mockTheme = ref("auto");
+  const mockMotionPreference = ref("system");
   const mockIsRefreshing = ref(false);
   const mockWakeLock = {
     isSupported: true,
@@ -21,19 +22,23 @@ describe("AppearanceSettings.vue", () => {
     toggle: vi.fn()
   };
   const mockHandleThemeChange = vi.fn();
+  const mockHandleMotionPreferenceChange = vi.fn();
 
   beforeEach(() => {
     vi.clearAllMocks();
     mockTheme.value = "auto";
+    mockMotionPreference.value = "system";
     mockIsRefreshing.value = false;
     mockWakeLock.isActive.value = false;
     mockWakeLock.isSupported = true;
 
     vi.mocked(useSettingsModule.useSettings).mockReturnValue({
       theme: mockTheme,
+      motionPreference: mockMotionPreference,
       isRefreshing: mockIsRefreshing,
       wakeLock: mockWakeLock,
-      handleThemeChange: mockHandleThemeChange
+      handleThemeChange: mockHandleThemeChange,
+      handleMotionPreferenceChange: mockHandleMotionPreferenceChange,
     } as any);
   });
 
@@ -73,6 +78,22 @@ describe("AppearanceSettings.vue", () => {
 
     await wrapper.find('button[aria-label="Light Theme"]').trigger("click");
     expect(mockHandleThemeChange).toHaveBeenCalledWith("light");
+  });
+
+  it("uses a three-state motion preference with an explicit reduced option", async () => {
+    const wrapper = mount(AppearanceSettings, {
+      global: {
+        stubs: {
+          Icon: true,
+          SettingRow: true,
+          SettingsCard: { template: '<div class="settings-card-stub"><slot /></div>' }
+        }
+      }
+    });
+
+    expect(wrapper.find('button[aria-label="Follow device motion preference"]').classes()).toContain("active");
+    await wrapper.find('button[aria-label="Reduce motion"]').trigger("click");
+    expect(mockHandleMotionPreferenceChange).toHaveBeenCalledWith("reduced");
   });
 
   it("renders Wake Lock setting if supported", () => {

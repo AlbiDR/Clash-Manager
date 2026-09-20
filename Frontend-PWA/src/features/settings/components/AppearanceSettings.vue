@@ -7,7 +7,14 @@ defineProps<{
   initiallyExpanded?: boolean;
 }>();
 
-const { theme, wakeLock, isRefreshing, handleThemeChange } = useSettings();
+const {
+  theme,
+  motionPreference,
+  wakeLock,
+  isRefreshing,
+  handleThemeChange,
+  handleMotionPreferenceChange,
+} = useSettings();
 </script>
 
 <template>
@@ -74,6 +81,68 @@ const { theme, wakeLock, isRefreshing, handleThemeChange } = useSettings();
         <div
           class="selection-slider"
           :class="`pos-${theme}`"
+        />
+      </div>
+    </div>
+
+    <div class="motion-selection-area">
+      <div class="theme-label-group">
+        <span class="theme-main-label">Motion</span>
+        <span class="theme-sub-label">Follow your device or choose a calmer pace</span>
+      </div>
+
+      <div class="theme-switch-container">
+        <button
+          v-tactile
+          class="theme-option"
+          :class="{ active: motionPreference === 'system' }"
+          aria-label="Follow device motion preference"
+          @click="handleMotionPreferenceChange('system')"
+        >
+          <div class="option-icon-box">
+            <Icon
+              name="theme_auto"
+              size="18"
+            />
+          </div>
+          <span class="option-name label-badge">System</span>
+        </button>
+
+        <button
+          v-tactile
+          class="theme-option"
+          :class="{ active: motionPreference === 'reduced' }"
+          aria-label="Reduce motion"
+          @click="handleMotionPreferenceChange('reduced')"
+        >
+          <div class="option-icon-box">
+            <Icon
+              name="visibility"
+              size="18"
+            />
+          </div>
+          <span class="option-name label-badge">Reduced</span>
+        </button>
+
+        <button
+          v-tactile
+          class="theme-option"
+          :class="{ active: motionPreference === 'standard' }"
+          aria-label="Use standard app motion"
+          @click="handleMotionPreferenceChange('standard')"
+        >
+          <div class="option-icon-box">
+            <Icon
+              name="lightning"
+              size="18"
+            />
+          </div>
+          <span class="option-name label-badge">Standard</span>
+        </button>
+
+        <div
+          class="selection-slider motion-selection-slider"
+          :class="`motion-pos-${motionPreference}`"
         />
       </div>
     </div>
@@ -195,4 +264,19 @@ const { theme, wakeLock, isRefreshing, handleThemeChange } = useSettings();
   gap: var(--sys-space-8);
   margin-top: var(--sys-space-12);
 }
+
+.motion-selection-area {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sys-space-12);
+  margin-top: var(--sys-space-12);
+  padding: var(--sys-space-12);
+  border: 1px solid var(--sys-surface-glass-border);
+  border-radius: var(--sys-shape-corner-small);
+  background: var(--sys-color-surface-container-low);
+}
+
+.motion-pos-system { transform: translateX(0); }
+.motion-pos-reduced { transform: translateX(calc(100% + 4px)); }
+.motion-pos-standard { transform: translateX(calc(200% + 8px)); }
 </style>

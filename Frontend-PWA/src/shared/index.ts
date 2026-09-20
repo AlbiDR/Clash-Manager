@@ -63,6 +63,8 @@ export type {
   SliderTickMark,
 } from "./composables/usePrecisionSlider";
 export { useTheme } from "./composables/useTheme";
+export { useMotionPreference } from "./composables/useMotionPreference";
+export type { MotionPreference } from "./composables/useMotionPreference";
 export { useLongPress } from "./composables/useLongPress";
 export { useCountdown } from "./composables/useCountdown";
 export { useViewport } from "./composables/useViewport";

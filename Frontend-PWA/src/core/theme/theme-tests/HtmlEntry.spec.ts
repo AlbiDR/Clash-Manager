@@ -109,6 +109,13 @@ describe('HtmlEntry Module', () => {
     expect(html).toContain('document.documentElement.classList.add("dark")');
   });
 
+  it('applies the persisted motion preference before the app starts', () => {
+    const html = generateHtmlEntry(mockVersion);
+
+    expect(html).toContain('localStorage.getItem("cm_motion_preference")');
+    expect(html).toContain('data-motion-preference');
+  });
+
   it('should include the boot-stuck guard mechanism', () => {
     const html = generateHtmlEntry(mockVersion);
     expect(html).toContain('cm_boot_retry');

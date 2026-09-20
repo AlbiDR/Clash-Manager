@@ -330,10 +330,14 @@ const hasDescription = computed(() => Boolean(props.description || slots.descrip
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .setting-row,
-  .switch,
-  .switch .handle {
+  :global(html:not([data-motion-preference="standard"])) .setting-row,
+  :global(html:not([data-motion-preference="standard"])) .switch,
+  :global(html:not([data-motion-preference="standard"])) .switch .handle {
     transition: none;
   }
 }
+
+:global(html[data-motion-preference="reduced"]) .setting-row,
+:global(html[data-motion-preference="reduced"]) .switch,
+:global(html[data-motion-preference="reduced"]) .switch .handle { transition: none; }
 </style>

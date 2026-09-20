@@ -283,18 +283,24 @@ function finishDockSwap() {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .dock-container.is-swapping {
+  :global(html:not([data-motion-preference="standard"])) .dock-container.is-swapping {
     transition: none;
   }
 
-  .dock-swap-enter-active,
-  .dock-swap-leave-active {
+  :global(html:not([data-motion-preference="standard"])) .dock-swap-enter-active,
+  :global(html:not([data-motion-preference="standard"])) .dock-swap-leave-active {
     transition: opacity var(--sys-motion-duration-200) linear;
   }
 
-  .dock-swap-enter-from,
-  .dock-swap-leave-to {
+  :global(html:not([data-motion-preference="standard"])) .dock-swap-enter-from,
+  :global(html:not([data-motion-preference="standard"])) .dock-swap-leave-to {
     transform: none;
   }
 }
+
+:global(html[data-motion-preference="reduced"]) .dock-container.is-swapping { transition: none; }
+:global(html[data-motion-preference="reduced"]) .dock-swap-enter-active,
+:global(html[data-motion-preference="reduced"]) .dock-swap-leave-active { transition: opacity var(--sys-motion-duration-200) linear; }
+:global(html[data-motion-preference="reduced"]) .dock-swap-enter-from,
+:global(html[data-motion-preference="reduced"]) .dock-swap-leave-to { transform: none; }
 </style>
