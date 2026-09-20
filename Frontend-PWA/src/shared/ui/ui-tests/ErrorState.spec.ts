@@ -3,9 +3,11 @@
 import { afterEach, describe, it, expect, vi } from "vitest";
 import { mount } from "@vue/test-utils";
 import ErrorState from "../ErrorState.vue";
+import { CLIPBOARD_FEEDBACK_DURATION_MS } from "../../composables/useClipboard";
 
 describe("ErrorState.vue", () => {
   afterEach(() => {
+    vi.useRealTimers();
     vi.unstubAllGlobals();
   });
 
@@ -39,6 +41,7 @@ describe("ErrorState.vue", () => {
   });
 
   it("copies the complete reader-safe error detail", async () => {
+    vi.useFakeTimers();
     const writeText = vi.fn().mockResolvedValue(undefined);
     vi.stubGlobal("navigator", { clipboard: { writeText } });
     const wrapper = mount(ErrorState, {
@@ -50,5 +53,9 @@ describe("ErrorState.vue", () => {
 
     expect(writeText).toHaveBeenCalledWith("System Anomaly Detected");
     expect(wrapper.text()).toContain("Copied");
+
+    vi.advanceTimersByTime(CLIPBOARD_FEEDBACK_DURATION_MS);
+    await wrapper.vm.$nextTick();
+    expect(wrapper.text()).toContain("Copy details");
   });
 });

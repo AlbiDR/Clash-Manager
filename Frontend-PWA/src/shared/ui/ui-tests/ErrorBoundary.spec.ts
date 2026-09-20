@@ -102,12 +102,13 @@ describe('ErrorBoundary.vue', () => {
     const copyBtn = wrapper.find('.copy-btn');
     await copyBtn.trigger('click');
 
-    // Wait for the async copyError to complete and state to update
+    // Wait for the shared clipboard broker to complete and state to update.
     await nextTick();
     await nextTick();
 
     expect(writeTextMock).toHaveBeenCalled();
     expect(copyBtn.classes()).toContain('copied');
+    expect(copyBtn.attributes("aria-label")).toBe("Copied error details");
   });
 
   it('resets system and reloads page when recover button is clicked', async () => {
