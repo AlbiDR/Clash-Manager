@@ -36,6 +36,7 @@ import {
   WarHistoryChart,
   VoyageHistoryChart,
   BaseSegmentedControl,
+  Icon,
   formatRole,
 } from "@shared";
 import { computed, ref } from "vue";
@@ -51,6 +52,17 @@ import { formatTimeAgo, formatNumber, parseTimeAgoValue } from "@core";
  * [DECISION LOG] Defaults to 'war' (River War) as the primary clan performance metric.
  */
 const activeChartMode = ref<"war" | "voyage">("war");
+
+/**
+ * History is useful evidence, but not the first decision a roster operator
+ * makes. Keep it deliberately available without making every expanded row pay
+ * the visual and vertical cost of a chart.
+ */
+const isHistoryOpen = ref(false);
+
+const historyActionLabel = computed(() =>
+  isHistoryOpen.value ? "Hide performance history" : "Show performance history",
+);
 
 /**
  * Component Props Interface Definition.
@@ -218,30 +230,57 @@ const memberAccessibilityLabel = computed(() => {
         class="history-section"
         aria-label="Performance history"
       >
-        <header class="history-heading">
-          <span class="history-heading-label">Performance history</span>
-          <span class="history-heading-detail">War and Voyage trend</span>
-        </header>
-        <BaseSegmentedControl
-          v-model="activeChartMode"
-          :options="[
-            { label: 'War', value: 'war' },
-            { label: 'Voyage', value: 'voyage' }
-          ]"
-          compact
-          class="chart-toggle-margin"
-        />
+        <button
+          v-tactile
+          type="button"
+          class="history-trigger hit-target"
+          :aria-expanded="isHistoryOpen"
+          :aria-label="historyActionLabel"
+          @click.stop="isHistoryOpen = !isHistoryOpen"
+        >
+          <span class="history-heading">
+            <span class="history-heading-label">Performance history</span>
+            <span class="history-heading-detail">War and Voyage trend</span>
+          </span>
+          <span class="history-action">
+            <span class="history-action-label">{{ isHistoryOpen ? "Hide history" : "Show history" }}</span>
+            <Icon
+              name="chevron_down"
+              size="20"
+              class="history-chevron"
+              :class="{ 'is-open': isHistoryOpen }"
+            />
+          </span>
+        </button>
 
-        <WarHistoryChart
-          v-if="activeChartMode === 'war'"
-          :history="props.member.d.hist"
-          :loading="props.appIsRefreshing"
-        />
-        <VoyageHistoryChart
-          v-else
-          :history="props.member.d.v_hist"
-          :loading="props.appIsRefreshing"
-        />
+        <Transition name="history-details">
+          <div
+            v-if="isHistoryOpen"
+            class="history-details-reveal"
+          >
+            <div class="history-details-body">
+              <BaseSegmentedControl
+                v-model="activeChartMode"
+                :options="[
+                  { label: 'War', value: 'war' },
+                  { label: 'Voyage', value: 'voyage' }
+                ]"
+                compact
+              />
+
+              <WarHistoryChart
+                v-if="activeChartMode === 'war'"
+                :history="props.member.d.hist"
+                :loading="props.appIsRefreshing"
+              />
+              <VoyageHistoryChart
+                v-else
+                :history="props.member.d.v_hist"
+                :loading="props.appIsRefreshing"
+              />
+            </div>
+          </div>
+        </Transition>
       </section>
 
       <CardActions
@@ -267,13 +306,14 @@ const memberAccessibilityLabel = computed(() => {
 
 .history-section {
   display: grid;
-  gap: var(--sys-space-8);
   margin-top: var(--sys-space-16);
 }
 
 .history-heading {
   display: grid;
   gap: var(--sys-space-2);
+  min-width: 0;
+  text-align: left;
   color: var(--sys-color-on-surface-variant);
   font-family: var(--sys-font-family-mono);
   font-size: var(--sys-typescale-label-sm);
@@ -293,6 +333,104 @@ const memberAccessibilityLabel = computed(() => {
   font-weight: 600;
   letter-spacing: normal;
   text-transform: none;
+}
+
+.history-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sys-space-12);
+  width: 100%;
+  min-height: var(--sys-space-48);
+  padding: var(--sys-space-4) var(--sys-space-8);
+  color: inherit;
+  background: transparent;
+  border: 0;
+  border-radius: var(--sys-shape-corner-small);
+  cursor: pointer;
+  transition:
+    background-color var(--sys-motion-duration-200) var(--sys-motion-easing-standard),
+    color var(--sys-motion-duration-200) var(--sys-motion-easing-standard);
+}
+
+.history-trigger:hover,
+.history-trigger:focus-visible {
+  color: var(--sys-color-primary);
+  background: var(--sys-color-surface-container-highest);
+  outline: none;
+}
+
+.history-trigger:focus-visible {
+  box-shadow: 0 0 0 2px var(--sys-color-primary);
+}
+
+.history-action {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sys-space-4);
+  flex: 0 0 auto;
+  color: var(--sys-color-primary);
+  font-family: var(--sys-font-family-mono);
+  font-size: var(--sys-typescale-label-xs);
+  font-weight: 800;
+  letter-spacing: var(--sys-tracking-wide);
+  line-height: var(--sys-leading-none);
+  text-transform: uppercase;
+}
+
+.history-chevron {
+  transition: transform var(--sys-motion-duration-300) var(--sys-motion-easing-standard);
+}
+
+.history-chevron.is-open {
+  transform: rotate(180deg);
+}
+
+.history-details-reveal {
+  display: grid;
+  grid-template-rows: 1fr;
+  overflow: hidden;
+}
+
+.history-details-body {
+  display: grid;
+  gap: var(--sys-space-8);
+  min-height: 0;
+  padding-top: var(--sys-space-8);
+}
+
+.history-details-enter-active,
+.history-details-leave-active {
+  transition:
+    grid-template-rows var(--sys-motion-duration-300) var(--sys-motion-easing-standard),
+    opacity var(--sys-motion-duration-200) var(--sys-motion-easing-standard);
+}
+
+.history-details-enter-active .history-details-body,
+.history-details-leave-active .history-details-body {
+  transition: padding-top var(--sys-motion-duration-300) var(--sys-motion-easing-standard);
+}
+
+.history-details-enter-from,
+.history-details-leave-to {
+  grid-template-rows: 0fr;
+  opacity: 0;
+}
+
+.history-details-enter-from .history-details-body,
+.history-details-leave-to .history-details-body {
+  padding-top: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .history-trigger,
+  .history-chevron,
+  .history-details-enter-active,
+  .history-details-leave-active,
+  .history-details-enter-active .history-details-body,
+  .history-details-leave-active .history-details-body {
+    transition: none;
+  }
 }
 
 .card-actions-margin {
