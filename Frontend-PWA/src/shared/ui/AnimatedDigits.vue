@@ -15,11 +15,10 @@ const props = withDefaults(defineProps<{
   /** Display value. Separators remain visually static. */
   value: string | number;
   /** Spoken context for assistive technology. */
-  label?: string;
+  label: string;
   /** Fixed semantic direction where a value is known to count down/up. */
   direction?: "auto" | "up" | "down";
 }>(), {
-  label: undefined,
   direction: "auto",
 });
 
@@ -28,20 +27,20 @@ const displayCharacters = computed(() => [...displayValue.value]);
 const resolvedDirection = ref<"up" | "down">("up");
 const isMounted = ref(false);
 
-function numericValue(value: string) {
+function getNumericValue(value: string) {
   const digits = value.replace(/[^\d.-]/g, "");
   return Number(digits);
 }
 
-function isDigit(character: string) {
+function isDigitCharacter(character: string) {
   return /^\d$/.test(character);
 }
 
 watch(displayValue, (nextValue, previousValue) => {
   if (!isMounted.value || props.direction !== "auto") return;
 
-  const nextNumber = numericValue(nextValue);
-  const previousNumber = numericValue(previousValue);
+  const nextNumber = getNumericValue(nextValue);
+  const previousNumber = getNumericValue(previousValue);
   if (Number.isFinite(nextNumber) && Number.isFinite(previousNumber) && nextNumber !== previousNumber) {
     resolvedDirection.value = nextNumber > previousNumber ? "up" : "down";
   }
@@ -52,7 +51,7 @@ onMounted(() => {
 });
 
 const motionDirection = computed(() => props.direction === "auto" ? resolvedDirection.value : props.direction);
-const accessibleValue = computed(() => props.label ? `${props.label}: ${displayValue.value}` : displayValue.value);
+const accessibleValue = computed(() => `${props.label}: ${displayValue.value}`);
 </script>
 
 <template>
@@ -70,10 +69,10 @@ const accessibleValue = computed(() => props.label ? `${props.label}: ${displayV
         v-for="(character, index) in displayCharacters"
         :key="index"
         class="animated-digit-cell"
-        :class="{ 'animated-digit-cell--separator': !isDigit(character) }"
+        :class="{ 'animated-digit-cell--separator': !isDigitCharacter(character) }"
       >
         <Transition
-          v-if="isDigit(character)"
+          v-if="isDigitCharacter(character)"
           name="animated-digit"
         >
           <span
