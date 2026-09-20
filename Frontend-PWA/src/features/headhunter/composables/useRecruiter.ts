@@ -39,9 +39,9 @@ import { useLeaderboardScraper } from "./useLeaderboardScraper";
 export function useRecruiter() {
   const clashDataStore = useClashDataStore();
   const { data, isRefreshing } = storeToRefs(clashDataStore);
-  const { dismissRecruitsAction } = useHeadhunter();
+  const { dismissRecruitsAction, undismissRecruitsAction } = useHeadhunter();
   const blacklist = useRecruitBlacklist();
-  const { undo, success, info } = useToast();
+  const { undo, success, info, remove } = useToast();
   const { isOnline } = useConnectionStatus();
 
   /**
@@ -142,22 +142,39 @@ export function useRecruiter() {
       raw_potential_score: recruitSnapshot.potentialRawScore || 0
     }));
 
-    const { undismissRecruitsAction } = useHeadhunter();
-
     // 1. [OPTIMISTIC] Inject in-memory tombstones to hide items immediately.
     blacklist.hide(targetRecruitIds);
 
-    // 2. [PERSISTENCE] Dispatch network request. Failure triggers rollback.
-    dismissRecruitsAction(dismissalPayload).catch(() => {
-      blacklist.restore(targetRecruitIds);
-    });
+    // 2. [PERSISTENCE] Start persistence before offering Undo. An immediate
+    // undo waits for this request to settle before issuing its inverse, which
+    // prevents a slower dismissal from winning a request-order race.
+    const dismissalPromise = dismissRecruitsAction(dismissalPayload);
+    let undoToastId = "";
 
     // 3. [RESILIENCE] Provide undo mechanism for user error recovery.
-    undo(`Dismissed ${targetRecruitIds.length} recruits`, () => {
+    undoToastId = undo(`Dismissed ${targetRecruitIds.length} recruits`, () => {
       blacklist.restore(targetRecruitIds);
-      undismissRecruitsAction(targetRecruitIds, recruitsToRemove);
-      success("Dismissal cancelled");
+      void dismissalPromise
+        .then(async (wasDismissed) => {
+          if (!wasDismissed) return;
+          const wasRestored = await undismissRecruitsAction(targetRecruitIds, recruitsToRemove);
+          if (wasRestored) success("Dismissal restored");
+        })
+        // The main persistence observer below has already restored the local
+        // list and cleared the now-invalid Undo affordance on this path.
+        .catch(() => undefined);
     });
+
+    void dismissalPromise
+      .then((wasDismissed) => {
+        if (wasDismissed) return;
+        blacklist.restore(targetRecruitIds);
+        remove(undoToastId);
+      })
+      .catch(() => {
+        blacklist.restore(targetRecruitIds);
+        remove(undoToastId);
+      });
   }
 
   /**

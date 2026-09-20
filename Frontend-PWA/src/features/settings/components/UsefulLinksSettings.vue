@@ -27,6 +27,7 @@ import { useSettings } from "../composables/useSettings";
 import {
   appVersion,
   getSupercellLocale,
+  ROYALE_API_LOGO_URL,
   type ApkReleaseDownload,
   resolveLatestApkRelease,
   useExternalLink,
@@ -108,13 +109,13 @@ const usefulLinks = computed(() => {
       label: "RoyaleAPI Blog",
       desc: "Latest news and articles about Clash Royale",
       url: "https://royaleapi.com/blog",
-      logo: "https://cdn.royaleapi.com/static/img/branding/royaleapi-logo-128.png",
+      logo: ROYALE_API_LOGO_URL,
     },
     {
       label: "RoyaleAPI Giveaway",
       desc: "Claim free in-game cosmetics and perks",
       url: "https://royaleapi.com/free",
-      logo: "https://cdn.royaleapi.com/static/img/branding/royaleapi-logo-128.png",
+      logo: ROYALE_API_LOGO_URL,
     },
     {
       label: "Supercell ID Rewards",
@@ -126,7 +127,7 @@ const usefulLinks = computed(() => {
       label: "Clash Royale Store",
       desc: "Official Supercell store specials and deals",
       url: `https://store.supercell.com/${locale}/clashroyale`,
-      logo: "https://store.supercell.com/public/icon-nav-supercell-store-HDDWMNKU.png",
+      icon: "clash-royale",
     },
   ];
 

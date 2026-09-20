@@ -126,8 +126,9 @@ onUnmounted(clearTimer);
   <div
     class="toast"
     :class="[type, { 'is-actionable': !!actionLabel }]"
-    @mouseenter="clearTimer"
-    @mouseleave="startTimer"
+    :style="type === 'undo' ? { '--toast-duration': `${duration ?? 5000}ms` } : undefined"
+    @mouseenter="type !== 'undo' && clearTimer()"
+    @mouseleave="type !== 'undo' && startTimer()"
     @click="handleMainClick"
   >
     <!-- Visual Indicator for Undo (Progress circle or icon) -->
@@ -206,6 +207,7 @@ onUnmounted(clearTimer);
 
 <style scoped>
 .toast {
+  position: relative;
   display: flex;
   align-items: flex-start; /* Align top for multiline compatibility */
   gap: var(--sys-space-12);
@@ -253,6 +255,26 @@ onUnmounted(clearTimer);
   color: var(--sys-color-inverse-on-surface);
   border: 1px solid var(--sys-overlay-light-soft);
   padding: var(--sys-space-12) var(--sys-space-20);
+  overflow: hidden;
+}
+
+/* Undo expires by design. This quiet rail makes that window visible without
+   adding a second countdown label or competing with the single Undo action. */
+.toast.undo::after {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  content: "";
+  background: var(--sys-color-inverse-primary);
+  transform-origin: left;
+  animation: undo-window-countdown var(--toast-duration) linear forwards;
+}
+
+@keyframes undo-window-countdown {
+  from { transform: scaleX(1); }
+  to { transform: scaleX(0); }
 }
 
 .icon-side {
@@ -353,5 +375,11 @@ onUnmounted(clearTimer);
 .close-btn:hover {
   opacity: 1;
   background: var(--sys-overlay-light-soft);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toast.undo::after {
+    animation: none;
+  }
 }
 </style>

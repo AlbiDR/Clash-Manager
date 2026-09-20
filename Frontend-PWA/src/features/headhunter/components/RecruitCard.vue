@@ -150,8 +150,8 @@ const recruitAccessibilityLabel = computed(() => {
       <StatsGrid
         :columns="2"
         :loading="props.appIsRefreshing"
-        label="Score drivers"
-        detail="Recent recruitment activity"
+        label="Account record"
+        detail="Lifetime player metrics"
       >
         <StatisticItem
           label="Donations"
@@ -178,15 +178,6 @@ const recruitAccessibilityLabel = computed(() => {
           benchmark-metric="warWins"
           :benchmark-raw-value="props.recruit.d.war || 0"
         />
-      </StatsGrid>
-
-      <StatsGrid
-        :columns="2"
-        :loading="props.appIsRefreshing"
-        class="profile-grid-margin"
-        label="Score foundations"
-        detail="Account depth and history"
-      >
         <StatisticItem
           label="Cards Won"
           :value="props.recruit.d.cards || 0"
@@ -195,6 +186,15 @@ const recruitAccessibilityLabel = computed(() => {
           benchmark-metric="cardsWon"
           :benchmark-raw-value="props.recruit.d.cards || 0"
         />
+      </StatsGrid>
+
+      <StatsGrid
+        :columns="2"
+        :loading="props.appIsRefreshing"
+        class="profile-grid-margin"
+        label="Recruitment context"
+        detail="Score and scan metadata"
+      >
         <StatisticItem
           label="RPoS"
           :value="formatNumber(props.recruit.potentialRawScore, { maximumFractionDigits: 0 })"

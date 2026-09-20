@@ -84,6 +84,7 @@ describe("BaseCard.vue", () => {
     expect(wrapper.find(".expanded-slot").exists()).toBe(true);
     expect(wrapper.find(".card-detail-reveal").exists()).toBe(true);
     expect(wrapper.find(".card-body").attributes("role")).toBe("region");
+    expect(wrapper.find(".card-detail-sequence").exists()).toBe(true);
   });
 
   it("applies dynamic score style to stat-pod", () => {

@@ -18,6 +18,8 @@ describe("EmptyState.vue", () => {
       }
     });
     expect(wrapper.find(".empty-message").text()).toBe(message);
+    expect(wrapper.find(".empty-state").attributes("role")).toBe("status");
+    expect(wrapper.find("h2.empty-message").exists()).toBe(true);
   });
 
   it("renders the default icon when none is provided", () => {

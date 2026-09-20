@@ -11,6 +11,7 @@ import {
   type ConsoleFabState,
 } from "@core";
 import { usePullToRefresh } from "../index";
+import { vTactile } from "../directives/vTactile";
 import ConsoleHeader from "./ConsoleHeader.vue";
 import EmptyState from "./EmptyState.vue";
 import ErrorState from "./ErrorState.vue";
@@ -87,6 +88,7 @@ const { isShowcaseMode } = useShowcaseMode();
 const { isBlueprintMode } = useBlueprintMode();
 const { appVersion, activeBadge } = useSystemInfo();
 const isViewOptionsOpen = ref(false);
+const hasActiveSearch = computed(() => Boolean(props.searchQuery?.trim()));
 
 const activeFooterBadge = computed(() => {
   if (props.footerBadge !== undefined) return props.footerBadge;
@@ -142,6 +144,10 @@ watch(
 onUnmounted(() => {
   setFabVisible(false);
 });
+
+function handleClearSearch() {
+  emit("update:search", "");
+}
 </script>
 
 <template>
@@ -231,6 +237,7 @@ onUnmounted(() => {
       <!-- Error State -->
       <ErrorState
         v-if="props.syncError && props.isEmpty"
+        :title="props.title"
         :message="props.syncError"
         @retry="emit('refresh')"
       />
@@ -258,6 +265,20 @@ onUnmounted(() => {
         :hint="props.emptyHint"
       >
         <template #action>
+          <button
+            v-if="hasActiveSearch"
+            v-tactile
+            type="button"
+            class="empty-recovery-action"
+            @click="handleClearSearch"
+          >
+            <Icon
+              name="close"
+              size="16"
+              aria-hidden="true"
+            />
+            <span>Clear search</span>
+          </button>
           <slot name="empty-action" />
         </template>
       </EmptyState>
@@ -312,6 +333,33 @@ onUnmounted(() => {
 }
 .gpu-contain {
   contain: layout;
+}
+
+.empty-recovery-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sys-space-8);
+  min-height: var(--sys-space-48);
+  padding: 0 var(--sys-space-16);
+  border: 1px solid var(--sys-color-outline-variant);
+  border-radius: var(--sys-shape-corner-full);
+  background: var(--sys-color-surface-container-high);
+  color: var(--sys-color-on-surface);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 800;
+}
+
+.empty-recovery-action:hover {
+  border-color: var(--sys-color-primary);
+  background: var(--sys-color-primary-container);
+  color: var(--sys-color-on-primary-container);
+}
+
+.empty-recovery-action:focus-visible {
+  outline: 2px solid var(--sys-color-primary);
+  outline-offset: 2px;
 }
 .ptr-indicator {
   position: absolute;

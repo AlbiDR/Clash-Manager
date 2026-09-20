@@ -3,6 +3,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { mount } from "@vue/test-utils";
 import ConsoleLayout from "../ConsoleLayout.vue";
+import EmptyState from "../EmptyState.vue";
 import { defineComponent, h, nextTick, markRaw } from "vue";
 
 // Mock Core Services (Deep Imports per Mocking Rule)
@@ -154,6 +155,27 @@ describe("ConsoleLayout", () => {
     expect(wrapper.findComponent({ name: "EmptyState" }).exists()).toBe(true);
   });
 
+  it("offers a direct recovery action for a filtered-empty console", async () => {
+    const wrapper = mount(ConsoleLayout, {
+      props: {
+        ...defaultProps,
+        isEmpty: true,
+        searchQuery: "No match",
+      },
+      global: {
+        ...globalConfig,
+        stubs: {
+          ...globalConfig.stubs,
+          EmptyState,
+        },
+      },
+    });
+
+    await wrapper.find(".empty-recovery-action").trigger("click");
+
+    expect(wrapper.emitted("update:search")).toEqual([[""]]);
+  });
+
   it("renders error state when syncError and isEmpty are present", () => {
     const wrapper = mount(ConsoleLayout, {
       props: {
@@ -167,6 +189,7 @@ describe("ConsoleLayout", () => {
     const errorState = wrapper.findComponent({ name: "ErrorState" });
     expect(errorState.exists()).toBe(true);
     expect(errorState.props("message")).toBe("Network Error");
+    expect(errorState.props("title")).toBe("Test Title");
   });
 
   it("synchronizes FAB state correctly", async () => {

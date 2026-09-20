@@ -103,4 +103,5 @@ If multiple potential layout leaks, touch target issues, or raw inputs are ident
 - Use `SKIPPED` or `PARTIAL-RUN` only after restoring every non-log change.
 - Do not append another summary line manually; finalization replaces the lifecycle sentinel.
 - Run `node .github/scripts/nightly/nightly-stage.mjs budget --stage 12`, then `node .github/scripts/nightly/nightly-stage.mjs finalize --stage 12 --status <STATUS> --summary "<what changed>" --why "<rationale>" --result "<verification result>"`.
+- For a `CLEAN` run, use a concrete Result in this shape: `--result "apk-ux-audit-status.txt: PASS; apk-ux-audit.json: <N> candidate files reviewed; UX categories 1-10 checked"`. Replace `<N>` with the observed count. A bare `PASS`, `CLEAN`, or `audit complete` is not evidence and will be rejected once before publication.
 - Read `/tmp/nightly/final-handoff.txt` for the publication data, return the exact contents of `/tmp/nightly/pr-body.md` verbatim and alone as your final message, and end immediately. Jules native publication owns the branch, commit, push, and non-draft PR creation.

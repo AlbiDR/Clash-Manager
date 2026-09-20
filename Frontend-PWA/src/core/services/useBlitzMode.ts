@@ -93,6 +93,16 @@ export function useBlitzMode(
   });
 
   /**
+   * Describes a completed sequence without claiming that the external app
+   * accepted every invite. The web layer can truthfully report the number of
+   * profiles it handed off, but the game owns the outcome beyond that boundary.
+   */
+  function formatSequenceCompletion(sequenceName: "Blitz" | "Batch", profileCount: number) {
+    const profileLabel = profileCount === 1 ? "profile" : "profiles";
+    return `${sequenceName} sequence complete · ${profileCount} ${profileLabel}`;
+  }
+
+  /**
    * UI State for the Floating Action Button (FAB).
    */
   const fabState = computed(() => {
@@ -172,7 +182,7 @@ export function useBlitzMode(
 
     if (blitzCurrentItemIndex.value >= selectedIds.value.length) {
       stopBlitz();
-      info("Blitz complete");
+      info(formatSequenceCompletion("Blitz", selectedIds.value.length));
       return;
     }
 
@@ -192,7 +202,7 @@ export function useBlitzMode(
       } else {
         blitzOperationTimer = setTimeout(() => {
           stopBlitz();
-          info("Blitz complete");
+          info(formatSequenceCompletion("Blitz", selectedIds.value.length));
         }, BLITZ_COMPLETION_DELAY);
       }
     } else {
@@ -293,7 +303,7 @@ export function useBlitzMode(
         batchExecutionQueue.value.shift();
       }
       if (batchExecutionQueue.value.length === 0) {
-        info("Batch complete");
+        info(formatSequenceCompletion("Batch", selectedIds.value.length));
       }
     }, BLITZ_BATCH_SHIFT_DELAY);
   }

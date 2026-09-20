@@ -31,7 +31,7 @@ const props = defineProps<{
       v-if="props.label"
       class="stats-section-heading"
     >
-      <span>{{ props.label }}</span>
+      <span class="stats-section-label">{{ props.label }}</span>
       <span
         v-if="props.detail"
         class="stats-section-detail"
@@ -54,10 +54,8 @@ const props = defineProps<{
 }
 
 .stats-section-heading {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--sys-space-12);
+  display: grid;
+  gap: var(--sys-space-2);
   min-width: 0;
   color: var(--sys-color-on-surface-variant);
   font-family: var(--sys-font-family-mono);
@@ -68,15 +66,16 @@ const props = defineProps<{
   text-transform: uppercase;
 }
 
+.stats-section-label {
+  width: fit-content;
+}
+
 .stats-section-detail {
-  overflow: hidden;
-  color: var(--sys-color-primary);
-  font-weight: 700;
+  color: var(--sys-color-outline);
+  font-size: var(--sys-typescale-label-xs);
+  font-weight: 600;
   letter-spacing: normal;
-  text-align: end;
-  text-overflow: ellipsis;
   text-transform: none;
-  white-space: nowrap;
 }
 
 .stats-grid {

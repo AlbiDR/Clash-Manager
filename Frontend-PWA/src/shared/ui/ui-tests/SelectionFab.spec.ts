@@ -66,17 +66,20 @@ describe("SelectionFab.vue", () => {
   describe("Dismiss / Abort Button", () => {
     it("renders 'Clear' label when no selection and nothing active", () => {
       const wrapper = mountFab();
-      const dismissBtn = wrapper.find(".fab-btn.danger");
+      const dismissBtn = wrapper.find(".fab-btn.dismiss");
       expect(dismissBtn.text()).toContain("Clear");
       expect(dismissBtn.classes()).not.toContain("compact");
+      expect(dismissBtn.classes()).not.toContain("danger");
+      expect(wrapper.find(".selection-summary").text()).toBe("Choose entries to begin");
     });
 
     it("renders as compact when items are selected", async () => {
       fabState.selectionCount = 3;
       const wrapper = mountFab();
-      const dismissBtn = wrapper.find(".fab-btn.danger");
+      const dismissBtn = wrapper.find(".fab-btn.dismiss");
       expect(dismissBtn.text()).not.toContain("Clear");
       expect(dismissBtn.classes()).toContain("compact");
+      expect(dismissBtn.classes()).not.toContain("danger");
       expect(dismissBtn.attributes("aria-label")).toBe("Clear selection (3)");
       expect(wrapper.find(".selection-summary").text()).toBe("3selected");
     });
@@ -86,21 +89,22 @@ describe("SelectionFab.vue", () => {
       fabState.dismissLabel = "Dismiss selected recruits";
       const wrapper = mountFab();
 
-      expect(wrapper.find(".fab-btn.danger").attributes("aria-label"))
+      expect(wrapper.find(".fab-btn.dismiss").attributes("aria-label"))
         .toBe("Dismiss selected recruits (2)");
     });
 
     it("calls onDismiss when clicked in normal mode", async () => {
       const wrapper = mountFab();
-      await wrapper.find(".fab-btn.danger").trigger("click");
+      await wrapper.find(".fab-btn.dismiss").trigger("click");
       expect(fabState.onDismiss).toHaveBeenCalled();
     });
 
     it("calls onAbortHarvest when clicked while harvesting", async () => {
       fabState.isHarvesting = true;
       const wrapper = mountFab();
-      const dismissBtn = wrapper.find(".fab-btn.danger");
+      const dismissBtn = wrapper.find(".fab-btn.dismiss");
       expect(dismissBtn.attributes("aria-label")).toBe("Abort Harvest");
+      expect(dismissBtn.classes()).toContain("danger");
 
       await dismissBtn.trigger("click");
       expect(fabState.onAbortHarvest).toHaveBeenCalled();
@@ -143,6 +147,8 @@ describe("SelectionFab.vue", () => {
       // blitzEnabled was true and silently did nothing when clicked there.
       const wrapper = mountFab();
       expect(wrapper.find(".fab-btn.blitz").exists()).toBe(true);
+      expect(wrapper.find(".fab-btn.blitz").attributes("aria-label")).toBe("Start Blitz for 5 selected");
+      expect(wrapper.find(".blitz-count").text()).toBe("5");
       expect(wrapper.find("button[aria-label='Global Harvest']").exists()).toBe(false);
       expect(wrapper.find("button[aria-label='Local Harvest']").exists()).toBe(false);
     });
@@ -167,6 +173,7 @@ describe("SelectionFab.vue", () => {
       const wrapper = mountFab();
       const blitzBtn = wrapper.find(".fab-btn.blitz");
       expect(blitzBtn.element.disabled).toBe(true);
+      expect(blitzBtn.attributes("aria-label")).toBe("Select one or more entries to start Blitz");
     });
 
     it("calls relevant callbacks when buttons are clicked", async () => {

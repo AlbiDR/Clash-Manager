@@ -78,7 +78,7 @@ describe("FloatingDock.vue", () => {
 
     const wrapper = mountDock();
     
-    const dismissBtn = wrapper.find(".fab-btn.danger");
+    const dismissBtn = wrapper.find(".fab-btn.dismiss");
     expect(dismissBtn.classes()).toContain("compact");
   });
 
@@ -89,7 +89,7 @@ describe("FloatingDock.vue", () => {
 
     const wrapper = mountDock();
     
-    const dismissBtn = wrapper.find(".fab-btn.danger");
+    const dismissBtn = wrapper.find(".fab-btn.dismiss");
     expect(dismissBtn.classes()).not.toContain("compact");
   });
 

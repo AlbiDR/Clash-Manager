@@ -130,13 +130,13 @@ describe("RecruitCard.vue", () => {
     expect(wrapper.findComponent({ name: "CardActions" }).exists()).toBe(true);
   });
 
-  it("separates recent recruiting signals from the account profile", () => {
+  it("groups lifetime account metrics separately from recruitment metadata", () => {
     const wrapper = mountRecruitCard({ expanded: true });
     const headings = wrapper.findAll(".stats-section-heading").map((heading) => heading.text());
 
     expect(headings).toEqual([
-      "Score driversRecent recruitment activity",
-      "Score foundationsAccount depth and history",
+      "Account recordLifetime player metrics",
+      "Recruitment contextScore and scan metadata",
     ]);
   });
 

@@ -45,6 +45,15 @@ describe("Toast.vue", () => {
     });
   });
 
+  it("renders a duration-aware progress rail for undo", () => {
+    const wrapper = mount(Toast, {
+      props: { ...defaultProps, type: "undo", duration: 7000 },
+    });
+
+    expect(wrapper.classes()).toContain("undo");
+    expect(wrapper.attributes("style")).toContain("--toast-duration: 7000ms");
+  });
+
   it("emits dismiss event when close button is clicked", async () => {
     const wrapper = mount(Toast, {
       props: defaultProps,
@@ -124,6 +133,17 @@ describe("Toast.vue", () => {
     // Mouse leave: restart timer
     await wrapper.trigger("mouseleave");
     vi.advanceTimersByTime(3000);
+    expect(wrapper.emitted("dismiss")).toBeTruthy();
+  });
+
+  it("does not pause an undo window on hover", async () => {
+    const wrapper = mount(Toast, {
+      props: { ...defaultProps, type: "undo", duration: 3000 },
+    });
+
+    await wrapper.trigger("mouseenter");
+    vi.advanceTimersByTime(3000);
+
     expect(wrapper.emitted("dismiss")).toBeTruthy();
   });
 

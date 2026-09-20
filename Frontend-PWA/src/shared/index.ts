@@ -3,7 +3,6 @@
 
 // [UI] UI Components
 export { default as Icon } from "./ui/Icon.vue";
-export { default as ClashRoyaleIcon } from "./ui/ClashRoyaleIcon.vue";
 export { default as BaseSelect } from "./ui/BaseSelect.vue";
 export { default as BaseCard } from "./ui/BaseCard.vue";
 export { default as BaseCardSkeleton } from "./ui/BaseCardSkeleton.vue";
@@ -75,6 +74,8 @@ export { useHistoryChart } from "./composables/useHistoryChart";
 export { useBaseHistoryChart } from "./composables/useBaseHistoryChart";
 export { useStatusPill } from "./composables/useStatusPill";
 export { useBenchmarkedStat } from "./composables/useBenchmarkedStat";
+export { useClipboard } from "./composables/useClipboard";
+export type { ClipboardState } from "./composables/useClipboard";
 
 export { useCardMechanics } from "./composables/useCardMechanics";
 export { useHaptics, resetHapticsState } from "./composables/useHaptics";

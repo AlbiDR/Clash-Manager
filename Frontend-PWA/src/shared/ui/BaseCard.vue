@@ -230,7 +230,12 @@ const scoreActionLabel = computed(() => {
           role="region"
           :aria-label="detailsRegionLabel"
         >
-          <slot name="expanded-content" />
+          <!-- One owned wrapper gives every feature's detail slot the same
+               unobtrusive arrival treatment without coupling shared UI to a
+               particular card's content. -->
+          <div class="card-detail-sequence">
+            <slot name="expanded-content" />
+          </div>
         </div>
       </div>
     </Transition>
@@ -348,7 +353,19 @@ const scoreActionLabel = computed(() => {
 .name-block {
   display: flex;
   flex-direction: column;
+  flex: 1 1 auto;
   min-width: 0;
+}
+
+/* Player names are the card's lowest-priority horizontal claimant after the
+   score and expand actions. A long name must yield within its own column,
+   never displace those two stable 48px controls or force the row wider. */
+.name-block :deep(.player-name) {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .header-actions {
   display: flex;
@@ -456,17 +473,86 @@ const scoreActionLabel = computed(() => {
   border-top: 1px solid var(--sys-overlay-dark-subtle);
 }
 
+.card-detail-sequence {
+  min-width: 0;
+}
+
 .card-details-enter-active,
 .card-details-leave-active {
   transition:
     grid-template-rows var(--sys-motion-duration-300) var(--sys-motion-easing-decelerate),
-    opacity var(--sys-motion-duration-200) var(--sys-motion-easing-standard);
+    opacity var(--sys-motion-duration-300) var(--sys-motion-easing-standard);
+}
+
+/* The body owns 32px of spacing plus its divider. If those dimensions are
+   left static, a zero-height grid track still has a visible tail and Vue
+   removes that remainder only on unmount. Animate them with the track so a
+   collapse finishes exactly where the reader sees it finish. */
+.card-details-enter-active .card-body,
+.card-details-leave-active .card-body {
+  transition:
+    margin-top var(--sys-motion-duration-300) var(--sys-motion-easing-decelerate),
+    padding-top var(--sys-motion-duration-300) var(--sys-motion-easing-decelerate),
+    border-color var(--sys-motion-duration-300) var(--sys-motion-easing-standard);
 }
 
 .card-details-enter-from,
 .card-details-leave-to {
   grid-template-rows: 0fr;
   opacity: 0;
+}
+
+.card-details-enter-from .card-body,
+.card-details-leave-to .card-body {
+  margin-top: 0;
+  padding-top: 0;
+  border-top-color: transparent;
+}
+
+/* The grid reveal gives the details their space; this short, delayed settle
+   gives the information its own arrival without moving the surrounding list.
+   It is deliberately shared so roster and recruit cards feel like one system. */
+.card-details-enter-active .card-detail-sequence {
+  animation: card-detail-content-in var(--sys-motion-duration-200)
+    var(--sys-motion-easing-decelerate) 60ms both;
+}
+
+@keyframes card-detail-content-in {
+  from {
+    opacity: 0;
+    transform: translateY(var(--sys-space-4));
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 360px) {
+  /* The action rail keeps its full targets. Reclaim only structural spacing so
+     a real player name still has a readable column between identity and score. */
+  .card {
+    padding-inline: var(--sys-space-12);
+  }
+
+  .card-header {
+    gap: var(--sys-space-8);
+  }
+
+  .identity-group {
+    gap: var(--sys-space-10);
+  }
+
+  .meta-stack {
+    width: var(--sys-space-56);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card-details-enter-active .card-detail-sequence {
+    animation: none;
+  }
 }
 
 /* Shared Hit Target Helper */

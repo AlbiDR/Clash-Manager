@@ -62,6 +62,7 @@ describe("StatusPill", () => {
     
     const trigger = wrapper.find(".status-trigger");
     expect(trigger.attributes("aria-expanded")).toBe("false");
+    expect(trigger.attributes("aria-label")).toBe("Ready. Show data status details.");
     expect(wrapper.find(".status-details").exists()).toBe(false);
     
     // Simulate v-tactile interaction
@@ -108,6 +109,25 @@ describe("StatusPill", () => {
     });
     expect(wrapper.find(".status-label").exists()).toBe(true);
     expect(wrapper.text()).toContain("Loading");
+  });
+
+  it("lets an in-progress refresh disclose the data already on screen", async () => {
+    const wrapper = mount(StatusPill, {
+      props: {
+        type: "loading",
+        text: "SYNCING",
+        remoteInfo: { source: "SUPABASE", dataAge: "4m ago", lastFetched: "Just now" },
+      },
+    });
+
+    const trigger = wrapper.find(".status-trigger");
+    expect(trigger.attributes("aria-expanded")).toBe("false");
+
+    await trigger.trigger("click");
+
+    expect(wrapper.find(".status-details").text()).toContain("Checking for updates");
+    expect(wrapper.find(".status-details").text()).toContain("Source snapshot");
+    expect(wrapper.find(".status-details").text()).toContain("Last checked");
   });
 
   it("speaks the caller's loading label rather than a hardcoded one", () => {

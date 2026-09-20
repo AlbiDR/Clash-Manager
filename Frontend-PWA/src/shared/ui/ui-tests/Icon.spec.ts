@@ -20,4 +20,17 @@ describe("Icon.vue", () => {
     expect(props.name).toBe("gear");
     expect(props.size).toBe("24");
   });
+
+  it("renders the full Clash Royale brand mark through the shared primitive", () => {
+    const wrapper = mount(Icon, {
+      props: { name: "clash-royale" },
+    });
+
+    expect(wrapper.find("svg").attributes("viewBox")).toBe("11 10 26 29");
+    const paths = wrapper.findAll<SVGPathElement>(".icon-path");
+
+    expect(paths).toHaveLength(4);
+    expect(paths[0].element.style.fill).not.toBe("");
+    expect(paths[2].element.style.fill).not.toBe(paths[0].element.style.fill);
+  });
 });

@@ -2,7 +2,7 @@
 <!-- Copyright (C) 2026 AlbiDR -->
 <script setup lang="ts">
 import { computed } from "vue";
-import { ICONS } from "../../core/theme/icons";
+import { ICONS, ICON_VIEW_BOXES, type IconPath } from "../../core/theme/icons";
 
 const props = defineProps<{
   name: string;
@@ -15,6 +15,14 @@ const sizePx = computed(() => {
   if (typeof props.size === "number") return `${props.size}px`;
   return props.size || "24px";
 });
+
+const iconPaths = computed<readonly IconPath[]>(() => {
+  const definition = ICONS[props.name];
+  if (!definition) return [];
+  return typeof definition === "string" ? [{ d: definition }] : definition;
+});
+
+const resolvedViewBox = computed(() => props.viewBox || ICON_VIEW_BOXES[props.name] || "0 0 24 24");
 </script>
 
 <template>
@@ -22,15 +30,20 @@ const sizePx = computed(() => {
     class="icon"
     :width="sizePx"
     :height="sizePx"
-    :viewBox="viewBox || '0 0 24 24'"
+    :viewBox="resolvedViewBox"
     role="img"
     v-bind="{ 'aria-hidden': 'true' }"
     :style="{ width: sizePx, height: sizePx }"
   >
     <title>{{ name }} icon</title>
     <path
+      v-for="path in iconPaths"
+      :key="path.d"
       class="icon-path"
-      :d="ICONS[name] || ''"
+      :d="path.d"
+      :fill="path.fill"
+      :style="path.fill ? { fill: path.fill } : undefined"
+      :opacity="path.opacity"
       v-bind="{ 'vector-effect': 'non-scaling-stroke' }"
     />
   </svg>

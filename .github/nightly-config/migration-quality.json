@@ -61,7 +61,8 @@
     "Backend/supabase/migrations/20260917070530_roster_view_uses_battle_stats_function.sql": "97f6325f9889759d5cea443fd02ba5eb75710d8b971f6654fd1b628bfec35103",
     "Backend/supabase/migrations/20260917070640_fix_battle_stats_today_branch_sargable.sql": "0e658110464eeb865002b92276a828de6fc5930ed3c6042dcb07188384a2d0c4",
     "Backend/supabase/migrations/20260917221300_optimize_roster_battle_stats_planning.sql": "dc0151267faef6abcabc8212115647ceebcf01227f5c110722706468d81d4a97",
-    "Backend/supabase/migrations/20260917221532_specialize_roster_battle_stats_query.sql": "8066097a2c25ec349a77f4d9cbde40279233f7e689df87830383a01cd1bb646e"
+    "Backend/supabase/migrations/20260917221532_specialize_roster_battle_stats_query.sql": "8066097a2c25ec349a77f4d9cbde40279233f7e689df87830383a01cd1bb646e",
+    "Backend/supabase/migrations/20260920150554_reconcile_sync_recruits_provenance.sql": "a60d1098943807f1a2b2507ddee5121505d9b89c89278215d68e0149e46b3c40"
   },
   "exemptions": []
 }

@@ -222,9 +222,17 @@ describe("MemberCard.vue", () => {
     const headings = wrapper.findAll(".stats-section-heading").map((heading) => heading.text());
 
     expect(headings).toEqual([
-      "Score driversCurrent clan contribution",
-      "Score foundationsDurable profile",
+      "Score driversRecent clan contribution",
+      "Score foundationsProven record",
     ]);
+  });
+
+  it("gives the chart its own labelled history section", () => {
+    const wrapper = mountMemberCard({ expanded: true });
+
+    expect(wrapper.find(".history-section").attributes("aria-label")).toBe("Performance history");
+    expect(wrapper.find(".history-heading-label").text()).toBe("Performance history");
+    expect(wrapper.find(".history-heading-detail").text()).toBe("War and Voyage trend");
   });
 
   it("shows refreshing state in expanded content", () => {

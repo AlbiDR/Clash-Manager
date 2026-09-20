@@ -10,16 +10,19 @@ defineProps<{
 </script>
 
 <template>
-  <div class="empty-state">
+  <section
+    class="empty-state"
+    role="status"
+  >
     <div class="empty-icon-box">
       <Icon
         :name="icon || 'telescope'"
         size="48"
       />
     </div>
-    <p class="empty-message">
+    <h2 class="empty-message">
       {{ message }}
-    </p>
+    </h2>
     <p
       v-if="hint"
       class="empty-hint"
@@ -27,7 +30,7 @@ defineProps<{
       {{ hint }}
     </p>
     <slot name="action" />
-  </div>
+  </section>
 </template>
 
 <style scoped>
@@ -38,8 +41,8 @@ defineProps<{
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1rem;
-  padding: 4rem 2rem;
+  gap: var(--sys-space-16);
+  padding: var(--sys-space-48) var(--sys-space-24);
   text-align: center;
   background: var(--sys-color-surface-container);
   border-radius: var(--sys-shape-corner-l);
@@ -47,22 +50,33 @@ defineProps<{
 }
 
 .empty-icon-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   color: var(--sys-color-outline);
   opacity: 0.5;
-  margin-bottom: 0.5rem;
+  margin-bottom: var(--sys-space-4);
 }
 
 .empty-message {
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: var(--sys-color-on-surface);
   margin: 0;
+  font-size: var(--sys-typescale-title-sm);
+  font-weight: 800;
+  line-height: var(--sys-leading-tight);
+  color: var(--sys-color-on-surface);
 }
 
 .empty-hint {
-  font-size: 0.875rem;
+  margin: 0;
+  font-size: var(--sys-typescale-body-sm);
   color: var(--sys-color-on-surface-variant);
-  max-width: 240px;
-  line-height: 1.5;
+  max-width: 32ch;
+  line-height: var(--sys-leading-normal);
+}
+
+@media (max-width: 360px) {
+  .empty-state {
+    padding: var(--sys-space-40) var(--sys-space-16);
+  }
 }
 </style>

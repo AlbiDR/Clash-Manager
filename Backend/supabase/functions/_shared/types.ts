@@ -139,10 +139,10 @@ export interface RecruitSyncRow {
   /**
    * Discovery source (SHADOW, TOURNAMENT, TOURNAMENT_AUTO, MANUAL).
    *
-   * Optional because a REFRESH is not a discovery. A caller that is updating an
-   * existing recruit omits it, and sync_recruits COALESCEs the stored value so
-   * the original provenance survives. A caller creating a recruit must supply
-   * it: the column is NOT NULL and CHECK-constrained to those four values.
+   * Optional because a REFRESH is not a discovery. Updates always retain the
+   * stored provenance. Discovery callers should provide it; the database uses
+   * `TOURNAMENT` only as a legacy-safe fallback for a newly inserted row whose
+   * source is missing or blank.
    */
   source?: RecruitSource;
   /** Ingestion status (ACTIVE, BENCHED, QUEUE). */

@@ -31,6 +31,8 @@ export interface StatusPillProps {
  * - `isDB`: True if the primary status label is "DB" (cached state).
  * - `displayText`: The caller's label, preserved exactly across viewports.
  * - `displaySource`: Normalized data source label.
+ * - `statusSummary`: A concise, state-appropriate description for the
+ *   optional disclosure.
  * - `handleToggle`: Expansion orchestrator (haptics are handled by `v-tactile`
  *   on the pill element in `StatusPill.vue`, not here -- see the note below).
  */
@@ -44,11 +46,11 @@ export function useStatusPill(props: MaybeRefOrGetter<StatusPillProps>) {
   // dismiss when an error state was being refreshed.
 
   const handleToggle = () => {
-    const statusPillPropsSnapshot = toValue(props);
-    if (statusPillPropsSnapshot.type === "loading") return;
-
     // [DECISION LOG] Synchronized with v-tactile in StatusPill.vue.
     // Manual haptic call removed to prevent double-triggering (Target A.2).
+    // A refresh can safely expose the same provenance metadata as a settled
+    // state. The component still withholds this affordance when no metadata is
+    // available, so a spinner never becomes an empty, distracting popup.
     isExpanded.value = !isExpanded.value;
   };
 
@@ -69,11 +71,23 @@ export function useStatusPill(props: MaybeRefOrGetter<StatusPillProps>) {
     return statusPillPropsSnapshot.remoteInfo.source === 'SUPABASE' ? 'DB' : statusPillPropsSnapshot.remoteInfo.source;
   });
 
+  const statusSummary = computed(() => {
+    const statusPillPropsSnapshot = toValue(props);
+
+    if (statusPillPropsSnapshot.type === "loading") return "Checking for updates";
+    if (statusPillPropsSnapshot.type === "warning") return "Needs attention";
+    if (statusPillPropsSnapshot.type === "error") return "Latest update did not complete";
+    if (statusPillPropsSnapshot.text === "LOCAL") return "Using saved device data";
+
+    return "Current";
+  });
+
   return {
     isExpanded,
     isDB,
     displayText,
     displaySource,
+    statusSummary,
     handleToggle
   };
 }

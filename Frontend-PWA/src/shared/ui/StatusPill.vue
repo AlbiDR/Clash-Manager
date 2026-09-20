@@ -16,16 +16,21 @@ const props = defineProps<{
   compressionStage?: number;
 }>();
 
-const { isExpanded, isDB, displayText, displaySource, handleToggle } = useStatusPill(props);
+const { isExpanded, isDB, displayText, displaySource, statusSummary, handleToggle } = useStatusPill(props);
 const detailsId = useId();
 const statusControl = useTemplateRef<HTMLElement>("statusControl");
 
 const detailsAvailable = computed(() =>
-  props.type !== "loading" && Boolean(displaySource.value || props.remoteInfo?.dataAge || props.remoteInfo?.diagnosis),
+  Boolean(
+    displaySource.value
+    || props.remoteInfo?.dataAge
+    || props.remoteInfo?.lastFetched
+    || props.remoteInfo?.diagnosis,
+  ),
 );
 
 const statusLabel = computed(() => {
-  const action = isExpanded.value ? "Hide connection details" : "Show connection details";
+  const action = isExpanded.value ? "Hide data status details" : "Show data status details";
   return detailsAvailable.value ? `${props.text}. ${action}.` : props.text;
 });
 
@@ -74,20 +79,12 @@ onUnmounted(() => document.removeEventListener("click", handleClickOutside));
         class="status-indicator"
         aria-hidden="true"
       >
-        <svg
+        <Icon
           v-if="props.type === 'loading'"
+          name="loader"
+          size="12"
           class="spinner"
-          viewBox="0 0 24 24"
-        >
-          <circle
-            cx="12"
-            cy="12"
-            r="9"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="3"
-          />
-        </svg>
+        />
         <span
           v-else
           class="status-dot"
@@ -114,21 +111,28 @@ onUnmounted(() => document.removeEventListener("click", handleClickOutside));
         v-if="isExpanded && detailsAvailable"
         :id="detailsId"
         class="status-details"
-        aria-label="Connection details"
-        role="status"
+        aria-label="Data status details"
+        role="region"
       >
         <div class="detail-heading">
-          <span class="detail-label">Connection</span>
+          <span class="detail-label">Status</span>
           <span class="detail-state">{{ props.text }}</span>
         </div>
+        <p class="detail-summary">
+          {{ statusSummary }}
+        </p>
         <dl class="detail-list">
           <div v-if="displaySource">
             <dt>Source</dt>
             <dd>{{ displaySource }}</dd>
           </div>
           <div v-if="props.remoteInfo?.dataAge">
-            <dt>Source age</dt>
+            <dt>Source snapshot</dt>
             <dd>{{ props.remoteInfo.dataAge }}</dd>
+          </div>
+          <div v-if="props.remoteInfo?.lastFetched">
+            <dt>Last checked</dt>
+            <dd>{{ props.remoteInfo.lastFetched }}</dd>
           </div>
           <div
             v-if="props.remoteInfo?.diagnosis"
@@ -157,7 +161,7 @@ onUnmounted(() => document.removeEventListener("click", handleClickOutside));
   justify-content: center;
   gap: var(--sys-space-6);
   /* Visual controls in the summary rail are 32px high. The transparent halo
-     below preserves the 44px pointer target without making this small status
+     below preserves the ADR-required 48px pointer target without making this small status
      token look like a second header row. */
   height: var(--sys-space-32);
   min-height: var(--sys-space-32);
@@ -174,7 +178,7 @@ onUnmounted(() => document.removeEventListener("click", handleClickOutside));
 .status-trigger::after {
   content: "";
   position: absolute;
-  inset: calc(-1 * var(--sys-space-6));
+  inset: calc(-1 * var(--sys-space-8));
 }
 
 .status-trigger.is-nominal { background: transparent; }
@@ -287,6 +291,13 @@ onUnmounted(() => document.removeEventListener("click", handleClickOutside));
   border-bottom: 1px solid var(--sys-color-outline-variant);
 }
 
+.detail-summary {
+  margin: var(--sys-space-10) 0 0;
+  color: var(--sys-color-on-surface-variant);
+  font-size: var(--sys-typescale-meta);
+  line-height: var(--sys-leading-normal);
+}
+
 .detail-label,
 .detail-list dt {
   color: var(--sys-color-on-surface-variant);
@@ -307,7 +318,7 @@ onUnmounted(() => document.removeEventListener("click", handleClickOutside));
 .detail-list {
   display: grid;
   gap: var(--sys-space-8);
-  margin: var(--sys-space-10) 0 0;
+  margin: var(--sys-space-12) 0 0;
 }
 
 .detail-list .is-diagnosis {

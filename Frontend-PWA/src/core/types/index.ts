@@ -311,6 +311,8 @@ export interface ConsoleRemoteInfo {
   diagnosis?: string | null;
   /** Formatted time when the remote dataset was last compiled. */
   lastCompiled?: string | null;
+  /** Formatted time when this device last checked the remote dataset. */
+  lastFetched?: string | null;
 }
 
 /**

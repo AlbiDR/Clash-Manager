@@ -414,6 +414,25 @@ test("selectRecoveryCandidates only picks stuck sessions under the attempt cap",
   assert.deepEqual(selectRecoveryCandidates(entries, ledger, date).map(e => e.stage), []);
 });
 
+test("a completed patch goes to direct publication before the nudge retry budget is spent", () => {
+  const date = "2026-08-15";
+  const entries = evaluateNightlyRun({
+    registry,
+    date,
+    observed: stuckObserved(date, 3),
+    previousLedger: createEmptyLedger(),
+  });
+  const ledger = createEmptyLedger();
+  ensureRunEntries(ledger, registry, date);
+
+  assert.deepEqual(selectFallbackCandidates(entries, ledger, date).map(entry => entry.stage), [3]);
+
+  upsertStageEntry(ledger, registry, date, 3, {
+    evidence: { fallbackPublish: { prNumber: 1500, publishedAt: "2026-08-15T04:00:00.000Z" } },
+  });
+  assert.deepEqual(selectRecoveryCandidates(entries, ledger, date), [], "a fallback PR must not race a Jules nudge");
+});
+
 test("nudgeJulesSession posts to the documented sendMessage endpoint", async () => {
   const calls = [];
   const fetchImpl = async (url, init) => {

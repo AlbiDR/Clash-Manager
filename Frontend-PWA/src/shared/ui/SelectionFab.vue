@@ -29,6 +29,14 @@ const dismissAriaLabel = computed(() => {
   if (selectedCount.value === 0) return dismissLabel.value;
   return `${dismissLabel.value} (${selectedCount.value})`;
 });
+const selectionSummaryLabel = computed(() => {
+  if (selectedCount.value === 0) return "Choose entries to begin";
+  return "selected";
+});
+const blitzAriaLabel = computed(() => {
+  if (selectedCount.value === 0) return "Select one or more entries to start Blitz";
+  return `Start Blitz for ${selectedCount.value} selected`;
+});
 
 /**
  * [DECISION LOG] ACTION DELEGATION: All handlers verify the existence of
@@ -72,13 +80,13 @@ function handleFabAbortHarvest() {
   <div class="selection-fab">
     <Transition name="selection-summary">
       <div
-        v-if="selectedCount > 0 && !fabState.isBlasting"
+        v-if="!fabState.isBlasting"
         class="selection-summary"
         role="status"
         aria-live="polite"
       >
-        <strong>{{ selectedCount }}</strong>
-        <span>selected</span>
+        <strong v-if="selectedCount > 0">{{ selectedCount }}</strong>
+        <span>{{ selectionSummaryLabel }}</span>
       </div>
     </Transition>
 
@@ -91,8 +99,11 @@ function handleFabAbortHarvest() {
        text, so their names are free to describe the action instead. -->
     <button
       v-tactile
-      class="fab-btn danger"
-      :class="{ compact: fabState.isBlasting || (fabState.selectionCount ?? 0) > 0 || fabState.isHarvesting }"
+      class="fab-btn dismiss"
+      :class="{
+        compact: fabState.isBlasting || (fabState.selectionCount ?? 0) > 0 || fabState.isHarvesting,
+        danger: fabState.isHarvesting || fabState.isBlasting,
+      }"
       :aria-label="fabState.isHarvesting ? 'Abort Harvest' : fabState.isBlasting ? 'Cancel Blitz' : dismissAriaLabel"
       :title="fabState.isHarvesting ? 'Abort Harvest' : fabState.isBlasting ? 'Cancel Blitz' : dismissAriaLabel"
       @click="fabState.isHarvesting ? handleFabAbortHarvest() : handleFabDismiss()"
@@ -106,7 +117,12 @@ function handleFabAbortHarvest() {
 
     <!-- Blasting State: Progress Indicator -->
     <template v-if="fabState.isBlasting">
-      <div class="blast-status">
+      <div
+        class="blast-status"
+        role="status"
+        aria-live="polite"
+        :aria-label="`Blitz progress: ${fabState.label}`"
+      >
         <div class="spinner-small" />
         <span class="blast-label">{{ fabState.label }}</span>
       </div>
@@ -133,7 +149,8 @@ function handleFabAbortHarvest() {
           v-tactile
           class="fab-btn blitz"
           :disabled="fabState.isHarvesting || (fabState.selectionCount ?? 0) === 0"
-          aria-label="Start Blitz Mode"
+          :aria-label="blitzAriaLabel"
+          :title="blitzAriaLabel"
           @click="handleFabBlitz"
         >
           <Icon
@@ -141,6 +158,11 @@ function handleFabAbortHarvest() {
             size="18"
           />
           <span>Blitz</span>
+          <span
+            v-if="selectedCount > 0"
+            class="blitz-count"
+            aria-hidden="true"
+          >{{ selectedCount }}</span>
         </button>
 
         <!-- Harvest scouts external clanless players from the leaderboard for
@@ -292,9 +314,16 @@ function handleFabAbortHarvest() {
   color: var(--sys-color-on-primary);
   box-shadow: 0 4px 16px rgba(var(--sys-color-primary-rgb), 0.35);
 }
-.fab-btn.danger {
+.fab-btn.dismiss {
+  background: var(--sys-color-surface-container-highest);
+  color: var(--sys-color-on-surface-variant);
+  border: 1px solid var(--sys-color-outline-variant);
+}
+
+.fab-btn.dismiss.danger {
   background: var(--sys-color-error-container);
   color: var(--sys-color-on-error-container);
+  border-color: transparent;
 }
 
 /* [DECISION LOG] BLITZ GETS A ROLE, NOT A PALETTE OF ITS OWN:
@@ -313,6 +342,10 @@ function handleFabAbortHarvest() {
   color: var(--sys-color-on-secondary-container);
   border: 1px solid var(--sys-color-outline-variant);
   box-shadow: var(--sys-elevation-2);
+}
+
+.blitz-count {
+  display: none;
 }
 
 .blast-status {
@@ -368,6 +401,61 @@ function handleFabAbortHarvest() {
     padding: 0 var(--sys-space-16);
     gap: var(--sys-space-8);
     font-size: 14px;
+  }
+
+  /* The desktop summary already carries this count. On phone the summary is
+     intentionally hidden to protect the four-action Headhunter dock, so the
+     primary action carries the count instead. */
+  .blitz-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 var(--sys-space-4);
+    border-radius: var(--sys-shape-corner-full);
+    background: var(--sys-overlay-dark-subtle);
+    color: currentColor;
+    font-family: var(--sys-font-family-mono);
+    font-size: 11px;
+    font-weight: 900;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+  }
+}
+
+@media (max-width: 360px) {
+  /* At 320px a zero-selection Headhunter dock can contain Clear, Blitz, and
+     two harvest actions. Preserve all actions and their 48px targets, but let
+     the prominent Blitz action absorb the remaining rail width instead of
+     pushing the dock past its safe viewport. */
+  .selection-fab {
+    width: 100%;
+    max-width: 100%;
+    gap: var(--sys-space-4);
+  }
+
+  .fab-btn {
+    height: var(--sys-space-48);
+    min-height: var(--sys-space-48);
+  }
+
+  .fab-btn.compact,
+  .fab-btn.dismiss {
+    width: var(--sys-space-48);
+    min-width: var(--sys-space-48);
+    padding: 0;
+  }
+
+  /* The close glyph and its accessible name remain; only the redundant visual
+     word steps aside until the viewport has room to show it comfortably. */
+  .fab-btn.dismiss > span { display: none; }
+
+  .fab-btn.blitz {
+    flex: 1 1 auto;
+    min-width: 0;
+    padding: 0 var(--sys-space-12);
+    gap: var(--sys-space-6);
   }
 }
 

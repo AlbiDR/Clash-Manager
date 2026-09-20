@@ -360,6 +360,18 @@ describe("SupabaseClient", () => {
       expect(result.timestamp).toBe(new Date('2026-02-03T04:05:06Z').getTime());
     });
 
+    it("uses newer roster ingestion evidence when a failed pipeline heartbeat lags behind it", async () => {
+      vi.mocked(mockFrom.abortSignal)
+        .mockResolvedValueOnce({ data: [{ player_tag: '#ABC', last_ingested_at: '2026-02-03T04:05:06Z' }], error: null })
+        .mockResolvedValueOnce({ data: [], error: null })
+        .mockResolvedValueOnce({ data: { last_success_at: '2026-02-03T03:31:19Z' }, error: null })
+        .mockResolvedValueOnce({ data: [], error: null });
+
+      const result = await SupabaseClient.fetchRemote();
+
+      expect(result.timestamp).toBe(new Date('2026-02-03T04:05:06Z').getTime());
+    });
+
     it("drops one malformed roster row without discarding valid rows", async () => {
       vi.mocked(mockFrom.abortSignal)
         .mockResolvedValueOnce({ data: [{ player_tag: '#ABC' }, { player_tag: { invalid: true } }], error: null })

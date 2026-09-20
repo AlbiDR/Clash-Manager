@@ -13,6 +13,13 @@
 const BASE_URL = import.meta.env.BASE_URL;
 
 /**
+ * Canonical RoyaleAPI platform mark used wherever the destination is named.
+ * Keeping the asset address here prevents the card action and Settings link
+ * rows from quietly drifting into different visual identities.
+ */
+export const ROYALE_API_LOGO_URL = "https://cdn.royaleapi.com/static/img/branding/royaleapi-logo-128.png";
+
+/**
  * Resolves the path for a game currency icon.
  *
  * @param currency - The currency name ('gold', 'gem', 'xp').

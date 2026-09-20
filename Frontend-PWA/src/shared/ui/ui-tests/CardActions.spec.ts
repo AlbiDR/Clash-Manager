@@ -6,6 +6,7 @@
 import CardActions from "../CardActions.vue";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { mount } from "@vue/test-utils";
+import { ROYALE_API_LOGO_URL } from "@core";
 
 const mockOpenExternal = vi.fn();
 const mockOpenInGame = vi.fn();
@@ -39,6 +40,12 @@ describe("CardActions", () => {
     expect(buttons).toHaveLength(2);
     expect(buttons[0].text()).toContain("RoyaleAPI");
     expect(buttons[1].text()).toContain("Open Game");
+    expect(buttons[0].attributes("aria-label")).toBe("View TAG123 on RoyaleAPI");
+    expect(buttons[1].attributes("aria-label")).toBe("Open TAG123 in Clash Royale");
+    expect(buttons[0].classes()).toContain("card-action--reference");
+    expect(buttons[1].classes()).toContain("card-action--game");
+    expect(wrapper.find(".royaleapi-logo").attributes("src")).toBe(ROYALE_API_LOGO_URL);
+    expect(wrapper.findAllComponents({ name: "Icon" })[0].props("name")).toBe("clash-royale");
     expect(wrapper.find(".skeleton-anim").exists()).toBe(false);
   });
 
