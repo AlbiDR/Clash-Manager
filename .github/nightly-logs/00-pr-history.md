@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-19
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-20] PR #1894 [Stage 7]: Scanned catalogs in workspace and package manifests; verified version 14.50.109 consistency across root, Frontend-PWA, Backend manifests, README badges, protocol constants, and APK manifests. pnpm audit:version reported 0 drift lines.
+**Domain:** versioning | **Commit:** ab0f3adb0 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1894)
+**Files:** .github/nightly-logs/07-version-integrity-coverage.log, .github/nightly-logs/07-version-integrity-pr-body.md
+**Why:** No version drift or catalog violations found across audited monorepo manifests and derived targets.
+**Change:** Scanned catalogs in workspace and package manifests; verified version 14.50.109 consistency across root, Frontend-PWA, Backend manifests, README badges, protocol constants, and APK manifests. pnpm audit:version reported 0 drift lines.
+**Result:** pnpm audit:version reported 0 drift lines across all manifests, README badges, protocol constants, and APK manifests
+**Nudges:** 0
+
+
 ### [2026-09-20] PR #1893 [Stage 8]: Bumped knip devDependency to ^6.37.0 and updated major version watchlist
 **Domain:** dependencies | **Commit:** 393462504 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1893)
 **Files:** .github/nightly-logs/08-dependency-audit-coverage.log, .github/nightly-logs/08-dependency-audit-pr-body.md, package.json, pnpm-lock.yaml, pnpm-workspace.yaml
