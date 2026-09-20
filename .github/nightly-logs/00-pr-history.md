@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-19
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-20] PR #1889 [Stage 2]: Expanded useConsoleMetadata unit test suite with coverage for visibleCount ratio logic edge cases
+**Domain:** verification | **Commit:** d4f9b209a | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1889)
+**Files:** .github/nightly-logs/02-verification-coverage.log, .github/nightly-logs/02-verification-pr-body.md, Frontend-PWA/src/core/services/services-tests/useConsoleMetadata.spec.ts
+**Why:** Closing partial-coverage gaps in Layer 1 Console Metadata service
+**Change:** Expanded useConsoleMetadata unit test suite with coverage for visibleCount ratio logic edge cases
+**Result:** Mutation proof: inverting showing !== itemCount to showing === itemCount failed 4 assertions in useConsoleMetadata.spec.ts and useConsoleController.spec.ts. All 15 tests pass after restoring source.
+**Nudges:** 0
+
+
 ### [2026-09-20] PR #1888 [Stage 3]: Completed read-only audit of master migration baseline with 0 pending migrations; verified RLS compliance, search_path isolation, and clean formatting.
 **Domain:** database | **Commit:** 9c6c7c2e9 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1888)
 **Files:** .github/nightly-logs/03-baseline-consolidation-coverage.log, .github/nightly-logs/03-baseline-consolidation-pr-body.md
