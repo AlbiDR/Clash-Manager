@@ -353,7 +353,19 @@ const scoreActionLabel = computed(() => {
 .name-block {
   display: flex;
   flex-direction: column;
+  flex: 1 1 auto;
   min-width: 0;
+}
+
+/* Player names are the card's lowest-priority horizontal claimant after the
+   score and expand actions. A long name must yield within its own column,
+   never displace those two stable 48px controls or force the row wider. */
+.name-block :deep(.player-name) {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .header-actions {
   display: flex;
@@ -495,6 +507,26 @@ const scoreActionLabel = computed(() => {
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@media (max-width: 360px) {
+  /* The action rail keeps its full targets. Reclaim only structural spacing so
+     a real player name still has a readable column between identity and score. */
+  .card {
+    padding-inline: var(--sys-space-12);
+  }
+
+  .card-header {
+    gap: var(--sys-space-8);
+  }
+
+  .identity-group {
+    gap: var(--sys-space-10);
+  }
+
+  .meta-stack {
+    width: var(--sys-space-56);
   }
 }
 

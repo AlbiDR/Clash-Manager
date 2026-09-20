@@ -424,6 +424,41 @@ function handleFabAbortHarvest() {
   }
 }
 
+@media (max-width: 360px) {
+  /* At 320px a zero-selection Headhunter dock can contain Clear, Blitz, and
+     two harvest actions. Preserve all actions and their 48px targets, but let
+     the prominent Blitz action absorb the remaining rail width instead of
+     pushing the dock past its safe viewport. */
+  .selection-fab {
+    width: 100%;
+    max-width: 100%;
+    gap: var(--sys-space-4);
+  }
+
+  .fab-btn {
+    height: var(--sys-space-48);
+    min-height: var(--sys-space-48);
+  }
+
+  .fab-btn.compact,
+  .fab-btn.dismiss {
+    width: var(--sys-space-48);
+    min-width: var(--sys-space-48);
+    padding: 0;
+  }
+
+  /* The close glyph and its accessible name remain; only the redundant visual
+     word steps aside until the viewport has room to show it comfortably. */
+  .fab-btn.dismiss > span { display: none; }
+
+  .fab-btn.blitz {
+    flex: 1 1 auto;
+    min-width: 0;
+    padding: 0 var(--sys-space-12);
+    gap: var(--sys-space-6);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .selection-summary-enter-active,
   .selection-summary-leave-active {
