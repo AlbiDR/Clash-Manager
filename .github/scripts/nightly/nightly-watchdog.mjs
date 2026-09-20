@@ -1103,12 +1103,12 @@ export function evaluateNightlyRun({ registry, date, observed, previousLedger, f
 /**
  * Stages the nudge ladder can no longer help.
  *
- * These are the fallback publisher's whole reason to exist: the stage is stuck,
- * a finished Jules session is sitting there with the work in it, and either the
- * retry budget is spent or the nudge could not be delivered at all. The
- * publisher reaches GitHub directly rather than through the Jules API, so it is
- * an independent path - which is exactly why it still works on the night a dead
- * JULES_API_KEY is what broke the nudge.
+ * These are the fallback publisher's whole reason to exist: the stage is stuck
+ * while a finished Jules session still holds the finalized patch. The publisher
+ * reaches GitHub directly rather than through the Jules API, so it is the first
+ * recovery path once the normal publisher has missed its handoff window. A
+ * nudge remains available when the patch cannot be safely published (for
+ * example, when Jules returned no extractable change set).
  */
 export function selectFallbackCandidates(entries, ledger, date) {
   return entries.filter(entry => {
@@ -1118,7 +1118,7 @@ export function selectFallbackCandidates(entries, ledger, date) {
     // Publishing a second time would open a duplicate pull request for work
     // that already landed once.
     if (recorded?.evidence?.fallbackPublish) return false;
-    return getInterventionAttemptCount(recorded) >= MAX_RECOVERY_ATTEMPTS;
+    return true;
   });
 }
 
@@ -1137,6 +1137,9 @@ export function selectRecoveryCandidates(entries, ledger, date) {
     if (!RECOVERABLE_FAILURE_CLASSES.has(entry.failureClass)) return false;
     if (!entry.evidence?.julesSession) return false;
     const recorded = stageEntry(ledger, date, entry.stage);
+    // A direct recovery has already created the only safe replacement PR. Do
+    // not also wake Jules, which could race it into a duplicate publication.
+    if (recorded?.evidence?.fallbackPublish) return false;
     return getInterventionAttemptCount(recorded) < MAX_RECOVERY_ATTEMPTS;
   });
 }
@@ -1256,13 +1259,10 @@ export async function recoverStuckStages({
   return { attempted, recovered, failed, unrecovered };
 }
 
-// Last resort once nudging has failed: publish the stage's finished work
-// ourselves. See nightly-publish-fallback.mjs for why this is safe to do
+// Publishes a finished patch ourselves after the native publisher missed its
+// handoff window. See nightly-publish-fallback.mjs for why this is safe to do
 // autonomously (the patch is validated against the same per-stage write
 // boundary the normal path uses, and refuses rather than guesses).
-//
-// Runs only over stages the nudge could not rescue, so the happy path and the
-// nudge path both behave exactly as they did before.
 /**
  * Rewrites the descriptions of pull requests that published a damaged body.
  *
@@ -1776,10 +1776,26 @@ export async function runCli(argv = process.argv.slice(2), config = CONFIG) {
 
   if (!options.get("dry-run") && !options.get("no-recover")) {
     try {
-      const recovery = await recoverStuckStages({ entries, ledger, registry, date, config });
       let publishedByFallback = 0;
-      // Escalation, not a parallel path: only stages the nudge failed to rescue
-      // reach this, so a normal night never touches it.
+      // A completed session that has been silent beyond the settle window has
+      // already missed Jules' native publication handoff. Publish its validated
+      // patch directly first, rather than asking the same unreliable handoff to
+      // retry. If the patch is unavailable or unsafe, the nudge path below is
+      // retained as the narrower recovery option.
+      if (!options.get("no-fallback-publish")) {
+        const fallback = await publishStrandedWork({
+          unrecovered: selectFallbackCandidates(entries, ledger, date),
+          julesSessions,
+          ledger,
+          registry,
+          date,
+          config,
+        });
+        publishedByFallback = fallback.published.length;
+      }
+      const recovery = await recoverStuckStages({ entries, ledger, registry, date, config });
+      // A patch that direct publication declined may still be recoverable by
+      // asking its owning Jules session to complete the handoff.
       if (!options.get("no-fallback-publish") && recovery.unrecovered?.length) {
         const fallback = await publishStrandedWork({
           unrecovered: recovery.unrecovered,
@@ -1789,7 +1805,7 @@ export async function runCli(argv = process.argv.slice(2), config = CONFIG) {
           date,
           config,
         });
-        publishedByFallback = fallback.published.length;
+        publishedByFallback += fallback.published.length;
       }
       if (recovery.recovered.length > 0 || publishedByFallback > 0) {
         await dispatchMergeWorkflow(config);
