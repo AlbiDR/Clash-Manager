@@ -99,4 +99,15 @@ describe("useLeaderboard", () => {
     expect(status.value.type).toBe("ready");
     expect(typeof status.value.text).toBe("string");
   });
+
+  it("shares the history disclosure preference across roster controllers", () => {
+    const firstController = useLeaderboard();
+    const secondController = useLeaderboard();
+
+    firstController.setHistoryOpen(false);
+
+    expect(secondController.isHistoryOpen.value).toBe(false);
+
+    firstController.setHistoryOpen(true);
+  });
 });

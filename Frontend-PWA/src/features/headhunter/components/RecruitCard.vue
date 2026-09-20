@@ -150,6 +150,7 @@ const recruitAccessibilityLabel = computed(() => {
       <StatsGrid
         :columns="2"
         :loading="props.appIsRefreshing"
+        priority="primary"
         label="Account record"
         detail="Lifetime player metrics"
       >

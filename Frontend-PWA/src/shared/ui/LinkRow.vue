@@ -39,6 +39,9 @@ defineProps<{
   /** Icon name resolved through the Icon.vue primitive. Ignored when `logo` is set. */
   icon?: string;
 
+  /** Keeps a multi-colour platform mark quiet until the row is intentionally engaged. */
+  brandIcon?: boolean;
+
   /** Remote brand image URL. Takes precedence over `icon` when present. */
   logo?: string;
 
@@ -84,6 +87,7 @@ defineEmits<{
       :name="icon"
       size="18"
       class="link-icon"
+      :class="{ 'link-icon--brand': brandIcon }"
     />
   </button>
 </template>
@@ -148,6 +152,21 @@ defineEmits<{
 
 .link-row:hover .link-icon {
   color: var(--sys-color-primary);
+  opacity: 1;
+}
+
+/* Authored-colour platform marks follow the same interaction hierarchy as
+   monochrome icons: quiet when scanning, fully expressive only once the row
+   is deliberately engaged by pointer, keyboard, or press. */
+.link-icon--brand {
+  filter: grayscale(1);
+  transition: filter var(--sys-motion-duration-250), opacity var(--sys-motion-duration-250);
+}
+
+.link-row:hover .link-icon--brand,
+.link-row:focus-visible .link-icon--brand,
+.link-row:not(.disabled):active .link-icon--brand {
+  filter: grayscale(0);
   opacity: 1;
 }
 

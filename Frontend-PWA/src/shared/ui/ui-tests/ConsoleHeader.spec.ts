@@ -7,8 +7,11 @@ import ConsoleHeader from "../ConsoleHeader.vue";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { mount } from "@vue/test-utils";
 import { createCommentVNode, Fragment, h, nextTick } from "vue";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 
 const { mockTap } = vi.hoisted(() => ({ mockTap: vi.fn() }));
+const consoleHeaderSource = readFileSync(resolve(process.cwd(), "src/shared/ui/ConsoleHeader.vue"), "utf8");
 
 vi.mock("@shared/composables/useHaptics", () => ({
   useHaptics: () => ({ tap: mockTap }),
@@ -35,6 +38,41 @@ describe("ConsoleHeader", () => {
 
     expect(wrapper.find(".view-title").text()).toBe("Test Feature");
     expect(wrapper.findComponent({ name: "StatusPill" }).exists()).toBe(true);
+  });
+
+  it("forwards a status-detail refresh without adding a permanent header action", async () => {
+    const wrapper = mount(ConsoleHeader, {
+      props: {
+        title: "Roster",
+        status: { type: "success", text: "DB", nominal: true },
+        remoteInfo: { source: "SUPABASE", dataAge: "4m ago" },
+      },
+    });
+
+    const statusPill = wrapper.findComponent({ name: "StatusPill" });
+    await statusPill.vm.$emit("refresh");
+
+    expect(wrapper.emitted("refresh")).toEqual([[]]);
+    expect(wrapper.find(".header-controls").exists()).toBe(false);
+  });
+
+  it("keeps vertical leading inside the ellipsized title's clipping boundary", () => {
+    // Ellipsis requires overflow clipping. A zero-leading line box used to cut
+    // the bottom of Settings' G, so this must remain the roomy title leading.
+    expect(consoleHeaderSource).toMatch(/\.view-title\s*\{[\s\S]*?overflow:\s*hidden;/);
+    expect(consoleHeaderSource).toMatch(/\.view-title\s*\{[\s\S]*?line-height:\s*var\(--sys-leading-tight\);/);
+  });
+
+  it("uses the final header-pressure stage to preserve the console name", () => {
+    // After status and count have already made their concessions, the title
+    // itself must shrink before an ordinary console name can be ellipsized.
+    expect(consoleHeaderSource).toMatch(
+      /\.console-header\.is-pressure-stage-4\s+\.view-title\s*\{[\s\S]*?font-size:\s*clamp\([\s\S]*?var\(--sys-typescale-label-md\),[\s\S]*?8vw,[\s\S]*?var\(--sys-typescale-title-sm\)/,
+    );
+    // The resolver must measure the final font size, never a transition frame
+    // that can later grow into a clipped title.
+    expect(consoleHeaderSource).toMatch(/\.view-title\s*\{[\s\S]*?transition:\s*[\s\S]*?color[\s\S]*?transform[\s\S]*?opacity/);
+    expect(consoleHeaderSource).not.toMatch(/\.view-title\s*\{[\s\S]*?transition:\s*all/);
   });
 
   it("does not create a controls region when a view forwards an empty Fragment", () => {

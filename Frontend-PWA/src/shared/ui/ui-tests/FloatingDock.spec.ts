@@ -54,14 +54,15 @@ describe("FloatingDock.vue", () => {
     vi.stubGlobal('innerWidth', 1200);
   });
 
-  const mountDock = () => {
+  const mountDock = (useRealTransition = false) => {
     return mount(FloatingDock, {
       global: {
         directives: {
           tooltip: () => {}
         },
         stubs: {
-          Icon: true
+          Icon: true,
+          ...(useRealTransition ? { Transition: false } : {}),
         }
       }
     });
@@ -100,5 +101,16 @@ describe("FloatingDock.vue", () => {
 
     const wrapper = mountDock();
     expect(wrapper.classes()).not.toContain("hidden");
+  });
+
+  it("holds the navigation footprint until selection controls are ready", async () => {
+    const wrapper = mountDock(true);
+
+    mockDockVisible.value = false;
+    await wrapper.vm.$nextTick();
+
+    expect(wrapper.findAll(".dock-container")).toHaveLength(1);
+    expect(wrapper.find(".dock-container").classes()).not.toContain("fab-mode");
+    expect(wrapper.findAll(".dock-item").length).toBeGreaterThan(0);
   });
 });

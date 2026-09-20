@@ -74,8 +74,9 @@ describe("VoyageBanner.vue", () => {
 
     expect(wrapper.find(".voyage-banner").exists()).toBe(true);
     expect(wrapper.find(".voyage-banner").classes()).not.toContain("is-victory");
-    expect(wrapper.find(".crown-value").text()).toBe("500");
-    expect(wrapper.find(".crown-target").text()).toBe("1,000");
+    expect(wrapper.find(".crown-value .animated-digits-visual").text()).toBe("500");
+    expect(wrapper.find(".crown-target .animated-digits-visual").text()).toBe("1,000");
+    expect(wrapper.find(".crown-value").find(".animated-digits-accessible").text()).toBe("Crowns earned: 500");
     expect(wrapper.find(".progress-label").text()).toBe("50%");
   });
 
@@ -112,13 +113,13 @@ describe("VoyageBanner.vue", () => {
     await wrapper.vm.$nextTick();
 
     // Initial countdown (00:00:05)
-    expect(wrapper.find(".countdown").text()).toBe("00:00:05");
+    expect(wrapper.find(".countdown .animated-digits-visual").text()).toBe("00:00:05");
 
     // Advance time by 5 seconds
     vi.advanceTimersByTime(5000);
     await wrapper.vm.$nextTick();
 
-    expect(wrapper.find(".countdown").text()).toBe("Ended");
+    expect(wrapper.find(".countdown .animated-digits-visual").text()).toBe("Ended");
     expect(wrapper.find(".countdown").classes()).toContain("ended");
 
     // Verify store.refresh was called when it ended (once on mount, once on end)
@@ -133,13 +134,13 @@ describe("VoyageBanner.vue", () => {
       progress_ratio: 0
     };
     await wrapper.vm.$nextTick();
-    expect(wrapper.find(".countdown").text()).toBe("");
+    expect(wrapper.find(".countdown .animated-digits-visual").text()).toBe("");
 
     const futureDate = new Date("2026-01-01T13:00:00Z"); // 1 hour from 12:00:00
     // @ts-expect-error -- test mock/state does not satisfy the full type
     store.summary.event.end_at = futureDate.toISOString();
     await wrapper.vm.$nextTick();
 
-    expect(wrapper.find(".countdown").text()).toBe("01:00:00");
+    expect(wrapper.find(".countdown .animated-digits-visual").text()).toBe("01:00:00");
   });
 });

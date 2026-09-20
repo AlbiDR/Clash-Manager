@@ -156,7 +156,7 @@ describe("Toast.vue", () => {
     expect(spy).toHaveBeenCalled();
   });
 
-  describe("copyToClipboard functionality", () => {
+  describe("copyToastMessage functionality", () => {
     it("renders copy button only for error and info toast types", () => {
       const types = [
         { type: "error" as const, expected: true },
@@ -223,8 +223,7 @@ describe("Toast.vue", () => {
       expect(wrapper.emitted("dismiss")).toBeTruthy();
     });
 
-    it("handles clipboard failure gracefully without throwing", async () => {
-      const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    it("communicates unavailable clipboard access without throwing", async () => {
       const writeTextMock = vi.fn().mockRejectedValue(new Error("Clipboard denied"));
       Object.assign(navigator, {
         clipboard: {
@@ -239,8 +238,8 @@ describe("Toast.vue", () => {
       const copyBtn = wrapper.find(".copy-btn");
       await copyBtn.trigger("click");
 
-      expect(consoleSpy).toHaveBeenCalledWith("Failed to copy toast message:", expect.any(Error));
-      consoleSpy.mockRestore();
+      expect(copyBtn.attributes("aria-label")).toBe("Copy unavailable");
+      expect(copyBtn.classes()).toContain("is-unavailable");
     });
 
     it("prevents triggering container action when copy button is clicked on an actionable toast", async () => {

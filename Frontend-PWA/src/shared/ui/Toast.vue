@@ -2,8 +2,12 @@
 <!-- Copyright (C) 2026 AlbiDR -->
 <script setup lang="ts">
 import Icon from "./Icon.vue";
+import {
+  CLIPBOARD_FEEDBACK_DURATION_MS,
+  useClipboard,
+} from "../composables/useClipboard";
 import { vTactile } from "../directives/vTactile";
-import { ref, onMounted, onUnmounted } from "vue";
+import { computed, ref, onMounted, onUnmounted } from "vue";
 
 /**
  * ============================================================================
@@ -46,11 +50,21 @@ const emit = defineEmits<{
 /** @internal Internal timer ID used for auto-dismissal cleanup. */
 let timer: number | undefined;
 
+/** @internal Holds the transient copy acknowledgement without leaking it after dismissal. */
+let copyFeedbackTimer: number | undefined;
+
 /** @internal Prevents duplicate emission of action callbacks. */
 const isHandlingAction = ref(false);
 
 /** @internal Controls visual confirmation tick state after clipboard copy. */
 const showCopiedTick = ref(false);
+const { clipboardState, copyText } = useClipboard();
+
+const copyLabel = computed(() => {
+  if (showCopiedTick.value) return "Copied message";
+  if (clipboardState.value === "unavailable") return "Copy unavailable";
+  return "Copy message";
+});
 
 /**
  * Initializes auto-dismissal timer when a non-zero duration prop is set.
@@ -71,6 +85,14 @@ function startTimer() {
  */
 function clearTimer() {
   if (timer) clearTimeout(timer);
+}
+
+/** Clears a pending copy acknowledgement when the toast is retried or unmounted. */
+function clearCopyFeedbackTimer() {
+  if (copyFeedbackTimer !== undefined) {
+    clearTimeout(copyFeedbackTimer);
+    copyFeedbackTimer = undefined;
+  }
 }
 
 /**
@@ -102,24 +124,25 @@ function triggerAction() {
  * Pauses dismissal timer during copy confirmation feedback tick.
  * [THREAT] Clipboard API rejection on unsecured context caught gracefully without crashing host UI.
  */
-async function copyToClipboard() {
-  try {
-    // [DECISION LOG] Error and Info messages are explicitly selectable and
-    // copyable to satisfy the "Error Readability Contract" in ADR Section IV.
-    await navigator.clipboard.writeText(props.message);
-    showCopiedTick.value = true;
-    clearTimer();
-    setTimeout(() => {
-      showCopiedTick.value = false;
-      startTimer();
-    }, 2000);
-  } catch (clipboardError) {
-    console.error("Failed to copy toast message:", clipboardError);
-  }
+async function copyToastMessage() {
+  const copied = await copyText(props.message, { feedbackDurationMs: 0 });
+  if (!copied) return;
+
+  clearCopyFeedbackTimer();
+  showCopiedTick.value = true;
+  clearTimer();
+  copyFeedbackTimer = window.setTimeout(() => {
+    showCopiedTick.value = false;
+    copyFeedbackTimer = undefined;
+    startTimer();
+  }, CLIPBOARD_FEEDBACK_DURATION_MS);
 }
 
 onMounted(startTimer);
-onUnmounted(clearTimer);
+onUnmounted(() => {
+  clearTimer();
+  clearCopyFeedbackTimer();
+});
 </script>
 
 <template>
@@ -168,12 +191,14 @@ onUnmounted(clearTimer);
     </div>
 
     <!-- Copy Button for Error and Info notifications -->
-    <button 
-      v-if="type === 'error' || type === 'info'" 
+    <button
+      v-if="type === 'error' || type === 'info'"
       v-tactile
-      class="copy-btn" 
-      title="Copy message"
-      @click.stop="copyToClipboard"
+      class="copy-btn"
+      :class="{ 'is-copied': showCopiedTick, 'is-unavailable': clipboardState === 'unavailable' }"
+      :aria-label="copyLabel"
+      :title="copyLabel"
+      @click.stop="copyToastMessage"
     >
       <Icon
         :name="showCopiedTick ? 'check' : 'copy'"
@@ -310,13 +335,25 @@ onUnmounted(clearTimer);
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: opacity var(--sys-motion-duration-200), background var(--sys-motion-duration-200);
+  transition:
+    opacity var(--sys-motion-duration-200) var(--sys-motion-easing-standard),
+    background-color var(--sys-motion-duration-200) var(--sys-motion-easing-standard),
+    color var(--sys-motion-duration-200) var(--sys-motion-easing-standard),
+    transform var(--sys-motion-duration-200) var(--sys-motion-spring);
   margin-left: var(--sys-space-2);
   margin-top: -var(--sys-space-1); /* Align with first line */
 }
 .copy-btn:hover {
   opacity: 1;
   background: var(--sys-overlay-light-soft);
+}
+.copy-btn.is-copied {
+  opacity: 1;
+  background: var(--sys-overlay-light-soft);
+}
+.copy-btn.is-unavailable {
+  color: var(--sys-color-error);
+  opacity: 1;
 }
 
 .action-btn {

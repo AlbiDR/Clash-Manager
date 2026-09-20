@@ -16,6 +16,11 @@ const props = defineProps<{
   compressionStage?: number;
 }>();
 
+const emit = defineEmits<{
+  /** Requests a real console refresh from the status detail surface. */
+  refresh: [];
+}>();
+
 const { isExpanded, isDB, displayText, displaySource, statusSummary, handleToggle } = useStatusPill(props);
 const detailsId = useId();
 const statusControl = useTemplateRef<HTMLElement>("statusControl");
@@ -32,6 +37,12 @@ const detailsAvailable = computed(() =>
 const statusLabel = computed(() => {
   const action = isExpanded.value ? "Hide data status details" : "Show data status details";
   return detailsAvailable.value ? `${props.text}. ${action}.` : props.text;
+});
+
+const refreshLabel = computed(() => {
+  if (props.type === "loading") return "Checking for updates";
+  if (props.type === "error") return "Try again";
+  return "Refresh data";
 });
 
 function handleKeydown(keyboardEvent: KeyboardEvent) {
@@ -77,6 +88,7 @@ onUnmounted(() => document.removeEventListener("click", handleClickOutside));
     >
       <span
         class="status-indicator"
+        :class="{ 'is-syncing': props.type === 'loading' }"
         aria-hidden="true"
       >
         <Icon
@@ -142,6 +154,24 @@ onUnmounted(() => document.removeEventListener("click", handleClickOutside));
             <dd>{{ props.remoteInfo.diagnosis }}</dd>
           </div>
         </dl>
+        <button
+          v-tactile
+          type="button"
+          class="status-refresh-action"
+          :class="{ 'is-syncing': props.type === 'loading' }"
+          :aria-label="refreshLabel"
+          :title="refreshLabel"
+          :disabled="props.type === 'loading'"
+          @click="emit('refresh')"
+        >
+          <Icon
+            :name="props.type === 'loading' ? 'loader' : 'refresh'"
+            size="16"
+            class="status-refresh-icon"
+            aria-hidden="true"
+          />
+          <span>{{ refreshLabel }}</span>
+        </button>
       </section>
     </Transition>
   </div>
@@ -152,6 +182,7 @@ onUnmounted(() => document.removeEventListener("click", handleClickOutside));
   position: relative;
   color: var(--sys-color-on-surface-variant);
   z-index: var(--sys-z-dropdown);
+  transition: color var(--sys-motion-duration-200) var(--sys-motion-easing-standard);
 }
 
 .status-trigger {
@@ -173,6 +204,10 @@ onUnmounted(() => document.removeEventListener("click", handleClickOutside));
   color: inherit;
   cursor: pointer;
   font: inherit;
+  transition:
+    background-color var(--sys-motion-duration-200) var(--sys-motion-easing-standard),
+    border-color var(--sys-motion-duration-200) var(--sys-motion-easing-standard),
+    box-shadow var(--sys-motion-duration-200) var(--sys-motion-easing-standard);
 }
 
 .status-trigger::after {
@@ -196,6 +231,7 @@ onUnmounted(() => document.removeEventListener("click", handleClickOutside));
 .status-trigger:disabled { cursor: default; }
 
 .status-indicator {
+  position: relative;
   display: inline-flex;
   width: var(--sys-space-12);
   height: var(--sys-space-12);
@@ -204,12 +240,27 @@ onUnmounted(() => document.removeEventListener("click", handleClickOutside));
   flex: 0 0 auto;
 }
 
+/* Loading is the only ongoing operation represented by the pill. Its ring
+   establishes "working now" at a glance; settled current, stale, and error
+   data retain their quieter static dots so status never looks needlessly busy. */
+.status-indicator.is-syncing::after {
+  content: "";
+  position: absolute;
+  inset: calc(-1 * var(--sys-space-4));
+  border: 1px solid currentColor;
+  border-radius: var(--sys-shape-corner-full);
+  opacity: 0;
+  animation: status-sync-pulse var(--sys-motion-ambient-pulse) var(--sys-motion-easing-standard) infinite;
+}
+
 .status-dot {
   width: var(--sys-space-8);
   height: var(--sys-space-8);
   border-radius: var(--sys-shape-corner-full);
   background: currentColor;
-  box-shadow: 0 0 0 3px color-mix(in srgb, currentColor 16%, transparent);
+  box-shadow:
+    0 0 0 var(--sys-space-4) color-mix(in srgb, currentColor 16%, transparent),
+    0 1px var(--sys-space-4) color-mix(in srgb, currentColor 24%, transparent);
 }
 
 .status-label {
@@ -261,6 +312,20 @@ onUnmounted(() => document.removeEventListener("click", handleClickOutside));
   width: var(--sys-space-12);
   height: var(--sys-space-12);
   animation: rotate var(--sys-motion-ambient-spin) linear infinite;
+}
+
+@keyframes status-sync-pulse {
+  0%, 100% {
+    opacity: 0;
+    transform: scale(0.72);
+  }
+  35% {
+    opacity: 0.52;
+  }
+  70% {
+    opacity: 0;
+    transform: scale(1.24);
+  }
 }
 
 .status-details {
@@ -335,6 +400,54 @@ onUnmounted(() => document.removeEventListener("click", handleClickOutside));
 }
 .is-error .detail-list .is-diagnosis dd { color: var(--sys-color-error); }
 
+/* Refresh belongs with data provenance, not in the always-visible title rail.
+   It uses the real connectivity state supplied by the host: an idle refresh
+   glyph invites a check; the only rotation is the active request itself. */
+.status-refresh-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sys-space-8);
+  width: 100%;
+  min-height: var(--sys-space-48);
+  margin-top: var(--sys-space-14);
+  padding: 0 var(--sys-space-12);
+  border: 1px solid var(--sys-color-outline-variant);
+  border-radius: var(--sys-shape-corner-small);
+  background: var(--sys-color-surface-container-high);
+  color: var(--sys-color-on-surface);
+  cursor: pointer;
+  font: inherit;
+  font-size: var(--sys-typescale-meta);
+  font-weight: 750;
+  transition:
+    background-color var(--sys-motion-duration-200) var(--sys-motion-easing-standard),
+    border-color var(--sys-motion-duration-200) var(--sys-motion-easing-standard),
+    color var(--sys-motion-duration-200) var(--sys-motion-easing-standard),
+    transform var(--sys-motion-duration-200) var(--sys-motion-spring);
+}
+
+.status-refresh-action:hover:not(:disabled) {
+  border-color: var(--sys-color-primary);
+  background: var(--sys-color-primary-container);
+  color: var(--sys-color-on-primary-container);
+  transform: translateY(calc(-1 * var(--sys-space-1)));
+}
+
+.status-refresh-action:active:not(:disabled) { transform: scale(0.98); }
+
+.status-refresh-action:focus-visible {
+  outline: 2px solid var(--sys-color-primary);
+  outline-offset: 2px;
+}
+
+.status-refresh-action:disabled {
+  cursor: progress;
+  opacity: 0.78;
+}
+
+.status-refresh-icon.is-syncing { animation: rotate var(--sys-motion-ambient-spin) linear infinite; }
+
 .status-popover-enter-active,
 .status-popover-leave-active {
   transition:
@@ -349,4 +462,20 @@ onUnmounted(() => document.removeEventListener("click", handleClickOutside));
 }
 
 @keyframes rotate { to { transform: rotate(360deg); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner,
+  .status-indicator.is-syncing::after,
+  .status-refresh-icon.is-syncing {
+    animation: none;
+  }
+
+  .status-indicator.is-syncing::after {
+    opacity: 0.45;
+    transform: none;
+  }
+
+  .status-refresh-action:hover:not(:disabled),
+  .status-refresh-action:active:not(:disabled) { transform: none; }
+}
 </style>

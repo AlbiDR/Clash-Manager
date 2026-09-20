@@ -1,15 +1,23 @@
 <!-- SPDX-License-Identifier: GPL-3.0-only -->
 <!-- Copyright (C) 2026 AlbiDR -->
 <script setup lang="ts">
-import { ref, onErrorCaptured } from "vue";
+import { computed, onErrorCaptured, ref } from "vue";
+import { useClipboard } from "../composables/useClipboard";
 import { vTactile } from "../directives/vTactile";
+import Icon from "./Icon.vue";
 
 /**
  * [GUARD] ERROR BOUNDARY
  * Resilience #45: Captures runtime errors and provides a graceful recovery path.
  */
 const error = ref<Error | null>(null);
-const copied = ref(false);
+const { clipboardState, copyText } = useClipboard();
+
+const copyLabel = computed(() => {
+  if (clipboardState.value === "copied") return "Copied error details";
+  if (clipboardState.value === "unavailable") return "Copy unavailable";
+  return "Copy error details";
+});
 
 onErrorCaptured((capturedError) => {
   error.value = capturedError instanceof Error ? capturedError : new Error(String(capturedError));
@@ -20,7 +28,7 @@ onErrorCaptured((capturedError) => {
 /**
  * Copies the error details to the clipboard.
  */
-async function copyError() {
+function copyErrorDetails() {
   if (!error.value) return;
 
   const title = "System Resilience";
@@ -28,21 +36,13 @@ async function copyError() {
     "A rendering anomaly was detected. Our self-healing systems are standing by.";
   const content = `[${title}]\nAnomaly: ${description}\n\nMessage: ${error.value.message}\n\nStack: ${error.value.stack || "N/A"}`;
 
-  try {
-    await navigator.clipboard.writeText(content);
-    copied.value = true;
-    setTimeout(() => {
-      copied.value = false;
-    }, 2000);
-  } catch (clipboardError) {
-    console.error("[GUARD] FAILED TO COPY ERROR DETAILS:", clipboardError);
-  }
+  void copyText(content);
 }
 
 /**
  * Resets the application state and reloads the page.
  */
-function reset() {
+function resetApplication() {
   error.value = null;
   // Clear any potentially corrupted temporary state
   sessionStorage.clear();
@@ -57,17 +57,11 @@ function reset() {
   >
     <div class="error-content">
       <div class="error-icon-wrapper">
-        <svg
-          viewBox="0 0 24 24"
-          width="32"
-          height="32"
-        >
-          <path
-            fill="currentColor"
-            d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2Zm1 15h-2v-2h2v2Zm0-4h-2V7h2v6Z"
-            :vector-effect="'non-scaling-stroke'"
-          />
-        </svg>
+        <Icon
+          name="warning"
+          size="32"
+          aria-hidden="true"
+        />
       </div>
       <h2>System Resilience</h2>
       <p>
@@ -85,41 +79,26 @@ function reset() {
         <button
           v-tactile
           class="copy-btn hit-target"
-          :class="{ copied }"
-          title="Copy Error Details"
-          @click="copyError"
+          :class="{
+            copied: clipboardState === 'copied',
+            unavailable: clipboardState === 'unavailable',
+          }"
+          :aria-label="copyLabel"
+          :title="copyLabel"
+          @click="copyErrorDetails"
         >
-          <svg
-            v-if="!copied"
-            viewBox="0 0 24 24"
-            width="18"
-            height="18"
-          >
-            <path
-              fill="currentColor"
-              d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1Zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2Zm0 16H8V7h11v14Z"
-              :vector-effect="'non-scaling-stroke'"
-            />
-          </svg>
-          <svg
-            v-else
-            viewBox="0 0 24 24"
-            width="18"
-            height="18"
-          >
-            <path
-              fill="currentColor"
-              d="M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2Z"
-              :vector-effect="'non-scaling-stroke'"
-            />
-          </svg>
+          <Icon
+            :name="clipboardState === 'copied' ? 'check' : 'copy'"
+            size="18"
+            aria-hidden="true"
+          />
         </button>
       </div>
 
       <button
         v-tactile
         class="recover-btn"
-        @click="reset"
+        @click="resetApplication"
       >
         <span>Re-Initialize System</span>
       </button>
@@ -191,6 +170,7 @@ p {
   font-size: 12px;
   text-align: left;
   word-break: break-all;
+  white-space: pre-wrap;
   max-height: 120px;
   overflow-y: auto;
   color: var(--sys-color-on-surface-variant);
@@ -241,6 +221,10 @@ p {
 .copy-btn.copied {
   background: var(--sys-color-primary);
   color: var(--sys-color-on-primary);
+}
+
+.copy-btn.unavailable {
+  color: var(--sys-color-error);
 }
 
 .recover-btn {

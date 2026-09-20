@@ -227,15 +227,39 @@ describe("MemberCard.vue", () => {
     ]);
   });
 
-  it("gives the chart its own labelled history section", () => {
+  it("keeps the chart expanded by default with an intentional, labelled disclosure", async () => {
     const wrapper = mountMemberCard({ expanded: true });
 
     expect(wrapper.find(".history-section").attributes("aria-label")).toBe("Performance history");
     expect(wrapper.find(".history-heading-label").text()).toBe("Performance history");
     expect(wrapper.find(".history-heading-detail").text()).toBe("War and Voyage trend");
+    expect(wrapper.find(".history-trigger").attributes("aria-expanded")).toBe("true");
+    expect(wrapper.find(".history-action-label").text()).toBe("Hide history");
+    expect(wrapper.find(".war-history-chart-mock").exists()).toBe(true);
+
+    await wrapper.find(".history-trigger").trigger("click");
+
+    expect(wrapper.emitted("update:history-open")).toEqual([[false]]);
+
+    await wrapper.setProps({ historyOpen: false });
+
+    expect(wrapper.find(".history-trigger").attributes("aria-expanded")).toBe("false");
+    expect(wrapper.find(".history-action-label").text()).toBe("Show history");
+    expect(wrapper.find(".war-history-chart-mock").exists()).toBe(false);
   });
 
-  it("shows refreshing state in expanded content", () => {
+  it("uses and updates the roster-session history preference", async () => {
+    const wrapper = mountMemberCard({ expanded: true, historyOpen: false });
+
+    expect(wrapper.find(".history-trigger").attributes("aria-expanded")).toBe("false");
+    expect(wrapper.find(".war-history-chart-mock").exists()).toBe(false);
+
+    await wrapper.find(".history-trigger").trigger("click");
+
+    expect(wrapper.emitted("update:history-open")).toEqual([[true]]);
+  });
+
+  it("shows refreshing state in the default-expanded history", () => {
     const wrapper = mountMemberCard({ expanded: true, appIsRefreshing: true });
 
     expect(wrapper.find(".stats-grid").attributes("aria-busy")).toBe("true");
@@ -288,7 +312,7 @@ describe("MemberCard.vue", () => {
 
     const wrapper = mountMemberCard({ member: memberWithVoyage, expanded: true });
 
-    // Initially displays WarHistoryChart
+    // The primary War history is visible with every expanded card.
     expect(wrapper.find(".war-history-chart-mock").exists()).toBe(true);
     expect(wrapper.find(".voyage-history-chart-mock").exists()).toBe(false);
 

@@ -88,6 +88,7 @@ const { benchmarkTooltipContent } = useBenchmarkedStat(
   font-weight: 700;
   color: var(--sys-color-on-surface);
   font-family: var(--sys-font-family-mono);
+  font-variant-numeric: tabular-nums;
   line-height: var(--sys-leading-none);
 }
 

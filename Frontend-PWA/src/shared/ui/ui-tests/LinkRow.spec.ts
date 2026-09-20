@@ -49,10 +49,11 @@ describe("LinkRow.vue", () => {
   });
 
   it("keeps platform icons consistent with their shared icon definition", () => {
-    const wrapper = mountRow({ label: "Clash Royale Store", icon: "clash-royale" });
+    const wrapper = mountRow({ label: "Clash Royale Store", icon: "clash-royale", brandIcon: true });
 
     expect(wrapper.findComponent(Icon).props("name")).toBe("clash-royale");
     expect(wrapper.find("svg").attributes("viewBox")).toBe("11 10 26 29");
+    expect(wrapper.findComponent(Icon).classes()).toContain("link-icon--brand");
   });
 
   it("prefers a remote logo over an icon and labels it for assistive tech", () => {

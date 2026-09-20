@@ -19,12 +19,15 @@ const props = defineProps<{
   label?: string;
   /** Brief supporting context, kept visually quieter than the section label. */
   detail?: string;
+  /** Whether this group is the immediate evidence for the score or supporting context. */
+  priority?: "primary" | "supporting";
 }>();
 </script>
 
 <template>
   <section
     class="stats-section"
+    :class="`stats-section--${props.priority || 'supporting'}`"
     :aria-label="props.label"
   >
     <header
@@ -54,8 +57,11 @@ const props = defineProps<{
 }
 
 .stats-section-heading {
-  display: grid;
-  gap: var(--sys-space-2);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: var(--sys-space-8);
+  row-gap: var(--sys-space-2);
   min-width: 0;
   color: var(--sys-color-on-surface-variant);
   font-family: var(--sys-font-family-mono);
@@ -76,6 +82,27 @@ const props = defineProps<{
   font-weight: 600;
   letter-spacing: normal;
   text-transform: none;
+}
+
+.stats-section--primary .stats-section-heading {
+  color: var(--sys-color-primary);
+}
+
+.stats-section--primary .stats-section-detail {
+  color: var(--sys-color-on-surface-variant);
+}
+
+/* Supporting evidence remains fully readable but does not compete with the
+   first metric group that explains the score decision. */
+.stats-section--supporting .stats-grid :deep(.stat-item) {
+  background: var(--sys-color-surface-container);
+  border-color: var(--sys-color-outline-variant);
+  box-shadow: none;
+}
+
+.stats-section--supporting .stats-grid :deep(.stat-item:hover) {
+  background: var(--sys-color-surface-container-high);
+  box-shadow: var(--sys-elevation-1);
 }
 
 .stats-grid {

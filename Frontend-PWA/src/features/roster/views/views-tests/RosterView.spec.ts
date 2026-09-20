@@ -18,6 +18,7 @@ vi.mock("vue-router/experimental", () => ({
 
 const mockToggleExpand = vi.fn();
 const mockToggleSelect = vi.fn();
+const mockSetHistoryOpen = vi.fn();
 const mockGetCardMetadata = vi.fn((id: string) => ({ expanded: id === "m1", selected: false }));
 const mockGetMemoKeys = vi.fn((id: string, deps: unknown[]) => [id, ...deps]);
 
@@ -34,6 +35,7 @@ const mockMembers: LeaderboardMember[] = [
 
 const mockVisibleItems = ref(mockMembers);
 const mockIsShowcaseMode = ref(false);
+const mockIsHistoryOpen = ref(true);
 
 vi.mock("../../composables/useLeaderboard", () => ({
   useLeaderboard: () => ({
@@ -41,6 +43,8 @@ vi.mock("../../composables/useLeaderboard", () => ({
     isShowcaseMode: mockIsShowcaseMode,
     toggleExpand: mockToggleExpand,
     toggleSelect: mockToggleSelect,
+    isHistoryOpen: mockIsHistoryOpen,
+    setHistoryOpen: mockSetHistoryOpen,
     layoutProps: ref({ status: { type: "success", text: "Ready" } }),
     layoutEvents: ref({}),
     getCardMetadata: mockGetCardMetadata,
@@ -64,7 +68,7 @@ function mountRosterView() {
         MemberCard: {
           name: "MemberCard",
           template: '<div class="member-card-stub" :data-id="id" @click="$emit(\'toggle\')" @dblclick="$emit(\'toggle-select\')"></div>',
-          props: ["id", "member", "expanded", "selected"],
+          props: ["id", "member", "expanded", "selected", "historyOpen"],
         },
         VoyageBanner: {
           name: "VoyageBanner",
@@ -91,6 +95,8 @@ describe("RosterView.vue", () => {
     expect(cards[0].props("expanded")).toBe(true);
     expect(cards[1].props("member")).toEqual(mockMembers[1]);
     expect(cards[1].props("expanded")).toBe(false);
+    expect(cards[0].props("historyOpen")).toBe(true);
+    expect(cards[1].props("historyOpen")).toBe(true);
     expect(mockGetCardMetadata).toHaveBeenCalledWith("m1");
     expect(mockGetCardMetadata).toHaveBeenCalledWith("m2");
   });
@@ -111,5 +117,14 @@ describe("RosterView.vue", () => {
     await secondCard.trigger("dblclick");
 
     expect(mockToggleSelect).toHaveBeenCalledWith("m2");
+  });
+
+  it("wires history disclosure changes to the shared roster preference", async () => {
+    const wrapper = mountRosterView();
+    const firstCard = wrapper.findAllComponents({ name: "MemberCard" })[0];
+
+    await firstCard.vm.$emit("update:history-open", false);
+
+    expect(mockSetHistoryOpen).toHaveBeenCalledWith(false);
   });
 });

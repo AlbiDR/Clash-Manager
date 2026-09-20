@@ -115,10 +115,10 @@ describe("EventManagement.vue", () => {
 
     const summary = wrapper.find(".active-summary");
     expect(summary.exists()).toBe(true);
-    expect(summary.text()).toContain("2,500 / 5,000");
-    expect(summary.text()).toContain("50%");
+    const primaryValues = summary.findAll(".summary-value.primary .animated-digits-visual").map((value) => value.text());
+    expect(primaryValues).toEqual(["2,500", "5,000", "50%"]);
     expect(summary.text()).toContain("Underway");
-    expect(summary.find(".timer").text()).toBe("1d 00h");
+    expect(summary.find(".timer .animated-digits-visual").text()).toBe("1d 00h");
   });
 
   it("shows Goal Achieved when crowns target is met", async () => {
@@ -157,7 +157,7 @@ describe("EventManagement.vue", () => {
 
     const wrapper = createWrapper();
     await nextTick();
-    expect(wrapper.find(".timer").text()).toBe("00:00:10");
+    expect(wrapper.find(".timer .animated-digits-visual").text()).toBe("00:00:10");
 
     // Advance 1s
     vi.advanceTimersByTime(1000);
@@ -165,7 +165,7 @@ describe("EventManagement.vue", () => {
 
     const timer = wrapper.find(".timer");
     if (timer.exists()) {
-      expect(timer.text()).toBe("00:00:09");
+      expect(timer.find(".animated-digits-visual").text()).toBe("00:00:09");
     }
 
     // Advance to end
@@ -174,7 +174,7 @@ describe("EventManagement.vue", () => {
 
     const timerEnd = wrapper.find(".timer");
     if (timerEnd.exists()) {
-      expect(timerEnd.text()).toBe("Ended");
+      expect(timerEnd.find(".animated-digits-visual").text()).toBe("Ended");
     }
   });
 

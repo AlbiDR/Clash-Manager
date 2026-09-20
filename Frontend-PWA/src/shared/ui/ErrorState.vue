@@ -77,7 +77,12 @@ function handleCopyDetails() {
         v-tactile
         type="button"
         class="error-action error-action--secondary"
+        :class="{
+          'is-copied': clipboardState === 'copied',
+          'is-unavailable': clipboardState === 'unavailable',
+        }"
         :aria-label="copyLabel"
+        :title="copyLabel"
         @click="handleCopyDetails"
       >
         <Icon
@@ -182,6 +187,21 @@ function handleCopyDetails() {
   border: 1px solid var(--sys-color-outline-variant);
   background: var(--sys-color-surface-container-high);
   color: var(--sys-color-on-surface);
+  transition:
+    background-color var(--sys-motion-duration-200) var(--sys-motion-easing-standard),
+    border-color var(--sys-motion-duration-200) var(--sys-motion-easing-standard),
+    color var(--sys-motion-duration-200) var(--sys-motion-easing-standard),
+    transform var(--sys-motion-duration-200) var(--sys-motion-spring);
+}
+
+.error-action--secondary.is-copied {
+  background: var(--sys-color-primary);
+  border-color: var(--sys-color-primary);
+  color: var(--sys-color-on-primary);
+}
+
+.error-action--secondary.is-unavailable {
+  color: var(--sys-color-error);
 }
 
 .error-action:hover { transform: translateY(calc(-1 * var(--sys-space-2))); }

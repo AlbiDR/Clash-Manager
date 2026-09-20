@@ -125,6 +125,7 @@ const hasDescription = computed(() => Boolean(props.description || slots.descrip
       class="switch"
       :class="{
         active: active,
+        'is-loading': loading,
         'skeleton-anim sk-badge-s': loading,
       }"
       aria-hidden="true"
@@ -150,7 +151,10 @@ const hasDescription = computed(() => Boolean(props.description || slots.descrip
   align-items: center;
   justify-content: space-between;
   cursor: pointer;
-  transition: all var(--sys-motion-duration-200) var(--sys-motion-spring);
+  border-radius: var(--sys-shape-corner-small);
+  transition:
+    background-color var(--sys-motion-duration-200) var(--sys-motion-easing-standard),
+    color var(--sys-motion-duration-200) var(--sys-motion-easing-standard);
   min-height: var(--sys-space-48); /* 48px Mobile Footprint (Target B.2) */
   padding: var(--sys-space-4) 0; /* Compensating vertical padding */
 }
@@ -159,6 +163,19 @@ const hasDescription = computed(() => Boolean(props.description || slots.descrip
   outline: 2px solid var(--sys-color-primary);
   outline-offset: var(--sys-space-2);
   border-radius: var(--sys-shape-corner-extra-small);
+}
+
+/* Hover is a pointer enhancement only. Touch devices keep their state stable
+   until the deliberate press response below. */
+@media (hover: hover) {
+  .setting-row:not(:disabled):hover .switch {
+    border-color: rgba(var(--sys-color-primary-rgb), 0.55);
+    box-shadow: 0 2px 8px rgba(var(--sys-color-primary-rgb), 0.16);
+  }
+
+  .setting-row:not(:disabled):hover .switch.active {
+    box-shadow: 0 3px 10px rgba(var(--sys-color-primary-rgb), 0.28);
+  }
 }
 
 /* The native `disabled` attribute already blocks activation and removes the
@@ -212,6 +229,8 @@ const hasDescription = computed(() => Boolean(props.description || slots.descrip
   --switch-border: 1.5px;
   --handle-size: 17px;
   --handle-inset: 2px;
+  --handle-translate: 0px;
+  --handle-press-scale: 1;
 
   width: var(--switch-width);
   height: var(--switch-height);
@@ -221,14 +240,19 @@ const hasDescription = computed(() => Boolean(props.description || slots.descrip
   /* `var(--sys-overlay-dark-soft)` was invisible against a dark track. */
   border: var(--switch-border) solid var(--sys-color-outline-variant);
   flex-shrink: 0;
+  box-shadow: inset 0 1px 1px var(--sys-overlay-dark-subtle);
   transition:
     background-color var(--sys-motion-duration-300) var(--sys-motion-easing-standard),
-    border-color var(--sys-motion-duration-300) var(--sys-motion-easing-standard);
+    border-color var(--sys-motion-duration-300) var(--sys-motion-easing-standard),
+    box-shadow var(--sys-motion-duration-200) var(--sys-motion-easing-standard);
 }
 
 .switch.active {
   background: var(--sys-color-primary);
   border-color: var(--sys-color-primary);
+  box-shadow:
+    inset 0 1px 1px var(--sys-overlay-light-medium),
+    0 2px 8px rgba(var(--sys-color-primary-rgb), 0.2);
 }
 
 .switch .handle {
@@ -242,9 +266,14 @@ const hasDescription = computed(() => Boolean(props.description || slots.descrip
      1.2:1 against the light-blue dark-mode track. */
   background: var(--sys-color-outline);
   border-radius: 50%;
+  box-shadow:
+    0 1px 2px var(--sys-overlay-dark-soft),
+    inset 0 1px 1px var(--sys-overlay-light-medium);
   transition:
-    transform var(--sys-motion-duration-300) var(--sys-motion-spring),
-    background-color var(--sys-motion-duration-300) var(--sys-motion-easing-standard);
+    transform var(--sys-motion-duration-300) var(--sys-motion-easing-spring-overshoot),
+    background-color var(--sys-motion-duration-200) var(--sys-motion-easing-standard),
+    box-shadow var(--sys-motion-duration-200) var(--sys-motion-easing-standard);
+  transform: translateX(var(--handle-translate)) scaleX(var(--handle-press-scale));
 }
 
 /* [DECISION LOG] TRANSFORM, NOT `left`:
@@ -253,13 +282,27 @@ const hasDescription = computed(() => Boolean(props.description || slots.descrip
    layout pass. The travel is the track's inner width less the handle and both
    insets, derived rather than measured so it survives a resize of any of them. */
 .switch.active .handle {
-  transform: translateX(
-    calc(
-      var(--switch-width) - 2 * var(--switch-border) - var(--handle-size) - 2 *
-        var(--handle-inset)
-    )
+  --handle-translate: calc(
+    var(--switch-width) - 2 * var(--switch-border) - var(--handle-size) - 2 *
+      var(--handle-inset)
   );
   background: var(--sys-color-on-primary);
+}
+
+/* A short horizontal widening gives press feedback without moving the row or
+   requiring drag semantics from a full-row preference button. */
+.setting-row:not(:disabled):active .switch .handle {
+  --handle-press-scale: 1.16;
+}
+
+.setting-row:focus-visible .switch {
+  box-shadow:
+    0 0 0 2px var(--sys-color-primary-container),
+    0 0 0 4px var(--sys-color-primary);
+}
+
+.switch.is-loading .handle {
+  opacity: 0.72;
 }
 
 /* Mini Variant */
@@ -284,5 +327,13 @@ const hasDescription = computed(() => Boolean(props.description || slots.descrip
 /* Skeleton animation if loading */
 .sk-badge-s {
   border: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .setting-row,
+  .switch,
+  .switch .handle {
+    transition: none;
+  }
 }
 </style>
