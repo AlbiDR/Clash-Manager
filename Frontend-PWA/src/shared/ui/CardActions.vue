@@ -87,7 +87,6 @@ function handleOpenInGame() {
         <Icon
           name="clash-royale"
           :size="iconSize + 4"
-          view-box="11 10 26 29"
           aria-hidden="true"
         />
         <span>Open Game</span>

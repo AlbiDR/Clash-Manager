@@ -127,7 +127,7 @@ const usefulLinks = computed(() => {
       label: "Clash Royale Store",
       desc: "Official Supercell store specials and deals",
       url: `https://store.supercell.com/${locale}/clashroyale`,
-      logo: "https://store.supercell.com/public/icon-nav-supercell-store-HDDWMNKU.png",
+      icon: "clash-royale",
     },
   ];
 

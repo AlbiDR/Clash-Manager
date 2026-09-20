@@ -48,6 +48,13 @@ describe("LinkRow.vue", () => {
     expect(wrapper.find(".link-logo").exists()).toBe(false);
   });
 
+  it("keeps platform icons consistent with their shared icon definition", () => {
+    const wrapper = mountRow({ label: "Clash Royale Store", icon: "clash-royale" });
+
+    expect(wrapper.findComponent(Icon).props("name")).toBe("clash-royale");
+    expect(wrapper.find("svg").attributes("viewBox")).toBe("11 10 26 29");
+  });
+
   it("prefers a remote logo over an icon and labels it for assistive tech", () => {
     const wrapper = mountRow({
       label: "RoyaleAPI",

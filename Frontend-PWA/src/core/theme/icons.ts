@@ -9,14 +9,32 @@ const PATH_MOON = "M12,3c-4.97,0-9,4.03-9,9s4.03,9,9,9s9-4.03,9-9c0-0.46-0.04-0.
 const PATH_FLAG = "M14.4 6L14 4H5v17h2v-7h5.6l.4 2h7V6h-5.6z";
 const PATH_STAR = "M12,17.27L18.18,21l-1.64-7.03L22,9.24l-7.19-0.61L12,2L9.19,8.63L2,9.24l5.46,4.73L5.82,21L12,17.27z";
 const PATH_ROSTER = "M3,21C2.717,21 2.479,20.904 2.288,20.712C2.097,20.52 2.001,20.283 2,20L2,10C2,9.717 2.096,9.479 2.288,9.288C2.48,9.097 2.717,9.001 3,9L6.5,9C6.783,9 7.021,9.096 7.213,9.288C7.405,9.48 7.501,9.717 7.5,10L7.5,20C7.5,20.283 7.404,20.521 7.212,20.713C7.02,20.905 6.783,21.001 6.5,21L3,21ZM10.25,21C9.967,21 9.729,20.904 9.538,20.712C9.347,20.52 9.251,20.283 9.25,20L9.25,4C9.25,3.717 9.346,3.479 9.538,3.288C9.73,3.097 9.967,3.001 10.25,3L13.75,3C14.033,3 14.271,3.096 14.463,3.288C14.655,3.48 14.751,3.717 14.75,4L14.75,20C14.75,20.283 14.654,20.521 14.462,20.713C14.27,20.905 14.033,21.001 13.75,21L10.25,21ZM17.5,21C17.217,21 16.979,20.904 16.788,20.712C16.597,20.52 16.501,20.283 16.5,20L16.5,12C16.5,11.717 16.596,11.479 16.788,11.288C16.98,11.097 17.217,11.001 17.5,11L21,11C21.283,11 21.521,11.096 21.713,11.288C21.905,11.48 22.001,11.717 22,12L22,20C22,20.283 21.904,20.521 21.712,20.713C21.52,20.905 21.283,21.001 21,21L17.5,21Z";
-const PATH_CLASH_ROYALE = "M12 14v18l12 6 12-6V14h-7l-5-3-5 3zm2 2h5.554L24 13.332 28.446 16H34v14.764l-10 5-10-5zm4 4h1l1 2h1l1-3h4l1 3h1l1-2h1v3l-1 1v5H19v-5l-1-1z";
+const PATHS_CLASH_ROYALE = Object.freeze([
+  { d: "M13 15v16l11 6 11-6V15h-6l-5-3-5 3z", fill: "#11569c" },
+  { d: "M13 15v18l12 6 12-6V15h-7l-5-3-5 3zm2 2h5.554L25 14.332 29.446 17H35v14.764l-10 5-10-5zm4 4h1l1 2 2-3h4l1 3 2-2h1v3l-1 2v4H20v-4l-1-2z", opacity: 0.1 },
+  { d: "M12 14v18l12 6 12-6V14h-7l-5-3-5 3zm2 2h5.554L24 13.332 28.446 16H34v14.764l-10 5-10-5zm4 4h1l1 2h1l1-3h4l1 3h1l1-2h1v3l-1 1v5H19v-5l-1-1z", fill: "#e8c92b" },
+  { d: "m18 23 1 2h10l1-2zm6 3 1 1-1 1-1-1z", fill: "#e6a219" },
+]);
 
-export const ICONS: Record<string, string> = Object.freeze({
+export interface IconPath {
+  d: string;
+  fill?: string;
+  opacity?: number;
+}
+
+export type IconDefinition = string | readonly IconPath[];
+
+/** Non-standard view boxes are owned by the icon registry, not its callers. */
+export const ICON_VIEW_BOXES: Readonly<Record<string, string>> = Object.freeze({
+  "clash-royale": "11 10 26 29",
+});
+
+export const ICONS: Readonly<Record<string, IconDefinition>> = Object.freeze({
   // Navigation
   roster: PATH_ROSTER,
   leaderboard: PATH_CHART_BAR,
   recruiter: PATH_DISCOVERY,
-  "clash-royale": PATH_CLASH_ROYALE,
+  "clash-royale": PATHS_CLASH_ROYALE,
   settings: PATH_COG,
   voyage: PATH_FLAG,
   victory: PATH_STAR,
