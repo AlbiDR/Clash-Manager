@@ -220,18 +220,19 @@ export function useHeadhunter() {
    *
    * @throws {Error} Re-throws non-transient errors after rolling back local state.
    */
-  async function dismissRecruitsAction(items: DismissalRequest[]) {
-    if (!clashData.value) return;
+  async function dismissRecruitsAction(items: DismissalRequest[]): Promise<boolean> {
+    if (!clashData.value) return false;
     // THREAT: Anemic variable 'i' hid intent. Using domain-descriptive 'dismissalRequest' [Target B 4].
     const ids = items.map(dismissalRequest => dismissalRequest.id);
     const oldData = clashData.value;
     applyLocalDismissal(ids);
 
-    if (isSyntheticMode.value) return;
+    if (isSyntheticMode.value) return true;
 
     try {
       await dismissRecruits(items);
       broadcast({ type: "RECRUIT_DISMISSAL", ids });
+      return true;
     } catch (syncError: unknown) {
       const errorName = syncError instanceof Error ? syncError.name : "Error";
       const errorMessage = syncError instanceof Error ? syncError.message : String(syncError);
@@ -240,7 +241,7 @@ export function useHeadhunter() {
       // The in-memory tombstone resets on component remount; server state is authoritative on next load.
       if (errorName === "AbortError") {
         updateLocalData(oldData);
-        return;
+        return false;
       }
 
       // All other failures (NetworkError, server errors, etc.) are surfaced to the user.
@@ -264,18 +265,25 @@ export function useHeadhunter() {
     undismissRecruitsAction: async (
       ids: string[],
       originalRecruits?: Recruit[],
-    ) => {
+    ): Promise<boolean> => {
       // Optimistically inject original recruits into store if provided to eliminate UI latency
       if (originalRecruits && originalRecruits.length > 0) {
         injectRecruits(originalRecruits);
       }
-      if (isSyntheticMode.value) return;
+      if (isSyntheticMode.value) return true;
       try {
         await undismissRecruits(ids);
         broadcast({ type: "RECRUIT_RESTORATION", ids });
+        return true;
       } catch (undoError: unknown) {
-        // THREAT: Unvalidated error risks silent corruption if logging fails or masks context [Target B 4].
-        console.error("Undo Sync Failed:", undoError instanceof Error ? undoError.message : String(undoError));
+        // The optimistic restore must not outlive a failed remote restoration:
+        // otherwise the next authoritative refresh makes a recruit disappear a
+        // second time with no explanation. Roll it back and surface the typed
+        // error through the global, readable feedback path instead.
+        applyLocalDismissal(ids);
+        const errorMessage = undoError instanceof Error ? undoError.message : String(undoError);
+        toastError(`Could not restore dismissal: ${errorMessage}`);
+        return false;
       }
     }
   };

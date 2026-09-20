@@ -19,6 +19,7 @@ const mockUpdateLocalData = vi.fn((newData) => {
 });
 const mockPost = vi.fn();
 const mockIsSyntheticMode = ref(false);
+const mockToastError = vi.fn();
 
 // Mock Specific Modules
 vi.mock("@core/services/useBadge", () => ({
@@ -56,7 +57,7 @@ vi.mock("@core/services/useSyntheticMode", () => ({
 
 vi.mock("@core/services/useToast", () => ({
   useToast: () => ({
-    error: vi.fn(),
+    error: mockToastError,
     success: vi.fn(),
     info: vi.fn(),
   }),
@@ -364,15 +365,17 @@ describe("useHeadhunter", () => {
     const { undismissRecruitsAction } = useHeadhunter();
     const { undismissRecruits } = await import("@core/api/RecruitClient");
 
-    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     vi.mocked(undismissRecruits).mockRejectedValueOnce(new Error("Network Failure"));
 
     mockClashData.value = sampleData;
     await nextTick();
 
-    await undismissRecruitsAction(["R1"]);
+    const result = await undismissRecruitsAction(["R1"]);
 
-    expect(consoleSpy).toHaveBeenCalledWith("Undo Sync Failed:", "Network Failure");
-    consoleSpy.mockRestore();
+    expect(result).toBe(false);
+    expect(mockToastError).toHaveBeenCalledWith("Could not restore dismissal: Network Failure");
+    expect(mockUpdateLocalData).toHaveBeenLastCalledWith(expect.objectContaining({
+      hh: [sampleRecruit2],
+    }));
   });
 });

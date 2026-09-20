@@ -9,11 +9,12 @@ import { setActivePinia, createPinia } from 'pinia';
 const mockUpdateLocalData = vi.fn();
 const mockRefreshStore = vi.fn();
 const mockInjectRecruits = vi.fn().mockReturnValue(1);
-const mockDismissRecruitsAction = vi.fn().mockResolvedValue(undefined);
-const mockUndismissRecruitsAction = vi.fn().mockResolvedValue(undefined);
+const mockDismissRecruitsAction = vi.fn().mockResolvedValue(true);
+const mockUndismissRecruitsAction = vi.fn().mockResolvedValue(true);
 const mockHide = vi.fn();
 const mockRestore = vi.fn();
-const mockUndo = vi.fn();
+const mockUndo = vi.fn(() => "undo-toast-id");
+const mockRemove = vi.fn();
 const mockSuccess = vi.fn();
 const mockInfo = vi.fn();
 const mockError = vi.fn();
@@ -104,6 +105,7 @@ vi.mock("@core", async (importOriginal) => {
     })),
     useToast: vi.fn(() => ({
       undo: mockUndo,
+      remove: mockRemove,
       success: mockSuccess,
       error: mockError,
       info: mockInfo,
@@ -172,6 +174,7 @@ vi.mock("@core/services/useConnectionStatus", () => ({
 vi.mock("@core/services/useToast", () => ({
   useToast: vi.fn(() => ({
     undo: mockUndo,
+    remove: mockRemove,
     success: mockSuccess,
     error: mockError,
     info: mockInfo,
@@ -212,7 +215,8 @@ describe("useRecruiter", () => {
         { id: "2", n: "Recruit B", potentialScore: 90, t: 6000, d: { ago: "2024-01-02T00:00:00Z", don: 50, war: 5 } }
       ]
     };
-    mockDismissRecruitsAction.mockResolvedValue(undefined);
+    mockDismissRecruitsAction.mockResolvedValue(true);
+    mockUndismissRecruitsAction.mockResolvedValue(true);
   });
 
 
@@ -377,6 +381,7 @@ describe("useRecruiter", () => {
       await new Promise(resolve => setTimeout(resolve, 0));
 
       expect(mockRestore).toHaveBeenCalledWith(["1"]);
+      expect(mockRemove).toHaveBeenCalledWith(expect.any(String));
     });
 
     it("restores recruits when undo is clicked", async () => {
@@ -389,10 +394,33 @@ describe("useRecruiter", () => {
       expect(mockUndo).toHaveBeenCalled();
       const undoCallback = mockUndo.mock.calls[0][1];
       undoCallback();
+      await Promise.resolve();
+      await Promise.resolve();
 
       expect(mockRestore).toHaveBeenCalledWith(["1"]);
       expect(mockUndismissRecruitsAction).toHaveBeenCalledWith(["1"], [mockClashData.value.hh[0]]);
-      expect(mockSuccess).toHaveBeenCalledWith("Dismissal cancelled");
+      expect(mockSuccess).toHaveBeenCalledWith("Dismissal restored");
+    });
+
+    it("waits for dismissal persistence before sending an undo restore", async () => {
+      let resolveDismissal: (wasDismissed: boolean) => void;
+      mockDismissRecruitsAction.mockImplementationOnce(
+        () => new Promise<boolean>((resolve) => { resolveDismissal = resolve; }),
+      );
+      const [{ dismissBulk, selectedIds }] = withSetup(() => useRecruiter());
+
+      selectedIds.value = ["1"];
+      dismissBulk();
+      const undoCallback = mockUndo.mock.calls[0][1];
+      undoCallback();
+
+      expect(mockUndismissRecruitsAction).not.toHaveBeenCalled();
+
+      resolveDismissal!(true);
+      await Promise.resolve();
+      await Promise.resolve();
+
+      expect(mockUndismissRecruitsAction).toHaveBeenCalledWith(["1"], [mockClashData.value.hh[0]]);
     });
   });
 });
