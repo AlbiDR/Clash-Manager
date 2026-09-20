@@ -16,6 +16,23 @@ LAST_AGED:   2026-09-19
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-20] PR #1899 [Stage 12]: Completed Stage 12 APK UX audit across 78 files with 0 violations.
+**Domain:** ux | **Commit:** 6655fa3ac | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1899)
+**Files:** .github/nightly-logs/12-apk-ux-coverage.log, .github/nightly-logs/12-apk-ux-pr-body.md
+**Why:** Automated APK UX audit passed with zero violations across all 10 UX categories; candidate ViewOptions.vue is verified compliant.
+**Change:** Completed Stage 12 APK UX audit across 78 files with 0 violations.
+**Result:** Audit completed with no source change required.
+**Nudges:** 1
+
+### [2026-09-20] PR #1898 [Stage 13]: Recorded S2, S7, S9 watchdog nudges (27.3% intervention rate), S12 missing output event, verified 0 unfinalized sentinels, updated Section 3 metrics.
+**Domain:** pipeline | **Commit:** d82238993 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1898)
+**Files:** .github/nightly-logs/13-self-healing-protocol-coverage.log, .github/nightly-logs/13-self-healing-protocol-pr-body.md, .github/nightly-logs/13-self-healing-protocol.md
+**Why:** Updated .github/nightly-logs/13-self-healing-protocol.md in-place with 2026-09-20 pipeline evidence.
+**Change:** Recorded S2, S7, S9 watchdog nudges (27.3% intervention rate), S12 missing output event, verified 0 unfinalized sentinels, updated Section 3 metrics.
+**Result:** git diff --check passed with 0 errors across 13-self-healing-protocol.md
+**Nudges:** 1
+
+
 ### [2026-09-20] PR #1897 [Stage 11]: Audited native WebView performance settings, Service Worker cache topology, and Vite bundle chunking; all optimal.
 **Domain:** apk | **Commit:** 32c27a9ec | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1897)
 **Files:** .github/nightly-logs/11-apk-optimization-coverage.log, .github/nightly-logs/11-apk-optimization-pr-body.md
