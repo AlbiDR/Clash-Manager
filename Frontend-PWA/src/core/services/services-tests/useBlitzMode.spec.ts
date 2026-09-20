@@ -80,7 +80,7 @@ describe("useBlitzMode", () => {
     vi.advanceTimersByTime(150);
 
     expect(isProcessing.value).toBe(false);
-    expect(mockInfo).toHaveBeenCalledWith("Batch complete");
+    expect(mockInfo).toHaveBeenCalledWith("Batch sequence complete · 2 profiles");
   });
 
   describe("Blitz Mode", () => {
@@ -107,7 +107,7 @@ describe("useBlitzMode", () => {
 
       vi.advanceTimersByTime(1500);
       expect(fabState.value.isBlasting).toBe(false);
-      expect(mockInfo).toHaveBeenCalledWith("Blitz complete");
+      expect(mockInfo).toHaveBeenCalledWith("Blitz sequence complete · 3 profiles");
     });
 
     it("stops blitz when clearSelection is called", () => {
