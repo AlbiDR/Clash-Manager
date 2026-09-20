@@ -34,8 +34,10 @@ describe("StatusPill", () => {
       
       if (type === "loading") {
         expect(wrapper.find(".spinner").exists()).toBe(true);
+        expect(wrapper.find(".status-indicator").classes()).toContain("is-syncing");
       } else {
         expect(wrapper.find(".status-dot").exists()).toBe(true);
+        expect(wrapper.find(".status-indicator").classes()).not.toContain("is-syncing");
       }
     }
   });

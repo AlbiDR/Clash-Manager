@@ -77,6 +77,7 @@ onUnmounted(() => document.removeEventListener("click", handleClickOutside));
     >
       <span
         class="status-indicator"
+        :class="{ 'is-syncing': props.type === 'loading' }"
         aria-hidden="true"
       >
         <Icon
@@ -152,6 +153,7 @@ onUnmounted(() => document.removeEventListener("click", handleClickOutside));
   position: relative;
   color: var(--sys-color-on-surface-variant);
   z-index: var(--sys-z-dropdown);
+  transition: color var(--sys-motion-duration-200) var(--sys-motion-easing-standard);
 }
 
 .status-trigger {
@@ -173,6 +175,10 @@ onUnmounted(() => document.removeEventListener("click", handleClickOutside));
   color: inherit;
   cursor: pointer;
   font: inherit;
+  transition:
+    background-color var(--sys-motion-duration-200) var(--sys-motion-easing-standard),
+    border-color var(--sys-motion-duration-200) var(--sys-motion-easing-standard),
+    box-shadow var(--sys-motion-duration-200) var(--sys-motion-easing-standard);
 }
 
 .status-trigger::after {
@@ -196,6 +202,7 @@ onUnmounted(() => document.removeEventListener("click", handleClickOutside));
 .status-trigger:disabled { cursor: default; }
 
 .status-indicator {
+  position: relative;
   display: inline-flex;
   width: var(--sys-space-12);
   height: var(--sys-space-12);
@@ -204,12 +211,27 @@ onUnmounted(() => document.removeEventListener("click", handleClickOutside));
   flex: 0 0 auto;
 }
 
+/* Loading is the only ongoing operation represented by the pill. Its ring
+   establishes "working now" at a glance; settled current, stale, and error
+   data retain their quieter static dots so status never looks needlessly busy. */
+.status-indicator.is-syncing::after {
+  content: "";
+  position: absolute;
+  inset: calc(-1 * var(--sys-space-4));
+  border: 1px solid currentColor;
+  border-radius: var(--sys-shape-corner-full);
+  opacity: 0;
+  animation: status-sync-pulse var(--sys-motion-ambient-pulse) var(--sys-motion-easing-standard) infinite;
+}
+
 .status-dot {
   width: var(--sys-space-8);
   height: var(--sys-space-8);
   border-radius: var(--sys-shape-corner-full);
   background: currentColor;
-  box-shadow: 0 0 0 3px color-mix(in srgb, currentColor 16%, transparent);
+  box-shadow:
+    0 0 0 var(--sys-space-4) color-mix(in srgb, currentColor 16%, transparent),
+    0 1px var(--sys-space-4) color-mix(in srgb, currentColor 24%, transparent);
 }
 
 .status-label {
@@ -261,6 +283,20 @@ onUnmounted(() => document.removeEventListener("click", handleClickOutside));
   width: var(--sys-space-12);
   height: var(--sys-space-12);
   animation: rotate var(--sys-motion-ambient-spin) linear infinite;
+}
+
+@keyframes status-sync-pulse {
+  0%, 100% {
+    opacity: 0;
+    transform: scale(0.72);
+  }
+  35% {
+    opacity: 0.52;
+  }
+  70% {
+    opacity: 0;
+    transform: scale(1.24);
+  }
 }
 
 .status-details {
@@ -349,4 +385,16 @@ onUnmounted(() => document.removeEventListener("click", handleClickOutside));
 }
 
 @keyframes rotate { to { transform: rotate(360deg); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner,
+  .status-indicator.is-syncing::after {
+    animation: none;
+  }
+
+  .status-indicator.is-syncing::after {
+    opacity: 0.45;
+    transform: none;
+  }
+}
 </style>
