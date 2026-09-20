@@ -62,6 +62,7 @@ describe("StatusPill", () => {
     
     const trigger = wrapper.find(".status-trigger");
     expect(trigger.attributes("aria-expanded")).toBe("false");
+    expect(trigger.attributes("aria-label")).toBe("Ready. Show data status details.");
     expect(wrapper.find(".status-details").exists()).toBe(false);
     
     // Simulate v-tactile interaction

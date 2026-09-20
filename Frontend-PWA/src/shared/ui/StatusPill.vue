@@ -30,7 +30,7 @@ const detailsAvailable = computed(() =>
 );
 
 const statusLabel = computed(() => {
-  const action = isExpanded.value ? "Hide connection details" : "Show connection details";
+  const action = isExpanded.value ? "Hide data status details" : "Show data status details";
   return detailsAvailable.value ? `${props.text}. ${action}.` : props.text;
 });
 
@@ -161,7 +161,7 @@ onUnmounted(() => document.removeEventListener("click", handleClickOutside));
   justify-content: center;
   gap: var(--sys-space-6);
   /* Visual controls in the summary rail are 32px high. The transparent halo
-     below preserves the 44px pointer target without making this small status
+     below preserves the ADR-required 48px pointer target without making this small status
      token look like a second header row. */
   height: var(--sys-space-32);
   min-height: var(--sys-space-32);
@@ -178,7 +178,7 @@ onUnmounted(() => document.removeEventListener("click", handleClickOutside));
 .status-trigger::after {
   content: "";
   position: absolute;
-  inset: calc(-1 * var(--sys-space-6));
+  inset: calc(-1 * var(--sys-space-8));
 }
 
 .status-trigger.is-nominal { background: transparent; }
