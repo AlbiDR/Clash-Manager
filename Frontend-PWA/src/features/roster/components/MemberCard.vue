@@ -150,7 +150,7 @@ const memberAccessibilityLabel = computed(() => {
         :columns="2"
         :loading="props.appIsRefreshing"
         label="Score drivers"
-        detail="Current clan contribution"
+        detail="Recent clan contribution"
       >
         <StatisticItem
           label="War Rate"
@@ -193,7 +193,7 @@ const memberAccessibilityLabel = computed(() => {
         :loading="props.appIsRefreshing"
         class="lifetime-grid-margin"
         label="Score foundations"
-        detail="Durable profile"
+        detail="Proven record"
       >
         <StatisticItem
           label="RPeS"
@@ -213,26 +213,35 @@ const memberAccessibilityLabel = computed(() => {
         />
       </StatsGrid>
 
-      <BaseSegmentedControl
-        v-model="activeChartMode"
-        :options="[
-          { label: 'War', value: 'war' },
-          { label: 'Voyage', value: 'voyage' }
-        ]"
-        compact
-        class="chart-toggle-margin"
-      />
+      <section
+        class="history-section"
+        aria-label="Performance history"
+      >
+        <header class="history-heading">
+          <span class="history-heading-label">Performance history</span>
+          <span class="history-heading-detail">War and Voyage trend</span>
+        </header>
+        <BaseSegmentedControl
+          v-model="activeChartMode"
+          :options="[
+            { label: 'War', value: 'war' },
+            { label: 'Voyage', value: 'voyage' }
+          ]"
+          compact
+          class="chart-toggle-margin"
+        />
 
-      <WarHistoryChart
-        v-if="activeChartMode === 'war'"
-        :history="props.member.d.hist"
-        :loading="props.appIsRefreshing"
-      />
-      <VoyageHistoryChart
-        v-else
-        :history="props.member.d.v_hist"
-        :loading="props.appIsRefreshing"
-      />
+        <WarHistoryChart
+          v-if="activeChartMode === 'war'"
+          :history="props.member.d.hist"
+          :loading="props.appIsRefreshing"
+        />
+        <VoyageHistoryChart
+          v-else
+          :history="props.member.d.v_hist"
+          :loading="props.appIsRefreshing"
+        />
+      </section>
 
       <CardActions
         :id="props.member.id"
@@ -255,8 +264,34 @@ const memberAccessibilityLabel = computed(() => {
   margin-top: var(--sys-space-16);
 }
 
-.chart-toggle-margin {
+.history-section {
+  display: grid;
+  gap: var(--sys-space-8);
   margin-top: var(--sys-space-16);
+}
+
+.history-heading {
+  display: grid;
+  gap: var(--sys-space-2);
+  color: var(--sys-color-on-surface-variant);
+  font-family: var(--sys-font-family-mono);
+  font-size: var(--sys-typescale-label-sm);
+  font-weight: 800;
+  letter-spacing: var(--sys-tracking-wide);
+  line-height: var(--sys-leading-none);
+  text-transform: uppercase;
+}
+
+.history-heading-label {
+  width: fit-content;
+}
+
+.history-heading-detail {
+  color: var(--sys-color-outline);
+  font-size: var(--sys-typescale-label-xs);
+  font-weight: 600;
+  letter-spacing: normal;
+  text-transform: none;
 }
 
 .card-actions-margin {

@@ -53,6 +53,7 @@ describe("StatsGrid.vue", () => {
     });
 
     expect(wrapper.find(".stats-section").attributes("aria-label")).toBe("Current performance");
+    expect(wrapper.find(".stats-section-label").text()).toBe("Current performance");
     expect(wrapper.find(".stats-section-heading").text()).toContain("Current performance");
     expect(wrapper.find(".stats-section-detail").text()).toBe("Clan contribution");
     expect(wrapper.find(".stats-grid").classes()).toContain("cols-2");

@@ -230,7 +230,12 @@ const scoreActionLabel = computed(() => {
           role="region"
           :aria-label="detailsRegionLabel"
         >
-          <slot name="expanded-content" />
+          <!-- One owned wrapper gives every feature's detail slot the same
+               unobtrusive arrival treatment without coupling shared UI to a
+               particular card's content. -->
+          <div class="card-detail-sequence">
+            <slot name="expanded-content" />
+          </div>
         </div>
       </div>
     </Transition>
@@ -456,6 +461,10 @@ const scoreActionLabel = computed(() => {
   border-top: 1px solid var(--sys-overlay-dark-subtle);
 }
 
+.card-detail-sequence {
+  min-width: 0;
+}
+
 .card-details-enter-active,
 .card-details-leave-active {
   transition:
@@ -467,6 +476,32 @@ const scoreActionLabel = computed(() => {
 .card-details-leave-to {
   grid-template-rows: 0fr;
   opacity: 0;
+}
+
+/* The grid reveal gives the details their space; this short, delayed settle
+   gives the information its own arrival without moving the surrounding list.
+   It is deliberately shared so roster and recruit cards feel like one system. */
+.card-details-enter-active .card-detail-sequence {
+  animation: card-detail-content-in var(--sys-motion-duration-200)
+    var(--sys-motion-easing-decelerate) 60ms both;
+}
+
+@keyframes card-detail-content-in {
+  from {
+    opacity: 0;
+    transform: translateY(var(--sys-space-4));
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card-details-enter-active .card-detail-sequence {
+    animation: none;
+  }
 }
 
 /* Shared Hit Target Helper */

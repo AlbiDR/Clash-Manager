@@ -135,7 +135,7 @@ describe("RecruitCard.vue", () => {
     const headings = wrapper.findAll(".stats-section-heading").map((heading) => heading.text());
 
     expect(headings).toEqual([
-      "Score driversRecent recruitment activity",
+      "Score driversRecent activity",
       "Score foundationsAccount depth and history",
     ]);
   });

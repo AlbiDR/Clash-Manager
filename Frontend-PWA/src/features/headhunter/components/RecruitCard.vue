@@ -151,7 +151,7 @@ const recruitAccessibilityLabel = computed(() => {
         :columns="2"
         :loading="props.appIsRefreshing"
         label="Score drivers"
-        detail="Recent recruitment activity"
+        detail="Recent activity"
       >
         <StatisticItem
           label="Donations"
