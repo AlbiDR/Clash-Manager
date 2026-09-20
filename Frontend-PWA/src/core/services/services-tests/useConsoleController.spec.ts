@@ -489,6 +489,7 @@ describe("useConsoleController", () => {
     it("maps hubInfo correctly when source is present", () => {
       mockClashStore.currentSource.value = "SUPABASE";
       mockClashStore.lastCompiledTime.value = Date.now() - 3600000; // 1h ago
+      mockClashStore.lastFetchedTime.value = Date.now() - 120000;
       
       const { layoutProps } = useConsoleController(createOptions());
 
@@ -496,6 +497,7 @@ describe("useConsoleController", () => {
         source: "SUPABASE",
       });
       expect(layoutProps.value.remoteInfo?.dataAge).toBeDefined();
+      expect(layoutProps.value.remoteInfo?.lastFetched).toBeDefined();
     });
 
     it("falls back to lastSyncTime for hubAge if lastCompiledTime is missing", () => {

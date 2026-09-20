@@ -63,12 +63,23 @@ describe('useStatusPill', () => {
     expect(isExpanded.value).toBe(false);
   });
 
-  it('prevents toggle when type is loading', () => {
+  it('allows a loading status to disclose existing provenance details', () => {
     props.type = 'loading';
     const { isExpanded, handleToggle } = useStatusPill(props);
     expect(isExpanded.value).toBe(false);
     handleToggle();
-    expect(isExpanded.value).toBe(false);
+    expect(isExpanded.value).toBe(true);
+  });
+
+  it('uses a calm, state-specific detail summary', () => {
+    const { statusSummary } = useStatusPill(props);
+    expect(statusSummary.value).toBe('Current');
+
+    props.type = 'loading';
+    expect(statusSummary.value).toBe('Checking for updates');
+
+    props.type = 'error';
+    expect(statusSummary.value).toBe('Latest update did not complete');
   });
 
   it('identifies DB status correctly', () => {

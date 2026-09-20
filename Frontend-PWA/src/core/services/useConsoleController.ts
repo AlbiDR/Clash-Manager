@@ -302,6 +302,7 @@ export function useConsoleController<T extends { id: string; n?: string }>(
       dataAge: metadata.value.age,
       diagnosis: hubHealth.value.diagnosis,
       lastCompiled: metadata.value.lastCompiled,
+      lastFetched: metadata.value.lastFetched,
     },
   }));
 

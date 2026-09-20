@@ -110,6 +110,25 @@ describe("StatusPill", () => {
     expect(wrapper.text()).toContain("Loading");
   });
 
+  it("lets an in-progress refresh disclose the data already on screen", async () => {
+    const wrapper = mount(StatusPill, {
+      props: {
+        type: "loading",
+        text: "SYNCING",
+        remoteInfo: { source: "SUPABASE", dataAge: "4m ago", lastFetched: "Just now" },
+      },
+    });
+
+    const trigger = wrapper.find(".status-trigger");
+    expect(trigger.attributes("aria-expanded")).toBe("false");
+
+    await trigger.trigger("click");
+
+    expect(wrapper.find(".status-details").text()).toContain("Checking for updates");
+    expect(wrapper.find(".status-details").text()).toContain("Source snapshot");
+    expect(wrapper.find(".status-details").text()).toContain("Last checked");
+  });
+
   it("speaks the caller's loading label rather than a hardcoded one", () => {
     // Laboratory authors "Scanning Vault..." and "Computing Trajectory...", and
     // Settings distinguishes "Connecting..." from "Syncing...". All four were
