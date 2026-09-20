@@ -102,17 +102,20 @@ function prepareDockSwap() {
 }
 
 /**
- * Vue has mounted the incoming mode by this hook. Temporarily release the
- * lock to obtain its natural footprint, restore the old footprint, then move
- * to the new one on the next frame. This keeps desktop's content-sized dock
- * and mobile's full-width navigation rail intact while animating between them.
+ * The `before-enter` hook runs before Vue inserts the incoming controls, so it
+ * may only switch their layout rules. Measuring there reads the empty rail's
+ * 10px footprint. The `enter` hook runs after insertion and can safely capture
+ * the mode's natural size before moving to it on the next frame.
  */
+function prepareIncomingDockLayout() {
+  setSelectionLayout(!dockVisible.value);
+}
+
 function animateDockSwap() {
   const element = dockContainer.value;
   if (!element) return;
 
   const from = previousSize ?? measureDock(element);
-  setSelectionLayout(!dockVisible.value);
   clearDockSizeLock();
   const to = measureDock(element);
   lockDockSize(element, from);
@@ -147,7 +150,8 @@ function finishDockSwap() {
       name="dock-swap"
       mode="out-in"
       @before-leave="prepareDockSwap"
-      @before-enter="animateDockSwap"
+      @before-enter="prepareIncomingDockLayout"
+      @enter="animateDockSwap"
       @after-enter="finishDockSwap"
       @enter-cancelled="finishDockSwap"
       @leave-cancelled="finishDockSwap"
