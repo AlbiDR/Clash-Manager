@@ -323,7 +323,11 @@ onUnmounted(() => {
 .view-title {
   margin: 0;
   font-size: var(--sys-typescale-title-lg);
-  line-height: var(--sys-leading-none);
+  /* `overflow: hidden` is required for ellipsis, so its line box is also the
+     glyph clipping boundary. Keep vertical leading here instead of relying on
+     font metrics fitting exactly inside the em square: a future font, weight,
+     or title string must retain room for its lowest rendered pixels. */
+  line-height: var(--sys-leading-tight);
   font-weight: 900;
   color: var(--sys-color-on-surface);
   letter-spacing: var(--sys-tracking-tight);

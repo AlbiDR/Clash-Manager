@@ -7,8 +7,11 @@ import ConsoleHeader from "../ConsoleHeader.vue";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { mount } from "@vue/test-utils";
 import { createCommentVNode, Fragment, h, nextTick } from "vue";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 
 const { mockTap } = vi.hoisted(() => ({ mockTap: vi.fn() }));
+const consoleHeaderSource = readFileSync(resolve(process.cwd(), "src/shared/ui/ConsoleHeader.vue"), "utf8");
 
 vi.mock("@shared/composables/useHaptics", () => ({
   useHaptics: () => ({ tap: mockTap }),
@@ -35,6 +38,13 @@ describe("ConsoleHeader", () => {
 
     expect(wrapper.find(".view-title").text()).toBe("Test Feature");
     expect(wrapper.findComponent({ name: "StatusPill" }).exists()).toBe(true);
+  });
+
+  it("keeps vertical leading inside the ellipsized title's clipping boundary", () => {
+    // Ellipsis requires overflow clipping. A zero-leading line box used to cut
+    // the bottom of Settings' G, so this must remain the roomy title leading.
+    expect(consoleHeaderSource).toMatch(/\.view-title\s*\{[\s\S]*?overflow:\s*hidden;/);
+    expect(consoleHeaderSource).toMatch(/\.view-title\s*\{[\s\S]*?line-height:\s*var\(--sys-leading-tight\);/);
   });
 
   it("does not create a controls region when a view forwards an empty Fragment", () => {
