@@ -335,7 +335,14 @@ onUnmounted(() => {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  transition: all var(--sys-motion-duration-200) var(--sys-motion-spring);
+  /* Pressure resolution measures this box after each concession. Animating
+     font-size would make it measure an in-between width, then settle on a
+     larger final glyph that no longer fits. Keep layout-affecting type changes
+     immediate; the feedback properties can still ease. */
+  transition:
+    color var(--sys-motion-duration-200) var(--sys-motion-spring),
+    transform var(--sys-motion-duration-200) var(--sys-motion-spring),
+    opacity var(--sys-motion-duration-200) var(--sys-motion-spring);
   min-width: 0;
   flex: 0 1 auto;
   max-width: 100%;
@@ -413,7 +420,15 @@ onUnmounted(() => {
 
 .console-header.is-pressure-stage-4 .title-label { display: none; }
 .console-header.is-pressure-stage-4 .view-title {
-  font-size: var(--sys-typescale-title-sm);
+  /* Below the ordinary phone floor, browser zoom can make the visual viewport
+     narrower than a 120px title rail. Scale down only in that last-resort
+     state, while keeping a tokenized minimum that remains readable when
+     magnified. */
+  font-size: clamp(
+    var(--sys-typescale-label-md),
+    8vw,
+    var(--sys-typescale-title-sm)
+  );
 }
 
 /* A console toolbar only appears for view-specific filters or selection. Search

@@ -67,8 +67,12 @@ describe("ConsoleHeader", () => {
     // After status and count have already made their concessions, the title
     // itself must shrink before an ordinary console name can be ellipsized.
     expect(consoleHeaderSource).toMatch(
-      /\.console-header\.is-pressure-stage-4\s+\.view-title\s*\{[\s\S]*?font-size:\s*var\(--sys-typescale-title-sm\);/,
+      /\.console-header\.is-pressure-stage-4\s+\.view-title\s*\{[\s\S]*?font-size:\s*clamp\([\s\S]*?var\(--sys-typescale-label-md\),[\s\S]*?8vw,[\s\S]*?var\(--sys-typescale-title-sm\)/,
     );
+    // The resolver must measure the final font size, never a transition frame
+    // that can later grow into a clipped title.
+    expect(consoleHeaderSource).toMatch(/\.view-title\s*\{[\s\S]*?transition:\s*[\s\S]*?color[\s\S]*?transform[\s\S]*?opacity/);
+    expect(consoleHeaderSource).not.toMatch(/\.view-title\s*\{[\s\S]*?transition:\s*all/);
   });
 
   it("does not create a controls region when a view forwards an empty Fragment", () => {
