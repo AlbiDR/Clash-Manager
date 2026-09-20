@@ -1534,7 +1534,7 @@ export async function publishStrandedWork({
 
     try {
       const result = await publish(plan, { config, githubApi, dryRun, log: logLine });
-      if (result.published) {
+      if (result.published || result.alreadyPublished) {
         upsertStageEntry(ledger, registry, date, entry.stage, {
           state: "RECOVERABLE",
           failureClass: FAILURE_CLASSES.RECOVERED_BY_FALLBACK_PUBLISH,
@@ -1542,7 +1542,12 @@ export async function publishStrandedWork({
             prNumber: result.prNumber,
             prUrl: result.prUrl,
             headRef: result.branch,
-            fallbackPublish: { at: new Date().toISOString(), sessionName: plan.sessionName, status: plan.status },
+            fallbackPublish: {
+              at: new Date().toISOString(),
+              sessionName: plan.sessionName,
+              status: plan.status,
+              ...(result.alreadyPublished ? { reused: true } : {}),
+            },
           },
         }, { source: NIGHTLY_EVENT_SOURCES.WATCHDOG_FALLBACK });
         published.push({ stage: entry.stage, prNumber: result.prNumber });

@@ -10,6 +10,7 @@ import {
   buildFallbackPlan,
   extractSessionPatch,
   fallbackBranchName,
+  findExistingFallbackPullRequest,
   parseCoverageOutcome,
   patchTouchedPaths,
   publishFallback,
@@ -94,6 +95,44 @@ test("the fallback branch is recognised by the merge coordinator", () => {
   }
 });
 
+test("an existing fallback branch is reused instead of publishing a duplicate", async () => {
+  const stage = stageOf(4);
+  const plan = buildFallbackPlan({
+    stage,
+    session: sessionWith(patchFor([stage.coverageLog], coverageLine(4, "CLEAN"))),
+    date: DATE,
+  });
+  const config = { owner: "AlbiDR", repo: "Clash-Manager", targetBranch: "Nightly", token: "t" };
+  const existing = {
+    number: 4242,
+    html_url: "https://github.com/AlbiDR/Clash-Manager/pull/4242",
+    base: { ref: "Nightly" },
+    head: { ref: plan.branch },
+  };
+  const calls = [];
+  const githubApi = async endpoint => {
+    calls.push(endpoint);
+    return [existing];
+  };
+
+  const found = await findExistingFallbackPullRequest(plan, { config, githubApi });
+  assert.equal(found, existing);
+  assert.match(calls[0], /state=open/);
+  assert.match(calls[0], /head=AlbiDR%3Anightly%2Fstage-4-/);
+
+  const gitCalls = [];
+  const result = await publishFallback(plan, {
+    config,
+    githubApi,
+    runGit: args => gitCalls.push(args.join(" ")),
+    applyPatch: () => ({ status: 0, stderr: "" }),
+    log: () => {},
+  });
+  assert.equal(result.alreadyPublished, true);
+  assert.equal(result.prNumber, 4242);
+  assert.ok(!gitCalls.some(call => /^(add|commit|push )/.test(call)), "a duplicate preflight must run before any write");
+});
+
 test("a patch that escapes the stage's write boundary is refused", () => {
   // Stage 2 may only touch *.spec.ts besides its own log. This is the property
   // that stops an autonomous publisher from writing anywhere it likes.
@@ -152,7 +191,14 @@ test("a failed pull request removes the branch it already pushed", async () => {
   await assert.rejects(
     () => publishFallback(plan, {
       config: { targetBranch: "Nightly", owner: "o", repo: "r" },
-      githubApi: async () => { throw new Error("403 Resource not accessible by integration"); },
+      githubApi: (() => {
+        let calls = 0;
+        return async () => {
+          calls++;
+          if (calls === 1) return [];
+          throw new Error("403 Resource not accessible by integration");
+        };
+      })(),
       runGit: args => { commands.push(args.join(" ")); return ""; },
       applyPatch: () => ({ status: 0, stderr: "" }),
       log: () => {},
@@ -243,11 +289,17 @@ test("every exit returns to the base branch and the commit has a real identity",
   };
   const config = { targetBranch: "Nightly", owner: "AlbiDR", repo: "Clash-Manager", token: "t" };
 
-  const run = async (applyPatch, githubApi) => {
+  const run = async (applyPatch, publishApi) => {
     const calls = [];
     const runGit = args => { calls.push(args.join(" ")); return ""; };
     let threw = null;
     try {
+      let apiCalls = 0;
+      const githubApi = async (...args) => {
+        apiCalls++;
+        if (apiCalls === 1) return [];
+        return publishApi(...args);
+      };
       await publishFallback(plan, { config, githubApi, runGit, applyPatch, log: () => {} });
     } catch (error) {
       threw = error;

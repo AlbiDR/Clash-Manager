@@ -195,6 +195,28 @@ export function renderFallbackPrBody(plan) {
   ].join("\n");
 }
 
+/**
+ * Returns the already-open fallback PR for this exact recovered session branch.
+ *
+ * The ledger write follows publication, so a runner can be interrupted after
+ * GitHub accepts the PR but before it records the recovery. Retrying that run
+ * must attach the existing PR to the ledger, not apply the same patch onto a
+ * second branch or open a duplicate. Matching the complete fallback branch is
+ * deliberately narrower than matching a stage number: another run of the same
+ * stage is not evidence that this session's patch was published.
+ */
+export async function findExistingFallbackPullRequest(plan, { config, githubApi }) {
+  const query = new URLSearchParams({
+    state: "open",
+    base: config.targetBranch,
+    head: `${config.owner}:${plan.branch}`,
+    per_page: "100",
+  });
+  const response = await githubApi(`/repos/${config.owner}/${config.repo}/pulls?${query}`, config);
+  const pullRequests = Array.isArray(response) ? response : [];
+  return pullRequests.find(pr => pr?.base?.ref === config.targetBranch && pr?.head?.ref === plan.branch) || null;
+}
+
 function git(args, options = {}) {
   const res = spawnSync("git", args, { encoding: "utf8", maxBuffer: 64 * 1024 * 1024, ...options });
   if (res.status !== 0) {
@@ -241,6 +263,20 @@ export async function publishFallback(plan, {
     if (dryRun) {
       log(`[dry-run] Stage ${plan.stage}: patch applies cleanly to ${base}; would publish ${plan.branch}.`);
       return { published: false, dryRun: true, branch: plan.branch };
+    }
+
+    // Query only after the patch has proved fresh. A dry run and a stale patch
+    // are intentionally offline checks; neither should need GitHub access.
+    const existing = await findExistingFallbackPullRequest(plan, { config, githubApi });
+    if (existing) {
+      log(`Stage ${plan.stage}: fallback PR #${existing.number} already exists; reusing it.`);
+      return {
+        published: false,
+        alreadyPublished: true,
+        branch: plan.branch,
+        prNumber: existing.number,
+        prUrl: existing.html_url,
+      };
     }
 
     const apply = applyPatch(plan.patch, false);
