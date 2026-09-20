@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-19
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-20] PR #1897 [Stage 11]: Audited native WebView performance settings, Service Worker cache topology, and Vite bundle chunking; all optimal.
+**Domain:** apk | **Commit:** 32c27a9ec | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1897)
+**Files:** .github/nightly-logs/11-apk-optimization-coverage.log, .github/nightly-logs/11-apk-optimization-pr-body.md
+**Why:** All 9 wrapper and caching performance invariants pass cleanly and precache asset footprint is 11.1 KB across 6 essential icon assets.
+**Change:** Audited native WebView performance settings, Service Worker cache topology, and Vite bundle chunking; all optimal.
+**Result:** pnpm audit:apk-perf PASS (9/9 invariants ok, 11.1 KB precache footprint)
+**Nudges:** 0
+
+
 ### [2026-09-20] PR #1896 [Stage 9]: 91 files, 0 dep-violations, knip (1 file, 2 devDeps, 5 binaries, 3 exp, 1 dup); clean-streak: 0. Inspected config, roster/components, RosterView, useProgressiveList, useConnectivityManager. BLITZ_DWELL_DEFAULT intentional. Hunt clean.
 **Domain:** architecture | **Commit:** dd01dd5d4 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1896)
 **Files:** .github/nightly-logs/09-refactor-proposals-coverage.log, .github/nightly-logs/09-refactor-proposals-pr-body.md
