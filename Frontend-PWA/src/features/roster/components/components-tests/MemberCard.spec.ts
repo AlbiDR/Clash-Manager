@@ -185,7 +185,7 @@ describe("MemberCard.vue", () => {
     expect(statsGrid.exists()).toBe(true);
     expect(statsGrid.attributes("aria-busy")).toBe("false");
 
-    expect(wrapper.find(".war-history-chart-mock").exists()).toBe(false);
+    expect(wrapper.find(".war-history-chart-mock").exists()).toBe(true);
     expect(wrapper.find(".card-actions-stub").exists()).toBe(true);
   });
 
@@ -227,28 +227,27 @@ describe("MemberCard.vue", () => {
     ]);
   });
 
-  it("gives the chart an intentional, labelled disclosure", async () => {
+  it("keeps the chart expanded by default with an intentional, labelled disclosure", async () => {
     const wrapper = mountMemberCard({ expanded: true });
 
     expect(wrapper.find(".history-section").attributes("aria-label")).toBe("Performance history");
     expect(wrapper.find(".history-heading-label").text()).toBe("Performance history");
     expect(wrapper.find(".history-heading-detail").text()).toBe("War and Voyage trend");
-    expect(wrapper.find(".history-trigger").attributes("aria-expanded")).toBe("false");
-    expect(wrapper.find(".history-action-label").text()).toBe("Show history");
-    expect(wrapper.find(".war-history-chart-mock").exists()).toBe(false);
-
-    await wrapper.find(".history-trigger").trigger("click");
-
     expect(wrapper.find(".history-trigger").attributes("aria-expanded")).toBe("true");
     expect(wrapper.find(".history-action-label").text()).toBe("Hide history");
     expect(wrapper.find(".war-history-chart-mock").exists()).toBe(true);
+
+    await wrapper.find(".history-trigger").trigger("click");
+
+    expect(wrapper.find(".history-trigger").attributes("aria-expanded")).toBe("false");
+    expect(wrapper.find(".history-action-label").text()).toBe("Show history");
+    expect(wrapper.find(".war-history-chart-mock").exists()).toBe(false);
   });
 
-  it("shows refreshing state when history is revealed", async () => {
+  it("shows refreshing state in the default-expanded history", () => {
     const wrapper = mountMemberCard({ expanded: true, appIsRefreshing: true });
 
     expect(wrapper.find(".stats-grid").attributes("aria-busy")).toBe("true");
-    await wrapper.find(".history-trigger").trigger("click");
     expect(wrapper.findComponent({ name: "WarHistoryChart" }).props("loading")).toBe(true);
     expect(wrapper.findComponent({ name: "CardActions" }).props("loading")).toBe(true);
   });
@@ -287,7 +286,7 @@ describe("MemberCard.vue", () => {
     expect(winRateItem!.props("value")).toBe("100%");
   });
 
-  it("toggles active chart mode between War and Voyage after history is revealed", async () => {
+  it("toggles active chart mode between War and Voyage", async () => {
     const memberWithVoyage = {
       ...mockMember,
       d: {
@@ -298,12 +297,9 @@ describe("MemberCard.vue", () => {
 
     const wrapper = mountMemberCard({ member: memberWithVoyage, expanded: true });
 
-    // The history stays quiet until the operator asks for it.
-    expect(wrapper.find(".war-history-chart-mock").exists()).toBe(false);
-    expect(wrapper.find(".voyage-history-chart-mock").exists()).toBe(false);
-
-    await wrapper.find(".history-trigger").trigger("click");
+    // The primary War history is visible with every expanded card.
     expect(wrapper.find(".war-history-chart-mock").exists()).toBe(true);
+    expect(wrapper.find(".voyage-history-chart-mock").exists()).toBe(false);
 
     // Click Segmented Control button to toggle to voyage
     const btnVoyage = wrapper.find(".btn-voyage");

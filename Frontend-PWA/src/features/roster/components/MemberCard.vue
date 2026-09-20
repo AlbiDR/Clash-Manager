@@ -54,11 +54,11 @@ import { formatTimeAgo, formatNumber, parseTimeAgoValue } from "@core";
 const activeChartMode = ref<"war" | "voyage">("war");
 
 /**
- * History is useful evidence, but not the first decision a roster operator
- * makes. Keep it deliberately available without making every expanded row pay
- * the visual and vertical cost of a chart.
+ * History is decision-relevant roster evidence, so it begins open with the
+ * rest of an expanded card. The disclosure lets an operator compact an
+ * individual row without removing that evidence by default.
  */
-const isHistoryOpen = ref(false);
+const isHistoryOpen = ref(true);
 
 const historyActionLabel = computed(() =>
   isHistoryOpen.value ? "Hide performance history" : "Show performance history",
