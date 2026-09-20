@@ -2,7 +2,7 @@
 <!-- Copyright (C) 2026 AlbiDR -->
 <script setup lang="ts">
 import Icon from "./Icon.vue";
-import { useExternalLink } from "@core/services/useExternalLink";
+import { ROYALE_API_LOGO_URL, useExternalLink } from "@core";
 import { useHaptics } from "@shared/composables/useHaptics";
 
 /**
@@ -67,11 +67,14 @@ function handleOpenInGame() {
         :aria-label="`View ${props.id} on RoyaleAPI`"
         @click.stop="handleOpenExternal"
       >
-        <Icon
-          name="globe"
-          :size="iconSize"
-          aria-hidden="true"
-        />
+        <img
+          :src="ROYALE_API_LOGO_URL"
+          :width="iconSize"
+          :height="iconSize"
+          alt=""
+          class="royaleapi-logo"
+          loading="lazy"
+        >
         <span>RoyaleAPI</span>
       </button>
       <button
@@ -82,8 +85,9 @@ function handleOpenInGame() {
         @click.stop="handleOpenInGame"
       >
         <Icon
-          name="external-link"
-          :size="iconSize"
+          name="clash-royale"
+          :size="iconSize + 4"
+          view-box="11 10 26 29"
           aria-hidden="true"
         />
         <span>Open Game</span>
@@ -113,6 +117,17 @@ function handleOpenInGame() {
 
 .card-action--game {
   box-shadow: var(--sys-elevation-2);
+}
+
+.royaleapi-logo {
+  flex-shrink: 0;
+  object-fit: contain;
+  filter: grayscale(1) opacity(0.65);
+  transition: filter var(--sys-motion-duration-200) var(--sys-motion-spring);
+}
+
+.card-action--reference:hover .royaleapi-logo {
+  filter: grayscale(0) opacity(1);
 }
 
 .card-action:hover {
