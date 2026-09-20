@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-19
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-20] PR #1892 [Stage 6]: Harden useConsoleMetadata interface contracts and inline logic annotations
+**Domain:** documentation | **Commit:** 638d7ebb2 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1892)
+**Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, .github/nightly-logs/06-documentation-tsdoc-pr-body.md, Frontend-PWA/src/core/services/useConsoleMetadata.ts
+**Why:** Document visibleCount parameter and ratio badge formatting in useConsoleMetadata.ts TSDoc interface contract
+**Change:** Harden useConsoleMetadata interface contracts and inline logic annotations
+**Result:** PASSED (git diff --check clean and useConsoleMetadata unit tests 15/15 passed)
+**Nudges:** 0
+
+
 ### [2026-09-20] PR #1891 [Stage 5]: Reconciled useConsoleMetadata connectivity aggregation, demo counts, and ratio badge formatting in core services README
 **Domain:** documentation | **Commit:** 715a900dd | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1891)
 **Files:** .github/nightly-logs/05-documentation-readme-coverage.log, .github/nightly-logs/05-documentation-readme-pr-body.md, Frontend-PWA/src/core/services/README.md
