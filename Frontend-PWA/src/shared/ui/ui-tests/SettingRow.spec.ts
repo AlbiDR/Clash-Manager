@@ -135,5 +135,6 @@ describe('SettingRow.vue', () => {
     const sw = wrapper.find('.switch');
     expect(sw.classes()).toContain('skeleton-anim');
     expect(sw.classes()).toContain('sk-badge-s');
+    expect(sw.classes()).toContain('is-loading');
   });
 });
