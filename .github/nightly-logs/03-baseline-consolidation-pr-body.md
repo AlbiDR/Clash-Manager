@@ -4,23 +4,23 @@
 
 In plain terms: nothing needed fixing. This run checked the baseline consolidation area and found it already correct, so the only file here is the log recording that the check happened.
 
-**What was checked:** 0 pending migrations; fold-state DEGRADED; migration-quality PASS; database-verification DB-UNAVAILABLE; read-only RLS and search_path baseline audit clean
+**What was checked:** Completed read-only audit of master migration baseline with 0 pending migrations; verified RLS compliance, search_path isolation, and clean formatting.
 
-**Why:** Master baseline remains fully current; no source edits required
+**Why:** No pending migrations exist and master migration baseline passed all read-only audit checks.
 
-**Result:** Audit pass with 0 pending migrations and DB-UNAVAILABLE semantic status
+**Result:** Static audit PASS (migration-quality: PASS, fold-state: DEGRADED, DB: DB-UNAVAILABLE). Clean-since-calibration count: 4, pending migrations: 0.
 
 **Files changed:** .github/nightly-logs/03-baseline-consolidation-coverage.log
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: database
-  Cycle: nightly-cycle/2026-09-19
+  Cycle: nightly-cycle/2026-09-20
   Contract: fce15bf60f686eba9489d1297c90bb03fbaaff69d64886cf62eb35d47f90f307
-  Why: Master baseline remains fully current; no source edits required
-  Change: 0 pending migrations; fold-state DEGRADED; migration-quality PASS; database-verification DB-UNAVAILABLE; read-only RLS and search_path baseline audit clean
-  Result: Audit pass with 0 pending migrations and DB-UNAVAILABLE semantic status
+  Why: No pending migrations exist and master migration baseline passed all read-only audit checks.
+  Change: Completed read-only audit of master migration baseline with 0 pending migrations; verified RLS compliance, search_path isolation, and clean formatting.
+  Result: Static audit PASS (migration-quality: PASS, fold-state: DEGRADED, DB: DB-UNAVAILABLE). Clean-since-calibration count: 4, pending migrations: 0.
   Files: .github/nightly-logs/03-baseline-consolidation-coverage.log
   Nudges: 0
-  Execution: 922fd99d0a519e360f1d579f2c005cf3bbdb254b
+  Execution: a8aa5b26522540cb042cc86ba1366b3dbb470828
 -->

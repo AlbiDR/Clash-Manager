@@ -4,23 +4,23 @@
 
 In plain terms: this changes 1 code file, so the app's behaviour may be affected. No tests were added or changed alongside it.
 
-**What changed:** docs(tsdoc): harden useClashSyncUtils interface contracts and inline logic annotations
+**What changed:** Harden useConsoleMetadata interface contracts and inline logic annotations
 
-**Why:** Reconciles useClashSyncUtils JSDoc/TSDoc interface contracts, ADR Section IV mappings, and inline decision logs following recent Stage 2 sync retry additions
+**Why:** Document visibleCount parameter and ratio badge formatting in useConsoleMetadata.ts TSDoc interface contract
 
-**Result:** PASS: Monorepo Vitest suite clean (205 test files, 2034 unit tests passed)
+**Result:** PASSED (git diff --check clean and useConsoleMetadata unit tests 15/15 passed)
 
-**Files changed:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, Frontend-PWA/src/core/services/useClashSyncUtils.ts
+**Files changed:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, Frontend-PWA/src/core/services/useConsoleMetadata.ts
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: documentation
-  Cycle: nightly-cycle/2026-09-19
+  Cycle: nightly-cycle/2026-09-20
   Contract: a9f522cc73babe487aa3df1b083524daba64c0dd03c9e1b446dd4bd70c376bae
-  Why: Reconciles useClashSyncUtils JSDoc/TSDoc interface contracts, ADR Section IV mappings, and inline decision logs following recent Stage 2 sync retry additions
-  Change: docs(tsdoc): harden useClashSyncUtils interface contracts and inline logic annotations
-  Result: PASS: Monorepo Vitest suite clean (205 test files, 2034 unit tests passed)
-  Files: .github/nightly-logs/06-documentation-tsdoc-coverage.log, Frontend-PWA/src/core/services/useClashSyncUtils.ts
+  Why: Document visibleCount parameter and ratio badge formatting in useConsoleMetadata.ts TSDoc interface contract
+  Change: Harden useConsoleMetadata interface contracts and inline logic annotations
+  Result: PASSED (git diff --check clean and useConsoleMetadata unit tests 15/15 passed)
+  Files: .github/nightly-logs/06-documentation-tsdoc-coverage.log, Frontend-PWA/src/core/services/useConsoleMetadata.ts
   Nudges: 0
-  Execution: 7c81e63fe07be9543df0bf97fb1cd01f649ccf1b
+  Execution: cf447d30fce07df9a7a9cb25bd770a54726fb1f5
 -->

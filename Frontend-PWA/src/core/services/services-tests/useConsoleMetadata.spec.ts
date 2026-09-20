@@ -144,9 +144,53 @@ describe("useConsoleMetadata", () => {
           compactValue: "2/38",
         });
       });
+
+      it("returns standard unratioed badge when visibleCount equals dataCount", () => {
+        const dataCount = ref(38);
+        const visibleCount = ref(38);
+        const { statsBadge } = useConsoleMetadata("Member", dataCount, visibleCount);
+
+        expect(statsBadge.value).toEqual({
+          label: "Members",
+          value: "38",
+        });
+        expect((statsBadge.value as any).compactValue).toBeUndefined();
+      });
+
+      it("reactively updates statsBadge as visibleCount changes relative to dataCount", () => {
+        const dataCount = ref(10);
+        const visibleCount = ref(10);
+        const { statsBadge } = useConsoleMetadata("Member", dataCount, visibleCount);
+
+        expect(statsBadge.value).toEqual({
+          label: "Members",
+          value: "10",
+        });
+
+        visibleCount.value = 4;
+        expect(statsBadge.value).toEqual({
+          label: "Members",
+          value: "4 of 10",
+          compactValue: "4/10",
+        });
+
+        visibleCount.value = 10;
+        expect(statsBadge.value).toEqual({
+          label: "Members",
+          value: "10",
+        });
+      });
     });
 
     describe("Showcase Mode", () => {
+      it("suppresses filtered ratio count formatting even when visibleCount is provided", () => {
+        mockIsShowcase.value = true;
+        const visibleCount = ref(5);
+        const { statsBadge } = useConsoleMetadata("Member", ref(100), visibleCount);
+
+        expect(statsBadge.value.value).not.toContain("of");
+        expect((statsBadge.value as any).compactValue).toBeUndefined();
+      });
       it("returns a random number between 1 and 50", () => {
         mockIsShowcase.value = true;
         const { statsBadge } = useConsoleMetadata("Member", ref(100));
@@ -178,6 +222,17 @@ describe("useConsoleMetadata", () => {
           label: "Members",
           value: DEFAULT_MOCK_MEMBER_COUNT.toString()
         });
+      });
+
+      it("suppresses ratio formatting in blueprint mode even when visibleCount differs", () => {
+        const visibleCount = ref(1);
+        const { statsBadge } = useConsoleMetadata("Member", ref(0), visibleCount);
+
+        expect(statsBadge.value).toEqual({
+          label: "Members",
+          value: DEFAULT_MOCK_MEMBER_COUNT.toString()
+        });
+        expect((statsBadge.value as any).compactValue).toBeUndefined();
       });
     });
   });

@@ -4,23 +4,23 @@
 
 In plain terms: this is a documentation change to 1 file in the documentation README area. Nothing about how the app runs is affected.
 
-**What changed:** Reconciled useClashSyncUtils timeout and transient retry engine details in core services README
+**What changed:** Reconciled useConsoleMetadata connectivity aggregation, demo counts, and ratio badge formatting in core services README
 
-**Why:** Document SYNC_REQUEST_TIMEOUT_MS update (25s) and SYNC_RETRY_DELAYS_MS transient transport retry sequence
+**Why:** Document useConsoleMetadata.ts connectivity health extraction, demo mode counts, and filtered dataset ratio badge formatting
 
-**Result:** git diff --check clean and useClashSyncUtils.spec.ts passed 12/12
+**Result:** PASSED (git diff --check clean and 2041 unit tests passed across 205 test files)
 
 **Files changed:** .github/nightly-logs/05-documentation-readme-coverage.log, Frontend-PWA/src/core/services/README.md
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: documentation
-  Cycle: nightly-cycle/2026-09-19
+  Cycle: nightly-cycle/2026-09-20
   Contract: cea68a5bbba1bd2cbc6d3bdfe2639f37f3935b571beab59f5da1501b1180b22d
-  Why: Document SYNC_REQUEST_TIMEOUT_MS update (25s) and SYNC_RETRY_DELAYS_MS transient transport retry sequence
-  Change: Reconciled useClashSyncUtils timeout and transient retry engine details in core services README
-  Result: git diff --check clean and useClashSyncUtils.spec.ts passed 12/12
+  Why: Document useConsoleMetadata.ts connectivity health extraction, demo mode counts, and filtered dataset ratio badge formatting
+  Change: Reconciled useConsoleMetadata connectivity aggregation, demo counts, and ratio badge formatting in core services README
+  Result: PASSED (git diff --check clean and 2041 unit tests passed across 205 test files)
   Files: .github/nightly-logs/05-documentation-readme-coverage.log, Frontend-PWA/src/core/services/README.md
   Nudges: 0
-  Execution: 7c81e63fe07be9543df0bf97fb1cd01f649ccf1b
+  Execution: 2bb12093f371b34a6de24d82d43a5e7bb4c07499
 -->

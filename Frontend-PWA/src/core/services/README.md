@@ -175,6 +175,13 @@ The Native Bridge service coordinates communication between the Web/PWA layer an
   - **Reconstruction & Rounding:** Hydrates raw native coordinates via `loadCoordinates()`, converting the decimal offsets back to percentage values (0 - 100) and rounding to precision limits for high UI rendering fidelity.
   - **Robust Fallback Paths:** Implements Android intents for opening deep-linked system settings (`ACCESSIBILITY_SETTINGS` and `MANAGE_OVERLAY_PERMISSION`) if running in normal web browser environments where direct bridge method invocations are unavailable.
 
+### Console Metadata & Stats Badge Service (`useConsoleMetadata.ts`)
+
+`useConsoleMetadata.ts` extracts connectivity status and stats badge orchestration from `useConsoleController.ts` to maintain Layer 1 purity:
+- **Connectivity & System Health Aggregation:** Delegates connectivity state tracking to `useConnectivityManager.ts`, exposing simplified `status` (`type`, `text`, `nominal`) and `hubHealth` properties for header status pills.
+- **Demo Mode Synthetic Counting:** Provides synthetic count values in Showcase mode (random integer 1–50) and Blueprint mode (`DEFAULT_MOCK_RECRUIT_COUNT` or `DEFAULT_MOCK_MEMBER_COUNT`) to ensure UI review confidence.
+- **Filtered Dataset Ratio Badge Formatting:** When `visibleCount` is provided and differs from `itemCount` outside of demo modes, formats the header badge with ratio metadata (`value: `${showing} of ${itemCount}`` and `compactValue: `${showing}/${itemCount}``). When all items are showing or when `visibleCount` is omitted, returns standard count strings without ratio formatting.
+
 ### List Console Orchestration Engine (`useConsoleController.ts`)
 
 `useConsoleController.ts` acts as the primary Layer 1 orchestrator for complex list feature views (Roster, Headhunter):

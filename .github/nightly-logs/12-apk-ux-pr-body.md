@@ -4,23 +4,23 @@
 
 In plain terms: nothing needed fixing. This run checked the APK UX area and found it already correct, so the only file here is the log recording that the check happened.
 
-**What was checked:** S12 APK UX audit PASS (1 candidate examined; 7 clean since calibration); checked selects, haptics, insets, 48px targets, select containment, link isolation, overscroll, keyboard, dark mode, media
+**What was checked:** Completed Stage 12 APK UX audit across 78 files with 0 violations.
 
-**Why:** Structured APK UX audit reported status PASS with 0 violations across 78 files examined. Widen bounded candidate review of Frontend-PWA/src/shared/ui/ViewOptions.vue and changed files confirmed full compliance across all 10 hybrid UX categories.
+**Why:** Automated APK UX audit passed with zero violations across all 10 UX categories; candidate ViewOptions.vue is verified compliant.
 
-**Result:** PASSED (ViewOptions.spec.ts verified 205 test files / 2034 tests passing)
+**Result:** Audit completed with no source change required.
 
 **Files changed:** .github/nightly-logs/12-apk-ux-coverage.log
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: ux
-  Cycle: nightly-cycle/2026-09-19
+  Cycle: nightly-cycle/2026-09-20
   Contract: f279dcd9fa3e895a0f76426a8bcab2381910b64ed4f8694d2c16ab7f8ec4ce04
-  Why: Structured APK UX audit reported status PASS with 0 violations across 78 files examined. Widen bounded candidate review of Frontend-PWA/src/shared/ui/ViewOptions.vue and changed files confirmed full compliance across all 10 hybrid UX categories.
-  Change: S12 APK UX audit PASS (1 candidate examined; 7 clean since calibration); checked selects, haptics, insets, 48px targets, select containment, link isolation, overscroll, keyboard, dark mode, media
-  Result: PASSED (ViewOptions.spec.ts verified 205 test files / 2034 tests passing)
+  Why: Automated APK UX audit passed with zero violations across all 10 UX categories; candidate ViewOptions.vue is verified compliant.
+  Change: Completed Stage 12 APK UX audit across 78 files with 0 violations.
+  Result: Audit completed with no source change required.
   Files: .github/nightly-logs/12-apk-ux-coverage.log
-  Nudges: 0
-  Execution: 158e0ba8fdb5cda3ea02fbdd784abaddce6845b0
+  Nudges: 1
+  Execution: fc2097bd13df2bf5df519fc8f959356a1467e098
 -->
