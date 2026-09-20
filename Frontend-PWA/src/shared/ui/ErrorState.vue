@@ -1,15 +1,15 @@
 <!-- SPDX-License-Identifier: GPL-3.0-only -->
 <!-- Copyright (C) 2026 AlbiDR -->
 <script setup lang="ts">
-/**
- * [GUARD] ERROR STATE
- * Resilience #45: Handles non-standard error displays with a premium, manifesto-compliant UI.
- */
-import { ref } from "vue";
-import Icon from "./Icon.vue";
+import { computed } from "vue";
+import { useClipboard } from "../composables/useClipboard";
 import { vTactile } from "../directives/vTactile";
+import Icon from "./Icon.vue";
 
-defineProps<{
+const props = defineProps<{
+  /** Human-readable name of the surface that could not be loaded. */
+  title?: string;
+  /** Classified, reader-safe sync failure supplied by Layer 1. */
   message: string;
 }>();
 
@@ -17,151 +17,197 @@ defineEmits<{
   retry: [];
 }>();
 
-const isRetryInteractionActive = ref(false);
+const { clipboardState, copyText } = useClipboard();
+
+const errorHeading = computed(() => `Couldn't load ${props.title || "this view"}`);
+const copyLabel = computed(() => {
+  if (clipboardState.value === "copied") return "Copied";
+  if (clipboardState.value === "unavailable") return "Copy unavailable";
+  return "Copy details";
+});
+
+function handleCopyDetails() {
+  void copyText(props.message);
+}
 </script>
 
 <template>
-  <div
+  <section
     class="error-state"
-    @mousedown="isRetryInteractionActive = true"
-    @mouseup="isRetryInteractionActive = false"
+    role="alert"
+    aria-live="assertive"
   >
-    <div class="error-icon-box">
-      <!-- Custom Crafted Warning SVG -->
-      <Icon
-        name="warning"
-        size="48"
-        class="svg-warning"
-      />
-      <svg
-        width="0"
-        height="0"
-        style="position: absolute;"
-      >
-        <defs>
-          <linearGradient
-            id="warning-grad"
-            x1="0%"
-            y1="0%"
-            x2="100%"
-            y2="100%"
-          >
-            <stop
-              offset="0%"
-              style="stop-color: var(--sys-color-error); stop-opacity: 1"
-            />
-            <stop
-              offset="100%"
-              style="stop-color: rgba(var(--sys-color-error-rgb), 0.55); stop-opacity: 1"
-            />
-          </linearGradient>
-        </defs>
-      </svg>
-    </div>
-    
-    <p class="error-message">
-      {{ message }}
-    </p>
-    
-    <button 
-      v-tactile
-      class="btn-error" 
-      :class="{ active: isRetryInteractionActive }"
-      @click="$emit('retry')"
+    <div
+      class="error-icon-box"
+      aria-hidden="true"
     >
       <Icon
-        name="refresh"
-        size="18"
-        class="svg-refresh"
+        name="warning"
+        size="32"
       />
-      <span>Re-Synchronize</span>
-    </button>
-  </div>
+    </div>
+
+    <div class="error-copy">
+      <p class="error-eyebrow">
+        SYNC NEEDS ATTENTION
+      </p>
+      <h2 class="error-heading">
+        {{ errorHeading }}
+      </h2>
+      <p class="error-message">
+        {{ props.message }}
+      </p>
+    </div>
+
+    <div class="error-actions">
+      <button
+        v-tactile
+        type="button"
+        class="error-action error-action--primary"
+        @click="$emit('retry')"
+      >
+        <Icon
+          name="refresh"
+          size="18"
+          aria-hidden="true"
+        />
+        <span>Try again</span>
+      </button>
+      <button
+        v-tactile
+        type="button"
+        class="error-action error-action--secondary"
+        :aria-label="copyLabel"
+        @click="handleCopyDetails"
+      >
+        <Icon
+          :name="clipboardState === 'copied' ? 'check' : 'copy'"
+          size="18"
+          aria-hidden="true"
+        />
+        <span>{{ copyLabel }}</span>
+      </button>
+    </div>
+  </section>
 </template>
 
 <style scoped>
-/* This root previously carried `animate-pulse-glow`, a class defined nowhere in the
-   stack (@core/theme/animations.ts declares `animate-pop` and nothing else), so it
-   styled nothing. Removed rather than invented: the intended motion was never
-   specified. Any replacement belongs in the animations SSOT, and must animate from
-   opacity 0 without a persistent `opacity: 0` base - a base of 0 leaves the element
-   permanently invisible on any client where the animation never runs. */
 .error-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1.5rem;
-  padding: 3rem 2rem;
-  text-align: center;
-  background: var(--sys-surface-glass);
-
-  color: var(--sys-color-on-error-container);
-  border-radius: var(--sys-shape-corner-extra-large);
-  border: 1px solid var(--sys-surface-glass-border);
-  box-shadow: var(--sys-elevation-3);
+  display: grid;
+  justify-items: center;
+  gap: var(--sys-space-16);
   margin: var(--sys-space-20) 0;
+  padding: var(--sys-space-40) var(--sys-space-24);
+  border: 1px solid var(--sys-color-outline-variant);
+  border-radius: var(--sys-shape-corner-extra-large);
+  background: var(--sys-surface-glass);
+  box-shadow: var(--sys-elevation-3);
+  color: var(--sys-color-on-surface);
+  text-align: center;
 }
 
 .error-icon-box {
-  color: var(--sys-color-error);
-  padding: var(--sys-space-16);
-  background: rgba(var(--sys-color-error-rgb), 0.1);
-  border-radius: var(--sys-shape-corner-m);
   display: flex;
   align-items: center;
   justify-content: center;
-  transform: rotate(-2deg);
+  width: var(--sys-space-56);
+  height: var(--sys-space-56);
+  border-radius: var(--sys-shape-corner-medium);
+  background: var(--sys-color-error-container);
+  color: var(--sys-color-error);
 }
 
-.svg-warning {
-  opacity: 0.9;
+.error-copy {
+  display: grid;
+  gap: var(--sys-space-6);
+  max-width: 52ch;
 }
 
-.svg-warning :deep(.icon-path) {
-  fill: url(#warning-grad);
+.error-eyebrow {
+  margin: 0;
+  color: var(--sys-color-error);
+  font-family: var(--sys-font-family-mono);
+  font-size: var(--sys-typescale-label-xs);
+  font-weight: 800;
+  letter-spacing: var(--sys-tracking-wide);
+  line-height: var(--sys-leading-none);
+}
+
+.error-heading {
+  margin: 0;
+  color: var(--sys-color-on-surface);
+  font-size: var(--sys-typescale-title-sm);
+  font-weight: 850;
+  line-height: var(--sys-leading-tight);
 }
 
 .error-message {
-  font-weight: 750;
-  font-size: 16px;
   margin: 0;
-  max-width: 320px;
-  line-height: 1.5;
-  letter-spacing: -0.01em;
+  color: var(--sys-color-on-surface-variant);
+  font-size: var(--sys-typescale-body-sm);
+  line-height: var(--sys-leading-normal);
+  overflow-wrap: anywhere;
+  user-select: text;
+  white-space: pre-wrap;
+}
+
+.error-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--sys-space-8);
+}
+
+.error-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sys-space-8);
+  min-height: var(--sys-space-48);
+  padding: 0 var(--sys-space-16);
+  border-radius: var(--sys-shape-corner-full);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 800;
+}
+
+.error-action--primary {
+  border: 1px solid transparent;
+  background: var(--sys-color-primary);
+  color: var(--sys-color-on-primary);
+  box-shadow: var(--sys-elevation-2);
+}
+
+.error-action--secondary {
+  border: 1px solid var(--sys-color-outline-variant);
+  background: var(--sys-color-surface-container-high);
   color: var(--sys-color-on-surface);
 }
 
-.btn-error {
-  display: flex;
-  align-items: center;
-  gap: var(--sys-space-10);
-  padding: var(--sys-space-12) var(--sys-space-24);
-  background: var(--sys-color-error);
-  color: var(--sys-color-on-error);
-  border: none;
-  border-radius: var(--sys-shape-corner-full);
-  font-weight: 850;
-  font-size: 14px;
-  cursor: pointer;
-  transition: all var(--sys-motion-duration-300) var(--sys-motion-spring);
-  box-shadow: 0 8px 16px rgba(var(--sys-color-error-rgb), 0.3);
+.error-action:hover { transform: translateY(calc(-1 * var(--sys-space-2))); }
+
+.error-action:focus-visible {
+  outline: 2px solid var(--sys-color-primary);
+  outline-offset: 2px;
 }
 
-.btn-error:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 20px rgba(var(--sys-color-error-rgb), 0.4);
+@media (max-width: 360px) {
+  .error-state {
+    margin: var(--sys-space-16) 0;
+    padding: var(--sys-space-32) var(--sys-space-16);
+  }
+
+  .error-actions {
+    width: 100%;
+  }
+
+  .error-action {
+    flex: 1 1 0;
+    min-width: 0;
+  }
 }
 
-.btn-error.active {
-  transform: scale(0.96);
-  opacity: 0.9;
-}
-
-.svg-refresh {
-  transition: transform var(--sys-motion-duration-500) var(--sys-motion-spring);
-}
-
-.btn-error:hover .svg-refresh {
-  transform: rotate(180deg);
+@media (prefers-reduced-motion: reduce) {
+  .error-action:hover { transform: none; }
 }
 </style>

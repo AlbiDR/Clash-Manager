@@ -75,6 +75,8 @@ export { useHistoryChart } from "./composables/useHistoryChart";
 export { useBaseHistoryChart } from "./composables/useBaseHistoryChart";
 export { useStatusPill } from "./composables/useStatusPill";
 export { useBenchmarkedStat } from "./composables/useBenchmarkedStat";
+export { useClipboard } from "./composables/useClipboard";
+export type { ClipboardState } from "./composables/useClipboard";
 
 export { useCardMechanics } from "./composables/useCardMechanics";
 export { useHaptics, resetHapticsState } from "./composables/useHaptics";
