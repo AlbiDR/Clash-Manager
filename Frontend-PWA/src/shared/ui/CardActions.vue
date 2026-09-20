@@ -100,7 +100,7 @@ function handleOpenInGame() {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
   gap: var(--sys-space-8);
-  width: min(100%, var(--sys-layout-action-cluster-max));
+  width: 100%;
 }
 
 .card-action {

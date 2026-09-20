@@ -27,6 +27,10 @@ describe("Icon.vue", () => {
     });
 
     expect(wrapper.find("svg").attributes("viewBox")).toBe("11 10 26 29");
-    expect(wrapper.findAll(".icon-path")).toHaveLength(4);
+    const paths = wrapper.findAll<SVGPathElement>(".icon-path");
+
+    expect(paths).toHaveLength(4);
+    expect(paths[0].element.style.fill).not.toBe("");
+    expect(paths[2].element.style.fill).not.toBe(paths[0].element.style.fill);
   });
 });

@@ -42,6 +42,7 @@ const resolvedViewBox = computed(() => props.viewBox || ICON_VIEW_BOXES[props.na
       class="icon-path"
       :d="path.d"
       :fill="path.fill"
+      :style="path.fill ? { fill: path.fill } : undefined"
       :opacity="path.opacity"
       v-bind="{ 'vector-effect': 'non-scaling-stroke' }"
     />
