@@ -16,6 +16,23 @@ LAST_AGED:   2026-09-19
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-20] PR #1896 [Stage 9]: 91 files, 0 dep-violations, knip (1 file, 2 devDeps, 5 binaries, 3 exp, 1 dup); clean-streak: 0. Inspected config, roster/components, RosterView, useProgressiveList, useConnectivityManager. BLITZ_DWELL_DEFAULT intentional. Hunt clean.
+**Domain:** architecture | **Commit:** dd01dd5d4 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1896)
+**Files:** .github/nightly-logs/09-refactor-proposals-coverage.log, .github/nightly-logs/09-refactor-proposals-pr-body.md
+**Why:** Substrate complies with CleanStack ADR. Candidate index.ts re-export and useClashDataLoader are non-dead/exempt. Target C defect hunt on core services produced zero reproducible failures.
+**Change:** 91 files, 0 dep-violations, knip (1 file, 2 devDeps, 5 binaries, 3 exp, 1 dup); clean-streak: 0. Inspected config, roster/components, RosterView, useProgressiveList, useConnectivityManager. BLITZ_DWELL_DEFAULT intentional. Hunt clean.
+**Result:** vue-tsc --build --force passed; pnpm test passed 205 test files (2041 tests); depcruise passed with 0 violations.
+**Nudges:** 0
+
+### [2026-09-20] PR #1895 [Stage 10]: Verified PWA/APK wrapper integrity invariants across asset links, manifest parity, version code/name sync, release metadata, and security policy.
+**Domain:** apk | **Commit:** 6f6a9006a | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1895)
+**Files:** .github/nightly-logs/10-apk-integrity-coverage.log, .github/nightly-logs/10-apk-integrity-pr-body.md
+**Why:** No configuration mismatches found across PWA manifest, asset links, twa-manifest.json, apktool.yml, and AndroidManifest.xml.
+**Change:** Verified PWA/APK wrapper integrity invariants across asset links, manifest parity, version code/name sync, release metadata, and security policy.
+**Result:** Passed pnpm audit:apk, pnpm apk:verify:source, and pnpm test:apk-release.
+**Nudges:** 0
+
+
 ### [2026-09-20] PR #1894 [Stage 7]: Scanned catalogs in workspace and package manifests; verified version 14.50.109 consistency across root, Frontend-PWA, Backend manifests, README badges, protocol constants, and APK manifests. pnpm audit:version reported 0 drift lines.
 **Domain:** versioning | **Commit:** ab0f3adb0 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1894)
 **Files:** .github/nightly-logs/07-version-integrity-coverage.log, .github/nightly-logs/07-version-integrity-pr-body.md
