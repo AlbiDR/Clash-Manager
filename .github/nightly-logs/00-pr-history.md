@@ -15,6 +15,15 @@ LAST_AGED:   2026-09-20
 ---
 
 ## T1 -- Active (last 7 days)
+
+### [2026-09-20] PR #1900 [Stage 1]: Widened runtime security audit verified zero unhandled threats across Target B/C surfaces
+**Domain:** hardening | **Commit:** 876f73d7a | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1900)
+**Files:** .github/nightly-logs/00-pr-history.md, .github/nightly-logs/01-hardening-coverage.log, .github/nightly-logs/01-hardening-pr-body.md
+**Why:** Calibration scan widened across older Target B/C surfaces (api, composables, functions); history aged to 2026-09-20; 2066 tests pass
+**Change:** Widened runtime security audit verified zero unhandled threats across Target B/C surfaces
+**Result:** All security, auth, state, and Valibot boundaries verified intact
+**Nudges:** 0
+
 ### [2026-09-20] PR #1899 [Stage 12]: Completed Stage 12 APK UX audit across 78 files with 0 violations.
 **Domain:** ux | **Commit:** 6655fa3ac | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1899)
 **Files:** .github/nightly-logs/12-apk-ux-coverage.log, .github/nightly-logs/12-apk-ux-pr-body.md
