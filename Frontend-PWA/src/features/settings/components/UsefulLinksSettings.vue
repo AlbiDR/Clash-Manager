@@ -55,6 +55,8 @@ interface UsefulLinkRecord {
   logo?: string;
   /** Icon name resolved through the Icon.vue primitive. */
   icon?: string;
+  /** True when the icon is a multi-colour platform mark. */
+  brandIcon?: boolean;
 }
 
 defineProps<{
@@ -128,6 +130,7 @@ const usefulLinks = computed(() => {
       desc: "Official Supercell store specials and deals",
       url: `https://store.supercell.com/${locale}/clashroyale`,
       icon: "clash-royale",
+      brandIcon: true,
     },
   ];
 
@@ -158,6 +161,7 @@ const usefulLinks = computed(() => {
         :label="usefulLinkRecord.label"
         :description="usefulLinkRecord.desc"
         :icon="usefulLinkRecord.icon"
+        :brand-icon="usefulLinkRecord.brandIcon"
         :logo="usefulLinkRecord.logo"
         @click="openExternal(usefulLinkRecord.url)"
       />
