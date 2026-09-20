@@ -1,18 +1,20 @@
 <!-- SPDX-License-Identifier: GPL-3.0-only -->
 <!-- Copyright (C) 2026 AlbiDR -->
 <script setup lang="ts">
-import ClashRoyaleIcon from "./ClashRoyaleIcon.vue";
+import Icon from "./Icon.vue";
 import { useExternalLink } from "@core/services/useExternalLink";
 import { useHaptics } from "@shared/composables/useHaptics";
 
 /**
  * [UTIL] CARD ACTIONS
- * Atomic component for player-specific action buttons (RoyaleAPI, Open Game).
+ * Atomic component for the deliberate next steps after evaluating a player.
  * Deduplicated from MemberCard and RecruitCard.
  *
  * @remarks
- * [DECISION LOG] Haptic feedback integrated via useHaptics to ensure tactile
- * consistency for global card actions across the Android WebView shell.
+ * [DECISION LOG] The game hand-off is primary because it advances the player
+ * evaluation. RoyaleAPI remains available as the quieter supporting reference.
+ * The cluster has a bounded width so wide cards do not turn two actions into
+ * anonymous full-width slabs.
  */
 const props = defineProps<{
   /** Player Tag */
@@ -52,39 +54,37 @@ function handleOpenInGame() {
     <template v-if="loading">
       <div
         class="sk-button-m skeleton-anim"
-        style="flex: 1"
       />
       <div
         class="sk-button-m skeleton-anim"
-        style="flex: 1"
       />
     </template>
     <template v-else>
       <button
-        class="btn-action"
+        type="button"
+        class="btn-action card-action card-action--reference"
         :class="{ compact: compact }"
-        aria-label="View on RoyaleAPI"
+        :aria-label="`View ${props.id} on RoyaleAPI`"
         @click.stop="handleOpenExternal"
       >
-        <img
-          src="https://cdn.royaleapi.com/static/img/branding/royaleapi-logo-128.png"
-          :width="iconSize"
-          :height="iconSize"
-          alt="RoyaleAPI"
-          class="royaleapi-logo"
-          loading="lazy"
-        >
+        <Icon
+          name="globe"
+          :size="iconSize"
+          aria-hidden="true"
+        />
         <span>RoyaleAPI</span>
       </button>
       <button
-        class="btn-action primary"
+        type="button"
+        class="btn-action primary card-action card-action--game"
         :class="{ compact: compact }"
-        aria-label="Open in Game"
+        :aria-label="`Open ${props.id} in Clash Royale`"
         @click.stop="handleOpenInGame"
       >
-        <ClashRoyaleIcon
-          :size="iconSize + 4"
-          class="clashroyale-icon"
+        <Icon
+          name="external-link"
+          :size="iconSize"
+          aria-hidden="true"
         />
         <span>Open Game</span>
       </button>
@@ -94,30 +94,37 @@ function handleOpenInGame() {
 
 <style scoped>
 .card-actions-wrapper {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
   gap: var(--sys-space-8);
-  width: 100%;
+  width: min(100%, var(--sys-layout-action-cluster-max));
 }
 
-.royaleapi-logo {
-  object-fit: contain;
-  filter: grayscale(1) opacity(0.6);
-  transition: filter var(--sys-motion-duration-200) var(--sys-motion-spring);
+.card-action {
+  min-width: 0;
+  border: 1px solid transparent;
 }
 
-.btn-action:hover .royaleapi-logo {
-  filter: grayscale(0) opacity(1);
+.card-action--reference {
+  border-color: var(--sys-color-outline-variant);
+  background: var(--sys-color-surface-container-high);
+  color: var(--sys-color-on-surface-variant);
 }
 
-.clashroyale-icon {
-  filter: grayscale(1) opacity(0.6);
-  transform: translateZ(0);
-  will-change: filter;
-  transition: filter var(--sys-motion-duration-200) var(--sys-motion-spring),
-              transform var(--sys-motion-duration-200) var(--sys-motion-spring);
+.card-action--game {
+  box-shadow: var(--sys-elevation-2);
 }
 
-.btn-action:hover .clashroyale-icon {
-  filter: grayscale(0) opacity(1);
+.card-action:hover {
+  transform: translateY(calc(-1 * var(--sys-space-2)));
+}
+
+.card-action:focus-visible {
+  outline: 2px solid var(--sys-color-primary);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card-action:hover { transform: none; }
 }
 </style>

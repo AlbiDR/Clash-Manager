@@ -39,6 +39,10 @@ describe("CardActions", () => {
     expect(buttons).toHaveLength(2);
     expect(buttons[0].text()).toContain("RoyaleAPI");
     expect(buttons[1].text()).toContain("Open Game");
+    expect(buttons[0].attributes("aria-label")).toBe("View TAG123 on RoyaleAPI");
+    expect(buttons[1].attributes("aria-label")).toBe("Open TAG123 in Clash Royale");
+    expect(buttons[0].classes()).toContain("card-action--reference");
+    expect(buttons[1].classes()).toContain("card-action--game");
     expect(wrapper.find(".skeleton-anim").exists()).toBe(false);
   });
 

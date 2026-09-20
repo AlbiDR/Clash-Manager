@@ -34,6 +34,9 @@ export const staticTokens = `
      rounded onto one - 112px snapped to the nearest step would have put eight
      pixels of dead air under every list. */
   --sys-layout-dock-clearance: 112px;
+  /* A bounded action pair reads as the conclusion of an expanded card instead
+     of becoming two anonymous full-width slabs on a wide console. */
+  --sys-layout-action-cluster-max: 360px;
 
   /* ── FONTS ── */
   --sys-font-family-body: "Inter", system-ui, sans-serif;
