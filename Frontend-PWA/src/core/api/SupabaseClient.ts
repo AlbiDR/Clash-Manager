@@ -532,8 +532,12 @@ export async function fetchRemote(options?: {
   // SSOT: vars.PLAYER_TAG is injected by deploy-pwa.yml as VITE_PLAYER_TAG at build time.
   const playerTag: string = import.meta.env.VITE_PLAYER_TAG || "";
   
-  // Rationale: Use the kernel's ingestion heartbeat as the authoritative data age.
-  // [GUARD] Validate heartbeat structure before date conversion.
+  // [GUARD] Validate independent source-freshness evidence before combining it.
+  // A terminal pipeline failure can be written after the roster transaction has
+  // already committed. In that case `last_success_at` remains behind even
+  // though the rows the user is actually viewing carry a newer
+  // `last_ingested_at`. Treating the heartbeat as unconditionally dominant
+  // made a freshly populated console read as an hour old.
   const HeartbeatRowSchema = v.object({
     last_success_at: v.nullable(v.string()),
   });
@@ -552,7 +556,11 @@ export async function fetchRemote(options?: {
   const rosterTimestamp = rosterTimestamps.length > 0 ? Math.max(...rosterTimestamps) : null;
   // Never replace unknown freshness with the client's current clock. Doing so
   // makes arbitrarily old source data appear freshly ingested.
-  const timestamp = heartbeatTimestamp ?? rosterTimestamp ?? 0;
+  // Both timestamps describe remote data, so use the newest valid observation.
+  // Pipeline health remains independently visible in Settings; a lagging or
+  // failed heartbeat must not falsify the age of the successfully fetched
+  // roster payload.
+  const timestamp = Math.max(heartbeatTimestamp ?? 0, rosterTimestamp ?? 0);
   
   const webAppData: WebAppData = {
     lb: leaderboardMembers,
