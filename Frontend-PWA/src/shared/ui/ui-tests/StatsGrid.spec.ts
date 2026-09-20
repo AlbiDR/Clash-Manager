@@ -58,4 +58,20 @@ describe("StatsGrid.vue", () => {
     expect(wrapper.find(".stats-section-detail").text()).toBe("Clan contribution");
     expect(wrapper.find(".stats-grid").classes()).toContain("cols-2");
   });
+
+  it("marks immediate score evidence as the primary metric group", () => {
+    const wrapper = mount(StatsGrid, {
+      props: { columns: 2, priority: "primary" },
+    });
+
+    expect(wrapper.find(".stats-section").classes()).toContain("stats-section--primary");
+  });
+
+  it("uses the supporting hierarchy by default", () => {
+    const wrapper = mount(StatsGrid, {
+      props: { columns: 2 },
+    });
+
+    expect(wrapper.find(".stats-section").classes()).toContain("stats-section--supporting");
+  });
 });

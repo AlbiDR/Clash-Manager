@@ -149,6 +149,7 @@ const memberAccessibilityLabel = computed(() => {
       <StatsGrid
         :columns="2"
         :loading="props.appIsRefreshing"
+        priority="primary"
         label="Score drivers"
         detail="Recent clan contribution"
       >
