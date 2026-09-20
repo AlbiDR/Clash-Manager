@@ -22,7 +22,8 @@ import type { HubHealth } from "../types";
  * - **Import Boundaries:** Restricted to Layer 1 services and Layer 0 utilities.
  *
  * @param statsLabel - Singular display label for the item type (e.g., 'Member').
- * @param dataCount - Reactive count of the current dataset.
+ * @param dataCount - Reactive count of the current total dataset.
+ * @param visibleCount - Optional reactive count of currently visible/filtered items for ratio display formatting.
  * @returns
  * - `status`: Tiered system health status (text/type).
  * - `statsBadge`: Item counter for the header.
