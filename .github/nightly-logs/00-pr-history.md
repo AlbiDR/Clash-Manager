@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-19
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-20] PR #1891 [Stage 5]: Reconciled useConsoleMetadata connectivity aggregation, demo counts, and ratio badge formatting in core services README
+**Domain:** documentation | **Commit:** 715a900dd | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1891)
+**Files:** .github/nightly-logs/05-documentation-readme-coverage.log, .github/nightly-logs/05-documentation-readme-pr-body.md, Frontend-PWA/src/core/services/README.md
+**Why:** Document useConsoleMetadata.ts connectivity health extraction, demo mode counts, and filtered dataset ratio badge formatting
+**Change:** Reconciled useConsoleMetadata connectivity aggregation, demo counts, and ratio badge formatting in core services README
+**Result:** PASSED (git diff --check clean and 2041 unit tests passed across 205 test files)
+**Nudges:** 0
+
+
 ### [2026-09-20] PR #1890 [Stage 4]: Audited Edge Function SQL view usage, recent changed files (86 files), and L1/L3 core services and feature components; zero substrate or logic bottlenecks found
 **Domain:** optimization | **Commit:** 12f0ce7b7 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1890)
 **Files:** .github/nightly-logs/04-optimization-coverage.log, .github/nightly-logs/04-optimization-pr-body.md
