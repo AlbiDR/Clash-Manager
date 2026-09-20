@@ -22,6 +22,7 @@
 import { computed, onMounted, defineAsyncComponent } from "vue";
 import { default as SettingsCard } from "./SettingsCard.vue";
 import Icon from "./Icon.vue";
+import AnimatedDigits from "./AnimatedDigits.vue";
 import { useVoyageStatus } from "../composables/useVoyageStatus";
 import { formatNumber } from "@core";
 
@@ -72,7 +73,10 @@ const pillClass = computed(() => {
       <div class="summary-row">
         <span class="summary-label label-section">Crown Target</span>
         <span class="summary-value primary">
-          {{ formatNumber(store.targetCrowns) }} <Icon
+          <AnimatedDigits
+            :value="formatNumber(store.targetCrowns)"
+            label="Crown target"
+          /> <Icon
             name="crown"
             size="14"
             style="display: inline-block; vertical-align: middle; margin-left: var(--sys-space-2);"
@@ -85,7 +89,11 @@ const pillClass = computed(() => {
       >
         <span class="summary-label label-section">Starts In</span>
         <span class="summary-value timer pending-timer">
-          {{ startsInCountdown }}
+          <AnimatedDigits
+            :value="startsInCountdown"
+            direction="down"
+            label="Time until Clan Voyage starts"
+          />
         </span>
       </div>
       <div class="section-divider" />
@@ -99,7 +107,13 @@ const pillClass = computed(() => {
       <div class="summary-row">
         <span class="summary-label label-section">Progress</span>
         <span class="summary-value primary">
-          {{ formatNumber(store.totalCrowns) }} / {{ formatNumber(store.targetCrowns) }} <Icon
+          <AnimatedDigits
+            :value="formatNumber(store.totalCrowns)"
+            label="Crowns earned"
+          /> / <AnimatedDigits
+            :value="formatNumber(store.targetCrowns)"
+            label="Crown target"
+          /> <Icon
             name="crown"
             size="14"
             style="display: inline-block; vertical-align: middle; margin-left: var(--sys-space-2);"
@@ -109,7 +123,10 @@ const pillClass = computed(() => {
       <div class="summary-row">
         <span class="summary-label label-section">Completion</span>
         <span class="summary-value primary">
-          {{ Math.round(store.progressRatio * 100) }}%
+          <AnimatedDigits
+            :value="`${Math.round(store.progressRatio * 100)}%`"
+            label="Voyage completion"
+          />
         </span>
       </div>
       <div class="summary-row">
@@ -130,7 +147,11 @@ const pillClass = computed(() => {
           class="summary-value timer"
           :class="{ 'ended': timeRemaining === 'Ended' }"
         >
-          {{ timeRemaining }}
+          <AnimatedDigits
+            :value="timeRemaining"
+            direction="down"
+            label="Time remaining"
+          />
         </span>
       </div>
       <!-- Nudge: end_at not yet set -->

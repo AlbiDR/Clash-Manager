@@ -18,6 +18,7 @@
 import { onMounted, computed } from "vue";
 import { useVoyageStatus } from "../composables/useVoyageStatus";
 import Icon from "./Icon.vue";
+import AnimatedDigits from "./AnimatedDigits.vue";
 import { formatNumber } from "@core";
 
 const { store, timeRemaining, startsInCountdown, progressPercent } = useVoyageStatus();
@@ -93,19 +94,27 @@ const shouldShowBanner = computed(() => {
         </div>
         <div class="banner-meta">
           <div class="crown-count">
-            <span class="crown-value">{{ formatNumber(store.totalCrowns) }}</span>
+            <AnimatedDigits
+              class="crown-value"
+              :value="formatNumber(store.totalCrowns)"
+              label="Crowns earned"
+            />
             <span
               v-if="store.isActive"
               class="crown-sep"
             >/</span>
-            <span
+            <AnimatedDigits
               v-if="store.isActive"
               class="crown-target"
-            >{{ formatNumber(store.targetCrowns) }}</span>
-            <span
+              :value="formatNumber(store.targetCrowns)"
+              label="Crown target"
+            />
+            <AnimatedDigits
               v-else
               class="crown-target-single"
-            >Target: {{ formatNumber(store.targetCrowns) }}</span>
+              :value="`Target: ${formatNumber(store.targetCrowns)}`"
+              label="Crown target"
+            />
             <span class="crown-icon"><Icon
               name="crown"
               size="14"
@@ -116,14 +125,22 @@ const shouldShowBanner = computed(() => {
             class="countdown"
             :class="{ 'ended': timeRemaining === 'Ended' }"
           >
-            {{ timeRemaining }}
+            <AnimatedDigits
+              :value="timeRemaining"
+              direction="down"
+              label="Time remaining"
+            />
           </div>
           <div
             v-else-if="store.isPending"
             class="countdown pending"
             :class="{ 'ended': startsInCountdown === 'Ended' }"
           >
-            Starts in: {{ startsInCountdown }}
+            <span>Starts in: </span><AnimatedDigits
+              :value="startsInCountdown"
+              direction="down"
+              label="Time until Clan Voyage starts"
+            />
           </div>
           <div
             v-else-if="store.isAwaitingEnd"
