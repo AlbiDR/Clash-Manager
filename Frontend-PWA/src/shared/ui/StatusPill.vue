@@ -16,6 +16,11 @@ const props = defineProps<{
   compressionStage?: number;
 }>();
 
+const emit = defineEmits<{
+  /** Requests a real console refresh from the status detail surface. */
+  refresh: [];
+}>();
+
 const { isExpanded, isDB, displayText, displaySource, statusSummary, handleToggle } = useStatusPill(props);
 const detailsId = useId();
 const statusControl = useTemplateRef<HTMLElement>("statusControl");
@@ -32,6 +37,12 @@ const detailsAvailable = computed(() =>
 const statusLabel = computed(() => {
   const action = isExpanded.value ? "Hide data status details" : "Show data status details";
   return detailsAvailable.value ? `${props.text}. ${action}.` : props.text;
+});
+
+const refreshLabel = computed(() => {
+  if (props.type === "loading") return "Checking for updates";
+  if (props.type === "error") return "Try again";
+  return "Refresh data";
 });
 
 function handleKeydown(keyboardEvent: KeyboardEvent) {
@@ -143,6 +154,24 @@ onUnmounted(() => document.removeEventListener("click", handleClickOutside));
             <dd>{{ props.remoteInfo.diagnosis }}</dd>
           </div>
         </dl>
+        <button
+          v-tactile
+          type="button"
+          class="status-refresh-action"
+          :class="{ 'is-syncing': props.type === 'loading' }"
+          :aria-label="refreshLabel"
+          :title="refreshLabel"
+          :disabled="props.type === 'loading'"
+          @click="emit('refresh')"
+        >
+          <Icon
+            :name="props.type === 'loading' ? 'loader' : 'refresh'"
+            size="16"
+            class="status-refresh-icon"
+            aria-hidden="true"
+          />
+          <span>{{ refreshLabel }}</span>
+        </button>
       </section>
     </Transition>
   </div>
@@ -371,6 +400,54 @@ onUnmounted(() => document.removeEventListener("click", handleClickOutside));
 }
 .is-error .detail-list .is-diagnosis dd { color: var(--sys-color-error); }
 
+/* Refresh belongs with data provenance, not in the always-visible title rail.
+   It uses the real connectivity state supplied by the host: an idle refresh
+   glyph invites a check; the only rotation is the active request itself. */
+.status-refresh-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sys-space-8);
+  width: 100%;
+  min-height: var(--sys-space-48);
+  margin-top: var(--sys-space-14);
+  padding: 0 var(--sys-space-12);
+  border: 1px solid var(--sys-color-outline-variant);
+  border-radius: var(--sys-shape-corner-small);
+  background: var(--sys-color-surface-container-high);
+  color: var(--sys-color-on-surface);
+  cursor: pointer;
+  font: inherit;
+  font-size: var(--sys-typescale-meta);
+  font-weight: 750;
+  transition:
+    background-color var(--sys-motion-duration-200) var(--sys-motion-easing-standard),
+    border-color var(--sys-motion-duration-200) var(--sys-motion-easing-standard),
+    color var(--sys-motion-duration-200) var(--sys-motion-easing-standard),
+    transform var(--sys-motion-duration-200) var(--sys-motion-spring);
+}
+
+.status-refresh-action:hover:not(:disabled) {
+  border-color: var(--sys-color-primary);
+  background: var(--sys-color-primary-container);
+  color: var(--sys-color-on-primary-container);
+  transform: translateY(calc(-1 * var(--sys-space-1)));
+}
+
+.status-refresh-action:active:not(:disabled) { transform: scale(0.98); }
+
+.status-refresh-action:focus-visible {
+  outline: 2px solid var(--sys-color-primary);
+  outline-offset: 2px;
+}
+
+.status-refresh-action:disabled {
+  cursor: progress;
+  opacity: 0.78;
+}
+
+.status-refresh-icon.is-syncing { animation: rotate var(--sys-motion-ambient-spin) linear infinite; }
+
 .status-popover-enter-active,
 .status-popover-leave-active {
   transition:
@@ -388,7 +465,8 @@ onUnmounted(() => document.removeEventListener("click", handleClickOutside));
 
 @media (prefers-reduced-motion: reduce) {
   .spinner,
-  .status-indicator.is-syncing::after {
+  .status-indicator.is-syncing::after,
+  .status-refresh-icon.is-syncing {
     animation: none;
   }
 
@@ -396,5 +474,8 @@ onUnmounted(() => document.removeEventListener("click", handleClickOutside));
     opacity: 0.45;
     transform: none;
   }
+
+  .status-refresh-action:hover:not(:disabled),
+  .status-refresh-action:active:not(:disabled) { transform: none; }
 }
 </style>

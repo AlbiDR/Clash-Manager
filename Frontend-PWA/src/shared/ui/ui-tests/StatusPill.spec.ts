@@ -132,6 +132,30 @@ describe("StatusPill", () => {
     expect(wrapper.find(".status-details").text()).toContain("Last checked");
   });
 
+  it("offers a data refresh from the details panel and locks it to the real request", async () => {
+    const wrapper = mount(StatusPill, {
+      props: {
+        type: "success",
+        text: "DB",
+        nominal: true,
+        remoteInfo: { source: "SUPABASE", dataAge: "4m ago" },
+      },
+    });
+
+    await wrapper.find(".status-trigger").trigger("click");
+    const refreshAction = wrapper.find(".status-refresh-action");
+    expect(refreshAction.text()).toContain("Refresh data");
+    expect(refreshAction.attributes("disabled")).toBeUndefined();
+
+    await refreshAction.trigger("click");
+    expect(wrapper.emitted("refresh")).toEqual([[]]);
+
+    await wrapper.setProps({ type: "loading", text: "SYNCING" });
+    expect(refreshAction.text()).toContain("Checking for updates");
+    expect(refreshAction.attributes("disabled")).toBeDefined();
+    expect(refreshAction.findComponent({ name: "Icon" }).props("name")).toBe("loader");
+  });
+
   it("speaks the caller's loading label rather than a hardcoded one", () => {
     // Laboratory authors "Scanning Vault..." and "Computing Trajectory...", and
     // Settings distinguishes "Connecting..." from "Syncing...". All four were

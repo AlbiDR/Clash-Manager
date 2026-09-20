@@ -39,7 +39,7 @@ const props = defineProps<{
   remoteInfo?: ConsoleRemoteInfo;
 }>();
 
-defineEmits<{
+const emit = defineEmits<{
   refresh: [];
 }>();
 
@@ -208,6 +208,7 @@ onUnmounted(() => {
             :nominal="props.status.nominal"
             :remote-info="props.remoteInfo"
             :compression-stage="pressureStage"
+            @refresh="emit('refresh')"
           />
         </div>
       </div>
@@ -402,7 +403,18 @@ onUnmounted(() => {
 
 .console-header.is-pressure-stage-3 .action-group,
 .console-header.is-pressure-stage-4 .action-group { display: none; }
+.console-header.is-pressure-stage-4 {
+  /* The final pressure state has already removed every secondary datum. Use
+     the space it recovers to preserve the console name itself at narrow
+     widths and high browser zoom, rather than ellipsizing a known short
+     title such as Settings. */
+  padding-inline: var(--sys-space-12);
+}
+
 .console-header.is-pressure-stage-4 .title-label { display: none; }
+.console-header.is-pressure-stage-4 .view-title {
+  font-size: var(--sys-typescale-title-sm);
+}
 
 /* A console toolbar only appears for view-specific filters or selection. Search
    and order live behind the title-rail View button, so this grid never reserves

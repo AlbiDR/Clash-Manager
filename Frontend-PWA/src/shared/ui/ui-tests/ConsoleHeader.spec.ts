@@ -40,11 +40,35 @@ describe("ConsoleHeader", () => {
     expect(wrapper.findComponent({ name: "StatusPill" }).exists()).toBe(true);
   });
 
+  it("forwards a status-detail refresh without adding a permanent header action", async () => {
+    const wrapper = mount(ConsoleHeader, {
+      props: {
+        title: "Roster",
+        status: { type: "success", text: "DB", nominal: true },
+        remoteInfo: { source: "SUPABASE", dataAge: "4m ago" },
+      },
+    });
+
+    const statusPill = wrapper.findComponent({ name: "StatusPill" });
+    await statusPill.vm.$emit("refresh");
+
+    expect(wrapper.emitted("refresh")).toEqual([[]]);
+    expect(wrapper.find(".header-controls").exists()).toBe(false);
+  });
+
   it("keeps vertical leading inside the ellipsized title's clipping boundary", () => {
     // Ellipsis requires overflow clipping. A zero-leading line box used to cut
     // the bottom of Settings' G, so this must remain the roomy title leading.
     expect(consoleHeaderSource).toMatch(/\.view-title\s*\{[\s\S]*?overflow:\s*hidden;/);
     expect(consoleHeaderSource).toMatch(/\.view-title\s*\{[\s\S]*?line-height:\s*var\(--sys-leading-tight\);/);
+  });
+
+  it("uses the final header-pressure stage to preserve the console name", () => {
+    // After status and count have already made their concessions, the title
+    // itself must shrink before an ordinary console name can be ellipsized.
+    expect(consoleHeaderSource).toMatch(
+      /\.console-header\.is-pressure-stage-4\s+\.view-title\s*\{[\s\S]*?font-size:\s*var\(--sys-typescale-title-sm\);/,
+    );
   });
 
   it("does not create a controls region when a view forwards an empty Fragment", () => {
