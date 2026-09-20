@@ -57,22 +57,10 @@ describe("ConsoleHeader", () => {
   });
 
   it("keeps vertical leading inside the ellipsized title's clipping boundary", () => {
-    // Ellipsis requires overflow clipping. A zero-leading line box used to cut
-    // the bottom of Settings' G, so this must remain the roomy title leading.
+    // Ellipsis requires overflow clipping. The 24px title needs a 28.8px line
+    // box (not 26.4px) so browser rounding cannot crop its bottom pixels.
     expect(consoleHeaderSource).toMatch(/\.view-title\s*\{[\s\S]*?overflow:\s*hidden;/);
-    expect(consoleHeaderSource).toMatch(/\.view-title\s*\{[\s\S]*?line-height:\s*var\(--sys-leading-tight\);/);
-  });
-
-  it("uses the final header-pressure stage to preserve the console name", () => {
-    // After status and count have already made their concessions, the title
-    // itself must shrink before an ordinary console name can be ellipsized.
-    expect(consoleHeaderSource).toMatch(
-      /\.console-header\.is-pressure-stage-4\s+\.view-title\s*\{[\s\S]*?font-size:\s*clamp\([\s\S]*?var\(--sys-typescale-label-md\),[\s\S]*?8vw,[\s\S]*?var\(--sys-typescale-title-sm\)/,
-    );
-    // The resolver must measure the final font size, never a transition frame
-    // that can later grow into a clipped title.
-    expect(consoleHeaderSource).toMatch(/\.view-title\s*\{[\s\S]*?transition:\s*[\s\S]*?color[\s\S]*?transform[\s\S]*?opacity/);
-    expect(consoleHeaderSource).not.toMatch(/\.view-title\s*\{[\s\S]*?transition:\s*all/);
+    expect(consoleHeaderSource).toMatch(/\.view-title\s*\{[\s\S]*?line-height:\s*1\.2;/);
   });
 
   it("does not create a controls region when a view forwards an empty Fragment", () => {

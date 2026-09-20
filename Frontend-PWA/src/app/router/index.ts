@@ -111,59 +111,6 @@ const router = createRouter({
   ],
 });
 
-// [PERF] FIX: View Transitions Support with Safety Timeout
-let isInitialNavigation = true;
-
-function shouldUseRouteViewTransition() {
-  if (!document.startViewTransition) return false;
-  if (document.visibilityState !== "visible") return false;
-  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return false;
-  if (window.matchMedia("(hover: none), (pointer: coarse)").matches) return false;
-  return true;
-}
-
-/**
- * Navigation Guard: beforeResolve (View Transitions & UX orchestration)
- *
- * @remarks
- * **Architectural Context:**
- * - **Satisfaction:** Satisfies ADR Section III: Visual Continuity.
- * - **Threat Mitigation:** Prevents screen flashes and jumpy transition animations.
- *   Uses a safety fallback timeout to guarantee navigation completes even if the View
- *   Transitions API gets blocked or delayed.
- */
-router.beforeResolve(async (to, from) => {
-  if (isInitialNavigation) {
-    isInitialNavigation = false;
-    return;
-  }
-  
-  if (to.path === from.path) return;
-  if (!shouldUseRouteViewTransition()) return;
-
-  try {
-    return await new Promise((resolve) => {
-      let resolved = false;
-      document.startViewTransition(() => {
-        // [DECISION LOG] Resolve navigation to trigger DOM update and view swap.
-        resolve(true);
-        resolved = true;
-        // [PERF] Delay finishes the transition screenshot after DOM has settled.
-        return new Promise((r) => setTimeout(r, 50));
-      });
-      
-      // [THREAT:] Unresolved transition promise blocks route resolution and freezes the app.
-      // [DECISION LOG] Enforce a strict 500ms safety timeout fallback to resolve route unconditionally.
-      setTimeout(() => {
-        if (!resolved) resolve(true);
-      }, 500);
-    });
-  } catch (viewTransitionError) {
-    console.warn("View transition failed:", viewTransitionError);
-    return true;
-  }
-});
-
 /**
  * Navigation Guard: beforeEach (Scroll Position Capturing)
  */
