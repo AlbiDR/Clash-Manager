@@ -55,15 +55,9 @@ const activeChartMode = ref<"war" | "voyage">("war");
 
 /**
  * History is decision-relevant roster evidence, so it begins open with the
- * rest of an expanded card. The disclosure lets an operator compact an
- * individual row without removing that evidence by default.
+ * rest of an expanded card. The disclosure lets an operator compact history
+ * across roster cards for the rest of the current session.
  */
-const isHistoryOpen = ref(true);
-
-const historyActionLabel = computed(() =>
-  isHistoryOpen.value ? "Hide performance history" : "Show performance history",
-);
-
 /**
  * Component Props Interface Definition.
  *
@@ -71,12 +65,16 @@ const historyActionLabel = computed(() =>
  * Extends `ConsoleCardMetadata` to include card state (expanded, selected, selectionMode, isTagged)
  * along with member identification and leaderboard payload data.
  */
-const props = defineProps<ConsoleCardMetadata & {
+const props = withDefaults(defineProps<ConsoleCardMetadata & {
   /** Unique player tag identifier. */
   id: string;
   /** Authoritative member data object from the Leaderboard dataset. */
   member: LeaderboardMember;
-}>();
+  /** Shared roster-session preference for the performance-history disclosure. */
+  historyOpen?: boolean;
+}>(), {
+  historyOpen: true,
+});
 
 /**
  * Component Event Emission Contract.
@@ -89,7 +87,19 @@ const emit = defineEmits<{
   toggle: [];
   /** Triggers addition/removal from the batch selection queue. */
   "toggle-select": [];
+  /** Updates the shared roster-session performance-history preference. */
+  "update:history-open": [open: boolean];
 }>();
+
+const isHistoryOpen = computed(() => props.historyOpen);
+
+const historyActionLabel = computed(() =>
+  isHistoryOpen.value ? "Hide performance history" : "Show performance history",
+);
+
+function toggleHistory() {
+  emit("update:history-open", !isHistoryOpen.value);
+}
 
 /**
  * ACCESSIBILITY RESOLVER
@@ -236,7 +246,7 @@ const memberAccessibilityLabel = computed(() => {
           class="history-trigger hit-target"
           :aria-expanded="isHistoryOpen"
           :aria-label="historyActionLabel"
-          @click.stop="isHistoryOpen = !isHistoryOpen"
+          @click.stop="toggleHistory"
         >
           <span class="history-heading">
             <span class="history-heading-label">Performance history</span>

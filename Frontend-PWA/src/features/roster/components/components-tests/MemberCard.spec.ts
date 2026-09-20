@@ -239,9 +239,24 @@ describe("MemberCard.vue", () => {
 
     await wrapper.find(".history-trigger").trigger("click");
 
+    expect(wrapper.emitted("update:history-open")).toEqual([[false]]);
+
+    await wrapper.setProps({ historyOpen: false });
+
     expect(wrapper.find(".history-trigger").attributes("aria-expanded")).toBe("false");
     expect(wrapper.find(".history-action-label").text()).toBe("Show history");
     expect(wrapper.find(".war-history-chart-mock").exists()).toBe(false);
+  });
+
+  it("uses and updates the roster-session history preference", async () => {
+    const wrapper = mountMemberCard({ expanded: true, historyOpen: false });
+
+    expect(wrapper.find(".history-trigger").attributes("aria-expanded")).toBe("false");
+    expect(wrapper.find(".war-history-chart-mock").exists()).toBe(false);
+
+    await wrapper.find(".history-trigger").trigger("click");
+
+    expect(wrapper.emitted("update:history-open")).toEqual([[true]]);
   });
 
   it("shows refreshing state in the default-expanded history", () => {

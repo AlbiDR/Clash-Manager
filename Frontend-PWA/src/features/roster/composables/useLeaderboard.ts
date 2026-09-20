@@ -3,13 +3,22 @@
 
 import { useClashDataStore } from "@core";
 import { storeToRefs } from "pinia";
-import { computed } from "vue";
+import { computed, ref } from "vue";
 import { useConsoleController } from "@core/services/useConsoleController";
 import { useBlitzMode } from "@core/services/useBlitzMode";
 import { useSelectionStore } from "@core/services/useSelectionStore";
 import { LEADERBOARD_SORT_OPTIONS } from "@core/utils/sortOptions";
 import { LeaderboardSort } from "@core/utils/sortStrategies";
 import type { LeaderboardMember } from "@core/types";
+
+/**
+ * Session-scoped disclosure preference shared by every roster card.
+ *
+ * History starts expanded for a new app session. Once an operator changes the
+ * disclosure, the shared ref keeps subsequently opened member cards aligned
+ * without persisting the choice beyond the current session.
+ */
+const isHistoryOpen = ref(true);
 
 /**
  * COMPOSABLE: useLeaderboard
@@ -46,6 +55,8 @@ import type { LeaderboardMember } from "@core/types";
  * - `handleSelectScore`: Selects members exceeding a performance threshold.
  * - `getCardMetadata`: Factory for per-card UI state.
  * - `getMemoKeys`: Generates stable keys for Vue list memoization.
+ * - `isHistoryOpen`: Session-scoped preference for the performance-history disclosure.
+ * - `setHistoryOpen`: Updates the shared performance-history preference.
  *
  * @sideeffects
  * - Inherits side effects from `useConsoleController`, including UI coordination
@@ -98,5 +109,9 @@ export function useLeaderboard() {
 
   return {
     ...controller,
+    isHistoryOpen,
+    setHistoryOpen: (open: boolean) => {
+      isHistoryOpen.value = open;
+    },
   };
 }

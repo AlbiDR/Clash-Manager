@@ -63,6 +63,8 @@ const {
   layoutEvents,
   getCardMetadata,
   getMemoKeys,
+  isHistoryOpen,
+  setHistoryOpen,
 } = useLeaderboard();
 
 </script>
@@ -93,13 +95,16 @@ const {
             memberSnapshot.d.rate,
             memberSnapshot.d.wfame,
             memberSnapshot.d.avg,
-            memberSnapshot.d.seen
+            memberSnapshot.d.seen,
+            isHistoryOpen
           ])"
           :member="memberSnapshot"
+          :history-open="isHistoryOpen"
           v-bind="getCardMetadata(memberSnapshot.id)"
           :style="{ '--i': index }"
           @toggle="toggleExpand(memberSnapshot.id)"
           @toggle-select="toggleSelect(memberSnapshot.id)"
+          @update:history-open="setHistoryOpen"
         />
       </template>
     </ConsoleList>
