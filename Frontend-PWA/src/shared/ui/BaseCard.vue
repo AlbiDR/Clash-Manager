@@ -481,13 +481,32 @@ const scoreActionLabel = computed(() => {
 .card-details-leave-active {
   transition:
     grid-template-rows var(--sys-motion-duration-300) var(--sys-motion-easing-decelerate),
-    opacity var(--sys-motion-duration-200) var(--sys-motion-easing-standard);
+    opacity var(--sys-motion-duration-300) var(--sys-motion-easing-standard);
+}
+
+/* The body owns 32px of spacing plus its divider. If those dimensions are
+   left static, a zero-height grid track still has a visible tail and Vue
+   removes that remainder only on unmount. Animate them with the track so a
+   collapse finishes exactly where the reader sees it finish. */
+.card-details-enter-active .card-body,
+.card-details-leave-active .card-body {
+  transition:
+    margin-top var(--sys-motion-duration-300) var(--sys-motion-easing-decelerate),
+    padding-top var(--sys-motion-duration-300) var(--sys-motion-easing-decelerate),
+    border-color var(--sys-motion-duration-300) var(--sys-motion-easing-standard);
 }
 
 .card-details-enter-from,
 .card-details-leave-to {
   grid-template-rows: 0fr;
   opacity: 0;
+}
+
+.card-details-enter-from .card-body,
+.card-details-leave-to .card-body {
+  margin-top: 0;
+  padding-top: 0;
+  border-top-color: transparent;
 }
 
 /* The grid reveal gives the details their space; this short, delayed settle
