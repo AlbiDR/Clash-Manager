@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-20
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-21] PR #1908 [Stage 9]: 72 changed-files, 0 dep-violations, knip (1 file, 2 devDeps, 5 binaries, 3 exp, 1 dup); clean-streak: 1. Inspected config, roster/components, RosterView, useClipboard, useStatusPill. Candidate BLITZ_DWELL_DEFAULT intentional. Hunt clean.
+**Domain:** architecture | **Commit:** 89a32ff4b | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1908)
+**Files:** .github/nightly-logs/09-refactor-proposals-coverage.log, .github/nightly-logs/09-refactor-proposals-pr-body.md
+**Why:** Substrate complies with CleanStack ADR. Bounded candidate set contains no viable structural extraction, and Target C defect hunt produced zero reproducible failures.
+**Change:** 72 changed-files, 0 dep-violations, knip (1 file, 2 devDeps, 5 binaries, 3 exp, 1 dup); clean-streak: 1. Inspected config, roster/components, RosterView, useClipboard, useStatusPill. Candidate BLITZ_DWELL_DEFAULT intentional. Hunt clean.
+**Result:** vue-tsc --build --force passed with 0 errors; pnpm test passed 207 test files (2074 tests); depcruise passed with 0 violations.
+**Nudges:** 0
+
+
 ### [2026-09-21] PR #1907 [Stage 8]: Bumped @types/node catalog entry to ^26.6.2 and refreshed lockfile
 **Domain:** dependencies | **Commit:** 9e9702f05 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1907)
 **Files:** .github/nightly-logs/08-dependency-audit-coverage.log, .github/nightly-logs/08-dependency-audit-pr-body.md, package.json, pnpm-lock.yaml, pnpm-workspace.yaml
