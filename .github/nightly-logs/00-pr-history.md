@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-20
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-21] PR #1907 [Stage 8]: Bumped @types/node catalog entry to ^26.6.2 and refreshed lockfile
+**Domain:** dependencies | **Commit:** 9e9702f05 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1907)
+**Files:** .github/nightly-logs/08-dependency-audit-coverage.log, .github/nightly-logs/08-dependency-audit-pr-body.md, package.json, pnpm-lock.yaml, pnpm-workspace.yaml
+**Why:** Routine Tier 1 patch maintenance
+**Change:** Bumped @types/node catalog entry to ^26.6.2 and refreshed lockfile
+**Result:** pnpm test passed 2074 of 2074 tests across 207 test files
+**Nudges:** 1
+
+
 ### [2026-09-21] PR #1906 [Stage 7]: Monorepo version audit cleanly verified
 **Domain:** versioning | **Commit:** 398ac7cfe | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1906)
 **Files:** .github/nightly-logs/07-version-integrity-coverage.log, .github/nightly-logs/07-version-integrity-pr-body.md
