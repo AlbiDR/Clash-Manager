@@ -4,23 +4,23 @@
 
 In plain terms: nothing needed fixing. This run checked the APK optimization area and found it already correct, so the only file here is the log recording that the check happened.
 
-**What was checked:** Audited native WebView performance settings, Service Worker cache topology, and Vite bundle chunking; all optimal.
+**What was checked:** Calibration CLEAN audit: verified WebView cache mode, preraster, DOM storage, acceleration, SW precache & navigation preload, Vite chunks, and 11.1 KB precache footprint across 7 clean runs.
 
-**Why:** All 9 wrapper and caching performance invariants pass cleanly and precache asset footprint is 11.1 KB across 6 essential icon assets.
+**Why:** Widened calibration audit confirmed all native wrapper performance invariants and SW routes remain optimal with zero violations.
 
-**Result:** pnpm audit:apk-perf PASS (9/9 invariants ok, 11.1 KB precache footprint)
+**Result:** PASS: pnpm audit:apk-perf checked 9 invariants and 6 precached assets with zero violations.
 
 **Files changed:** .github/nightly-logs/11-apk-optimization-coverage.log
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: apk
-  Cycle: nightly-cycle/2026-09-20
+  Cycle: nightly-cycle/2026-09-21
   Contract: 63c0229fe16cf4c98e352282307edbee4830cff68ea2d93c5c967a1f5cbd30ea
-  Why: All 9 wrapper and caching performance invariants pass cleanly and precache asset footprint is 11.1 KB across 6 essential icon assets.
-  Change: Audited native WebView performance settings, Service Worker cache topology, and Vite bundle chunking; all optimal.
-  Result: pnpm audit:apk-perf PASS (9/9 invariants ok, 11.1 KB precache footprint)
+  Why: Widened calibration audit confirmed all native wrapper performance invariants and SW routes remain optimal with zero violations.
+  Change: Calibration CLEAN audit: verified WebView cache mode, preraster, DOM storage, acceleration, SW precache & navigation preload, Vite chunks, and 11.1 KB precache footprint across 7 clean runs.
+  Result: PASS: pnpm audit:apk-perf checked 9 invariants and 6 precached assets with zero violations.
   Files: .github/nightly-logs/11-apk-optimization-coverage.log
   Nudges: 0
-  Execution: dddc3415000f7c8a904de162c9e90bc5c6297170
+  Execution: ce794fb1458eeb353b8c34a561defe59c6704928
 -->
