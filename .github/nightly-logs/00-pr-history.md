@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-20
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-21] PR #1910 [Stage 11]: Calibration CLEAN audit: verified WebView cache mode, preraster, DOM storage, acceleration, SW precache & navigation preload, Vite chunks, and 11.1 KB precache footprint across 7 clean runs.
+**Domain:** apk | **Commit:** b1df7cbc4 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1910)
+**Files:** .github/nightly-logs/11-apk-optimization-coverage.log, .github/nightly-logs/11-apk-optimization-pr-body.md
+**Why:** Widened calibration audit confirmed all native wrapper performance invariants and SW routes remain optimal with zero violations.
+**Change:** Calibration CLEAN audit: verified WebView cache mode, preraster, DOM storage, acceleration, SW precache & navigation preload, Vite chunks, and 11.1 KB precache footprint across 7 clean runs.
+**Result:** PASS: pnpm audit:apk-perf checked 9 invariants and 6 precached assets with zero violations.
+**Nudges:** 0
+
+
 ### [2026-09-21] PR #1909 [Stage 10]: Completed APK & PWA wrapper integrity audit
 **Domain:** apk | **Commit:** 2c3add3bd | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1909)
 **Files:** .github/nightly-logs/10-apk-integrity-coverage.log, .github/nightly-logs/10-apk-integrity-pr-body.md
