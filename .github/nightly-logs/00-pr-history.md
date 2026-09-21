@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-20
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-21] PR #1909 [Stage 10]: Completed APK & PWA wrapper integrity audit
+**Domain:** apk | **Commit:** 2c3add3bd | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1909)
+**Files:** .github/nightly-logs/10-apk-integrity-coverage.log, .github/nightly-logs/10-apk-integrity-pr-body.md
+**Why:** All wrapper invariants, asset links, manifests, release metadata, and security profiles were verified and synchronized.
+**Change:** Completed APK & PWA wrapper integrity audit
+**Result:** PASSED: pnpm audit:apk, pnpm apk:verify:source, pnpm test:apk-release
+**Nudges:** 0
+
+
 ### [2026-09-21] PR #1908 [Stage 9]: 72 changed-files, 0 dep-violations, knip (1 file, 2 devDeps, 5 binaries, 3 exp, 1 dup); clean-streak: 1. Inspected config, roster/components, RosterView, useClipboard, useStatusPill. Candidate BLITZ_DWELL_DEFAULT intentional. Hunt clean.
 **Domain:** architecture | **Commit:** 89a32ff4b | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1908)
 **Files:** .github/nightly-logs/09-refactor-proposals-coverage.log, .github/nightly-logs/09-refactor-proposals-pr-body.md
