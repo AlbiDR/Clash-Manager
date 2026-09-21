@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-20
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-21] PR #1905 [Stage 6]: Harden SupabaseClient fetchRemote TSDoc and inline freshness evidence annotations
+**Domain:** documentation | **Commit:** bff573d8d | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1905)
+**Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, .github/nightly-logs/06-documentation-tsdoc-pr-body.md, Frontend-PWA/src/core/api/SupabaseClient.ts
+**Why:** Reconcile doc debt for SupabaseClient after recent ingestion timestamp logic change
+**Change:** Harden SupabaseClient fetchRemote TSDoc and inline freshness evidence annotations
+**Result:** vue-tsc type-check 0 errors, Vitest passed 2074 of 2074 tests across 207 files
+**Nudges:** 1
+
+
 ### [2026-09-21] PR #1904 [Stage 5]: Reconciled useClipboard and useSearchField composables in shared composables README
 **Domain:** documentation | **Commit:** 2751e8650 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1904)
 **Files:** .github/nightly-logs/05-documentation-readme-coverage.log, .github/nightly-logs/05-documentation-readme-pr-body.md, Frontend-PWA/src/shared/composables/README.md
