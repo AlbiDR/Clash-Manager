@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-20
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-21] PR #1904 [Stage 5]: Reconciled useClipboard and useSearchField composables in shared composables README
+**Domain:** documentation | **Commit:** 2751e8650 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1904)
+**Files:** .github/nightly-logs/05-documentation-readme-coverage.log, .github/nightly-logs/05-documentation-readme-pr-body.md, Frontend-PWA/src/shared/composables/README.md
+**Why:** Documented missing Layer 2 composables to eliminate README drift
+**Change:** Reconciled useClipboard and useSearchField composables in shared composables README
+**Result:** All 22 relevant unit tests passed and file references validated with custom validator
+**Nudges:** 0
+
+
 ### [2026-09-21] PR #1903 [Stage 4]: Audited Edge Function SQL view usage, recent changed files (78 files), and L2/L3 shared composables; zero substrate or logic bottlenecks found
 **Domain:** optimization | **Commit:** 8459ce3a4 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1903)
 **Files:** .github/nightly-logs/04-optimization-coverage.log, .github/nightly-logs/04-optimization-pr-body.md
