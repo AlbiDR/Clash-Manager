@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-20
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-21] PR #1902 [Stage 3]: Baseline current across 0 pending migrations (calibration-due: NO, consecutive CLEAN: 11); read-only RLS, search_path, and formatting audit verified clean
+**Domain:** database | **Commit:** 78719a401 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1902)
+**Files:** .github/nightly-logs/03-baseline-consolidation-coverage.log, .github/nightly-logs/03-baseline-consolidation-pr-body.md
+**Why:** No new migrations exist in pending-migrations.txt, and the master migration satisfies all structural, RLS, search_path, and formatting policies.
+**Change:** Baseline current across 0 pending migrations (calibration-due: NO, consecutive CLEAN: 11); read-only RLS, search_path, and formatting audit verified clean
+**Result:** Pending migrations: 0; migration-quality: PASS; fold-state: DEGRADED; database-verification: DB-UNAVAILABLE
+**Nudges:** 0
+
+
 ### [2026-09-21] PR #1901 [Stage 2]: Expanded useClipboard and useStatusPill unit test coverage
 **Domain:** verification | **Commit:** 08df82b4a | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1901)
 **Files:** .github/nightly-logs/02-verification-coverage.log, .github/nightly-logs/02-verification-pr-body.md, Frontend-PWA/src/shared/composables/composables-tests/useClipboard.spec.ts, Frontend-PWA/src/shared/composables/composables-tests/useStatusPill.spec.ts
