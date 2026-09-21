@@ -4,23 +4,23 @@
 
 In plain terms: nothing needed fixing. This run checked the APK integrity area and found it already correct, so the only file here is the log recording that the check happened.
 
-**What was checked:** Verified PWA/APK wrapper integrity invariants across asset links, manifest parity, version code/name sync, release metadata, and security policy.
+**What was checked:** Completed APK & PWA wrapper integrity audit
 
-**Why:** No configuration mismatches found across PWA manifest, asset links, twa-manifest.json, apktool.yml, and AndroidManifest.xml.
+**Why:** All wrapper invariants, asset links, manifests, release metadata, and security profiles were verified and synchronized.
 
-**Result:** Passed pnpm audit:apk, pnpm apk:verify:source, and pnpm test:apk-release.
+**Result:** PASSED: pnpm audit:apk, pnpm apk:verify:source, pnpm test:apk-release
 
 **Files changed:** .github/nightly-logs/10-apk-integrity-coverage.log
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: apk
-  Cycle: nightly-cycle/2026-09-20
+  Cycle: nightly-cycle/2026-09-21
   Contract: 4f9b40864d05ffea731090b36800572dd7affedd8532fcd17c8ded8c9e2fbc12
-  Why: No configuration mismatches found across PWA manifest, asset links, twa-manifest.json, apktool.yml, and AndroidManifest.xml.
-  Change: Verified PWA/APK wrapper integrity invariants across asset links, manifest parity, version code/name sync, release metadata, and security policy.
-  Result: Passed pnpm audit:apk, pnpm apk:verify:source, and pnpm test:apk-release.
+  Why: All wrapper invariants, asset links, manifests, release metadata, and security profiles were verified and synchronized.
+  Change: Completed APK & PWA wrapper integrity audit
+  Result: PASSED: pnpm audit:apk, pnpm apk:verify:source, pnpm test:apk-release
   Files: .github/nightly-logs/10-apk-integrity-coverage.log
   Nudges: 0
-  Execution: 656666004b0dc8fb27028516f7bb7f64c9457412
+  Execution: ce73ac15b21c457a03637be43c2a7dde2ac061c3
 -->
