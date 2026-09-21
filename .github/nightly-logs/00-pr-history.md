@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-20
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-21] PR #1901 [Stage 2]: Expanded useClipboard and useStatusPill unit test coverage
+**Domain:** verification | **Commit:** 08df82b4a | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1901)
+**Files:** .github/nightly-logs/02-verification-coverage.log, .github/nightly-logs/02-verification-pr-body.md, Frontend-PWA/src/shared/composables/composables-tests/useClipboard.spec.ts, Frontend-PWA/src/shared/composables/composables-tests/useStatusPill.spec.ts
+**Why:** Closed validation boundary, error handling, timer reset, scope cleanup, and status summary gaps
+**Change:** Expanded useClipboard and useStatusPill unit test coverage
+**Result:** Proven mutations: (1) if (!content) in useClipboard.ts disabled -> caught by empty content assertion in useClipboard.spec.ts; (2) warning status in useStatusPill.ts disabled -> caught by status summary assertion in useStatusPill.spec.ts. All 2074 PWA unit tests pass.
+**Nudges:** 0
+
+
 ### [2026-09-20] PR #1900 [Stage 1]: Widened runtime security audit verified zero unhandled threats across Target B/C surfaces
 **Domain:** hardening | **Commit:** 876f73d7a | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1900)
 **Files:** .github/nightly-logs/00-pr-history.md, .github/nightly-logs/01-hardening-coverage.log, .github/nightly-logs/01-hardening-pr-body.md
