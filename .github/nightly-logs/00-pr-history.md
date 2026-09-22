@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-21
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-22] PR #1919 [Stage 7]: Audit complete: No version drift or catalog violations detected across 10 version-controlled targets.
+**Domain:** versioning | **Commit:** 9a55e7cd3 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1919)
+**Files:** .github/nightly-logs/07-version-integrity-coverage.log, .github/nightly-logs/07-version-integrity-pr-body.md
+**Why:** Ground truth version 14.50.109 is consistently applied and catalog usage is 100% adhered.
+**Change:** Audit complete: No version drift or catalog violations detected across 10 version-controlled targets.
+**Result:** pnpm audit:version reported 0 drift lines across all manifests, badges, constants, and catalog targets
+**Nudges:** 0
+
+
 ### [2026-09-22] PR #1918 [Stage 6]: Harden MemberCard interface contracts and inline logic annotations
 **Domain:** documentation | **Commit:** 75d0b84c5 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1918)
 **Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, .github/nightly-logs/06-documentation-tsdoc-pr-body.md, Frontend-PWA/src/features/roster/components/MemberCard.vue
