@@ -64,6 +64,10 @@ import { spawnSync } from "node:child_process";
 
 import { HEALTH, PACE, evaluatePipelineHealth, isObserved } from "./nightly-health.mjs";
 import { INTERVENTION_OUTCOMES, classifyIntervention } from "./nightly-intervention.mjs";
+// The same classifier finalize uses to write each pull request's own
+// plain-language line. Imported rather than reimplemented so the recap and the
+// bodies can never disagree about what kind of night it was.
+import { classifyChangedPaths } from "./nightly-stage.mjs";
 import { prNumberFromTag } from "./nightly-ledger.mjs";
 import { getEvidenceDate } from "./nightly-events.mjs";
 import {
@@ -283,6 +287,10 @@ export function classifyStage({ stage, entry, tag, declared, history, progress }
     result: history?.result ?? null,
     nudges: history?.nudges ?? null,
     files: history?.files ?? [],
+    // Carried from the registry so the file classifier can tell this stage's
+    // own bookkeeping from its work. Naming the log directory here instead
+    // would be a second copy of a path the registry already owns.
+    coverageLog: stage.coverageLog ?? null,
     health: entry?.evidence?.health ?? null,
     session: entry?.evidence?.session ?? null,
     bodyHealth: entry?.evidence?.body ?? null,
@@ -751,6 +759,121 @@ function stageLabel(stage) {
 }
 
 /**
+ * Which part of the project a changed file belongs to, in everyday words.
+ *
+ * Keyed on the directory structure and never on filenames, because a
+ * directory is a decision about what something IS and a filename is an
+ * identifier. "useClipboard.spec.ts" means nothing to a reader who wants a
+ * summary; "shared helper logic" is the same fact in their language.
+ *
+ * Ordered, first match wins, most specific first. An unmapped directory
+ * falls through to its own folder name rather than to silence: if this list
+ * goes stale because a directory was renamed, the line degrades to naming the
+ * new folder, which is honest, instead of quietly dropping a changed area and
+ * under-reporting the night.
+ */
+const PLAIN_SUBJECTS = [
+  { match: /^Frontend-PWA\/src\/features\/([^/]+)\//, phrase: m => `the ${words(m[1])} screen` },
+  { match: /^Frontend-PWA\/src\/core\/api\//, phrase: () => "the server connection layer" },
+  { match: /^Frontend-PWA\/src\/core\/services\//, phrase: () => "background data syncing" },
+  // "theming", not "theming and colours": the phrases are joined with "and",
+  // and a phrase carrying its own "and" produced "the backend functions and
+  // theming and colours".
+  { match: /^Frontend-PWA\/src\/core\/theme\//, phrase: () => "theming" },
+  { match: /^Frontend-PWA\/src\/core\/([^/]+)\//, phrase: m => `the app's ${words(m[1])} core` },
+  { match: /^Frontend-PWA\/src\/shared\/ui\//, phrase: () => "shared screen components" },
+  { match: /^Frontend-PWA\/src\/shared\/composables\//, phrase: () => "shared helper logic" },
+  { match: /^Frontend-PWA\/src\/shared\/([^/]+)\//, phrase: m => `shared ${words(m[1])}` },
+  { match: /^Frontend-PWA\/src\/([^/]+)\//, phrase: m => `the ${words(m[1])} area` },
+  { match: /^Backend\/supabase\/migrations\//, phrase: () => "the database schema" },
+  { match: /^Backend\/supabase\/functions\//, phrase: () => "the backend functions" },
+  { match: /^Backend\//, phrase: () => "the backend" },
+  { match: /^APK\//, phrase: () => "the Android wrapper" },
+];
+
+/** A directory segment as prose: "documentation-readme" reads "documentation readme". */
+function words(segment) {
+  return String(segment).replace(/[-_]+/g, " ").trim();
+}
+
+export function plainSubject(filePath) {
+  for (const { match, phrase } of PLAIN_SUBJECTS) {
+    const found = match.exec(filePath);
+    if (found) return phrase(found);
+  }
+  return null;
+}
+
+/**
+ * What the night's changes MEAN, in everyday words and with no identifiers.
+ *
+ * Built from the changed FILES and never from the stages' own summaries, for
+ * the same reason renderPlainSummary is: a summary is engineering prose
+ * ("Harden SupabaseClient fetchRemote TSDoc"), and the reader who wants a
+ * TL;DR is precisely the reader that sentence fails. Each stage's own words
+ * are printed in full in its own block below, so nothing is lost by not
+ * repeating them here.
+ *
+ * The line this replaced named only the areas that changed ("The project
+ * changed in verification, documentation README, ..."), which is a list of
+ * stage names rather than a statement about the project: it read the same
+ * every night, and it never answered the one question a summary is for,
+ * which is whether anything a user could notice actually changed.
+ *
+ * Returns null when no changed stage still carries a file list. The pull
+ * request history ages out, and a plain-language claim built from an empty
+ * file list would be asserting something the evidence cannot support.
+ */
+function plainChangeMeaning(changed) {
+  const stagesPerKind = { test: 0, docs: 0, deps: 0, code: 0 };
+  const subjects = [];
+  let measured = 0;
+  for (const stage of changed) {
+    if (!stage.files?.length || !stage.coverageLog) continue;
+    measured += 1;
+    const kinds = classifyChangedPaths({ coverageLog: stage.coverageLog }, stage.files);
+    for (const kind of Object.keys(stagesPerKind)) {
+      if (kinds[kind].length > 0) stagesPerKind[kind] += 1;
+    }
+    // Dependency manifests are deliberately excluded: "a dependency update"
+    // below already says it, and they live at the repository root, which maps
+    // to no part of the project a reader would recognise.
+    for (const filePath of [...kinds.code, ...kinds.test, ...kinds.docs]) {
+      const subject = plainSubject(filePath);
+      if (subject && !subjects.includes(subject)) subjects.push(subject);
+    }
+  }
+  if (measured === 0) return null;
+
+  const phrases = [];
+  if (stagesPerKind.test > 0) phrases.push("more automated tests");
+  if (stagesPerKind.docs > 0) phrases.push("documentation");
+  if (stagesPerKind.deps > 0) phrases.push("a dependency update");
+
+  // Named first, because it is the half that actually differs from night to
+  // night. The pipeline audits the same thirteen areas every night and its
+  // work is nearly always tests, docs and dependencies, so a summary built
+  // only from the KIND of work reads identically every time even when the
+  // night was completely different. What changed is the part that varies.
+  const where = subjects.length > 0 ? `Tonight's work touched ${joinList(subjects)}. ` : "";
+
+  if (stagesPerKind.code === 0) {
+    // Every CHANGED stage whose whole diff was its own log, which only Stage 8
+    // is allowed to be. Nothing about the project can be said from that.
+    if (phrases.length === 0) return null;
+    return `${where}Nothing about how the app runs changed: the work was ${joinList(phrases)}.`;
+  }
+
+  // The hedge is deliberately "may have", and it is the same one
+  // renderPlainSummary carries: the classifier can see that a source file
+  // changed, never that the change was only comments, and trusting a stage's
+  // mandate over its own diff is how a stage gets to assert its own safety.
+  const alongside = phrases.length > 0 ? ` Alongside that came ${joinList(phrases)}.` : "";
+  return `${where}${stagesPerKind.code === 1 ? "One stage" : `${stagesPerKind.code} stages`} changed product code,`
+    + ` so how the app behaves may have changed.${alongside}`;
+}
+
+/**
  * The whole run in one plain-language paragraph, for a reader who does not want
  * thirteen stage entries.
  *
@@ -798,10 +921,14 @@ function overviewSection(recap) {
   // two things a count cannot say: what needs the reader, and whether the sweep
   // was self-driven. What is kept is the part the counts do not carry.
   if (changed.length > 0) {
-    // displayArea's casing is kept verbatim: it carries the acronyms (README,
-    // TSDoc, APK, UX), and lowercasing the area names destroys them. The area
-    // list is the information here; the count of them is already above.
-    sentences.push(`The project changed in ${joinList(changed.map(s => displayArea(s.slug)))}.`);
+    // Falls back to the area list when the file evidence has aged out of the
+    // pull request history. displayArea's casing is kept verbatim there: it
+    // carries the acronyms (README, TSDoc, APK, UX), and lowercasing the area
+    // names destroys them.
+    sentences.push(
+      plainChangeMeaning(changed)
+      || `The project changed in ${joinList(changed.map(s => displayArea(s.slug)))}.`,
+    );
   } else {
     sentences.push("No stage changed the project.");
   }
