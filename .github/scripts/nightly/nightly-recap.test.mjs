@@ -13,6 +13,7 @@ import {
   gradeRun,
   latestRunDate,
   declaredCoverageRecord,
+  plainSubject,
   parsePrHistoryEntry,
   renderRecap,
   runProgress,
@@ -1089,6 +1090,101 @@ test("the overview never describes a clean stage as idle or wasted", () => {
   assert.match(text, /found nothing that needed fixing/);
   assert.match(text, /the job being done rather than a wasted run/);
   assert.doesNotMatch(text, /idle|did nothing|wasted capacity|nothing to show/i);
+});
+
+// --- The plain-terms TL;DR -----------------------------------------------
+//
+// The line this replaced named only which stage areas changed, in one fixed
+// sentence frame. It read identically night after night, because the pipeline
+// audits the same thirteen areas every night and its output is nearly always
+// tests, docs and dependencies. A summary whose wording cannot vary when the
+// night varies is not a summary.
+//
+// So the part that DOES vary is named first: which part of the project was
+// touched, in everyday words taken from the directory structure.
+
+const changedStage = (stage, slug, files) => ({
+  stage, slug, outcome: "CHANGED", merged: true, observed: true,
+  coverageLog: `.github/nightly-logs/${String(stage).padStart(2, "0")}-${slug}-coverage.log`,
+  files,
+});
+
+test("the plain-terms line names which part of the project was touched, in plain words", () => {
+  const text = renderRecap(overviewRecap({
+    total: 2, changed: 2, clean: 0,
+    stages: [
+      changedStage(2, "verification", [
+        ".github/nightly-logs/02-verification-coverage.log",
+        "Frontend-PWA/src/shared/composables/composables-tests/useClipboard.spec.ts",
+      ]),
+      changedStage(12, "apk-ux", [
+        ".github/nightly-logs/12-apk-ux-coverage.log",
+        "Frontend-PWA/src/features/headhunter/components/RecruitCard.vue",
+      ]),
+    ],
+  }));
+  assert.match(text, /Tonight's work touched shared helper logic and the headhunter screen\./);
+  // No identifiers. The whole point of the line is that it is readable by
+  // someone who does not know what a composable is.
+  assert.doesNotMatch(text.split("\n")[6] || "", /useClipboard|RecruitCard|\.spec\.ts|\.vue/);
+});
+
+test("a night with no product-code change says so, instead of hedging", () => {
+  const text = renderRecap(overviewRecap({
+    total: 1, changed: 1, clean: 0,
+    stages: [
+      changedStage(5, "documentation-readme", [
+        ".github/nightly-logs/05-documentation-readme-coverage.log",
+        "Frontend-PWA/src/shared/composables/README.md",
+      ]),
+    ],
+  }));
+  assert.match(text, /Nothing about how the app runs changed: the work was documentation\./);
+  assert.doesNotMatch(text, /may have changed/);
+});
+
+test("a source-file change keeps the hedge, because the diff cannot prove it was only comments", () => {
+  // Stage 6 is the TSDoc stage: its diff is a .ts file whose change is
+  // comments. renderPlainSummary carries the same hedge for the same reason,
+  // and trusting a stage's mandate over its own diff is how a stage gets to
+  // assert its own safety.
+  const text = renderRecap(overviewRecap({
+    total: 1, changed: 1, clean: 0,
+    stages: [
+      changedStage(6, "documentation-tsdoc", [
+        ".github/nightly-logs/06-documentation-tsdoc-coverage.log",
+        "Frontend-PWA/src/core/api/SupabaseClient.ts",
+      ]),
+    ],
+  }));
+  assert.match(text, /the server connection layer/);
+  assert.match(text, /One stage changed product code, so how the app behaves may have changed\./);
+});
+
+test("an unmapped directory degrades to its own folder name, never to silence", () => {
+  // If a directory is renamed this list goes stale. Dropping the area would
+  // under-report the night silently, which is the failure mode this repo
+  // treats as worse than an imperfect phrase.
+  assert.equal(plainSubject("Frontend-PWA/src/widgets/Thing.vue"), "the widgets area");
+  assert.equal(plainSubject("Frontend-PWA/src/features/war-log/X.vue"), "the war log screen");
+  assert.equal(plainSubject("Backend/supabase/migrations/0001_x.sql"), "the database schema");
+  assert.equal(plainSubject("APK/android/apktool.yml"), "the Android wrapper");
+  assert.equal(plainSubject("package.json"), null, "root manifests map to no part a reader would recognise");
+});
+
+test("the plain-terms line falls back to areas when the file evidence has aged out", () => {
+  // Stage 1's aging pass prunes older pull request entries, so `files` empties
+  // out for past runs. A plain-language claim built from an empty file list
+  // would assert something the evidence cannot support.
+  const text = renderRecap(overviewRecap({
+    total: 2, changed: 2, clean: 0,
+    stages: [
+      { stage: 5, slug: "documentation-readme", outcome: "CHANGED", merged: true, files: [] },
+      { stage: 10, slug: "apk-integrity", outcome: "CHANGED", merged: true, files: [] },
+    ],
+  }));
+  assert.match(text, /The project changed in documentation README and APK integrity\./);
+  assert.doesNotMatch(text, /Tonight's work touched/);
 });
 
 test("the overview keeps acronyms in area names", () => {
