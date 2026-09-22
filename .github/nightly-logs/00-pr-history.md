@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-21
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-22] PR #1917 [Stage 5]: Reconciled Frontend-PWA/src/features/roster/README.md with implementation details from useLeaderboard.ts
+**Domain:** documentation | **Commit:** b45638a40 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1917)
+**Files:** .github/nightly-logs/05-documentation-readme-coverage.log, .github/nightly-logs/05-documentation-readme-pr-body.md, Frontend-PWA/src/features/roster/README.md
+**Why:** Document useLeaderboard domain callbacks, Blitz FAB customization, and session disclosure state
+**Change:** Reconciled Frontend-PWA/src/features/roster/README.md with implementation details from useLeaderboard.ts
+**Result:** git diff --check clean and 2076 Vitest tests passed
+**Nudges:** 0
+
+
 ### [2026-09-22] PR #1916 [Stage 4]: Audited Edge Function SQL view usage, recent changed files (72 files), and L1/L2 performance composables; zero substrate or logic bottlenecks found
 **Domain:** optimization | **Commit:** cb679c09f | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1916)
 **Files:** .github/nightly-logs/04-optimization-coverage.log, .github/nightly-logs/04-optimization-pr-body.md
