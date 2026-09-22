@@ -127,3 +127,4 @@
 * [2026-09-19] [Stage 6] [04:31Z-04:38Z 7m] CHANGED: Frontend-PWA/src/core/services/useClashSyncUtils.ts -- docs(tsdoc): harden useClashSyncUtils interface contracts and inline logic annotations
 * [2026-09-20] [Stage 6] [04:17Z-04:22Z 5m] CHANGED: Frontend-PWA/src/core/services/useConsoleMetadata.ts -- Harden useConsoleMetadata interface contracts and inline logic annotations
 * [2026-09-21] [Stage 6] [04:12Z-04:19Z 7m] CHANGED: Frontend-PWA/src/core/api/SupabaseClient.ts -- Harden SupabaseClient fetchRemote TSDoc and inline freshness evidence annotations
+* [2026-09-22] [Stage 6] [04:30Z-04:42Z 12m] CHANGED: Frontend-PWA/src/features/roster/components/MemberCard.vue -- Harden MemberCard interface contracts and inline logic annotations
