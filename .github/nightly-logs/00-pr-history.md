@@ -15,6 +15,15 @@ LAST_AGED:   2026-09-22
 ---
 
 ## T1 -- Active (last 7 days)
+
+### [2026-09-22] PR #1926 [Stage 1]: Runtime Integrity Auditor: CLEAN scan across Edge Functions, Valibot boundaries, and cross-layer surfaces (calibrated)
+**Domain:** hardening | **Commit:** ef6db1cb4 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1926)
+**Files:** .github/nightly-logs/00-pr-history.md, .github/nightly-logs/01-hardening-coverage.log, .github/nightly-logs/01-hardening-pr-body.md
+**Why:** Aged history to 2026-09-22. Widened calibration scan across 57 changed-files candidate surface and older Target B/C surfaces (cross-feature isolation, Valibot schema boundaries, in-memory state, and unauthenticated Edge Function endpoints). All boundaries intact, 2076 monorepo tests passing.
+**Change:** Runtime Integrity Auditor: CLEAN scan across Edge Functions, Valibot boundaries, and cross-layer surfaces (calibrated)
+**Result:** 2076 monorepo tests passing, 0 security or runtime integrity violations found across audited files.
+**Nudges:** 0
+
 ### [2026-09-22] PR #1925 [Stage 13]: Completed Stage 13 pipeline self-healing audit for 2026-09-22
 **Domain:** pipeline | **Commit:** c5abf7672 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1925)
 **Files:** .github/nightly-logs/13-self-healing-protocol-coverage.log, .github/nightly-logs/13-self-healing-protocol-pr-body.md
