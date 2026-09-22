@@ -13,6 +13,19 @@ const mockData = ref({
   ]
 });
 
+let capturedControllerConfig: any = null;
+
+const mockBlitz = {
+  fabState: ref({ count: 2, visible: true, dismissIcon: "trash", harvestEnabled: true }),
+  handleAction: vi.fn(),
+  handleBlitz: vi.fn(),
+  clearSelection: vi.fn(),
+};
+
+vi.mock("@core/services/useBlitzMode", () => ({
+  useBlitzMode: () => mockBlitz,
+}));
+
 vi.mock("@core/api/useApiState", () => ({
   useApiState: () => ({
     pingData: ref({
@@ -44,6 +57,7 @@ vi.mock("@core/services/useShowcaseMode", () => ({
 
 vi.mock("@core/services/useConsoleController", () => ({
   useConsoleController: (config: any) => {
+    capturedControllerConfig = config;
     const searchQuery = ref("");
     return {
       searchQuery,
@@ -62,7 +76,8 @@ vi.mock("@core/services/useConsoleController", () => ({
         status: { type: "ready", text: "Ready" },
         sortOptions: config.sortOptions || []
       }),
-      layoutEvents: {},
+      layoutEvents: config.layoutEvents || ref({}),
+      fabState: config.fabState || ref({}),
     };
   },
 }));
@@ -77,6 +92,7 @@ vi.mock("vue-router", () => ({
 describe("useLeaderboard", () => {
   beforeEach(() => {
     setActivePinia(createPinia());
+    capturedControllerConfig = null;
   });
 
   it("exposes layoutProps containing sortOptions with descriptions", () => {
@@ -109,5 +125,42 @@ describe("useLeaderboard", () => {
     expect(secondController.isHistoryOpen.value).toBe(false);
 
     firstController.setHistoryOpen(true);
+  });
+
+  it("configures useConsoleController with correct domain parameters and callbacks", () => {
+    useLeaderboard();
+    expect(capturedControllerConfig).not.toBeNull();
+    expect(capturedControllerConfig.defaultSort).toBe("score");
+    expect(capturedControllerConfig.sortPersistenceKey).toBe("cm_console_sort_roster");
+    expect(capturedControllerConfig.deepLinkPrefix).toBe("member-");
+    expect(capturedControllerConfig.statsLabel).toBe("Member");
+
+    // Test filterFn
+    const sampleMember = { id: "#999", n: "Valerie", performanceScore: 95 } as any;
+    expect(capturedControllerConfig.filterFn(sampleMember)).toEqual(["Valerie", "#999"]);
+
+    // Test batchIdMapper
+    expect(capturedControllerConfig.batchIdMapper(sampleMember)).toBe("#999");
+
+    // Test scoreGetter with score and fallback 0
+    expect(capturedControllerConfig.scoreGetter(sampleMember)).toBe(95);
+    expect(capturedControllerConfig.scoreGetter({ id: "#000", n: "Zero" } as any)).toBe(0);
+  });
+
+  it("overrides fabState and binds layoutEvents to blitz handlers", () => {
+    const controller = useLeaderboard();
+    const fabState = capturedControllerConfig.fabState.value;
+    expect(fabState.dismissIcon).toBe("close");
+    expect(fabState.harvestEnabled).toBe(false);
+    expect(fabState.count).toBe(2);
+
+    expect(controller.fabState.value.dismissIcon).toBe("close");
+    expect(controller.fabState.value.harvestEnabled).toBe(false);
+
+    const layoutEvents = capturedControllerConfig.layoutEvents.value;
+    expect(layoutEvents["fab-action"]).toBe(mockBlitz.handleAction);
+    expect(layoutEvents["fab-blitz"]).toBe(mockBlitz.handleBlitz);
+    expect(layoutEvents["clear-selection"]).toBe(mockBlitz.clearSelection);
+    expect(layoutEvents["fab-dismiss"]).toBe(mockBlitz.clearSelection);
   });
 });
