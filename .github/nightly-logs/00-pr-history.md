@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-21
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-22] PR #1922 [Stage 10]: Completed APK and PWA wrapper integrity audit; verified asset links, manifest parity, version code/name sync, release metadata, and security policy without mismatches.
+**Domain:** apk | **Commit:** 53d33b9cd | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1922)
+**Files:** .github/nightly-logs/10-apk-integrity-coverage.log, .github/nightly-logs/10-apk-integrity-pr-body.md
+**Why:** All APK wrapper invariants and security configurations match package.json and PWA settings cleanly.
+**Change:** Completed APK and PWA wrapper integrity audit; verified asset links, manifest parity, version code/name sync, release metadata, and security policy without mismatches.
+**Result:** PASSED (pnpm audit:apk, pnpm apk:verify:source, pnpm test:apk-release, pnpm test:version-code)
+**Nudges:** 0
+
+
 ### [2026-09-22] PR #1921 [Stage 9]: 72 changed-files, 0 dep-violations, knip (1 file, 2 devDeps, 5 binaries, 3 exp, 1 dup); clean-streak: 2. Inspected config, useClipboard, useStatusPill, useLeaderboard, protocol. Candidate BLITZ_DWELL_DEFAULT intentional. Hunt clean.
 **Domain:** architecture | **Commit:** 2dbcf18cf | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1921)
 **Files:** .github/nightly-logs/09-refactor-proposals-coverage.log, .github/nightly-logs/09-refactor-proposals-pr-body.md
