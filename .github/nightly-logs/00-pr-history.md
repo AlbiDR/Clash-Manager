@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-21
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-22] PR #1924 [Stage 12]: No APK UX violations detected across candidate files
+**Domain:** ux | **Commit:** 0476774ff | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1924)
+**Files:** .github/nightly-logs/12-apk-ux-coverage.log, .github/nightly-logs/12-apk-ux-pr-body.md
+**Why:** Audit completed with 0 violations across 78 files examined
+**Change:** No APK UX violations detected across candidate files
+**Result:** apk-ux-audit-status.txt: PASS; apk-ux-audit.json: 1 candidate files reviewed; UX categories 1-10 checked
+**Nudges:** 0
+
+
 ### [2026-09-22] PR #1923 [Stage 11]: Audited WebView performance settings, service worker precaching, and bundle footprint; zero source changes required
 **Domain:** apk | **Commit:** 63ab6a964 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1923)
 **Files:** .github/nightly-logs/11-apk-optimization-coverage.log, .github/nightly-logs/11-apk-optimization-pr-body.md
