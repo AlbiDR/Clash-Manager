@@ -1260,6 +1260,35 @@ export function renderRecap(recap) {
   return lines.join("\n");
 }
 
+/**
+ * Evidence refs older than a week are moved out of refs/tags into
+ * refs/nightly-archive/ by merge-nightly-core.mjs, so `git tag -l nightly/*`
+ * alone silently loses them. The recap read only the tags, and for every run
+ * before 2026-08-31 it lost the proof that stages merged: replaying all 42
+ * ledger dates with and without the archive, 9 were misreported, and
+ * 2026-08-20 printed "Dead pipeline" at 1/10 when 8 stages had merged. The
+ * output gave no hint that its input was missing.
+ *
+ * An archive ref carries the same path under a different namespace
+ * (refs/nightly-archive/<date>/stage-N/pr-N), so it is rewritten to the tag
+ * spelling every other reader already understands. Duplicates collapse, for
+ * the window in which a ref exists in both places.
+ */
+const ARCHIVE_NAMESPACE = "refs/nightly-archive";
+
+export function evidenceRefNames(tagList, archiveList) {
+  const names = new Set();
+  for (const line of String(tagList || "").split("\n")) {
+    const tag = line.trim();
+    if (tag) names.add(tag);
+  }
+  for (const line of String(archiveList || "").split("\n")) {
+    const ref = line.trim();
+    if (ref.startsWith(`${ARCHIVE_NAMESPACE}/`)) names.add(`nightly/${ref.slice(ARCHIVE_NAMESPACE.length + 1)}`);
+  }
+  return [...names];
+}
+
 export function loadRecapInputs(date, ref = SOURCE_REF) {
   const ledger = JSON.parse(readAtRef(LEDGER, ref) || "{}");
   const registry = JSON.parse(readAtRef(REGISTRY, ref) || "{}");
@@ -1270,7 +1299,10 @@ export function loadRecapInputs(date, ref = SOURCE_REF) {
   for (const stage of registry.stages || []) {
     coverageByStage[stage.number] = readAtRef(stage.coverageLog, ref) || "";
   }
-  const tags = (git(["tag", "-l", "nightly/*"]) || "").split("\n").map(t => t.trim()).filter(Boolean);
+  const tags = evidenceRefNames(
+    git(["tag", "-l", "nightly/*"]),
+    git(["for-each-ref", "--format=%(refname)", `${ARCHIVE_NAMESPACE}/`]),
+  );
   return { ledger, registry, date: runDate, coverageByStage, prHistory: readAtRef(PR_HISTORY, ref) || "", tags };
 }
 
@@ -1280,6 +1312,7 @@ export function runCli(argv = process.argv.slice(2)) {
   if (date && !/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new Error(`Invalid --date: ${date}`);
 
   git(["fetch", "--tags", "--quiet", "origin", "Nightly"]);
+  git(["fetch", "--quiet", "origin", `+${ARCHIVE_NAMESPACE}/*:${ARCHIVE_NAMESPACE}/*`]);
   const recap = buildRecap(loadRecapInputs(date));
   console.log(argv.includes("--json") ? JSON.stringify(recap, null, 2) : renderRecap(recap));
 }

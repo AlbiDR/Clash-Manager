@@ -10,6 +10,7 @@ import {
   buildRecap,
   classifyStage,
   evidenceDateFor,
+  evidenceRefNames,
   gradeRun,
   latestRunDate,
   declaredCoverageRecord,
@@ -1533,4 +1534,20 @@ test("the self-report guard names the stage and quotes the contradicting result"
     text,
     /Self-report guard: S03 declared CLEAN but its own summary reports a failing sub-check \("Static fold-state DEGRADED, migration-quality FAIL \(6 historical violations\), database DB-UNAVAILABLE\."\)\./,
   );
+});
+
+test("archived evidence refs count as tags, so runs older than a week keep their merges", () => {
+  const names = evidenceRefNames(
+    "nightly/2026-09-20/stage-13/pr-1898\n",
+    "refs/nightly-archive/2026-08-20/stage-2/pr-1504\nrefs/nightly-archive/2026-09-20/stage-13/pr-1898\n",
+  );
+  assert.deepEqual(names.sort(), [
+    "nightly/2026-08-20/stage-2/pr-1504",
+    "nightly/2026-09-20/stage-13/pr-1898",
+  ]);
+});
+
+test("a missing tag or archive listing yields no names rather than throwing", () => {
+  assert.deepEqual(evidenceRefNames(null, null), []);
+  assert.deepEqual(evidenceRefNames("", "refs/other/2026-08-20/stage-2/pr-1504"), []);
 });
