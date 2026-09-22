@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-21
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-22] PR #1918 [Stage 6]: Harden MemberCard interface contracts and inline logic annotations
+**Domain:** documentation | **Commit:** 75d0b84c5 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1918)
+**Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, .github/nightly-logs/06-documentation-tsdoc-pr-body.md, Frontend-PWA/src/features/roster/components/MemberCard.vue
+**Why:** Reconcile MemberCard TSDoc interface contracts, active chart mode, history disclosure toggle, and accessibility annotations
+**Change:** Harden MemberCard interface contracts and inline logic annotations
+**Result:** vue-tsc type-check 0 errors, Vitest passed 18 of 18 MemberCard tests
+**Nudges:** 0
+
+
 ### [2026-09-22] PR #1917 [Stage 5]: Reconciled Frontend-PWA/src/features/roster/README.md with implementation details from useLeaderboard.ts
 **Domain:** documentation | **Commit:** b45638a40 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1917)
 **Files:** .github/nightly-logs/05-documentation-readme-coverage.log, .github/nightly-logs/05-documentation-readme-pr-body.md, Frontend-PWA/src/features/roster/README.md
