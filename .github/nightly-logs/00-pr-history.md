@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-21
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-22] PR #1914 [Stage 2]: Expanded useLeaderboard unit test coverage for domain callbacks, fabState overrides, and layoutEvents
+**Domain:** verification | **Commit:** 1e5865cdf | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1914)
+**Files:** .github/nightly-logs/02-verification-coverage.log, .github/nightly-logs/02-verification-pr-body.md, Frontend-PWA/src/features/roster/composables/composables-tests/useLeaderboard.spec.ts
+**Why:** Close partial coverage gap in Roster useLeaderboard composable
+**Change:** Expanded useLeaderboard unit test coverage for domain callbacks, fabState overrides, and layoutEvents
+**Result:** Added tests asserting filterFn, batchIdMapper, scoreGetter, fabState overrides, and layoutEvents bindings in useLeaderboard.spec.ts. Tested mutation on dismissIcon: close in useLeaderboard.ts which caused expected test assertion failure. Restored source immediately.
+**Nudges:** 0
+
+
 ### [2026-09-21] PR #1913 [Stage 1]: Widened runtime security audit verified zero unhandled threats across Target B/C surfaces
 **Domain:** hardening | **Commit:** 49402b095 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1913)
 **Files:** .github/nightly-logs/00-pr-history.md, .github/nightly-logs/01-hardening-coverage.log, .github/nightly-logs/01-hardening-pr-body.md
