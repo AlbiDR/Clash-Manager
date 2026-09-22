@@ -29,7 +29,12 @@
 
 ## How it works
 
-`useLeaderboard` observes the `members` store in [`@core`](../../core/README.md), configures the shared list controller, and renders cards through progressive time-slicing. Charts and prediction come from [`@shared/composables/useHistoryChart`](../../shared/composables/README.md). The Roster only reads: every persistent change goes through a [`@core` API service](../../core/api/README.md).
+`useLeaderboard` observes the `members` store in [`@core`](../../core/README.md), configures the `useConsoleController` list engine, and renders cards through progressive time-slicing:
+- **Domain Callbacks:** Binds domain-specific filters (`filterFn` searching member name and ID), score getters (`scoreGetter` returning `performanceScore`), and batch ID mapping (`batchIdMapper`).
+- **Blitz FAB Integration:** Integrates `useBlitzMode` with customized FAB properties for existing clan members (`dismissIcon: "close"`, `harvestEnabled: false`).
+- **Session Disclosure State:** Shares a session-scoped `isHistoryOpen` preference ref across member cards so expanded detail state remains aligned across cards without persisting beyond the session.
+
+Charts and prediction come from [`@shared/composables/useHistoryChart`](../../shared/composables/README.md). The Roster only reads: every persistent change goes through a [`@core` API service](../../core/api/README.md).
 
 ## See also
 

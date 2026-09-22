@@ -176,3 +176,4 @@
 * [2026-09-19] [Stage 5] [03:19Z-03:22Z 3m] CHANGED: Frontend-PWA/src/core/services/README.md -- Reconciled useClashSyncUtils timeout and transient retry engine details in core services README
 * [2026-09-20] [Stage 5] [03:28Z-03:33Z 5m] CHANGED: Frontend-PWA/src/core/services/README.md -- Reconciled useConsoleMetadata connectivity aggregation, demo counts, and ratio badge formatting in core services README
 * [2026-09-21] [Stage 5] [03:15Z-03:19Z 4m] CHANGED: Frontend-PWA/src/shared/composables/README.md -- Reconciled useClipboard and useSearchField composables in shared composables README
+* [2026-09-22] [Stage 5] [03:18Z-03:23Z 5m] CHANGED: Frontend-PWA/src/features/roster/README.md -- Reconciled Frontend-PWA/src/features/roster/README.md with implementation details from useLeaderboard.ts
