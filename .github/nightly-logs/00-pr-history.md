@@ -15,6 +15,15 @@ LAST_AGED:   2026-09-23
 ---
 
 ## T1 -- Active (last 7 days)
+
+### [2026-09-23] PR #1939 [Stage 1]: Audited unauthenticated Edge Functions, Valibot boundaries, and cross-layer dependencies with calibration sweep across Laboratory and Roster features
+**Domain:** hardening | **Commit:** f86a111db | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1939)
+**Files:** .github/nightly-logs/00-pr-history.md, .github/nightly-logs/01-hardening-coverage.log, .github/nightly-logs/01-hardening-pr-body.md
+**Why:** Calibration-due CLEAN pass verified zero actionable runtime vulnerabilities across 83 recently modified files and widened surfaces
+**Change:** Audited unauthenticated Edge Functions, Valibot boundaries, and cross-layer dependencies with calibration sweep across Laboratory and Roster features
+**Result:** pnpm test passed (209 files, 2088 tests), depcruise confirmed zero layer violations
+**Nudges:** 0
+
 ### [2026-09-23] PR #1938 [Stage 13]: Added Stage 10 watchdog nudge rescue finding for 2026-09-23 and updated Section 3 counters
 **Domain:** pipeline | **Commit:** 404de62fb | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1938)
 **Files:** .github/nightly-logs/13-self-healing-protocol-coverage.log, .github/nightly-logs/13-self-healing-protocol-pr-body.md, .github/nightly-logs/13-self-healing-protocol.md
