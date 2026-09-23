@@ -177,3 +177,4 @@
 * [2026-09-20] [Stage 5] [03:28Z-03:33Z 5m] CHANGED: Frontend-PWA/src/core/services/README.md -- Reconciled useConsoleMetadata connectivity aggregation, demo counts, and ratio badge formatting in core services README
 * [2026-09-21] [Stage 5] [03:15Z-03:19Z 4m] CHANGED: Frontend-PWA/src/shared/composables/README.md -- Reconciled useClipboard and useSearchField composables in shared composables README
 * [2026-09-22] [Stage 5] [03:18Z-03:23Z 5m] CHANGED: Frontend-PWA/src/features/roster/README.md -- Reconciled Frontend-PWA/src/features/roster/README.md with implementation details from useLeaderboard.ts
+* [2026-09-23] [Stage 5] [03:06Z-03:10Z 4m] CHANGED: Frontend-PWA/src/core/api/README.md -- Reconciled Frontend-PWA/src/core/api/README.md with implementation details from SupabaseClient.ts
