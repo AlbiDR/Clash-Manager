@@ -4,23 +4,23 @@
 
 In plain terms: this changes 1 code file, so the app's behaviour may be affected. No tests were added or changed alongside it.
 
-**What changed:** Harden useConsoleMetadata interface contracts and inline logic annotations
+**What changed:** docs(tsdoc): harden StorageService interface contracts and inline annotations
 
-**Why:** Document visibleCount parameter and ratio badge formatting in useConsoleMetadata.ts TSDoc interface contract
+**Why:** Recent-Change Priority: reconcile StorageService JSDoc/TSDoc interface contracts, ADR Section mappings, and side-effect annotations following recent Stage 4 optimization updates
 
-**Result:** PASSED (git diff --check clean and useConsoleMetadata unit tests 15/15 passed)
+**Result:** vue-tsc type-check 0 errors, Vitest passed 2076 of 2076 tests across 207 files
 
-**Files changed:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, Frontend-PWA/src/core/services/useConsoleMetadata.ts
+**Files changed:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, Frontend-PWA/src/core/services/StorageService.ts
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: documentation
-  Cycle: nightly-cycle/2026-09-20
+  Cycle: nightly-cycle/2026-09-23
   Contract: a9f522cc73babe487aa3df1b083524daba64c0dd03c9e1b446dd4bd70c376bae
-  Why: Document visibleCount parameter and ratio badge formatting in useConsoleMetadata.ts TSDoc interface contract
-  Change: Harden useConsoleMetadata interface contracts and inline logic annotations
-  Result: PASSED (git diff --check clean and useConsoleMetadata unit tests 15/15 passed)
-  Files: .github/nightly-logs/06-documentation-tsdoc-coverage.log, Frontend-PWA/src/core/services/useConsoleMetadata.ts
+  Why: Recent-Change Priority: reconcile StorageService JSDoc/TSDoc interface contracts, ADR Section mappings, and side-effect annotations following recent Stage 4 optimization updates
+  Change: docs(tsdoc): harden StorageService interface contracts and inline annotations
+  Result: vue-tsc type-check 0 errors, Vitest passed 2076 of 2076 tests across 207 files
+  Files: .github/nightly-logs/06-documentation-tsdoc-coverage.log, Frontend-PWA/src/core/services/StorageService.ts
   Nudges: 0
-  Execution: cf447d30fce07df9a7a9cb25bd770a54726fb1f5
+  Execution: ecf88ba3003cd23abd02f89b83556bae07b0fb4a
 -->

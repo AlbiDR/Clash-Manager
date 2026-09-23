@@ -4,23 +4,23 @@
 
 In plain terms: this is a documentation change to 1 file in the documentation README area. Nothing about how the app runs is affected.
 
-**What changed:** Reconciled useConsoleMetadata connectivity aggregation, demo counts, and ratio badge formatting in core services README
+**What changed:** Reconciled Frontend-PWA/src/core/api/README.md with implementation details from SupabaseClient.ts
 
-**Why:** Document useConsoleMetadata.ts connectivity health extraction, demo mode counts, and filtered dataset ratio badge formatting
+**Why:** Documented source-freshness resolution, fetch clock distinction, optional query decoupling, diagnostic boundaries, and client singleton instantiation in Frontend-PWA/src/core/api/README.md
 
-**Result:** PASSED (git diff --check clean and 2041 unit tests passed across 205 test files)
+**Result:** 207 Vitest specs passed (2076 tests green) and git diff --check clean
 
-**Files changed:** .github/nightly-logs/05-documentation-readme-coverage.log, Frontend-PWA/src/core/services/README.md
+**Files changed:** .github/nightly-logs/05-documentation-readme-coverage.log, Frontend-PWA/src/core/api/README.md
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: documentation
-  Cycle: nightly-cycle/2026-09-20
+  Cycle: nightly-cycle/2026-09-23
   Contract: cea68a5bbba1bd2cbc6d3bdfe2639f37f3935b571beab59f5da1501b1180b22d
-  Why: Document useConsoleMetadata.ts connectivity health extraction, demo mode counts, and filtered dataset ratio badge formatting
-  Change: Reconciled useConsoleMetadata connectivity aggregation, demo counts, and ratio badge formatting in core services README
-  Result: PASSED (git diff --check clean and 2041 unit tests passed across 205 test files)
-  Files: .github/nightly-logs/05-documentation-readme-coverage.log, Frontend-PWA/src/core/services/README.md
+  Why: Documented source-freshness resolution, fetch clock distinction, optional query decoupling, diagnostic boundaries, and client singleton instantiation in Frontend-PWA/src/core/api/README.md
+  Change: Reconciled Frontend-PWA/src/core/api/README.md with implementation details from SupabaseClient.ts
+  Result: 207 Vitest specs passed (2076 tests green) and git diff --check clean
+  Files: .github/nightly-logs/05-documentation-readme-coverage.log, Frontend-PWA/src/core/api/README.md
   Nudges: 0
-  Execution: 2bb12093f371b34a6de24d82d43a5e7bb4c07499
+  Execution: 960fd987d4ea3a8e984a91932e1e8c351a1e07b4
 -->

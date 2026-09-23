@@ -91,12 +91,36 @@ const emit = defineEmits<{
   "update:history-open": [open: boolean];
 }>();
 
+/**
+ * Shared Roster Session Disclosure Reactive Alias.
+ *
+ * @remarks
+ * Bridges the optional `historyOpen` property to a local computed ref for clean
+ * template access and ARIA attribute binding.
+ */
 const isHistoryOpen = computed(() => props.historyOpen);
 
+/**
+ * Accessibility Action Label Generator.
+ *
+ * @remarks
+ * Generates dynamic ARIA label strings describing the current toggle action state
+ * for screen readers ("Hide performance history" vs "Show performance history").
+ */
 const historyActionLabel = computed(() =>
   isHistoryOpen.value ? "Hide performance history" : "Show performance history",
 );
 
+/**
+ * Performance History Disclosure Toggle Handler.
+ *
+ * @remarks
+ * Emits the `update:history-open` event to update the shared session-scoped
+ * disclosure state across all roster cards.
+ *
+ * [DECISION LOG] Propagates session state changes to parent view controller
+ * rather than maintaining isolated local component state.
+ */
 function toggleHistory() {
   emit("update:history-open", !isHistoryOpen.value);
 }

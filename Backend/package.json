@@ -13,7 +13,7 @@
   },
   "devDependencies": {
     "@types/node": "catalog:",
-    "p-limit": "7.3.2",
+    "p-limit": "7.3.3",
     "valibot": "catalog:",
     "vitest": "catalog:"
   }

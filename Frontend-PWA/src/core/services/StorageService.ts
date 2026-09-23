@@ -27,8 +27,12 @@ import {
  * Purges all known deprecated databases from disk asynchronously.
  *
  * @remarks
+ * Satisfies ADR Section III: Persistence Boundaries.
  * Iterates through `STORAGE_DEPRECATED_DB_NAMES` and issues explicit database deletion commands
  * for any legacy databases other than the active migration candidate.
+ *
+ * **Side Effects:**
+ * - Asynchronously requests deletion of deprecated IndexedDB databases from browser storage.
  *
  * @returns Resolves once all deprecated databases have been purged or deletion attempts finish.
  */
@@ -46,8 +50,12 @@ async function purgeDeprecatedDatabases(): Promise<void> {
  * Internal wrapper to open the IndexedDB database connection with object store creation and legacy migration bridge hooks.
  *
  * @remarks
+ * Satisfies ADR Section I: Core Services & Section III: Schema Evolution.
  * Encapsulates IndexedDB lifecycle management via `idbKernel.openDB`, configuring standard store creation
  * on upgrade and triggering legacy migration when necessary.
+ *
+ * **Side Effects:**
+ * - Opens IndexedDB connection and creates `STORAGE_STORE_NAME` object store on version upgrade.
  *
  * @returns A Promise resolving to an open IDBDatabase handle.
  */
@@ -149,12 +157,16 @@ async function migrateLegacyData(newDb: IDBDatabase): Promise<void> {
  * Key-Value Storage Interface (`idb`)
  *
  * @remarks
+ * Satisfies ADR Section I: Core Services & Section III: Persistence Boundaries.
  * Unified API exposing basic CRUD operations and administrative destruction commands over IndexedDB,
  * backed by automatic memory fallback in unsupported or restricted environments.
  */
 export const idb = {
   /**
    * Retrieves a stored item by key from the active object store.
+   *
+   * @remarks
+   * Satisfies ADR Section III: Persistence Boundaries.
    *
    * @template T - The expected return type of the cached record.
    * @param key - The unique storage lookup key.
@@ -167,6 +179,12 @@ export const idb = {
   /**
    * Stores or updates an item in the active object store.
    *
+   * @remarks
+   * Satisfies ADR Section III: Persistence Boundaries.
+   *
+   * **Side Effects:**
+   * - Writes key-value pair to IndexedDB `STORAGE_STORE_NAME` or memory fallback store.
+   *
    * @param key - The unique storage record key.
    * @param value - The record payload to persist.
    * @returns Resolves when write operation completes.
@@ -178,6 +196,12 @@ export const idb = {
   /**
    * Deletes a record from the active object store by key.
    *
+   * @remarks
+   * Satisfies ADR Section III: Persistence Boundaries.
+   *
+   * **Side Effects:**
+   * - Removes record from IndexedDB `STORAGE_STORE_NAME` or memory store.
+   *
    * @param key - The storage record key to remove.
    * @returns Resolves when key deletion completes.
    */
@@ -187,6 +211,12 @@ export const idb = {
 
   /**
    * Clears all records from the active object store and purges legacy databases.
+   *
+   * @remarks
+   * Satisfies ADR Section III: Persistence Boundaries.
+   *
+   * **Side Effects:**
+   * - Wipes all records from active IndexedDB store and deletes legacy databases.
    *
    * @returns Resolves when active store is cleared and legacy databases purged.
    */
@@ -201,9 +231,15 @@ export const idb = {
    * wipes in-memory backup store, and forces fallback memory mode for the remainder of session.
    *
    * @remarks
+   * Satisfies ADR Section III: Persistence Boundaries & Resilience.
    * [THREAT:] Persistent IndexedDB corruption can block app bootstrap or cause infinite re-hydration crashes.
    * [DECISION LOG] Destroy all database instances from disk, purge memory store, and force memory mode
    * to guarantee immediate recovery without requiring hard browser storage clearance.
+   *
+   * **Side Effects:**
+   * - Closes active IDBDatabase connection.
+   * - Deletes active, legacy, and deprecated IndexedDB databases from disk.
+   * - Clears in-memory storage backup and forces volatile memory mode for session duration.
    *
    * @returns Resolves when database connection is closed and disk/memory stores are wiped.
    */
