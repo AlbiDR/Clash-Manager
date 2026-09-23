@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-22
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-23] PR #1929 [Stage 4]: Audited Edge Function SQL view usage, changed files (16 files), and widened surface (StorageService.ts, useHeaderScroll.ts); confirmed ordinary CLEAN count (8) and zero substrate or logic bottlenecks found
+**Domain:** optimization | **Commit:** 543000677 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1929)
+**Files:** .github/nightly-logs/04-optimization-coverage.log, .github/nightly-logs/04-optimization-pr-body.md
+**Why:** Source-level grep confirmed all 6 known database views remain unreferenced with zero new orphaned views, and changed/widened UI and composables operate at optimal execution efficiency without structural rot
+**Change:** Audited Edge Function SQL view usage, changed files (16 files), and widened surface (StorageService.ts, useHeaderScroll.ts); confirmed ordinary CLEAN count (8) and zero substrate or logic bottlenecks found
+**Result:** All 2076 unit tests passed; verified zero layout or logic regressions
+**Nudges:** 0
+
+
 ### [2026-09-23] PR #1928 [Stage 3]: Baseline current (0 pending migrations, quality PASS, fold-state DEGRADED, DB-UNAVAILABLE, RLS/search_path audit clean)
 **Domain:** database | **Commit:** 457bbc12c | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1928)
 **Files:** .github/nightly-logs/03-baseline-consolidation-coverage.log, .github/nightly-logs/03-baseline-consolidation-pr-body.md
