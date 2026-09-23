@@ -216,6 +216,51 @@ describe("clinicalServe", () => {
 
       expect(response.status).toBe(200);
     });
+
+    it("authorizes a request when presented token matches one of multiple configured tokens in an array", async () => {
+      const { supabase } = makeSupabaseMock(async (fn) => {
+        if (fn === "report_telemetry") return { data: { id: "tid-multi-token" }, error: null };
+        return { data: null, error: null };
+      });
+
+      const response = await clinicalServe({
+        req: makeRequest({}),
+        supabase: supabase as any,
+        bearerToken: ["wrong-token-1", BEARER_TOKEN, "wrong-token-2"],
+        eventType: "TEST_EVENT",
+        componentId: "protocol-multi-token-spec",
+        schema: EMPTY_SCHEMA,
+        handler: async () => ({ ok: true }),
+      });
+
+      expect(response.status).toBe(200);
+    });
+
+    it("rejects a request with malformed authorization scheme or prefix", async () => {
+      const { supabase, calls } = makeSupabaseMock(async () => ({ data: null, error: null }));
+
+      const response = await clinicalServe({
+        req: new Request("https://example.test/fn", {
+          method: "POST",
+          headers: {
+            Authorization: `Basic ${BEARER_TOKEN}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({}),
+        }),
+        supabase: supabase as any,
+        bearerToken: BEARER_TOKEN,
+        eventType: "TEST_EVENT",
+        componentId: "protocol-basic-auth-spec",
+        schema: EMPTY_SCHEMA,
+        handler: async () => ({ ok: true }),
+      });
+
+      expect(response.status).toBe(401);
+      const body = await response.json();
+      expect(body.code).toBe("UNAUTHORIZED");
+      expect(calls.length).toBe(0);
+    });
   });
 
   describe("F7: typed error classification", () => {
@@ -439,6 +484,69 @@ describe("clinicalServe", () => {
 
       // A different target from the SAME caller IP is a distinct bucket and unaffected.
       expect((await callWithTag("#OTHER")).status).toBe(200);
+    });
+
+    it("skips target bucket and uses per-IP bucket when targetKey returns undefined", async () => {
+      const { supabase } = makeSupabaseMock(async (fn) => {
+        if (fn === "report_telemetry") return { data: { id: "tid-rl-no-target" }, error: null };
+        return { data: null, error: null };
+      });
+
+      const OPTIONAL_TAG_SCHEMA = v.object({ tag: v.optional(v.string()) });
+      const callOptionalTag = (payload: { tag?: string }) => clinicalServe({
+        req: makeRequest(payload, BEARER_TOKEN, { "x-forwarded-for": "10.0.0.50" }),
+        supabase: supabase as any,
+        bearerToken: BEARER_TOKEN,
+        eventType: "TEST_EVENT",
+        componentId: "rl-target-undefined-scope",
+        schema: OPTIONAL_TAG_SCHEMA,
+        rateLimit: {
+          maxRequests: 5,
+          windowMs: 60_000,
+          targetKey: (p) => p.tag,
+          targetMaxRequests: 1,
+          targetWindowMs: 60_000,
+        },
+        handler: async () => ({ ok: true }),
+      });
+
+      // Call twice with tag undefined -> targetKey returns undefined -> target bucket skipped
+      expect((await callOptionalTag({})).status).toBe(200);
+      expect((await callOptionalTag({})).status).toBe(200);
+    });
+
+    it("resets rate limit count after window duration elapses", async () => {
+      const { supabase } = makeSupabaseMock(async (fn) => {
+        if (fn === "report_telemetry") return { data: { id: "tid-rl-window-reset" }, error: null };
+        return { data: null, error: null };
+      });
+
+      const dateNowSpy = vi.spyOn(Date, "now");
+      let currentTime = 1000_000;
+      dateNowSpy.mockImplementation(() => currentTime);
+
+      try {
+        const callAtTime = () => clinicalServe({
+          req: makeRequest({}, BEARER_TOKEN, { "x-forwarded-for": "10.0.0.99" }),
+          supabase: supabase as any,
+          bearerToken: BEARER_TOKEN,
+          eventType: "TEST_EVENT",
+          componentId: "rl-window-reset-spec",
+          schema: EMPTY_SCHEMA,
+          rateLimit: { maxRequests: 1, windowMs: 10_000 },
+          handler: async () => ({ ok: true }),
+        });
+
+        expect((await callAtTime()).status).toBe(200);
+        expect((await callAtTime()).status).toBe(429);
+
+        // Advance time past windowMs (10,000ms)
+        currentTime += 10_001;
+
+        expect((await callAtTime()).status).toBe(200);
+      } finally {
+        dateNowSpy.mockRestore();
+      }
     });
 
     it("does not rate limit at all when the option is omitted (internal-bearer-only, cron-triggered functions)", async () => {
