@@ -39,5 +39,14 @@ in the ledger.
 - Never commit, push or tag. This is read-only.
 - No em-dashes and no emojis in the output.
 
+## Standing lines are not news
+
+A night can grade 10 with "within standing limits" and print a Blind spots
+line such as "S03 database verification: has never been able to run". That is
+a standing fact about the environment, repeated every night until it changes,
+not something that went wrong tonight. Relay it verbatim like everything else,
+and do not raise it as tonight's problem. Only a line saying "new tonight", or a
+grade below 10 that names a lost check, is news.
+
 If the script is wrong, fix `.github/scripts/nightly/nightly-recap.mjs` and its tests.
 Never work around it here: this file is local and gitignored, the script is not.

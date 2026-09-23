@@ -374,6 +374,10 @@ test("a whole recap is assembled and rendered from evidence alone", () => {
     "",
     "Self-report guard: no stage's own summary contradicted the outcome it declared.",
     "",
+    // No fixture stage narrates a sub-check, so the blind-spot reader has no
+    // evidence either way, and says so rather than printing "none".
+    "Blind spots: not measured. No stage had reported whether its checks could run on or before this date, so this run cannot say whether any check was skipped.",
+    "",
   ].join("\n"));
 });
 
@@ -1480,7 +1484,9 @@ test("a measured zero says nobody was asked, not that nobody looked", () => {
     why: "Substrate aligned with the ADR", result: "depcruise 0 violations", nudges: 0,
   }));
   assert.match(text, /^Evidence guard: no stage was asked to restate a result\.$/m);
-  assert.doesNotMatch(text, /not measured/);
+  // Scoped to this section's own line: the blind-spot section below it has a
+  // "not measured" answer of its own, about a different question.
+  assert.doesNotMatch(text, /^Evidence guard: not measured/m);
 });
 
 // The property the design rests on, asserted at the surface a person reads.
