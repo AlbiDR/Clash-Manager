@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-22
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-23] PR #1927 [Stage 2]: Expanded Backend protocol.ts test coverage in protocol.spec.ts
+**Domain:** verification | **Commit:** 4b6282fef | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1927)
+**Files:** .github/nightly-logs/02-verification-coverage.log, .github/nightly-logs/02-verification-pr-body.md, Backend/supabase/functions/_shared/shared-tests/protocol.spec.ts
+**Why:** Recent-Change Priority: covered L1 Core clinicalServe protocol handler authorization, rate limiting, and header fallbacks
+**Change:** Expanded Backend protocol.ts test coverage in protocol.spec.ts
+**Result:** Added 4 edge-case tests in protocol.spec.ts (multi-token bearer arrays, basic auth scheme rejection, targetKey undefined fallback, and rate limit window duration expiration reset). Verified non-trivial by mutating matchCount accumulator in protocol.ts, which failed 41 assertions, and restoring immediately.
+**Nudges:** 0
+
+
 ### [2026-09-22] PR #1926 [Stage 1]: Runtime Integrity Auditor: CLEAN scan across Edge Functions, Valibot boundaries, and cross-layer surfaces (calibrated)
 **Domain:** hardening | **Commit:** ef6db1cb4 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1926)
 **Files:** .github/nightly-logs/00-pr-history.md, .github/nightly-logs/01-hardening-coverage.log, .github/nightly-logs/01-hardening-pr-body.md
