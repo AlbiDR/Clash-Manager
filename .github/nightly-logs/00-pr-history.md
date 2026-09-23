@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-22
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-23] PR #1932 [Stage 7]: Audited catalog adherence in Frontend-PWA and Backend package.json and version declarations across 10 locations against ground truth 14.50.111; 0 drift lines found
+**Domain:** versioning | **Commit:** dbdd4e010 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1932)
+**Files:** .github/nightly-logs/07-version-integrity-coverage.log, .github/nightly-logs/07-version-integrity-pr-body.md
+**Why:** All monorepo package manifests and derived files are fully synchronized at version 14.50.111 with 100% catalog adherence
+**Change:** Audited catalog adherence in Frontend-PWA and Backend package.json and version declarations across 10 locations against ground truth 14.50.111; 0 drift lines found
+**Result:** pnpm audit:version reported 0 drift lines and 0 catalog violations
+**Nudges:** 0
+
+
 ### [2026-09-23] PR #1931 [Stage 6]: docs(tsdoc): harden StorageService interface contracts and inline annotations
 **Domain:** documentation | **Commit:** cb5cea61f | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1931)
 **Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, .github/nightly-logs/06-documentation-tsdoc-pr-body.md, Frontend-PWA/src/core/services/StorageService.ts
