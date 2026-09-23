@@ -156,9 +156,14 @@ const accessibleValue = computed(() => `${props.label}: ${displayValue.value}`);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .animated-digit-enter-active,
-  .animated-digit-leave-active {
+  :global(html:not([data-motion-preference="standard"])) .animated-digit-enter-active,
+  :global(html:not([data-motion-preference="standard"])) .animated-digit-leave-active {
     transition: none;
   }
+}
+
+:global(html[data-motion-preference="reduced"]) .animated-digit-enter-active,
+:global(html[data-motion-preference="reduced"]) .animated-digit-leave-active {
+  transition: none;
 }
 </style>

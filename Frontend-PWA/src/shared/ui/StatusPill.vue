@@ -464,18 +464,25 @@ onUnmounted(() => document.removeEventListener("click", handleClickOutside));
 @keyframes rotate { to { transform: rotate(360deg); } }
 
 @media (prefers-reduced-motion: reduce) {
-  .spinner,
-  .status-indicator.is-syncing::after,
-  .status-refresh-icon.is-syncing {
+  :global(html:not([data-motion-preference="standard"])) .spinner,
+  :global(html:not([data-motion-preference="standard"])) .status-indicator.is-syncing::after,
+  :global(html:not([data-motion-preference="standard"])) .status-refresh-icon.is-syncing {
     animation: none;
   }
 
-  .status-indicator.is-syncing::after {
+  :global(html:not([data-motion-preference="standard"])) .status-indicator.is-syncing::after {
     opacity: 0.45;
     transform: none;
   }
 
-  .status-refresh-action:hover:not(:disabled),
-  .status-refresh-action:active:not(:disabled) { transform: none; }
+  :global(html:not([data-motion-preference="standard"])) .status-refresh-action:hover:not(:disabled),
+  :global(html:not([data-motion-preference="standard"])) .status-refresh-action:active:not(:disabled) { transform: none; }
 }
+
+:global(html[data-motion-preference="reduced"]) .spinner,
+:global(html[data-motion-preference="reduced"]) .status-indicator.is-syncing::after,
+:global(html[data-motion-preference="reduced"]) .status-refresh-icon.is-syncing { animation: none; }
+:global(html[data-motion-preference="reduced"]) .status-indicator.is-syncing::after { opacity: 0.45; transform: none; }
+:global(html[data-motion-preference="reduced"]) .status-refresh-action:hover:not(:disabled),
+:global(html[data-motion-preference="reduced"]) .status-refresh-action:active:not(:disabled) { transform: none; }
 </style>

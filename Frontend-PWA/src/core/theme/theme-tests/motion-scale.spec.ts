@@ -36,6 +36,7 @@ import {
   durationLiterals,
   inlineStyles,
 } from './style-corpus';
+import { animationStyles } from '../animations';
 
 const SRC_DIR = join(__dirname, '..', '..', '..');
 const BASE_TOKENS = readFileSync(join(__dirname, '..', 'base.ts'), 'utf8');
@@ -107,5 +108,11 @@ describe('motion scale', () => {
       (finding) => finding.ms > 0 && finding.ms <= NEAR_ZERO_CEILING_MS,
     );
     expect(nearZero, `near-zero durations:\n${report(nearZero)}`).toEqual([]);
+  });
+
+  it('keeps manual motion policy aligned with the system reduced-motion contract', () => {
+    expect(animationStyles).toContain(':root[data-motion-preference="reduced"]');
+    expect(animationStyles).toContain(':root:not([data-motion-preference="standard"])');
+    expect(animationStyles).toContain('animation-name: pop-in-reduced');
   });
 });

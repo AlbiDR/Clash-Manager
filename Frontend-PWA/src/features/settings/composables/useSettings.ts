@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
-import { useTheme } from "@shared";
+import { useMotionPreference, useTheme } from "@shared";
 import { useAppSettings } from "@core/services/useAppSettings";
 import { useBlueprintMode } from "@core/services/useBlueprintMode";
 import { useClashDataStore } from "@core";
@@ -78,6 +78,7 @@ import { computed, ref, onMounted } from "vue";
 export function useSettings() {
   const { modules, toggle, init: initAppSettings } = useAppSettings();
   const { theme, setTheme, clearManifestCache } = useTheme();
+  const { motionPreference, setMotionPreference } = useMotionPreference();
   const haptics = useHaptics();
   const wakeLock = useWakeLock();
   const { isSyntheticMode, toggleSyntheticMode } = useSyntheticMode();
@@ -154,6 +155,12 @@ export function useSettings() {
     // response for theme changes in the Android WebView shell.
     haptics.tap();
     setTheme(newTheme);
+  }
+
+  /** Applies an explicit motion preference with the same tactile confirmation as theme. */
+  function handleMotionPreferenceChange(nextPreference: "system" | "reduced" | "standard") {
+    haptics.tap();
+    setMotionPreference(nextPreference);
   }
 
   /**
@@ -318,6 +325,7 @@ export function useSettings() {
     rosterSize,
     theme,
     wakeLock,
+    motionPreference,
     isSyntheticMode,
     isBlueprintMode,
     isShowcaseMode,
@@ -351,6 +359,7 @@ export function useSettings() {
     toggle,
     setTheme,
     handleThemeChange,
+    handleMotionPreferenceChange,
     toggleSyntheticMode,
     toggleBlueprintMode,
     toggleShowcaseMode,

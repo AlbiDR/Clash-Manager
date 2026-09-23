@@ -550,9 +550,13 @@ const scoreActionLabel = computed(() => {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .card-details-enter-active .card-detail-sequence {
+  :global(html:not([data-motion-preference="standard"])) .card-details-enter-active .card-detail-sequence {
     animation: none;
   }
+}
+
+:global(html[data-motion-preference="reduced"]) .card-details-enter-active .card-detail-sequence {
+  animation: none;
 }
 
 /* Shared Hit Target Helper */

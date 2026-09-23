@@ -139,6 +139,8 @@ function handleOpenInGame() {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .card-action:hover { transform: none; }
+  :global(html:not([data-motion-preference="standard"])) .card-action:hover { transform: none; }
 }
+
+:global(html[data-motion-preference="reduced"]) .card-action:hover { transform: none; }
 </style>

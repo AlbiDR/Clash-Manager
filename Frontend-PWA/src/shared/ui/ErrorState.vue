@@ -228,6 +228,8 @@ function handleCopyDetails() {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .error-action:hover { transform: none; }
+  :global(html:not([data-motion-preference="standard"])) .error-action:hover { transform: none; }
 }
+
+:global(html[data-motion-preference="reduced"]) .error-action:hover { transform: none; }
 </style>
