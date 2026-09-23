@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-22
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-23] PR #1933 [Stage 8]: package.json -- Bumped @supabase/supabase-js catalog entry from ^2.116.0 to ^2.117.0
+**Domain:** dependencies | **Commit:** 3c82c1f5a | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1933)
+**Files:** .github/nightly-logs/08-dependency-audit-coverage.log, .github/nightly-logs/08-dependency-audit-pr-body.md, package.json
+**Why:** Apply safe minor bump within current major range for @supabase/supabase-js
+**Change:** package.json -- Bumped @supabase/supabase-js catalog entry from ^2.116.0 to ^2.117.0
+**Result:** pnpm -r test passed 2076 of 2076 tests across 207 files
+**Nudges:** 0
+
+
 ### [2026-09-23] PR #1932 [Stage 7]: Audited catalog adherence in Frontend-PWA and Backend package.json and version declarations across 10 locations against ground truth 14.50.111; 0 drift lines found
 **Domain:** versioning | **Commit:** dbdd4e010 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1932)
 **Files:** .github/nightly-logs/07-version-integrity-coverage.log, .github/nightly-logs/07-version-integrity-pr-body.md
