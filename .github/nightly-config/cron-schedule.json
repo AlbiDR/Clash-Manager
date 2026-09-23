@@ -9,9 +9,18 @@
     "dailyBudget exists because on 2026-09-06 voyage-auto-activate-cron ran every",
     "minute, 1440 of 1873 daily executions, and starved the t4g.nano of CPU credits",
     "until pg_cron could no longer start any job. Nothing in the repo stated a",
-    "cadence, so nothing could see it. The budget makes that visible in CI."
+    "cadence, so nothing could see it. The budget makes that visible in CI.",
+    "",
+    "Raised 600 -> 900 on 2026-09-23 when finalize-expired-voyages was added",
+    "(+288/day, bringing the declared total to 841). Still under half of the",
+    "1873/day that caused the incident, and unlike that job this one's body is",
+    "near-zero cost when nothing is expired (a handful of small-table lookups",
+    "against 4-row clan_voyage and a double-digit-row clan_voyage_contributions -",
+    "see 20260923225809_decouple_voyage_finalization_from_battle_trigger.sql).",
+    "If a future addition needs to push this further, re-check that reasoning",
+    "still holds rather than just bumping the number again."
   ],
-  "dailyBudget": 600,
+  "dailyBudget": 900,
   "jobs": [
     { "name": "nightly-maintenance",       "schedule": "0 3 * * *",     "command": "SELECT substrate.execute_nightly_maintenance()" },
     { "name": "pipeline-watchdog",         "schedule": "*/10 * * * *",  "command": "SELECT substrate.pipeline_watchdog()" },
@@ -21,6 +30,8 @@
     { "name": "voyage-auto-activate-cron", "schedule": "*/5 * * * *",   "command": "SELECT drivers.auto_activate_pending_voyages()",
       "dormantWhenIdle": true, "scheduleFrom": "VOYAGE_ACTIVATION_SCHEDULE",
       "$why": "Event-gated. drivers.sync_voyage_activation_job() switches this on only while a voyage is PENDING and off again once none are, so active=false is the normal resting state and its cadence comes from substrate.config rather than from here. The audit therefore does not assert schedule or active for it, and counts 0 toward dailyBudget because its steady-state cost is zero. The trigger on drivers.clan_voyage is the real control; this entry exists so the job cannot go missing unnoticed." },
-    { "name": "headhunter-epoch-guard",    "schedule": "*/5 * * * *",   "command": "SELECT substrate.run_headhunter_epoch_guard()" }
+    { "name": "headhunter-epoch-guard",    "schedule": "*/5 * * * *",   "command": "SELECT substrate.run_headhunter_epoch_guard()" },
+    { "name": "finalize-expired-voyages",  "schedule": "*/5 * * * *",   "command": "SELECT substrate.finalize_expired_voyages()",
+      "$why": "Added 2026-09-23. Was previously called from drivers.on_battle_recorded() on every battle-insert row that fell outside an active voyage window (~6,500 calls/day) instead of on its own schedule - a wall-clock deadline (has any voyage's end_at passed?) was being detected as a side effect of an unrelated domain event. Moved here, on the same 5-minute cadence as headhunter-epoch-guard, because the voyage banner's countdown UI refreshes once on expiry and does not retry (see Frontend-PWA/src/shared/composables/useCountdown.ts) - finalization latency is user-visible and needed a bounded replacement, not just removal. See 20260923225809_decouple_voyage_finalization_from_battle_trigger.sql." }
   ]
 }
