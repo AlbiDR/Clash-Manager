@@ -414,6 +414,12 @@ export async function ping(options?: { signal?: AbortSignal; force?: boolean }):
  * This function bypasses legacy RPCs to query views directly, enforcing
  * Valibot schema validation on all inbound data.
  *
+ * [DECISION LOG] FRESHNESS EVIDENCE RESOLUTION
+ * Combines independent source-freshness evidence from the pipeline heartbeat
+ * and individual roster row ingestion timestamps using the newest valid observation.
+ * A terminal pipeline failure or delayed heartbeat write must not obscure the
+ * freshness of committed roster rows.
+ *
  * @param options - Fetch configuration including AbortSignal.
  * @returns A Promise resolving to a fully populated WebAppData object.
  * @throws Error if any fetch fails or data validation fails.
@@ -532,12 +538,12 @@ export async function fetchRemote(options?: {
   // SSOT: vars.PLAYER_TAG is injected by deploy-pwa.yml as VITE_PLAYER_TAG at build time.
   const playerTag: string = import.meta.env.VITE_PLAYER_TAG || "";
   
-  // [GUARD] Validate independent source-freshness evidence before combining it.
+  // [DECISION LOG] INDEPENDENT SOURCE-FRESHNESS EVIDENCE COMBINATION
   // A terminal pipeline failure can be written after the roster transaction has
   // already committed. In that case `last_success_at` remains behind even
-  // though the rows the user is actually viewing carry a newer
-  // `last_ingested_at`. Treating the heartbeat as unconditionally dominant
-  // made a freshly populated console read as an hour old.
+  // though the rows the user is actually viewing carry a newer `last_ingested_at`.
+  // Treating the heartbeat as unconditionally dominant made a freshly populated
+  // console read as an hour old.
   const HeartbeatRowSchema = v.object({
     last_success_at: v.nullable(v.string()),
   });
@@ -554,12 +560,13 @@ export async function fetchRemote(options?: {
     .map((rosterRow) => parseTimestamp(rosterRow.last_ingested_at))
     .filter((rosterTimestamp): rosterTimestamp is number => rosterTimestamp !== null);
   const rosterTimestamp = rosterTimestamps.length > 0 ? Math.max(...rosterTimestamps) : null;
-  // Never replace unknown freshness with the client's current clock. Doing so
+
+  // [DECISION LOG] NEWEST OBSERVATION SELECTION
+  // Never replace unknown freshness with the client's current clock, as doing so
   // makes arbitrarily old source data appear freshly ingested.
-  // Both timestamps describe remote data, so use the newest valid observation.
-  // Pipeline health remains independently visible in Settings; a lagging or
-  // failed heartbeat must not falsify the age of the successfully fetched
-  // roster payload.
+  // Both timestamps describe remote data, so use the newest valid observation via Math.max.
+  // Pipeline health remains independently visible in Settings; a lagging or failed heartbeat
+  // must not falsify the age of the successfully fetched roster payload.
   const timestamp = Math.max(heartbeatTimestamp ?? 0, rosterTimestamp ?? 0);
   
   const webAppData: WebAppData = {

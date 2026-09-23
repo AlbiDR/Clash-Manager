@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { useStatusPill, type StatusPillProps } from '../useStatusPill';
 import { reactive, nextTick } from 'vue';
 
@@ -45,9 +45,6 @@ describe('useStatusPill', () => {
     const { isExpanded: _isExpanded } = useStatusPill(props);
     props.type = 'success';
     await nextTick();
-    // It remains whatever it was (it doesn't auto-collapse in the implementation)
-    // but the trigger for success doesn't set it to true.
-    // If it started as false:
     const props2 = reactive({ type: 'warning' as const, text: 'test' });
     const { isExpanded: isExpanded2 } = useStatusPill(props2);
     props2.type = 'success';
@@ -80,6 +77,18 @@ describe('useStatusPill', () => {
 
     props.type = 'error';
     expect(statusSummary.value).toBe('Latest update did not complete');
+  });
+
+  it('returns Needs attention summary for warning status', () => {
+    props.type = 'warning';
+    const { statusSummary } = useStatusPill(props);
+    expect(statusSummary.value).toBe('Needs attention');
+  });
+
+  it('returns Using saved device data summary for LOCAL text', () => {
+    props.text = 'LOCAL';
+    const { statusSummary } = useStatusPill(props);
+    expect(statusSummary.value).toBe('Using saved device data');
   });
 
   it('identifies DB status correctly', () => {
@@ -118,5 +127,11 @@ describe('useStatusPill', () => {
     props.remoteInfo = { source: 'LOCAL', dataAge: '1m' };
     const { displaySource } = useStatusPill(props);
     expect(displaySource.value).toBe('LOCAL');
+  });
+
+  it('returns null displaySource when remoteInfo or source is missing', () => {
+    props.remoteInfo = undefined;
+    const { displaySource } = useStatusPill(props);
+    expect(displaySource.value).toBe(null);
   });
 });

@@ -33,6 +33,15 @@ Realtime event consumption is a critical boundary where malformed payloads could
 - **Descriptive Error Naming:** All realtime callback execution errors must conform to CleanStack naming rules and are explicitly bound to the `realtimeSubscriptionError` parameter to avoid ambiguous or anemic names (such as `err`).
 - **Resource Lifecycle Management:** Realtime subscriptions must return a clean, synchronous unsubscribe handler function that should be invoked on caller unmount to prevent lingering connection memory leaks.
 
+## Independent Source-Freshness & Diagnostic Isolation Boundaries
+
+`SupabaseClient.ts` encapsulates several transport and freshness guarantees to ensure payload delivery and diagnostic stability:
+- **Source-Freshness Resolution:** The `fetchRemote` query combines independent source-freshness evidence from the pipeline heartbeat (`pipeline_heartbeat_view`) and individual roster row ingestion timestamps (`roster_view.last_ingested_at`) using the newest valid observation (`Math.max`). This prevents a delayed or failed heartbeat write from making freshly committed roster data appear stale to the user.
+- **Client Fetch Clock Distinction:** The returned `WebAppData` payload distinguishes between remote source timestamps (`timestamp`, `remoteTimestamp`, `lastCompiled`) and the client's local fetch clock (`lastFetched: Date.now()`). This allows upstream ingestor latency to be diagnosed independently from client network synchronizations.
+- **Optional Query Decoupling:** Optional enrichment reads (such as pipeline heartbeat and recruit blacklist queries) are wrapped in `resolveOptionalQuery` with an independent `OPTIONAL_METADATA_TIMEOUT_MS` (3000ms) cancellation scope. If an enrichment query times out or fails, `fetchRemote` degrades gracefully and returns the essential roster and recruiting payloads without failing the sync.
+- **Diagnostic Isolation Boundaries:** Specialized methods `fetchPipelineHealth` and `fetchResourcePressure` query diagnostic views (`pipeline_heartbeat_view`, `resource_health_view`) under independent timeout budgets to power Settings diagnostic status indicators without blocking application data hydration.
+- **Singleton Client Instantiation:** `createSupabaseClient()` memoizes a single GoTrue-compatible module instance, avoiding redundant client creations and storage key contention warnings.
+
 ## Gotchas
 
 - Prefer reading the feature views (`roster_view`, `headhunter_view`) over building client-side joins.

@@ -16,6 +16,7 @@
 | `useViewport.ts` | Breakpoint and viewport reactivity. |
 | `usePointerCapability.ts` | Detects coarse/fine pointer capability (touch vs. mouse/trackpad) via media queries. |
 | `useTheme.ts` | Applies light/dark tokens, toggles the `dark` class, and rewrites the `theme-color` meta. |
+| `useClipboard.ts` | Layer 2 browser-API broker for explicit copy affordances with `ClipboardState` reactivity, feedback duration settings, and automated scope disposal. |
 
 ## Interaction and gestures
 
@@ -25,6 +26,7 @@
 | `usePullToRefresh.ts` | Pull-to-refresh gesture and trigger. |
 | `useHeaderScroll.ts` | Scroll-depth and directional hysteresis for adaptive headers with host pin veto and KeepAlive lifecycle awareness. |
 | `useCardMechanics.ts` | Card squish, selection, and scaling. |
+| `useSearchField.ts` | Domain-blind collapsible search input state, debounced query propagation, keyboard shortcuts (Escape/Enter), and KeepAlive deactivation reset. |
 
 ## Charts and stats
 

@@ -112,3 +112,6 @@
 * [2026-09-18] [Stage 11] [09:24Z-09:35Z 11m] CLEAN: Codebase -- Audited native WebView settings, Service Worker caching, and Vite manualChunks; zero source changes required
 * [2026-09-19] [Stage 11] [09:21Z-09:23Z 2m] CLEAN: Codebase -- Audited native WebView performance settings, Service Worker cache topology, and Vite bundle chunking; all optimal.
 * [2026-09-20] [Stage 11] [09:28Z-09:32Z 4m] CLEAN: Codebase -- Audited native WebView performance settings, Service Worker cache topology, and Vite bundle chunking; all optimal.
+* [2026-09-21] [Stage 11] [09:14Z-09:17Z 3m] CLEAN: Codebase -- Calibration CLEAN audit: verified WebView cache mode, preraster, DOM storage, acceleration, SW precache & navigation preload, Vite chunks, and 11.1 KB precache footprint across 7 clean runs.
+* [2026-09-22] [Stage 11] [09:07Z-09:10Z 3m] CLEAN: Codebase -- Audited WebView performance settings, service worker precaching, and bundle footprint; zero source changes required
+* [2026-09-23] [Stage 11] [09:05Z-09:09Z 4m] CLEAN: Codebase -- Audited native WebView settings, Service Worker caching, and Vite manualChunks; zero source changes required
