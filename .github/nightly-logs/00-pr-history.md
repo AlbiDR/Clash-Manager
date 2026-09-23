@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-22
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-23] PR #1935 [Stage 11]: Audited native WebView settings, Service Worker caching, and Vite manualChunks; zero source changes required
+**Domain:** apk | **Commit:** 9e3d7d639 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1935)
+**Files:** .github/nightly-logs/11-apk-optimization-coverage.log, .github/nightly-logs/11-apk-optimization-pr-body.md
+**Why:** All 9 wrapper/caching invariants pass in pnpm audit:apk-perf and precache footprint is 11.1 KB across 6 files
+**Change:** Audited native WebView settings, Service Worker caching, and Vite manualChunks; zero source changes required
+**Result:** PASS (9/9 invariants present, 0 oversized assets)
+**Nudges:** 0
+
+
 ### [2026-09-23] PR #1934 [Stage 9]: Audited 12 changed files, depcruise 0 violations, knip 1 unused file/3 unused exports/1 dup export, streak 3. Examined roster/components/index.ts, core/config/index.ts, useProgressiveList.ts. Non-viable refactor: BLITZ_DWELL_MIN dup export.
 **Domain:** architecture | **Commit:** 44907300f | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1934)
 **Files:** .github/nightly-logs/09-refactor-proposals-coverage.log, .github/nightly-logs/09-refactor-proposals-pr-body.md
