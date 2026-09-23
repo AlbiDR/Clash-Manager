@@ -998,12 +998,20 @@ function blindSpotPhrase(item) {
   }
 }
 
-/** One sentence per stage whose result is narrower than its status implies. */
+/**
+ * One sentence per stage whose result is narrower than its status implies.
+ *
+ * Phrases are joined with semicolons, not joinList's comma-and-comma, because
+ * every phrase here already contains its own comma ("... tonight, after it
+ * last could not run"). Two of them joined with "and" used to read as one
+ * run-on clause with no seam between where the first check's story ends and
+ * the second's begins.
+ */
 function blindSpotCaveat(stage) {
   const phrases = (stage.blindSpots || []).map(blindSpotPhrase).filter(Boolean);
   if (phrases.length === 0) return null;
   const which = stage.outcome === "CLEAN" ? "clean result" : "result";
-  return `${stageTag(stage.stage)} ${displayArea(stage.slug)}'s ${which} does not cover everything: ${joinList(phrases)}.`;
+  return `${stageTag(stage.stage)} ${displayArea(stage.slug)}'s ${which} does not cover everything: ${phrases.join("; ")}.`;
 }
 
 /**
@@ -1395,8 +1403,11 @@ function blindSpotLine(item) {
         ? `${tag}: ran for the first time tonight (${item.value}) after ${item.previous.value} on ${item.previous.date}, the only night before.`
         : `${tag}: ran for the first time tonight (${item.value}) after ${item.streakValue ? `${item.streakValue} on all` : "not running on any of the"} ${item.streakNights} nights before.`;
     case "UNSTATED":
-      return item.lastAnswered
-        ? `${tag}: not reported tonight. It could not run on the last night it reported (${item.previous.value} on ${item.previous.date}), so tonight is unknown, not fixed.`
+      if (item.lastAnswered) {
+        return `${tag}: not reported tonight. It could not run on the last night it reported (${item.previous.value} on ${item.previous.date}), so tonight is unknown, not fixed.`;
+      }
+      return item.statedNights === 1
+        ? `${tag}: not reported tonight. It has never been able to run (${item.previous.value} on ${item.firstStated}, the only night it reported), so tonight is unknown, not fixed.`
         : `${tag}: not reported tonight. It has never been able to run (${item.streakValue ? `${item.streakValue} on all` : "not on any of the"} ${item.statedNights} nights it reported), so tonight is unknown, not fixed.`;
     default:
       return `${tag}: ${item.kind}.`;
@@ -1428,6 +1439,11 @@ function blindSpotSection(recap) {
   const coverage = recap.blindSpotCoverage || { everReported: [], reportedTonight: [] };
   const spots = (recap.stages || []).flatMap(s => s.blindSpots || []);
   const tags = numbers => joinList(numbers.map(stageTag));
+  // A reporter whose slot has not come round yet has not stayed silent; it has
+  // not had the chance to speak. Without this split, a run still in progress
+  // told S03 and S12 they "did not" report tonight while their turn was still
+  // ahead, which is a claim about a night that has not finished happening.
+  const pending = new Set((recap.stages || []).filter(s => s.outcome === "PENDING").map(s => s.stage));
 
   if (coverage.everReported.length === 0) {
     return [
@@ -1442,8 +1458,15 @@ function blindSpotSection(recap) {
   const reporters = coverage.everReported;
 
   if (spots.length === 0 && coverage.reportedTonight.length === 0) {
-    const verb = reporters.length === 1 ? "reports this, and did not tonight" : `report this, and ${reporters.length === 2 ? "neither" : "none of them"} did tonight`;
-    return [`Blind spots: not measured tonight. ${tags(reporters)} ${verb}.`, ""];
+    const silent = reporters.filter(n => !pending.has(n));
+    const notYet = reporters.filter(n => pending.has(n));
+    if (silent.length === 0) {
+      return [`Blind spots: not measured yet tonight. ${tags(notYet)} ${notYet.length === 1 ? "reports this and has" : "report this and have"} not run yet.`, ""];
+    }
+    const verb = silent.length === 1 ? "reports this, and did not tonight" : `report this, and ${silent.length === 2 ? "neither" : "none of them"} did tonight`;
+    const clauses = [`${tags(silent)} ${verb}`];
+    if (notYet.length > 0) clauses.push(`${tags(notYet)} ${notYet.length === 1 ? "has" : "have"} not run yet`);
+    return [`Blind spots: not measured tonight. ${clauses.join("; ")}.`, ""];
   }
 
   let head;

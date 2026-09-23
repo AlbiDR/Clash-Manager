@@ -238,6 +238,17 @@ export function statedSubChecks({ structured = null, prose = "" } = {}) {
  *
  * It stops AT the selected run date. A night after it must never change how
  * that date reads, for the same reason ledgerThrough stops there.
+ *
+ * KNOWN LIMIT, until Layer 2 (the durable [checks] coverage-log field) lands:
+ * `historyByStage` is the LIVE 00-pr-history.md, and Stage 1's aging pass
+ * prunes a night's full block after about 7 days. Once a night ages out, a
+ * sub-check whose only carrier was PR-history prose reads as UNSTATED rather
+ * than its true historical NEVER or ONGOING, because there is nothing left to
+ * read. This is a real, measured effect (checked 2026-09-23: five S03 nights
+ * flip once prHistory is emptied) and is why a recap re-run against an old
+ * date can read differently than it did closer to that date. The durable
+ * field removes this once every night carries it; until then, treat a reading
+ * of a night older than about a week as resting on coverage logs alone.
  */
 export function subCheckHistory({ registry, coverageByStage = {}, historyByStage = {}, date }) {
   const byStage = {};

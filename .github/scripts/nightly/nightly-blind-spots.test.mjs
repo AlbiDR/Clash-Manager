@@ -171,7 +171,7 @@ test("a stage that stops mentioning an unanswered check is unknown, never fixed"
   assert.notEqual(spot.kind, "RESTORED");
   assert.equal(recap.standingBlindSpots.length, 1);
   const text = renderRecap(recap);
-  assert.match(text, /^- S03 database verification: not reported tonight\. It has never been able to run \(DB-UNAVAILABLE on all 1 nights it reported\), so tonight is unknown, not fixed\.$/m);
+  assert.match(text, /^- S03 database verification: not reported tonight\. It has never been able to run \(DB-UNAVAILABLE on 2026-09-12, the only night it reported\), so tonight is unknown, not fixed\.$/m);
   assert.match(text, /^\*\*S03 BASELINE CONSOLIDATION\*\* \| Clean, 1 check not reported \| PR #3$/m);
   assert.match(recap.rationale, /1 check that could not run before was not reported; see Blind spots\./);
 });
@@ -363,4 +363,101 @@ test("every status the context script can write is classified exactly once", () 
   for (const check of SUB_CHECKS) {
     assert.ok(produced.has(check.id), `${check.id} is not written by the producer; its entry is stale`);
   }
+});
+
+// --- Review findings (2026-09-23) --------------------------------------------
+//
+// Four low-severity findings from the first review of this feature, each
+// verified against real inputs before being reported. Fixed here, with the
+// test that would have caught it.
+
+test("a stage whose turn has not come yet is not called silent", () => {
+  // S12 reported apk-ux-audit on 2026-09-20 (so it is a known reporter), but
+  // tonight (2026-09-21) the run has only reached stage 11: S12 has not run,
+  // and calling that "did not report tonight" would be a claim about a night
+  // still ahead, the same mistake buildRecap's own PENDING guard exists to
+  // avoid for blindSpots itself.
+  const priorDate = "2026-09-20";
+  const date = "2026-09-21";
+  const ledger = { schemaVersion: 1, runs: { [date]: {} } };
+  for (const stage of registry.stages) {
+    ledger.runs[date][String(stage.number)] = stage.number <= 11
+      ? { state: "MERGED", failureClass: null, attempts: 0, evidence: {} }
+      : { state: "EXPECTED", failureClass: null, attempts: 0, evidence: {} };
+  }
+  const tags = registry.stages
+    .filter(stage => stage.number <= 11)
+    .map(stage => `nightly/${evidenceDateFor(stage.number, date)}/stage-${stage.number}/pr-${1900 + stage.number}`);
+  const coverageByStage = {
+    12: `* [${evidenceDateFor(12, priorDate)}] [Stage 12] CLEAN: Codebase -- apk-ux-audit-status.txt: PASS\n`,
+  };
+
+  const recap = buildRecap({ ledger, registry, date, coverageByStage, prHistory: "", tags });
+
+  assert.equal(recap.stages.find(s => s.stage === 12).outcome, "PENDING");
+  assert.deepEqual(recap.blindSpotCoverage, { everReported: [12], reportedTonight: [] });
+  const text = renderRecap(recap);
+  assert.match(text, /^Blind spots: not measured yet tonight\. S12 reports this and has not run yet\.$/m);
+  assert.doesNotMatch(text, /did not tonight/);
+
+  // Mixed case: a reporter that has run and stayed silent, alongside one still
+  // pending, must name each separately rather than lumping them together.
+  const ledger2 = { schemaVersion: 1, runs: { [date]: { ...ledger.runs[date] } } };
+  ledger2.runs[date]["3"] = { state: "MERGED", failureClass: null, attempts: 0, evidence: {} };
+  const tags2 = [...tags, `nightly/${evidenceDateFor(3, date)}/stage-3/pr-1903`];
+  const coverageByStage2 = {
+    ...coverageByStage,
+    3: `* [${evidenceDateFor(3, priorDate)}] [Stage 3] CLEAN: Codebase -- fold-state CLEAN\n* [${evidenceDateFor(3, date)}] [Stage 3] CLEAN: Codebase -- nothing to do\n`,
+  };
+  const mixed = buildRecap({ ledger: ledger2, registry, date, coverageByStage: coverageByStage2, prHistory: "", tags: tags2 });
+  const mixedText = renderRecap(mixed);
+  assert.match(mixedText, /^Blind spots: not measured tonight\. S03 reports this, and did not tonight; S12 has not run yet\.$/m);
+});
+
+test("a mixed streak of DEGRADED and SKIPPED never claims one status for every night", () => {
+  const nights = {
+    "2026-08-31": "fold-state CLEAN",
+    "2026-09-01": "fold-state DEGRADED",
+    "2026-09-02": "fold-state SKIPPED",
+    "2026-09-03": "fold-state DEGRADED",
+  };
+  const recap = recapOf(["2026-08-31", "2026-09-01", "2026-09-02", "2026-09-03"], { s03: nights });
+  const [spot] = s03Spots(recap);
+  assert.equal(spot.kind, "ONGOING");
+  assert.equal(spot.streakValue, null, "the streak mixes two values, so no single one is true of every night");
+  const text = renderRecap(recap);
+  assert.match(text, /S03 fold-state check: could not run on every night it reported since 2026-09-01/);
+  assert.doesNotMatch(text, /DEGRADED on every night/);
+});
+
+test("only the reporters that have reported so far scope the coverage sentence", () => {
+  const recap = recapOf(["2026-09-11", "2026-09-12"], {
+    s03: { "2026-09-11": "fold-state CLEAN", "2026-09-12": "fold-state DEGRADED" },
+    extra: { 12: { "2026-09-11": "apk-ux-audit-status.txt: PASS", "2026-09-12": "apk-ux-audit-status.txt: PASS" } },
+  });
+  const text = renderRecap(recap);
+  assert.match(text, /Only S03 and S12 have ever reported whether their checks ran, so this says nothing about the other 11 stages\./);
+});
+
+test("a single-night NEVER or UNSTATED reading names that one night, not \"all 1 nights\"", () => {
+  const never = recapOf(["2026-09-09"], { s03: { "2026-09-09": "fold-state DEGRADED" } });
+  assert.match(renderRecap(never), /^- S03 fold-state check: has never been able to run \(DEGRADED on 2026-09-09, the only night it reported\)\.$/m);
+
+  const unstated = recapOf(["2026-09-09", "2026-09-10"], { s03: { "2026-09-09": "fold-state DEGRADED" } });
+  assert.match(renderRecap(unstated), /^- S03 fold-state check: not reported tonight\. It has never been able to run \(DEGRADED on 2026-09-09, the only night it reported\), so tonight is unknown, not fixed\.$/m);
+  assert.doesNotMatch(renderRecap(unstated), /all 1 nights/);
+});
+
+test("two blind-spot phrases for one stage read as two clauses, not one run-on sentence", () => {
+  // Both checks land on the same UNSTATED night, so each phrase already
+  // carries its own comma ("... tonight, after it last could not run").
+  // joinList's ", ... and ..." used to erase the seam between them.
+  const recap = recapOf(["2026-09-09", "2026-09-10"], {
+    s03: { "2026-09-09": "fold-state DEGRADED, migration-quality PASS, DB-UNAVAILABLE" },
+  });
+  const text = renderRecap(recap);
+  assert.match(
+    text,
+    /S03 baseline consolidation's clean result does not cover everything: its database verification was not reported tonight, after it last could not run; its fold-state check was not reported tonight, after it last could not run\./,
+  );
 });
