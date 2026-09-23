@@ -43,8 +43,39 @@ export const animationStyles = `
 
    [THREAT:] Zeroing a duration also suppresses transitionend and animationend,
    so a handler waiting on either never resumes. Nothing here is zeroed. */
+/* The same policy has two entry points: the OS media preference (unless the
+   operator explicitly chooses Standard) and the in-app Reduced preference. */
+:root[data-motion-preference="reduced"] {
+  /* The overshoot is the provoking part of a spring, so every springy curve
+     flattens. Durations are untouched. */
+  --sys-motion-spring:                  ease;
+  --sys-motion-easing-spring-overshoot: ease;
+  --sys-motion-easing-spring-nav:       ease;
+}
+
+:root[data-motion-preference="reduced"] *,
+:root[data-motion-preference="reduced"] *::before,
+:root[data-motion-preference="reduced"] *::after {
+  transition-property:
+    opacity, color, background-color, border-color, outline-color,
+    box-shadow, fill, stroke, height !important;
+  scroll-behavior: auto !important;
+  animation-iteration-count: 1 !important;
+}
+
+:root[data-motion-preference="reduced"] .animate-pop {
+  animation-name: pop-in-reduced;
+}
+
+:root[data-motion-preference="reduced"] .spinner,
+:root[data-motion-preference="reduced"] .spinner-small,
+:root[data-motion-preference="reduced"] .ptr-icon,
+:root[data-motion-preference="reduced"] [class*="spinner"] {
+  animation-iteration-count: infinite !important;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  :root {
+  :root:not([data-motion-preference="standard"]) {
     /* The overshoot is the provoking part of a spring, so every springy curve
        flattens. Durations are untouched. */
     --sys-motion-spring:                  ease;
@@ -54,40 +85,43 @@ export const animationStyles = `
 
   /* Everything that can crossfade still does. Everything that would travel no
      longer transitions at all, so it simply arrives. */
-  *,
-  *::before,
-  *::after {
+  :root:not([data-motion-preference="standard"]) *,
+  :root:not([data-motion-preference="standard"]) *::before,
+  :root:not([data-motion-preference="standard"]) *::after {
     transition-property:
       opacity, color, background-color, border-color, outline-color,
       box-shadow, fill, stroke, height !important;
     scroll-behavior: auto !important;
   }
 
-  /* The one global keyframe that travels becomes the fade it should have been.
-     Redefining the keyframe reaches every consumer without any of them opting
-     in. */
-  @keyframes pop-in {
-    from { opacity: 0; }
-    to   { opacity: 1; }
+  /* The one global entrance that travels becomes a fade without changing its
+     timing or suppressing animation lifecycle events. */
+  :root:not([data-motion-preference="standard"]) .animate-pop {
+    animation-name: pop-in-reduced;
   }
 
   /* Motion that loops without anyone asking for it settles after one pass.
      These keyframes all begin and end at their resting values, so the element
      is left where it belongs rather than frozen mid-gesture. */
-  *,
-  *::before,
-  *::after {
+  :root:not([data-motion-preference="standard"]) *,
+  :root:not([data-motion-preference="standard"]) *::before,
+  :root:not([data-motion-preference="standard"]) *::after {
     animation-iteration-count: 1 !important;
   }
 
   /* Progress indicators are the documented exception, and macOS keeps them too:
      a spinner is small, local, and the only thing on screen saying work is
      still happening. Stopping it reads as an app that has hung. */
-  .spinner,
-  .spinner-small,
-  .ptr-icon,
-  [class*="spinner"] {
+  :root:not([data-motion-preference="standard"]) .spinner,
+  :root:not([data-motion-preference="standard"]) .spinner-small,
+  :root:not([data-motion-preference="standard"]) .ptr-icon,
+  :root:not([data-motion-preference="standard"]) [class*="spinner"] {
     animation-iteration-count: infinite !important;
   }
+}
+
+@keyframes pop-in-reduced {
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 `;

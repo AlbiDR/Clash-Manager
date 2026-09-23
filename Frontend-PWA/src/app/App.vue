@@ -267,17 +267,35 @@ onMounted(() => {
 .page-enter-active,
 .page-leave-active {
   transition:
-    opacity var(--sys-motion-duration-250) cubic-bezier(0.4, 0, 0.2, 1),
-    transform var(--sys-motion-duration-250) cubic-bezier(0.4, 0, 0.2, 1);
+    opacity var(--sys-motion-duration-200) var(--sys-motion-easing-decelerate),
+    transform var(--sys-motion-duration-200) var(--sys-motion-easing-decelerate);
+  /* Only the brief active interval asks for its own layer. Keeping this off
+     the resting consoles avoids blurry text and excess GPU memory on mobile. */
+  will-change: opacity, transform;
 }
 
 .page-enter-from {
   opacity: 0;
-  transform: translateY(4px);
+  transform: translate3d(0, var(--sys-space-6), 0);
 }
 
 .page-leave-to {
   opacity: 0;
-  transform: translateY(-4px);
+  transform: translate3d(0, calc(-1 * var(--sys-space-4)), 0);
+}
+
+/* The global motion policy removes transform from transition-property. These
+   rules also remove the starting transform itself, so reduced-motion readers
+   get one predictable opacity handoff rather than a one-frame position jump. */
+:global(:root[data-motion-preference="reduced"] .page-enter-from),
+:global(:root[data-motion-preference="reduced"] .page-leave-to) {
+  transform: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :global(:root:not([data-motion-preference="standard"]) .page-enter-from),
+  :global(:root:not([data-motion-preference="standard"]) .page-leave-to) {
+    transform: none !important;
+  }
 }
 </style>

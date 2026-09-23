@@ -3,6 +3,7 @@
 import { getAppShellStyles, getAppShellHtml } from './AppShell';
 import { lightTokens, darkTokens } from './tokens';
 import { BOOT_THEME_SCRIPT } from './themeContract';
+import { BOOT_MOTION_SCRIPT } from './motionContract';
 
 /**
  * CLASH MANAGER - HTML Entry Point (TypeScript Source of Truth)
@@ -108,6 +109,7 @@ export function generateHtmlEntry(version: string): string {
     <link rel="preload" href="./fonts/JetBrainsMono-Bold.woff2" as="font" type="font/woff2" crossorigin />
 
     <script>${BOOT_THEME_SCRIPT}</script>
+    <script>${BOOT_MOTION_SCRIPT}</script>
     <script>
       (function() {
         // Boot-stuck guard: if Vue hasn't replaced the static app shell after 10s,

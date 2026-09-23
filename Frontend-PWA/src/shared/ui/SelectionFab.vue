@@ -29,10 +29,6 @@ const dismissAriaLabel = computed(() => {
   if (selectedCount.value === 0) return dismissLabel.value;
   return `${dismissLabel.value} (${selectedCount.value})`;
 });
-const selectionSummaryLabel = computed(() => {
-  if (selectedCount.value === 0) return "Choose entries to begin";
-  return "selected";
-});
 const blitzAriaLabel = computed(() => {
   if (selectedCount.value === 0) return "Select one or more entries to start Blitz";
   return `Start Blitz for ${selectedCount.value} selected`;
@@ -78,18 +74,6 @@ function handleFabAbortHarvest() {
 
 <template>
   <div class="selection-fab">
-    <Transition name="selection-summary">
-      <div
-        v-if="!fabState.isBlasting"
-        class="selection-summary"
-        role="status"
-        aria-live="polite"
-      >
-        <strong v-if="selectedCount > 0">{{ selectedCount }}</strong>
-        <span>{{ selectionSummaryLabel }}</span>
-      </div>
-    </Transition>
-
     <!-- Dismiss Button (Always Visible) -->
     <!-- [DECISION LOG] THE NAME CONTAINS THE WORD ON THE BUTTON:
        In its resting state this button renders the word "Clear" and was named
@@ -163,6 +147,11 @@ function handleFabAbortHarvest() {
             class="blitz-count"
             aria-hidden="true"
           >{{ selectedCount }}</span>
+          <span
+            v-if="selectedCount > 0"
+            class="blitz-selected"
+            aria-hidden="true"
+          >selected</span>
         </button>
 
         <!-- Harvest scouts external clanless players from the leaderboard for
@@ -262,42 +251,6 @@ function handleFabAbortHarvest() {
   min-width: 0;
 }
 
-.selection-summary {
-  min-height: 40px;
-  padding: 0 var(--sys-space-12);
-  display: inline-flex;
-  align-items: center;
-  gap: var(--sys-space-6);
-  border: 1px solid var(--sys-color-outline-variant);
-  border-radius: var(--sys-shape-corner-full);
-  background: var(--sys-color-surface-container-high);
-  color: var(--sys-color-on-surface-variant);
-  font-size: 12px;
-  font-weight: 800;
-  line-height: 1;
-  white-space: nowrap;
-  font-variant-numeric: tabular-nums;
-}
-
-.selection-summary strong {
-  color: var(--sys-color-primary);
-  font-size: 15px;
-  font-weight: 900;
-}
-
-.selection-summary-enter-active,
-.selection-summary-leave-active {
-  transition:
-    opacity var(--sys-motion-duration-200) var(--sys-motion-easing-decelerate),
-    transform var(--sys-motion-duration-200) var(--sys-motion-easing-decelerate);
-}
-
-.selection-summary-enter-from,
-.selection-summary-leave-to {
-  opacity: 0;
-  transform: scale(0.9);
-}
-
 .fab-btn:active {
   transform: scale(0.93);
   opacity: 0.9;
@@ -345,7 +298,10 @@ function handleFabAbortHarvest() {
 }
 
 .blitz-count {
-  display: none;
+  font-family: var(--sys-font-family-mono);
+  font-size: 0.9em;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
 }
 
 .blast-status {
@@ -390,37 +346,16 @@ function handleFabAbortHarvest() {
 }
 
 @media (max-width: 600px) {
-  /* The console header already carries the live `Clear · N` state. On a
-     recruiting selection the dock can contain four actions; keeping a second
-     count here would push the final harvest action beyond the safe viewport. */
-  .selection-summary {
-    display: none;
-  }
-
   .fab-btn:not(.compact) {
     padding: 0 var(--sys-space-16);
     gap: var(--sys-space-8);
     font-size: 14px;
   }
 
-  /* The desktop summary already carries this count. On phone the summary is
-     intentionally hidden to protect the four-action Headhunter dock, so the
-     primary action carries the count instead. */
-  .blitz-count {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 18px;
-    height: 18px;
-    padding: 0 var(--sys-space-4);
-    border-radius: var(--sys-shape-corner-full);
-    background: var(--sys-overlay-dark-subtle);
-    color: currentColor;
-    font-family: var(--sys-font-family-mono);
-    font-size: 11px;
-    font-weight: 900;
-    font-variant-numeric: tabular-nums;
-    line-height: 1;
+  /* The compact rail keeps the actionable count but yields the explanatory
+     word before its four selection actions compete for horizontal space. */
+  .blitz-selected {
+    display: none;
   }
 }
 
@@ -459,15 +394,4 @@ function handleFabAbortHarvest() {
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .selection-summary-enter-active,
-  .selection-summary-leave-active {
-    transition: opacity var(--sys-motion-duration-200) linear;
-  }
-
-  .selection-summary-enter-from,
-  .selection-summary-leave-to {
-    transform: none;
-  }
-}
 </style>

@@ -327,22 +327,18 @@ onUnmounted(() => {
   /* `overflow: hidden` is required for ellipsis, so its line box is also the
      glyph clipping boundary. Keep vertical leading here instead of relying on
      font metrics fitting exactly inside the em square: a future font, weight,
-     or title string must retain room for its lowest rendered pixels. */
-  line-height: var(--sys-leading-tight);
+     or title string must retain room for its lowest rendered pixels. The
+     1.1 shared tight leading still rounded to a 26px box for this 24px title
+     while its glyph metrics needed 27px; 1.2 clears that rounding boundary
+     while remaining inside the 32px title rail. */
+  line-height: 1.2;
   font-weight: 900;
   color: var(--sys-color-on-surface);
   letter-spacing: var(--sys-tracking-tight);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  /* Pressure resolution measures this box after each concession. Animating
-     font-size would make it measure an in-between width, then settle on a
-     larger final glyph that no longer fits. Keep layout-affecting type changes
-     immediate; the feedback properties can still ease. */
-  transition:
-    color var(--sys-motion-duration-200) var(--sys-motion-spring),
-    transform var(--sys-motion-duration-200) var(--sys-motion-spring),
-    opacity var(--sys-motion-duration-200) var(--sys-motion-spring);
+  transition: all var(--sys-motion-duration-200) var(--sys-motion-spring);
   min-width: 0;
   flex: 0 1 auto;
   max-width: 100%;
@@ -410,26 +406,7 @@ onUnmounted(() => {
 
 .console-header.is-pressure-stage-3 .action-group,
 .console-header.is-pressure-stage-4 .action-group { display: none; }
-.console-header.is-pressure-stage-4 {
-  /* The final pressure state has already removed every secondary datum. Use
-     the space it recovers to preserve the console name itself at narrow
-     widths and high browser zoom, rather than ellipsizing a known short
-     title such as Settings. */
-  padding-inline: var(--sys-space-12);
-}
-
 .console-header.is-pressure-stage-4 .title-label { display: none; }
-.console-header.is-pressure-stage-4 .view-title {
-  /* Below the ordinary phone floor, browser zoom can make the visual viewport
-     narrower than a 120px title rail. Scale down only in that last-resort
-     state, while keeping a tokenized minimum that remains readable when
-     magnified. */
-  font-size: clamp(
-    var(--sys-typescale-label-md),
-    8vw,
-    var(--sys-typescale-title-sm)
-  );
-}
 
 /* A console toolbar only appears for view-specific filters or selection. Search
    and order live behind the title-rail View button, so this grid never reserves

@@ -66,7 +66,9 @@ const { benchmarkTooltipContent } = useBenchmarkedStat(
   box-shadow: 0 1px 2px var(--sys-overlay-dark-subtle);
 }
 .stat-item:hover {
-  transform: translateY(-2px) scale(1.02);
+  /* Keep edge tiles inside the expanded card's outline. Scaling makes their
+     border extend into the card edge and visibly clip when a card is selected. */
+  transform: translateY(-2px);
   background: var(--sys-color-surface-container-high);
   box-shadow: 0 4px 12px var(--sys-overlay-dark-soft);
   z-index: 2;

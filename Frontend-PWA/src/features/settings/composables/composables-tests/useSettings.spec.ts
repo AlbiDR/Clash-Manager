@@ -15,6 +15,8 @@ const mocks = vi.hoisted(() => {
     mockIsSyntheticMode: ref(false),
     mockTheme: ref("auto"),
     mockSetTheme: vi.fn(),
+    mockMotionPreference: ref("system"),
+    mockSetMotionPreference: vi.fn(),
     mockClearManifestCache: vi.fn(),
     mockHaptics: {
       tap: vi.fn(),
@@ -69,6 +71,13 @@ vi.mock("../../../../shared/composables/useTheme", () => ({
     theme: mocks.mockTheme,
     setTheme: mocks.mockSetTheme,
     clearManifestCache: mocks.mockClearManifestCache,
+  })),
+}));
+
+vi.mock("../../../../shared/composables/useMotionPreference", () => ({
+  useMotionPreference: vi.fn(() => ({
+    motionPreference: mocks.mockMotionPreference,
+    setMotionPreference: mocks.mockSetMotionPreference,
   })),
 }));
 
@@ -324,6 +333,14 @@ describe("useSettings", () => {
     result.handleThemeChange("dark");
     expect(mocks.mockHaptics.tap).toHaveBeenCalled();
     expect(mocks.mockSetTheme).toHaveBeenCalledWith("dark");
+  });
+
+  it("handles motion preference changes with the same tactile confirmation", () => {
+    const { result } = withSetup(useSettings);
+    result.handleMotionPreferenceChange("reduced");
+
+    expect(mocks.mockHaptics.tap).toHaveBeenCalled();
+    expect(mocks.mockSetMotionPreference).toHaveBeenCalledWith("reduced");
   });
 
   describe("forceUpdate", () => {

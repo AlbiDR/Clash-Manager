@@ -70,7 +70,7 @@ describe("SelectionFab.vue", () => {
       expect(dismissBtn.text()).toContain("Clear");
       expect(dismissBtn.classes()).not.toContain("compact");
       expect(dismissBtn.classes()).not.toContain("danger");
-      expect(wrapper.find(".selection-summary").text()).toBe("Choose entries to begin");
+      expect(wrapper.find(".selection-summary").exists()).toBe(false);
     });
 
     it("renders as compact when items are selected", async () => {
@@ -81,7 +81,7 @@ describe("SelectionFab.vue", () => {
       expect(dismissBtn.classes()).toContain("compact");
       expect(dismissBtn.classes()).not.toContain("danger");
       expect(dismissBtn.attributes("aria-label")).toBe("Clear selection (3)");
-      expect(wrapper.find(".selection-summary").text()).toBe("3selected");
+      expect(wrapper.find(".selection-summary").exists()).toBe(false);
     });
 
     it("uses the feature-provided name for a non-clear dismiss action", () => {
@@ -149,6 +149,7 @@ describe("SelectionFab.vue", () => {
       expect(wrapper.find(".fab-btn.blitz").exists()).toBe(true);
       expect(wrapper.find(".fab-btn.blitz").attributes("aria-label")).toBe("Start Blitz for 5 selected");
       expect(wrapper.find(".blitz-count").text()).toBe("5");
+      expect(wrapper.find(".blitz-selected").text()).toBe("selected");
       expect(wrapper.find("button[aria-label='Global Harvest']").exists()).toBe(false);
       expect(wrapper.find("button[aria-label='Local Harvest']").exists()).toBe(false);
     });

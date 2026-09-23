@@ -7,6 +7,7 @@
  */
 import {
   useTheme,
+  useMotionPreference,
   vTactile,
   vTooltip,
   Icon,
@@ -132,6 +133,9 @@ async function bootstrap() {
 
     const theme = useTheme();
     theme.init();
+
+    const motionPreference = useMotionPreference();
+    motionPreference.init();
 
     // 2. Create App
     const app = createApp(App);
