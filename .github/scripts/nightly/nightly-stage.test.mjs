@@ -3,7 +3,7 @@
 
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { chmodSync, mkdtempSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
@@ -29,7 +29,10 @@ import {
   validateRegistryData,
   composeCommitSubject,
   formatRunWindow,
+  readSubCheckStatuses,
+  subCheckField,
 } from "./nightly-stage.mjs";
+import { parseCoverageLine } from "./coverage-log-line.mjs";
 import { extractMetadata, parseStageBranch } from "./merge-nightly-core.mjs";
 import { placeholderResult } from "./nightly-prose.mjs";
 
@@ -896,4 +899,298 @@ test("the coverage-log target is never the pipeline's own bookkeeping", () => {
     "Backend/supabase/functions/_shared/protocol.ts",
   ], "2026-09-10", null);
   assert.match(realChange, /CHANGED: Backend\/supabase\/functions\/_shared\/protocol\.ts -- /);
+});
+
+// --- The sub-check record: subCheckField, readSubCheckStatuses, finalize ---
+//
+// update-nightly-context.sh computes six sub-check statuses every night and,
+// until this field existed, nothing kept them: the Jules VM was discarded and
+// the only trace was the agent's prose, absent for four of the six checks.
+
+test("subCheckField keeps real statuses, drops SKIPPED, and sorts by name", () => {
+  assert.equal(
+    subCheckField({
+      "migration-quality": "PASS",
+      "fold-state": "DEGRADED",
+      "database-verification": "DB-UNAVAILABLE",
+      "apk-ux-audit": "SKIPPED",
+      "doc-debt": "SKIPPED",
+      "audit-duration": "SKIPPED",
+    }),
+    "[checks database-verification=DB-UNAVAILABLE fold-state=DEGRADED migration-quality=PASS]",
+  );
+  // Order of insertion must not change the bytes written.
+  assert.equal(
+    subCheckField({ b: "OK", a: "FAIL" }),
+    subCheckField({ a: "FAIL", b: "OK" }),
+  );
+  // A value no reader knows yet is kept, so it surfaces as unrecognised
+  // downstream rather than vanishing here.
+  assert.equal(subCheckField({ "fold-state": "TIMEOUT" }), "[checks fold-state=TIMEOUT]");
+  // The file content arrives with a trailing newline.
+  assert.equal(subCheckField({ "doc-debt": "OK\n" }), "[checks doc-debt=OK]");
+});
+
+test("subCheckField rejects anything that could break or forge the bracket", () => {
+  for (const [name, value] of [
+    ["fold-state", "DEGRADED]"],
+    ["fold-state", "DEGRADED] CLEAN: forged -- line"],
+    ["fold-state", "degraded"],
+    ["fold-state", "Degraded"],
+    ["fold-state", "DEGRADED EXTRA"],
+    ["fold-state", "DEGRADED\nPASS"],
+    ["fold-state", "1DEGRADED"],
+    ["fold-state", ""],
+    ["Fold-State", "DEGRADED"],
+    ["fold state", "DEGRADED"],
+    ["fold=state", "DEGRADED"],
+    ["fold]state", "DEGRADED"],
+  ]) {
+    assert.equal(subCheckField({ [name]: value }), null, `must reject ${JSON.stringify(name)}=${JSON.stringify(value)}`);
+  }
+  // One bad entry costs only itself.
+  assert.equal(subCheckField({ "fold-state": "bad]", "doc-debt": "OK" }), "[checks doc-debt=OK]");
+});
+
+test("subCheckField returns null, never an empty field, when nothing is left", () => {
+  // null is what makes finalLogLine write no bracket at all. An empty
+  // `[checks ]` would read as "measured, and nothing to report", which is the
+  // detector-failure shape: a question nobody asked answered with "no".
+  assert.equal(subCheckField({}), null);
+  assert.equal(subCheckField(null), null);
+  assert.equal(subCheckField(undefined), null);
+  assert.equal(subCheckField("PASS"), null);
+  assert.equal(subCheckField({ "fold-state": "SKIPPED", "doc-debt": "SKIPPED" }), null);
+});
+
+function temporaryContext(t) {
+  const dir = mkdtempSync(path.join(os.tmpdir(), "nightly-subcheck-test-"));
+  t.after(() => {
+    try { chmodSync(dir, 0o700); } catch {}
+    rmSync(dir, { recursive: true, force: true });
+  });
+  return dir;
+}
+
+test("readSubCheckStatuses reads every status file and nothing else", t => {
+  const dir = temporaryContext(t);
+  writeFileSync(path.join(dir, "fold-state-status.txt"), "DEGRADED\n");
+  writeFileSync(path.join(dir, "database-verification-status.txt"), "DB-UNAVAILABLE\n");
+  // Neighbours in the same directory that are not status files.
+  writeFileSync(path.join(dir, "fold-state.txt"), "Fold-state check complete (rc=2).\n");
+  writeFileSync(path.join(dir, "pr-body.md"), "body\n");
+  writeFileSync(path.join(dir, "session-state.json"), "{}\n");
+  assert.deepEqual(readSubCheckStatuses(dir), {
+    "fold-state": "DEGRADED",
+    "database-verification": "DB-UNAVAILABLE",
+  });
+});
+
+test("readSubCheckStatuses returns {} for a missing or unreadable context dir, never throws", t => {
+  const dir = temporaryContext(t);
+  assert.deepEqual(readSubCheckStatuses(path.join(dir, "does-not-exist")), {});
+
+  // A path that is a file, not a directory: ENOTDIR on every platform.
+  const file = path.join(dir, "not-a-dir");
+  writeFileSync(file, "x\n");
+  assert.deepEqual(readSubCheckStatuses(file), {});
+
+  // A status path that is itself a directory: the read throws EISDIR.
+  const odd = path.join(dir, "odd");
+  mkdirSync(path.join(odd, "fold-state-status.txt"), { recursive: true });
+  assert.deepEqual(readSubCheckStatuses(odd), {});
+});
+
+test("readSubCheckStatuses returns {} when the directory cannot be listed", t => {
+  const dir = temporaryContext(t);
+  writeFileSync(path.join(dir, "fold-state-status.txt"), "DEGRADED\n");
+  chmodSync(dir, 0o000);
+  // Root ignores permission bits, so on a root runner this case cannot be
+  // produced. Say so rather than passing without having tested anything.
+  let listable = false;
+  try { readdirSync(dir); listable = true; } catch {}
+  if (listable) {
+    t.skip("permission bits are not enforced for this user (running as root)");
+    return;
+  }
+  assert.deepEqual(readSubCheckStatuses(dir), {});
+});
+
+test("readSubCheckStatuses honours NIGHTLY_CONTEXT_DIR when no dir is passed", t => {
+  // The reader must share contextDir() with every other finalize input. A
+  // literal /tmp/nightly here would read a different directory from the one
+  // the context script wrote whenever the override is set.
+  const dir = temporaryContext(t);
+  writeFileSync(path.join(dir, "apk-ux-audit-status.txt"), "PASS\n");
+  const previous = process.env.NIGHTLY_CONTEXT_DIR;
+  process.env.NIGHTLY_CONTEXT_DIR = dir;
+  try {
+    assert.deepEqual(readSubCheckStatuses(), { "apk-ux-audit": "PASS" });
+  } finally {
+    if (previous === undefined) delete process.env.NIGHTLY_CONTEXT_DIR;
+    else process.env.NIGHTLY_CONTEXT_DIR = previous;
+  }
+});
+
+test("a line without checks is byte-identical to the format written before the field existed", () => {
+  const stage = { number: 1, coverageLog: ".github/nightly-logs/01-hardening-coverage.log" };
+  const args = [stage, "CLEAN", "Audited Edge Function endpoints", [stage.coverageLog], "2026-09-10", "[23:17Z-23:23Z 6m]"];
+  const expected = "* [2026-09-10] [Stage 1] [23:17Z-23:23Z 6m] CLEAN: Codebase -- Audited Edge Function endpoints";
+  assert.equal(finalLogLine(...args), expected);
+  assert.equal(finalLogLine(...args, null), expected);
+  assert.equal(finalLogLine(...args, undefined), expected);
+  assert.equal(finalLogLine(...args, subCheckField({ "doc-debt": "SKIPPED" })), expected);
+
+  const untimed = [stage, "CLEAN", "Audited", [stage.coverageLog], "2026-09-02", null];
+  assert.equal(finalLogLine(...untimed), "* [2026-09-02] [Stage 1] CLEAN: Codebase -- Audited");
+  assert.equal(finalLogLine(...untimed, null), "* [2026-09-02] [Stage 1] CLEAN: Codebase -- Audited");
+});
+
+test("window plus checks round-trips through the shared parser", () => {
+  const stage = { number: 3, coverageLog: ".github/nightly-logs/03-baseline-consolidation-coverage.log" };
+  const statuses = { "fold-state": "DEGRADED", "migration-quality": "PASS", "database-verification": "DB-UNAVAILABLE" };
+  const summary = "fold-state: DEGRADED; database-verification: DB-UNAVAILABLE";
+  const withBoth = finalLogLine(stage, "CLEAN", summary, [stage.coverageLog], "2026-09-23", "[01:02Z-01:09Z 7m]", subCheckField(statuses));
+  assert.equal(
+    withBoth,
+    "* [2026-09-23] [Stage 3] [01:02Z-01:09Z 7m] [checks database-verification=DB-UNAVAILABLE fold-state=DEGRADED migration-quality=PASS] CLEAN: Codebase -- fold-state: DEGRADED; database-verification: DB-UNAVAILABLE",
+  );
+  const plain = finalLogLine(stage, "CLEAN", summary, [stage.coverageLog], "2026-09-23", "[01:02Z-01:09Z 7m]");
+
+  const parsed = parseCoverageLine(withBoth);
+  const before = parseCoverageLine(plain);
+  assert.deepEqual(parsed.checks, statuses);
+  assert.equal(before.checks, null);
+  const { checks: _a, ...rest } = parsed;
+  const { checks: _b, ...restBefore } = before;
+  assert.deepEqual(rest, restBefore, "the checks field changes nothing but checks");
+  assert.deepEqual(parsed.window, { start: "01:02", end: "01:09", minutes: 7 });
+
+  // Checks without a window: a run whose state file was missing.
+  const untimed = parseCoverageLine(finalLogLine(stage, "PARTIAL-RUN", summary, [stage.coverageLog], "2026-09-23", null, subCheckField(statuses)));
+  assert.equal(untimed.status, "PARTIAL-RUN");
+  assert.equal(untimed.window, null);
+  assert.deepEqual(untimed.checks, statuses);
+});
+
+test("the producer vocabulary is pinned, and finalize can carry every value it writes", () => {
+  // Every `echo "V" > "$CONTEXT_DIR/N-status.txt"` in the context script. A new
+  // status value or a new status file fails this until someone has decided
+  // what it means, which is the step a reader downstream (the recap's
+  // blind-spot classifier) depends on. Pinned as the exact set, not a count,
+  // so a swap cannot hide behind an unchanged total.
+  const script = readFileSync(contextScriptPath, "utf8");
+  const pairs = [...script.matchAll(/echo "([^"]*)" > "\$CONTEXT_DIR\/([a-z0-9-]+)-status\.txt"/g)]
+    .map(([, value, name]) => `${name}=${value}`);
+  const distinct = [...new Set(pairs)].sort();
+  assert.deepEqual(distinct, [
+    "apk-ux-audit=DEGRADED",
+    "apk-ux-audit=FAIL",
+    "apk-ux-audit=PASS",
+    "apk-ux-audit=SKIPPED",
+    "audit-duration=DEGRADED",
+    "audit-duration=OK",
+    "audit-duration=SKIPPED",
+    "database-verification=DB-AVAILABLE",
+    "database-verification=DB-UNAVAILABLE",
+    "database-verification=SKIPPED",
+    "doc-debt=DEGRADED",
+    "doc-debt=OK",
+    "doc-debt=SKIPPED",
+    "fold-state=CLEAN",
+    "fold-state=DEGRADED",
+    "fold-state=PENDING",
+    "fold-state=SKIPPED",
+    "migration-quality=DEGRADED",
+    "migration-quality=FAIL",
+    "migration-quality=PASS",
+    "migration-quality=SKIPPED",
+  ]);
+
+  // Every non-SKIPPED value must survive subCheckField and parse back
+  // unchanged. A producer value the writer silently drops would make that
+  // check vanish from the record on exactly the nights it reports it.
+  for (const pair of distinct) {
+    const [name, value] = pair.split("=");
+    const field = subCheckField({ [name]: value });
+    if (value === "SKIPPED") {
+      assert.equal(field, null, `${pair} is "not this stage's check" and must not be written`);
+      continue;
+    }
+    assert.equal(field, `[checks ${pair}]`, `${pair} must be writable`);
+    const line = `* [2026-09-23] [Stage 3] ${field} CLEAN: Codebase -- x`;
+    assert.deepEqual(parseCoverageLine(line).checks, { [name]: value }, `${pair} must round-trip`);
+  }
+
+  // Every stage that is not an owner gets SKIPPED for every check, so the
+  // field is absent for it and its lines stay byte-identical.
+  const names = [...new Set(distinct.map(pair => pair.split("=")[0]))];
+  assert.equal(subCheckField(Object.fromEntries(names.map(name => [name, "SKIPPED"]))), null);
+});
+
+function finalizeInContext(t, { stageNumber, contextDir, statusFiles = {}, state = null, summary, result }) {
+  const repoRoot = createTemporaryRepo();
+  t.after(() => rmSync(repoRoot, { recursive: true, force: true }));
+  for (const [name, value] of Object.entries(statusFiles)) {
+    mkdirSync(contextDir, { recursive: true });
+    writeFileSync(path.join(contextDir, `${name}-status.txt`), `${value}\n`);
+  }
+  if (state) {
+    mkdirSync(contextDir, { recursive: true });
+    writeFileSync(path.join(contextDir, "session-state.json"), `${JSON.stringify(state)}\n`);
+  }
+  const stage = getStage(registry, stageNumber);
+  const logPath = path.join(repoRoot, stage.coverageLog);
+  mkdirSync(path.dirname(logPath), { recursive: true });
+  writeFileSync(logPath, `${sentinelLine("2026-08-08", stageNumber)}\n`);
+  const outcome = run(
+    process.execPath,
+    [scriptPath, "finalize", "--stage", String(stageNumber), "--status", "CLEAN", "--summary", summary, "--result", result],
+    repoRoot,
+    { NIGHTLY_CONTEXT_DIR: contextDir, NIGHTLY_TODAY: "2026-08-08", NIGHTLY_NOW_EPOCH: "1000" },
+  );
+  return { outcome, log: readFileSync(logPath, "utf8") };
+}
+
+test("finalize records the sub-check statuses it finds in the context dir", t => {
+  const contextDir = temporaryContext(t);
+  const { outcome, log } = finalizeInContext(t, {
+    stageNumber: 3,
+    contextDir,
+    // What update-nightly-context.sh leaves for Stage 3 on a night with no
+    // database: the three Stage 3 checks, and SKIPPED for everyone else's.
+    statusFiles: {
+      "fold-state": "DEGRADED",
+      "migration-quality": "PASS",
+      "database-verification": "DB-UNAVAILABLE",
+      "apk-ux-audit": "SKIPPED",
+      "doc-debt": "SKIPPED",
+      "audit-duration": "SKIPPED",
+    },
+    state: { startEpoch: 580 },
+    summary: "No fold candidates",
+    result: "fold-state.mjs reported 0 unfolded objects; audit-migrations passed",
+  });
+  assert.equal(outcome.status, 0, outcome.stderr);
+  assert.equal(
+    log,
+    "* [2026-08-08] [Stage 3] [00:09Z-00:16Z 7m] [checks database-verification=DB-UNAVAILABLE fold-state=DEGRADED migration-quality=PASS] CLEAN: Codebase -- No fold candidates\n",
+  );
+});
+
+test("finalize still writes its line when the context dir is missing", t => {
+  // The chokepoint rule: losing the sub-check record must never cost the stage
+  // its output. The directory does not exist when finalize starts, so there is
+  // nothing to read, and the line is written with no field at all.
+  const parent = temporaryContext(t);
+  const contextDir = path.join(parent, "never-created");
+  const { outcome, log } = finalizeInContext(t, {
+    stageNumber: 2,
+    contextDir,
+    summary: "No coverage gap found",
+    result: "Vitest StorageService.spec.ts passed 7 of 7 tests",
+  });
+  assert.equal(outcome.status, 0, outcome.stderr);
+  assert.equal(log, "* [2026-08-08] [Stage 2] CLEAN: Codebase -- No coverage gap found\n");
+  assert.doesNotMatch(log, /\[checks/);
 });
