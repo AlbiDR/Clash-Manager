@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-22
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-23] PR #1931 [Stage 6]: docs(tsdoc): harden StorageService interface contracts and inline annotations
+**Domain:** documentation | **Commit:** cb5cea61f | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1931)
+**Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, .github/nightly-logs/06-documentation-tsdoc-pr-body.md, Frontend-PWA/src/core/services/StorageService.ts
+**Why:** Recent-Change Priority: reconcile StorageService JSDoc/TSDoc interface contracts, ADR Section mappings, and side-effect annotations following recent Stage 4 optimization updates
+**Change:** docs(tsdoc): harden StorageService interface contracts and inline annotations
+**Result:** vue-tsc type-check 0 errors, Vitest passed 2076 of 2076 tests across 207 files
+**Nudges:** 0
+
+
 ### [2026-09-23] PR #1930 [Stage 5]: Reconciled Frontend-PWA/src/core/api/README.md with implementation details from SupabaseClient.ts
 **Domain:** documentation | **Commit:** 255e8914c | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1930)
 **Files:** .github/nightly-logs/05-documentation-readme-coverage.log, .github/nightly-logs/05-documentation-readme-pr-body.md, Frontend-PWA/src/core/api/README.md
