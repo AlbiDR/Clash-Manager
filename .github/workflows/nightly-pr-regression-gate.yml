@@ -36,15 +36,36 @@
 # There is no threshold here and nothing to tune. A test runner computes the
 # verdict, which is the point: it is the one gate in this pipeline an agent
 # cannot narrate its way around.
+#
+# WHAT IT RUNS ON: EVERYTHING EXCEPT THE PIPELINE'S OWN BOOKKEEPING
+# This used to be an allow-list (`paths: Frontend-PWA/**, Backend/**`), and an
+# allow-list only covers what someone remembered to list. Measured over
+# 2026-09-03..09-22: 18 Stage 8 dependency PRs changed only the root
+# package.json, pnpm-lock.yaml and pnpm-workspace.yaml (#1893 and #1907 among
+# them), which every package's tests install from, and the gate never ran on
+# one of them. So it is now a deny-list of what is provably not code: the
+# coverage logs, PR bodies and history under .github/nightly-logs/. Across
+# the 655 file changes in the 271 stage PRs merged 2026-09-03..09-23, every
+# path outside Frontend-PWA/ and Backend/ was either under
+# .github/nightly-logs/ (530) or one of those three root files (53). Log-only stage PRs such as #1913,
+# #1919, #1922 and #1925 still get no run, and the merge coordinator reads a
+# missing gate as "nothing to test". A new top-level package is covered the
+# day it appears, with nothing to update here.
+#
+# WHO WAITS FOR IT
+# merge-nightly-prs.yml does not merge a stage PR while this job is unfinished,
+# and resumes when this workflow completes (its workflow_run trigger). That
+# trigger matches on this workflow's `name:` below and the coordinator reads
+# the job's name, so neither may be renamed alone; nightly-coherence.test.mjs
+# pins both.
 name: Nightly PR Regression Gate
 
 on:
   pull_request:
     branches:
       - Nightly
-    paths:
-      - "Frontend-PWA/**"
-      - "Backend/**"
+    paths-ignore:
+      - ".github/nightly-logs/**"
 
 concurrency:
   group: nightly-pr-gate-${{ github.event.pull_request.number }}

@@ -12,6 +12,29 @@ on:
     types: [opened, reopened, ready_for_review, synchronize]
     branches:
       - Nightly
+  # The regression gate finishing is what resumes a deferred merge.
+  #
+  # The pull_request trigger above starts this pass in the same instant the
+  # gate starts, so the pass almost always meets the gate unfinished. It used
+  # to read "unfinished" as "not blocking" and merge: 57 of the 63 gated stage PRs of
+  # 2026-09-03..09-22 merged before the gate finished, and #1721 merged 14s
+  # after its gate started, then turned out to break 16 tests. The coordinator
+  # now leaves such a PR open ("defer"), and this event runs the same merge
+  # pass again once the gate has a conclusion. No clock is involved; the 12:00
+  # cron stays as the existing safety net.
+  #
+  # GitHub matches this list by the gate workflow's `name:`, not its file
+  # name. nightly-coherence.test.mjs pins it to the gate's name and to
+  # REGRESSION_GATE_WORKFLOW in merge-nightly-core.mjs, because a mismatch here
+  # would never fail: the merge would simply stop resuming.
+  #
+  # This trigger is read from the default branch's copy of this file (Stable),
+  # like the schedule, and checks out Nightly's scripts below as before. The
+  # pull_request trigger above is read from the pull request's merge ref, which
+  # is Nightly's copy, so this file has to be on both branches.
+  workflow_run:
+    workflows: ["Nightly PR Regression Gate"]
+    types: [completed]
 
 concurrency:
   # Shared with Nightly Watchdog. See that workflow's concurrency comment.
@@ -21,10 +44,28 @@ concurrency:
 permissions:
   contents: write
   pull-requests: write
+  # Read-only, for the regression gate: the check run on the head commit and,
+  # before that check exists, the gate's workflow run. Named explicitly
+  # because a permissions block sets everything unnamed to none; the reads
+  # work today only because the repository is public.
+  checks: read
+  actions: read
 
 jobs:
   merge-prs:
     name: "Merge Google Jules PRs"
+    # A gate run for a pull request that does not target Nightly is not ours to
+    # resume. The gate only runs on pull requests to Nightly, so this is belt
+    # and braces. An EMPTY pull_requests list still runs the pass, on purpose:
+    # the runs API reported it empty for every recent gate run (checked
+    # 2026-09-23, after those PRs merged), and GitHub documents it only
+    # loosely. Skipping then would leave a deferred PR with nothing to resume
+    # it, whereas an extra pass is harmless: it only touches Nightly stage PRs.
+    if: >-
+      github.event_name != 'workflow_run' ||
+      (github.event.workflow_run.event == 'pull_request' &&
+        (!github.event.workflow_run.pull_requests[0] ||
+          contains(github.event.workflow_run.pull_requests.*.base.ref, 'Nightly')))
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
