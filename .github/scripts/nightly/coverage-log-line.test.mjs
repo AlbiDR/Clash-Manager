@@ -265,11 +265,24 @@ test('consumer: nightly-publish-fallback recovers the same outcome from a patch'
 });
 
 test('consumer: nightly-recap declaredCoverageRecord and buildRecap agree', () => {
+  // This pins two things at once, and they pull in opposite directions on
+  // purpose. Everything the checks field is NOT wired to must stay identical
+  // (status, target, summary, window, durationMinutes; and every recap field
+  // outside blindSpots). But declaredCoverageRecord.checks and the recap's
+  // blindSpots ARE wired to it (nightly-blind-spots.mjs, landed alongside
+  // this field so the two are never out of step), and are SUPPOSED to differ:
+  // that is Layer 1 reading Layer 2's structured record instead of guessing
+  // from prose, the entire reason this field exists. A blanket equality here
+  // would make this test fail the moment the feature it is meant to protect
+  // starts working, which is what it did until this comment was added.
   for (const shape of SHAPES) {
     const { before, after } = logPair(DATES, shape);
     const old = declaredCoverageRecord(before, 3, '2026-09-22');
+    const updated = declaredCoverageRecord(after, 3, '2026-09-22');
     assert.equal(old.status, shape.status);
-    assert.deepEqual(declaredCoverageRecord(after, 3, '2026-09-22'), old);
+    assert.equal(old.checks, null, 'the unwired line carries no structured record');
+    assert.deepEqual({ ...updated, checks: null }, old, 'every field but checks is untouched by the field existing');
+    assert.deepEqual(updated.checks, { 'database-verification': 'DB-UNAVAILABLE', 'fold-state': 'DEGRADED', 'migration-quality': 'PASS' });
 
     const inputs = coverage => {
       const ledger = createEmptyLedger();
@@ -284,11 +297,35 @@ test('consumer: nightly-recap declaredCoverageRecord and buildRecap agree', () =
       };
     };
     const stageOf = recap => recap.stages.find(stage => stage.stage === 3);
-    assert.deepEqual(stageOf(buildRecap(inputs(after))), stageOf(buildRecap(inputs(before))));
+    const beforeStage = stageOf(buildRecap(inputs(before)));
+    const afterStage = stageOf(buildRecap(inputs(after)));
+    assert.deepEqual({ ...afterStage, blindSpots: [] }, { ...beforeStage, blindSpots: [] }, 'nothing outside blindSpots reacts to the checks field');
+    // fold-state and database-verification are both unanswered here and both
+    // already readable from this fixture's prose, so the structured and
+    // prose-only readings report the same two NEVER spots either way.
+    // migration-quality PASS is new information only the structured reading
+    // has (prose never mentions it), but PASS is answered, so it adds no
+    // blind-spot item and this fixture cannot tell the two readings apart by
+    // outcome. That is expected: this only proves the wiring reaches
+    // blindSpots, not that every input changes it.
+    assert.equal(afterStage.blindSpots.length, 2);
+    assert.deepEqual(afterStage.blindSpots, beforeStage.blindSpots);
 
-    // nightly-explain reads the same record through the recap, and hashes it
-    // into a projection fingerprint, so equality here is byte-level.
-    assert.deepEqual(buildStageExplanation(inputs(after), 3), buildStageExplanation(inputs(before), 3));
+    // nightly-explain does not READ checks (no rule inspects it), but it
+    // embeds the whole declaredCoverageRecord verbatim, checks included, and
+    // hashes that embedding into the projection fingerprint. So the field
+    // legitimately changes the explanation's `coverage.checks` and its
+    // fingerprint, and nothing else: every rule's own inputs and result stay
+    // byte-identical, which is what actually matters for "the same reasoning
+    // ran".
+    const explAfter = buildStageExplanation(inputs(after), 3);
+    const explBefore = buildStageExplanation(inputs(before), 3);
+    assert.notEqual(explAfter.projectionFingerprint, explBefore.projectionFingerprint, "the embedded record really did change");
+    assert.deepEqual(
+      { ...explAfter, coverage: { ...explAfter.coverage, checks: null }, projectionFingerprint: null },
+      { ...explBefore, coverage: { ...explBefore.coverage, checks: null }, projectionFingerprint: null },
+      "every rule's inputs and result are unaffected by the checks field",
+    );
   }
 });
 
