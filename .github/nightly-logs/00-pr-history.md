@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-22
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-23] PR #1934 [Stage 9]: Audited 12 changed files, depcruise 0 violations, knip 1 unused file/3 unused exports/1 dup export, streak 3. Examined roster/components/index.ts, core/config/index.ts, useProgressiveList.ts. Non-viable refactor: BLITZ_DWELL_MIN dup export.
+**Domain:** architecture | **Commit:** 44907300f | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1934)
+**Files:** .github/nightly-logs/09-refactor-proposals-coverage.log, .github/nightly-logs/09-refactor-proposals-pr-body.md
+**Why:** Substrate complies with CleanStack ADR architecture boundaries and no reproducible defects were found in the targeted core service.
+**Change:** Audited 12 changed files, depcruise 0 violations, knip 1 unused file/3 unused exports/1 dup export, streak 3. Examined roster/components/index.ts, core/config/index.ts, useProgressiveList.ts. Non-viable refactor: BLITZ_DWELL_MIN dup export.
+**Result:** Vitest Frontend-PWA test suite passed 207 of 207 test files (2076 tests), depcruise reported 0 violations across 508 modules.
+**Nudges:** 0
+
+
 ### [2026-09-23] PR #1933 [Stage 8]: package.json -- Bumped @supabase/supabase-js catalog entry from ^2.116.0 to ^2.117.0
 **Domain:** dependencies | **Commit:** 3c82c1f5a | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1933)
 **Files:** .github/nightly-logs/08-dependency-audit-coverage.log, .github/nightly-logs/08-dependency-audit-pr-body.md, package.json
