@@ -4,23 +4,23 @@
 
 In plain terms: this is a documentation change to 1 file in the documentation README area. Nothing about how the app runs is affected.
 
-**What changed:** Reconciled Frontend-PWA/src/features/roster/README.md with implementation details from useLeaderboard.ts
+**What changed:** Reconciled Frontend-PWA/src/core/api/README.md with implementation details from SupabaseClient.ts
 
-**Why:** Document useLeaderboard domain callbacks, Blitz FAB customization, and session disclosure state
+**Why:** Documented source-freshness resolution, fetch clock distinction, optional query decoupling, diagnostic boundaries, and client singleton instantiation in Frontend-PWA/src/core/api/README.md
 
-**Result:** git diff --check clean and 2076 Vitest tests passed
+**Result:** 207 Vitest specs passed (2076 tests green) and git diff --check clean
 
-**Files changed:** .github/nightly-logs/05-documentation-readme-coverage.log, Frontend-PWA/src/features/roster/README.md
+**Files changed:** .github/nightly-logs/05-documentation-readme-coverage.log, Frontend-PWA/src/core/api/README.md
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: documentation
-  Cycle: nightly-cycle/2026-09-22
+  Cycle: nightly-cycle/2026-09-23
   Contract: cea68a5bbba1bd2cbc6d3bdfe2639f37f3935b571beab59f5da1501b1180b22d
-  Why: Document useLeaderboard domain callbacks, Blitz FAB customization, and session disclosure state
-  Change: Reconciled Frontend-PWA/src/features/roster/README.md with implementation details from useLeaderboard.ts
-  Result: git diff --check clean and 2076 Vitest tests passed
-  Files: .github/nightly-logs/05-documentation-readme-coverage.log, Frontend-PWA/src/features/roster/README.md
+  Why: Documented source-freshness resolution, fetch clock distinction, optional query decoupling, diagnostic boundaries, and client singleton instantiation in Frontend-PWA/src/core/api/README.md
+  Change: Reconciled Frontend-PWA/src/core/api/README.md with implementation details from SupabaseClient.ts
+  Result: 207 Vitest specs passed (2076 tests green) and git diff --check clean
+  Files: .github/nightly-logs/05-documentation-readme-coverage.log, Frontend-PWA/src/core/api/README.md
   Nudges: 0
-  Execution: 416c5dcd1cfaf09ffa85d8df2fbc0efc5a5633bb
+  Execution: 960fd987d4ea3a8e984a91932e1e8c351a1e07b4
 -->
