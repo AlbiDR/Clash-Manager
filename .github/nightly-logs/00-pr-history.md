@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-23
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-24] PR #1944 [Stage 6]: docs(tsdoc): harden useMotionPreference interface contracts and inline logic annotations
+**Domain:** documentation | **Commit:** 4c2f72f8f | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1944)
+**Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, .github/nightly-logs/06-documentation-tsdoc-pr-body.md, Frontend-PWA/src/shared/composables/useMotionPreference.ts
+**Why:** Recent-Change Priority: harden useMotionPreference TSDoc interface contracts, ADR Section mappings, and inline logic annotations following Stage 2 test additions
+**Change:** docs(tsdoc): harden useMotionPreference interface contracts and inline logic annotations
+**Result:** vue-tsc type-check 0 errors, Vitest passed 5 of 5 useMotionPreference tests
+**Nudges:** 0
+
+
 ### [2026-09-24] PR #1943 [Stage 5]: docs(readme): Reconcile headhunter README with RecruitCard metric taxonomy
 **Domain:** documentation | **Commit:** 8ac7981d6 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1943)
 **Files:** .github/nightly-logs/05-documentation-readme-coverage.log, .github/nightly-logs/05-documentation-readme-pr-body.md, Frontend-PWA/src/features/headhunter/README.md
