@@ -29,6 +29,10 @@ export const CONTROL_PLANE_FILES = [
   ".github/scripts/nightly/nightly-publish-fallback.mjs",
   ".github/scripts/nightly/nightly-health.mjs",
   ".github/scripts/nightly/nightly-recap.mjs",
+  // Imported by the recap, which the watchdog imports, so it has to reach
+  // Nightly with the recap commit that first uses it or the watchdog fails to
+  // load.
+  ".github/scripts/nightly/nightly-blind-spots.mjs",
   ".github/scripts/nightly/nightly-contract.mjs",
   ".github/scripts/nightly/nightly-intervention.mjs",
   ".github/scripts/nightly/nightly-events.mjs",

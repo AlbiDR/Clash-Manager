@@ -9,7 +9,8 @@
  *
  * Responsibilities:
  * - retarget nightly stage PRs to Nightly when needed
- * - merge allowed stage PRs in stage order
+ * - merge allowed stage PRs in stage order, once the regression gate has
+ *   judged them (an unfinished gate defers the PR to the next pass)
  * - recover known shared-log conflicts where possible
  * - tag successful stage merges as durable history facts
  * - compile recent tag facts into 00-pr-history.md
@@ -1074,45 +1075,220 @@ async function resolveConflictsAndRebase(pr, config = CONFIG, stageOverride = nu
 // workflow fails loudly at review time instead of silently disarming the gate.
 export const REGRESSION_GATE_CHECK = "Suite must not regress";
 
-/**
- * Refuses a pull request whose regression gate concluded failure.
- *
- * Until this existed the coordinator gated on `details.mergeable` alone, which
- * means conflict-free, not correct. It never read a check result, so the
- * regression gate added in b750c1de5 ran, went red, and the pull request merged
- * anyway - the test was detection, not prevention, and a stage that broke the
- * suite still reached Nightly.
- *
- * ABSENT IS NOT FAILURE, and that asymmetry is the whole design. The gate is
- * path-filtered to Frontend-PWA and Backend, so a log-only stage legitimately
- * has no gate to pass; treating a missing check as a refusal would block most
- * of the pipeline every night. A check that is still running is also not a
- * refusal, because the coordinator has its own retry loop and a later pass will
- * see the conclusion. Only an explicit failure stops the merge.
- */
-export async function regressionGateBlocks(pr, config = CONFIG) {
-  let runs;
-  try {
-    const res = await githubApi(
-      `/repos/${config.owner}/${config.repo}/commits/${pr.head.sha}/check-runs?per_page=100`,
-      "GET", null, false, config,
-    );
-    runs = res?.check_runs || [];
-  } catch (error) {
-    // A failed query is not evidence of a passing gate, but neither is it
-    // evidence of a failing one, and refusing every merge because GitHub's API
-    // hiccuped would be its own outage. Report and proceed.
-    log(`Could not read check runs for PR #${pr.number}: ${error.message}`, "warn");
-    return false;
-  }
+// The gate's workflow `name:`. merge-nightly-prs.yml resumes on
+// `workflow_run: workflows: [<this name>]`, and GitHub matches that list by the
+// workflow's name, not its file name. A rename of the gate would therefore
+// silently stop the merge from resuming, which is the one failure this change
+// must not have; nightly-coherence.test.mjs pins all three spellings together.
+export const REGRESSION_GATE_WORKFLOW = "Nightly PR Regression Gate";
 
-  const gate = runs.find(run => run.name === REGRESSION_GATE_CHECK);
-  if (!gate) return false;
-  if (gate.conclusion === "failure" || gate.conclusion === "timed_out") {
-    log(`PR #${pr.number} regressed the test suite (${REGRESSION_GATE_CHECK}: ${gate.conclusion}). Refusing to merge.`, "error");
-    return true;
+// What the coordinator does with a stage pull request once the gate has been
+// read. Three answers rather than a boolean, because the boolean it replaces
+// could not say "not yet", and "not yet" was being read as "yes".
+export const GATE_VERDICT = Object.freeze({
+  BLOCK: "block",
+  DEFER: "defer",
+  PROCEED: "proceed",
+});
+
+// A gate run in one of these states has not judged the change yet, and it will
+// reach `completed` without anybody doing anything: GitHub moves a requested,
+// queued or pending run on by itself, and every run ends. Completion is the
+// event merge-nightly-prs.yml listens for, so a pull request deferred on one of
+// these states always has something that resumes it.
+//
+// `waiting` is deliberately absent. It means a deployment protection rule is
+// holding the job for a person, and the unattended night has none, so a defer
+// on it would be a PR waiting with nothing to resume it. It falls through to
+// the unknown-status branch below and proceeds with a warning.
+const GATE_UNFINISHED_STATUSES = new Set(["requested", "queued", "pending", "in_progress"]);
+
+// The only two conclusions that are a verdict against the change. The gate
+// exits 1 only when the suite passes at the merge base and fails at the head,
+// and a timeout means the suite never showed it was safe.
+const GATE_REFUSING_CONCLUSIONS = new Set(["failure", "timed_out"]);
+
+// Conclusions that say the gate did NOT judge the change and never will on its
+// own. Each proceeds, with a warning that names it, because each would
+// otherwise leave the pull request waiting for an event that is not coming:
+//
+// - cancelled: the gate's own concurrency (cancel-in-progress per PR) cancels
+//   a run when a newer push supersedes it, and that newer push's run is read
+//   instead because the head sha is read fresh. A run that is cancelled and
+//   still newest for the head was cancelled by hand or by a lost runner, and
+//   nothing re-runs it.
+// - stale: GitHub's own label for a check that sat incomplete too long. It
+//   will never complete.
+// - skipped: the job's condition was false. No test ran and none will.
+// - neutral: the gate never emits it (it exits 0 or 1); if it appears, it
+//   asserts no failure, so it cannot be a refusal.
+// - action_required: a person must act before the run can continue. Jules
+//   branches live in this repository, so approval gating should never apply;
+//   if it does, it is a configuration problem, not a verdict, and there is
+//   nobody awake to approve it.
+// - startup_failure (workflow level only): the gate could not start, which
+//   says nothing about the change.
+//
+// Proceeding here is the same trade the missing-gate case makes below, and it
+// is NOT silent: the warning says the change merged without a verdict, which
+// is a different line from a pass. A block would instead strand every code
+// stage behind one broken gate, which is its own outage.
+const GATE_UNJUDGED_CONCLUSIONS = new Set([
+  "cancelled", "stale", "skipped", "neutral", "action_required", "startup_failure",
+]);
+
+/**
+ * The newest gate run among `runs`, or null when none carries the name.
+ *
+ * A head sha can hold more than one run of the gate: a "Re-run jobs" on a red
+ * gate adds a second check run to the same commit, and the earlier red one is
+ * still listed. The re-run is the one that counts, in both directions, so the
+ * newest wins. Check run and workflow run ids both grow with creation, so the
+ * id orders them without reading any clock; started_at breaks a tie only when
+ * an id is missing.
+ */
+export function selectNewestGateRun(runs, name = REGRESSION_GATE_CHECK) {
+  const matching = (Array.isArray(runs) ? runs : []).filter(run => run?.name === name);
+  if (matching.length === 0) return null;
+  return matching.reduce((newest, run) => {
+    const a = Number(newest.id);
+    const b = Number(run.id);
+    if (Number.isFinite(a) && Number.isFinite(b) && a !== b) return b > a ? run : newest;
+    return String(run.started_at || "") > String(newest.started_at || "") ? run : newest;
+  });
+}
+
+/**
+ * Turns one gate run into a verdict. Pure, so every status and conclusion is
+ * pinned by a test rather than by the night it first happens.
+ *
+ * Returns { verdict, reason, warn }. `warn` is true when the change is allowed
+ * through WITHOUT the gate having judged it, so the log line can never read
+ * like a pass.
+ */
+export function judgeGateRun(run) {
+  if (!run) {
+    return { verdict: GATE_VERDICT.PROCEED, reason: "no gate run exists for this change", warn: false };
   }
-  return false;
+  const status = String(run.status || "").toLowerCase();
+  const conclusion = run.conclusion == null ? "" : String(run.conclusion).toLowerCase();
+
+  if (status !== "completed") {
+    if (GATE_UNFINISHED_STATUSES.has(status)) {
+      return { verdict: GATE_VERDICT.DEFER, reason: `the gate is ${status}`, warn: false };
+    }
+    return {
+      verdict: GATE_VERDICT.PROCEED,
+      reason: `the gate is in state '${status || "unknown"}', which nothing resumes unattended, so it merges without a verdict`,
+      warn: true,
+    };
+  }
+  if (GATE_REFUSING_CONCLUSIONS.has(conclusion)) {
+    return { verdict: GATE_VERDICT.BLOCK, reason: `the gate concluded ${conclusion}`, warn: false };
+  }
+  if (conclusion === "success") {
+    return { verdict: GATE_VERDICT.PROCEED, reason: "the gate passed", warn: false };
+  }
+  if (GATE_UNJUDGED_CONCLUSIONS.has(conclusion)) {
+    return {
+      verdict: GATE_VERDICT.PROCEED,
+      reason: `the gate concluded ${conclusion} without judging the change, and nothing will re-run it, so it merges without a verdict`,
+      warn: true,
+    };
+  }
+  // A conclusion GitHub adds later, or a completed run with none at all. It is
+  // not a refusal, and waiting on it would never end, so it gets the unjudged
+  // treatment with its own name in the log.
+  return {
+    verdict: GATE_VERDICT.PROCEED,
+    reason: `the gate completed with an unrecognised conclusion '${conclusion || "none"}', so it merges without a verdict`,
+    warn: true,
+  };
+}
+
+/**
+ * Reads the gate for one head sha: the newest check run first, and when there
+ * is no check run yet, the newest gate workflow run.
+ *
+ * WHY THE WORKFLOW RUN TOO. The stage PR's `opened` event starts this merge
+ * pass and the gate in the same instant: on 2026-09-07 the Sync Nightly PRs
+ * run for #1721 was created at 00:23:29Z and the gate's workflow run one
+ * second later, at 00:23:30Z. The check run only appears once the gate's job
+ * is queued. A merge pass that reads check runs in that gap sees "no gate"
+ * and, by the asymmetry below, merges: the same hole as before, one step
+ * earlier. The workflow run exists from the event onward, so a gate that has
+ * been started but has no check yet is read as unfinished, and its completion
+ * is still the event that resumes the merge.
+ *
+ * Returns { found, run } or throws when GitHub cannot be asked; the caller
+ * decides what an unreadable gate means.
+ */
+async function readGateRun(sha, config = CONFIG) {
+  // filter=all: the default (`latest`) collapses runs by completion time, and
+  // an unfinished re-run has none, so the default could hide exactly the run
+  // that says "not yet". Selecting the newest ourselves removes the question.
+  const checks = await githubApi(
+    `/repos/${config.owner}/${config.repo}/commits/${sha}/check-runs?check_name=${encodeURIComponent(REGRESSION_GATE_CHECK)}&filter=all&per_page=100`,
+    "GET", null, false, config,
+  );
+  const checkRun = selectNewestGateRun(checks?.check_runs, REGRESSION_GATE_CHECK);
+  if (checkRun) return { found: "check", run: checkRun };
+
+  const workflows = await githubApi(
+    `/repos/${config.owner}/${config.repo}/actions/runs?head_sha=${sha}&event=pull_request&per_page=100`,
+    "GET", null, false, config,
+  );
+  const workflowRun = selectNewestGateRun(workflows?.workflow_runs, REGRESSION_GATE_WORKFLOW);
+  if (workflowRun) return { found: "workflow", run: workflowRun };
+  return { found: null, run: null };
+}
+
+/**
+ * Decides whether a stage pull request may merge now: "block", "defer" or
+ * "proceed".
+ *
+ * Until f657410d0 the coordinator gated on `details.mergeable` alone, which
+ * means conflict-free, not correct. That commit made a red gate refuse, but it
+ * returned a boolean and read a gate that had not finished as "not blocking".
+ * Measured over 2026-09-03..09-22: 57 of the 63 stage PRs the gate ran on
+ * merged BEFORE the gate finished, so the refusal almost never had anything to
+ * refuse. PR #1721 (Stage 2, 2026-09-07) merged at 00:23:47Z, 14s after its
+ * gate started at 00:23:33Z; the gate reported 16 failing tests at 00:26:57Z,
+ * after the fact, and Nightly stayed red until #1727 at 07:26Z. Nightly has no
+ * branch protection, so nothing else stood in the way.
+ *
+ * DEFER IS THE FIX. An unfinished gate is not a verdict, so the pull request
+ * is left open for this pass and logged as waiting. It is not a failure: it
+ * writes no MERGE FAILED block and no BLOCKED ledger row. merge-nightly-prs.yml
+ * runs again on `workflow_run` when the gate completes, and that pass reads
+ * the conclusion. There is no clock and no timeout here: the gate finishing is
+ * the event, and every non-terminal state kept as a defer is one GitHub moves
+ * on by itself (see GATE_UNFINISHED_STATUSES).
+ *
+ * ABSENT IS NOT FAILURE, and that asymmetry is still the design. The gate
+ * ignores the pipeline's own bookkeeping (.github/nightly-logs/**), so a
+ * log-only stage legitimately has no gate to pass, and a push made with this
+ * workflow's own GITHUB_TOKEN starts no workflow at all; treating a missing
+ * gate as a refusal would block most of the pipeline every night. An API
+ * failure is not evidence of a failing gate either, and refusing every merge
+ * because GitHub's API hiccuped would be its own outage. Both proceed.
+ */
+export async function regressionGateVerdict(pr, config = CONFIG, sha = pr?.head?.sha) {
+  let read;
+  try {
+    read = await readGateRun(sha, config);
+  } catch (error) {
+    return {
+      verdict: GATE_VERDICT.PROCEED,
+      reason: `could not read ${REGRESSION_GATE_CHECK} for PR #${pr.number} (${error.message}), so it merges without a verdict`,
+      warn: true,
+    };
+  }
+  const judged = judgeGateRun(read.run);
+  if (read.found === "workflow" && judged.verdict === GATE_VERDICT.DEFER) {
+    return { ...judged, reason: `${judged.reason}; its check has not appeared yet` };
+  }
+  return judged;
 }
 
 async function mergePullRequest(pr, details, config = CONFIG) {
@@ -1168,7 +1344,12 @@ async function deleteHeadBranch(pr, config = CONFIG, prefix = "") {
   }
 }
 
-async function processPullRequest(pr, options, config = CONFIG) {
+// The outcomes processPullRequest can end in without throwing. A throw is still
+// the only failure: it is what writes the MERGE FAILED block and the BLOCKED
+// ledger row, and a deferral must write neither.
+export const PR_OUTCOME = Object.freeze({ MERGED: "merged", DEFERRED: "deferred" });
+
+export async function processPullRequest(pr, options, config = CONFIG) {
   const prefix = options.label ? `[${options.label}] ` : "";
   const classification = pr.nightlyClassification || { stage: null };
   validateStageBranch(pr.head.ref, classification.stage);
@@ -1189,14 +1370,32 @@ async function processPullRequest(pr, options, config = CONFIG) {
     }
   }
 
+  // The gate is read BEFORE any conflict resolution, on the head sha GitHub
+  // reports now. Two reasons. resolveConflictsAndRebase force-pushes with this
+  // workflow's GITHUB_TOKEN, and GitHub starts no workflow for such a push, so
+  // the rebased head never gets a gate of its own: judged afterwards, the
+  // stage's real verdict (on the commit Jules pushed) would be replaced by
+  // "no gate" and the change would proceed unjudged. And a pull request that
+  // is going to wait or be refused should not be rewritten first.
+  const gate = await regressionGateVerdict(pr, config, details?.head?.sha || pr.head.sha);
+  if (gate.verdict === GATE_VERDICT.BLOCK) {
+    throw new Error(`PR #${pr.number} failed ${REGRESSION_GATE_CHECK} (${gate.reason}); a stage may not merge a change that breaks the suite.`);
+  }
+  if (gate.verdict === GATE_VERDICT.DEFER) {
+    log(
+      `${prefix}Waiting for "${REGRESSION_GATE_CHECK}" on PR #${pr.number}: ${gate.reason}. ` +
+      "Not merged in this pass; the gate finishing starts the next one.",
+    );
+    return PR_OUTCOME.DEFERRED;
+  }
+  if (gate.warn) {
+    log(`${prefix}PR #${pr.number}: ${gate.reason}.`, "warn");
+  }
+
   if (details.mergeable === false) {
     log(`${prefix}PR #${pr.number} has merge conflicts. Attempting automatic resolution...`);
     await resolveConflictsAndRebase(pr, config, classification.stage);
     details = await pollMergeable(pr.number, options.mergeablePolls, config);
-  }
-
-  if (await regressionGateBlocks(pr, config)) {
-    throw new Error(`PR #${pr.number} failed ${REGRESSION_GATE_CHECK}; a stage may not merge a change that breaks the suite.`);
   }
 
   const mergeRes = await mergePullRequest(pr, details, config);
@@ -1204,6 +1403,7 @@ async function processPullRequest(pr, options, config = CONFIG) {
   createStageTag(pr, mergeRes?.sha || details.merge_commit_sha || pr.head.sha, config, classification.stage);
   syncTargetBranch(config);
   await deleteHeadBranch(pr, config, prefix);
+  return PR_OUTCOME.MERGED;
 }
 
 export function renderFailureBlock({ date, pr, status, errorMessage }) {
@@ -1239,18 +1439,46 @@ function writeFailureBlocks(failures, config = CONFIG) {
   log(`Changelog updated with ${newBlocks.length} failed merge record(s).`, "success");
 }
 
-async function processTargets(targets, options, failures, config = CONFIG) {
+/**
+ * Works through one pass's targets in stage order and returns
+ * { processed, deferred }.
+ *
+ * ORDERING WHILE AN EARLIER STAGE IS DEFERRED: later stages are NOT held
+ * behind it. Deliberate, for three reasons.
+ * 1. A refusal has never held the queue: a throw here is caught, recorded and
+ *    the loop moves on to the next stage. A deferral is weaker evidence than a
+ *    refusal (no verdict yet, rather than a verdict against), so letting it
+ *    hold what a refusal does not would invert the two.
+ * 2. Each gate judged its own pull request against the Nightly it was opened
+ *    on, independently of its siblings. Merging Stage 5 before a deferred
+ *    Stage 2 does not invalidate Stage 5's verdict, and holding it would not
+ *    make Stage 2's any truer: whichever merges second lands on a base neither
+ *    gate saw, in either order.
+ * 3. Holding would chain every later stage to the slowest gate in the night,
+ *    and to the one pending slot the shared nightly-control-plane concurrency
+ *    group keeps, where a queued run can be replaced before it starts.
+ * Stage order still decides the order of attempts, so when nothing waits the
+ * behaviour is exactly what it was. The shared-log conflicts an out-of-order
+ * merge can cause are the ones resolveConflictsAndRebase already handles on
+ * every night that two stages overlap.
+ */
+export async function processTargets(targets, options, failures, config = CONFIG, processOne = processPullRequest) {
+  const deferred = [];
   if (targets.length === 0) {
     log(`${options.label ? `${options.label}: ` : ""}No matching Nightly PRs found.`, "success");
-    return 0;
+    return { processed: 0, deferred };
   }
 
   log(`${options.label ? `${options.label}: ` : ""}Processing ${targets.length} PR(s) in stage order...`);
   let processed = 0;
   for (const pr of targets) {
     try {
-      await processPullRequest(pr, options, config);
-      processed++;
+      const outcome = await processOne(pr, options, config);
+      if (outcome === PR_OUTCOME.DEFERRED) {
+        deferred.push(pr);
+      } else {
+        processed++;
+      }
     } catch (error) {
       log(`${options.label ? `[${options.label}] ` : ""}FAILED PR #${pr.number}: ${error.message}`, "error");
       failures.push({
@@ -1261,7 +1489,7 @@ async function processTargets(targets, options, failures, config = CONFIG) {
       });
     }
   }
-  return processed;
+  return { processed, deferred };
 }
 
 export async function run(config = CONFIG) {
@@ -1270,6 +1498,9 @@ export async function run(config = CONFIG) {
 
   const failures = [];
   let rejected = [];
+  // The pull requests still waiting on their gate when this run ends, from the
+  // last pass that looked at them. Reported, never recorded as failures.
+  let waiting = [];
   try {
     log(`Fetching open PRs targeting ${config.targetBranch}...`);
     const prs = await fetchAllPullRequests(config);
@@ -1291,7 +1522,8 @@ export async function run(config = CONFIG) {
     }
 
     const firstPassTargets = getMergeTargets(prs, registry, config);
-    await processTargets(firstPassTargets, { mergeablePolls: FIRST_PASS_MERGEABLE_POLLS }, failures, config);
+    const firstPass = await processTargets(firstPassTargets, { mergeablePolls: FIRST_PASS_MERGEABLE_POLLS }, failures, config);
+    waiting = firstPass.deferred;
 
     if (firstPassTargets.length === 0) {
       log("Skipping second-pass wait because no first-pass Nightly PRs matched.");
@@ -1316,15 +1548,23 @@ export async function run(config = CONFIG) {
       rejected = [...rejected, ...retryRejected];
       const retryTargets = getMergeTargets(retryPrs, registry, config);
       if (retryTargets.length === 0) {
+        waiting = [];
         log("Second-pass check: no remaining open Nightly PRs. Pipeline fully merged.", "success");
       } else {
-        await processTargets(
+        const secondPass = await processTargets(
           retryTargets,
           { label: "Second pass", mergeablePolls: SECOND_PASS_MERGEABLE_POLLS },
           failures,
           config,
         );
+        waiting = secondPass.deferred;
       }
+    }
+    for (const pr of waiting) {
+      log(
+        `PR #${pr.number} (stage ${pr.nightlyClassification?.stage ?? "?"}) is waiting for "${REGRESSION_GATE_CHECK}" to finish. ` +
+        "It merges on the pass that starts when that check finishes.",
+      );
     }
   } finally {
     writeFailureBlocks(failures, config);

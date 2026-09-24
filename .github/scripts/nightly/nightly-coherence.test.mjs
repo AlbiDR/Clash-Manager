@@ -18,6 +18,8 @@ import assert from "node:assert/strict";
 import { readdirSync, readFileSync } from "node:fs";
 import test from "node:test";
 
+import { REGRESSION_GATE_CHECK, REGRESSION_GATE_WORKFLOW } from "./merge-nightly-core.mjs";
+
 const DIR = new URL("./", import.meta.url);
 const modules = readdirSync(DIR).filter(f => f.endsWith(".mjs") && !f.endsWith(".test.mjs"));
 
@@ -275,3 +277,74 @@ test("every nightly test file is wired into the control-plane chain", () => {
   assert.deepEqual(unreachable, [], `test files no chained script runs: ${unreachable.join(", ")}`);
 });
 
+
+// The merge waits for the regression gate, and three spellings hold that
+// together. The gate's workflow `name:` is what merge-nightly-prs.yml's
+// `workflow_run: workflows:` matches (GitHub matches by name, not file name);
+// the gate's job name is the check the coordinator reads; and both are
+// constants in merge-nightly-core.mjs. A mismatch in any of them fails
+// nothing at runtime: the merge would simply stop resuming, or read "no gate"
+// and merge unjudged, which is the hole this was built to close. So they are
+// read from the sources here.
+//
+// The YAML is read with narrow patterns rather than a parser (the control
+// plane is dependency-free). Every pattern must MATCH before its value is
+// compared, so a reformatted file fails loudly instead of passing vacuously.
+const WORKFLOWS = new URL("../../workflows/", DIR);
+const readWorkflow = name => readFileSync(new URL(name, WORKFLOWS), "utf8");
+
+function capture(source, pattern, what) {
+  const match = source.match(pattern);
+  assert.ok(match, `could not find ${what}; if the YAML was reformatted, update this reader rather than dropping the check`);
+  return match[1];
+}
+
+test("the merge resumes on the regression gate's exact workflow name", () => {
+  const gate = readWorkflow("nightly-pr-regression-gate.yml");
+  const merge = readWorkflow("merge-nightly-prs.yml");
+
+  const gateName = capture(gate, /^name:\s*(.+?)\s*$/m, "the gate's workflow name");
+  assert.equal(gateName, REGRESSION_GATE_WORKFLOW, "merge-nightly-core.mjs must name the gate workflow exactly");
+
+  const triggers = merge.slice(merge.indexOf("\non:"), merge.indexOf("\nconcurrency:"));
+  const workflowRun = capture(triggers, /\n {2}workflow_run:\n((?: {4}.*\n)+)/, "a workflow_run trigger");
+  const resumedBy = JSON.parse(capture(workflowRun, /workflows:\s*(\[.*\])/, "workflow_run.workflows"));
+  assert.deepEqual(resumedBy, [gateName], "workflow_run must list the gate's name: and nothing else");
+  assert.deepEqual(
+    capture(workflowRun, /types:\s*\[(.*)\]/, "workflow_run.types").split(",").map(t => t.trim()),
+    ["completed"],
+    "only a finished gate carries a verdict",
+  );
+
+  // The existing safety net and the lock stay as they were.
+  assert.match(triggers, /cron: "0 12 \* \* \*"/, "the 12:00 safety-net cron must stay");
+  assert.match(merge, /\n {2}group: nightly-control-plane\n {2}cancel-in-progress: false\n/,
+    "the resumed pass must run under the shared control-plane lock, never cancelling a pass in flight");
+
+  // Gate runs for pull requests that do not target Nightly are ignored, and
+  // the filter is scoped to workflow_run so the other triggers are untouched.
+  const jobIf = capture(merge, /\n {4}if: >-\n((?: {6}.*\n)+)/, "the merge job's if");
+  assert.match(jobIf, /github\.event_name != 'workflow_run' \|\|/);
+  assert.match(jobIf, /pull_requests\.\*\.base\.ref, 'Nightly'/);
+});
+
+test("the coordinator reads the gate's own job name", () => {
+  const gate = readWorkflow("nightly-pr-regression-gate.yml");
+  const jobName = capture(gate, /\n {2}regression:\n {4}name:\s*"([^"]+)"/, "the gate's job name");
+  assert.equal(jobName, REGRESSION_GATE_CHECK);
+});
+
+test("the regression gate tests everything except the pipeline's own bookkeeping", () => {
+  // An allow-list (`paths: Frontend-PWA/**, Backend/**`) never ran on the 18
+  // Stage 8 PRs that changed only the root package.json, pnpm-lock.yaml and
+  // pnpm-workspace.yaml. The rule is now a deny-list, and every entry on it
+  // must be bookkeeping, so it cannot quietly grow to exclude code again.
+  const gate = readWorkflow("nightly-pr-regression-gate.yml");
+  const triggers = gate.slice(gate.indexOf("\non:"), gate.indexOf("\nconcurrency:"));
+  assert.doesNotMatch(triggers, /\n {4}paths:/, "an allow-list only covers what someone remembered to list");
+  const ignored = [...capture(triggers, /\n {4}paths-ignore:\n((?: {6}- .*\n)+)/, "paths-ignore").matchAll(/- "([^"]+)"/g)]
+    .map(m => m[1]);
+  assert.ok(ignored.includes(".github/nightly-logs/**"), "stage bookkeeping must not trigger the suite");
+  const notBookkeeping = ignored.filter(p => !p.startsWith(".github/nightly-logs/"));
+  assert.deepEqual(notBookkeeping, [], "only the pipeline's own logs may skip the suite");
+});

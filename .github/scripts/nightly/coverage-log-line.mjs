@@ -11,6 +11,7 @@
  * The line shape, with any number of bracketed fields between the stage marker
  * and the status:
  *
+ *   * [2026-09-23] [Stage 3] [01:02Z-01:09Z 7m] [checks fold-state=DEGRADED] CLEAN: <target> -- <summary>
  *   * [2026-09-09] [Stage 1] [23:17Z-23:23Z 6m] CLEAN: <target> -- <summary>
  *   * [2026-09-02] [Stage 1] CLEAN: <target> -- <summary>
  *
@@ -52,6 +53,49 @@ const PAYLOAD_SEPARATOR = ' -- ';
 const WINDOW_FIELD = /\[(\d{2}:\d{2})Z-(\d{2}:\d{2})Z (\d+)m\]/;
 
 /**
+ * The stage's sub-check statuses inside the bracket run, e.g.
+ * `[checks database-verification=DB-UNAVAILABLE fold-state=DEGRADED]`.
+ *
+ * WHY THIS FIELD EXISTS (2026-09-23)
+ * update-nightly-context.sh computes an authoritative status for six sub-checks
+ * every night (fold-state, migration-quality, database-verification,
+ * apk-ux-audit, doc-debt, audit-duration) and writes each to
+ * `<name>-status.txt` in the context dir. Finalize never persisted them, so
+ * once the Jules VM was gone the only trace was the agent's own paraphrase.
+ * Measured over 2026-08-31..2026-09-22: Stage 3 narrated its database status
+ * on 19 of 22 nights, Stage 12 its APK UX audit on 8 of 23, and Stages 5, 6
+ * and 13 their doc-debt and audit-duration statuses on 0 of 23. A reader that
+ * relies on prose therefore reads "not mentioned" as "fine" for four of the
+ * six checks. finalize now writes the values it can see, and this is where
+ * they are read back.
+ *
+ * Only the bracket run is searched, never the ` -- ` payload, so a summary that
+ * happens to quote a checks field cannot forge one. Names are lowercase and
+ * values uppercase because that is what the producers write; subCheckField in
+ * nightly-stage.mjs enforces the same shape on the way in, so a `]` can never
+ * be written inside the field and end the bracket early.
+ */
+export const CHECKS_FIELD = /\[checks ((?:[a-z0-9-]+=[A-Z0-9_-]+ ?)+)\]/;
+
+/**
+ * `{ name: value }` from the bracket run, or null when the line carries no
+ * checks field. null means UNMEASURED: every line written before this field
+ * existed, and every line from a stage whose own checks were all SKIPPED. It
+ * must never be read as "no check had a problem", which is why this returns
+ * null rather than an empty object.
+ */
+function parseChecks(brackets) {
+  const match = CHECKS_FIELD.exec(brackets || '');
+  if (!match) return null;
+  const checks = {};
+  for (const pair of match[1].trim().split(/\s+/)) {
+    const separator = pair.indexOf('=');
+    checks[pair.slice(0, separator)] = pair.slice(separator + 1);
+  }
+  return checks;
+}
+
+/**
  * Parses one line. Returns null when the line is not a terminal record, so
  * callers can filter a whole file without pre-checking.
  */
@@ -77,6 +121,9 @@ export function parseCoverageLine(line) {
     window: window
       ? { start: window[1], end: window[2], minutes: Number(window[3]) }
       : null,
+    // null, not {}, when absent, for the same reason as `window`: a line with
+    // no checks field is unmeasured, not clean. See CHECKS_FIELD.
+    checks: parseChecks(brackets),
   };
 }
 

@@ -71,6 +71,15 @@ import { classifyChangedPaths } from "./nightly-stage.mjs";
 import { prNumberFromTag } from "./nightly-ledger.mjs";
 import { getEvidenceDate } from "./nightly-events.mjs";
 import {
+  COULD_NOT_RUN_KINDS,
+  NEW_KINDS,
+  RECOVERED_KINDS,
+  STANDING_KINDS,
+  blindSpotCoverage,
+  evaluateBlindSpots,
+  subCheckHistory,
+} from "./nightly-blind-spots.mjs";
+import {
   FAILURE_PHRASES,
   PLAIN_PREFIX,
   RESULT_LABEL,
@@ -123,20 +132,32 @@ export function declaredCoverageRecord(content, stageNumber, date) {
       summary: record.summary,
       window: record.window ? `${record.window.start}Z-${record.window.end}Z ${record.window.minutes}m` : null,
       durationMinutes: record.window ? record.window.minutes : null,
+      // The structured sub-check map, when the line carries one. undefined in
+      // the parser means that field does not exist yet, which is not "no
+      // checks": null here keeps "unmeasured" distinct from an empty map.
+      checks: record.checks ?? null,
     };
   }
   return null;
 }
 
-/** The rich block Stage 1's aging pass writes for each merged PR. */
-export function parsePrHistoryEntry(content, stageNumber, date) {
+/**
+ * Every rich block Stage 1's aging pass wrote for one stage, in file order.
+ *
+ * The single parser for the format. parsePrHistoryEntry below is a lookup over
+ * it, and the blind-spot reader, which needs every night rather than one, is
+ * handed its output instead of carrying a second copy of the head regex.
+ */
+export function parsePrHistoryEntries(content, stageNumber) {
+  const entries = [];
   const blocks = String(content || "").split(/^### /m);
   for (const block of blocks) {
     const head = block.match(/^\[(\d{4}-\d{2}-\d{2})\] PR #(\d+) \[Stage (\d+)\]: (.*)$/m);
     if (!head) continue;
-    if (head[1] !== date || Number(head[3]) !== stageNumber) continue;
+    if (Number(head[3]) !== stageNumber) continue;
     const field = name => (block.match(new RegExp(`^\\*\\*${name}:\\*\\* (.*)$`, "m")) || [])[1]?.trim() || null;
-    return {
+    entries.push({
+      date: head[1],
       prNumber: Number(head[2]),
       title: head[4].trim(),
       why: field("Why"),
@@ -147,9 +168,14 @@ export function parsePrHistoryEntry(content, stageNumber, date) {
       // means unmeasured and must never be read as a count of zero.
       nudges: /^\d+$/.test(field("Nudges") || "") ? Number(field("Nudges")) : null,
       files: (field("Files") || "").split(",").map(f => f.trim()).filter(Boolean),
-    };
+    });
   }
-  return null;
+  return entries;
+}
+
+/** The rich block Stage 1's aging pass writes for each merged PR. */
+export function parsePrHistoryEntry(content, stageNumber, date) {
+  return parsePrHistoryEntries(content, stageNumber).find(entry => entry.date === date) || null;
 }
 
 // The ledger states that count as a stage having reached a result, and so as
@@ -214,6 +240,14 @@ export function runProgress({ registry, ledger, date, coverageByStage, tags }) {
  * `\bFAIL\b` also doesn't match "FAILED" or "failover", so ordinary prose about
  * failure handling does not trip it. Checked against every terminal coverage
  * line ever written: only the two Stage 3 lines above match.
+ *
+ * DEGRADED, SKIPPED and DB-UNAVAILABLE are absent on purpose. They are not
+ * failures: they mean a check could not run at all, which is a different
+ * question with a different answer ("how much of this CLEAN was actually
+ * checked"). Folding them in here would fire every S03 night since
+ * 2026-08-31 and tell the reader nothing. Their reader is evaluateBlindSpots
+ * in nightly-blind-spots.mjs, which treats FAIL as a check that ran, so the
+ * two readers split the vocabulary and never both fire on one value.
  */
 const SELF_REPORTED_FAILURE_RE = /\b(FAIL|DIVERGENT|UNFOLDED)\b/;
 
@@ -297,6 +331,15 @@ export function classifyStage({ stage, entry, tag, declared, history, progress }
   };
 }
 
+// Mirrors the wording selfReportGuardSection uses lower in the recap, so the
+// grade rationale and the Self-report guard line never disagree about what a
+// stage actually declared. Before this, the rationale hardcoded "declared its
+// outcome clean" even when the stage had declared PARTIAL-RUN or another
+// non-clean outcome, contradicting the guard line a few paragraphs later.
+function selfContradictionClause(stages) {
+  return joinList(stages.map(s => `${stageTag(s.stage)} declared ${s.outcome} while its own summary reported a failing sub-check`));
+}
+
 // The grade rubric, encoded declaratively so the thresholds are the published
 // specification rather than numbers invented here. Evaluated in order.
 export const GRADE_RUBRIC = [
@@ -332,7 +375,19 @@ export const GRADE_RUBRIC = [
   {
     grade: 6,
     when: r => (r.selfContradicted || []).length > 0,
-    why: r => `Self-report gap: ${countOf(r.selfContradicted, "stage")} declared its outcome clean while its own summary reported a failing sub-check, and nothing in this run addressed it.`,
+    why: r => `Self-report gap: ${selfContradictionClause(r.selfContradicted)}, and nothing in this run addressed it.`,
+  },
+  // A check a stage HAD, lost tonight. Not a 9, because 9 means the run
+  // required nothing from the reader, and a stage that delivered with less
+  // verification than it had the night before needs a look (a new migration
+  // static analysis cannot verify, an audit script that started crashing).
+  // Not a 7, because nothing failed. Measured over all 42 ledger dates to
+  // 2026-09-22 this fires on 2 (09-07 and 09-14), both already graded lower
+  // by the rules above, so it changes no historical grade.
+  {
+    grade: 8,
+    when: r => (r.newBlindSpots || []).length > 0,
+    why: r => `Lost check: every stage completed, but ${lostCheckClause(r.newBlindSpots)}`,
   },
   // Still a 9, because a stage that needed rescuing is not the same as one that
   // did not, and the health check that spots a RISING rescue rate depends on
@@ -351,8 +406,45 @@ export const GRADE_RUBRIC = [
     when: r => r.unobserved > 0,
     why: r => `Unverified: every stage merged, but ${r.unobserved} of ${r.total} were never observed, so intervention cannot be ruled out.`,
   },
+  // A check that has not been able to run for nights on end is a fact about
+  // the environment, not about tonight. Docking it would pin every night since
+  // 2026-08-31 below 10 (all 8 of that period's 10/10 nights carry a standing
+  // S03 blind spot) and the grade would stop telling nights apart. The number
+  // stays; the qualifier stops the one-line verdict claiming more coverage
+  // than was actually checked.
+  {
+    grade: 10,
+    when: r => (r.standingBlindSpots || []).length > 0,
+    why: r => `Optimal run within standing limits: every stage completed unaided. ${standingClause(r.standingBlindSpots)}; see Blind spots.`,
+  },
   { grade: 10, when: () => true, why: "Optimal run: every stage completed unaided." },
 ];
+
+function stageCheck(item) {
+  return `${stageTag(item.stage)}'s ${item.label}`;
+}
+
+function lostCheckClause(items) {
+  if (items.length === 1) {
+    const [item] = items;
+    if (item.kind === "UNRECOGNISED") {
+      return `${stageCheck(item)} reported ${item.value}, a status this report does not recognise, so part of its result is unchecked.`;
+    }
+    return `${stageCheck(item)} could not run tonight after running on ${item.lastAnswered.date}, the last night it reported, so part of its result is unchecked.`;
+  }
+  return `${countOf(items, "check")} that ran on the last night each was reported did not tonight (${joinList(items.map(stageCheck))}), so part of the run's result is unchecked.`;
+}
+
+function standingClause(items) {
+  const couldNot = items.filter(item => item.kind !== "UNSTATED");
+  const unstated = items.filter(item => item.kind === "UNSTATED");
+  const parts = [];
+  if (couldNot.length > 0) parts.push(`${countOf(couldNot, "check")} could not run, as on the nights before`);
+  if (unstated.length > 0) {
+    parts.push(`${countOf(unstated, "check")} that could not run before ${unstated.length === 1 ? "was" : "were"} not reported`);
+  }
+  return parts.join(", and ");
+}
 
 export function gradeRun(stages) {
   const totals = {
@@ -365,6 +457,10 @@ export function gradeRun(stages) {
     clean: stages.filter(s => s.outcome === "CLEAN").length,
     unobserved: stages.filter(s => !s.observed).length,
     selfContradicted: stages.filter(s => s.selfReportedFailure),
+    // `|| []` keeps every caller that builds stages by hand, and every stage
+    // that has never reported a sub-check, exactly where it was.
+    newBlindSpots: stages.flatMap(s => (s.blindSpots || []).filter(b => NEW_KINDS.has(b.kind))),
+    standingBlindSpots: stages.flatMap(s => (s.blindSpots || []).filter(b => STANDING_KINDS.has(b.kind))),
   };
   const hit = GRADE_RUBRIC.find(rule => rule.when(totals));
   return { ...totals, grade: hit.grade, rationale: typeof hit.why === "function" ? hit.why(totals) : hit.why };
@@ -377,6 +473,12 @@ export function latestRunDate(ledger) {
 
 export function buildRecap({ ledger, registry, date, coverageByStage, prHistory, tags }) {
   const progress = runProgress({ registry, ledger, date, coverageByStage, tags });
+  // Like health below, blind spots need the nights before this one (a check is
+  // NEW only against the last night it was reported) and stop AT this date.
+  const historyByStage = Object.fromEntries(
+    registry.stages.map(stage => [stage.number, parsePrHistoryEntries(prHistory, stage.number)]),
+  );
+  const subChecks = subCheckHistory({ registry, coverageByStage: coverageByStage || {}, historyByStage, date });
   const stages = registry.stages.map(stage => {
     const evidenceDate = evidenceDateFor(stage.number, date);
     const tag = (tags || []).find(t => t.startsWith(`nightly/${evidenceDate}/stage-${stage.number}/pr-`)) || null;
@@ -388,7 +490,12 @@ export function buildRecap({ ledger, registry, date, coverageByStage, prHistory,
       history: parsePrHistoryEntry(prHistory, stage.number, evidenceDate),
       progress,
     });
-  });
+  }).map(stage => ({
+    ...stage,
+    // A stage whose turn has not come has reported nothing yet, and calling
+    // that "not reported tonight" would be a claim about a night still ahead.
+    blindSpots: stage.outcome === "PENDING" ? [] : evaluateBlindSpots(subChecks[stage.stage], date, { stage: stage.stage }),
+  }));
   // Cross-run health needs more than the selected date - a stage that needs
   // help every single night passes every individual run, so no single-date view
   // can ever see it - but it stops AT the selected date. Judging a past run
@@ -398,6 +505,7 @@ export function buildRecap({ ledger, registry, date, coverageByStage, prHistory,
     date,
     stages,
     ...gradeRun(stages),
+    blindSpotCoverage: blindSpotCoverage(subChecks, date),
     health: evaluatePipelineHealth(ledgerThrough(ledger, date, { inProgress: stages.some(s => s.outcome === "PENDING") }), registry),
   };
 }
@@ -629,6 +737,21 @@ function stageNotes(stage) {
 }
 
 /**
+ * ", 2 checks could not run" after the status, so "Clean" never stands alone
+ * over a result that was only partly checked. The detail is in Blind spots;
+ * this only stops the header claiming more than the stage verified.
+ */
+function blindSpotSuffix(stage) {
+  const spots = stage.blindSpots || [];
+  const couldNot = spots.filter(b => COULD_NOT_RUN_KINDS.has(b.kind));
+  const unstated = spots.filter(b => b.kind === "UNSTATED");
+  const parts = [];
+  if (couldNot.length > 0) parts.push(`${countOf(couldNot, "check")} could not run`);
+  if (unstated.length > 0) parts.push(`${countOf(unstated, "check")} not reported`);
+  return parts.length > 0 ? `, ${parts.join(", ")}` : "";
+}
+
+/**
  * One stage, as a reader meets it.
  *
  * Consolidated into a single labelled block, one line per question actually
@@ -649,7 +772,7 @@ function stageNotes(stage) {
 function stageBlock(stage) {
   const area = displayArea(stage.slug).toUpperCase();
   const pr = stage.prNumber ? `PR #${stage.prNumber}` : "no PR";
-  const header = `**${stageTag(stage.stage)} ${area}** | ${displayStatus(stage.outcome)} | ${pr}`;
+  const header = `**${stageTag(stage.stage)} ${area}** | ${displayStatus(stage.outcome)}${blindSpotSuffix(stage)} | ${pr}`;
 
   if (stage.outcome === "PENDING") return [header, PENDING_LINE, ""];
 
@@ -873,6 +996,55 @@ function plainChangeMeaning(changed) {
     + ` so how the app behaves may have changed.${alongside}`;
 }
 
+function blindSpotPhrase(item) {
+  switch (item.kind) {
+    case "NEVER": return `its ${item.label} has never been able to run`;
+    case "ONGOING": return `its ${item.label} has been unable to run since ${item.streakStart}`;
+    case "NEW": return `its ${item.label} could not run tonight, after running on ${item.lastAnswered.date}`;
+    case "UNRECOGNISED": return `its ${item.label} reported a status this report does not recognise`;
+    case "UNSTATED": return `its ${item.label} was not reported tonight, after it last could not run`;
+    default: return null;
+  }
+}
+
+/**
+ * One sentence per stage whose result is narrower than its status implies.
+ *
+ * Phrases are joined with semicolons, not joinList's comma-and-comma, because
+ * every phrase here already contains its own comma ("... tonight, after it
+ * last could not run"). Two of them joined with "and" used to read as one
+ * run-on clause with no seam between where the first check's story ends and
+ * the second's begins.
+ */
+function blindSpotCaveat(stage) {
+  const phrases = (stage.blindSpots || []).map(blindSpotPhrase).filter(Boolean);
+  if (phrases.length === 0) return null;
+  const which = stage.outcome === "CLEAN" ? "clean result" : "result";
+  return `${stageTag(stage.stage)} ${displayArea(stage.slug)}'s ${which} does not cover everything: ${phrases.join("; ")}.`;
+}
+
+/**
+ * The sentences that narrow what the overview's counts claim, in order.
+ *
+ * One list, owned here, so every reader that qualifies the run appends a
+ * sentence to it instead of editing overviewSection's prose. Three separate
+ * designs (blind spots, the independent test check, detector liveness) each
+ * wanted to rewrite a different sentence of that paragraph, and three edits to
+ * the same prose is how a caveat gets silently dropped by the next one. The
+ * overview prints these straight after "the rest checked their areas", the
+ * claim they qualify: "found nothing" is only as wide as what was checked, and
+ * a check that could not run found nothing too.
+ *
+ * Returns plain strings and an empty list when nothing needs qualifying, so a
+ * night with no caveats reads exactly as it did before this existed.
+ */
+export function overviewCaveats(recap) {
+  const stages = (recap?.stages || []).filter(s => s.outcome === "CHANGED" || s.outcome === "CLEAN");
+  // CHANGED before CLEAN, the order the overview names them in.
+  const ordered = [...stages.filter(s => s.outcome === "CHANGED"), ...stages.filter(s => s.outcome === "CLEAN")];
+  return ordered.map(blindSpotCaveat).filter(Boolean);
+}
+
 /**
  * The whole run in one plain-language paragraph, for a reader who does not want
  * thirteen stage entries.
@@ -940,6 +1112,8 @@ function overviewSection(recap) {
     // repurposed.
     sentences.push(`The rest checked their areas and found nothing that needed fixing, which for auditing stages is the job being done rather than a wasted run.`);
   }
+  // Right after the claim they qualify; see overviewCaveats.
+  sentences.push(...overviewCaveats(recap));
 
   if (stuck.length > 0) {
     sentences.push(`${joinList(stuck.map(stageLabel))} produced nothing at all.`);
@@ -958,8 +1132,12 @@ function overviewSection(recap) {
   // Attention is the union of what is broken now and what is trending badly.
   // Pace is excluded on purpose: a slow stage that still delivers is not a
   // call on the reader's time.
+  // A check lost tonight is the one blind-spot kind that asks for a look; a
+  // standing one is already in the sentence above and in the grade.
+  const lostCheck = stages.filter(s => (s.blindSpots || []).some(b => NEW_KINDS.has(b.kind)));
   const attention = [
     ...stuck.map(stageLabel),
+    ...lostCheck.map(stageLabel),
     ...(recap.health?.chronic || []).map(stageLabel),
     ...(recap.health?.degrading || []).map(stageLabel),
   ];
@@ -1207,6 +1385,118 @@ function selfReportGuardSection(recap) {
   return [`Self-report guard: ${parts.join("; ")}.`, ""];
 }
 
+/**
+ * What each blind spot looks like, one line per check. See
+ * nightly-blind-spots.mjs for how the kinds are derived.
+ */
+function blindSpotLine(item) {
+  const tag = `- ${stageTag(item.stage)} ${item.label}`;
+  const streakValue = item.streakValue || "could not run";
+  switch (item.kind) {
+    case "NEVER":
+      return item.statedNights === 1
+        ? `${tag}: has never been able to run (${item.value} on ${item.firstStated}, the only night it reported).`
+        : `${tag}: has never been able to run (${item.streakValue ? `${item.streakValue} on all` : "not on any of the"} ${item.statedNights} nights it reported, since ${item.firstStated}).`;
+    case "ONGOING":
+      return `${tag}: ${item.streakValue ? `${item.streakValue} on` : "could not run on"} every night it reported since ${item.streakStart} (${item.streakNights} nights); it last ran on ${item.lastAnswered.date} (${item.lastAnswered.value}).`;
+    case "NEW":
+      return `${tag}: new tonight. It reported ${item.value}; on ${item.lastAnswered.date}, the last night it reported, it ran (${item.lastAnswered.value}).`;
+    case "UNRECOGNISED":
+      return `${tag}: reported ${item.value}, a status this report does not recognise, so it is not counted as having run.`;
+    case "RESTORED":
+      return item.streakNights === 1
+        ? `${tag}: ran again tonight (${item.value}) after ${item.previous.value} on ${item.previous.date}.`
+        : `${tag}: ran again tonight (${item.value}) after ${streakValue} on the ${item.streakNights} nights it reported since ${item.streakStart}.`;
+    case "FIRST_RUN":
+      return item.streakNights === 1
+        ? `${tag}: ran for the first time tonight (${item.value}) after ${item.previous.value} on ${item.previous.date}, the only night before.`
+        : `${tag}: ran for the first time tonight (${item.value}) after ${item.streakValue ? `${item.streakValue} on all` : "not running on any of the"} ${item.streakNights} nights before.`;
+    case "UNSTATED":
+      if (item.lastAnswered) {
+        return `${tag}: not reported tonight. It could not run on the last night it reported (${item.previous.value} on ${item.previous.date}), so tonight is unknown, not fixed.`;
+      }
+      return item.statedNights === 1
+        ? `${tag}: not reported tonight. It has never been able to run (${item.previous.value} on ${item.firstStated}, the only night it reported), so tonight is unknown, not fixed.`
+        : `${tag}: not reported tonight. It has never been able to run (${item.streakValue ? `${item.streakValue} on all` : "not on any of the"} ${item.statedNights} nights it reported), so tonight is unknown, not fixed.`;
+    default:
+      return `${tag}: ${item.kind}.`;
+  }
+}
+
+function standingSummary(couldNot) {
+  const fresh = couldNot.filter(b => NEW_KINDS.has(b.kind)).length;
+  const standing = couldNot.length - fresh;
+  const all = couldNot.length === 2 ? "both" : "all";
+  if (fresh === 0) return couldNot.length === 1 ? "a standing one, none new" : `${all} standing, none new`;
+  if (standing === 0) return couldNot.length === 1 ? "new tonight" : `${all} new tonight`;
+  return `${fresh} new, ${standing} standing`;
+}
+
+/**
+ * Which checks could not run, printed every night.
+ *
+ * Three answers, and they must never print the same text: "none" (the stages
+ * that report their checks did, and every check ran), "not measured" (nobody
+ * reported, so nothing can be said), and the list. A reader that fell silent
+ * whenever it saw nothing would read the second exactly like the first.
+ *
+ * The closing coverage sentence is derived from which stages have ever
+ * reported, never from a list, because most stages never narrate their
+ * checks and "none found" is only as wide as the stages that were asked.
+ */
+function blindSpotSection(recap) {
+  const coverage = recap.blindSpotCoverage || { everReported: [], reportedTonight: [] };
+  const spots = (recap.stages || []).flatMap(s => s.blindSpots || []);
+  const tags = numbers => joinList(numbers.map(stageTag));
+  // A reporter whose slot has not come round yet has not stayed silent; it has
+  // not had the chance to speak. Without this split, a run still in progress
+  // told S03 and S12 they "did not" report tonight while their turn was still
+  // ahead, which is a claim about a night that has not finished happening.
+  const pending = new Set((recap.stages || []).filter(s => s.outcome === "PENDING").map(s => s.stage));
+
+  if (coverage.everReported.length === 0) {
+    return [
+      "Blind spots: not measured. No stage had reported whether its checks could run on or before this date, so this run cannot say whether any check was skipped.",
+      "",
+    ];
+  }
+
+  const couldNot = spots.filter(b => COULD_NOT_RUN_KINDS.has(b.kind));
+  const unstated = spots.filter(b => b.kind === "UNSTATED");
+  const recovered = spots.filter(b => RECOVERED_KINDS.has(b.kind));
+  const reporters = coverage.everReported;
+
+  if (spots.length === 0 && coverage.reportedTonight.length === 0) {
+    const silent = reporters.filter(n => !pending.has(n));
+    const notYet = reporters.filter(n => pending.has(n));
+    if (silent.length === 0) {
+      return [`Blind spots: not measured yet tonight. ${tags(notYet)} ${notYet.length === 1 ? "reports this and has" : "report this and have"} not run yet.`, ""];
+    }
+    const verb = silent.length === 1 ? "reports this, and did not tonight" : `report this, and ${silent.length === 2 ? "neither" : "none of them"} did tonight`;
+    const clauses = [`${tags(silent)} ${verb}`];
+    if (notYet.length > 0) clauses.push(`${tags(notYet)} ${notYet.length === 1 ? "has" : "have"} not run yet`);
+    return [`Blind spots: not measured tonight. ${clauses.join("; ")}.`, ""];
+  }
+
+  let head;
+  if (couldNot.length > 0) {
+    head = `Blind spots: ${countOf(couldNot, "check")} could not run tonight, ${standingSummary(couldNot)}`;
+    if (unstated.length > 0) head += `; ${countOf(unstated, "check")} that could not run before ${unstated.length === 1 ? "was" : "were"} not reported`;
+    head += ".";
+  } else if (unstated.length > 0) {
+    head = `Blind spots: ${countOf(unstated, "check")} that could not run before ${unstated.length === 1 ? "was" : "were"} not reported tonight.`;
+  } else {
+    head = `Blind spots: none. Every check ${tags(coverage.reportedTonight)} reported on tonight ran.`;
+  }
+
+  const lines = [head, ...[...couldNot, ...unstated, ...recovered].map(blindSpotLine)];
+  const unasked = (recap.total || (recap.stages || []).length) - reporters.length;
+  if (unasked > 0) {
+    lines.push(`Only ${tags(reporters)} ${reporters.length === 1 ? "has" : "have"} ever reported whether ${reporters.length === 1 ? "its" : "their"} checks ran, so this says nothing about the other ${countOf({ length: unasked }, "stage")}.`);
+  }
+  return [...lines, ""];
+}
+
 function unknownBoilerplateSection(recap) {
   const byResult = new Map();
   for (const stage of recap.stages || []) {
@@ -1255,6 +1545,7 @@ export function renderRecap(recap) {
   lines.push(...thinEvidenceSection(recap));
   lines.push(...evidenceGuardSection(recap));
   lines.push(...selfReportGuardSection(recap));
+  lines.push(...blindSpotSection(recap));
   lines.push(...unknownBoilerplateSection(recap));
 
   return lines.join("\n");

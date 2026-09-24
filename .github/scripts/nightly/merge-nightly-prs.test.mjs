@@ -42,8 +42,15 @@ import {
   sortStagePrs,
   stageNumber,
   summarizeFiles,
-  regressionGateBlocks,
+  GATE_VERDICT,
+  judgeGateRun,
+  PR_OUTCOME,
+  processPullRequest,
+  processTargets,
+  regressionGateVerdict,
   REGRESSION_GATE_CHECK,
+  REGRESSION_GATE_WORKFLOW,
+  selectNewestGateRun,
 } from "./merge-nightly-core.mjs";
 import {
   createEmptyLedger,
@@ -513,51 +520,302 @@ test("a promotion tag protects a merged row from a later coordinator failure", (
   assert.equal(stageEntry(ledger, "2026-08-25", 2).failureClass, "MERGE_COORDINATOR");
 });
 
-test("a red regression gate blocks the merge, and an absent one does not", async () => {
-  // Before this the coordinator gated on details.mergeable alone, which means
-  // conflict-free, not correct. The regression gate could run, go red, and the
-  // pull request merged anyway: the test was detection, not prevention.
-  //
-  // The asymmetry is the design. The gate is path-filtered to Frontend-PWA and
-  // Backend, so a log-only stage legitimately has no gate to pass; treating a
-  // missing check as failure would block most of the pipeline every night.
-  const config = { owner: "AlbiDR", repo: "Clash-Manager", token: "t" };
-  const pr = { number: 1700, head: { sha: "abc123" } };
+// --- The merge waits for the regression gate's verdict ----------------------
+//
+// Before this the coordinator asked one yes/no question, "does the gate
+// block?", and an unfinished gate answered no. Measured over 2026-09-03..09-22:
+// 57 of the 63 stage PRs the gate ran on merged before it finished. #1721
+// merged 14s after its gate started and broke 16 tests; the refusal arrived
+// three minutes after the merge. These tests pin the three-way answer, and
+// above all that no answer leaves a pull request waiting on an event that
+// never comes.
 
-  const withRuns = runs => {
-    global.fetch = async () => ({
-      ok: true,
-      status: 200,
-      json: async () => ({ check_runs: runs }),
-      text: async () => "",
-    });
+const GATE_SHA = "abc123";
+
+// A fake GitHub that answers the three endpoints the gate path reads, and
+// records every request so a test can prove what did NOT happen (a merge).
+function fakeGitHub({ checkRuns = [], workflowRuns = [], details = {}, failGateReads = false } = {}) {
+  const calls = [];
+  global.fetch = async (url, init = {}) => {
+    const method = init.method || "GET";
+    calls.push({ url: String(url), method });
+    const reply = body => ({ ok: true, status: 200, json: async () => body, text: async () => "" });
+    if (String(url).includes("/check-runs") || String(url).includes("/actions/runs")) {
+      if (failGateReads) throw new Error("network down");
+      return String(url).includes("/check-runs")
+        ? reply({ check_runs: checkRuns })
+        : reply({ workflow_runs: workflowRuns });
+    }
+    if (method === "PUT" && String(url).endsWith("/merge")) {
+      return reply({ sha: "squash1", merged: true });
+    }
+    if (/\/pulls\/\d+$/.test(String(url))) {
+      return reply({ mergeable: true, draft: false, head: { sha: GATE_SHA }, ...details });
+    }
+    throw new Error(`unexpected request ${method} ${url}`);
   };
+  return calls;
+}
+
+const gateConfig = { owner: "AlbiDR", repo: "Clash-Manager", token: "t" };
+const gateCheck = (fields) => ({ name: REGRESSION_GATE_CHECK, id: 100, ...fields });
+
+test("every gate state has exactly one answer, and only an unfinished gate waits", () => {
+  // The whole table, so a state nobody thought about is a failing test here
+  // rather than a pull request stuck on the night it first appears.
+  const expected = [
+    // Unfinished and moved on by GitHub alone: its completion is the
+    // workflow_run event that resumes the merge.
+    [{ status: "requested" }, GATE_VERDICT.DEFER, false],
+    [{ status: "queued" }, GATE_VERDICT.DEFER, false],
+    [{ status: "pending" }, GATE_VERDICT.DEFER, false],
+    [{ status: "in_progress" }, GATE_VERDICT.DEFER, false],
+    // A verdict against the change.
+    [{ status: "completed", conclusion: "failure" }, GATE_VERDICT.BLOCK, false],
+    [{ status: "completed", conclusion: "timed_out" }, GATE_VERDICT.BLOCK, false],
+    // A verdict for it.
+    [{ status: "completed", conclusion: "success" }, GATE_VERDICT.PROCEED, false],
+    // No verdict and nothing will produce one: proceed, loudly.
+    [{ status: "completed", conclusion: "cancelled" }, GATE_VERDICT.PROCEED, true],
+    [{ status: "completed", conclusion: "stale" }, GATE_VERDICT.PROCEED, true],
+    [{ status: "completed", conclusion: "skipped" }, GATE_VERDICT.PROCEED, true],
+    [{ status: "completed", conclusion: "neutral" }, GATE_VERDICT.PROCEED, true],
+    [{ status: "completed", conclusion: "action_required" }, GATE_VERDICT.PROCEED, true],
+    [{ status: "completed", conclusion: "startup_failure" }, GATE_VERDICT.PROCEED, true],
+    [{ status: "completed", conclusion: "something_new" }, GATE_VERDICT.PROCEED, true],
+    [{ status: "completed", conclusion: null }, GATE_VERDICT.PROCEED, true],
+    // Held for a person (deployment protection) or a state GitHub adds later:
+    // nothing resumes it unattended, so it must not wait.
+    [{ status: "waiting" }, GATE_VERDICT.PROCEED, true],
+    [{ status: "something_new" }, GATE_VERDICT.PROCEED, true],
+    [{}, GATE_VERDICT.PROCEED, true],
+  ];
+  for (const [run, verdict, warn] of expected) {
+    const judged = judgeGateRun(gateCheck(run));
+    assert.equal(judged.verdict, verdict, `${JSON.stringify(run)} must ${verdict}`);
+    assert.equal(judged.warn, warn, `${JSON.stringify(run)} warn must be ${warn}`);
+    assert.ok(judged.reason, "every answer carries a reason for the log line");
+  }
+
+  // GraphQL spells these in capitals (the #1721 rollup reads FAILURE); the
+  // answer must not depend on which API a caller used.
+  assert.equal(judgeGateRun(gateCheck({ status: "COMPLETED", conclusion: "FAILURE" })).verdict, GATE_VERDICT.BLOCK);
+  assert.equal(judgeGateRun(gateCheck({ status: "IN_PROGRESS" })).verdict, GATE_VERDICT.DEFER);
+});
+
+test("a cancelled or stale gate proceeds with a warning, never an endless wait", () => {
+  // Binding from the design review: a gate that will never complete must not
+  // become a new stuck state. Nothing re-runs a cancelled or stale check, so a
+  // defer on either would wait for a workflow_run event that is not coming.
+  for (const conclusion of ["cancelled", "stale"]) {
+    const judged = judgeGateRun(gateCheck({ status: "completed", conclusion }));
+    assert.equal(judged.verdict, GATE_VERDICT.PROCEED, `${conclusion} must proceed`);
+    assert.notEqual(judged.verdict, GATE_VERDICT.DEFER, `${conclusion} must never defer`);
+    assert.equal(judged.warn, true, `${conclusion} must warn`);
+    assert.match(judged.reason, new RegExp(conclusion));
+    assert.match(judged.reason, /without a verdict/);
+  }
+});
+
+test("a gate that could not be judged never reads like a pass", () => {
+  // The vacuous case. "No gate", "could not ask" and "passed" all proceed, so
+  // the only thing telling them apart is the reason and the warning; if those
+  // collapsed, an unread gate would look exactly like a green one.
+  const passed = judgeGateRun(gateCheck({ status: "completed", conclusion: "success" }));
+  const absent = judgeGateRun(null);
+  const unjudged = judgeGateRun(gateCheck({ status: "completed", conclusion: "cancelled" }));
+  assert.equal(passed.warn, false);
+  assert.equal(absent.warn, false, "a log-only stage has nothing to test; that is not an alarm");
+  assert.equal(unjudged.warn, true);
+  const reasons = new Set([passed.reason, absent.reason, unjudged.reason]);
+  assert.equal(reasons.size, 3, "passed, absent and unjudged must each say something different");
+  assert.doesNotMatch(absent.reason, /pass/);
+  assert.doesNotMatch(unjudged.reason, /pass/);
+});
+
+test("the newest gate run for the head decides, whatever its siblings say", () => {
+  // A "Re-run jobs" on a red gate adds a second check run to the same commit
+  // and leaves the red one listed. The re-run is the one that counts.
+  const red = gateCheck({ id: 10, status: "completed", conclusion: "failure", started_at: "2026-09-07T00:23:33Z" });
+  const green = gateCheck({ id: 12, status: "completed", conclusion: "success", started_at: "2026-09-07T01:00:00Z" });
+  const rerun = gateCheck({ id: 13, status: "in_progress", conclusion: null, started_at: "2026-09-07T01:10:00Z" });
+  const other = { name: "Commit Attribution Guard", id: 99, status: "completed", conclusion: "failure" };
+
+  assert.equal(selectNewestGateRun([red, green, other]), green);
+  assert.equal(selectNewestGateRun([green, red]), green, "listing order must not matter");
+  assert.equal(selectNewestGateRun([red, rerun, green]), rerun);
+  assert.equal(selectNewestGateRun([other]), null, "another check's name is not the gate");
+  assert.equal(selectNewestGateRun([]), null);
+  assert.equal(selectNewestGateRun(undefined), null, "an absent list is no gate, not a crash");
+
+  // Without ids, the start time orders them.
+  const early = { name: REGRESSION_GATE_CHECK, started_at: "2026-09-07T00:00:00Z", conclusion: "failure" };
+  const late = { name: REGRESSION_GATE_CHECK, started_at: "2026-09-07T02:00:00Z", conclusion: "success" };
+  assert.equal(selectNewestGateRun([late, early]), late);
+});
+
+test("the gate is read for the head sha, newest run first, over every run GitHub holds", async () => {
   const originalFetch = global.fetch;
-
   try {
-    withRuns([{ name: REGRESSION_GATE_CHECK, conclusion: "failure" }]);
-    assert.equal(await regressionGateBlocks(pr, config), true, "a failed gate must block");
+    // A red run superseded by a green re-run: proceed, not block.
+    let calls = fakeGitHub({
+      checkRuns: [
+        gateCheck({ id: 10, status: "completed", conclusion: "failure" }),
+        gateCheck({ id: 11, status: "completed", conclusion: "success" }),
+      ],
+    });
+    let verdict = await regressionGateVerdict({ number: 1721, head: { sha: "stale" } }, gateConfig, "fresh");
+    assert.equal(verdict.verdict, GATE_VERDICT.PROCEED);
+    const checkUrl = calls.find(call => call.url.includes("/check-runs")).url;
+    assert.match(checkUrl, /\/commits\/fresh\/check-runs/, "the sha passed in is the one read");
+    assert.match(checkUrl, /filter=all/, "the default filter can hide an unfinished re-run");
 
-    withRuns([{ name: REGRESSION_GATE_CHECK, conclusion: "timed_out" }]);
-    assert.equal(await regressionGateBlocks(pr, config), true, "a timed-out gate must block");
+    // The #1721 shape: started, not finished. Defer.
+    fakeGitHub({ checkRuns: [gateCheck({ status: "in_progress", conclusion: null })] });
+    verdict = await regressionGateVerdict({ number: 1721, head: { sha: GATE_SHA } }, gateConfig);
+    assert.equal(verdict.verdict, GATE_VERDICT.DEFER);
 
-    withRuns([{ name: REGRESSION_GATE_CHECK, conclusion: "success" }]);
-    assert.equal(await regressionGateBlocks(pr, config), false, "a passing gate must not block");
+    // The same instant, one step earlier: the gate's workflow run exists but
+    // its job has not created the check yet. Still a defer, not "no gate".
+    calls = fakeGitHub({ workflowRuns: [{ name: REGRESSION_GATE_WORKFLOW, id: 5, status: "queued", conclusion: null }] });
+    verdict = await regressionGateVerdict({ number: 1721, head: { sha: GATE_SHA } }, gateConfig);
+    assert.equal(verdict.verdict, GATE_VERDICT.DEFER);
+    assert.match(verdict.reason, /check has not appeared yet/);
+    assert.ok(calls.some(call => call.url.includes(`head_sha=${GATE_SHA}`)));
 
-    // Path-filtered away: a log-only stage has no gate and must still merge.
-    withRuns([{ name: "Commit Attribution Guard", conclusion: "success" }]);
-    assert.equal(await regressionGateBlocks(pr, config), false, "an absent gate is not a failure");
+    // Another workflow's run on the same commit is not the gate.
+    fakeGitHub({ workflowRuns: [{ name: "Nightly Watchdog", id: 6, status: "in_progress" }] });
+    verdict = await regressionGateVerdict({ number: 1913, head: { sha: GATE_SHA } }, gateConfig);
+    assert.equal(verdict.verdict, GATE_VERDICT.PROCEED, "a log-only stage has no gate and must still merge");
+    assert.equal(verdict.warn, false);
 
-    // Still running: the coordinator retries, so this is not a refusal either.
-    withRuns([{ name: REGRESSION_GATE_CHECK, conclusion: null, status: "in_progress" }]);
-    assert.equal(await regressionGateBlocks(pr, config), false, "an unfinished gate is not a failure");
+    // A failed gate still blocks.
+    fakeGitHub({ checkRuns: [gateCheck({ status: "completed", conclusion: "failure" })] });
+    verdict = await regressionGateVerdict({ number: 1721, head: { sha: GATE_SHA } }, gateConfig);
+    assert.equal(verdict.verdict, GATE_VERDICT.BLOCK);
 
-    // A broken API is not evidence of a failing gate.
-    global.fetch = async () => { throw new Error("network down"); };
-    assert.equal(await regressionGateBlocks(pr, config), false, "an unreadable check must not block every merge");
+    // A broken API is not evidence of a failing gate, and must say so.
+    fakeGitHub({ failGateReads: true });
+    verdict = await regressionGateVerdict({ number: 1721, head: { sha: GATE_SHA } }, gateConfig);
+    assert.equal(verdict.verdict, GATE_VERDICT.PROCEED, "an unreadable check must not block every merge");
+    assert.equal(verdict.warn, true, "and it must not read like a pass");
+    assert.match(verdict.reason, /could not read/);
   } finally {
     global.fetch = originalFetch;
   }
+});
+
+// processPullRequest runs git for conflict resolution, tagging and branch
+// sync. These tests must never reach it, and if a regression ever made them,
+// GIT_DIR pointing nowhere turns every git call into a thrown error instead of
+// a change to the real repository.
+async function withoutGit(fn) {
+  const saved = process.env.GIT_DIR;
+  const dir = mkdtempSync(path.join(os.tmpdir(), "gate-no-git-"));
+  process.env.GIT_DIR = path.join(dir, "absent");
+  const originalFetch = global.fetch;
+  try {
+    return await fn();
+  } finally {
+    global.fetch = originalFetch;
+    if (saved === undefined) delete process.env.GIT_DIR; else process.env.GIT_DIR = saved;
+    rmSync(dir, { recursive: true, force: true });
+  }
+}
+
+const stagePr = (number, stage) => ({
+  number,
+  title: `chore(stage-${stage})`,
+  head: { ref: `nightly/stage-${stage}-verification-a1b2c3d4`, sha: GATE_SHA },
+  user: { login: "google-labs-jules" },
+  nightlyClassification: { kind: "canonical", stage },
+});
+
+test("a deferred pull request is not merged in that pass and is not a failure", async () => {
+  await withoutGit(async () => {
+    const calls = fakeGitHub({ checkRuns: [gateCheck({ status: "in_progress", conclusion: null })] });
+    const outcome = await processPullRequest(stagePr(1721, 2), { mergeablePolls: 0 }, gateConfig);
+    assert.equal(outcome, PR_OUTCOME.DEFERRED);
+    assert.equal(calls.filter(call => call.method === "PUT").length, 0, "a deferred PR must not be merged");
+
+    // Through the pass loop: nothing recorded as failed, nothing counted as
+    // merged, and the PR is reported as waiting.
+    fakeGitHub({ checkRuns: [gateCheck({ status: "queued", conclusion: null })] });
+    const failures = [];
+    const pass = await processTargets([stagePr(1721, 2)], { mergeablePolls: 0 }, failures, gateConfig);
+    assert.equal(pass.processed, 0);
+    assert.deepEqual(pass.deferred.map(pr => pr.number), [1721]);
+    assert.equal(failures.length, 0, "a wait writes no MERGE FAILED block and no BLOCKED ledger row");
+  });
+});
+
+test("the gate is judged before conflict resolution rewrites the head", async () => {
+  // resolveConflictsAndRebase force-pushes with GITHUB_TOKEN, which starts no
+  // workflow, so a gate read afterwards would find "no gate" and let an
+  // unjudged change through. With git disabled, reaching it would throw.
+  await withoutGit(async () => {
+    const calls = fakeGitHub({
+      details: { mergeable: false },
+      checkRuns: [gateCheck({ status: "in_progress", conclusion: null })],
+    });
+    const outcome = await processPullRequest(stagePr(1721, 2), { mergeablePolls: 0 }, gateConfig);
+    assert.equal(outcome, PR_OUTCOME.DEFERRED, "a waiting PR is not rebased first");
+    assert.equal(calls.filter(call => call.method === "PUT").length, 0);
+
+    fakeGitHub({
+      details: { mergeable: false },
+      checkRuns: [gateCheck({ status: "completed", conclusion: "failure" })],
+    });
+    await assert.rejects(
+      processPullRequest(stagePr(1721, 2), { mergeablePolls: 0 }, gateConfig),
+      new RegExp(`failed ${REGRESSION_GATE_CHECK}`),
+      "a refused PR is refused before anything rewrites it",
+    );
+  });
+});
+
+test("a refused pull request is recorded as a failure and not merged", async () => {
+  await withoutGit(async () => {
+    const calls = fakeGitHub({ checkRuns: [gateCheck({ status: "completed", conclusion: "timed_out" })] });
+    const failures = [];
+    const pass = await processTargets([stagePr(1721, 2)], { mergeablePolls: 0 }, failures, gateConfig);
+    assert.equal(pass.processed, 0);
+    assert.equal(pass.deferred.length, 0, "a refusal is not a wait");
+    assert.equal(failures.length, 1);
+    assert.match(failures[0].errorMessage, /timed_out/);
+    assert.equal(calls.filter(call => call.method === "PUT").length, 0);
+  });
+});
+
+test("a deferred earlier stage does not hold later stages, and attempts stay in stage order", async () => {
+  // The ordering decision (see processTargets): a refusal has never held the
+  // queue, and a deferral is weaker evidence than a refusal, so it must not
+  // hold it either. Stage order still decides the order of attempts.
+  const attempted = [];
+  const outcomes = { 2: PR_OUTCOME.DEFERRED, 5: PR_OUTCOME.MERGED, 9: "throw", 11: PR_OUTCOME.MERGED };
+  const processOne = async pr => {
+    const stage = pr.nightlyClassification.stage;
+    attempted.push(stage);
+    if (outcomes[stage] === "throw") throw new Error(`PR #${pr.number} failed ${REGRESSION_GATE_CHECK}`);
+    return outcomes[stage];
+  };
+  const targets = sortStagePrs([stagePr(1911, 11), stagePr(1909, 9), stagePr(1902, 2), stagePr(1905, 5)]);
+  const failures = [];
+  const pass = await processTargets(targets, { mergeablePolls: 0 }, failures, gateConfig, processOne);
+
+  assert.deepEqual(attempted, [2, 5, 9, 11], "every stage is attempted, in stage order");
+  assert.equal(pass.processed, 2, "stages 5 and 11 merge while stage 2 waits");
+  assert.deepEqual(pass.deferred.map(pr => pr.number), [1902]);
+  assert.deepEqual(failures.map(failure => failure.pr.number), [1909], "only the refusal is a failure");
+});
+
+test("an empty pass reports nothing processed and nothing waiting", async () => {
+  // The vacuous shape of the new return value: a caller reading `deferred`
+  // must get an empty list, not undefined, on a night with no PRs.
+  const pass = await processTargets([], {}, [], gateConfig, async () => {
+    throw new Error("must not be called");
+  });
+  assert.deepEqual(pass, { processed: 0, deferred: [] });
 });
 
 // --- The record stops depending on an agent copying a file ------------------

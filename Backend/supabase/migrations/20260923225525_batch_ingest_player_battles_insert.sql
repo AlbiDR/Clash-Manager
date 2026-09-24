@@ -1,26 +1,12 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 -- Copyright (C) 2026 AlbiDR
 
--- ingest_player_battles() inserted each battle in the payload one row at a
--- time via a PL/pgSQL loop. Measured directly against production (rolled
--- back, no writes): an empty payload costs 6.3ms; a 25-battle payload (the
--- max the Royale API ever returns) costs 262.7ms, and 164.3ms of that
--- remains even with the AFTER INSERT trigger disabled - i.e. the per-row
--- loop dispatch itself, not the trigger, is the bigger of the two costs.
--- This call runs ~11,000 times/day (every member AND every tracked recruit,
--- every 30 minutes - see ingest-royale-data/stages/deep-depth.ts) and is
--- roughly half of all database execution time on the project.
---
--- Fix: collapse the loop into one set-based INSERT ... SELECT ... ON
--- CONFLICT DO NOTHING. Same filter, same computed columns, same conflict
--- target. AFTER INSERT triggers are FOR EACH ROW regardless of whether the
--- statement is single- or multi-row, so tr_battle_voyage_sync still fires
--- once per newly inserted battle, in the same order, with the same effect -
--- verified empirically that ON CONFLICT DO NOTHING (unlike DO UPDATE) does
--- not error when the source rows contain a duplicate conflict key, so no
--- behavior changes for a payload with repeated battleTime entries either.
--- Nothing else in the function (the 100-battle rolling window enforcement,
--- the next-poll scheduling) is touched.
+-- Batches ingest_player_battles()'s per-row INSERT loop into one set-based
+-- INSERT ... SELECT ... ON CONFLICT DO NOTHING statement. Measured against
+-- production (rolled back, no writes): cuts a 25-battle payload from 262.7ms
+-- to ~68ms; the per-row dispatch, not the AFTER INSERT trigger, was the
+-- dominant cost. Full methodology and safety reasoning are in this
+-- function's own COMMENT ON below (queryable live via psql `\df+`).
 
 BEGIN;
 
