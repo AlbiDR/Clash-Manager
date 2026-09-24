@@ -44,4 +44,32 @@ describe("useMotionPreference", () => {
     expect(motionPreference.value).toBe("system");
     expect(document.documentElement.dataset.motionPreference).toBe("system");
   });
+
+  it("is idempotent when init is called multiple times", async () => {
+    localStorage.setItem("cm_motion_preference", "reduced");
+    const { useMotionPreference } = await import("../useMotionPreference");
+    const { motionPreference, init } = useMotionPreference();
+
+    init();
+    expect(motionPreference.value).toBe("reduced");
+
+    // Change localStorage external to composable state
+    localStorage.setItem("cm_motion_preference", "standard");
+
+    // Subsequent call to init should do nothing because isInitialized is true
+    init();
+    expect(motionPreference.value).toBe("reduced");
+  });
+
+  it("safely handles SSR or environments where window/document is undefined", async () => {
+    vi.stubGlobal("window", undefined);
+    vi.stubGlobal("document", undefined);
+
+    const { useMotionPreference } = await import("../useMotionPreference");
+    const { motionPreference, init, setMotionPreference } = useMotionPreference();
+
+    expect(() => init()).not.toThrow();
+    expect(() => setMotionPreference("standard")).not.toThrow();
+    expect(motionPreference.value).toBe("standard");
+  });
 });
