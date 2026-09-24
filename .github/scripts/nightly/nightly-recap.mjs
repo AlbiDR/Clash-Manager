@@ -331,6 +331,15 @@ export function classifyStage({ stage, entry, tag, declared, history, progress }
   };
 }
 
+// Mirrors the wording selfReportGuardSection uses lower in the recap, so the
+// grade rationale and the Self-report guard line never disagree about what a
+// stage actually declared. Before this, the rationale hardcoded "declared its
+// outcome clean" even when the stage had declared PARTIAL-RUN or another
+// non-clean outcome, contradicting the guard line a few paragraphs later.
+function selfContradictionClause(stages) {
+  return joinList(stages.map(s => `${stageTag(s.stage)} declared ${s.outcome} while its own summary reported a failing sub-check`));
+}
+
 // The grade rubric, encoded declaratively so the thresholds are the published
 // specification rather than numbers invented here. Evaluated in order.
 export const GRADE_RUBRIC = [
@@ -366,7 +375,7 @@ export const GRADE_RUBRIC = [
   {
     grade: 6,
     when: r => (r.selfContradicted || []).length > 0,
-    why: r => `Self-report gap: ${countOf(r.selfContradicted, "stage")} declared its outcome clean while its own summary reported a failing sub-check, and nothing in this run addressed it.`,
+    why: r => `Self-report gap: ${selfContradictionClause(r.selfContradicted)}, and nothing in this run addressed it.`,
   },
   // A check a stage HAD, lost tonight. Not a 9, because 9 means the run
   // required nothing from the reader, and a stage that delivered with less

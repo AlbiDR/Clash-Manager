@@ -227,14 +227,18 @@ test("the grade rubric is applied in severity order", () => {
 });
 
 test("a single self-contradicted stage caps the grade at 6, worse than a rescue and better than a stuck stage", () => {
-  const stage = (outcome, extra = {}) => ({ outcome, merged: true, rescued: false, observed: true, ...extra });
+  const stage = (num, outcome, extra = {}) => ({ stage: num, outcome, merged: true, rescued: false, observed: true, ...extra });
   const contradicted = [
-    ...Array.from({ length: 12 }, () => stage("CLEAN")),
-    stage("CLEAN", { selfReportedFailure: true }),
+    ...Array.from({ length: 12 }, (_, i) => stage(i + 1, "CLEAN")),
+    stage(13, "PARTIAL-RUN", { selfReportedFailure: true }),
   ];
   const graded = gradeRun(contradicted);
   assert.equal(graded.grade, 6);
-  assert.match(graded.rationale, /Self-report gap: 1 stage declared its outcome clean/);
+  // The rationale must name the outcome the stage actually declared, not
+  // assume CLEAN -- see selfContradictionClause, and keep this in sync with
+  // whatever the Self-report guard line (selfReportGuardSection) says, since
+  // the two used to contradict each other for a non-CLEAN outcome.
+  assert.match(graded.rationale, /Self-report gap: S13 declared PARTIAL-RUN while its own summary reported a failing sub-check/);
 });
 
 test("a perfect run grades 10 and a rescued one grades 9", () => {
