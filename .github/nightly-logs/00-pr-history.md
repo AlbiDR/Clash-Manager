@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-23
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-24] PR #1947 [Stage 9]: Audited 83 changed files, 0 dep-violations, knip (1 file, 2 devDeps, 3 exp, 1 dup), streak 4. Examined roster/components/index.ts, config/index.ts, useClipboard.ts. Non-viable: BLITZ_DWELL_MIN duplicate export intentional. Hunt clean.
+**Domain:** architecture | **Commit:** 18ac0daa1 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1947)
+**Files:** .github/nightly-logs/09-refactor-proposals-coverage.log, .github/nightly-logs/09-refactor-proposals-pr-body.md
+**Why:** Substrate complies with CleanStack ADR architecture boundaries and Target C defect hunt on useClipboard.ts produced zero reproducible failures.
+**Change:** Audited 83 changed files, 0 dep-violations, knip (1 file, 2 devDeps, 3 exp, 1 dup), streak 4. Examined roster/components/index.ts, config/index.ts, useClipboard.ts. Non-viable: BLITZ_DWELL_MIN duplicate export intentional. Hunt clean.
+**Result:** Vitest monorepo test suite passed 209 of 209 test files (2090 tests green), depcruise reported 0 violations across 512 modules.
+**Nudges:** 0
+
+
 ### [2026-09-24] PR #1945 [Stage 7]: Monorepo version integrity and catalog scan verified clean at version 14.50.112
 **Domain:** versioning | **Commit:** 34d5914aa | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1945)
 **Files:** .github/nightly-logs/07-version-integrity-coverage.log, .github/nightly-logs/07-version-integrity-pr-body.md
