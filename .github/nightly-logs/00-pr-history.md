@@ -16,6 +16,23 @@ LAST_AGED:   2026-09-23
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-24] PR #1941 [Stage 2]: Expanded useMotionPreference spec with idempotency and SSR boundary unit tests
+**Domain:** verification | **Commit:** b35331c8a | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1941)
+**Files:** .github/nightly-logs/02-verification-coverage.log, .github/nightly-logs/02-verification-pr-body.md, Frontend-PWA/src/shared/composables/composables-tests/useMotionPreference.spec.ts
+**Why:** Covered useMotionPreference gap with saturating unit tests
+**Change:** Expanded useMotionPreference spec with idempotency and SSR boundary unit tests
+**Result:** Added 2 unit tests in useMotionPreference.spec.ts; verified mutation failure by commenting out isInitialized assignment
+**Nudges:** 0
+
+### [2026-09-24] PR #1940 [Stage 3]: Baseline consolidation partial run: 0 pending migrations; migration-quality FAIL due to historical migration comment policy violations; fold-state DEGRADED; database DB-UNAVAILABLE
+**Domain:** database | **Commit:** d602f4b30 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1940)
+**Files:** .github/nightly-logs/03-baseline-consolidation-coverage.log, .github/nightly-logs/03-baseline-consolidation-pr-body.md
+**Why:** Historical incremental migrations carry comment policy violations that Stage 3 is forbidden to rewrite per prompt audit trail policy, blocking CLEAN status
+**Change:** Baseline consolidation partial run: 0 pending migrations; migration-quality FAIL due to historical migration comment policy violations; fold-state DEGRADED; database DB-UNAVAILABLE
+**Result:** migration-quality FAIL: 4 historical violations in incremental migrations; fold-state DEGRADED, database DB-UNAVAILABLE
+**Nudges:** 0
+
+
 ### [2026-09-23] PR #1939 [Stage 1]: Audited unauthenticated Edge Functions, Valibot boundaries, and cross-layer dependencies with calibration sweep across Laboratory and Roster features
 **Domain:** hardening | **Commit:** f86a111db | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1939)
 **Files:** .github/nightly-logs/00-pr-history.md, .github/nightly-logs/01-hardening-coverage.log, .github/nightly-logs/01-hardening-pr-body.md
