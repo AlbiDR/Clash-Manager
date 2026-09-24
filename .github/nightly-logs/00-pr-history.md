@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-23
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-24] PR #1951 [Stage 13]: Added Stage 2 watchdog nudge rescue entry for 2026-09-24 and updated Section 3 metrics
+**Domain:** pipeline | **Commit:** 48167333f | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1951)
+**Files:** .github/nightly-logs/13-self-healing-protocol-coverage.log, .github/nightly-logs/13-self-healing-protocol-pr-body.md, .github/nightly-logs/13-self-healing-protocol.md
+**Why:** Pipeline self-healing audit recorded 12/12 merged stages with 1 watchdog intervention (Stage 2)
+**Change:** Added Stage 2 watchdog nudge rescue entry for 2026-09-24 and updated Section 3 metrics
+**Result:** pnpm nightly:explain verified 12/12 stages merged; git diff --check clean
+**Nudges:** 0
+
+
 ### [2026-09-24] PR #1950 [Stage 12]: Verified 1 candidate file across 10 UX categories; no source change required
 **Domain:** ux | **Commit:** a4b5f28a0 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1950)
 **Files:** .github/nightly-logs/12-apk-ux-coverage.log, .github/nightly-logs/12-apk-ux-pr-body.md
