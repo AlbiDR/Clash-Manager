@@ -16,6 +16,23 @@ LAST_AGED:   2026-09-23
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-24] PR #1945 [Stage 7]: Monorepo version integrity and catalog scan verified clean at version 14.50.112
+**Domain:** versioning | **Commit:** 34d5914aa | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1945)
+**Files:** .github/nightly-logs/07-version-integrity-coverage.log, .github/nightly-logs/07-version-integrity-pr-body.md
+**Why:** All manifests (package.json, Frontend-PWA/package.json, Backend/package.json), catalogs, and derived files match ground truth version 14.50.112 without version drift or catalog violations.
+**Change:** Monorepo version integrity and catalog scan verified clean at version 14.50.112
+**Result:** Catalog scan of root package.json, Frontend-PWA/package.json, Backend/package.json, and pnpm-workspace.yaml performed; pnpm audit:version passed with Ground Truth Version 14.50.112 and zero version drift or catalog violations.
+**Nudges:** 0
+
+### [2026-09-24] PR #1946 [Stage 8]: pnpm-workspace.yaml -- Aligned catalog entries for @supabase/supabase-js (^2.117.0) and @vue/test-utils (^2.5.0) with package.json and re-locked dependencies
+**Domain:** dependencies | **Commit:** 378d74c5d | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1946)
+**Files:** .github/nightly-logs/08-dependency-audit-coverage.log, .github/nightly-logs/08-dependency-audit-pr-body.md, pnpm-lock.yaml, pnpm-workspace.yaml
+**Why:** Ensure pnpm-workspace.yaml monorepo catalog definitions match package.json and pnpm-lock.yaml
+**Change:** pnpm-workspace.yaml -- Aligned catalog entries for @supabase/supabase-js (^2.117.0) and @vue/test-utils (^2.5.0) with package.json and re-locked dependencies
+**Result:** pnpm test passed 2090/2090 tests and Frontend-PWA type-check completed with zero errors
+**Nudges:** 0
+
+
 ### [2026-09-24] PR #1944 [Stage 6]: docs(tsdoc): harden useMotionPreference interface contracts and inline logic annotations
 **Domain:** documentation | **Commit:** 4c2f72f8f | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1944)
 **Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, .github/nightly-logs/06-documentation-tsdoc-pr-body.md, Frontend-PWA/src/shared/composables/useMotionPreference.ts
