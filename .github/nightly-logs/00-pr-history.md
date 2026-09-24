@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-23
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-24] PR #1943 [Stage 5]: docs(readme): Reconcile headhunter README with RecruitCard metric taxonomy
+**Domain:** documentation | **Commit:** 8ac7981d6 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1943)
+**Files:** .github/nightly-logs/05-documentation-readme-coverage.log, .github/nightly-logs/05-documentation-readme-pr-body.md, Frontend-PWA/src/features/headhunter/README.md
+**Why:** Reconcile Frontend-PWA/src/features/headhunter/README.md to document the Account record and Recruitment context metric grouping
+**Change:** docs(readme): Reconcile headhunter README with RecruitCard metric taxonomy
+**Result:** Reconciled Frontend-PWA/src/features/headhunter/README.md; verified with git diff --check
+**Nudges:** 0
+
+
 ### [2026-09-24] PR #1942 [Stage 4]: Inspected 83 changed files and widened scan to Backend/supabase/functions Edge Functions for SQL view substrate hygiene (9 clean since calibration); zero structural rot or unreferenced views found.
 **Domain:** optimization | **Commit:** ce8d951da | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1942)
 **Files:** .github/nightly-logs/04-optimization-coverage.log, .github/nightly-logs/04-optimization-pr-body.md
