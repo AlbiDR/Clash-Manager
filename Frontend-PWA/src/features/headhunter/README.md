@@ -9,7 +9,7 @@
 
 ## What it does
 
-- Shows the top prospects (windowed to the 50 highest potential), sortable by Potential, Trophies, Donations, Recency, or Name, with expandable stats benchmarked against the clan. (Weighted win rates arithmetically exceeding 100% to reward high three-crown ratios in RPeS calculations are display-capped at 100% on the card layout, while the true raw ratio is preserved for benchmarking comparisons). Expandable stats also surface a **Last Scan** metric to detail the exact elapsed duration since the candidate was last profiled by the automated background pipeline.
+- Shows the top prospects (windowed to the 50 highest potential), sortable by Potential, Trophies, Donations, Recency, or Name, with expandable stats benchmarked against the clan. Expandable stats organize metrics into a clear taxonomy: lifetime player metrics (Donations, Win Rate, War Wins, Cards Won) under **Account record**, and score/scan metadata (RPoS and elapsed duration since candidate profiling via **Last Scan**) under **Recruitment context**. (Weighted win rates arithmetically exceeding 100% to reward high three-crown ratios in RPeS calculations are display-capped at 100% on the card layout, while the true raw ratio is preserved for benchmarking comparisons).
 - Dismisses a recruit instantly with an undo toast; dismissals persist for 30 days and sync across devices (Supabase realtime) and browser tabs (BroadcastChannel).
 - Harvests clanless players from the global or local leaderboard on demand and queues them for recruiting.
 - Blitzes selected recruits: opens each profile in Clash Royale in sequence, and on [Android](../../../../APK/README.md) taps invite automatically.
@@ -20,7 +20,7 @@
 | Path | Role |
 | :--- | :--- |
 | `views/HeadhunterView.vue` | The console view and empty-state "Scan Again" action. |
-| `components/RecruitCard.vue` | A recruit row: identity, potential score, expandable stats, and screen-reader accessibility announcements (`recruitAccessibilityLabel`). |
+| `components/RecruitCard.vue` | A recruit row: identity, potential score, expandable stats with structured metric taxonomy (Account record vs Recruitment context), and screen-reader accessibility announcements (`recruitAccessibilityLabel`). |
 | `composables/useRecruiter.ts` | The main engine: list config, manual and background sync, Blitz setup. |
 | `composables/useHeadhunter.ts` | The dismissal lifecycle, optimistic state rollbacks, recruit injection deduplication, and realtime/broadcast sync. |
 | `composables/useLeaderboardScraper.ts` | On-demand global/local leaderboard harvesting via [`query-royale-api`](../../../../Backend/supabase/functions/query-royale-api/README.md). |
