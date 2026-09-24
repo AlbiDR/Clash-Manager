@@ -227,14 +227,18 @@ test("the grade rubric is applied in severity order", () => {
 });
 
 test("a single self-contradicted stage caps the grade at 6, worse than a rescue and better than a stuck stage", () => {
-  const stage = (outcome, extra = {}) => ({ outcome, merged: true, rescued: false, observed: true, ...extra });
+  const stage = (num, outcome, extra = {}) => ({ stage: num, outcome, merged: true, rescued: false, observed: true, ...extra });
   const contradicted = [
-    ...Array.from({ length: 12 }, () => stage("CLEAN")),
-    stage("CLEAN", { selfReportedFailure: true }),
+    ...Array.from({ length: 12 }, (_, i) => stage(i + 1, "CLEAN")),
+    stage(13, "PARTIAL-RUN", { selfReportedFailure: true }),
   ];
   const graded = gradeRun(contradicted);
   assert.equal(graded.grade, 6);
-  assert.match(graded.rationale, /Self-report gap: 1 stage declared its outcome clean/);
+  // The rationale must name the outcome the stage actually declared, not
+  // assume CLEAN -- see selfContradictionClause, and keep this in sync with
+  // whatever the Self-report guard line (selfReportGuardSection) says, since
+  // the two used to contradict each other for a non-CLEAN outcome.
+  assert.match(graded.rationale, /Self-report gap: S13 declared PARTIAL-RUN while its own summary reported a failing sub-check/);
 });
 
 test("a perfect run grades 10 and a rescued one grades 9", () => {
@@ -373,6 +377,10 @@ test("a whole recap is assembled and rendered from evidence alone", () => {
     "Evidence guard: not measured on any of the 13 merged stages, so this run cannot say whether any stage was asked to restate a contentless result.",
     "",
     "Self-report guard: no stage's own summary contradicted the outcome it declared.",
+    "",
+    // No fixture stage narrates a sub-check, so the blind-spot reader has no
+    // evidence either way, and says so rather than printing "none".
+    "Blind spots: not measured. No stage had reported whether its checks could run on or before this date, so this run cannot say whether any check was skipped.",
     "",
   ].join("\n"));
 });
@@ -1480,7 +1488,9 @@ test("a measured zero says nobody was asked, not that nobody looked", () => {
     why: "Substrate aligned with the ADR", result: "depcruise 0 violations", nudges: 0,
   }));
   assert.match(text, /^Evidence guard: no stage was asked to restate a result\.$/m);
-  assert.doesNotMatch(text, /not measured/);
+  // Scoped to this section's own line: the blind-spot section below it has a
+  // "not measured" answer of its own, about a different question.
+  assert.doesNotMatch(text, /^Evidence guard: not measured/m);
 });
 
 // The property the design rests on, asserted at the surface a person reads.

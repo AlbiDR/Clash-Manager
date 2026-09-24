@@ -39,5 +39,23 @@ in the ledger.
 - Never commit, push or tag. This is read-only.
 - No em-dashes and no emojis in the output.
 
+## Standing lines are not news
+
+A night can grade 10 with "within standing limits" and print a Blind spots
+line such as "S03 database verification: has never been able to run". That is
+a standing fact about the environment, repeated every night until it changes,
+not something that went wrong tonight. Relay it verbatim like everything else,
+and do not raise it as tonight's problem. Only a line saying "new tonight", or a
+grade below 10 that names a lost check, is news.
+
+## Blind spots can read differently once history ages
+
+A stage's Blind spots status can rest on its own prose in the pull request
+history, and Stage 1 prunes that history to one line after about 7 days. A
+recap re-run against a date older than roughly a week may then show UNSTATED
+("not reported, so tonight is unknown") for a check whose true status closer
+to that date was NEVER or ONGOING. This is a known, documented limit (see
+`subCheckHistory` in `nightly-blind-spots.mjs`), not a new defect to report.
+
 If the script is wrong, fix `.github/scripts/nightly/nightly-recap.mjs` and its tests.
 Never work around it here: this file is local and gitignored, the script is not.

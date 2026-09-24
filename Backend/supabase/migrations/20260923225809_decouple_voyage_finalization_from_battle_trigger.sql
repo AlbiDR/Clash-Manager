@@ -1,51 +1,18 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 -- Copyright (C) 2026 AlbiDR
 
--- WHAT: drivers.on_battle_recorded() (the AFTER INSERT trigger on
--- drivers.player_battles) used to call substrate.finalize_expired_voyages()
--- on every single row insert that did NOT belong to an active voyage's time
--- window - which, since there is no active voyage most of the time, was
--- effectively every row. At current ingestion volume (~11,000
--- ingest_player_battles() calls/day, ~6,500 new battle rows/day - see
--- Backend/supabase/functions/ingest-royale-data/stages/deep-depth.ts) that
--- is ~6,500 extra small-table lookups/day for a wall-clock fact (has any
--- voyage's end_at passed?) that has nothing to do with any individual
--- battle being logged.
---
--- WHY NOW: found while investigating unrelated statement-timeout noise on
--- the project's t4g.nano box. This call was NOT the dominant cost (that was
--- the per-row insert loop, fixed in 20260923225525) but it is architecturally
--- wrong: a time-based deadline was being detected as a side effect of an
--- unrelated domain event (a battle being logged) instead of on its own
--- schedule.
---
--- WHY THIS IS SAFE TO MOVE, NOT SAFE TO JUST DELETE: finalize_expired_voyages()
--- flipping drivers.clan_voyage.status to 'COMPLETED' is user-visible in
--- near-real-time. Frontend-PWA/src/shared/ui/VoyageBanner.vue shows a live
--- countdown (Frontend-PWA/src/shared/composables/useVoyageStatus.ts) that,
--- the instant it reaches zero, fires exactly ONE store.refresh() and never
--- retries (see the `wasEnded` guard in
--- Frontend-PWA/src/shared/composables/useCountdown.ts). If the backend
--- hasn't finalized by that moment, the banner is stuck showing "Active
--- Event" in its red "Ended" state until something else calls
--- finalize_expired_voyages() again - the only other path is Postgres
--- Realtime on drivers.clan_voyage / drivers.clan_voyage_contributions
--- (Frontend-PWA/src/shared/composables/useVoyageStore.ts,
--- setupRealtimeListeners), which only fires when a write actually happens.
--- Before this migration, that write was near-guaranteed within ~30 minutes
--- (any tracked player's next battle-log poll). The only existing fallback
--- independent of battle traffic was substrate.execute_nightly_maintenance()
--- (once/day, 03:00 UTC) - an unacceptable worst case for a live countdown UI.
---
--- THE FIX: give voyage-expiry detection its own schedule (5 minutes, same
--- cadence already used by substrate.run_headhunter_epoch_guard(), see
--- 20260620142000_headhunter_epoch_guard.sql) instead of piggybacking on
--- battle inserts. This bounds finalization latency to <=5 minutes
--- unconditionally (better than the ~30-minute battle-trigger path it
--- replaces) and removes ~6,500 unnecessary per-row calls/day. Do NOT
--- "simplify" this by deleting the cron job without adding an equivalent
--- scheduled or event-driven replacement first - see the countdown/realtime
--- dependency above.
+-- WHAT: on_battle_recorded() no longer calls finalize_expired_voyages() as a
+-- side effect of battle-log inserts (~6,500/day, mostly outside any active
+-- voyage window) - a wall-clock deadline check smuggled into an unrelated
+-- domain event. WHY SAFE TO MOVE: voyage completion is user-visible within
+-- seconds (VoyageBanner.vue's countdown fires one refresh at zero, see the
+-- `wasEnded` guard in useCountdown.ts); the only fallbacks besides this
+-- trigger were Realtime writes (~30min via the next battle poll) or the
+-- once-daily nightly-maintenance job - both too slow for a live countdown.
+-- THE FIX: give expiry its own 5-minute pg_cron schedule, same cadence as
+-- run_headhunter_epoch_guard() (20260620142000_headhunter_epoch_guard.sql).
+-- Do NOT delete the cron job without an equivalent replacement first - see
+-- the COMMENT ON blocks below for the full reasoning.
 
 BEGIN;
 

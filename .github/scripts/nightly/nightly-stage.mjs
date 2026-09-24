@@ -392,6 +392,19 @@ export function resolveResult(rawResult, status, state, recordRefusal = () => {}
  * accepted and downgraded to PARTIAL-RUN, which validateChangedPaths already
  * enforces as log-only, matching what this stage can actually produce when it
  * finds a violation it is forbidden to fix (it never rewrites history).
+ *
+ * What this deliberately does NOT enforce: fold-state DEGRADED and database
+ * DB-UNAVAILABLE. Those say a check could not run, not that it found
+ * something, and 03-baseline-consolidation.md names static audit as the
+ * authoritative substitute when the database is unreachable, which
+ * 00-nightly-agent-contract.md allows for a CLEAN. DB-UNAVAILABLE has held on
+ * every Stage 3 night that reported it since 2026-08-31, so a block here would
+ * fire every night at the chokepoint. They reach the reader instead: finalize
+ * writes every sub-check status into the coverage line's `[checks ...]` field
+ * (subCheckField), and the recap's blind-spot reader grades a check that has
+ * stopped running. A migration-quality DEGRADED, which the prompt also says
+ * cannot finalize CLEAN and which has occurred 0 times, surfaces there too as
+ * a newly lost check. Do not extend this function to cover them.
  */
 export function resolveStatus(status, stage, state, migrationQualityStatus, recordRefusal = () => {}) {
   if (stage.number !== 3 || status !== "CLEAN" || migrationQualityStatus !== "FAIL") return status;
@@ -1032,15 +1045,96 @@ export function formatRunWindow(startEpochSeconds, endEpochSeconds) {
 // subject, and the summary carries the surface actually examined.
 const BOOKKEEPING_PATH = /^\.github\/nightly-logs\//;
 
-export function finalLogLine(stage, status, summary, paths, date, window) {
+/**
+ * The durable record of this stage's sub-check statuses, as a coverage-line
+ * bracket: `[checks database-verification=DB-UNAVAILABLE fold-state=DEGRADED]`.
+ *
+ * WHY (2026-09-23)
+ * update-nightly-context.sh computes an authoritative status for six sub-checks
+ * on every run and writes each to `<name>-status.txt` in the context dir: 21
+ * distinct producer values across fold-state, migration-quality,
+ * database-verification, apk-ux-audit, doc-debt and audit-duration. Nothing
+ * persisted them. The VM is discarded after publication, so the only surviving
+ * trace was the agent's paraphrase in its Result, which exists for Stage 3's
+ * database status on 19 of 22 nights since 2026-08-31, for Stage 12's APK UX
+ * audit on 8 of 23, and for doc-debt (Stages 5, 6) and audit-duration
+ * (Stage 13) on 0 of 23. A reader of prose alone therefore reads "the agent did
+ * not mention it" as "it ran", for four of the six checks.
+ *
+ * WHAT IS KEPT
+ * - Names must be `[a-z0-9-]+` and values `^[A-Z][A-Z0-9_-]*$`. That is the
+ *   producer vocabulary exactly (pinned by a test against the script), and it
+ *   is also what makes the field safe to embed: neither alphabet contains `]`
+ *   or whitespace, so a value can never end the bracket early or split into a
+ *   fake pair.
+ * - SKIPPED is dropped. The context script writes it for every stage that
+ *   does not own a check, so keeping it would put six "not mine" entries on
+ *   every line of every lane. Its one other use, Stage 3 with no migrations
+ *   directory, makes fold-state vanish from that night's field, which a reader
+ *   comparing against earlier nights sees as "not reported", never as fixed.
+ * - Any other value is kept verbatim, including one no reader recognises yet,
+ *   so a new status is visible as unrecognised rather than silently discarded.
+ *
+ * Sorted by name so the same statuses always produce the same bytes. Returns
+ * null when nothing is left, and finalLogLine then writes no field at all,
+ * which is what keeps every line from a lane that owns no check byte-identical
+ * to before.
+ */
+export const SUB_CHECK_NAME = /^[a-z0-9-]+$/;
+export const SUB_CHECK_VALUE = /^[A-Z][A-Z0-9_-]*$/;
+
+export function subCheckField(statuses) {
+  const kept = Object.entries(statuses && typeof statuses === "object" ? statuses : {})
+    .map(([name, value]) => [String(name), String(value ?? "").trim()])
+    .filter(([name, value]) => SUB_CHECK_NAME.test(name) && SUB_CHECK_VALUE.test(value) && value !== "SKIPPED")
+    .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
+  if (kept.length === 0) return null;
+  return `[checks ${kept.map(([name, value]) => `${name}=${value}`).join(" ")}]`;
+}
+
+const SUB_CHECK_STATUS_FILE = /^([a-z0-9-]+)-status\.txt$/;
+
+/**
+ * Every `<name>-status.txt` in the context dir, as `{ name: value }`.
+ *
+ * Self-extending on purpose: no list of files, so a seventh status file joins
+ * the field the night its producer ships, without anyone remembering this
+ * function exists. Reads the same contextDir() as every other finalize input,
+ * so NIGHTLY_CONTEXT_DIR redirects it with the rest.
+ *
+ * finalize is a chokepoint: any throw there costs the stage its whole night.
+ * So everything, including resolving the directory, sits inside one try, and
+ * ANY failure (missing dir, unreadable dir, a status path that is a directory)
+ * returns {}. The line is then written without the field, which a reader sees
+ * as unmeasured. Losing the record must never cost the stage its output.
+ */
+export function readSubCheckStatuses(dir) {
+  try {
+    const root = dir || contextDir();
+    const statuses = {};
+    for (const file of readdirSync(root)) {
+      const match = SUB_CHECK_STATUS_FILE.exec(file);
+      if (!match) continue;
+      statuses[match[1]] = readFileSync(path.join(root, file), "utf8").trim();
+    }
+    return statuses;
+  } catch {
+    return {};
+  }
+}
+
+export function finalLogLine(stage, status, summary, paths, date, window, checks) {
   const target = paths.find(
     filePath => filePath !== stage.coverageLog && !BOOKKEEPING_PATH.test(filePath),
   ) || "Codebase";
-  // The window sits in the bracket run, never in the ` -- ` payload, because the
-  // recap splits that payload into target and summary. Optional so every line
-  // written before this existed still parses.
-  const timing = window ? `${window} ` : "";
-  return `* [${date}] [Stage ${stage.number}] ${timing}${status}: ${target} -- ${cleanSummary(summary)}`;
+  // The window and the checks field sit in the bracket run, never in the ` -- `
+  // payload, because the recap splits that payload into target and summary.
+  // Both optional, and each absent field contributes zero bytes, so a line with
+  // neither is byte-identical to one written before either existed. The window
+  // stays first: parseRunWindow in the watchdog locates the line by the bracket
+  // that follows the stage marker.
+  const brackets = [window, checks].filter(Boolean).map(field => `${field} `).join("");
+  return `* [${date}] [Stage ${stage.number}] ${brackets}${status}: ${target} -- ${cleanSummary(summary)}`;
 }
 
 function finalizeCommand(repoRoot, stage, status, summary, dryRun, details = {}) {
@@ -1070,7 +1164,11 @@ function finalizeCommand(repoRoot, stage, status, summary, dryRun, details = {})
   // A run whose state file is missing still finalizes, just without a window.
   // Losing the metric must never cost the stage its output.
   const window = formatRunWindow(state.startEpoch, epochSeconds());
-  const finalLine = finalLogLine(stage, status, normalizedSummary, paths, date, window);
+  // Same rule for the sub-check record: readSubCheckStatuses never throws and
+  // subCheckField is pure, so a missing or unreadable context dir costs only
+  // the field. It is never an invariant.
+  const checks = subCheckField(readSubCheckStatuses());
+  const finalLine = finalLogLine(stage, status, normalizedSummary, paths, date, window, checks);
   const replacement = replaceSentinel(readFileSync(logPath, "utf8"), sentinel, finalLine);
   invariant(!state.stage || state.stage === stage.number, "Session state belongs to a different stage.");
   const runId = state.runId || randomBytes(4).toString("hex");
