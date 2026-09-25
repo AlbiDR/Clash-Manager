@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-24
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-25] PR #1954 [Stage 3]: Read-only baseline audit verified RLS compliance, search_path isolation, and formatting on 20260531232406_master_migration.sql with 0 pending migrations
+**Domain:** database | **Commit:** b7b12d933 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1954)
+**Files:** .github/nightly-logs/03-baseline-consolidation-coverage.log, .github/nightly-logs/03-baseline-consolidation-pr-body.md
+**Why:** Master baseline matches current database state and pass static migration quality audit
+**Change:** Read-only baseline audit verified RLS compliance, search_path isolation, and formatting on 20260531232406_master_migration.sql with 0 pending migrations
+**Result:** pnpm audit:migrations passed with 0 violations across 52 migrations and 170 baseline objects; pending-migrations count is 0
+**Nudges:** 0
+
+
 ### [2026-09-25] PR #1953 [Stage 2]: Expanded AnimatedDigits spec with automatic direction determination, explicit direction prop overrides, and string unit handling
 **Domain:** verification | **Commit:** d60ae2e79 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1953)
 **Files:** .github/nightly-logs/02-verification-coverage.log, .github/nightly-logs/02-verification-pr-body.md, Frontend-PWA/src/shared/ui/ui-tests/AnimatedDigits.spec.ts
