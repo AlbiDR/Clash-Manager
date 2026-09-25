@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-24
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-25] PR #1957 [Stage 6]: Harden TSDoc interface contracts for internal helper functions in SupabaseClient
+**Domain:** documentation | **Commit:** 1eec7d157 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1957)
+**Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, .github/nightly-logs/06-documentation-tsdoc-pr-body.md, Frontend-PWA/src/core/api/SupabaseClient.ts
+**Why:** Resolved documentation debt by completing parameter and return annotations for parseTimestamp and resolveOptionalQuery
+**Change:** Harden TSDoc interface contracts for internal helper functions in SupabaseClient
+**Result:** vue-tsc type check and vitest test suite passed cleanly
+**Nudges:** 0
+
+
 ### [2026-09-25] PR #1956 [Stage 4]: Inspected 74 changed files and Edge Functions for SQL view substrate hygiene; zero structural rot or unreferenced views found.
 **Domain:** optimization | **Commit:** eedd4bb74 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1956)
 **Files:** .github/nightly-logs/04-optimization-coverage.log, .github/nightly-logs/04-optimization-pr-body.md
