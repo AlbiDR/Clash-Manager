@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-24
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-25] PR #1959 [Stage 8]: package.json -- pnpm-workspace.yaml -- pnpm-lock.yaml -- Bumped dependency-cruiser to ^18.4.0 and re-locked dependencies
+**Domain:** dependencies | **Commit:** e8bf4bef3 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1959)
+**Files:** .github/nightly-logs/08-dependency-audit-coverage.log, .github/nightly-logs/08-dependency-audit-pr-body.md, package.json, pnpm-lock.yaml, pnpm-workspace.yaml
+**Why:** Tier 1 automated minor bump for dependency-cruiser and watchlist maintenance
+**Change:** package.json -- pnpm-workspace.yaml -- pnpm-lock.yaml -- Bumped dependency-cruiser to ^18.4.0 and re-locked dependencies
+**Result:** PASS: pnpm test and pnpm test:nightly-control-plane passed
+**Nudges:** 0
+
+
 ### [2026-09-25] PR #1958 [Stage 7]: Catalog scan (Frontend-PWA/package.json, Backend/package.json) and package-version scan (package.json, Frontend-PWA/package.json, Backend/package.json) confirmed ground truth version 14.50.113.
 **Domain:** versioning | **Commit:** d3ed631d5 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1958)
 **Files:** .github/nightly-logs/07-version-integrity-coverage.log, .github/nightly-logs/07-version-integrity-pr-body.md
