@@ -181,6 +181,12 @@ export function getApiUrl(): string {
   return getSupabaseUrl() || "(not configured)";
 }
 
+/**
+ * Safely parses an ISO date string or timestamp string into a Unix timestamp (ms).
+ *
+ * @param timestamp - The ISO string, timestamp string, null, or undefined to parse.
+ * @returns Parsed Unix timestamp in milliseconds, or null if invalid/absent.
+ */
 function parseTimestamp(timestamp: string | null | undefined): number | null {
   if (!timestamp) return null;
   const parsedTimestamp = Date.parse(timestamp);
@@ -197,6 +203,11 @@ type OptionalQueryResponse = {
  * roster and headhunter views remain strict; heartbeat and blacklist enrichment
  * can safely degrade because roster timestamps and server-side filtering retain
  * their core contracts.
+ *
+ * @param label - Diagnostic string identifier for telemetry and logging.
+ * @param parentSignal - AbortSignal from the parent fetch context.
+ * @param execute - Function executing the optional PostgREST query with a scoped signal.
+ * @returns Promise resolving to response object or null if timed out/failed.
  */
 async function resolveOptionalQuery<T extends OptionalQueryResponse>(
   label: string,
