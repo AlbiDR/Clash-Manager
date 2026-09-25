@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-24
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-25] PR #1964 [Stage 13]: Record Stage 4 and Stage 9 watchdog recovery nudges for 2026-09-25 and update Section 1 and Section 3 metrics
+**Domain:** pipeline | **Commit:** 276b35ce3 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1964)
+**Files:** .github/nightly-logs/13-self-healing-protocol-coverage.log, .github/nightly-logs/13-self-healing-protocol-pr-body.md, .github/nightly-logs/13-self-healing-protocol.md
+**Why:** Documented 2026-09-25 watchdog nudge rescues for Stage 4 and Stage 9 (16.7% intervention rate) and refreshed consecutive no-diff counters and audit durations for Stages 1-13
+**Change:** Record Stage 4 and Stage 9 watchdog recovery nudges for 2026-09-25 and update Section 1 and Section 3 metrics
+**Result:** Updated .github/nightly-logs/13-self-healing-protocol.md and verified diff with git diff --check
+**Nudges:** 0
+
+
 ### [2026-09-25] PR #1963 [Stage 12]: No hybrid shell UX violations found across candidate files
 **Domain:** ux | **Commit:** 10e403796 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1963)
 **Files:** .github/nightly-logs/12-apk-ux-coverage.log, .github/nightly-logs/12-apk-ux-pr-body.md
