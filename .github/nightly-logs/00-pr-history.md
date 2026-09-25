@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-24
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-25] PR #1958 [Stage 7]: Catalog scan (Frontend-PWA/package.json, Backend/package.json) and package-version scan (package.json, Frontend-PWA/package.json, Backend/package.json) confirmed ground truth version 14.50.113.
+**Domain:** versioning | **Commit:** d3ed631d5 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1958)
+**Files:** .github/nightly-logs/07-version-integrity-coverage.log, .github/nightly-logs/07-version-integrity-pr-body.md
+**Why:** All manifests and derived declarations match ground truth version 14.50.113 and catalog rules.
+**Change:** Catalog scan (Frontend-PWA/package.json, Backend/package.json) and package-version scan (package.json, Frontend-PWA/package.json, Backend/package.json) confirmed ground truth version 14.50.113.
+**Result:** pnpm audit:version PASSED across all manifests, workspace catalog, README badges, useProgressiveList.ts, protocol.ts, apktool.yml, twa-manifest.json, and manifest.json.
+**Nudges:** 0
+
+
 ### [2026-09-25] PR #1957 [Stage 6]: Harden TSDoc interface contracts for internal helper functions in SupabaseClient
 **Domain:** documentation | **Commit:** 1eec7d157 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1957)
 **Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, .github/nightly-logs/06-documentation-tsdoc-pr-body.md, Frontend-PWA/src/core/api/SupabaseClient.ts
