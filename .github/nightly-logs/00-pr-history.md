@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-24
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-25] PR #1961 [Stage 9]: Audited 74 files, depcruise 0 violations, knip (1 file, 3 exp, 1 dup), streak 5. Inspected roster/components/index.ts, config/index.ts, useClipboard.ts. BLITZ_DWELL_MIN dup export intentional. Hunt clean.
+**Domain:** architecture | **Commit:** 9d6648bf3 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1961)
+**Files:** .github/nightly-logs/09-refactor-proposals-coverage.log, .github/nightly-logs/09-refactor-proposals-pr-body.md
+**Why:** Bounded candidate set contained no viable refactor targets and defect hunt on useClipboard.ts yielded zero failures.
+**Change:** Audited 74 files, depcruise 0 violations, knip (1 file, 3 exp, 1 dup), streak 5. Inspected roster/components/index.ts, config/index.ts, useClipboard.ts. BLITZ_DWELL_MIN dup export intentional. Hunt clean.
+**Result:** PASS: Bounded structural scan clean and defect hunt on useClipboard concurrent timers passed all 7 tests.
+**Nudges:** 0
+
+
 ### [2026-09-25] PR #1960 [Stage 10]: APK/PWA wrapper configuration is fully synchronized and compliant; checked asset links, manifest parity, version code/name sync, release metadata, and security policy.
 **Domain:** apk | **Commit:** 6120d71d3 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1960)
 **Files:** .github/nightly-logs/10-apk-integrity-coverage.log, .github/nightly-logs/10-apk-integrity-pr-body.md
