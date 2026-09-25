@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-24
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-25] PR #1953 [Stage 2]: Expanded AnimatedDigits spec with automatic direction determination, explicit direction prop overrides, and string unit handling
+**Domain:** verification | **Commit:** d60ae2e79 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1953)
+**Files:** .github/nightly-logs/02-verification-coverage.log, .github/nightly-logs/02-verification-pr-body.md, Frontend-PWA/src/shared/ui/ui-tests/AnimatedDigits.spec.ts
+**Why:** Close partial coverage gap in AnimatedDigits.vue display-only numeric component
+**Change:** Expanded AnimatedDigits spec with automatic direction determination, explicit direction prop overrides, and string unit handling
+**Result:** Added 3 unit tests in AnimatedDigits.spec.ts. Tested mutation by inverting direction logic in AnimatedDigits.vue, confirming test failure on automatically determines direction, and restored AnimatedDigits.vue.
+**Nudges:** 0
+
+
 ### [2026-09-24] PR #1952 [Stage 1]: Runtime Integrity Auditor: CLEAN scan across Edge Functions, Valibot boundaries, and cross-layer surfaces
 **Domain:** hardening | **Commit:** 52c54fef9 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1952)
 **Files:** .github/nightly-logs/00-pr-history.md, .github/nightly-logs/01-hardening-coverage.log, .github/nightly-logs/01-hardening-pr-body.md
