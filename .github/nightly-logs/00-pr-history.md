@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-24
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-25] PR #1963 [Stage 12]: No hybrid shell UX violations found across candidate files
+**Domain:** ux | **Commit:** 10e403796 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1963)
+**Files:** .github/nightly-logs/12-apk-ux-coverage.log, .github/nightly-logs/12-apk-ux-pr-body.md
+**Why:** Broad automated APK UX audit passed and candidate file review revealed no actionable UX defects.
+**Change:** No hybrid shell UX violations found across candidate files
+**Result:** apk-ux-audit-status.txt: PASS; apk-ux-audit.json: 1 candidate files reviewed; UX categories 1-10 checked
+**Nudges:** 0
+
+
 ### [2026-09-25] PR #1962 [Stage 11]: Audited native WebView settings, Service Worker caching, and Vite manualChunks; zero source changes required
 **Domain:** apk | **Commit:** c4263acdc | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1962)
 **Files:** .github/nightly-logs/11-apk-optimization-coverage.log, .github/nightly-logs/11-apk-optimization-pr-body.md
