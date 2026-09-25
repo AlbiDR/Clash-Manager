@@ -426,3 +426,4 @@
 * [2026-09-22] [Stage 3] [01:26Z-01:34Z 7m] CLEAN: Codebase -- 0 pending migrations; master baseline verified clean
 * [2026-09-23] [Stage 3] [01:10Z-01:14Z 4m] CLEAN: Codebase -- Baseline current (0 pending migrations, quality PASS, fold-state DEGRADED, DB-UNAVAILABLE, RLS/search_path audit clean)
 * [2026-09-24] [Stage 3] [01:14Z-01:16Z 3m] PARTIAL-RUN: Codebase -- Baseline consolidation partial run: 0 pending migrations; migration-quality FAIL due to historical migration comment policy violations; fold-state DEGRADED; database DB-UNAVAILABLE
+* [2026-09-25] [Stage 3] [01:15Z-01:17Z 2m] [checks database-verification=DB-UNAVAILABLE fold-state=DEGRADED migration-quality=PASS] CLEAN: Codebase -- Read-only baseline audit verified RLS compliance, search_path isolation, and formatting on 20260531232406_master_migration.sql with 0 pending migrations
