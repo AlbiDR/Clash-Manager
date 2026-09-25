@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-24
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-25] PR #1960 [Stage 10]: APK/PWA wrapper configuration is fully synchronized and compliant; checked asset links, manifest parity, version code/name sync, release metadata, and security policy.
+**Domain:** apk | **Commit:** 6120d71d3 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1960)
+**Files:** .github/nightly-logs/10-apk-integrity-coverage.log, .github/nightly-logs/10-apk-integrity-pr-body.md
+**Why:** All packaging and wrapper invariants are properly aligned between web manifest, android manifests, twa-manifest, and release metadata.
+**Change:** APK/PWA wrapper configuration is fully synchronized and compliant; checked asset links, manifest parity, version code/name sync, release metadata, and security policy.
+**Result:** pnpm audit:apk and pnpm apk:verify:source verified asset links, manifest parity, version code/name sync, release metadata, and security policy without errors.
+**Nudges:** 0
+
+
 ### [2026-09-25] PR #1959 [Stage 8]: package.json -- pnpm-workspace.yaml -- pnpm-lock.yaml -- Bumped dependency-cruiser to ^18.4.0 and re-locked dependencies
 **Domain:** dependencies | **Commit:** e8bf4bef3 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1959)
 **Files:** .github/nightly-logs/08-dependency-audit-coverage.log, .github/nightly-logs/08-dependency-audit-pr-body.md, package.json, pnpm-lock.yaml, pnpm-workspace.yaml
