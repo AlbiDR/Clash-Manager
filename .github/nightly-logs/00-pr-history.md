@@ -16,6 +16,23 @@ LAST_AGED:   2026-09-24
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-25] PR #1956 [Stage 4]: Inspected 74 changed files and Edge Functions for SQL view substrate hygiene; zero structural rot or unreferenced views found.
+**Domain:** optimization | **Commit:** eedd4bb74 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1956)
+**Files:** .github/nightly-logs/04-optimization-coverage.log, .github/nightly-logs/04-optimization-pr-body.md
+**Why:** Substrate complies strictly with Pinia stores, Layer boundaries, and clean SQL view references.
+**Change:** Inspected 74 changed files and Edge Functions for SQL view substrate hygiene; zero structural rot or unreferenced views found.
+**Result:** 209 test suites passed (2093 tests); 0 unreferenced views found via source grep.
+**Nudges:** 0
+
+### [2026-09-25] PR #1955 [Stage 5]: Document AnimatedDigits.vue component in shared/ui README
+**Domain:** documentation | **Commit:** 959a82cee | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1955)
+**Files:** .github/nightly-logs/05-documentation-readme-coverage.log, .github/nightly-logs/05-documentation-readme-pr-body.md, Frontend-PWA/src/shared/ui/README.md
+**Why:** Synchronize shared UI documentation with recently tested AnimatedDigits component in PR #1953
+**Change:** Document AnimatedDigits.vue component in shared/ui README
+**Result:** Required stage validation completed.
+**Nudges:** 1
+
+
 ### [2026-09-25] PR #1954 [Stage 3]: Read-only baseline audit verified RLS compliance, search_path isolation, and formatting on 20260531232406_master_migration.sql with 0 pending migrations
 **Domain:** database | **Commit:** b7b12d933 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1954)
 **Files:** .github/nightly-logs/03-baseline-consolidation-coverage.log, .github/nightly-logs/03-baseline-consolidation-pr-body.md
