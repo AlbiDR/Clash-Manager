@@ -130,3 +130,4 @@
 * [2026-09-22] [Stage 6] [04:30Z-04:42Z 12m] CHANGED: Frontend-PWA/src/features/roster/components/MemberCard.vue -- Harden MemberCard interface contracts and inline logic annotations
 * [2026-09-23] [Stage 6] [04:22Z-04:31Z 9m] CHANGED: Frontend-PWA/src/core/services/StorageService.ts -- docs(tsdoc): harden StorageService interface contracts and inline annotations
 * [2026-09-24] [Stage 6] [04:15Z-04:20Z 5m] CHANGED: Frontend-PWA/src/shared/composables/useMotionPreference.ts -- docs(tsdoc): harden useMotionPreference interface contracts and inline logic annotations
+* [2026-09-25] [Stage 6] [04:16Z-04:22Z 6m] [checks doc-debt=OK] CHANGED: Frontend-PWA/src/core/api/SupabaseClient.ts -- Harden TSDoc interface contracts for internal helper functions in SupabaseClient
