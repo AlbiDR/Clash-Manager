@@ -18618,7 +18618,7 @@
         "dispatchAttempts": 0,
         "interventionAttempts": 0,
         "attempts": 0,
-        "lastObservedAt": "2026-09-25T03:12:22.065Z",
+        "lastObservedAt": "2026-09-25T04:25:54.270Z",
         "failureClass": null
       },
       "2": {
@@ -18666,7 +18666,7 @@
         "dispatchAttempts": 0,
         "interventionAttempts": 0,
         "attempts": 0,
-        "lastObservedAt": "2026-09-25T03:12:22.084Z",
+        "lastObservedAt": "2026-09-25T04:25:54.295Z",
         "failureClass": null
       },
       "3": {
@@ -18714,7 +18714,7 @@
         "dispatchAttempts": 0,
         "interventionAttempts": 0,
         "attempts": 0,
-        "lastObservedAt": "2026-09-25T03:12:22.104Z",
+        "lastObservedAt": "2026-09-25T04:25:54.320Z",
         "failureClass": null
       },
       "4": {
@@ -18723,7 +18723,7 @@
         "cycleId": "nightly-cycle/2026-09-25",
         "expectedAfterUtc": null,
         "deadlineUtc": null,
-        "state": "RECOVERABLE",
+        "state": "MERGED",
         "evidence": {
           "coverageLog": ".github/nightly-logs/04-optimization-coverage.log",
           "notReached": {
@@ -18744,8 +18744,8 @@
             "name": "sessions/17375795356601367168",
             "state": "COMPLETED",
             "createTime": "2026-09-25T02:10:19.685324207Z",
-            "updateTime": "2026-09-25T02:33:27.711480Z",
-            "lifetimeMinutes": 23.1
+            "updateTime": "2026-09-25T03:13:13.016803Z",
+            "lifetimeMinutes": 62.9
           },
           "recovery": {
             "nudgedAt": "2026-09-25T03:11:12.157Z",
@@ -18754,13 +18754,29 @@
             "error": null
           },
           "prNumber": 1956,
-          "prUrl": "https://github.com/AlbiDR/Clash-Manager/pull/1956"
+          "prUrl": "https://github.com/AlbiDR/Clash-Manager/pull/1956",
+          "tag": "nightly/2026-09-25/stage-4/pr-1956",
+          "run": {
+            "started": "2026-09-25T02:12:00Z",
+            "terminated": "2026-09-25T02:24:00Z",
+            "durationMinutes": 12
+          },
+          "body": {
+            "pr": 1956,
+            "verdict": "OK",
+            "ok": true
+          },
+          "stageExecution": {
+            "pr": 1956,
+            "revision": "a0bb404c216abb74007ba12893753abfd5d34c69",
+            "source": "pr-body"
+          }
         },
         "dispatchAttempts": 0,
         "interventionAttempts": 1,
         "attempts": 0,
-        "lastObservedAt": "2026-09-25T03:12:22.124Z",
-        "failureClass": "RECOVERED_AFTER_NUDGE"
+        "lastObservedAt": "2026-09-25T04:25:54.346Z",
+        "failureClass": null
       },
       "5": {
         "date": "2026-09-25",
@@ -18768,7 +18784,7 @@
         "cycleId": "nightly-cycle/2026-09-25",
         "expectedAfterUtc": null,
         "deadlineUtc": null,
-        "state": "RECOVERABLE",
+        "state": "MERGED",
         "evidence": {
           "coverageLog": ".github/nightly-logs/05-documentation-readme-coverage.log",
           "notReached": {
@@ -18776,19 +18792,42 @@
           },
           "health": {
             "verdict": "HEALTHY",
-            "currentStreak": 1,
+            "currentStreak": 0,
             "reason": "no adverse trend"
           },
           "prNumber": 1955,
           "prUrl": "https://github.com/AlbiDR/Clash-Manager/pull/1955",
           "headRef": "nightly/stage-5-documentation-readme-1603f0c1-17724380376751698425",
-          "reason": "canonical nightly stage branch"
+          "tag": "nightly/2026-09-25/stage-5/pr-1955",
+          "session": {
+            "id": "17724380376751698425",
+            "name": "sessions/17724380376751698425",
+            "state": "COMPLETED",
+            "createTime": "2026-09-25T03:03:54.591978333Z",
+            "updateTime": "2026-09-25T03:10:59.886579Z",
+            "lifetimeMinutes": 7.1
+          },
+          "run": {
+            "started": "2026-09-25T03:05:00Z",
+            "terminated": "2026-09-25T03:08:00Z",
+            "durationMinutes": 3
+          },
+          "body": {
+            "pr": 1955,
+            "verdict": "OK",
+            "ok": true
+          },
+          "stageExecution": {
+            "pr": 1955,
+            "revision": "a0bb404c216abb74007ba12893753abfd5d34c69",
+            "source": "pr-body"
+          }
         },
         "dispatchAttempts": 0,
         "interventionAttempts": 0,
         "attempts": 0,
-        "lastObservedAt": "2026-09-25T03:12:22.158Z",
-        "failureClass": "OPEN_PR"
+        "lastObservedAt": "2026-09-25T04:25:54.371Z",
+        "failureClass": null
       },
       "6": {
         "date": "2026-09-25",
@@ -18796,7 +18835,7 @@
         "cycleId": "nightly-cycle/2026-09-25",
         "expectedAfterUtc": null,
         "deadlineUtc": null,
-        "state": "EXPECTED",
+        "state": "RECOVERABLE",
         "evidence": {
           "coverageLog": ".github/nightly-logs/06-documentation-tsdoc-coverage.log",
           "notReached": {
@@ -18804,15 +18843,19 @@
           },
           "health": {
             "verdict": "HEALTHY",
-            "currentStreak": 0,
+            "currentStreak": 1,
             "reason": "no adverse trend"
-          }
+          },
+          "prNumber": 1957,
+          "prUrl": "https://github.com/AlbiDR/Clash-Manager/pull/1957",
+          "headRef": "nightly/stage-6-documentation-tsdoc-869e160f-11228003524983688850",
+          "reason": "canonical nightly stage branch"
         },
         "dispatchAttempts": 0,
         "interventionAttempts": 0,
         "attempts": 0,
-        "lastObservedAt": "2026-09-25T03:12:22.193Z",
-        "failureClass": null
+        "lastObservedAt": "2026-09-25T04:25:54.418Z",
+        "failureClass": "OPEN_PR"
       },
       "7": {
         "date": "2026-09-25",
@@ -18824,7 +18867,7 @@
         "evidence": {
           "coverageLog": ".github/nightly-logs/07-version-integrity-coverage.log",
           "notReached": {
-            "frontier": 5
+            "frontier": 6
           },
           "health": {
             "verdict": "HEALTHY",
@@ -18835,7 +18878,7 @@
         "dispatchAttempts": 0,
         "interventionAttempts": 0,
         "attempts": 0,
-        "lastObservedAt": "2026-09-25T03:12:22.211Z",
+        "lastObservedAt": "2026-09-25T04:25:54.465Z",
         "failureClass": null
       },
       "8": {
@@ -18848,7 +18891,7 @@
         "evidence": {
           "coverageLog": ".github/nightly-logs/08-dependency-audit-coverage.log",
           "notReached": {
-            "frontier": 5
+            "frontier": 6
           },
           "health": {
             "verdict": "HEALTHY",
@@ -18859,7 +18902,7 @@
         "dispatchAttempts": 0,
         "interventionAttempts": 0,
         "attempts": 0,
-        "lastObservedAt": "2026-09-25T03:12:22.230Z",
+        "lastObservedAt": "2026-09-25T04:25:54.490Z",
         "failureClass": null
       },
       "9": {
@@ -18872,7 +18915,7 @@
         "evidence": {
           "coverageLog": ".github/nightly-logs/09-refactor-proposals-coverage.log",
           "notReached": {
-            "frontier": 5
+            "frontier": 6
           },
           "health": {
             "verdict": "HEALTHY",
@@ -18883,7 +18926,7 @@
         "dispatchAttempts": 0,
         "interventionAttempts": 0,
         "attempts": 0,
-        "lastObservedAt": "2026-09-25T03:12:22.249Z",
+        "lastObservedAt": "2026-09-25T04:25:54.516Z",
         "failureClass": null
       },
       "10": {
@@ -18896,7 +18939,7 @@
         "evidence": {
           "coverageLog": ".github/nightly-logs/10-apk-integrity-coverage.log",
           "notReached": {
-            "frontier": 5
+            "frontier": 6
           },
           "health": {
             "verdict": "HEALTHY",
@@ -18907,7 +18950,7 @@
         "dispatchAttempts": 0,
         "interventionAttempts": 0,
         "attempts": 0,
-        "lastObservedAt": "2026-09-25T03:12:22.273Z",
+        "lastObservedAt": "2026-09-25T04:25:54.541Z",
         "failureClass": null
       },
       "11": {
@@ -18920,7 +18963,7 @@
         "evidence": {
           "coverageLog": ".github/nightly-logs/11-apk-optimization-coverage.log",
           "notReached": {
-            "frontier": 5
+            "frontier": 6
           },
           "health": {
             "verdict": "HEALTHY",
@@ -18931,7 +18974,7 @@
         "dispatchAttempts": 0,
         "interventionAttempts": 0,
         "attempts": 0,
-        "lastObservedAt": "2026-09-25T03:12:22.292Z",
+        "lastObservedAt": "2026-09-25T04:25:54.567Z",
         "failureClass": null
       },
       "12": {
@@ -18944,7 +18987,7 @@
         "evidence": {
           "coverageLog": ".github/nightly-logs/12-apk-ux-coverage.log",
           "notReached": {
-            "frontier": 5
+            "frontier": 6
           },
           "health": {
             "verdict": "HEALTHY",
@@ -18955,7 +18998,7 @@
         "dispatchAttempts": 0,
         "interventionAttempts": 0,
         "attempts": 0,
-        "lastObservedAt": "2026-09-25T03:12:22.310Z",
+        "lastObservedAt": "2026-09-25T04:25:54.592Z",
         "failureClass": null
       },
       "13": {
@@ -18968,7 +19011,7 @@
         "evidence": {
           "coverageLog": ".github/nightly-logs/13-self-healing-protocol-coverage.log",
           "notReached": {
-            "frontier": 5
+            "frontier": 6
           },
           "health": {
             "verdict": "HEALTHY",
@@ -18979,7 +19022,7 @@
         "dispatchAttempts": 0,
         "interventionAttempts": 0,
         "attempts": 0,
-        "lastObservedAt": "2026-09-25T03:12:22.328Z",
+        "lastObservedAt": "2026-09-25T04:25:54.615Z",
         "failureClass": null
       }
     }
@@ -95101,6 +95144,773 @@
         }
       },
       "eventId": "f49ed0c838fa1e937162757d57b86cf2b3168101f4cb411cbd29044e35af46dc"
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 1390,
+      "previousEventId": "f49ed0c838fa1e937162757d57b86cf2b3168101f4cb411cbd29044e35af46dc",
+      "cycleId": "nightly-cycle/2026-09-25",
+      "date": "2026-09-25",
+      "stage": 0,
+      "type": "CYCLE_EXECUTION_RECORDED",
+      "source": "nightly-watchdog/observer",
+      "recordedAt": "2026-09-25T04:25:16.986Z",
+      "contractFingerprint": null,
+      "payload": {
+        "execution": {
+          "checkout": {
+            "branch": "Nightly",
+            "sha": "6984be34b335f668759ccef5c99860cbe44bdc43"
+          },
+          "controlPlane": {
+            "registryDigest": "30443a39a196d342d855f97d9836420520dd28741ab06ff306c5a6fa4caab9f5",
+            "workflowDigest": "91cf12e7a4b54fded370a7d2963a662a5b7ca014c795fa9fc9a150e34732dbd8"
+          },
+          "executionId": ".github/workflows/nightly-watchdog.yml:36094344748:1",
+          "runtime": {
+            "arch": "x64",
+            "node": "v22.23.2",
+            "platform": "linux",
+            "runnerImage": "ubuntu24",
+            "runnerOs": "Linux"
+          },
+          "schemaVersion": 1,
+          "workflow": {
+            "attempt": 1,
+            "name": "Nightly Watchdog",
+            "path": ".github/workflows/nightly-watchdog.yml",
+            "runId": "36094344748"
+          }
+        }
+      },
+      "eventId": "974f92dae3260e47eaa4662885adea569ce212d888818bdd953ab26e1733d532"
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 1391,
+      "previousEventId": "974f92dae3260e47eaa4662885adea569ce212d888818bdd953ab26e1733d532",
+      "cycleId": "nightly-cycle/2026-09-25",
+      "date": "2026-09-25",
+      "stage": 4,
+      "type": "STAGE_ENTRY_UPDATED",
+      "source": "nightly-watchdog/observer",
+      "recordedAt": "2026-09-25T04:25:53.801Z",
+      "contractFingerprint": "aa2c8988d1392624d60bb5e0229636b4e4503d27fc3a61008485cb2452cde7f5",
+      "payload": {
+        "after": {
+          "attempts": 0,
+          "dispatchAttempts": 0,
+          "failureClass": null,
+          "interventionAttempts": 1,
+          "state": "MERGED"
+        },
+        "before": {
+          "attempts": 0,
+          "dispatchAttempts": 0,
+          "failureClass": "RECOVERED_AFTER_NUDGE",
+          "interventionAttempts": 1,
+          "state": "RECOVERABLE"
+        },
+        "requested": {
+          "evidence": {
+            "removed": [],
+            "set": {
+              "body": {
+                "ok": true,
+                "pr": 1956,
+                "verdict": "OK"
+              },
+              "run": {
+                "durationMinutes": 12,
+                "started": "2026-09-25T02:12:00Z",
+                "terminated": "2026-09-25T02:24:00Z"
+              },
+              "session": {
+                "createTime": "2026-09-25T02:10:19.685324207Z",
+                "id": "17375795356601367168",
+                "lifetimeMinutes": 62.9,
+                "name": "sessions/17375795356601367168",
+                "state": "COMPLETED",
+                "updateTime": "2026-09-25T03:13:13.016803Z"
+              },
+              "stageExecution": {
+                "pr": 1956,
+                "revision": "a0bb404c216abb74007ba12893753abfd5d34c69",
+                "source": "pr-body"
+              },
+              "tag": "nightly/2026-09-25/stage-4/pr-1956"
+            }
+          },
+          "failureClass": null,
+          "state": "MERGED"
+        },
+        "rules": [
+          {
+            "failureClassGuarded": false,
+            "id": "TAGGED_MERGE_IS_DURABLE",
+            "outcome": "NOT_APPLICABLE",
+            "stateGuarded": false
+          },
+          {
+            "id": "EVIDENCE_ACCUMULATES",
+            "outcome": "APPLIED"
+          }
+        ],
+        "transition": {
+          "from": "RECOVERABLE",
+          "name": "MERGE_CONFIRMED",
+          "to": "MERGED"
+        }
+      },
+      "eventId": "a509870152d7d95107d8c4f937fdbca8b04a89e7825a6a21c62bc3bf27b6451c"
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 1392,
+      "previousEventId": "a509870152d7d95107d8c4f937fdbca8b04a89e7825a6a21c62bc3bf27b6451c",
+      "cycleId": "nightly-cycle/2026-09-25",
+      "date": "2026-09-25",
+      "stage": 5,
+      "type": "STAGE_ENTRY_UPDATED",
+      "source": "nightly-watchdog/observer",
+      "recordedAt": "2026-09-25T04:25:53.855Z",
+      "contractFingerprint": "cea68a5bbba1bd2cbc6d3bdfe2639f37f3935b571beab59f5da1501b1180b22d",
+      "payload": {
+        "after": {
+          "attempts": 0,
+          "dispatchAttempts": 0,
+          "failureClass": null,
+          "interventionAttempts": 0,
+          "state": "MERGED"
+        },
+        "before": {
+          "attempts": 0,
+          "dispatchAttempts": 0,
+          "failureClass": "OPEN_PR",
+          "interventionAttempts": 0,
+          "state": "RECOVERABLE"
+        },
+        "requested": {
+          "evidence": {
+            "removed": [
+              "reason"
+            ],
+            "set": {
+              "body": {
+                "ok": true,
+                "pr": 1955,
+                "verdict": "OK"
+              },
+              "run": {
+                "durationMinutes": 3,
+                "started": "2026-09-25T03:05:00Z",
+                "terminated": "2026-09-25T03:08:00Z"
+              },
+              "session": {
+                "createTime": "2026-09-25T03:03:54.591978333Z",
+                "id": "17724380376751698425",
+                "lifetimeMinutes": 7.1,
+                "name": "sessions/17724380376751698425",
+                "state": "COMPLETED",
+                "updateTime": "2026-09-25T03:10:59.886579Z"
+              },
+              "stageExecution": {
+                "pr": 1955,
+                "revision": "a0bb404c216abb74007ba12893753abfd5d34c69",
+                "source": "pr-body"
+              },
+              "tag": "nightly/2026-09-25/stage-5/pr-1955"
+            }
+          },
+          "failureClass": null,
+          "state": "MERGED"
+        },
+        "rules": [
+          {
+            "failureClassGuarded": false,
+            "id": "TAGGED_MERGE_IS_DURABLE",
+            "outcome": "NOT_APPLICABLE",
+            "stateGuarded": false
+          },
+          {
+            "id": "EVIDENCE_ACCUMULATES",
+            "outcome": "APPLIED"
+          }
+        ],
+        "transition": {
+          "from": "RECOVERABLE",
+          "name": "MERGE_CONFIRMED",
+          "to": "MERGED"
+        }
+      },
+      "eventId": "703285f0af968b8c52565432a3be58c13fb1f624bb38d8c04e7ddf8483fbf6d0"
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 1393,
+      "previousEventId": "703285f0af968b8c52565432a3be58c13fb1f624bb38d8c04e7ddf8483fbf6d0",
+      "cycleId": "nightly-cycle/2026-09-25",
+      "date": "2026-09-25",
+      "stage": 6,
+      "type": "STAGE_ENTRY_UPDATED",
+      "source": "nightly-watchdog/observer",
+      "recordedAt": "2026-09-25T04:25:53.901Z",
+      "contractFingerprint": "a9f522cc73babe487aa3df1b083524daba64c0dd03c9e1b446dd4bd70c376bae",
+      "payload": {
+        "after": {
+          "attempts": 0,
+          "dispatchAttempts": 0,
+          "failureClass": "OPEN_PR",
+          "interventionAttempts": 0,
+          "state": "RECOVERABLE"
+        },
+        "before": {
+          "attempts": 0,
+          "dispatchAttempts": 0,
+          "failureClass": null,
+          "interventionAttempts": 0,
+          "state": "EXPECTED"
+        },
+        "requested": {
+          "evidence": {
+            "removed": [],
+            "set": {
+              "headRef": "nightly/stage-6-documentation-tsdoc-869e160f-11228003524983688850",
+              "prNumber": 1957,
+              "prUrl": "https://github.com/AlbiDR/Clash-Manager/pull/1957",
+              "reason": "canonical nightly stage branch"
+            }
+          },
+          "failureClass": "OPEN_PR",
+          "state": "RECOVERABLE"
+        },
+        "rules": [
+          {
+            "failureClassGuarded": false,
+            "id": "TAGGED_MERGE_IS_DURABLE",
+            "outcome": "NOT_APPLICABLE",
+            "stateGuarded": false
+          },
+          {
+            "id": "EVIDENCE_ACCUMULATES",
+            "outcome": "APPLIED"
+          }
+        ],
+        "transition": {
+          "from": "EXPECTED",
+          "name": "OBSERVATION_UPDATED",
+          "to": "RECOVERABLE"
+        }
+      },
+      "eventId": "c943ed67abf9da1f0fabc0ea53a207a38c1bce17e5123f520f75a02e16604789"
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 1394,
+      "previousEventId": "c943ed67abf9da1f0fabc0ea53a207a38c1bce17e5123f520f75a02e16604789",
+      "cycleId": "nightly-cycle/2026-09-25",
+      "date": "2026-09-25",
+      "stage": 7,
+      "type": "STAGE_ENTRY_UPDATED",
+      "source": "nightly-watchdog/observer",
+      "recordedAt": "2026-09-25T04:25:53.948Z",
+      "contractFingerprint": "294f64f1358ef17af7639062d355427eaf3ce873f96ed18c821b7f7412d9219a",
+      "payload": {
+        "after": {
+          "attempts": 0,
+          "dispatchAttempts": 0,
+          "failureClass": null,
+          "interventionAttempts": 0,
+          "state": "EXPECTED"
+        },
+        "before": {
+          "attempts": 0,
+          "dispatchAttempts": 0,
+          "failureClass": null,
+          "interventionAttempts": 0,
+          "state": "EXPECTED"
+        },
+        "requested": {
+          "evidence": {
+            "removed": [],
+            "set": {
+              "notReached": {
+                "frontier": 6
+              }
+            }
+          }
+        },
+        "rules": [
+          {
+            "failureClassGuarded": false,
+            "id": "TAGGED_MERGE_IS_DURABLE",
+            "outcome": "NOT_APPLICABLE",
+            "stateGuarded": false
+          },
+          {
+            "id": "EVIDENCE_ACCUMULATES",
+            "outcome": "APPLIED"
+          }
+        ],
+        "transition": {
+          "from": "EXPECTED",
+          "name": "OBSERVATION_UPDATED",
+          "to": "EXPECTED"
+        }
+      },
+      "eventId": "054212c709ff373b72eb79242837fdc339dc65475e9b92e6f4246dc135b4b8ff"
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 1395,
+      "previousEventId": "054212c709ff373b72eb79242837fdc339dc65475e9b92e6f4246dc135b4b8ff",
+      "cycleId": "nightly-cycle/2026-09-25",
+      "date": "2026-09-25",
+      "stage": 8,
+      "type": "STAGE_ENTRY_UPDATED",
+      "source": "nightly-watchdog/observer",
+      "recordedAt": "2026-09-25T04:25:53.993Z",
+      "contractFingerprint": "b865578f1a0b5d4e90f264b4dbb792c4d309c9bbea08fd314cf47cef940ff9b8",
+      "payload": {
+        "after": {
+          "attempts": 0,
+          "dispatchAttempts": 0,
+          "failureClass": null,
+          "interventionAttempts": 0,
+          "state": "EXPECTED"
+        },
+        "before": {
+          "attempts": 0,
+          "dispatchAttempts": 0,
+          "failureClass": null,
+          "interventionAttempts": 0,
+          "state": "EXPECTED"
+        },
+        "requested": {
+          "evidence": {
+            "removed": [],
+            "set": {
+              "notReached": {
+                "frontier": 6
+              }
+            }
+          }
+        },
+        "rules": [
+          {
+            "failureClassGuarded": false,
+            "id": "TAGGED_MERGE_IS_DURABLE",
+            "outcome": "NOT_APPLICABLE",
+            "stateGuarded": false
+          },
+          {
+            "id": "EVIDENCE_ACCUMULATES",
+            "outcome": "APPLIED"
+          }
+        ],
+        "transition": {
+          "from": "EXPECTED",
+          "name": "OBSERVATION_UPDATED",
+          "to": "EXPECTED"
+        }
+      },
+      "eventId": "f30df36c726c0d2157121e4044c1dc30458cdd1bcb339f41fb19586f38de2b6b"
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 1396,
+      "previousEventId": "f30df36c726c0d2157121e4044c1dc30458cdd1bcb339f41fb19586f38de2b6b",
+      "cycleId": "nightly-cycle/2026-09-25",
+      "date": "2026-09-25",
+      "stage": 9,
+      "type": "STAGE_ENTRY_UPDATED",
+      "source": "nightly-watchdog/observer",
+      "recordedAt": "2026-09-25T04:25:54.038Z",
+      "contractFingerprint": "401ccac4d9a8ca083bc5492dd8958aca42a02d1f4857914b074fb6ad6b2e53f1",
+      "payload": {
+        "after": {
+          "attempts": 0,
+          "dispatchAttempts": 0,
+          "failureClass": null,
+          "interventionAttempts": 0,
+          "state": "EXPECTED"
+        },
+        "before": {
+          "attempts": 0,
+          "dispatchAttempts": 0,
+          "failureClass": null,
+          "interventionAttempts": 0,
+          "state": "EXPECTED"
+        },
+        "requested": {
+          "evidence": {
+            "removed": [],
+            "set": {
+              "notReached": {
+                "frontier": 6
+              }
+            }
+          }
+        },
+        "rules": [
+          {
+            "failureClassGuarded": false,
+            "id": "TAGGED_MERGE_IS_DURABLE",
+            "outcome": "NOT_APPLICABLE",
+            "stateGuarded": false
+          },
+          {
+            "id": "EVIDENCE_ACCUMULATES",
+            "outcome": "APPLIED"
+          }
+        ],
+        "transition": {
+          "from": "EXPECTED",
+          "name": "OBSERVATION_UPDATED",
+          "to": "EXPECTED"
+        }
+      },
+      "eventId": "81a4d4481f6b0e554a64c3696578770dd8122ee6dca7a5012011c2f9c8c30bf8"
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 1397,
+      "previousEventId": "81a4d4481f6b0e554a64c3696578770dd8122ee6dca7a5012011c2f9c8c30bf8",
+      "cycleId": "nightly-cycle/2026-09-25",
+      "date": "2026-09-25",
+      "stage": 10,
+      "type": "STAGE_ENTRY_UPDATED",
+      "source": "nightly-watchdog/observer",
+      "recordedAt": "2026-09-25T04:25:54.083Z",
+      "contractFingerprint": "4f9b40864d05ffea731090b36800572dd7affedd8532fcd17c8ded8c9e2fbc12",
+      "payload": {
+        "after": {
+          "attempts": 0,
+          "dispatchAttempts": 0,
+          "failureClass": null,
+          "interventionAttempts": 0,
+          "state": "EXPECTED"
+        },
+        "before": {
+          "attempts": 0,
+          "dispatchAttempts": 0,
+          "failureClass": null,
+          "interventionAttempts": 0,
+          "state": "EXPECTED"
+        },
+        "requested": {
+          "evidence": {
+            "removed": [],
+            "set": {
+              "notReached": {
+                "frontier": 6
+              }
+            }
+          }
+        },
+        "rules": [
+          {
+            "failureClassGuarded": false,
+            "id": "TAGGED_MERGE_IS_DURABLE",
+            "outcome": "NOT_APPLICABLE",
+            "stateGuarded": false
+          },
+          {
+            "id": "EVIDENCE_ACCUMULATES",
+            "outcome": "APPLIED"
+          }
+        ],
+        "transition": {
+          "from": "EXPECTED",
+          "name": "OBSERVATION_UPDATED",
+          "to": "EXPECTED"
+        }
+      },
+      "eventId": "4f517b469cd1754ec6b07c160809343b95924e4cee4842809c9a1df8ef398113"
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 1398,
+      "previousEventId": "4f517b469cd1754ec6b07c160809343b95924e4cee4842809c9a1df8ef398113",
+      "cycleId": "nightly-cycle/2026-09-25",
+      "date": "2026-09-25",
+      "stage": 11,
+      "type": "STAGE_ENTRY_UPDATED",
+      "source": "nightly-watchdog/observer",
+      "recordedAt": "2026-09-25T04:25:54.128Z",
+      "contractFingerprint": "63c0229fe16cf4c98e352282307edbee4830cff68ea2d93c5c967a1f5cbd30ea",
+      "payload": {
+        "after": {
+          "attempts": 0,
+          "dispatchAttempts": 0,
+          "failureClass": null,
+          "interventionAttempts": 0,
+          "state": "EXPECTED"
+        },
+        "before": {
+          "attempts": 0,
+          "dispatchAttempts": 0,
+          "failureClass": null,
+          "interventionAttempts": 0,
+          "state": "EXPECTED"
+        },
+        "requested": {
+          "evidence": {
+            "removed": [],
+            "set": {
+              "notReached": {
+                "frontier": 6
+              }
+            }
+          }
+        },
+        "rules": [
+          {
+            "failureClassGuarded": false,
+            "id": "TAGGED_MERGE_IS_DURABLE",
+            "outcome": "NOT_APPLICABLE",
+            "stateGuarded": false
+          },
+          {
+            "id": "EVIDENCE_ACCUMULATES",
+            "outcome": "APPLIED"
+          }
+        ],
+        "transition": {
+          "from": "EXPECTED",
+          "name": "OBSERVATION_UPDATED",
+          "to": "EXPECTED"
+        }
+      },
+      "eventId": "c069b073f087a246cc3421bd393a1d3c669a9b241af93ba54c4f0665416c94da"
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 1399,
+      "previousEventId": "c069b073f087a246cc3421bd393a1d3c669a9b241af93ba54c4f0665416c94da",
+      "cycleId": "nightly-cycle/2026-09-25",
+      "date": "2026-09-25",
+      "stage": 12,
+      "type": "STAGE_ENTRY_UPDATED",
+      "source": "nightly-watchdog/observer",
+      "recordedAt": "2026-09-25T04:25:54.173Z",
+      "contractFingerprint": "f279dcd9fa3e895a0f76426a8bcab2381910b64ed4f8694d2c16ab7f8ec4ce04",
+      "payload": {
+        "after": {
+          "attempts": 0,
+          "dispatchAttempts": 0,
+          "failureClass": null,
+          "interventionAttempts": 0,
+          "state": "EXPECTED"
+        },
+        "before": {
+          "attempts": 0,
+          "dispatchAttempts": 0,
+          "failureClass": null,
+          "interventionAttempts": 0,
+          "state": "EXPECTED"
+        },
+        "requested": {
+          "evidence": {
+            "removed": [],
+            "set": {
+              "notReached": {
+                "frontier": 6
+              }
+            }
+          }
+        },
+        "rules": [
+          {
+            "failureClassGuarded": false,
+            "id": "TAGGED_MERGE_IS_DURABLE",
+            "outcome": "NOT_APPLICABLE",
+            "stateGuarded": false
+          },
+          {
+            "id": "EVIDENCE_ACCUMULATES",
+            "outcome": "APPLIED"
+          }
+        ],
+        "transition": {
+          "from": "EXPECTED",
+          "name": "OBSERVATION_UPDATED",
+          "to": "EXPECTED"
+        }
+      },
+      "eventId": "4eccb386e986f83ba4e44d202180810d8a590e2975316ac7ad652e388d0b0145"
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 1400,
+      "previousEventId": "4eccb386e986f83ba4e44d202180810d8a590e2975316ac7ad652e388d0b0145",
+      "cycleId": "nightly-cycle/2026-09-25",
+      "date": "2026-09-25",
+      "stage": 13,
+      "type": "STAGE_ENTRY_UPDATED",
+      "source": "nightly-watchdog/observer",
+      "recordedAt": "2026-09-25T04:25:54.218Z",
+      "contractFingerprint": "df81a67e6d78a129caa22f2d9d3499a9aaf33de1a9f9c7718ff860013b7a86e1",
+      "payload": {
+        "after": {
+          "attempts": 0,
+          "dispatchAttempts": 0,
+          "failureClass": null,
+          "interventionAttempts": 0,
+          "state": "EXPECTED"
+        },
+        "before": {
+          "attempts": 0,
+          "dispatchAttempts": 0,
+          "failureClass": null,
+          "interventionAttempts": 0,
+          "state": "EXPECTED"
+        },
+        "requested": {
+          "evidence": {
+            "removed": [],
+            "set": {
+              "notReached": {
+                "frontier": 6
+              }
+            }
+          }
+        },
+        "rules": [
+          {
+            "failureClassGuarded": false,
+            "id": "TAGGED_MERGE_IS_DURABLE",
+            "outcome": "NOT_APPLICABLE",
+            "stateGuarded": false
+          },
+          {
+            "id": "EVIDENCE_ACCUMULATES",
+            "outcome": "APPLIED"
+          }
+        ],
+        "transition": {
+          "from": "EXPECTED",
+          "name": "OBSERVATION_UPDATED",
+          "to": "EXPECTED"
+        }
+      },
+      "eventId": "f8b1b9135f831d5b8850797e9d4a7648a95e7b0a3496bac5d2a9e59699664ea1"
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 1401,
+      "previousEventId": "f8b1b9135f831d5b8850797e9d4a7648a95e7b0a3496bac5d2a9e59699664ea1",
+      "cycleId": "nightly-cycle/2026-09-25",
+      "date": "2026-09-25",
+      "stage": 5,
+      "type": "STAGE_ENTRY_UPDATED",
+      "source": "nightly-watchdog/health",
+      "recordedAt": "2026-09-25T04:25:54.371Z",
+      "contractFingerprint": "cea68a5bbba1bd2cbc6d3bdfe2639f37f3935b571beab59f5da1501b1180b22d",
+      "payload": {
+        "after": {
+          "attempts": 0,
+          "dispatchAttempts": 0,
+          "failureClass": null,
+          "interventionAttempts": 0,
+          "state": "MERGED"
+        },
+        "before": {
+          "attempts": 0,
+          "dispatchAttempts": 0,
+          "failureClass": null,
+          "interventionAttempts": 0,
+          "state": "MERGED"
+        },
+        "requested": {
+          "evidence": {
+            "removed": [],
+            "set": {
+              "health": {
+                "currentStreak": 0,
+                "reason": "no adverse trend",
+                "verdict": "HEALTHY"
+              }
+            }
+          }
+        },
+        "rules": [
+          {
+            "failureClassGuarded": false,
+            "id": "TAGGED_MERGE_IS_DURABLE",
+            "outcome": "NOT_APPLICABLE",
+            "stateGuarded": false
+          },
+          {
+            "id": "EVIDENCE_ACCUMULATES",
+            "outcome": "APPLIED"
+          }
+        ],
+        "transition": {
+          "from": "MERGED",
+          "name": "HEALTH_EVALUATED",
+          "to": "MERGED"
+        }
+      },
+      "eventId": "57ea638a0cc340de91e91410b4a0f8a84d1b15c73b0cf82b3d3071ad54c2ebbd"
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 1402,
+      "previousEventId": "57ea638a0cc340de91e91410b4a0f8a84d1b15c73b0cf82b3d3071ad54c2ebbd",
+      "cycleId": "nightly-cycle/2026-09-25",
+      "date": "2026-09-25",
+      "stage": 6,
+      "type": "STAGE_ENTRY_UPDATED",
+      "source": "nightly-watchdog/health",
+      "recordedAt": "2026-09-25T04:25:54.418Z",
+      "contractFingerprint": "a9f522cc73babe487aa3df1b083524daba64c0dd03c9e1b446dd4bd70c376bae",
+      "payload": {
+        "after": {
+          "attempts": 0,
+          "dispatchAttempts": 0,
+          "failureClass": "OPEN_PR",
+          "interventionAttempts": 0,
+          "state": "RECOVERABLE"
+        },
+        "before": {
+          "attempts": 0,
+          "dispatchAttempts": 0,
+          "failureClass": "OPEN_PR",
+          "interventionAttempts": 0,
+          "state": "RECOVERABLE"
+        },
+        "requested": {
+          "evidence": {
+            "removed": [],
+            "set": {
+              "health": {
+                "currentStreak": 1,
+                "reason": "no adverse trend",
+                "verdict": "HEALTHY"
+              }
+            }
+          }
+        },
+        "rules": [
+          {
+            "failureClassGuarded": false,
+            "id": "TAGGED_MERGE_IS_DURABLE",
+            "outcome": "NOT_APPLICABLE",
+            "stateGuarded": false
+          },
+          {
+            "id": "EVIDENCE_ACCUMULATES",
+            "outcome": "APPLIED"
+          }
+        ],
+        "transition": {
+          "from": "RECOVERABLE",
+          "name": "HEALTH_EVALUATED",
+          "to": "RECOVERABLE"
+        }
+      },
+      "eventId": "4d7bfe5a360c5763762f7e4f13eff1ccb9112451b87c8dff1454ada47d2cd9dd"
     }
   ],
   "cycles": {
@@ -98828,10 +99638,35 @@
             "registryDigest": "30443a39a196d342d855f97d9836420520dd28741ab06ff306c5a6fa4caab9f5",
             "workflowDigest": "91cf12e7a4b54fded370a7d2963a662a5b7ca014c795fa9fc9a150e34732dbd8"
           }
+        },
+        ".github/workflows/nightly-watchdog.yml:36094344748:1": {
+          "schemaVersion": 1,
+          "executionId": ".github/workflows/nightly-watchdog.yml:36094344748:1",
+          "workflow": {
+            "name": "Nightly Watchdog",
+            "path": ".github/workflows/nightly-watchdog.yml",
+            "runId": "36094344748",
+            "attempt": 1
+          },
+          "checkout": {
+            "branch": "Nightly",
+            "sha": "6984be34b335f668759ccef5c99860cbe44bdc43"
+          },
+          "runtime": {
+            "node": "v22.23.2",
+            "platform": "linux",
+            "arch": "x64",
+            "runnerOs": "Linux",
+            "runnerImage": "ubuntu24"
+          },
+          "controlPlane": {
+            "registryDigest": "30443a39a196d342d855f97d9836420520dd28741ab06ff306c5a6fa4caab9f5",
+            "workflowDigest": "91cf12e7a4b54fded370a7d2963a662a5b7ca014c795fa9fc9a150e34732dbd8"
+          }
         }
       }
     }
   },
-  "eventCount": 1389,
-  "eventHead": "f49ed0c838fa1e937162757d57b86cf2b3168101f4cb411cbd29044e35af46dc"
+  "eventCount": 1402,
+  "eventHead": "4d7bfe5a360c5763762f7e4f13eff1ccb9112451b87c8dff1454ada47d2cd9dd"
 }
