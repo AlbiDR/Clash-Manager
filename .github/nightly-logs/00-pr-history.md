@@ -15,6 +15,15 @@ LAST_AGED:   2026-09-25
 ---
 
 ## T1 -- Active (last 7 days)
+
+### [2026-09-25] PR #1965 [Stage 1]: Runtime Integrity Auditor: CLEAN scan across Edge Functions, Valibot boundaries, and cross-layer surfaces
+**Domain:** hardening | **Commit:** 2932c6097 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1965)
+**Files:** .github/nightly-logs/00-pr-history.md, .github/nightly-logs/01-hardening-coverage.log, .github/nightly-logs/01-hardening-pr-body.md
+**Why:** Bounded threat surface scan across 74 candidate files, Edge Functions, in-memory state, and Valibot schema boundaries confirmed zero unhandled security or runtime integrity risks
+**Change:** Runtime Integrity Auditor: CLEAN scan across Edge Functions, Valibot boundaries, and cross-layer surfaces
+**Result:** 209 test files passed (2093 tests green), 0 depcruise violations
+**Nudges:** 0
+
 ### [2026-09-25] PR #1964 [Stage 13]: Record Stage 4 and Stage 9 watchdog recovery nudges for 2026-09-25 and update Section 1 and Section 3 metrics
 **Domain:** pipeline | **Commit:** 276b35ce3 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1964)
 **Files:** .github/nightly-logs/13-self-healing-protocol-coverage.log, .github/nightly-logs/13-self-healing-protocol-pr-body.md, .github/nightly-logs/13-self-healing-protocol.md
