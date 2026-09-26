@@ -299,14 +299,40 @@ export function strandedOnlyFiles(registryPath = ".github/nightly-config/stages.
  * finding". Same rule as collectStrandedWork below: this check is not allowed to
  * fall silent on a question it failed to ask.
  */
-function touchedControlPlaneFiles(commitish, files, spawn = spawnSync) {
-  const res = spawn(
-    "git",
-    ["diff-tree", "--no-commit-id", "--name-only", "-r", commitish, "--", ...files],
-    { encoding: "utf8" },
-  );
+export function touchedControlPlaneFiles(commitish, files, spawn = spawnSync) {
+  const git = args => spawn("git", args, { encoding: "utf8" });
+  const lines = res => (res.stdout || "").split("\n").map(line => line.trim()).filter(Boolean);
+
+  // A MERGE carries no diff of its own for diff-tree to print: without -m or
+  // -c, `git diff-tree <merge>` outputs nothing at all. That empty answer used
+  // to be read as "git could not say", so the finding was kept, and every sync
+  // merge that reached Stable without walking back to Nightly was reported as
+  // stranded forever. From 2026-09-24 the guard was red on every stage PR over
+  // 2a53d2b38 ("Merge origin/Beta into Stable"), a merge whose tree is
+  // identical to its first parent on every control-plane path: it brought
+  // nothing onto Stable, so there was nothing to deploy.
+  //
+  // What a merge introduces into its branch is its difference from the branch
+  // it merged into, its FIRST parent. An empty list there is a real answer,
+  // "this merge added no control-plane change", not a failure to answer. The
+  // commits it brought in are still judged one by one, because `git log A..B`
+  // lists them separately, and a merge that resolved a conflict inside a
+  // control-plane file differs from its first parent there and is judged like
+  // any other change.
+  const parents = git(["rev-list", "--parents", "-n", "1", commitish]);
+  if (parents.status !== 0) return null;
+  const isMerge = lines(parents).join(" ").split(/\s+/).length > 2;
+  if (isMerge) {
+    const res = git(["diff", "--name-only", `${commitish}^1`, commitish, "--", ...files]);
+    return res.status === 0 ? lines(res) : null;
+  }
+
+  const res = git(["diff-tree", "--no-commit-id", "--name-only", "-r", commitish, "--", ...files]);
   if (res.status !== 0) return null;
-  return (res.stdout || "").split("\n").map(line => line.trim()).filter(Boolean);
+  // An ordinary commit that `git log -- <files>` selected but diff-tree says
+  // touched nothing is a question git failed to answer, not "no change".
+  const touched = lines(res);
+  return touched.length > 0 ? touched : null;
 }
 
 /**
@@ -337,7 +363,10 @@ export function hasUnarrivedContent(commitLine, {
   if (!sha) return true;
 
   const changed = touched(sha, files);
-  if (changed === null || changed.length === 0) return true;
+  if (changed === null) return true;
+  // Only touchedControlPlaneFiles' merge branch returns an empty list, and
+  // there it means the merge added no control-plane change. Nothing to deploy.
+  if (changed.length === 0) return false;
 
   return changed.some(file => blob(executionBranch, file) !== blob(branch, file));
 }

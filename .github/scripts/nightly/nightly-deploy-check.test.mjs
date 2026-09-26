@@ -20,6 +20,7 @@ import {
   renderActivationReport,
   renderStrandedReport,
   strandedOnlyFiles,
+  touchedControlPlaneFiles,
 } from "./nightly-deploy-check.mjs";
 
 // ---------------------------------------------------------------------------
@@ -318,4 +319,66 @@ test("a commit git could not diff is kept, never quietly cleared", () => {
 test("an unparseable log line is kept rather than treated as arrived", () => {
   assert.equal(hasUnarrivedContent("", { branch: "Beta", touched: () => [CP_FILE], blob: () => "same" }), true);
   assert.equal(hasUnarrivedContent("   ", { branch: "Beta", touched: () => [CP_FILE], blob: () => "same" }), true);
+});
+
+// ---------------------------------------------------------------------------
+// Merges. From 2026-09-24 the guard was red on every stage PR over one sync
+// merge (2a53d2b38, "Merge origin/Beta into Stable") whose tree matched its
+// first parent on every control-plane path. `git diff-tree <merge>` prints
+// nothing without -m or -c, and that silence was read as "could not answer".
+
+test("a merge that added no control-plane change is not stranded", () => {
+  const unarrived = hasUnarrivedContent("2a53d2b38 Merge remote-tracking branch 'origin/Beta' into Stable", {
+    branch: "Stable",
+    executionBranch: "Nightly",
+    files: [CP_FILE],
+    touched: () => [],
+    // Would red if consulted: an empty list must decide on its own.
+    blob: branch => (branch === "Nightly" ? "stale-blob" : "fixed-blob"),
+  });
+
+  assert.equal(unarrived, false);
+});
+
+/** A fake git: `parents` is the rev-list --parents line, the rest are stdout per command. */
+function fakeGit({ parents, diff = "", diffTree = "", fail = [] }) {
+  const calls = [];
+  const spawn = (_cmd, args) => {
+    calls.push(args);
+    const verb = args[0];
+    if (fail.includes(verb)) return { status: 128, stdout: "", stderr: "fatal" };
+    if (verb === "rev-list") return { status: 0, stdout: `${parents}\n` };
+    if (verb === "diff") return { status: 0, stdout: diff };
+    if (verb === "diff-tree") return { status: 0, stdout: diffTree };
+    return { status: 1, stdout: "" };
+  };
+  return { spawn, calls };
+}
+
+test("a merge is judged against its first parent, not by diff-tree's silence", () => {
+  const empty = fakeGit({ parents: "m1 p1 p2" });
+  assert.deepEqual(touchedControlPlaneFiles("m1", [CP_FILE], empty.spawn), [], "no change against the branch it merged into is a real answer");
+  assert.ok(empty.calls.some(args => args[0] === "diff" && args.includes("m1^1") && args.includes("m1")), "compares with the FIRST parent");
+  assert.ok(!empty.calls.some(args => args[0] === "diff-tree"), "never asks diff-tree about a merge");
+
+  // A merge that resolved a conflict inside a control-plane file differs from
+  // its first parent there, and is judged like any other change.
+  const evil = fakeGit({ parents: "m2 p1 p2", diff: `${CP_FILE}\n` });
+  assert.deepEqual(touchedControlPlaneFiles("m2", [CP_FILE], evil.spawn), [CP_FILE]);
+});
+
+test("an ordinary commit is still read with diff-tree, and silence there is still unknown", () => {
+  const touched = fakeGit({ parents: "c1 p1", diffTree: `${CP_FILE}\n` });
+  assert.deepEqual(touchedControlPlaneFiles("c1", [CP_FILE], touched.spawn), [CP_FILE]);
+
+  // `git log -- <files>` selected it, so an empty diff-tree is a question git
+  // failed to answer. It must stay a finding, never become "no change".
+  const silent = fakeGit({ parents: "c2 p1", diffTree: "" });
+  assert.equal(touchedControlPlaneFiles("c2", [CP_FILE], silent.spawn), null);
+});
+
+test("any git failure while reading a commit keeps the finding", () => {
+  assert.equal(touchedControlPlaneFiles("x", [CP_FILE], fakeGit({ parents: "", fail: ["rev-list"] }).spawn), null);
+  assert.equal(touchedControlPlaneFiles("m", [CP_FILE], fakeGit({ parents: "m p1 p2", fail: ["diff"] }).spawn), null);
+  assert.equal(touchedControlPlaneFiles("c", [CP_FILE], fakeGit({ parents: "c p1", fail: ["diff-tree"] }).spawn), null);
 });
