@@ -158,6 +158,20 @@ jobs:
       # repairs and re-verifies the merged lockfile before any push.
       # --------------------------------------------------------------------
 
+      # --------------------------------------------------------------------
+      # The merge guard is read from THIS workflow's own commit, not from the
+      # branch the job checks out: the YAML comes from Stable (the default
+      # branch), and loading the script from the same commit keeps the two in
+      # lockstep. Reading it from the checked-out branch would fail on the
+      # first run after the guard lands, because the branch being merged INTO
+      # does not have it yet. See sync-merge-guard.mjs for why it exists.
+      # --------------------------------------------------------------------
+      - name: Load the sync merge guard
+        run: |
+          mkdir -p "$RUNNER_TEMP/sync-tools"
+          git archive "${{ github.sha }}" .github/scripts | tar -x -C "$RUNNER_TEMP/sync-tools"
+          echo "SYNC_GUARD=$RUNNER_TEMP/sync-tools/.github/scripts/project/sync-merge-guard.mjs" >> "$GITHUB_ENV"
+
       - name: Normalise APK release slot (pre-merge)
         run: |
           git fetch origin
@@ -386,6 +400,13 @@ jobs:
             PRE_MERGE_SHA=$(git rev-parse HEAD)
 
             if [ "$DIVERGED" = "true" ]; then
+              # -X theirs settles every conflict by taking Nightly's side, which
+              # silently drops Beta's own change wherever both touched the same
+              # lines. The guard refuses the merge when that would lose real
+              # work, before anything is written. See sync-merge-guard.mjs.
+              if ! node "$SYNC_GUARD" --target HEAD --source origin/Nightly --target-name Beta --source-name Nightly --lockfile-verified --apk-slot-normalised; then
+                exit 1
+              fi
               echo "Diverged branches detected. Merging with conflict strategy: Nightly wins (-X theirs)."
               git merge origin/Nightly -X theirs --no-edit
             else
@@ -525,6 +546,20 @@ jobs:
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
 
+      # --------------------------------------------------------------------
+      # The merge guard is read from THIS workflow's own commit, not from the
+      # branch the job checks out: the YAML comes from Stable (the default
+      # branch), and loading the script from the same commit keeps the two in
+      # lockstep. Reading it from the checked-out branch would fail on the
+      # first run after the guard lands, because the branch being merged INTO
+      # does not have it yet. See sync-merge-guard.mjs for why it exists.
+      # --------------------------------------------------------------------
+      - name: Load the sync merge guard
+        run: |
+          mkdir -p "$RUNNER_TEMP/sync-tools"
+          git archive "${{ github.sha }}" .github/scripts | tar -x -C "$RUNNER_TEMP/sync-tools"
+          echo "SYNC_GUARD=$RUNNER_TEMP/sync-tools/.github/scripts/project/sync-merge-guard.mjs" >> "$GITHUB_ENV"
+
       - name: Merge Beta into Stable
         id: merge
         run: |
@@ -532,8 +567,13 @@ jobs:
           git pull origin Stable
 
           BEFORE_SHA=$(git rev-parse HEAD)
-          # Beta is always the source of truth for Stable promotion.
-          # Use -X theirs to ensure Beta content wins on any unexpected divergence.
+          # Beta is always the source of truth for Stable promotion, and -X
+          # theirs makes Beta's content win on any divergence. That is what
+          # silently reverted Stable-only work on 2026-09-24 (2a53d2b38), so the
+          # guard first refuses a merge that would discard it.
+          if ! node "$SYNC_GUARD" --target HEAD --source origin/Beta --target-name Stable --source-name Beta; then
+            exit 1
+          fi
           git merge origin/Beta -X theirs --no-edit
           AFTER_SHA=$(git rev-parse HEAD)
 
@@ -608,6 +648,20 @@ jobs:
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
 
+      # --------------------------------------------------------------------
+      # The merge guard is read from THIS workflow's own commit, not from the
+      # branch the job checks out: the YAML comes from Stable (the default
+      # branch), and loading the script from the same commit keeps the two in
+      # lockstep. Reading it from the checked-out branch would fail on the
+      # first run after the guard lands, because the branch being merged INTO
+      # does not have it yet. See sync-merge-guard.mjs for why it exists.
+      # --------------------------------------------------------------------
+      - name: Load the sync merge guard
+        run: |
+          mkdir -p "$RUNNER_TEMP/sync-tools"
+          git archive "${{ github.sha }}" .github/scripts | tar -x -C "$RUNNER_TEMP/sync-tools"
+          echo "SYNC_GUARD=$RUNNER_TEMP/sync-tools/.github/scripts/project/sync-merge-guard.mjs" >> "$GITHUB_ENV"
+
       - name: Merge Stable into Beta
         id: merge
         run: |
@@ -615,7 +669,12 @@ jobs:
           git pull origin Beta
 
           BEFORE_SHA=$(git rev-parse HEAD)
-          # Stable content (hotfixes) always wins when flowing downstream to Beta.
+          # Stable content (hotfixes) always wins when flowing downstream to
+          # Beta, once the guard has shown that winning discards nothing of
+          # Beta's own.
+          if ! node "$SYNC_GUARD" --target HEAD --source origin/Stable --target-name Beta --source-name Stable; then
+            exit 1
+          fi
           git merge origin/Stable -X theirs --no-edit
           AFTER_SHA=$(git rev-parse HEAD)
 
@@ -648,6 +707,20 @@ jobs:
         run: |
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+
+      # --------------------------------------------------------------------
+      # The merge guard is read from THIS workflow's own commit, not from the
+      # branch the job checks out: the YAML comes from Stable (the default
+      # branch), and loading the script from the same commit keeps the two in
+      # lockstep. Reading it from the checked-out branch would fail on the
+      # first run after the guard lands, because the branch being merged INTO
+      # does not have it yet. See sync-merge-guard.mjs for why it exists.
+      # --------------------------------------------------------------------
+      - name: Load the sync merge guard
+        run: |
+          mkdir -p "$RUNNER_TEMP/sync-tools"
+          git archive "${{ github.sha }}" .github/scripts | tar -x -C "$RUNNER_TEMP/sync-tools"
+          echo "SYNC_GUARD=$RUNNER_TEMP/sync-tools/.github/scripts/project/sync-merge-guard.mjs" >> "$GITHUB_ENV"
 
       - name: Normalise APK release slot (pre-merge)
         run: |
@@ -694,7 +767,11 @@ jobs:
           git pull origin Nightly
           # Code flowing in was already verified by the Air Gap Guard in
           # JOB 1 (Nightly -> Beta). A second test run here would be
-          # redundant by transitivity.
+          # redundant by transitivity. What it does not cover is Nightly-only
+          # work that -X theirs would drop; the guard does.
+          if ! node "$SYNC_GUARD" --target HEAD --source origin/Beta --target-name Nightly --source-name Beta --apk-slot-normalised; then
+            exit 1
+          fi
           git merge origin/Beta -X theirs --no-edit
           git push origin Nightly
 
