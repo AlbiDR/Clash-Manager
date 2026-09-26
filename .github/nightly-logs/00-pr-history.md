@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-25
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-26] PR #1968 [Stage 4]: Inspected 74 changed files and Edge Functions for SQL view substrate hygiene; zero structural rot or unreferenced views found.
+**Domain:** optimization | **Commit:** 8eba07131 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1968)
+**Files:** .github/nightly-logs/04-optimization-coverage.log, .github/nightly-logs/04-optimization-pr-body.md
+**Why:** Codebase substrate hygiene is fully compliant; all 6 known database views remain unreferenced in Edge Function source code and all unit tests pass with zero source changes required.
+**Change:** Inspected 74 changed files and Edge Functions for SQL view substrate hygiene; zero structural rot or unreferenced views found.
+**Result:** Vitest pnpm test passed 209 test files and 2097 total tests, source grep confirmed 0 unreferenced view usages
+**Nudges:** 1
+
+
 ### [2026-09-26] PR #1967 [Stage 3]: Audited master baseline SQL: 0 pending migrations, migration-quality PASS, fold-state DEGRADED, DB-UNAVAILABLE, CLEAN-since-calib 1. Read-only audit confirmed 29 RLS tables, 102 search_path functions, 0 em-dashes, 0 emojis.
 **Domain:** database | **Commit:** 776974ec3 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1967)
 **Files:** .github/nightly-logs/03-baseline-consolidation-coverage.log, .github/nightly-logs/03-baseline-consolidation-pr-body.md
