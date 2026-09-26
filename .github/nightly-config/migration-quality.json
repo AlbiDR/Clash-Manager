@@ -64,7 +64,8 @@
     "Backend/supabase/migrations/20260917221532_specialize_roster_battle_stats_query.sql": "8066097a2c25ec349a77f4d9cbde40279233f7e689df87830383a01cd1bb646e",
     "Backend/supabase/migrations/20260920150554_reconcile_sync_recruits_provenance.sql": "a60d1098943807f1a2b2507ddee5121505d9b89c89278215d68e0149e46b3c40",
     "Backend/supabase/migrations/20260923225525_batch_ingest_player_battles_insert.sql": "66d56feee5d242d64b0b3b6319698d10a0ed404c1f06017ed532480576ea6321",
-    "Backend/supabase/migrations/20260923225809_decouple_voyage_finalization_from_battle_trigger.sql": "90be5cd3a88336bf50f7397d4568f2bd795c190210e6c821cde0a3dde7d5a4c4"
+    "Backend/supabase/migrations/20260923225809_decouple_voyage_finalization_from_battle_trigger.sql": "90be5cd3a88336bf50f7397d4568f2bd795c190210e6c821cde0a3dde7d5a4c4",
+    "Backend/supabase/migrations/20260926233013_event_gate_voyage_finalization.sql": "f5a27df8d2e4fd728e732b0e9288448bd044b5d2731e6ec9ea2c52efb87820a0"
   },
   "exemptions": []
 }
