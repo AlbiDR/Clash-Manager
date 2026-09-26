@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-25
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-26] PR #1973 [Stage 10]: calibration clean audit: verified asset links, manifest parity, version code/name sync, release metadata, and security policy
+**Domain:** apk | **Commit:** b231433d4 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1973)
+**Files:** .github/nightly-logs/10-apk-integrity-coverage.log, .github/nightly-logs/10-apk-integrity-pr-body.md
+**Why:** no wrapper or pwa mismatches found during calibrated widen audit
+**Change:** calibration clean audit: verified asset links, manifest parity, version code/name sync, release metadata, and security policy
+**Result:** pnpm audit:apk and pnpm apk:verify:source passed
+**Nudges:** 0
+
+
 ### [2026-09-26] PR #1972 [Stage 8]: Bumped @types/node catalog entry to ^26.6.3 and refreshed lockfile
 **Domain:** dependencies | **Commit:** d50163c99 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1972)
 **Files:** .github/nightly-logs/08-dependency-audit-coverage.log, .github/nightly-logs/08-dependency-audit-pr-body.md, package.json, pnpm-lock.yaml, pnpm-workspace.yaml
