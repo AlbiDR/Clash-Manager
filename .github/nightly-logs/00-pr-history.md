@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-25
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-26] PR #1966 [Stage 2]: Extended AnimatedDigits spec with edge cases for non-numeric transitions, negative/decimal parsing, and static separator rendering
+**Domain:** verification | **Commit:** 826ef2780 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1966)
+**Files:** .github/nightly-logs/02-verification-coverage.log, .github/nightly-logs/02-verification-pr-body.md, Frontend-PWA/src/shared/ui/ui-tests/AnimatedDigits.spec.ts
+**Why:** Saturate test coverage for AnimatedDigits component modified in recent changes
+**Change:** Extended AnimatedDigits spec with edge cases for non-numeric transitions, negative/decimal parsing, and static separator rendering
+**Result:** 209 test files (2097 tests) passing. Mutation testing proved: inverting direction comparison in AnimatedDigits.vue caused 4 targeted assertion failures in AnimatedDigits.spec.ts.
+**Nudges:** 0
+
+
 ### [2026-09-25] PR #1965 [Stage 1]: Runtime Integrity Auditor: CLEAN scan across Edge Functions, Valibot boundaries, and cross-layer surfaces
 **Domain:** hardening | **Commit:** 2932c6097 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1965)
 **Files:** .github/nightly-logs/00-pr-history.md, .github/nightly-logs/01-hardening-coverage.log, .github/nightly-logs/01-hardening-pr-body.md
