@@ -118,6 +118,25 @@ export const IngestionTargetsSchema = v.pipe(
 );
 
 /**
+ * L1 Core: Latest Battle Times Schema.
+ *
+ * @remarks
+ * Validates rows returned by `get_latest_battle_times()`: the newest stored battle per
+ * player tag, rendered in the Royale API `battleTime` format so the caller can compare
+ * it to a fetched battle log without parsing dates.
+ *
+ * [THREAT:] A malformed row that slipped through would let deep-depth.ts skip an ingest
+ * it should have made, which loses battles silently.
+ * [DECISION LOG] The caller treats any validation failure as "no information" and
+ * ingests everything, so this schema can only ever cause a redundant call, never a skip.
+ * Satisfies ADR Section III: Validation Boundaries.
+ */
+export const LatestBattleTimesSchema = v.array(v.object({
+    player_tag:         v.string(),
+    latest_battle_time: v.string()
+}));
+
+/**
  * L1 Core: Recruit Fate Schema (RPC).
  *
  * @remarks

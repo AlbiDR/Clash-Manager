@@ -52,7 +52,7 @@ vi.mock("../../../_shared/muscle.ts", () => ({
     processBatch: mockProcessBatch,
 }));
 
-import { runDeepDepth } from "../deep-depth.ts";
+import { runDeepDepth, isAlreadyIngested } from "../deep-depth.ts";
 
 function freshResults(): IngestionResult {
     return {
@@ -262,5 +262,127 @@ describe("runDeepDepth shadow-lead registry write gating (F5)", () => {
         // No shadow leads harvested from a 404 target, so the write phase is
         // never reached: this cannot be conflated with a genuine ingestion success.
         expect(results.battles.success).toBe(true);
+    });
+});
+
+/**
+ * Coverage for the no-op ingest skip. Only recruits may skip ingest_player_battles,
+ * only when the fetched log is provably already stored, and any doubt (missing or
+ * malformed data, a failed lookup) must fall back to ingesting as before.
+ */
+describe("runDeepDepth skips ingest_player_battles for recruits with nothing new", () => {
+    const storedLatest = validBattleLogPayload[0].battleTime;
+
+    function ingestCallsFor(tag: string) {
+        return mockSupabase.rpc.mock.calls.filter(
+            ([name, args]: [string, { p_tag?: string }]) => name === "ingest_player_battles" && args?.p_tag === tag
+        );
+    }
+
+    function arrangeBattleLog() {
+        mockFetchWithRotation.mockResolvedValue({ ok: true, status: 200, json: async () => validBattleLogPayload });
+        rpcResponses.sync_players = { data: null, error: null };
+        rpcResponses.sync_recruits = { data: null, error: null };
+    }
+
+    it("skips a recruit whose newest fetched battle is already stored, and still harvests leads", async () => {
+        rpcResponses.get_ingestion_targets = { data: { "drivers.members": [], "drivers.recruits": ["#RECRUIT1"] }, error: null };
+        rpcResponses.get_latest_battle_times = { data: [{ player_tag: "#RECRUIT1", latest_battle_time: storedLatest }], error: null };
+        arrangeBattleLog();
+        const results = freshResults();
+        const { entries, logAudit } = makeAuditCollector();
+
+        await runDeepDepth(results, logAudit);
+
+        expect(ingestCallsFor("#RECRUIT1")).toHaveLength(0);
+        expect(mockSupabase.rpc.mock.calls.find(([name]: [string]) => name === "sync_players")).toBeDefined();
+        const terminated = entries.find(entry => entry.action === "terminated");
+        expect((terminated?.details as { skipped_unchanged: number }).skipped_unchanged).toBe(1);
+        expect(results.battles.success).toBe(true);
+    });
+
+    it("ingests a recruit whose log contains a battle newer than the stored one", async () => {
+        rpcResponses.get_ingestion_targets = { data: { "drivers.members": [], "drivers.recruits": ["#RECRUIT1"] }, error: null };
+        rpcResponses.get_latest_battle_times = { data: [{ player_tag: "#RECRUIT1", latest_battle_time: "20260725T093151.000Z" }], error: null };
+        arrangeBattleLog();
+
+        await runDeepDepth(freshResults(), makeAuditCollector().logAudit);
+
+        expect(ingestCallsFor("#RECRUIT1")).toHaveLength(1);
+    });
+
+    it("never skips a member, and never asks for a member's latest battle time", async () => {
+        rpcResponses.get_ingestion_targets = { data: { "drivers.members": ["#MEMBER1"], "drivers.recruits": ["#RECRUIT1"] }, error: null };
+        rpcResponses.get_latest_battle_times = {
+            data: [
+                { player_tag: "#MEMBER1", latest_battle_time: storedLatest },
+                { player_tag: "#RECRUIT1", latest_battle_time: storedLatest },
+            ],
+            error: null,
+        };
+        arrangeBattleLog();
+
+        await runDeepDepth(freshResults(), makeAuditCollector().logAudit);
+
+        expect(ingestCallsFor("#MEMBER1")).toHaveLength(1);
+        expect(ingestCallsFor("#RECRUIT1")).toHaveLength(0);
+        const lookup = mockSupabase.rpc.mock.calls.find(([name]: [string]) => name === "get_latest_battle_times");
+        expect((lookup![1] as { p_player_tags: string[] }).p_player_tags).toEqual(["#RECRUIT1"]);
+    });
+
+    it("treats a tag listed as both member and recruit as a member", async () => {
+        rpcResponses.get_ingestion_targets = { data: { "drivers.members": ["#BOTH1"], "drivers.recruits": ["#BOTH1"] }, error: null };
+        rpcResponses.get_latest_battle_times = { data: [{ player_tag: "#BOTH1", latest_battle_time: storedLatest }], error: null };
+        arrangeBattleLog();
+
+        await runDeepDepth(freshResults(), makeAuditCollector().logAudit);
+
+        expect(ingestCallsFor("#BOTH1").length).toBeGreaterThan(0);
+        expect(mockSupabase.rpc.mock.calls.find(([name]: [string]) => name === "get_latest_battle_times")).toBeUndefined();
+    });
+
+    it("ingests everything when the latest-battle-times lookup fails", async () => {
+        rpcResponses.get_ingestion_targets = { data: { "drivers.members": [], "drivers.recruits": ["#RECRUIT1"] }, error: null };
+        rpcResponses.get_latest_battle_times = { data: null, error: { message: "function does not exist" } };
+        arrangeBattleLog();
+        const results = freshResults();
+        const { entries, logAudit } = makeAuditCollector();
+
+        await runDeepDepth(results, logAudit);
+
+        expect(ingestCallsFor("#RECRUIT1")).toHaveLength(1);
+        const check = entries.find(entry => (entry.details as { stage?: string })?.stage === "LATEST_BATTLE_TIMES");
+        expect((check?.details as { passed: boolean }).passed).toBe(false);
+        expect(results.battles.success).toBe(true);
+    });
+
+    it("ingests everything when the lookup payload is malformed", async () => {
+        rpcResponses.get_ingestion_targets = { data: { "drivers.members": [], "drivers.recruits": ["#RECRUIT1"] }, error: null };
+        rpcResponses.get_latest_battle_times = { data: [{ player_tag: "#RECRUIT1" }], error: null };
+        arrangeBattleLog();
+
+        await runDeepDepth(freshResults(), makeAuditCollector().logAudit);
+
+        expect(ingestCallsFor("#RECRUIT1")).toHaveLength(1);
+    });
+});
+
+describe("isAlreadyIngested answers false whenever it cannot prove the log is stored", () => {
+    const log = (...times: string[]) => times.map(battleTime => ({ battleTime }));
+
+    it("is true only when the newest fetched battle is at or before the stored one", () => {
+        expect(isAlreadyIngested(log("20260725T093152.000Z", "20260725T090000.000Z"), "20260725T093152.000Z")).toBe(true);
+        expect(isAlreadyIngested(log("20260725T090000.000Z"), "20260725T093152.000Z")).toBe(true);
+        expect(isAlreadyIngested(log("20260725T090000.000Z", "20260725T093153.000Z"), "20260725T093152.000Z")).toBe(false);
+    });
+
+    it("is false with no stored time or an empty log", () => {
+        expect(isAlreadyIngested(log("20260725T093152.000Z"), undefined)).toBe(false);
+        expect(isAlreadyIngested([], "20260725T093152.000Z")).toBe(false);
+    });
+
+    it("is false when either side does not match the exact battleTime format", () => {
+        expect(isAlreadyIngested(log("20260725T093152Z"), "20260725T093152.000Z")).toBe(false);
+        expect(isAlreadyIngested(log("20260725T093152.000Z"), "2026-07-25 09:31:52+00")).toBe(false);
     });
 });
