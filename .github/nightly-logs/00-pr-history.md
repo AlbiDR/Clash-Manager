@@ -15,6 +15,15 @@ LAST_AGED:   2026-09-26
 ---
 
 ## T1 -- Active (last 7 days)
+
+### [2026-09-26] PR #1978 [Stage 1]: Hardened in-memory state variables across core and feature composables with explicit EPHEMERAL annotations and threat descriptions
+**Domain:** hardening | **Commit:** 8e7e379e3 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1978)
+**Files:** .github/nightly-logs/*, Frontend-PWA/src/core/api/*, Frontend-PWA/src/core/utils/* (8 files)
+**Why:** Ensure in-memory caches, controllers, and singletons satisfy Target A and Target C runtime integrity contracts and cold-start state durability expectations
+**Change:** Hardened in-memory state variables across core and feature composables with explicit EPHEMERAL annotations and threat descriptions
+**Result:** Vitest 209 test files (2097 tests) passed and depcruise reported 0 violations
+**Nudges:** 0
+
 ### [2026-09-26] PR #1977 [Stage 13]: Update self-healing protocol findings and stage metrics for 2026-09-26
 **Domain:** pipeline | **Commit:** 0df05ac20 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1977)
 **Files:** .github/nightly-logs/13-self-healing-protocol-coverage.log, .github/nightly-logs/13-self-healing-protocol-pr-body.md, .github/nightly-logs/13-self-healing-protocol.md
