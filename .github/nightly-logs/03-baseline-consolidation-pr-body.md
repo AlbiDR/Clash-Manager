@@ -4,23 +4,23 @@
 
 In plain terms: nothing needed fixing. This run checked the baseline consolidation area and found it already correct, so the only file here is the log recording that the check happened.
 
-**What was checked:** Read-only baseline audit verified RLS compliance, search_path isolation, and formatting on 20260531232406_master_migration.sql with 0 pending migrations
+**What was checked:** Audited master baseline SQL: 0 pending migrations, migration-quality PASS, fold-state DEGRADED, DB-UNAVAILABLE, CLEAN-since-calib 1. Read-only audit confirmed 29 RLS tables, 102 search_path functions, 0 em-dashes, 0 emojis.
 
-**Why:** Master baseline matches current database state and pass static migration quality audit
+**Why:** 0 pending migrations in pending-migrations.txt; read-only audit verified full compliance with RLS, search_path, and formatting rules; no baseline SQL changes required.
 
-**Result:** pnpm audit:migrations passed with 0 violations across 52 migrations and 170 baseline objects; pending-migrations count is 0
+**Result:** pnpm audit:migrations reported PASS across 52 migrations and 170 baseline objects; fold-state reported DEGRADED static result due to DB-UNAVAILABLE.
 
 **Files changed:** .github/nightly-logs/03-baseline-consolidation-coverage.log
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: database
-  Cycle: nightly-cycle/2026-09-25
+  Cycle: nightly-cycle/2026-09-26
   Contract: fce15bf60f686eba9489d1297c90bb03fbaaff69d64886cf62eb35d47f90f307
-  Why: Master baseline matches current database state and pass static migration quality audit
-  Change: Read-only baseline audit verified RLS compliance, search_path isolation, and formatting on 20260531232406_master_migration.sql with 0 pending migrations
-  Result: pnpm audit:migrations passed with 0 violations across 52 migrations and 170 baseline objects; pending-migrations count is 0
+  Why: 0 pending migrations in pending-migrations.txt; read-only audit verified full compliance with RLS, search_path, and formatting rules; no baseline SQL changes required.
+  Change: Audited master baseline SQL: 0 pending migrations, migration-quality PASS, fold-state DEGRADED, DB-UNAVAILABLE, CLEAN-since-calib 1. Read-only audit confirmed 29 RLS tables, 102 search_path functions, 0 em-dashes, 0 emojis.
+  Result: pnpm audit:migrations reported PASS across 52 migrations and 170 baseline objects; fold-state reported DEGRADED static result due to DB-UNAVAILABLE.
   Files: .github/nightly-logs/03-baseline-consolidation-coverage.log
   Nudges: 0
-  Execution: e3cfd6f7825806d3c35b80a3623bd5e7dd473ab9
+  Execution: 22a4bdc51ae5b277b26e04c23e4e06e039dd9238
 -->
