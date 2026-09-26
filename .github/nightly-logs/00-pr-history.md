@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-25
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-26] PR #1975 [Stage 11]: Audited native WebView performance settings, PWA service worker precache route and navigation preload, and Vite bundle chunking rules; zero source changes required
+**Domain:** apk | **Commit:** a861d2ec9 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1975)
+**Files:** .github/nightly-logs/11-apk-optimization-coverage.log, .github/nightly-logs/11-apk-optimization-pr-body.md
+**Why:** All 9 native wrapper and caching invariants are active (LOAD_CACHE_ELSE_NETWORK, offscreen pre-raster, DOM storage, automatic image loading, hardware acceleration, SW precache route, navigation preload, and manualChunks) and the precache footprint is optimal at 6 assets (11.1 KB total)
+**Change:** Audited native WebView performance settings, PWA service worker precache route and navigation preload, and Vite bundle chunking rules; zero source changes required
+**Result:** pnpm audit:apk-perf PASSED with 0 violations and 6 precached assets
+**Nudges:** 0
+
+
 ### [2026-09-26] PR #1974 [Stage 9]: Codebase -- 79 candidates, 0 dep-violations, knip (1 file, 3 exports, 1 dup); streak: 6. Inspected config, useProgressiveList, useClipboard, useLeaderboard. Candidate BLITZ_DWELL_DEFAULT intentional. Defect hunt clean.
 **Domain:** architecture | **Commit:** 945e94638 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1974)
 **Files:** .github/nightly-logs/09-refactor-proposals-coverage.log, .github/nightly-logs/09-refactor-proposals-pr-body.md
