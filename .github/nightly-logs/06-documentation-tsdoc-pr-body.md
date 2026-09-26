@@ -4,23 +4,23 @@
 
 In plain terms: this changes 1 code file, so the app's behaviour may be affected. No tests were added or changed alongside it.
 
-**What changed:** Harden TSDoc interface contracts for internal helper functions in SupabaseClient
+**What changed:** Harden AnimatedDigits TSDoc interface contracts and inline logic annotations
 
-**Why:** Resolved documentation debt by completing parameter and return annotations for parseTimestamp and resolveOptionalQuery
+**Why:** Recent-Change Priority: reconcile AnimatedDigits JSDoc/TSDoc interface contracts, ADR Section II and IV mappings, and inline decision logs following recent Stage 2 test additions
 
-**Result:** vue-tsc type check and vitest test suite passed cleanly
+**Result:** vue-tsc type-check 0 errors, Vitest passed 9 of 9 AnimatedDigits tests
 
-**Files changed:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, Frontend-PWA/src/core/api/SupabaseClient.ts
+**Files changed:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, Frontend-PWA/src/shared/ui/AnimatedDigits.vue
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: documentation
-  Cycle: nightly-cycle/2026-09-25
+  Cycle: nightly-cycle/2026-09-26
   Contract: a9f522cc73babe487aa3df1b083524daba64c0dd03c9e1b446dd4bd70c376bae
-  Why: Resolved documentation debt by completing parameter and return annotations for parseTimestamp and resolveOptionalQuery
-  Change: Harden TSDoc interface contracts for internal helper functions in SupabaseClient
-  Result: vue-tsc type check and vitest test suite passed cleanly
-  Files: .github/nightly-logs/06-documentation-tsdoc-coverage.log, Frontend-PWA/src/core/api/SupabaseClient.ts
+  Why: Recent-Change Priority: reconcile AnimatedDigits JSDoc/TSDoc interface contracts, ADR Section II and IV mappings, and inline decision logs following recent Stage 2 test additions
+  Change: Harden AnimatedDigits TSDoc interface contracts and inline logic annotations
+  Result: vue-tsc type-check 0 errors, Vitest passed 9 of 9 AnimatedDigits tests
+  Files: .github/nightly-logs/06-documentation-tsdoc-coverage.log, Frontend-PWA/src/shared/ui/AnimatedDigits.vue
   Nudges: 0
-  Execution: 6984be34b335f668759ccef5c99860cbe44bdc43
+  Execution: c54757b17c746722b3349b01e60ed43a1103306a
 -->
