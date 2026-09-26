@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-25
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-26] PR #1971 [Stage 7]: Calibration CLEAN run 7: catalog and version declarations fully synchronized across all manifests
+**Domain:** versioning | **Commit:** 856f26119 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1971)
+**Files:** .github/nightly-logs/07-version-integrity-coverage.log, .github/nightly-logs/07-version-integrity-pr-body.md
+**Why:** All manifests and derived files match ground truth 14.50.113 with zero drift
+**Change:** Calibration CLEAN run 7: catalog and version declarations fully synchronized across all manifests
+**Result:** pnpm audit:version passed with zero drift detected
+**Nudges:** 0
+
+
 ### [2026-09-26] PR #1970 [Stage 6]: Harden AnimatedDigits TSDoc interface contracts and inline logic annotations
 **Domain:** documentation | **Commit:** 460884e41 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1970)
 **Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, .github/nightly-logs/06-documentation-tsdoc-pr-body.md, Frontend-PWA/src/shared/ui/AnimatedDigits.vue
