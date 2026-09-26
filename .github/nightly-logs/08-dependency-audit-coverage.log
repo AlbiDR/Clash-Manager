@@ -496,3 +496,4 @@
 * [2026-09-25] Target: Codebase - jsdom | ^29.1.1 | 30.1.1 | 2026-07-30 | Breaking: Requires Node.js >= 18.2, drops support for older environments.
 * [2026-09-25] Target: Codebase - @vite-pwa/assets-generator | ^1.0.2 | 2.0.0 | 2026-09-19 | Breaking: Requires Node 18+, updated sharp/consola dependencies, API refactoring.
 * [2026-09-25] [Stage 8] [06:15Z-06:23Z 8m] CHANGED: package.json -- package.json -- pnpm-workspace.yaml -- pnpm-lock.yaml -- Bumped dependency-cruiser to ^18.4.0 and re-locked dependencies
+* [2026-09-26] [Stage 8] [06:14Z-06:18Z 5m] CHANGED: package.json -- Bumped @types/node catalog entry to ^26.6.3 and refreshed lockfile
