@@ -145,6 +145,8 @@ function buildSupabaseClient() {
     });
 }
 
+// EPHEMERAL: intentionally resets on cold start
+// [THREAT:] Cached Supabase client instance resets on module re-load.
 let cachedSupabaseClient: ReturnType<typeof buildSupabaseClient> | null = null;
 
 /**

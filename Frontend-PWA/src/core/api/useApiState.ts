@@ -41,6 +41,8 @@ const pingData = ref<PingResponse | null>(null);
 
 
 
+// EPHEMERAL: intentionally resets on cold start
+// [THREAT:] Global API connection lifecycle state is transient per application session.
 let isInitialized = false;
 let consecutiveFailures = 0; // Track consecutive failures for soft-fail
 let handshakeController: AbortController | null = null;

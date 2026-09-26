@@ -11,14 +11,17 @@ import { useGhostBenchmarkState } from "./ghostBenchmarkState";
  * @remarks
  * [DECISION LOG] EPHEMERAL: singleton state intentionally resets on full page reload.
  */
+// EPHEMERAL: intentionally resets on cold start
 let activeTarget: HTMLElement | null = null;
 
+// EPHEMERAL: intentionally resets on cold start
 /**
  * Timeout handle for debouncing the tooltip concealment sequence.
  * Ensures brief mouse gap transitions between close elements do not cause jitter.
  */
 let hideTimer: number | null = null;
 
+// EPHEMERAL: intentionally resets on cold start
 /**
  * Indicates if the primary input hardware is a touch or high-latency pointer.
  *
