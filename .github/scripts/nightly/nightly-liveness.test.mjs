@@ -2,11 +2,9 @@
 // Copyright (C) 2026 AlbiDR
 
 import assert from "node:assert/strict";
-import { readFileSync, readdirSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import test from "node:test";
 
-import { parseCoverageLog } from "./coverage-log-line.mjs";
-import { isCalibrationClean } from "./nightly-clean-calibration.mjs";
 import {
   CALIBRATION_FINDINGS,
   LIVENESS,
@@ -27,7 +25,6 @@ import {
 import { buildRecap, evidenceDateFor, renderRecap } from "./nightly-recap.mjs";
 
 const registry = JSON.parse(readFileSync(new URL("../../nightly-config/stages.json", import.meta.url), "utf8"));
-const LOG_DIR = new URL("../../nightly-logs/", import.meta.url);
 const ASCII = /^[\x09\x0A\x20-\x7E]*$/;
 
 const MERGED = { state: "MERGED", failureClass: null, attempts: 0, evidence: {} };
@@ -196,19 +193,26 @@ test("descriptionProbe: after description checks began, a merged observed stage 
 
 // --- The calibration counter -------------------------------------------------------
 
-/** Stage 4 (no evidence-date offset): a registered calibration, then `ordinary` plain CLEAN nights, then tonight. */
+/**
+ * Stage 4 (no evidence-date offset): seven ordinary nights, a calibration on
+ * the due night that follows (2026-08-31), `ordinary` more plain CLEAN nights,
+ * then tonight. Since 2026-09-27 only a due night can register, so the history
+ * has to earn its calibration the way a real stage does.
+ */
 function calibrationLog(ordinary, tonight, stage = 4) {
-  const lines = [line(stage, "2026-08-31", "CLEAN", "Calibration CLEAN pass: widened to older surfaces")];
+  const lines = [];
+  for (let day = 24; day <= 30; day += 1) lines.push(line(stage, `2026-08-${day}`, "CLEAN", "routine scan clean"));
+  lines.push(line(stage, "2026-08-31", "CLEAN", "Calibration pass: widened to older surfaces"));
   for (let day = 1; day <= ordinary; day += 1) lines.push(line(stage, `2026-09-${String(day).padStart(2, "0")}`, "CLEAN", "routine scan clean"));
   const date = `2026-09-${String(ordinary + 1).padStart(2, "0")}`;
   lines.push(line(stage, date, "CLEAN", tonight));
   return { date, coverageByStage: { [stage]: `${lines.join("\n")}\n` } };
 }
 
-test("calibration UNCLOSED: a due stage whose clean result does not register, with S01's real wording", () => {
-  // S01's own lines on 2026-09-20 and 09-21. They do not contain the word the
-  // recogniser knows, so the counter kept telling S01 to re-check.
-  const { date, coverageByStage } = calibrationLog(8, "Widened runtime security audit verified zero unhandled threats across Target B/C surfaces.");
+test("calibration UNCLOSED: a due stage whose clean result claims no wider check", () => {
+  // S04's real line on 2026-09-22, due that night. Nothing in it says the
+  // scan was widened, so the counter tells S04 to re-check again.
+  const { date, coverageByStage } = calibrationLog(8, "Audited Edge Function SQL view usage, recent changed files (72 files), and L1/L2 performance composables; zero substrate or logic bottlenecks found.");
   const result = calibrationProbe({ registry, date, coverageByStage });
   assert.equal(result.verdict, LIVENESS.BLIND);
   assert.equal(result.feedsGrade, false, "advisory: a stuck counter changes what a stage is told, not what it delivered");
@@ -217,19 +221,30 @@ test("calibration UNCLOSED: a due stage whose clean result does not register, wi
   // Seven ordinary nights make it due; the eighth (09-08) is the first told to re-check.
   assert.equal(finding.since, "2026-09-08");
   assert.equal(finding.count, 2);
+  assert.match(finding.quote, /^Audited Edge Function SQL view usage/);
 });
 
-test("calibration PREMATURE: a line that only reports the counter resets it, with S03's real wording", () => {
+test("S01's real wider-check wording on a due night now registers, so it is no longer stuck", () => {
+  // Stuck ON until 2026-09-27: "Widened ..." matched nothing in the old rule.
+  const { date, coverageByStage } = calibrationLog(7, "Widened runtime security audit verified zero unhandled threats across Target B/C surfaces.");
+  assert.equal(calibrationProbe({ registry, date, coverageByStage }).verdict, LIVENESS.FED);
+});
+
+test("a line that only reports the counter on a night nothing was due is no finding and no reset", () => {
+  // S03's real wording. It used to reset S03's count, so S03 was never told
+  // to re-check; now it is an ordinary night and the count keeps growing.
   const { date, coverageByStage } = calibrationLog(5, "Baseline current across 0 pending migrations (calibration-due: NO, consecutive CLEAN: 11)", 3);
-  const [finding] = calibrationProbe({ registry, date, coverageByStage }).findings;
-  assert.equal(finding.kind, CALIBRATION_FINDINGS.PREMATURE);
-  assert.match(finding.quote, /calibration-due: NO/);
+  const result = calibrationProbe({ registry, date, coverageByStage });
+  assert.equal(result.verdict, LIVENESS.FED);
+  assert.deepEqual(result.findings, []);
 });
 
 test("calibration: a due stage that registers is fed, and no calibration ever registered is not yet", () => {
-  const { date, coverageByStage } = calibrationLog(7, "Calibration CLEAN pass: widened scan found nothing");
+  const { date, coverageByStage } = calibrationLog(7, "Calibration pass: widened scan found nothing");
   assert.equal(calibrationProbe({ registry, date, coverageByStage }).verdict, LIVENESS.FED);
-  const never = { 4: `${[1, 2, 3].map(d => line(4, `2026-09-0${d}`, "CLEAN", "routine scan clean")).join("\n")}\n` };
+  // A calibration line on a night nothing was due registers nothing, so the
+  // counter has still never registered one: the check did not exist yet.
+  const never = { 4: `${[1, 2, 3].map(d => line(4, `2026-09-0${d}`, "CLEAN", d === 2 ? "Calibration pass: widened" : "routine scan clean")).join("\n")}\n` };
   assert.equal(calibrationProbe({ registry, date: "2026-09-03", coverageByStage: never }).verdict, LIVENESS.NOT_YET);
 });
 
@@ -250,20 +265,17 @@ test("a calibration-only finding keeps a perfect night at 10 and adds no grade c
   assert.match(text, ASCII);
 });
 
-test("the recap's calibration reading agrees with the counter's on every coverage line on record", () => {
-  // The recap used to carry a private recogniser with an extra alternative
-  // ("ordinary CLEAN-since-calibration") that \bcalibration\b already matched.
-  // It now asks the counter's own function. Pin that nothing changed meaning.
-  const legacy = record => record.status === "CLEAN" && /\bcalibration\b|ordinary CLEAN-since-calibration|consecutive CLEAN/i.test(record.summary || "");
-  let compared = 0;
-  for (const file of readdirSync(LOG_DIR).filter(name => /^\d{2}-.*-coverage\.log$/.test(name))) {
-    const stage = Number(file.slice(0, 2));
-    for (const record of parseCoverageLog(readFileSync(new URL(file, LOG_DIR), "utf8"), stage)) {
-      compared += 1;
-      assert.equal(isCalibrationClean(record), legacy(record), `${file} ${record.date}: ${record.summary}`);
-    }
-  }
-  assert.ok(compared > 0, "no coverage line was read, so this pin would pass vacuously");
+test("the recap calls a line a calibration only when the counter registered it", () => {
+  // Same wording, two nights: due on one, not on the other. The recap's
+  // "wider calibration check" sentence has to follow the counter, not the word.
+  const due = calibrationLog(7, "Calibration pass: widened scan found nothing");
+  const early = calibrationLog(3, "Calibration pass: widened scan found nothing");
+  const stageOf = history => buildRecap(mergedNight(history.date, {
+    summaryFor: n => (n === 4 ? "Calibration pass: widened scan found nothing" : "nothing to do"),
+    extraLines: { 4: history.coverageByStage[4].split("\n").slice(0, -2).join("\n") + "\n" },
+  })).stages.find(s => s.stage === 4);
+  assert.equal(stageOf(due).calibrated, true);
+  assert.equal(stageOf(early).calibrated, false);
 });
 
 // --- Scope checks ----------------------------------------------------------------
