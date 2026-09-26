@@ -30,8 +30,23 @@ export function cleanStreak(records) {
   return streak;
 }
 
-function isCalibrationClean(record) {
-  return record.status === "CLEAN" && /\bcalibration\b|consecutive CLEAN/i.test(record.summary);
+/**
+ * The one recogniser for a calibration-backed CLEAN, exported so every reader
+ * asks the same question. nightly-recap.mjs used to carry a private copy with
+ * a different signature (stage.outcome and stage.summary) and an extra
+ * alternative, "ordinary CLEAN-since-calibration", that \bcalibration\b already
+ * matched: the same duplicate-recogniser defect as the coverage-line regex,
+ * waiting for one copy to be edited without the other. It now calls this one
+ * through an adapter.
+ *
+ * Still a vocabulary list, and known to be wrong both ways on current
+ * evidence (S01 stuck due since 2026-09-20, S03 reset by lines that only
+ * report its counter). calibrationProbe in nightly-liveness.mjs reports that
+ * every night; changing what this matches restates calibration history that
+ * stages act on, so it is left to the owner.
+ */
+export function isCalibrationClean(record) {
+  return record.status === "CLEAN" && /\bcalibration\b|consecutive CLEAN/i.test(record.summary ?? "");
 }
 
 export function ordinaryCleanStreakSinceCalibration(records) {

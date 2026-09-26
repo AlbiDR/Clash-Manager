@@ -33,6 +33,7 @@ export const CONTROL_PLANE_FILES = [
   // Nightly with the recap commit that first uses it or the watchdog fails to
   // load.
   ".github/scripts/nightly/nightly-blind-spots.mjs",
+  ".github/scripts/nightly/nightly-liveness.mjs",
   ".github/scripts/nightly/nightly-contract.mjs",
   ".github/scripts/nightly/nightly-intervention.mjs",
   ".github/scripts/nightly/nightly-events.mjs",
