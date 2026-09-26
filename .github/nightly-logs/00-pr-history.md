@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-25
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-26] PR #1974 [Stage 9]: Codebase -- 79 candidates, 0 dep-violations, knip (1 file, 3 exports, 1 dup); streak: 6. Inspected config, useProgressiveList, useClipboard, useLeaderboard. Candidate BLITZ_DWELL_DEFAULT intentional. Defect hunt clean.
+**Domain:** architecture | **Commit:** 945e94638 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1974)
+**Files:** .github/nightly-logs/09-refactor-proposals-coverage.log, .github/nightly-logs/09-refactor-proposals-pr-body.md
+**Why:** Substrate structural scan found no ADR targets; candidate BLITZ_DWELL_DEFAULT duplicate export is an intentional safety floor derivation; defect hunt on useProgressiveList and useClipboard verified full system health with 31 passing unit tests.
+**Change:** Codebase -- 79 candidates, 0 dep-violations, knip (1 file, 3 exports, 1 dup); streak: 6. Inspected config, useProgressiveList, useClipboard, useLeaderboard. Candidate BLITZ_DWELL_DEFAULT intentional. Defect hunt clean.
+**Result:** depcruise 0 violations; knip scan (1 unused file, 3 unused exports, 1 dup export); clean-streak: 6; pnpm --dir Frontend-PWA test src/core/services/services-tests/useProgressiveList.spec.ts src/shared/composables/composables-tests/useClipboard.spec.ts passed 31/31 tests.
+**Nudges:** 0
+
+
 ### [2026-09-26] PR #1973 [Stage 10]: calibration clean audit: verified asset links, manifest parity, version code/name sync, release metadata, and security policy
 **Domain:** apk | **Commit:** b231433d4 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1973)
 **Files:** .github/nightly-logs/10-apk-integrity-coverage.log, .github/nightly-logs/10-apk-integrity-pr-body.md
