@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-25
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-26] PR #1972 [Stage 8]: Bumped @types/node catalog entry to ^26.6.3 and refreshed lockfile
+**Domain:** dependencies | **Commit:** d50163c99 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1972)
+**Files:** .github/nightly-logs/08-dependency-audit-coverage.log, .github/nightly-logs/08-dependency-audit-pr-body.md, package.json, pnpm-lock.yaml, pnpm-workspace.yaml
+**Why:** Apply safe Tier 1 patch bump for @types/node within current major range
+**Change:** Bumped @types/node catalog entry to ^26.6.3 and refreshed lockfile
+**Result:** PASS: pnpm install, unit tests (209 test files, 2097 tests pass), and type-check passed cleanly
+**Nudges:** 0
+
+
 ### [2026-09-26] PR #1971 [Stage 7]: Calibration CLEAN run 7: catalog and version declarations fully synchronized across all manifests
 **Domain:** versioning | **Commit:** 856f26119 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1971)
 **Files:** .github/nightly-logs/07-version-integrity-coverage.log, .github/nightly-logs/07-version-integrity-pr-body.md
