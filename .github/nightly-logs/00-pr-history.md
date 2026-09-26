@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-25
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-26] PR #1977 [Stage 13]: Update self-healing protocol findings and stage metrics for 2026-09-26
+**Domain:** pipeline | **Commit:** 0df05ac20 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1977)
+**Files:** .github/nightly-logs/13-self-healing-protocol-coverage.log, .github/nightly-logs/13-self-healing-protocol-pr-body.md, .github/nightly-logs/13-self-healing-protocol.md
+**Why:** Record Stage 9 recovery nudge and update consecutive no-diff days and audit durations
+**Change:** Update self-healing protocol findings and stage metrics for 2026-09-26
+**Result:** git diff --cached --check verified clean formatting across 13-self-healing-protocol.md section updates
+**Nudges:** 1
+
+
 ### [2026-09-26] PR #1976 [Stage 12]: Bounded candidate review of ViewOptions.vue found no violations across 10 UX categories
 **Domain:** ux | **Commit:** 8c7efeeaf | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1976)
 **Files:** .github/nightly-logs/12-apk-ux-coverage.log, .github/nightly-logs/12-apk-ux-pr-body.md
