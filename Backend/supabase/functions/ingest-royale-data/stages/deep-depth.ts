@@ -6,7 +6,71 @@ import { fetchWithRotation, processBatch } from "../../_shared/muscle.ts";
 import { normalizeTag } from "../../_shared/utils.ts";
 import { IngestionResult, AuditEntry } from "../../_shared/types.ts";
 import * as v from "npm:valibot@1.4.2";
-import { RoyaleBattleLogSchema, IngestionTargetsSchema } from "../../_shared/schemas.ts";
+import { RoyaleBattleLogSchema, IngestionTargetsSchema, LatestBattleTimesSchema } from "../../_shared/schemas.ts";
+
+/** The exact `battleTime` shape the Royale API emits and get_latest_battle_times() renders. */
+const ROYALE_BATTLE_TIME = /^\d{8}T\d{6}\.\d{3}Z$/;
+
+/**
+ * True only when every battle in a fetched log is provably already stored.
+ *
+ * @remarks
+ * Both sides are fixed-width `YYYYMMDDTHHMMSS.mmmZ` strings, so lexical order is
+ * chronological order and no date parsing is needed.
+ *
+ * [THREAT:] A false positive here silently loses battles, because the ingest RPC is skipped.
+ * [DECISION LOG] Every uncertain case answers false (ingest as before): no stored time,
+ * an empty log, or either side not matching the exact format. A wrong answer can
+ * therefore only cost one redundant RPC, never a missed battle.
+ *
+ * @param battleLog - The validated battle log fetched from the Royale API.
+ * @param latestStored - The newest stored battle time for this player, if any.
+ * @returns Whether the ingest RPC can be skipped for this player.
+ */
+export function isAlreadyIngested(
+    battleLog: ReadonlyArray<{ battleTime: string }>,
+    latestStored: string | undefined
+): boolean {
+    if (latestStored === undefined || !ROYALE_BATTLE_TIME.test(latestStored)) return false;
+    let newestFetched: string | null = null;
+    for (const battle of battleLog) {
+        if (!ROYALE_BATTLE_TIME.test(battle.battleTime)) return false;
+        if (newestFetched === null || battle.battleTime > newestFetched) newestFetched = battle.battleTime;
+    }
+    return newestFetched !== null && newestFetched <= latestStored;
+}
+
+/**
+ * Fetches the newest stored battle time for each recruit tag.
+ *
+ * @remarks
+ * [THREAT:] This lookup is an optimisation, so it must never be able to stop ingestion.
+ * [DECISION LOG] Any RPC error or malformed payload returns an empty map, which makes
+ * {@link isAlreadyIngested} answer false for every player: the stage then behaves
+ * exactly as it did before the lookup existed.
+ */
+async function fetchLatestBattleTimes(
+    recruitTags: string[],
+    logAudit: (stage: string, action: AuditEntry['action'], details?: unknown) => void
+): Promise<Map<string, string>> {
+    if (recruitTags.length === 0) return new Map();
+
+    const { data: rawLatest, error: latestError } = await supabase.rpc('get_latest_battle_times', {
+        p_player_tags: recruitTags
+    });
+
+    // [GUARD] VALIDATION BOUNDARY: Database ingress must pass through a Valibot schema.
+    const latestValidation = v.safeParse(LatestBattleTimesSchema, rawLatest ?? []);
+
+    logAudit('S6_BATTLES', 'integrity_checked', {
+        stage: 'LATEST_BATTLE_TIMES',
+        passed: latestValidation.success && !latestError,
+        details: latestError ? latestError.message : (latestValidation.success ? 'Latest battle times validated' : 'Malformed latest battle times payload')
+    });
+
+    if (latestError || !latestValidation.success) return new Map();
+    return new Map(latestValidation.output.map(row => [row.player_tag, row.latest_battle_time]));
+}
 
 /**
  * Stage 6: Native Deep Depth
@@ -60,9 +124,19 @@ export async function runDeepDepth(
         // cannot report success while a database write silently failed.
         let shadowLeadWriteFailure: string | null = null;
 
+        // Counts recruits whose battle log held nothing new, so the saving stays visible.
+        let skippedUnchanged = 0;
+
         if (ingestionTargets.length > 0) {
             logAudit('S6_BATTLES', 'called', { tags_count: ingestionTargets.length });
-            
+
+            // [DECISION LOG] Only recruits may skip the ingest RPC. For members it also
+            // reschedules next_poll_at (their tiered polling), so skipping it would change
+            // how often they are polled. A tag present in both lists is treated as a member.
+            const memberTags = new Set(targetsSnapshot.members);
+            const skippableRecruits = targetsSnapshot.recruits.filter(tag => !memberTags.has(tag));
+            const latestBattleTimes = await fetchLatestBattleTimes(skippableRecruits, logAudit);
+
             // Shared map to collect shadow leads across all concurrent tasks
             // EPHEMERAL: intentionally resets on cold start
             // [DECISION LOG] Using Map<string, { name: string }> to fix type mismatch pathogen.
@@ -86,14 +160,22 @@ export async function runDeepDepth(
 
                         if (battleLogValidationResult.success && battleLogValidationResult.output.length > 0) {
                             const battleLog = battleLogValidationResult.output;
-                            // Ingest battles
-                            const { error: rpcIngestionError } = await supabase.rpc('ingest_player_battles', {
-                                p_tag: targetTag,
-                                p_payload: battleLog
-                            });
-                            
-                            if (rpcIngestionError) {
-                                logAudit('S6_BATTLES', 'error', { tag: targetTag, message: 'RPC Failure', details: rpcIngestionError });
+
+                            // [THREAT:] ~9 in 10 recruit ingests wrote nothing (measured 2026-09-26),
+                            // yet each still cost a full PostgREST round trip.
+                            // [DECISION LOG] Skip the RPC only when the log is provably already stored;
+                            // shadow-lead harvesting below still runs on every fetched log.
+                            if (!memberTags.has(targetTag) && isAlreadyIngested(battleLog, latestBattleTimes.get(targetTag))) {
+                                skippedUnchanged++;
+                            } else {
+                                const { error: rpcIngestionError } = await supabase.rpc('ingest_player_battles', {
+                                    p_tag: targetTag,
+                                    p_payload: battleLog
+                                });
+
+                                if (rpcIngestionError) {
+                                    logAudit('S6_BATTLES', 'error', { tag: targetTag, message: 'RPC Failure', details: rpcIngestionError });
+                                }
                             }
 
                             // Extract potential recruits (leads) from opponents
@@ -170,7 +252,7 @@ export async function runDeepDepth(
         if (shadowLeadWriteFailure !== null) {
             results.battles.error = shadowLeadWriteFailure;
         }
-        logAudit('S6_BATTLES', 'terminated', { tags: ingestionTargets.length, success: results.battles.success });
+        logAudit('S6_BATTLES', 'terminated', { tags: ingestionTargets.length, skipped_unchanged: skippedUnchanged, success: results.battles.success });
     } catch (battleLogError: unknown) {
         const errorMessage = battleLogError instanceof Error ? battleLogError.message : String(battleLogError);
         results.battles.error = errorMessage;
