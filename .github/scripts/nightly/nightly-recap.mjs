@@ -79,7 +79,7 @@ import {
   evaluateBlindSpots,
   subCheckHistory,
 } from "./nightly-blind-spots.mjs";
-import { isCalibrationClean } from "./nightly-clean-calibration.mjs";
+import { calibrationOn } from "./nightly-clean-calibration.mjs";
 import {
   CALIBRATION_FINDINGS,
   evaluateDetectorLiveness,
@@ -518,6 +518,11 @@ export function buildRecap({ ledger, registry, date, coverageByStage, prHistory,
     // A stage whose turn has not come has reported nothing yet, and calling
     // that "not reported tonight" would be a claim about a night still ahead.
     blindSpots: stage.outcome === "PENDING" ? [] : evaluateBlindSpots(subChecks[stage.stage], date, { stage: stage.stage }),
+    // Whether tonight's line registered as a calibration, by the counter's own
+    // rule (due AND marked; see nightly-clean-calibration.mjs). Read from the
+    // stage's whole log, because "was it due" depends on the nights before.
+    calibrated: stage.outcome === "CLEAN"
+      && Boolean(calibrationOn(coverageByStage?.[stage.stage], stage.stage, evidenceDateFor(stage.stage, date))?.registered),
   }));
   // Cross-run health needs more than the selected date - a stage that needs
   // help every single night passes every individual run, so no single-date view
@@ -685,10 +690,10 @@ function semanticMiddle(stage) {
   if (why) return why;
   const area = displayArea(stage.slug);
   // What survives here is only what a reader cannot get from the header line.
-  // The counter's own recogniser, through an adapter for the stage's field
-  // names, so this sentence and the counter can never disagree about which
-  // line was a calibration.
-  if (isCalibrationClean({ status: stage.outcome, summary: stage.summary || "" })) {
+  // stage.calibrated is the counter's own verdict (see buildRecap), so this
+  // sentence and the counter can never disagree about which line was one. A
+  // line that only mentions the counter on a night nothing was due is not.
+  if (stage.calibrated) {
     return `This was a wider calibration check after repeated clean runs, so the CLEAN result has stronger evidence.`;
   }
   if (stage.outcome === "SKIPPED") {
@@ -1651,9 +1656,6 @@ function livenessLines(recap, check) {
       return [`${head}${tags(findings)} merged, but the watchdog recorded no description check for ${itThem(findings)}, so the description line above does not cover ${itThem(findings)}.`];
     case "calibration":
       return findings.map(f => {
-        if (f.kind === CALIBRATION_FINDINGS.PREMATURE) {
-          return `${head}${label(f.stage)} had its count reset although no re-check was due, because the counter took this line as one: ${quoted(f.quote)}. That postpones its next real re-check.`;
-        }
         if (f.count === 1) {
           return `${head}${label(f.stage)} was due a wider re-check on this run and its clean result did not register as one: ${quoted(f.quote)}`;
         }

@@ -867,7 +867,9 @@ test("an identifier keeps its underscores, and emphasis is still neutralised", (
 });
 
 test("a calibration-backed CLEAN run is called out in prose", () => {
-  const text = renderRecap({
+  // The sentence follows the counter's verdict (buildRecap sets `calibrated`
+  // from nightly-clean-calibration.mjs), never the word "calibration" alone.
+  const recapWith = calibrated => ({
     date: "2026-08-27",
     total: 1,
     merged: 1,
@@ -886,9 +888,14 @@ test("a calibration-backed CLEAN run is called out in prose", () => {
       summary: "calibration CLEAN after 7 ordinary CLEAN-since-calibration runs checked full wrapper invariant set",
       result: "Audit completed with no source change required.",
       merged: true,
+      calibrated,
     }],
   });
+  const text = renderRecap(recapWith(true));
   assert.match(text, /This was a wider calibration check after repeated clean runs/);
+  // The same words on a line the counter did not register (for example a
+  // stage reporting its counter on a night nothing was due) are not one.
+  assert.doesNotMatch(renderRecap(recapWith(false)), /This was a wider calibration check/);
   // The calibration sentence survives because it says something the header
   // cannot. Its Result does not: "Audit completed with no source change
   // required" is placeholderResult("CLEAN"), the stage runner's own stand-in

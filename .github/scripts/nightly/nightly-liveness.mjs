@@ -2,11 +2,7 @@
 // Copyright (C) 2026 AlbiDR
 
 import { parseCoverageLog } from "./coverage-log-line.mjs";
-import {
-  CALIBRATION_CLEAN_STREAK,
-  isCalibrationClean,
-  ordinaryCleanStreakSinceCalibration,
-} from "./nightly-clean-calibration.mjs";
+import { CALIBRATION_CLEAN_STREAK, calibrationTimeline } from "./nightly-clean-calibration.mjs";
 import { getEvidenceDate } from "./nightly-events.mjs";
 import { isObserved } from "./nightly-health.mjs";
 import { hasInterventionEvidence } from "./nightly-intervention.mjs";
@@ -27,17 +23,15 @@ import { isPlaceholderField } from "./nightly-prose.mjs";
 //   over 8 merged stages. Fixed at the root in b2d55452f (evidenceRefNames);
 //   tagsProbe below stays as the cheap witness that the fix keeps holding.
 // - The calibration counter. Its line parser was repaired on 2026-09-10 (see
-//   coverage-log-line.mjs), but its RECOGNISER is a vocabulary list, and the
-//   stages stopped speaking it. S01's lines on 2026-09-20 and 09-21 read
-//   "Widened runtime security audit verified ...", which does not match, so
-//   S01 has been told "calibration-due: YES" every night since and its count
-//   never resets. S03 is stuck the other way: lines that only REPORT its
-//   counter ("(calibration-due: NO, consecutive CLEAN: 11)" on 09-21, "4
-//   clean since calibration" on 09-14) match, so its count resets on nights
-//   nothing was due. 5 of the 20 calibrations recognised in the ledger era
-//   happened on nights that were not due. Replayed, a check like the one
-//   below would have flagged S12 on 2026-09-08, two days before the manual
-//   discovery on 09-10.
+//   coverage-log-line.mjs), but its RECOGNISER was a vocabulary list the
+//   stages stopped speaking. S01's "Widened runtime security audit ..." on
+//   2026-09-20 did not match, so S01 was told "calibration-due: YES" every
+//   night after and its count never reset; S03's lines that only REPORTED
+//   its counter did match, resetting it on nights nothing was due. The
+//   recogniser itself was fixed on 2026-09-27 (a calibration now needs the
+//   stage to have been due; see nightly-clean-calibration.mjs). The check
+//   below stays as the witness that it keeps working: replayed, it would have
+//   flagged S12 on 2026-09-08, two days before the manual discovery.
 // - Watchdog observation. On 2026-08-20 and 08-22 the ledger held 12
 //   EXPECTED rows while 8 stages had merged, so health and the nudge count
 //   skipped those stages silently.
@@ -88,9 +82,11 @@ export const LIVENESS = Object.freeze({
   UNASKABLE: "UNASKABLE",
 });
 
+// One finding kind. A second, PREMATURE (a count reset on a night nothing was
+// due), existed until 2026-09-27; the counter's own rule now makes it
+// impossible, because a line only registers on a night the stage was due.
 export const CALIBRATION_FINDINGS = Object.freeze({
   UNCLOSED: "UNCLOSED",
-  PREMATURE: "PREMATURE",
 });
 
 /**
@@ -387,14 +383,6 @@ export function descriptionProbe(ctx) {
   return probeResult(PROBE_SPECS.description, { epochReached: epoch !== null, judged, findings, nothingToAsk: "no observed stage merged" });
 }
 
-/** The clause of a summary the recogniser matched, so a quote shows why. */
-function matchingClause(summary) {
-  const clauses = String(summary || "").split("; ");
-  const hit = clauses.find(clause => isCalibrationClean({ status: "CLEAN", summary: clause }));
-  const quote = hit || clauses[0];
-  return clauses.length > 1 ? `${quote}; ...` : quote;
-}
-
 function firstClause(summary) {
   const clauses = String(summary || "").split("; ");
   return clauses.length > 1 ? `${clauses[0]}; ...` : clauses[0];
@@ -403,30 +391,22 @@ function firstClause(summary) {
 /**
  * Whether the calibration counter is doing what the stage is told it does.
  *
- * Advisory: never moves the grade. Reuses the counter's own functions and
- * CALIBRATION_CLEAN_STREAK by import, so it cannot disagree with what
- * nightly-clean-calibration.mjs tells the stage each night.
+ * Advisory: never moves the grade. Reads calibrationTimeline, the counter's
+ * own rule, so it cannot disagree with what nightly-clean-calibration.mjs
+ * tells the stage each night.
  *
- * Per stage, with `before` as its terminal records before the evidence date:
- * - UNCLOSED: `before` was due, tonight's line is CLEAN, and it did not
- *   register as a calibration. The stage is told to re-check again tomorrow,
- *   and the count only grows.
- * - PREMATURE: tonight's line registered while `before` was not due. The
- *   count reset for nothing, postponing the next real re-check.
+ * UNCLOSED: the stage was due, tonight's line is CLEAN, and it did not
+ * register as a calibration (no CALIBRATION_TOKEN and none of the wordings the
+ * counter accepts). The stage is told to re-check again tomorrow and the count
+ * only grows. Either it skipped the wider check or described it in words the
+ * counter does not recognise; the quote lets a reader tell which.
  *
  * Epoch: the first calibration any log registered on or before this date.
  * Every stage is judged from then on, not only stages that have registered
  * one themselves: a lane that never manages to register a calibration is the
  * worst case of the defect, and judging only lanes with a past success would
  * have hidden S12, due and unclosed on 2026-09-08, 09-09 and 09-10 before its
- * first registration on 09-11. Four lanes (S02, S05, S06, S08) carry no
- * calibration gate in their prompt; on the evidence to 2026-09-23 none of them
- * has been due, and if one is, the counter IS telling it to re-check, so the
- * line is true of it too.
- *
- * Does not repair the recogniser. Widening it, or excluding lines that only
- * report the counter, restates calibration history that stages act on: that
- * is the owner's decision, and this check is what makes the cost visible.
+ * first registration on 09-11.
  */
 export function calibrationProbe(ctx) {
   const findings = [];
@@ -435,31 +415,26 @@ export function calibrationProbe(ctx) {
   for (const stage of ctx.registry?.stages || []) {
     const evidenceDate = getEvidenceDate(stage.number, ctx.date);
     const records = recordsFor(ctx, stage.number).filter(record => record.date <= evidenceDate);
+    const timeline = calibrationTimeline(records, CALIBRATION_CLEAN_STREAK);
     const index = records.findIndex(record => record.date === evidenceDate);
-    const through = index >= 0 ? records.slice(0, index + 1) : records;
-    if (through.some(record => isCalibrationClean(record))) registeredAnywhere = true;
+    const through = index >= 0 ? timeline.slice(0, index + 1) : timeline;
+    if (through.some(entry => entry.registered)) registeredAnywhere = true;
     if (index < 0 || records[index].status !== "CLEAN") continue;
     judged += 1;
-    const tonight = records[index];
-    const before = records.slice(0, index);
-    const streak = ordinaryCleanStreakSinceCalibration(before);
-    const due = streak >= CALIBRATION_CLEAN_STREAK;
-    const registered = isCalibrationClean(tonight);
-    if (due && !registered) {
-      // The streak is the last `streak` records of `before`. The record that
-      // brought it to the threshold sits CALIBRATION_CLEAN_STREAK into that
-      // run, and the first night told to re-check is the one after it.
-      const firstDue = before.length - streak + CALIBRATION_CLEAN_STREAK;
-      findings.push({
-        stage: stage.number,
-        kind: CALIBRATION_FINDINGS.UNCLOSED,
-        since: (before[firstDue] || tonight).date,
-        count: streak - CALIBRATION_CLEAN_STREAK + 1,
-        quote: firstClause(tonight.summary),
-      });
-    } else if (registered && !due) {
-      findings.push({ stage: stage.number, kind: CALIBRATION_FINDINGS.PREMATURE, quote: matchingClause(tonight.summary) });
-    }
+    const tonight = timeline[index];
+    if (!tonight.due || tonight.registered) continue;
+    // The streak is the last `streakBefore` records before tonight. The record
+    // that brought it to the threshold sits CALIBRATION_CLEAN_STREAK into that
+    // run, and the first night told to re-check is the one after it.
+    const streak = tonight.streakBefore;
+    const firstDue = index - streak + CALIBRATION_CLEAN_STREAK;
+    findings.push({
+      stage: stage.number,
+      kind: CALIBRATION_FINDINGS.UNCLOSED,
+      since: (records[firstDue] || tonight.record).date,
+      count: streak - CALIBRATION_CLEAN_STREAK + 1,
+      quote: firstClause(tonight.record.summary),
+    });
   }
   return probeResult(PROBE_SPECS.calibration, {
     epochReached: registeredAnywhere,
