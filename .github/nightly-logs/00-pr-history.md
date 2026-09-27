@@ -16,6 +16,23 @@ LAST_AGED:   2026-09-26
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-27] PR #1987 [Stage 9]: Calibration pass: 42 candidates, dep-violations: 0, knip: 1 file, 3 exports (useClashDataLoader false positive), 1 dup (BLITZ_DWELL); streak: 7. Inspected core/config, roster/components, useProgressiveList. Defect hunt clean.
+**Domain:** architecture | **Commit:** 6eb94bbf2 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1987)
+**Files:** .github/nightly-logs/09-refactor-proposals-coverage.log, .github/nightly-logs/09-refactor-proposals-pr-body.md
+**Why:** Substrate compliant with CleanStack ADR; knip exports required by DataLoaderPlugin and BLITZ_DWELL duplicate export represents distinct domain concepts; Defect hunt on useProgressiveList passed.
+**Change:** Calibration pass: 42 candidates, dep-violations: 0, knip: 1 file, 3 exports (useClashDataLoader false positive), 1 dup (BLITZ_DWELL); streak: 7. Inspected core/config, roster/components, useProgressiveList. Defect hunt clean.
+**Result:** depcruise: 0 violations. knip: false positives proven. Frontend-PWA test suite: 209 files, 2102 tests passed.
+**Nudges:** 0
+
+### [2026-09-27] PR #1986 [Stage 10]: Audited wrapper invariants: asset links, manifest parity, version code/name sync, release metadata (latest.json), and security policy via pnpm audit:apk and pnpm apk:verify:source; all intact with no mismatches.
+**Domain:** apk | **Commit:** 4a2cac24a | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1986)
+**Files:** .github/nightly-logs/10-apk-integrity-coverage.log, .github/nightly-logs/10-apk-integrity-pr-body.md
+**Why:** PWA and APK native wrapper configurations are strictly synchronized and aligned across all checks.
+**Change:** Audited wrapper invariants: asset links, manifest parity, version code/name sync, release metadata (latest.json), and security policy via pnpm audit:apk and pnpm apk:verify:source; all intact with no mismatches.
+**Result:** pnpm audit:apk and pnpm apk:verify:source passed cleanly.
+**Nudges:** 0
+
+
 ### [2026-09-27] PR #1985 [Stage 8]: Bumped knip to ^6.38.0 and updated major version watchlist
 **Domain:** dependencies | **Commit:** 7db5e1aeb | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1985)
 **Files:** .github/nightly-logs/08-dependency-audit-coverage.log, .github/nightly-logs/08-dependency-audit-pr-body.md, package.json, pnpm-lock.yaml, pnpm-workspace.yaml
