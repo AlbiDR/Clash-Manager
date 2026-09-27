@@ -10,6 +10,7 @@ _agents
 .gemini
 .cursor
 .jules
+.traycer
 .mcp
 # Local MCP server wiring: developer tooling only, nothing in CI reads it.
 .mcp.json
