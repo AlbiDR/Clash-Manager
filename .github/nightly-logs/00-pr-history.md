@@ -16,6 +16,31 @@ LAST_AGED:   2026-09-26
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-27] PR #1982 [Stage 4]: Inspected 42 changed files and Edge Functions for SQL view substrate hygiene; zero structural rot or unreferenced views found.
+**Domain:** optimization | **Commit:** 4abc0c97a | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1982)
+**Files:** .github/nightly-logs/04-optimization-coverage.log, .github/nightly-logs/04-optimization-pr-body.md
+**Why:** Codebase substrate hygiene is fully compliant; all 6 known database views remain unreferenced in Edge Function source code and all unit tests pass with zero source changes required.
+**Change:** Inspected 42 changed files and Edge Functions for SQL view substrate hygiene; zero structural rot or unreferenced views found.
+**Result:** Vitest pnpm test passed 209 test files and 2102 total tests, source grep confirmed 0 unreferenced view usages
+**Nudges:** 0
+
+### [2026-09-27] PR #1983 [Stage 5]: Audited doc debt file RecruitCard.vue and verified existing README prose is current
+**Domain:** documentation | **Commit:** 6b1272762 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1983)
+**Files:** .github/nightly-logs/05-documentation-readme-coverage.log, .github/nightly-logs/05-documentation-readme-pr-body.md
+**Why:** Doc debt file Frontend-PWA/src/features/headhunter/components/RecruitCard.vue prose in Frontend-PWA/src/features/headhunter/README.md is already up to date with metric taxonomy and accessibility labeling
+**Change:** Audited doc debt file RecruitCard.vue and verified existing README prose is current
+**Result:** VERIFIED: CLEAN - No source README changes required
+**Nudges:** 0
+
+### [2026-09-27] PR #1981 [Stage 6]: Updated RecruitCard interface contracts, decision log, and inline annotations to reflect recruit metric taxonomy
+**Domain:** documentation | **Commit:** ac89144d0 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1981)
+**Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, .github/nightly-logs/06-documentation-tsdoc-pr-body.md, Frontend-PWA/src/features/headhunter/components/RecruitCard.vue
+**Why:** Resolved documentation debt in RecruitCard.vue following recruit metric taxonomy clarification
+**Change:** Updated RecruitCard interface contracts, decision log, and inline annotations to reflect recruit metric taxonomy
+**Result:** All 209 unit test files (2102 tests) passed including RecruitCard.spec.ts
+**Nudges:** 0
+
+
 ### [2026-09-27] PR #1980 [Stage 3]: Pending migrations: 0, migration-quality: PASS, fold-state: DEGRADED, database-verification: DB-UNAVAILABLE. Read-only RLS, search_path, formatting, and GPL-3.0 header audit passed with zero structural deviations.
 **Domain:** database | **Commit:** 9d16a9a91 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1980)
 **Files:** .github/nightly-logs/03-baseline-consolidation-coverage.log, .github/nightly-logs/03-baseline-consolidation-pr-body.md
