@@ -1,26 +1,26 @@
 ### Nightly Stage 3: Baseline Consolidation - Declarative Schema Hardener
 
-**Status:** PARTIAL-RUN
+**Status:** CLEAN
 
-In plain terms: no change was made to the project. This run ended as PARTIAL-RUN and the only file here is the log recording that.
+In plain terms: nothing needed fixing. This run checked the baseline consolidation area and found it already correct, so the only file here is the log recording that the check happened.
 
-**What was checked:** Baseline consolidation partial run: 0 pending migrations; migration-quality FAIL due to historical migration comment policy violations; fold-state DEGRADED; database DB-UNAVAILABLE
+**What was checked:** Audited master baseline SQL: 0 pending migrations, migration-quality PASS, fold-state DEGRADED, DB-UNAVAILABLE, CLEAN-since-calib 1. Read-only audit confirmed 29 RLS tables, 102 search_path functions, 0 em-dashes, 0 emojis.
 
-**Why:** Historical incremental migrations carry comment policy violations that Stage 3 is forbidden to rewrite per prompt audit trail policy, blocking CLEAN status
+**Why:** 0 pending migrations in pending-migrations.txt; read-only audit verified full compliance with RLS, search_path, and formatting rules; no baseline SQL changes required.
 
-**Result:** migration-quality FAIL: 4 historical violations in incremental migrations; fold-state DEGRADED, database DB-UNAVAILABLE
+**Result:** pnpm audit:migrations reported PASS across 52 migrations and 170 baseline objects; fold-state reported DEGRADED static result due to DB-UNAVAILABLE.
 
 **Files changed:** .github/nightly-logs/03-baseline-consolidation-coverage.log
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: database
-  Cycle: nightly-cycle/2026-09-24
+  Cycle: nightly-cycle/2026-09-26
   Contract: fce15bf60f686eba9489d1297c90bb03fbaaff69d64886cf62eb35d47f90f307
-  Why: Historical incremental migrations carry comment policy violations that Stage 3 is forbidden to rewrite per prompt audit trail policy, blocking CLEAN status
-  Change: Baseline consolidation partial run: 0 pending migrations; migration-quality FAIL due to historical migration comment policy violations; fold-state DEGRADED; database DB-UNAVAILABLE
-  Result: migration-quality FAIL: 4 historical violations in incremental migrations; fold-state DEGRADED, database DB-UNAVAILABLE
+  Why: 0 pending migrations in pending-migrations.txt; read-only audit verified full compliance with RLS, search_path, and formatting rules; no baseline SQL changes required.
+  Change: Audited master baseline SQL: 0 pending migrations, migration-quality PASS, fold-state DEGRADED, DB-UNAVAILABLE, CLEAN-since-calib 1. Read-only audit confirmed 29 RLS tables, 102 search_path functions, 0 em-dashes, 0 emojis.
+  Result: pnpm audit:migrations reported PASS across 52 migrations and 170 baseline objects; fold-state reported DEGRADED static result due to DB-UNAVAILABLE.
   Files: .github/nightly-logs/03-baseline-consolidation-coverage.log
   Nudges: 0
-  Execution: 9e8aa28f2d6fd2c05c2377e91d7b81c3e1412663
+  Execution: 22a4bdc51ae5b277b26e04c23e4e06e039dd9238
 -->

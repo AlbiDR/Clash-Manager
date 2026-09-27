@@ -232,8 +232,12 @@ const TIME_AGO_MULTIPLIERS: Record<string, number> = {
   y: 525600,
 };
 
+// EPHEMERAL: intentionally resets on cold start
+// [THREAT:] Caches accumulate in memory per session and reset on module re-load.
 /** L2 Cache: Stores absolute timestamps to avoid re-parsing identical ISO strings. */
 const ABS_CACHE = new Map<string, number | null>();
+// EPHEMERAL: intentionally resets on cold start
+// [THREAT:] Caches accumulate in memory per session and reset on module re-load.
 /** L1 Cache: Stores static minute values for pre-formatted 'ago' strings. */
 const REL_CACHE = new Map<string, number>();
 

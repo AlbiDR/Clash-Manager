@@ -12,7 +12,8 @@ import { useToast } from "@core/services/useToast";
 import { getCurrentInstance, onUnmounted, watch } from "vue";
 import type { WebAppData, DismissalRequest, Recruit } from "@core/types";
 
-// Module-level state/references
+// EPHEMERAL: intentionally resets on cold start
+// [THREAT:] Headhunter notification tracking and watcher registration state resets on session re-load.
 let previousData: WebAppData | null = null;
 
 /**
