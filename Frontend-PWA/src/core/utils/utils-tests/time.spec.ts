@@ -16,6 +16,7 @@ import {
   formatTimeAgoShort,
   parseTimeAgoValue,
   getDurationUnits,
+  formatCompactDuration,
   formatCountdown,
   t2tToTimestamp,
 } from "../time";
@@ -198,6 +199,36 @@ describe("time utilities", () => {
         minutes: 0,
         seconds: 0,
       });
+    });
+  });
+
+  describe("formatCompactDuration", () => {
+    it("formats durations longer than 1 hour using accumulative total hours and padded minutes", () => {
+      // 1 day, 2 hours, 5 minutes, 30 seconds -> 26h 05m
+      const ms = 1 * 86_400_000 + 2 * 3_600_000 + 5 * 60_000 + 30 * 1_000;
+      expect(formatCompactDuration(ms)).toBe("26h 05m");
+    });
+
+    it("formats durations with minutes and seconds without trailing zeroes if seconds exist", () => {
+      // 2 minutes, 15 seconds -> 2m 15s
+      const ms = 2 * 60_000 + 15 * 1_000;
+      expect(formatCompactDuration(ms)).toBe("2m 15s");
+    });
+
+    it("drops trailing seconds when seconds are zero for minute-only durations", () => {
+      // 2 minutes, 0 seconds -> 2m
+      const ms = 2 * 60_000;
+      expect(formatCompactDuration(ms)).toBe("2m");
+    });
+
+    it("formats sub-minute durations using seconds only", () => {
+      // 45 seconds -> 45s
+      expect(formatCompactDuration(45_000)).toBe("45s");
+    });
+
+    it("formats 0ms or negative ms as 0s", () => {
+      expect(formatCompactDuration(0)).toBe("0s");
+      expect(formatCompactDuration(-5000)).toBe("0s");
     });
   });
 

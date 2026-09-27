@@ -382,6 +382,14 @@ test("a whole recap is assembled and rendered from evidence alone", () => {
     // evidence either way, and says so rather than printing "none".
     "Blind spots: not measured. No stage had reported whether its checks could run on or before this date, so this run cannot say whether any check was skipped.",
     "",
+    // Last, because it says how far every line above can be trusted. A
+    // one-date fixture has no epoch for the fields the watchdog records, so
+    // those checks say they did not exist yet rather than counting as fed;
+    // "none was blind" is only as wide as the three that could look.
+    "Detector check: 3 of 11 checks had what they need for this run, and none was blind.",
+    "5 checks did not exist yet on this date: merge tags, watchdog nudges, run timings, description checks and the calibration counter.",
+    "3 checks had nothing to ask on this run: the pull request history, because no pull request history entry survives for this run; the evidence guard, because no pull request history entry survives for this run; the boilerplate check, because fewer than two stages stated a result of their own.",
+    "",
   ].join("\n"));
 });
 
@@ -859,7 +867,9 @@ test("an identifier keeps its underscores, and emphasis is still neutralised", (
 });
 
 test("a calibration-backed CLEAN run is called out in prose", () => {
-  const text = renderRecap({
+  // The sentence follows the counter's verdict (buildRecap sets `calibrated`
+  // from nightly-clean-calibration.mjs), never the word "calibration" alone.
+  const recapWith = calibrated => ({
     date: "2026-08-27",
     total: 1,
     merged: 1,
@@ -878,9 +888,14 @@ test("a calibration-backed CLEAN run is called out in prose", () => {
       summary: "calibration CLEAN after 7 ordinary CLEAN-since-calibration runs checked full wrapper invariant set",
       result: "Audit completed with no source change required.",
       merged: true,
+      calibrated,
     }],
   });
+  const text = renderRecap(recapWith(true));
   assert.match(text, /This was a wider calibration check after repeated clean runs/);
+  // The same words on a line the counter did not register (for example a
+  // stage reporting its counter on a night nothing was due) are not one.
+  assert.doesNotMatch(renderRecap(recapWith(false)), /This was a wider calibration check/);
   // The calibration sentence survives because it says something the header
   // cannot. Its Result does not: "Audit completed with no source change
   // required" is placeholderResult("CLEAN"), the stage runner's own stand-in
@@ -1334,9 +1349,15 @@ test("an unfinished run is not graded", () => {
 // not started.
 test("prose about an unfinished run never claims the whole run succeeded", () => {
   const date = "2026-09-05";
+  // The stages that have run left readable log lines, as real ones do. With
+  // none at all the detector check is rightly blind (see the end of this
+  // test), and this test is about the in-progress wording, not that.
+  const coverageByStage = Object.fromEntries(registry.stages
+    .filter(stage => stage.number <= 11)
+    .map(stage => [stage.number, `* [${evidenceDateFor(stage.number, date)}] [Stage ${stage.number}] CHANGED: Codebase -- updated`]));
   const text = renderRecap(buildRecap({
     ledger: inFlightLedger(date, 11), registry, date,
-    coverageByStage: {}, prHistory: "", tags: [],
+    coverageByStage, prHistory: "", tags: [],
   }));
 
   assert.match(text, /This run is still going: S12 APK UX and S13 self healing protocol have not reached their slot/);
@@ -1352,6 +1373,17 @@ test("prose about an unfinished run never claims the whole run succeeded", () =>
   assert.match(text, /^Not yet run\. Its slot in the run order has not come round yet/m);
   assert.doesNotMatch(text, /^What was checked: APK UX/m);
   assert.doesNotMatch(text, /Waiting for its scheduled slot/);
+
+  // The same night with no readable log line: "nothing needs you" would rest
+  // on a check that could not see, so the sentence keeps its in-progress
+  // scope and says what it rests on, instead of either claim alone.
+  const blind = renderRecap(buildRecap({
+    ledger: inFlightLedger(date, 11), registry, date,
+    coverageByStage: {}, prHistory: "", tags: [],
+  }));
+  assert.match(blind, /Nothing that has run so far needs you, except that 1 of the checks below could not see its evidence; see Detector check\./);
+  assert.doesNotMatch(blind, /Nothing that has run so far needs you to do anything\./);
+  assert.doesNotMatch(blind, /Nothing in this run needs you/, "the run is not over, so the claim stays scoped to what has run");
 });
 
 // The phantom that made this look like a real regression: a stage that had not

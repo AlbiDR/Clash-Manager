@@ -27,6 +27,7 @@ The signature reusable capability. `ConsoleLayout` + `ConsoleHeader` + `ConsoleL
 | :--- | :--- |
 | `BaseCard.vue` / `BaseCardSkeleton.vue` | The foundational card (squish, selection) and its skeleton. `BaseCard.vue` integrates the declarative `v-tactile` directive on its score section and expand chevron button for mobile WebView touch feedback. |
 | `BaseBadge.vue` | The atomic badge. |
+| `AnimatedDigits.vue` | A layout-stable numeric readout with auto/explicit direction motion transition and tabular number formatting. |
 | `Icon.vue` | The SVG renderer; paths come from `@core/theme/icons`. |
 | `StatusPill.vue` / `MomentumPill.vue` | System-health pill and trend indicator. |
 | `StatsGrid.vue` / `StatisticItem.vue` | Responsive stat grid and a labeled data point. |

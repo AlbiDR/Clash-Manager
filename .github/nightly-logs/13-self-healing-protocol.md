@@ -446,6 +446,22 @@
   - Root Cause: Session entered prolonged execution reserves before watchdog recovery nudge re-triggered state updates.
   - Resolution Details: Watchdog nudge successfully recovered the session (`ok: true`). Stage 2 completed and published PR #1941 (CHANGED coverage log entry in `useMotionPreference.spec.ts`) for 2026-09-24. Pipeline intervention rate for 2026-09-24: 1/12 merged stages (8.3%).
 
+* Watchdog Recovery Nudge Interventions on 2026-09-25:
+  - Stages: Stage 4 (Optimization: Substrate Hygiene) and Stage 9 (Refactor Proposals Auditor)
+  - State: [RESCUED - monitor] (2026-09-25)
+  - Sessions: Stage 4 (sessions/17375795356601367168), Stage 9 (sessions/8403401972422557991)
+  - Symptom: Stage 4 and Stage 9 required watchdog nudge interventions (`nudgedAt: 2026-09-25T03:11:12.157Z` for Stage 4; `nudgedAt: 2026-09-25T08:24:01.682Z` for Stage 9) due to stalled execution or post-commit delay before finalization.
+  - Root Cause: Prolonged post-commit reserve or completion delays prior to finalization event emission.
+  - Resolution Details: Watchdog nudges successfully recovered both sessions (`ok: true`). Both Stage 4 and Stage 9 completed and merged cleanly. Pipeline intervention rate for 2026-09-25: 2/12 merged stages (16.7%).
+
+* Watchdog Recovery Nudge Intervention on 2026-09-26:
+  - Stage: Stage 9 (Refactor Proposals Auditor)
+  - State: [RESCUED - monitor] (2026-09-26)
+  - Session: sessions/10503216903773267575
+  - Symptom: Stage 9 session required a watchdog nudge intervention (`nudgedAt: 2026-09-26T08:32:07.768Z`) after stalled progress during refactor audit pass.
+  - Root Cause: Prolonged execution reserve or completion delay prior to finalization event emission; recurring stall pattern on consecutive days (2026-09-25 and 2026-09-26).
+  - Resolution Details: Watchdog nudge successfully recovered the session (`ok: true`). Stage 9 completed and published PR #1974 (CLEAN coverage log entry) for 2026-09-26. Pipeline intervention rate for 2026-09-26: 1/12 merged stages (8.3%).
+
 ## Section 2: Cross-Stage Coherence Bugs (Priority 2)
 
 * Duplicate Merge Failure Blocks in 00-pr-history.md:
@@ -496,53 +512,53 @@
 ## Section 3: No-Diff and Low-Value Audit (Priority 3)
 
 * Stage 1 (Harden):
-  - Consecutive No-Diff Days: 31 (CLEAN logged on 2026-09-24 [merged via PR #1939]; audit duration: 7m)
-  - Analysis: Monitored runtime integrity across codebase; verified zero unhandled threats across Target B/C surfaces.
+  - Consecutive No-Diff Days: 33 (CLEAN logged on 2026-09-26; audit duration: 6m)
+  - Analysis: Monitored runtime integrity across Edge Functions, Valibot boundaries, and cross-layer surfaces; zero threat vectors found.
 
 * Stage 2 (Verify):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-09-24 in Frontend-PWA/src/shared/composables/composables-tests/useMotionPreference.spec.ts [merged via PR #1941]; audit duration: 15m)
-  - Analysis: Expanded motion preference composable test coverage in useMotionPreference.spec.ts (rescued via watchdog nudge `nudgedAt: 2026-09-24T01:18:45.928Z`).
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-09-26 in Frontend-PWA/src/shared/ui/ui-tests/AnimatedDigits.spec.ts; audit duration: 16m)
+  - Analysis: Extended AnimatedDigits spec with edge cases for non-numeric transitions, negative/decimal parsing, and static separator rendering.
 
 * Stage 3 (Baseline Consolidation):
-  - Consecutive No-Diff Days: 15 (PARTIAL-RUN logged on 2026-09-24 [merged via PR #1940]; audit duration: 3m)
-  - Analysis: Baseline consolidation partial run: 0 pending migrations; migration-quality FAIL due to historical migration comment policy violations; fold-state DEGRADED.
+  - Consecutive No-Diff Days: 17 (CLEAN logged on 2026-09-26; audit duration: 3m)
+  - Analysis: Read-only baseline audit verified 0 pending migrations, migration-quality PASS, fold-state DEGRADED, DB-UNAVAILABLE, RLS compliance, and search_path isolation.
 
 * Stage 4 (Optimization):
-  - Consecutive No-Diff Days: 10 (CLEAN logged on 2026-09-24 [merged via PR #1942]; audit duration: 6m)
-  - Analysis: Audited Edge Function SQL view usage and performance composables; zero substrate or logic bottlenecks found.
+  - Consecutive No-Diff Days: 12 (CLEAN logged on 2026-09-26; audit duration: 4m)
+  - Analysis: Inspected 74 changed files and Edge Functions for SQL view substrate hygiene; zero structural rot found.
 
 * Stage 5 (README):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-09-24 in .github/nightly-logs/05-documentation-readme-coverage.log [merged via PR #1943]; audit duration: 11m)
-  - Analysis: Reconciled documentation and updated system README assets.
+  - Consecutive No-Diff Days: 1 (CLEAN logged on 2026-09-26; audit duration: 5m)
+  - Analysis: Audited codebase README files against implementation truth; verified zero documentation drift.
 
 * Stage 6 (TSDoc):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-09-24 in Frontend-PWA/src/core/services/StorageService.ts [merged via PR #1944]; audit duration: 5m)
-  - Analysis: Hardened StorageService interface contracts and inline TSDoc annotations.
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-09-26 in Frontend-PWA/src/shared/ui/AnimatedDigits.vue; audit duration: 7m)
+  - Analysis: Hardened AnimatedDigits TSDoc interface contracts and inline logic annotations.
 
 * Stage 7 (Version Integrity):
-  - Consecutive No-Diff Days: 144 (CLEAN logged on 2026-09-24 [merged via PR #1945]; audit duration: 2m)
-  - Analysis: Monorepo package versions (14.50.112) and PNPM catalogs cleanly verified across workspace and package manifests; 0 drift lines found.
+  - Consecutive No-Diff Days: 146 (CLEAN logged on 2026-09-26; audit duration: 2m)
+  - Analysis: Catalog and version declarations fully synchronized across all manifests (calibration CLEAN run 7).
 
 * Stage 8 (Dependency Audit):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-09-24 in package.json [merged via PR #1946]; audit duration: 6m)
-  - Analysis: Updated workspace package dependencies and refreshed lockfile.
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-09-26 in package.json; audit duration: 5m)
+  - Analysis: Bumped @types/node catalog entry to ^26.6.3 and refreshed lockfile.
 
 * Stage 9 (Refactor):
-  - Consecutive No-Diff Days: 5 (CLEAN logged on 2026-09-24 [merged via PR #1947]; audit duration: 7m)
-  - Analysis: Audited 83 changed files, depcruise 0 violations, knip 1 unused file/2 devDeps/3 exp/1 dup, streak 4. Examined roster/components/index.ts, config/index.ts, useClipboard.ts. Non-viable refactor: BLITZ_DWELL_MIN dup export.
+  - Consecutive No-Diff Days: 7 (CLEAN logged on 2026-09-26; audit duration: 5m)
+  - Analysis: Audited 79 candidates, 0 dep-violations, knip (1 file, 3 exports, 1 dup); inspected config, useProgressiveList, useClipboard, useLeaderboard (rescued via watchdog nudge `nudgedAt: 2026-09-26T08:32:07.768Z`).
 
 * Stage 10 (APK-Integrity):
-  - Consecutive No-Diff Days: 77 (CLEAN logged on 2026-09-24 [merged via PR #1948]; audit duration: 2m)
-  - Analysis: Audited PWA and Android APK wrapper integrity across asset links, manifest parity, version codes/names sync, release metadata, and cleartext traffic policy.
+  - Consecutive No-Diff Days: 79 (CLEAN logged on 2026-09-26; audit duration: 2m)
+  - Analysis: Calibration clean audit: verified asset links, manifest parity, version code/name sync, release metadata, and security policy.
 
 * Stage 11 (APK-Optimization):
-  - Consecutive No-Diff Days: 11 (CLEAN logged on 2026-09-24 [merged via PR #1949]; audit duration: 6m)
-  - Analysis: Audited native WebView settings, Service Worker caching, and Vite manualChunks; zero source changes required.
+  - Consecutive No-Diff Days: 13 (CLEAN logged on 2026-09-26; audit duration: 9m)
+  - Analysis: Audited native WebView performance settings, PWA service worker precache route and navigation preload, and Vite bundle chunking rules; zero source changes required.
 
 * Stage 12 (APK-UX):
-  - Consecutive No-Diff Days: 11 (CLEAN logged on 2026-09-24 [merged via PR #1950]; audit duration: 6m)
-  - Analysis: Verified 1 candidate file (ViewOptions.vue) across 10 UX categories; no source change required.
+  - Consecutive No-Diff Days: 26 (CLEAN logged on 2026-09-26; audit duration: 3m)
+  - Analysis: Bounded candidate review of ViewOptions.vue found no violations across 10 UX categories.
 
 * Stage 13 (Self-Healing):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-09-24; audit duration: 7m)
-  - Analysis: Completed daily self-healing audit pass for 2026-09-24: verified 12/12 preceding stages completed and merged cleanly (PRs #1939-#1950) with 1 watchdog nudge required (Stage 2, 8.3% intervention rate), confirmed 0 unfinalized sentinels, and updated Section 3 metrics.
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-09-26; audit duration: 7m)
+  - Analysis: Completed daily self-healing audit pass for 2026-09-26: verified 12/12 preceding stages completed and merged cleanly with 1 watchdog nudge required (Stage 9, 8.3% intervention rate), confirmed 0 unfinalized sentinels, and updated Section 1 and Section 3 metrics.

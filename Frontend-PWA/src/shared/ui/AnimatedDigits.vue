@@ -2,12 +2,23 @@
 <!-- Copyright (C) 2026 AlbiDR -->
 <script setup lang="ts">
 /**
+ * ============================================================================
  * [SHARED UI] ANIMATED DIGITS
- *
+ * ----------------------------------------------------------------------------
  * A layout-stable numeric readout. Only digit cells whose value changes are
  * replaced, so a live value communicates change without turning into a noisy
  * counter. It is intentionally display-only: editable numeric controls keep
  * their native input semantics, caret behaviour, and IME support.
+ *
+ * @remarks
+ * **Architectural Context:**
+ * - **Layer:** Layer 2 Shared UI (@shared/ui)
+ * - **Role:** Layout-stable animated numeric display component.
+ * - **Permitted Imports:** Vue reactivity primitives (`computed`, `ref`, `watch`, `onMounted`).
+ *
+ * Satisfies ADR Section II: Presentation Orchestration & Layer Boundaries.
+ * Satisfies ADR Section IV: User Experience & Interaction Protocols.
+ * ============================================================================
  */
 import { computed, onMounted, ref, watch } from "vue";
 
@@ -27,15 +38,36 @@ const displayCharacters = computed(() => [...displayValue.value]);
 const resolvedDirection = ref<"up" | "down">("up");
 const isMounted = ref(false);
 
-function getNumericValue(value: string) {
+/**
+ * Parses numeric value from formatted text string for direction calculations.
+ *
+ * @param value - The display string to parse numeric digits from.
+ * @returns Parsed number or NaN if no numeric characters exist.
+ */
+function getNumericValue(value: string): number {
   const digits = value.replace(/[^\d.-]/g, "");
   return Number(digits);
 }
 
-function isDigitCharacter(character: string) {
+/**
+ * Checks whether a single character is an animated digit (0-9).
+ *
+ * @param character - Single character string to check.
+ * @returns True if character is a digit, false for separators/symbols.
+ */
+function isDigitCharacter(character: string): boolean {
   return /^\d$/.test(character);
 }
 
+/**
+ * Watches display value changes to infer motion direction in auto mode.
+ *
+ * [DECISION LOG] Auto direction calculation is bypassed prior to component mount
+ * (`!isMounted.value`) to avoid initial hydration transition churn or invalid motion.
+ *
+ * [THREAT] Non-finite or NaN numeric parse results (e.g., empty string or symbol-only values)
+ * are guarded via `Number.isFinite` to prevent invalid state updates.
+ */
 watch(displayValue, (nextValue, previousValue) => {
   if (!isMounted.value || props.direction !== "auto") return;
 

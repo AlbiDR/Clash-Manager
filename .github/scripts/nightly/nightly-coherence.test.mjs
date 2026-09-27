@@ -45,7 +45,6 @@ const ALLOWED_REPEATS = new Map([
   ["invariant", "two-line assert; an import on the critical path costs more than it saves"],
   ["parseArgs", "each module's own argument shape"],
   ["loadRegistry", "genuinely different: one takes a repoRoot and checks existence, one does not"],
-  ["isCalibrationClean", "consolidation deferred"],
 ]);
 
 test("no function name is defined in two control-plane modules unless recorded", () => {

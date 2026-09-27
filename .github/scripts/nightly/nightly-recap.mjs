@@ -79,6 +79,12 @@ import {
   evaluateBlindSpots,
   subCheckHistory,
 } from "./nightly-blind-spots.mjs";
+import { calibrationOn } from "./nightly-clean-calibration.mjs";
+import {
+  CALIBRATION_FINDINGS,
+  evaluateDetectorLiveness,
+  stageLeftOwnWords,
+} from "./nightly-liveness.mjs";
 import {
   FAILURE_PHRASES,
   PLAIN_PREFIX,
@@ -397,6 +403,20 @@ export const GRADE_RUBRIC = [
   // the rescue count per stage runs 4 to 7 with no outlier, so which stages get
   // nudged on a given night is a coin toss, not a signal.
   { grade: 9, when: r => r.rescued > 0, why: r => `Minor issues: every stage completed. ${r.rescued === 1 ? "One stage" : `${r.rescued} stages`} needed an automatic watchdog nudge, which required nothing from you.` },
+  // A 10 is a claim that every check below found nothing, and a check that
+  // could not see its evidence found nothing too. Only the grade-feeding
+  // probes count here (stage log lines, merge tags, watchdog nudges; see
+  // nightly-liveness.mjs): the observation probe is left to the "never
+  // observed" rule right after this one, so one unobserved stage lowers the
+  // grade through exactly one rule. Placed below every lower grade so it only
+  // ever withholds the 10, never lowers a grade on its own. Measured over all
+  // 42 ledger dates to 2026-09-22 it changes no historical grade: no night
+  // graded 10 had a grade-feeding probe blind.
+  {
+    grade: 9,
+    when: r => (r.blindGrading || []).length > 0,
+    why: r => `Unverified: every stage completed, but ${countOf(r.blindGrading, "check")} (${joinList(r.blindGrading.map(c => c.name))}) could not see ${r.blindGrading.length === 1 ? "its" : "their"} evidence for this run, so an optimal run cannot be confirmed.`,
+  },
   // "Unaided" is a claim about intervention, and intervention is only knowable
   // from a ledger row. Tags alone prove the merge, never that it was unaided,
   // so a night with unobserved stages can reach 10/10 on tags while a rescue
@@ -446,7 +466,7 @@ function standingClause(items) {
   return parts.join(", and ");
 }
 
-export function gradeRun(stages) {
+export function gradeRun(stages, liveness = null) {
   const totals = {
     total: stages.length,
     merged: stages.filter(s => s.merged).length,
@@ -461,6 +481,9 @@ export function gradeRun(stages) {
     // that has never reported a sub-check, exactly where it was.
     newBlindSpots: stages.flatMap(s => (s.blindSpots || []).filter(b => NEW_KINDS.has(b.kind))),
     standingBlindSpots: stages.flatMap(s => (s.blindSpots || []).filter(b => STANDING_KINDS.has(b.kind))),
+    // Absent for every caller that grades hand-built stages, which keeps them
+    // exactly where they were.
+    blindGrading: liveness?.blindGrading || [],
   };
   const hit = GRADE_RUBRIC.find(rule => rule.when(totals));
   return { ...totals, grade: hit.grade, rationale: typeof hit.why === "function" ? hit.why(totals) : hit.why };
@@ -495,18 +518,30 @@ export function buildRecap({ ledger, registry, date, coverageByStage, prHistory,
     // A stage whose turn has not come has reported nothing yet, and calling
     // that "not reported tonight" would be a claim about a night still ahead.
     blindSpots: stage.outcome === "PENDING" ? [] : evaluateBlindSpots(subChecks[stage.stage], date, { stage: stage.stage }),
+    // Whether tonight's line registered as a calibration, by the counter's own
+    // rule (due AND marked; see nightly-clean-calibration.mjs). Read from the
+    // stage's whole log, because "was it due" depends on the nights before.
+    calibrated: stage.outcome === "CLEAN"
+      && Boolean(calibrationOn(coverageByStage?.[stage.stage], stage.stage, evidenceDateFor(stage.stage, date))?.registered),
   }));
   // Cross-run health needs more than the selected date - a stage that needs
   // help every single night passes every individual run, so no single-date view
   // can ever see it - but it stops AT the selected date. Judging a past run
   // against nights that had not happened yet would both misreport that run and
   // break the reproducibility this file promises above.
+  //
+  // Liveness judges the stages exactly as classified above, so a check is
+  // blind only against what this recap actually reported.
+  const liveness = evaluateDetectorLiveness({
+    ledger, registry, date, coverageByStage: coverageByStage || {}, prHistory, tags: tags || [], stages, historyByStage,
+  });
   return {
     date,
     stages,
-    ...gradeRun(stages),
+    ...gradeRun(stages, liveness),
     blindSpotCoverage: blindSpotCoverage(subChecks, date),
     health: evaluatePipelineHealth(ledgerThrough(ledger, date, { inProgress: stages.some(s => s.outcome === "PENDING") }), registry),
+    liveness,
   };
 }
 
@@ -619,10 +654,6 @@ function stripCommitPrefix(value) {
   return String(value || "").replace(/^([a-z]+)(\([^)]+\))?!?:\s+/i, "");
 }
 
-function isCalibrationClean(stage) {
-  return stage.outcome === "CLEAN" && /\bcalibration\b|ordinary CLEAN-since-calibration|consecutive CLEAN/i.test(stage.summary || "");
-}
-
 function semanticAction(stage) {
   // A stage can be STUCK and still have declared a coverage line, so its own
   // words are preferred whenever it left any. With nothing at all, the fallback
@@ -659,7 +690,10 @@ function semanticMiddle(stage) {
   if (why) return why;
   const area = displayArea(stage.slug);
   // What survives here is only what a reader cannot get from the header line.
-  if (stage.outcome === "CLEAN" && isCalibrationClean(stage)) {
+  // stage.calibrated is the counter's own verdict (see buildRecap), so this
+  // sentence and the counter can never disagree about which line was one. A
+  // line that only mentions the counter on a night nothing was due is not.
+  if (stage.calibrated) {
     return `This was a wider calibration check after repeated clean runs, so the CLEAN result has stronger evidence.`;
   }
   if (stage.outcome === "SKIPPED") {
@@ -1037,12 +1071,51 @@ function blindSpotCaveat(stage) {
  *
  * Returns plain strings and an empty list when nothing needs qualifying, so a
  * night with no caveats reads exactly as it did before this existed.
+ *
+ * The detector-check clause is always the LAST entry, and the overview prints
+ * it as the paragraph's last sentence: it qualifies every claim before it,
+ * the "nothing needs you" one included, so it takes that sentence's place
+ * rather than contradicting it. A reader adding a caveat inserts before it.
  */
 export function overviewCaveats(recap) {
   const stages = (recap?.stages || []).filter(s => s.outcome === "CHANGED" || s.outcome === "CLEAN");
   // CHANGED before CLEAN, the order the overview names them in.
   const ordered = [...stages.filter(s => s.outcome === "CHANGED"), ...stages.filter(s => s.outcome === "CLEAN")];
-  return ordered.map(blindSpotCaveat).filter(Boolean);
+  const caveats = ordered.map(blindSpotCaveat).filter(Boolean);
+  const detector = detectorCaveat(recap);
+  return detector ? [...caveats, detector] : caveats;
+}
+
+/**
+ * Who the overview asks the reader to look at: what is broken now, what lost
+ * a check tonight, and what is trending badly. Pace is excluded on purpose:
+ * a slow stage that still delivers is not a call on the reader's time. A
+ * standing blind spot is already in the grade and the caveats.
+ */
+function attentionLabels(recap) {
+  const stages = recap?.stages || [];
+  const lostCheck = stages.filter(s => (s.blindSpots || []).some(b => NEW_KINDS.has(b.kind)));
+  return [...new Set([
+    ...stages.filter(s => s.outcome === "STUCK").map(stageLabel),
+    ...lostCheck.map(stageLabel),
+    ...(recap?.health?.chronic || []).map(stageLabel),
+    ...(recap?.health?.degrading || []).map(stageLabel),
+  ])];
+}
+
+/**
+ * "Nothing in this run needs you" is a claim that every check behind it could
+ * see. When one could not, the sentence keeps its answer about the reader's
+ * time and says what it rests on. Null when every check could see, so a
+ * fully fed night reads exactly as before.
+ */
+function detectorCaveat(recap) {
+  const blind = recap?.liveness?.blind || [];
+  if (blind.length === 0) return null;
+  const which = `${blind.length} of the checks below could not see ${blind.length === 1 ? "its" : "their"} evidence; see Detector check.`;
+  if (attentionLabels(recap).length > 0) return `Separately, ${which}`;
+  const pending = (recap.stages || []).some(s => s.outcome === "PENDING");
+  return `${pending ? "Nothing that has run so far needs you" : "Nothing in this run needs you"}, except that ${which}`;
 }
 
 /**
@@ -1112,8 +1185,11 @@ function overviewSection(recap) {
     // repurposed.
     sentences.push(`The rest checked their areas and found nothing that needed fixing, which for auditing stages is the job being done rather than a wasted run.`);
   }
-  // Right after the claim they qualify; see overviewCaveats.
-  sentences.push(...overviewCaveats(recap));
+  // Right after the claim they qualify; see overviewCaveats. The detector
+  // clause, its last entry, is held back to close the paragraph.
+  const caveats = overviewCaveats(recap);
+  const detector = detectorCaveat(recap);
+  sentences.push(...(detector ? caveats.slice(0, -1) : caveats));
 
   if (stuck.length > 0) {
     sentences.push(`${joinList(stuck.map(stageLabel))} produced nothing at all.`);
@@ -1129,26 +1205,21 @@ function overviewSection(recap) {
     sentences.push("Every stage that has run got there without help.");
   }
 
-  // Attention is the union of what is broken now and what is trending badly.
-  // Pace is excluded on purpose: a slow stage that still delivers is not a
-  // call on the reader's time.
-  // A check lost tonight is the one blind-spot kind that asks for a look; a
-  // standing one is already in the sentence above and in the grade.
-  const lostCheck = stages.filter(s => (s.blindSpots || []).some(b => NEW_KINDS.has(b.kind)));
-  const attention = [
-    ...stuck.map(stageLabel),
-    ...lostCheck.map(stageLabel),
-    ...(recap.health?.chronic || []).map(stageLabel),
-    ...(recap.health?.degrading || []).map(stageLabel),
-  ];
-  const unique = [...new Set(attention)];
-  sentences.push(unique.length === 0
-    ? pendingStages.length > 0
+  // Attention is the union of what is broken now and what is trending badly;
+  // see attentionLabels.
+  const unique = attentionLabels(recap);
+  if (unique.length > 0) {
+    sentences.push(`The part worth your attention is ${joinList(unique)}, detailed below.`);
+  } else if (!detector) {
+    sentences.push(pendingStages.length > 0
       // Not "nothing needs you to do anything": the run is not over, so the
       // only claim the evidence supports is about the part that has finished.
       ? "Nothing that has run so far needs you to do anything."
-      : "Nothing in this run needs you to do anything."
-    : `The part worth your attention is ${joinList(unique)}, detailed below.`);
+      : "Nothing in this run needs you to do anything.");
+  }
+  // Last, whatever came before it: it qualifies every sentence above, and
+  // when nothing needs the reader it IS that sentence. See detectorCaveat.
+  if (detector) sentences.push(detector);
 
   return [PLAIN_PREFIX + sentences.join(" "), ""];
 }
@@ -1372,11 +1443,22 @@ function evidenceGuardSection(recap) {
  * evidence guard above: a silent section here would read exactly like
  * "checked, none found" whether or not the check actually ran, and those are
  * not the same claim.
+ *
+ * The all-clear also states its scope, because the guard can only read words
+ * a stage wrote. It used to print the same unscoped sentence on dates where
+ * only 5 of 13 stages had any (2026-08-12 to 08-24, 09-10, 09-14), which is
+ * the vacuous-truth shape. The full-scope sentence is unchanged byte for byte.
  */
 function selfReportGuardSection(recap) {
-  const flagged = (recap.stages || []).filter(s => s.selfReportedFailure);
+  const stages = recap.stages || [];
+  const flagged = stages.filter(s => s.selfReportedFailure);
   if (flagged.length === 0) {
-    return ["Self-report guard: no stage's own summary contradicted the outcome it declared.", ""];
+    const worded = stages.filter(stageLeftOwnWords);
+    if (worded.length === 0) return ["Self-report guard: not measured, no stage left words of its own to check.", ""];
+    const scope = worded.length === stages.length
+      ? ""
+      : ` (checked the ${worded.length} of ${stages.length} stages that left words of their own)`;
+    return [`Self-report guard: no stage's own summary contradicted the outcome it declared${scope}.`, ""];
   }
   const parts = flagged.map(s => {
     const quote = escapeInline(s.result || s.summary || "");
@@ -1519,6 +1601,122 @@ function unknownBoilerplateSection(recap) {
   return [...lines, ""];
 }
 
+/** "S01", or "S01 hardening" when the recap still carries the stage. */
+function livenessStageLabel(recap, number) {
+  const stage = (recap.stages || []).find(s => s.stage === number);
+  return stage?.slug ? stageLabel(stage) : stageTag(number);
+}
+
+function capitalise(text) {
+  return `${text.slice(0, 1).toUpperCase()}${text.slice(1)}`;
+}
+
+/** A quoted line from a stage's log, closing the sentence it ends. */
+function quoted(value) {
+  return `"${escapeInline(value)}"`;
+}
+
+/**
+ * One bullet per blind check, in the reader's words. Each says what the check
+ * could not see and which line above that weakens, never what to do about it:
+ * the fix is the pipeline's, and the reader only needs to know how far to
+ * trust the lines above.
+ */
+function livenessLines(recap, check) {
+  const label = number => livenessStageLabel(recap, number);
+  const tags = findings => joinList(findings.map(f => stageTag(f.stage)));
+  const itThem = findings => (findings.length === 1 ? "it" : "them");
+  const head = `- ${capitalise(check.name)}: `;
+  const findings = check.findings || [];
+  switch (check.id) {
+    case "coverage": {
+      if (findings.length === check.judged && check.judged > 1) {
+        return [`${head}none of the ${check.judged} merged stages left a log line for this date that this report could read, so every outcome above is a guess.`];
+      }
+      const missing = findings.filter(f => !f.token);
+      const unread = findings.filter(f => f.token);
+      const parts = [];
+      if (missing.length > 0) parts.push(`${tags(missing)} merged but left no log line for this date`);
+      for (const f of unread) parts.push(`${stageTag(f.stage)} merged, but its log line for this date is marked ${f.token}, which this report cannot read`);
+      return [`${head}${parts.join("; ")}.`];
+    }
+    case "tags":
+      return [`${head}the watchdog recorded a merge tag for ${tags(findings)} that is missing from the tags this report read, so ${findings.length === 1 ? "that merge rests" : "those merges rest"} on the watchdog's record alone.`];
+    case "observation":
+      return [`${head}${tags(findings)} merged or logged a result, but the watchdog never recorded a verdict, so the health check and the nudge count skipped ${itThem(findings)}.`];
+    case "intervention":
+      return [`${head}${findings.map(f => `${stageTag(f.stage)} opened its pull request after ${stageTag(f.overtakenBy)} had already opened one, which is what a stalled stage looks like, but no nudge was recorded for it`).join("; ")}. The nudge count above may be too low.`];
+    case "history":
+      return [`${head}${findings.map(f => `${stageTag(f.stage)} has a history entry for this date that could not be read (${quoted(f.quote)})`).join("; ")}, so ${findings.length === 1 ? "its" : "their"} Why and Result are missing above.`];
+    case "nudges":
+      return [`${head}${findings.map(f => `${stageTag(f.stage)}'s history entry records its nudge count as ${quoted(f.quote)}`).join("; ")}, which is not a number, so the evidence guard above did not count ${itThem(findings)}.`];
+    case "pace":
+      return [`${head}${tags(findings)} logged a run window, but the watchdog recorded no duration for ${itThem(findings)}, so the pace check skipped ${itThem(findings)}.`];
+    case "description":
+      return [`${head}${tags(findings)} merged, but the watchdog recorded no description check for ${itThem(findings)}, so the description line above does not cover ${itThem(findings)}.`];
+    case "calibration":
+      return findings.map(f => {
+        if (f.count === 1) {
+          return `${head}${label(f.stage)} was due a wider re-check on this run and its clean result did not register as one: ${quoted(f.quote)}`;
+        }
+        return `${head}${label(f.stage)} has been due a wider re-check since ${f.since}, and ${f.count === 2 ? "neither" : "none"} of its ${f.count} clean results since registered as one. Either it skipped the wider check or described it in words the counter does not recognise: ${quoted(f.quote)}`;
+      });
+    default:
+      return [`${head}${tags(findings)} could not be read.`];
+  }
+}
+
+/**
+ * Whether each check above could see its evidence for this run. Rendered
+ * last, because it qualifies every line above it. See nightly-liveness.mjs.
+ *
+ * Three answers that must never print the same text: all fed, some blind, and
+ * no evidence at all. The count is the probe list's length, never a literal.
+ * Checks that did not exist yet, or had nothing to ask, are collapsed into one
+ * line each so a recap of an old date does not grow a list of non-findings.
+ */
+function livenessSection(recap) {
+  const live = recap.liveness;
+  if (!live) return [];
+  if (live.vacuous) return ["Detector check: no evidence exists for this date, so no check could run.", ""];
+
+  const { total, fed, blind, notYet, unaskable } = live;
+  if (fed.length === total) return [`Detector check: all ${total} checks had what they need for this run.`, ""];
+
+  const lines = [];
+  if (blind.length === 0) {
+    lines.push(`Detector check: ${fed.length} of ${total} checks had what they need for this run, and none was blind.`);
+  } else {
+    lines.push(`Detector check: ${fed.length} of ${total} checks had what they need for this run. ${capitalise(joinList(blind.map(c => c.name)))} did not:`);
+    for (const check of blind) lines.push(...livenessLines(recap, check));
+    const unclosed = blind.flatMap(c => c.findings || []).filter(f => f.kind === CALIBRATION_FINDINGS.UNCLOSED);
+    if (unclosed.length > 0) {
+      lines.push(unclosed.length === 1
+        ? "Until a re-check registers, that stage is told to re-check every night and its count never resets."
+        : "Until a re-check registers, those stages are told to re-check every night and their count never resets.");
+    }
+  }
+  if (notYet.length > 0) {
+    lines.push(`${countOf(notYet, "check")} did not exist yet on this date: ${joinList(notYet.map(c => c.name))}.`);
+  }
+  if (unaskable.length > 0) {
+    lines.push(`${countOf(unaskable, "check")} had nothing to ask on this run: ${unaskable.map(c => `${c.name}, because ${c.reason}`).join("; ")}.`);
+  }
+  return [...lines, ""];
+}
+
+/**
+ * Appended to the Grade line whenever a grade-feeding check was blind,
+ * whatever the grade: a blind check can hide a failure as easily as a
+ * success, so the number could be wrong in either direction. A withheld
+ * grade has no number to qualify.
+ */
+function gradeCaveat(recap) {
+  return (recap.blindGrading || []).length > 0
+    ? " This grade leans on a check that was blind for this run, so it may be wrong in either direction."
+    : "";
+}
+
 export function renderRecap(recap) {
   const pending = recap.pending || 0;
   const lines = [
@@ -1529,7 +1727,7 @@ export function renderRecap(recap) {
       + ` | ${recap.rescued} auto-recovered`,
     // Never prints "null/10". A withheld grade is a statement in its own right
     // and has to read like one, not like a rendering bug.
-    recap.grade === null ? `Grade: withheld - ${recap.rationale}` : `Grade: ${recap.grade}/10 - ${recap.rationale}`,
+    recap.grade === null ? `Grade: withheld - ${recap.rationale}` : `Grade: ${recap.grade}/10 - ${recap.rationale}${gradeCaveat(recap)}`,
     "",
   ];
   lines.push(...overviewSection(recap));
@@ -1547,6 +1745,8 @@ export function renderRecap(recap) {
   lines.push(...selfReportGuardSection(recap));
   lines.push(...blindSpotSection(recap));
   lines.push(...unknownBoilerplateSection(recap));
+  // Last, because it says how far every line above can be trusted.
+  lines.push(...livenessSection(recap));
 
   return lines.join("\n");
 }
