@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-26
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-27] PR #1985 [Stage 8]: Bumped knip to ^6.38.0 and updated major version watchlist
+**Domain:** dependencies | **Commit:** 7db5e1aeb | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1985)
+**Files:** .github/nightly-logs/08-dependency-audit-coverage.log, .github/nightly-logs/08-dependency-audit-pr-body.md, package.json, pnpm-lock.yaml, pnpm-workspace.yaml
+**Why:** Safe minor update for devDependency knip
+**Change:** Bumped knip to ^6.38.0 and updated major version watchlist
+**Result:** pnpm test passed 209 test files and 2102 tests
+**Nudges:** 1
+
+
 ### [2026-09-27] PR #1984 [Stage 7]: Scanned Frontend-PWA and Backend package.json catalogs and root/Frontend-PWA/Backend versions (14.50.119); zero drift across manifests and derived locations.
 **Domain:** versioning | **Commit:** 775d8edeb | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1984)
 **Files:** .github/nightly-logs/07-version-integrity-coverage.log, .github/nightly-logs/07-version-integrity-pr-body.md
