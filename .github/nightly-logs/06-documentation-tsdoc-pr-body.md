@@ -4,23 +4,23 @@
 
 In plain terms: this changes 1 code file, so the app's behaviour may be affected. No tests were added or changed alongside it.
 
-**What changed:** Harden AnimatedDigits TSDoc interface contracts and inline logic annotations
+**What changed:** Updated RecruitCard interface contracts, decision log, and inline annotations to reflect recruit metric taxonomy
 
-**Why:** Recent-Change Priority: reconcile AnimatedDigits JSDoc/TSDoc interface contracts, ADR Section II and IV mappings, and inline decision logs following recent Stage 2 test additions
+**Why:** Resolved documentation debt in RecruitCard.vue following recruit metric taxonomy clarification
 
-**Result:** vue-tsc type-check 0 errors, Vitest passed 9 of 9 AnimatedDigits tests
+**Result:** All 209 unit test files (2102 tests) passed including RecruitCard.spec.ts
 
-**Files changed:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, Frontend-PWA/src/shared/ui/AnimatedDigits.vue
+**Files changed:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, Frontend-PWA/src/features/headhunter/components/RecruitCard.vue
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: documentation
-  Cycle: nightly-cycle/2026-09-26
+  Cycle: nightly-cycle/2026-09-27
   Contract: a9f522cc73babe487aa3df1b083524daba64c0dd03c9e1b446dd4bd70c376bae
-  Why: Recent-Change Priority: reconcile AnimatedDigits JSDoc/TSDoc interface contracts, ADR Section II and IV mappings, and inline decision logs following recent Stage 2 test additions
-  Change: Harden AnimatedDigits TSDoc interface contracts and inline logic annotations
-  Result: vue-tsc type-check 0 errors, Vitest passed 9 of 9 AnimatedDigits tests
-  Files: .github/nightly-logs/06-documentation-tsdoc-coverage.log, Frontend-PWA/src/shared/ui/AnimatedDigits.vue
+  Why: Resolved documentation debt in RecruitCard.vue following recruit metric taxonomy clarification
+  Change: Updated RecruitCard interface contracts, decision log, and inline annotations to reflect recruit metric taxonomy
+  Result: All 209 unit test files (2102 tests) passed including RecruitCard.spec.ts
+  Files: .github/nightly-logs/06-documentation-tsdoc-coverage.log, Frontend-PWA/src/features/headhunter/components/RecruitCard.vue
   Nudges: 0
-  Execution: c54757b17c746722b3349b01e60ed43a1103306a
+  Execution: 995eeffd257567a7d7539925f144c515eb8cfe7f
 -->

@@ -21,7 +21,9 @@
  * - **Import Boundaries:** Consumes @shared UI primitives and @core utilities.
  *   Strictly isolated from other features (e.g., Roster, Laboratory).
  *
- * **Decision Log - Accessibility & Text Containment:**
+ * **Decision Log - Metric Taxonomy, Accessibility & Text Containment:**
+ * - Groups lifetime account metrics ("Account record": Donations, Win Rate, War Wins, Cards Won)
+ *   separately from recruitment metadata ("Recruitment context": RPoS, Last Scan) for clear visual taxonomy.
  * - Computes spoken description combining name, rounded potential score, and discovery age.
  * - Applies `user-select: none` text selection containment to player names
  *   to prevent accidental text highlights during swipe gestures in Android WebView.
@@ -147,6 +149,7 @@ const recruitAccessibilityLabel = computed(() => {
 
     <!-- [SLOT] EXPANDED CONTENT: Detailed recruitment metrics and actions. -->
     <template #expanded-content>
+      <!-- Lifetime player metrics grid -->
       <StatsGrid
         :columns="2"
         :loading="props.appIsRefreshing"
@@ -189,6 +192,7 @@ const recruitAccessibilityLabel = computed(() => {
         />
       </StatsGrid>
 
+      <!-- Recruitment score and scan metadata grid -->
       <StatsGrid
         :columns="2"
         :loading="props.appIsRefreshing"
