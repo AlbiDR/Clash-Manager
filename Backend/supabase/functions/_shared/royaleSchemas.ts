@@ -200,6 +200,25 @@ export const RoyaleTournamentSchema = v.object({
 });
 
 /**
+ * L1 Core: Royale Battle Rounds Schema.
+ *
+ * @remarks
+ * The per-round results of a multi-round battle (clan-war duels), carried on each side.
+ * Only `crowns` is kept; `v.object` strips every other round field (cards, tower HP),
+ * so the ingest payload stays small.
+ *
+ * [THREAT:] Until 2026-09-27 `rounds` was undeclared, so `v.object` stripped it and the
+ * per-round duel scoring in `ingest_player_battles()` never received its input.
+ * [DECISION LOG] `crowns` is optional, never defaulted: a round without it must reach the
+ * database as missing so the SQL falls back to the battle's own crowns. Defaulting it to 0
+ * would silently score the round, and making it required would reject the whole battle log.
+ * Satisfies ADR Section III: Validation Boundaries.
+ */
+const RoyaleBattleRoundsSchema = v.array(v.object({
+    crowns: v.optional(v.number())
+}));
+
+/**
  * L1 Core: Royale Battle Log Schema.
  *
  * @remarks
@@ -219,12 +238,14 @@ export const RoyaleBattleLogSchema = v.array(v.object({
     team: v.array(v.object({
         tag: v.string(),
         name: v.string(),
-        crowns: v.optional(v.number(), 0)
+        crowns: v.optional(v.number(), 0),
+        rounds: v.optional(RoyaleBattleRoundsSchema)
     })),
     opponent: v.array(v.object({
         tag: v.string(),
         name: v.string(),
         crowns: v.optional(v.number(), 0),
+        rounds: v.optional(RoyaleBattleRoundsSchema),
         clan: v.optional(v.nullable(v.object({
             tag: v.string()
         })))
