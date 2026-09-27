@@ -208,6 +208,50 @@ describe("Royale API Domain Schemas", () => {
       const result = v.safeParse(RoyaleBattleLogSchema, input);
       expect(result.success).toBe(false);
     });
+
+    // Per-round duel scoring in ingest_player_battles() reads rounds[].crowns, so the
+    // schema must pass rounds through instead of stripping it (as it did before 2026-09-27).
+    it("keeps each side's rounds[].crowns and strips every other round field", () => {
+      const input = [
+        {
+          type: "riverRaceDuel",
+          battleTime: "20260101T000000.000Z",
+          team: [{ tag: "#P1", name: "P1", crowns: 4, rounds: [{ crowns: 3, cards: [1, 2] }, { crowns: 1, elixirLeaked: 2 }] }],
+          opponent: [{ tag: "#P2", name: "P2", crowns: 1, rounds: [{ crowns: 0 }, { crowns: 1 }] }]
+        }
+      ];
+      const result = v.parse(RoyaleBattleLogSchema, input);
+      expect(result[0].team[0].rounds).toEqual([{ crowns: 3 }, { crowns: 1 }]);
+      expect(result[0].opponent[0].rounds).toEqual([{ crowns: 0 }, { crowns: 1 }]);
+    });
+
+    it("still validates a battle with no rounds, and leaves rounds absent", () => {
+      const input = [
+        {
+          type: "PvP",
+          battleTime: "20260101T000000.000Z",
+          team: [{ tag: "#P1", name: "P1", crowns: 3 }],
+          opponent: [{ tag: "#P2", name: "P2", crowns: 1 }]
+        }
+      ];
+      const result = v.parse(RoyaleBattleLogSchema, input);
+      expect(result[0].team[0].rounds).toBeUndefined();
+    });
+
+    it("accepts a round with no crowns and does NOT default it to 0", () => {
+      // A defaulted 0 would silently score the round; missing lets the SQL fall back.
+      const input = [
+        {
+          type: "riverRaceDuel",
+          battleTime: "20260101T000000.000Z",
+          team: [{ tag: "#P1", name: "P1", crowns: 2, rounds: [{ crowns: 2 }, {}] }],
+          opponent: [{ tag: "#P2", name: "P2", crowns: 1, rounds: [{ crowns: 1 }, { crowns: 0 }] }]
+        }
+      ];
+      const result = v.safeParse(RoyaleBattleLogSchema, input);
+      expect(result.success).toBe(true);
+      expect(result.success && result.output[0].team[0].rounds?.[1]).toEqual({});
+    });
   });
 
   describe("RoyaleLocationListSchema", () => {
