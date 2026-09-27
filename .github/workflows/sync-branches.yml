@@ -171,6 +171,7 @@ jobs:
           mkdir -p "$RUNNER_TEMP/sync-tools"
           git archive "${{ github.sha }}" .github/scripts | tar -x -C "$RUNNER_TEMP/sync-tools"
           echo "SYNC_GUARD=$RUNNER_TEMP/sync-tools/.github/scripts/project/sync-merge-guard.mjs" >> "$GITHUB_ENV"
+          echo "APK_SLOT_SYNC=$RUNNER_TEMP/sync-tools/.github/scripts/android/apk-slot-sync.mjs" >> "$GITHUB_ENV"
 
       - name: Normalise APK release slot (pre-merge)
         run: |
@@ -559,6 +560,7 @@ jobs:
           mkdir -p "$RUNNER_TEMP/sync-tools"
           git archive "${{ github.sha }}" .github/scripts | tar -x -C "$RUNNER_TEMP/sync-tools"
           echo "SYNC_GUARD=$RUNNER_TEMP/sync-tools/.github/scripts/project/sync-merge-guard.mjs" >> "$GITHUB_ENV"
+          echo "APK_SLOT_SYNC=$RUNNER_TEMP/sync-tools/.github/scripts/android/apk-slot-sync.mjs" >> "$GITHUB_ENV"
 
       - name: Merge Beta into Stable
         id: merge
@@ -567,14 +569,24 @@ jobs:
           git pull origin Stable
 
           BEFORE_SHA=$(git rev-parse HEAD)
+          # apk-release.yml commits a signed APK to Beta and to Stable
+          # separately, renaming the one file in APK/release/ each time, so the
+          # two slots drift apart and the merge becomes a rename/rename that
+          # not even -X theirs can resolve. On 2026-09-27 that blocked every
+          # sync at this step. Align Stable's slot to Beta's first, and put
+          # Stable's back after the merge if it was the newer build (the
+          # 2026-09-10 lesson). See apk-slot-sync.mjs.
+          APK_SLOT_BACKUP="$RUNNER_TEMP/apk-slot-before-merge"
+          node "$APK_SLOT_SYNC" align --source origin/Beta --source-name Beta --backup "$APK_SLOT_BACKUP"
           # Beta is always the source of truth for Stable promotion, and -X
           # theirs makes Beta's content win on any divergence. That is what
           # silently reverted Stable-only work on 2026-09-24 (2a53d2b38), so the
           # guard first refuses a merge that would discard it.
-          if ! node "$SYNC_GUARD" --target HEAD --source origin/Beta --target-name Stable --source-name Beta; then
+          if ! node "$SYNC_GUARD" --target HEAD --source origin/Beta --target-name Stable --source-name Beta --apk-slot-normalised; then
             exit 1
           fi
           git merge origin/Beta -X theirs --no-edit
+          node "$APK_SLOT_SYNC" restore-newer --backup "$APK_SLOT_BACKUP"
           AFTER_SHA=$(git rev-parse HEAD)
 
           echo "before_sha=$BEFORE_SHA" >> $GITHUB_OUTPUT
@@ -661,6 +673,7 @@ jobs:
           mkdir -p "$RUNNER_TEMP/sync-tools"
           git archive "${{ github.sha }}" .github/scripts | tar -x -C "$RUNNER_TEMP/sync-tools"
           echo "SYNC_GUARD=$RUNNER_TEMP/sync-tools/.github/scripts/project/sync-merge-guard.mjs" >> "$GITHUB_ENV"
+          echo "APK_SLOT_SYNC=$RUNNER_TEMP/sync-tools/.github/scripts/android/apk-slot-sync.mjs" >> "$GITHUB_ENV"
 
       - name: Merge Stable into Beta
         id: merge
@@ -669,13 +682,18 @@ jobs:
           git pull origin Beta
 
           BEFORE_SHA=$(git rev-parse HEAD)
+          # Same slot alignment as the Beta -> Stable job, in the other
+          # direction: Beta's newer build is put back after the merge.
+          APK_SLOT_BACKUP="$RUNNER_TEMP/apk-slot-before-merge"
+          node "$APK_SLOT_SYNC" align --source origin/Stable --source-name Stable --backup "$APK_SLOT_BACKUP"
           # Stable content (hotfixes) always wins when flowing downstream to
           # Beta, once the guard has shown that winning discards nothing of
           # Beta's own.
-          if ! node "$SYNC_GUARD" --target HEAD --source origin/Stable --target-name Beta --source-name Stable; then
+          if ! node "$SYNC_GUARD" --target HEAD --source origin/Stable --target-name Beta --source-name Stable --apk-slot-normalised; then
             exit 1
           fi
           git merge origin/Stable -X theirs --no-edit
+          node "$APK_SLOT_SYNC" restore-newer --backup "$APK_SLOT_BACKUP"
           AFTER_SHA=$(git rev-parse HEAD)
 
           if [ "$BEFORE_SHA" != "$AFTER_SHA" ]; then
@@ -721,6 +739,7 @@ jobs:
           mkdir -p "$RUNNER_TEMP/sync-tools"
           git archive "${{ github.sha }}" .github/scripts | tar -x -C "$RUNNER_TEMP/sync-tools"
           echo "SYNC_GUARD=$RUNNER_TEMP/sync-tools/.github/scripts/project/sync-merge-guard.mjs" >> "$GITHUB_ENV"
+          echo "APK_SLOT_SYNC=$RUNNER_TEMP/sync-tools/.github/scripts/android/apk-slot-sync.mjs" >> "$GITHUB_ENV"
 
       - name: Normalise APK release slot (pre-merge)
         run: |

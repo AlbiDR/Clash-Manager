@@ -39,11 +39,12 @@
  *   waved through while walking Stable's version back.
  * - Paths another step already owns, and only in the jobs where it really
  *   does: the pipeline's own logs (.github/nightly-logs/, written on Nightly
- *   only); the APK release slot (APK/release/) where the job normalises it
- *   before merging (--apk-slot-normalised; the Nightly jobs do, the Stable
- *   ones do not, and there a conflicting slot is a rename/rename git cannot
- *   merge at all); and pnpm-lock.yaml where the job regenerates and
- *   re-verifies the lockfile after merging (--lockfile-verified).
+ *   only); the APK release slot (APK/release/) where the job aligns it before
+ *   merging (--apk-slot-normalised; every job does since 2026-09-27, when the
+ *   Stable jobs gained apk-slot-sync.mjs, and without it a conflicting slot
+ *   is a rename/rename git cannot merge at all); and pnpm-lock.yaml where the
+ *   job regenerates and re-verifies the lockfile after merging
+ *   (--lockfile-verified).
  * Anything else is a discard: the job stops before pushing and names the
  * files and the destination-only commits that touched them. A conflicted
  * file with no text markers (a binary) cannot be proven harmless, so it is a
