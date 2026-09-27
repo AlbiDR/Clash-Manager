@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-26
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-27] PR #1979 [Stage 2]: Extended time.ts spec with formatCompactDuration unit tests
+**Domain:** verification | **Commit:** a530d1b4f | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1979)
+**Files:** .github/nightly-logs/02-verification-coverage.log, .github/nightly-logs/02-verification-pr-body.md, Frontend-PWA/src/core/utils/utils-tests/time.spec.ts
+**Why:** Saturate test coverage for formatCompactDuration utility in core time module
+**Change:** Extended time.ts spec with formatCompactDuration unit tests
+**Result:** 209 test files (2102 tests) passing. Mutation testing proved: mutating totalHours condition in formatCompactDuration in time.ts caused expected assertion failure in time.spec.ts.
+**Nudges:** 0
+
+
 ### [2026-09-26] PR #1978 [Stage 1]: Hardened in-memory state variables across core and feature composables with explicit EPHEMERAL annotations and threat descriptions
 **Domain:** hardening | **Commit:** 8e7e379e3 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1978)
 **Files:** .github/nightly-logs/*, Frontend-PWA/src/core/api/*, Frontend-PWA/src/core/utils/* (8 files)
