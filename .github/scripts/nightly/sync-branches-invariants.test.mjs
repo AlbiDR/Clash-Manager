@@ -81,14 +81,39 @@ test('every -X theirs merge is preceded by the merge guard for the same source',
 });
 
 test('each job states only the ownership it really has', () => {
-  // The APK slot is normalised before the merge only in the Nightly jobs, and
-  // only Job 1 regenerates and re-verifies the lockfile. A job claiming more
-  // would let the guard wave through a loss nothing repairs.
-  for (const { step } of theirsMerges()) {
+  // A guard flag is a claim that some other step repairs that kind of loss.
+  // The APK slot is only safe where the job aligns it before merging, and only
+  // Job 1 regenerates and re-verifies the lockfile. A job claiming more would
+  // let the guard wave through a loss nothing repairs.
+  const jobs = WORKFLOW.split(/\n(?=  [a-z0-9-]+:\n)/);
+  for (const { step, index } of theirsMerges()) {
     const call = step.text.slice(step.text.indexOf('node "$SYNC_GUARD"')).split('\n')[0];
-    const nightlyJob = /--source origin\/Nightly|--target-name Nightly/.test(call);
-    assert.equal(call.includes('--apk-slot-normalised'), nightlyJob, `"${step.name}": --apk-slot-normalised only where the slot is normalised`);
+    // Matched by the step's own name line: a step's text can run on into the
+    // next job's header, so it is not always a substring of one job.
+    const nameLine = `- name: ${step.name}\n`;
+    const job = jobs.find(text => text.includes(nameLine));
+    assert.ok(job, `"${step.name}" belongs to no job`);
+    const alignsInStep = step.text.slice(0, index).includes('"$APK_SLOT_SYNC" align');
+    const normalisesBefore = /- name: Normalise APK release slot \(pre-merge\)/.test(job.slice(0, job.indexOf(nameLine)));
+    assert.equal(call.includes('--apk-slot-normalised'), alignsInStep || normalisesBefore, `"${step.name}": --apk-slot-normalised only where the slot is aligned before the merge`);
     assert.equal(call.includes('--lockfile-verified'), call.includes('--source origin/Nightly'), `"${step.name}": --lockfile-verified only in Job 1, which runs verify_lockfile`);
+  }
+});
+
+test('the Stable jobs align the APK slot before merging and keep the newer build after', () => {
+  // Without the alignment the two slots, each renamed by apk-release.yml on
+  // its own branch, make a rename/rename -X theirs cannot resolve: on
+  // 2026-09-27 that blocked every sync at the Beta -> Stable merge. Without
+  // the restore, aligning to the older side walks the updater back (the
+  // 2026-09-10 incident).
+  const stableSteps = theirsMerges().filter(m => /Stable/.test(m.step.name));
+  assert.equal(stableSteps.length, 2, 'both Stable merge steps must be checked');
+  for (const { step, source, index } of stableSteps) {
+    const before = step.text.slice(0, index);
+    const after = step.text.slice(index);
+    assert.match(before, new RegExp(`"\\$APK_SLOT_SYNC" align --source ${source.replace('/', '\\/')} `), `"${step.name}": align to the same source it merges`);
+    assert.ok(before.indexOf('"$APK_SLOT_SYNC" align') < before.indexOf('node "$SYNC_GUARD"'), `"${step.name}": align before the guard judges the merge`);
+    assert.match(after, /"\$APK_SLOT_SYNC" restore-newer --backup "\$APK_SLOT_BACKUP"/, `"${step.name}": restore the newer build after the merge`);
   }
 });
 
