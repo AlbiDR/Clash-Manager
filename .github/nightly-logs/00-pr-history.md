@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-26
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-27] PR #1989 [Stage 12]: Calibration pass: widened scan checked 78 files across 10 UX categories
+**Domain:** ux | **Commit:** 0b2eb0f18 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1989)
+**Files:** .github/nightly-logs/12-apk-ux-coverage.log, .github/nightly-logs/12-apk-ux-pr-body.md
+**Why:** Calibration due; verified 78 files and candidate ViewOptions.vue found no violations
+**Change:** Calibration pass: widened scan checked 78 files across 10 UX categories
+**Result:** apk-ux-audit-status.txt: PASS; apk-ux-audit.json: 1 candidate files reviewed; UX categories 1-10 checked
+**Nudges:** 0
+
+
 ### [2026-09-27] PR #1988 [Stage 11]: Audited native WebView performance settings, Service Worker caching, and Vite manualChunks; zero source changes required
 **Domain:** apk | **Commit:** 7ec854ccc | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1988)
 **Files:** .github/nightly-logs/11-apk-optimization-coverage.log, .github/nightly-logs/11-apk-optimization-pr-body.md
