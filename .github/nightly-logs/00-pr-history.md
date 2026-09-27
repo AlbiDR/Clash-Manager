@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-26
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-27] PR #1984 [Stage 7]: Scanned Frontend-PWA and Backend package.json catalogs and root/Frontend-PWA/Backend versions (14.50.119); zero drift across manifests and derived locations.
+**Domain:** versioning | **Commit:** 775d8edeb | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1984)
+**Files:** .github/nightly-logs/07-version-integrity-coverage.log, .github/nightly-logs/07-version-integrity-pr-body.md
+**Why:** No version drift or catalog protocol violations were detected across monorepo package manifests or derived locations.
+**Change:** Scanned Frontend-PWA and Backend package.json catalogs and root/Frontend-PWA/Backend versions (14.50.119); zero drift across manifests and derived locations.
+**Result:** pnpm audit:version returned PASSED (Ground Truth Version: 14.50.119, no version drift or catalog violations detected).
+**Nudges:** 0
+
+
 ### [2026-09-27] PR #1982 [Stage 4]: Inspected 42 changed files and Edge Functions for SQL view substrate hygiene; zero structural rot or unreferenced views found.
 **Domain:** optimization | **Commit:** 4abc0c97a | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1982)
 **Files:** .github/nightly-logs/04-optimization-coverage.log, .github/nightly-logs/04-optimization-pr-body.md
