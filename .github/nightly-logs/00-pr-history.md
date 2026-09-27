@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-26
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-27] PR #1980 [Stage 3]: Pending migrations: 0, migration-quality: PASS, fold-state: DEGRADED, database-verification: DB-UNAVAILABLE. Read-only RLS, search_path, formatting, and GPL-3.0 header audit passed with zero structural deviations.
+**Domain:** database | **Commit:** 9d16a9a91 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1980)
+**Files:** .github/nightly-logs/03-baseline-consolidation-coverage.log, .github/nightly-logs/03-baseline-consolidation-pr-body.md
+**Why:** Zero pending migrations exist in /tmp/nightly/pending-migrations.txt and read-only baseline SQL audit confirmed full schema hardening compliance without needing source edits.
+**Change:** Pending migrations: 0, migration-quality: PASS, fold-state: DEGRADED, database-verification: DB-UNAVAILABLE. Read-only RLS, search_path, formatting, and GPL-3.0 header audit passed with zero structural deviations.
+**Result:** Migration audit PASS (54 migrations examined, 170 baseline objects, 0 violations); static fold-state DEGRADED due to DB-UNAVAILABLE semantic authority.
+**Nudges:** 0
+
+
 ### [2026-09-27] PR #1979 [Stage 2]: Extended time.ts spec with formatCompactDuration unit tests
 **Domain:** verification | **Commit:** a530d1b4f | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1979)
 **Files:** .github/nightly-logs/02-verification-coverage.log, .github/nightly-logs/02-verification-pr-body.md, Frontend-PWA/src/core/utils/utils-tests/time.spec.ts
