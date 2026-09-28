@@ -3,6 +3,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref, useId, useTemplateRef, watch } from "vue";
 import { useSearchField } from "../composables/useSearchField";
+import { vTactile } from "../directives/vTactile";
 import Icon from "./Icon.vue";
 
 /**
@@ -175,6 +176,7 @@ onUnmounted(() => {
 <template>
   <button
     ref="triggerRef"
+    v-tactile
     type="button"
     class="view-options-trigger"
     :class="{ 'is-embedded': props.embedded, 'is-open': props.open, 'is-modified': isModified }"
@@ -216,6 +218,7 @@ onUnmounted(() => {
           @keydown="handlePanelKeydown"
         >
           <button
+            v-tactile
             type="button"
             class="view-options-sheet-handle-target"
             aria-label="Close view options. Swipe down to dismiss."
@@ -257,6 +260,7 @@ onUnmounted(() => {
             >
             <button
               v-if="hasSearchQuery"
+              v-tactile
               type="button"
               class="view-options-clear"
               aria-label="Clear search"
@@ -282,6 +286,7 @@ onUnmounted(() => {
               <button
                 v-for="sortOption in props.sortOptions"
                 :key="sortOption.value"
+                v-tactile
                 type="button"
                 class="view-options-sort-option"
                 :class="{ 'is-selected': sortOption.value === props.currentSort }"
@@ -313,6 +318,7 @@ onUnmounted(() => {
             class="view-options-footer"
           >
             <button
+              v-tactile
               type="button"
               class="view-options-reset"
               @click="resetOptions"
