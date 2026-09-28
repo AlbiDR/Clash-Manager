@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-27
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-28] PR #1997 [Stage 7]: Audit complete: No version drift or catalog protocol violations detected across monorepo package manifests or derived files.
+**Domain:** versioning | **Commit:** fda90ffca | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1997)
+**Files:** .github/nightly-logs/07-version-integrity-coverage.log, .github/nightly-logs/07-version-integrity-pr-body.md
+**Why:** Root, Frontend-PWA, and Backend package versions all align at 14.50.121, all shared catalog dependencies use catalog protocol, and pnpm audit:version passed cleanly.
+**Change:** Audit complete: No version drift or catalog protocol violations detected across monorepo package manifests or derived files.
+**Result:** Catalog scan (Frontend-PWA/package.json, Backend/package.json), package version scan (package.json, Frontend-PWA/package.json, Backend/package.json at 14.50.121), and pnpm audit:version output verified 0 violations.
+**Nudges:** 0
+
+
 ### [2026-09-28] PR #1996 [Stage 6]: Harden deep-depth stage TSDoc interface contracts and threat tags
 **Domain:** documentation | **Commit:** e16d73801 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1996)
 **Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, .github/nightly-logs/06-documentation-tsdoc-pr-body.md, Backend/supabase/functions/ingest-royale-data/stages/deep-depth.ts
