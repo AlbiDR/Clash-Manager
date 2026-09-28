@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-27
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-28] PR #1998 [Stage 8]: Bumped tsx devDependency from ^4.23.13 to ^4.23.15
+**Domain:** dependencies | **Commit:** 348918259 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1998)
+**Files:** .github/nightly-logs/08-dependency-audit-coverage.log, .github/nightly-logs/08-dependency-audit-pr-body.md, package.json, pnpm-lock.yaml, pnpm-workspace.yaml
+**Why:** Safe Tier 1 patch update for devDependency tsx
+**Change:** Bumped tsx devDependency from ^4.23.13 to ^4.23.15
+**Result:** pnpm install --no-frozen-lockfile updated pnpm-lock.yaml; pnpm test passed 2102 of 2102 tests across 209 test files
+**Nudges:** 0
+
+
 ### [2026-09-28] PR #1997 [Stage 7]: Audit complete: No version drift or catalog protocol violations detected across monorepo package manifests or derived files.
 **Domain:** versioning | **Commit:** fda90ffca | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1997)
 **Files:** .github/nightly-logs/07-version-integrity-coverage.log, .github/nightly-logs/07-version-integrity-pr-body.md
