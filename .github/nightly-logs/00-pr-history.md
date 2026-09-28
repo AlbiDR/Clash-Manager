@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-27
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-28] PR #2001 [Stage 11]: Audited APK performance: all 9 wrapper, WebView, and caching invariants pass cleanly; precache footprint optimal (6 files, 11.1 KB)
+**Domain:** apk | **Commit:** 39a048d05 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2001)
+**Files:** .github/nightly-logs/11-apk-optimization-coverage.log, .github/nightly-logs/11-apk-optimization-pr-body.md
+**Why:** All APK wrapper, WebView, Service Worker, and Vite build caching configurations are defensively configured and optimal
+**Change:** Audited APK performance: all 9 wrapper, WebView, and caching invariants pass cleanly; precache footprint optimal (6 files, 11.1 KB)
+**Result:** pnpm audit:apk-perf and node --test .github/scripts/android/*.test.mjs passed 46 of 46 tests cleanly
+**Nudges:** 0
+
+
 ### [2026-09-28] PR #2000 [Stage 10]: Verified digital asset links, manifest parity, shortcut parity, version code/name sync, APK release metadata, target SDK alignment, cleartext traffic policy, and permissions with zero mismatches found.
 **Domain:** apk | **Commit:** 5d7eabc77 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2000)
 **Files:** .github/nightly-logs/10-apk-integrity-coverage.log, .github/nightly-logs/10-apk-integrity-pr-body.md
