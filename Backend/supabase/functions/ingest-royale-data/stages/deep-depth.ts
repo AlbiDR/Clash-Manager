@@ -17,8 +17,9 @@ const ROYALE_BATTLE_TIME = /^\d{8}T\d{6}\.\d{3}Z$/;
  * @remarks
  * Both sides are fixed-width `YYYYMMDDTHHMMSS.mmmZ` strings, so lexical order is
  * chronological order and no date parsing is needed.
+ * Satisfies ADR Section IV: Resilience.
  *
- * [THREAT:] A false positive here silently loses battles, because the ingest RPC is skipped.
+ * [THREAT: SILENT_BATTLE_LOSS] A false positive here silently loses battles, because the ingest RPC is skipped.
  * [DECISION LOG] Every uncertain case answers false (ingest as before): no stored time,
  * an empty log, or either side not matching the exact format. A wrong answer can
  * therefore only cost one redundant RPC, never a missed battle.
@@ -44,10 +45,17 @@ export function isAlreadyIngested(
  * Fetches the newest stored battle time for each recruit tag.
  *
  * @remarks
- * [THREAT:] This lookup is an optimisation, so it must never be able to stop ingestion.
+ * Queries database procedures for recruit battle times and validates against LatestBattleTimesSchema.
+ * Satisfies ADR Section III: Validation Boundaries and ADR Section IV: Resilience.
+ *
+ * [THREAT: INGESTION_BLOCKADE] This lookup is an optimisation, so it must never be able to stop ingestion.
  * [DECISION LOG] Any RPC error or malformed payload returns an empty map, which makes
  * {@link isAlreadyIngested} answer false for every player: the stage then behaves
  * exactly as it did before the lookup existed.
+ *
+ * @param recruitTags - Array of player tags to look up in the database.
+ * @param logAudit - Telemetry logging callback function.
+ * @returns Map pairing player tags to their latest stored battleTime string.
  */
 async function fetchLatestBattleTimes(
     recruitTags: string[],
@@ -86,6 +94,14 @@ async function fetchLatestBattleTimes(
  * keeping queue consumption well within the 25-battle buffer.
  * Shortening the interval further adds API call overhead without meaningfully
  * improving battle capture accuracy.
+ *
+ * Satisfies ADR Section III: Validation Boundaries and ADR Section IV: Resilience.
+ *
+ * [THREAT: TWO_PHASE_WRITE_DESYNC]
+ * Ensures player registry sync succeeds before recruit upsert to prevent foreign key violations.
+ *
+ * @param results - Ingestion execution result accumulator.
+ * @param logAudit - Telemetry audit sink function.
  */
 export async function runDeepDepth(
     results: IngestionResult, 
