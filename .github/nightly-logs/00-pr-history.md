@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-27
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-28] PR #1992 [Stage 2]: Added unit tests for LatestBattleTimesSchema in rpcSchemas.spec.ts
+**Domain:** verification | **Commit:** f41108dd9 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1992)
+**Files:** .github/nightly-logs/02-verification-coverage.log, .github/nightly-logs/02-verification-pr-body.md, Backend/supabase/functions/_shared/shared-tests/rpcSchemas.spec.ts
+**Why:** Close coverage gap for recently added LatestBattleTimesSchema in L1 Core RPC Schemas
+**Change:** Added unit tests for LatestBattleTimesSchema in rpcSchemas.spec.ts
+**Result:** Vitest 296 tests passed; mutation test proved test fails when assertion mutated
+**Nudges:** 0
+
+
 ### [2026-09-27] PR #1991 [Stage 1]: Audited 42 candidate files and Edge Functions across Priority List items (auth gaps, in-memory state, Valibot boundaries, layer isolation); zero threat vectors found
 **Domain:** hardening | **Commit:** 652fcebac | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1991)
 **Files:** .github/nightly-logs/00-pr-history.md, .github/nightly-logs/01-hardening-coverage.log, .github/nightly-logs/01-hardening-pr-body.md
