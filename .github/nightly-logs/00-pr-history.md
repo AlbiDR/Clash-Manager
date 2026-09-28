@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-27
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-28] PR #1996 [Stage 6]: Harden deep-depth stage TSDoc interface contracts and threat tags
+**Domain:** documentation | **Commit:** e16d73801 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1996)
+**Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, .github/nightly-logs/06-documentation-tsdoc-pr-body.md, Backend/supabase/functions/ingest-royale-data/stages/deep-depth.ts
+**Why:** Documented interface contracts, parameters, return types, threat vectors, and ADR Section III/IV mappings for deep-depth.ts
+**Change:** Harden deep-depth stage TSDoc interface contracts and threat tags
+**Result:** Vitest 16 tests passed in deep-depth.spec.ts
+**Nudges:** 0
+
+
 ### [2026-09-28] PR #1995 [Stage 4]: Inspected 42 changed files and Edge Functions for SQL view substrate hygiene; zero structural rot or unreferenced views found.
 **Domain:** optimization | **Commit:** 7be0987de | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1995)
 **Files:** .github/nightly-logs/04-optimization-coverage.log, .github/nightly-logs/04-optimization-pr-body.md
