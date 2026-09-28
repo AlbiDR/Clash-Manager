@@ -11,6 +11,7 @@ import {
   DiscoveryAnchorSchema,
   DiscoveryCacheItemSchema,
   IngestionTargetsSchema,
+  LatestBattleTimesSchema,
   RecruitFateSchema,
 } from "../rpcSchemas";
 
@@ -174,6 +175,41 @@ describe("L1 Core Supabase RPC Schemas", () => {
         v.parse(RecruitFateSchema, {
           raw_potential_score: 100,
         })
+      ).toThrow();
+    });
+  });
+
+  describe("LatestBattleTimesSchema", () => {
+    it("should parse valid latest battle times array", () => {
+      const input = [
+        { player_tag: "#PP80QG99", latest_battle_time: "20260927T233000.000Z" },
+        { player_tag: "#2P0YY99L", latest_battle_time: "20260927T233500.000Z" },
+      ];
+      expect(v.parse(LatestBattleTimesSchema, input)).toEqual(input);
+    });
+
+    it("should parse empty array", () => {
+      expect(v.parse(LatestBattleTimesSchema, [])).toEqual([]);
+    });
+
+    it("should reject non-array root or malformed row objects", () => {
+      expect(() =>
+        v.parse(LatestBattleTimesSchema, { player_tag: "#PP80QG99", latest_battle_time: "20260927T233000.000Z" })
+      ).toThrow();
+      expect(() =>
+        v.parse(LatestBattleTimesSchema, [
+          { player_tag: "#PP80QG99" },
+        ])
+      ).toThrow();
+      expect(() =>
+        v.parse(LatestBattleTimesSchema, [
+          { player_tag: 12345, latest_battle_time: "20260927T233000.000Z" },
+        ])
+      ).toThrow();
+      expect(() =>
+        v.parse(LatestBattleTimesSchema, [
+          { player_tag: "#PP80QG99", latest_battle_time: null },
+        ])
       ).toThrow();
     });
   });

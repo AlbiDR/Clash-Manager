@@ -69,3 +69,4 @@
 * [2026-09-25] [Stage 2] [00:07Z-00:26Z 20m] CHANGED: Frontend-PWA/src/shared/ui/ui-tests/AnimatedDigits.spec.ts -- Expanded AnimatedDigits spec with automatic direction determination, explicit direction prop overrides, and string unit handling
 * [2026-09-26] [Stage 2] [00:09Z-00:25Z 16m] CHANGED: Frontend-PWA/src/shared/ui/ui-tests/AnimatedDigits.spec.ts -- Extended AnimatedDigits spec with edge cases for non-numeric transitions, negative/decimal parsing, and static separator rendering
 * [2026-09-27] [Stage 2] [00:09Z-00:22Z 13m] CHANGED: Frontend-PWA/src/core/utils/utils-tests/time.spec.ts -- Extended time.ts spec with formatCompactDuration unit tests
+* [2026-09-28] [Stage 2] [00:10Z-00:16Z 6m] CHANGED: Backend/supabase/functions/_shared/shared-tests/rpcSchemas.spec.ts -- Added unit tests for LatestBattleTimesSchema in rpcSchemas.spec.ts
