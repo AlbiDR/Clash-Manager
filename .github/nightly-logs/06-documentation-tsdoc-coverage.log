@@ -133,3 +133,4 @@
 * [2026-09-25] [Stage 6] [04:16Z-04:22Z 6m] [checks doc-debt=OK] CHANGED: Frontend-PWA/src/core/api/SupabaseClient.ts -- Harden TSDoc interface contracts for internal helper functions in SupabaseClient
 * [2026-09-26] [Stage 6] [04:15Z-04:22Z 7m] [checks doc-debt=OK] CHANGED: Frontend-PWA/src/shared/ui/AnimatedDigits.vue -- Harden AnimatedDigits TSDoc interface contracts and inline logic annotations
 * [2026-09-27] [Stage 6] [04:30Z-04:38Z 8m] [checks doc-debt=OK] CHANGED: Frontend-PWA/src/features/headhunter/components/RecruitCard.vue -- Updated RecruitCard interface contracts, decision log, and inline annotations to reflect recruit metric taxonomy
+* [2026-09-28] [Stage 6] [04:20Z-04:26Z 6m] [checks doc-debt=OK] CHANGED: Backend/supabase/functions/ingest-royale-data/stages/deep-depth.ts -- Harden deep-depth stage TSDoc interface contracts and threat tags
