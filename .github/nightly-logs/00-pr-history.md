@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-27
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-28] PR #1994 [Stage 5]: Audit doc-debt target Frontend-PWA/src/core/api/SupabaseClient.ts
+**Domain:** documentation | **Commit:** 497800995 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1994)
+**Files:** .github/nightly-logs/05-documentation-readme-coverage.log, .github/nightly-logs/05-documentation-readme-pr-body.md
+**Why:** Documentation in Frontend-PWA/src/core/api/README.md is already accurate and up to date following source code updates
+**Change:** Audit doc-debt target Frontend-PWA/src/core/api/SupabaseClient.ts
+**Result:** VERIFIED_ACCURATE
+**Nudges:** 0
+
+
 ### [2026-09-28] PR #1993 [Stage 3]: Calibration pass: 0 pending migrations examined, 29 baseline tables verified RLS-compliant, migration-quality PASS, fold-state DEGRADED, database-verification DB-UNAVAILABLE
 **Domain:** database | **Commit:** 7034110b6 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1993)
 **Files:** .github/nightly-logs/03-baseline-consolidation-coverage.log, .github/nightly-logs/03-baseline-consolidation-pr-body.md
