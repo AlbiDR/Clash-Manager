@@ -4,23 +4,23 @@
 
 In plain terms: nothing needed fixing. This run checked the APK integrity area and found it already correct, so the only file here is the log recording that the check happened.
 
-**What was checked:** Audited wrapper invariants: asset links, manifest parity, version code/name sync, release metadata (latest.json), and security policy via pnpm audit:apk and pnpm apk:verify:source; all intact with no mismatches.
+**What was checked:** Verified digital asset links, manifest parity, shortcut parity, version code/name sync, APK release metadata, target SDK alignment, cleartext traffic policy, and permissions with zero mismatches found.
 
-**Why:** PWA and APK native wrapper configurations are strictly synchronized and aligned across all checks.
+**Why:** PWA and native Android wrapper configurations are fully synchronized and defensively configured.
 
-**Result:** pnpm audit:apk and pnpm apk:verify:source passed cleanly.
+**Result:** Executed pnpm audit:apk, pnpm apk:verify:source, and node --test .github/scripts/android/*.test.mjs; all checks passed.
 
 **Files changed:** .github/nightly-logs/10-apk-integrity-coverage.log
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: apk
-  Cycle: nightly-cycle/2026-09-27
+  Cycle: nightly-cycle/2026-09-28
   Contract: 4f9b40864d05ffea731090b36800572dd7affedd8532fcd17c8ded8c9e2fbc12
-  Why: PWA and APK native wrapper configurations are strictly synchronized and aligned across all checks.
-  Change: Audited wrapper invariants: asset links, manifest parity, version code/name sync, release metadata (latest.json), and security policy via pnpm audit:apk and pnpm apk:verify:source; all intact with no mismatches.
-  Result: pnpm audit:apk and pnpm apk:verify:source passed cleanly.
+  Why: PWA and native Android wrapper configurations are fully synchronized and defensively configured.
+  Change: Verified digital asset links, manifest parity, shortcut parity, version code/name sync, APK release metadata, target SDK alignment, cleartext traffic policy, and permissions with zero mismatches found.
+  Result: Executed pnpm audit:apk, pnpm apk:verify:source, and node --test .github/scripts/android/*.test.mjs; all checks passed.
   Files: .github/nightly-logs/10-apk-integrity-coverage.log
   Nudges: 0
-  Execution: b695f47b866d30e84f2bb9d0d269d1a161ea3ddc
+  Execution: 8cd47b084f70f25ad3dab1f391b0a74813790de7
 -->
