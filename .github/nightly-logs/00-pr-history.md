@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-27
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-28] PR #1995 [Stage 4]: Inspected 42 changed files and Edge Functions for SQL view substrate hygiene; zero structural rot or unreferenced views found.
+**Domain:** optimization | **Commit:** 7be0987de | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1995)
+**Files:** .github/nightly-logs/04-optimization-coverage.log, .github/nightly-logs/04-optimization-pr-body.md
+**Why:** Codebase substrate hygiene is fully compliant; all 6 known database views remain unreferenced in Edge Function source code and all unit tests pass with zero source changes required.
+**Change:** Inspected 42 changed files and Edge Functions for SQL view substrate hygiene; zero structural rot or unreferenced views found.
+**Result:** Vitest pnpm test passed 209 test files and 2102 total tests, source grep confirmed 0 unreferenced view usages
+**Nudges:** 0
+
+
 ### [2026-09-28] PR #1994 [Stage 5]: Audit doc-debt target Frontend-PWA/src/core/api/SupabaseClient.ts
 **Domain:** documentation | **Commit:** 497800995 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1994)
 **Files:** .github/nightly-logs/05-documentation-readme-coverage.log, .github/nightly-logs/05-documentation-readme-pr-body.md
