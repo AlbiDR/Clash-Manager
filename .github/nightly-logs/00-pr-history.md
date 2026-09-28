@@ -15,6 +15,15 @@ LAST_AGED:   2026-09-28
 ---
 
 ## T1 -- Active (last 7 days)
+
+### [2026-09-28] PR #2004 [Stage 1]: Audited 42 candidate files and Edge Functions across Priority List items (auth gaps, in-memory state, Valibot boundaries, layer isolation); zero threat vectors found
+**Domain:** hardening | **Commit:** f4a271b10 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2004)
+**Files:** .github/nightly-logs/00-pr-history.md, .github/nightly-logs/01-hardening-coverage.log, .github/nightly-logs/01-hardening-pr-body.md
+**Why:** Bounded threat surface scan across 42 candidate files, unauthenticated Edge Functions, in-memory state, and Valibot schema boundaries confirmed zero unhandled security or runtime integrity risks
+**Change:** Audited 42 candidate files and Edge Functions across Priority List items (auth gaps, in-memory state, Valibot boundaries, layer isolation); zero threat vectors found
+**Result:** pnpm test passed 209 test files (2102 tests) and pnpm audit:version passed cleanly
+**Nudges:** 0
+
 ### [2026-09-28] PR #2003 [Stage 13]: Updated Self-Healing Protocol audit metrics and recorded watchdog intervention for 2026-09-28
 **Domain:** pipeline | **Commit:** 4f5fdc308 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2003)
 **Files:** .github/nightly-logs/13-self-healing-protocol-coverage.log, .github/nightly-logs/13-self-healing-protocol-pr-body.md, .github/nightly-logs/13-self-healing-protocol.md
