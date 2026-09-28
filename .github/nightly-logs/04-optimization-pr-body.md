@@ -15,12 +15,12 @@ In plain terms: nothing needed fixing. This run checked the optimization area an
 <!--
 NIGHTLY_PR_METADATA:
   Domain: optimization
-  Cycle: nightly-cycle/2026-09-27
+  Cycle: nightly-cycle/2026-09-28
   Contract: aa2c8988d1392624d60bb5e0229636b4e4503d27fc3a61008485cb2452cde7f5
   Why: Codebase substrate hygiene is fully compliant; all 6 known database views remain unreferenced in Edge Function source code and all unit tests pass with zero source changes required.
   Change: Inspected 42 changed files and Edge Functions for SQL view substrate hygiene; zero structural rot or unreferenced views found.
   Result: Vitest pnpm test passed 209 test files and 2102 total tests, source grep confirmed 0 unreferenced view usages
   Files: .github/nightly-logs/04-optimization-coverage.log
   Nudges: 0
-  Execution: 995eeffd257567a7d7539925f144c515eb8cfe7f
+  Execution: 18ed537c8b34f85a85b514bf7fc3c2fe730237c9
 -->
