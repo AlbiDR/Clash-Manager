@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-27
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-28] PR #2000 [Stage 10]: Verified digital asset links, manifest parity, shortcut parity, version code/name sync, APK release metadata, target SDK alignment, cleartext traffic policy, and permissions with zero mismatches found.
+**Domain:** apk | **Commit:** 5d7eabc77 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2000)
+**Files:** .github/nightly-logs/10-apk-integrity-coverage.log, .github/nightly-logs/10-apk-integrity-pr-body.md
+**Why:** PWA and native Android wrapper configurations are fully synchronized and defensively configured.
+**Change:** Verified digital asset links, manifest parity, shortcut parity, version code/name sync, APK release metadata, target SDK alignment, cleartext traffic policy, and permissions with zero mismatches found.
+**Result:** Executed pnpm audit:apk, pnpm apk:verify:source, and node --test .github/scripts/android/*.test.mjs; all checks passed.
+**Nudges:** 0
+
+
 ### [2026-09-28] PR #1999 [Stage 9]: Eliminate dead components barrel index export in roster feature
 **Domain:** architecture | **Commit:** a2e2043d8 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1999)
 **Files:** .github/nightly-logs/09-refactor-proposals-coverage.log, .github/nightly-logs/09-refactor-proposals-pr-body.md, Frontend-PWA/src/features/roster/components/index.ts, Frontend-PWA/src/features/roster/views/RosterView.vue
