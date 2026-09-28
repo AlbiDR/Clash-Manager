@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-27
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-28] PR #2002 [Stage 12]: Added v-tactile directive to ViewOptions interactive controls
+**Domain:** ux | **Commit:** b5aeb67f5 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2002)
+**Files:** .github/nightly-logs/12-apk-ux-coverage.log, .github/nightly-logs/12-apk-ux-pr-body.md, Frontend-PWA/src/shared/ui/ViewOptions.vue
+**Why:** Provide brokered tactile haptic feedback for trigger, handle, clear, sort options, and reset buttons in mobile WebView
+**Change:** Added v-tactile directive to ViewOptions interactive controls
+**Result:** ViewOptions.spec.ts: 9 tests passed
+**Nudges:** 0
+
+
 ### [2026-09-28] PR #2001 [Stage 11]: Audited APK performance: all 9 wrapper, WebView, and caching invariants pass cleanly; precache footprint optimal (6 files, 11.1 KB)
 **Domain:** apk | **Commit:** 39a048d05 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2001)
 **Files:** .github/nightly-logs/11-apk-optimization-coverage.log, .github/nightly-logs/11-apk-optimization-pr-body.md
