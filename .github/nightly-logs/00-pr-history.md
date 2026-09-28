@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-27
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-28] PR #2003 [Stage 13]: Updated Self-Healing Protocol audit metrics and recorded watchdog intervention for 2026-09-28
+**Domain:** pipeline | **Commit:** 4f5fdc308 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2003)
+**Files:** .github/nightly-logs/13-self-healing-protocol-coverage.log, .github/nightly-logs/13-self-healing-protocol-pr-body.md, .github/nightly-logs/13-self-healing-protocol.md
+**Why:** Audit completed with 12/12 preceding stages healthy/merged and 1 watchdog nudge recorded
+**Change:** Updated Self-Healing Protocol audit metrics and recorded watchdog intervention for 2026-09-28
+**Result:** git diff --check passed with 0 errors across 13-self-healing-protocol.md and 13-self-healing-protocol-coverage.log
+**Nudges:** 1
+
+
 ### [2026-09-28] PR #2002 [Stage 12]: Added v-tactile directive to ViewOptions interactive controls
 **Domain:** ux | **Commit:** b5aeb67f5 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2002)
 **Files:** .github/nightly-logs/12-apk-ux-coverage.log, .github/nightly-logs/12-apk-ux-pr-body.md, Frontend-PWA/src/shared/ui/ViewOptions.vue
