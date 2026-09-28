@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-27
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-28] PR #1999 [Stage 9]: Eliminate dead components barrel index export in roster feature
+**Domain:** architecture | **Commit:** a2e2043d8 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1999)
+**Files:** .github/nightly-logs/09-refactor-proposals-coverage.log, .github/nightly-logs/09-refactor-proposals-pr-body.md, Frontend-PWA/src/features/roster/components/index.ts, Frontend-PWA/src/features/roster/views/RosterView.vue
+**Why:** ADR target Target B dead-export removal identified by knip scan
+**Change:** Eliminate dead components barrel index export in roster feature
+**Result:** pnpm test and depcruise passed clean with 0 violations
+**Nudges:** 0
+
+
 ### [2026-09-28] PR #1998 [Stage 8]: Bumped tsx devDependency from ^4.23.13 to ^4.23.15
 **Domain:** dependencies | **Commit:** 348918259 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1998)
 **Files:** .github/nightly-logs/08-dependency-audit-coverage.log, .github/nightly-logs/08-dependency-audit-pr-body.md, package.json, pnpm-lock.yaml, pnpm-workspace.yaml
