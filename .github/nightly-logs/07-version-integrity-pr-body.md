@@ -4,23 +4,23 @@
 
 In plain terms: nothing needed fixing. This run checked the version integrity area and found it already correct, so the only file here is the log recording that the check happened.
 
-**What was checked:** Scanned Frontend-PWA and Backend package.json catalogs and root/Frontend-PWA/Backend versions (14.50.119); zero drift across manifests and derived locations.
+**What was checked:** Audit complete: No version drift or catalog protocol violations detected across monorepo package manifests or derived files.
 
-**Why:** No version drift or catalog protocol violations were detected across monorepo package manifests or derived locations.
+**Why:** Root, Frontend-PWA, and Backend package versions all align at 14.50.121, all shared catalog dependencies use catalog protocol, and pnpm audit:version passed cleanly.
 
-**Result:** pnpm audit:version returned PASSED (Ground Truth Version: 14.50.119, no version drift or catalog violations detected).
+**Result:** Catalog scan (Frontend-PWA/package.json, Backend/package.json), package version scan (package.json, Frontend-PWA/package.json, Backend/package.json at 14.50.121), and pnpm audit:version output verified 0 violations.
 
 **Files changed:** .github/nightly-logs/07-version-integrity-coverage.log
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: versioning
-  Cycle: nightly-cycle/2026-09-27
+  Cycle: nightly-cycle/2026-09-28
   Contract: 294f64f1358ef17af7639062d355427eaf3ce873f96ed18c821b7f7412d9219a
-  Why: No version drift or catalog protocol violations were detected across monorepo package manifests or derived locations.
-  Change: Scanned Frontend-PWA and Backend package.json catalogs and root/Frontend-PWA/Backend versions (14.50.119); zero drift across manifests and derived locations.
-  Result: pnpm audit:version returned PASSED (Ground Truth Version: 14.50.119, no version drift or catalog violations detected).
+  Why: Root, Frontend-PWA, and Backend package versions all align at 14.50.121, all shared catalog dependencies use catalog protocol, and pnpm audit:version passed cleanly.
+  Change: Audit complete: No version drift or catalog protocol violations detected across monorepo package manifests or derived files.
+  Result: Catalog scan (Frontend-PWA/package.json, Backend/package.json), package version scan (package.json, Frontend-PWA/package.json, Backend/package.json at 14.50.121), and pnpm audit:version output verified 0 violations.
   Files: .github/nightly-logs/07-version-integrity-coverage.log
   Nudges: 0
-  Execution: f8ef7c24627d2f4a393632d1101f66d73a67d646
+  Execution: 317a29b7025512a7cf78240e8392a455f53a0149
 -->
