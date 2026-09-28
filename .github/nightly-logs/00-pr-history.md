@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-27
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-28] PR #1993 [Stage 3]: Calibration pass: 0 pending migrations examined, 29 baseline tables verified RLS-compliant, migration-quality PASS, fold-state DEGRADED, database-verification DB-UNAVAILABLE
+**Domain:** database | **Commit:** 7034110b6 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1993)
+**Files:** .github/nightly-logs/03-baseline-consolidation-coverage.log, .github/nightly-logs/03-baseline-consolidation-pr-body.md
+**Why:** Baseline SQL is clean and fully compliant with state-based declarative constraints, requiring no source code mutations
+**Change:** Calibration pass: 0 pending migrations examined, 29 baseline tables verified RLS-compliant, migration-quality PASS, fold-state DEGRADED, database-verification DB-UNAVAILABLE
+**Result:** Static audit PASS with 0 pending migrations and DB-UNAVAILABLE semantic authority
+**Nudges:** 0
+
+
 ### [2026-09-28] PR #1992 [Stage 2]: Added unit tests for LatestBattleTimesSchema in rpcSchemas.spec.ts
 **Domain:** verification | **Commit:** f41108dd9 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/1992)
 **Files:** .github/nightly-logs/02-verification-coverage.log, .github/nightly-logs/02-verification-pr-body.md, Backend/supabase/functions/_shared/shared-tests/rpcSchemas.spec.ts
