@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-28
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-29] PR #2005 [Stage 2]: Extended deep-depth spec with tests for isAlreadyIngested non-chronological battle logs and invalid timestamps
+**Domain:** verification | **Commit:** d58d427b1 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2005)
+**Files:** .github/nightly-logs/02-verification-coverage.log, .github/nightly-logs/02-verification-pr-body.md, Backend/supabase/functions/ingest-royale-data/stages/stages-tests/deep-depth.spec.ts
+**Why:** Close validation boundary coverage gap in ingest-royale-data deep-depth stage
+**Change:** Extended deep-depth spec with tests for isAlreadyIngested non-chronological battle logs and invalid timestamps
+**Result:** 297 backend tests passed. Mutation testing proved: inverting comparison operator in isAlreadyIngested in deep-depth.ts caused 5 expected test failures in deep-depth.spec.ts.
+**Nudges:** 0
+
+
 ### [2026-09-28] PR #2004 [Stage 1]: Audited 42 candidate files and Edge Functions across Priority List items (auth gaps, in-memory state, Valibot boundaries, layer isolation); zero threat vectors found
 **Domain:** hardening | **Commit:** f4a271b10 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2004)
 **Files:** .github/nightly-logs/00-pr-history.md, .github/nightly-logs/01-hardening-coverage.log, .github/nightly-logs/01-hardening-pr-body.md
