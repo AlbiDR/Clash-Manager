@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-28
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-29] PR #2010 [Stage 7]: Audit complete: No version drift or catalog protocol violations detected.
+**Domain:** versioning | **Commit:** 470a4d7f2 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2010)
+**Files:** .github/nightly-logs/07-version-integrity-coverage.log, .github/nightly-logs/07-version-integrity-pr-body.md
+**Why:** Ground truth version 14.50.121 is synchronized across all package manifests and derived files; catalog usage is fully compliant.
+**Change:** Audit complete: No version drift or catalog protocol violations detected.
+**Result:** PASSED pnpm audit:version
+**Nudges:** 0
+
+
 ### [2026-09-29] PR #2009 [Stage 6]: Audited doc-debt targets and confirmed accurate contracts
 **Domain:** documentation | **Commit:** 5352b9176 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2009)
 **Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, .github/nightly-logs/06-documentation-tsdoc-pr-body.md
