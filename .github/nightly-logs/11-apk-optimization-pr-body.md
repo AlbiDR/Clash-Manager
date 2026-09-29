@@ -4,23 +4,23 @@
 
 In plain terms: nothing needed fixing. This run checked the APK optimization area and found it already correct, so the only file here is the log recording that the check happened.
 
-**What was checked:** Audited APK performance: all 9 wrapper, WebView, and caching invariants pass cleanly; precache footprint optimal (6 files, 11.1 KB)
+**What was checked:** Calibration pass: verified 9/9 wrapper invariants, WebView cache mode, SW routes, Vite chunking, and asset footprint
 
-**Why:** All APK wrapper, WebView, Service Worker, and Vite build caching configurations are defensively configured and optimal
+**Why:** Full wrapper calibration audit passed with zero violations across all optimization targets
 
-**Result:** pnpm audit:apk-perf and node --test .github/scripts/android/*.test.mjs passed 46 of 46 tests cleanly
+**Result:** PASS: pnpm audit:apk-perf and pnpm test:apk-performance
 
 **Files changed:** .github/nightly-logs/11-apk-optimization-coverage.log
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: apk
-  Cycle: nightly-cycle/2026-09-28
+  Cycle: nightly-cycle/2026-09-29
   Contract: 63c0229fe16cf4c98e352282307edbee4830cff68ea2d93c5c967a1f5cbd30ea
-  Why: All APK wrapper, WebView, Service Worker, and Vite build caching configurations are defensively configured and optimal
-  Change: Audited APK performance: all 9 wrapper, WebView, and caching invariants pass cleanly; precache footprint optimal (6 files, 11.1 KB)
-  Result: pnpm audit:apk-perf and node --test .github/scripts/android/*.test.mjs passed 46 of 46 tests cleanly
+  Why: Full wrapper calibration audit passed with zero violations across all optimization targets
+  Change: Calibration pass: verified 9/9 wrapper invariants, WebView cache mode, SW routes, Vite chunking, and asset footprint
+  Result: PASS: pnpm audit:apk-perf and pnpm test:apk-performance
   Files: .github/nightly-logs/11-apk-optimization-coverage.log
   Nudges: 0
-  Execution: 0b6a43b267f46311af3c9b044a5ff432ef441801
+  Execution: 2525e99a0b8c7bc5dc3bbd81a326aead170f7ac3
 -->
