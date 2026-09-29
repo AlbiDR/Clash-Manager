@@ -1,26 +1,26 @@
 ### Nightly Stage 6: Documentation TSDoc - Interface Contract Architect
 
-**Status:** CHANGED
+**Status:** CLEAN
 
-In plain terms: this changes 1 code file, so the app's behaviour may be affected. No tests were added or changed alongside it.
+In plain terms: nothing needed fixing. This run checked the documentation TSDoc area and found it already correct, so the only file here is the log recording that the check happened.
 
-**What changed:** Harden deep-depth stage TSDoc interface contracts and threat tags
+**What was checked:** Audited doc-debt targets and confirmed accurate contracts
 
-**Why:** Documented interface contracts, parameters, return types, threat vectors, and ADR Section III/IV mappings for deep-depth.ts
+**Why:** All files in /tmp/nightly/doc-debt.txt were verified and their JSDoc/TSDoc annotations match current code
 
-**Result:** Vitest 16 tests passed in deep-depth.spec.ts
+**Result:** 32/32 royaleSchemas and 17/17 deep-depth tests passing
 
-**Files changed:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, Backend/supabase/functions/ingest-royale-data/stages/deep-depth.ts
+**Files changed:** .github/nightly-logs/06-documentation-tsdoc-coverage.log
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: documentation
-  Cycle: nightly-cycle/2026-09-28
+  Cycle: nightly-cycle/2026-09-29
   Contract: a9f522cc73babe487aa3df1b083524daba64c0dd03c9e1b446dd4bd70c376bae
-  Why: Documented interface contracts, parameters, return types, threat vectors, and ADR Section III/IV mappings for deep-depth.ts
-  Change: Harden deep-depth stage TSDoc interface contracts and threat tags
-  Result: Vitest 16 tests passed in deep-depth.spec.ts
-  Files: .github/nightly-logs/06-documentation-tsdoc-coverage.log, Backend/supabase/functions/ingest-royale-data/stages/deep-depth.ts
+  Why: All files in /tmp/nightly/doc-debt.txt were verified and their JSDoc/TSDoc annotations match current code
+  Change: Audited doc-debt targets and confirmed accurate contracts
+  Result: 32/32 royaleSchemas and 17/17 deep-depth tests passing
+  Files: .github/nightly-logs/06-documentation-tsdoc-coverage.log
   Nudges: 0
-  Execution: e1869dc4a6eac091cbaa9e4c507af975db96d0d5
+  Execution: bb8924fb9bff994a4129fb378cf8428805641173
 -->
