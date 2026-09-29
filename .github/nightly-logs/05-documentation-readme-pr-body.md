@@ -1,26 +1,26 @@
 ### Nightly Stage 5: Documentation README - Architecture Truth Architect
 
-**Status:** CLEAN
+**Status:** CHANGED
 
-In plain terms: nothing needed fixing. This run checked the documentation README area and found it already correct, so the only file here is the log recording that the check happened.
+In plain terms: this is a documentation change to 1 file in the documentation README area. Nothing about how the app runs is affected.
 
-**What was checked:** Audit doc-debt target Frontend-PWA/src/core/api/SupabaseClient.ts
+**What changed:** Reconciled ingest-royale-data README with deep depth optimizations and reliability guards
 
-**Why:** Documentation in Frontend-PWA/src/core/api/README.md is already accurate and up to date following source code updates
+**Why:** Document isAlreadyIngested RPC skipping, two-phase shadow lead registry sync, and dead recruit purging
 
-**Result:** VERIFIED_ACCURATE
+**Result:** PASSED (git diff --check clean, monorepo vitest passed 2102 tests)
 
-**Files changed:** .github/nightly-logs/05-documentation-readme-coverage.log
+**Files changed:** .github/nightly-logs/05-documentation-readme-coverage.log, Backend/supabase/functions/ingest-royale-data/README.md
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: documentation
-  Cycle: nightly-cycle/2026-09-28
+  Cycle: nightly-cycle/2026-09-29
   Contract: cea68a5bbba1bd2cbc6d3bdfe2639f37f3935b571beab59f5da1501b1180b22d
-  Why: Documentation in Frontend-PWA/src/core/api/README.md is already accurate and up to date following source code updates
-  Change: Audit doc-debt target Frontend-PWA/src/core/api/SupabaseClient.ts
-  Result: VERIFIED_ACCURATE
-  Files: .github/nightly-logs/05-documentation-readme-coverage.log
+  Why: Document isAlreadyIngested RPC skipping, two-phase shadow lead registry sync, and dead recruit purging
+  Change: Reconciled ingest-royale-data README with deep depth optimizations and reliability guards
+  Result: PASSED (git diff --check clean, monorepo vitest passed 2102 tests)
+  Files: .github/nightly-logs/05-documentation-readme-coverage.log, Backend/supabase/functions/ingest-royale-data/README.md
   Nudges: 0
-  Execution: 18ed537c8b34f85a85b514bf7fc3c2fe730237c9
+  Execution: c3d469a2427e150d0d02c017f736fb9e1dc296c0
 -->
