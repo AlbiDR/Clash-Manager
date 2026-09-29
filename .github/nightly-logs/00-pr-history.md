@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-28
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-29] PR #2013 [Stage 10]: No APK or wrapper configuration changes required; wrapper invariants verified.
+**Domain:** apk | **Commit:** ba447f4ad | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2013)
+**Files:** .github/nightly-logs/10-apk-integrity-coverage.log, .github/nightly-logs/10-apk-integrity-pr-body.md
+**Why:** PWA configuration and native wrapper remain fully synchronized.
+**Change:** No APK or wrapper configuration changes required; wrapper invariants verified.
+**Result:** Ran pnpm audit:apk, pnpm apk:verify:source, pnpm test:apk-release, and pnpm test:version-code. All checks passed with zero mismatches across asset links, manifest parity, version code/name sync, release metadata, and security policies.
+**Nudges:** 0
+
+
 ### [2026-09-29] PR #2012 [Stage 9]: 42 candidates, dep-violations: 0, knip (2 devDeps, 5 binaries, 3 unused exp, 1 dup exp); streak: 0. Inspected core/config, useProgressiveList, deep-depth, protocol. Candidate BLITZ_DWELL_DEFAULT intentional. Defect hunt clean.
 **Domain:** architecture | **Commit:** 08aee1779 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2012)
 **Files:** .github/nightly-logs/09-refactor-proposals-coverage.log, .github/nightly-logs/09-refactor-proposals-pr-body.md
