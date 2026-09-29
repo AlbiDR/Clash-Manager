@@ -16,6 +16,31 @@ LAST_AGED:   2026-09-28
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-29] PR #2015 [Stage 11]: Calibration pass: verified 9/9 wrapper invariants, WebView cache mode, SW routes, Vite chunking, and asset footprint
+**Domain:** apk | **Commit:** b40354bac | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2015)
+**Files:** .github/nightly-logs/11-apk-optimization-coverage.log, .github/nightly-logs/11-apk-optimization-pr-body.md
+**Why:** Full wrapper calibration audit passed with zero violations across all optimization targets
+**Change:** Calibration pass: verified 9/9 wrapper invariants, WebView cache mode, SW routes, Vite chunking, and asset footprint
+**Result:** PASS: pnpm audit:apk-perf and pnpm test:apk-performance
+**Nudges:** 0
+
+### [2026-09-29] PR #2016 [Stage 12]: No UX issues found across 78 examined frontend files
+**Domain:** ux | **Commit:** f1fa4daff | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2016)
+**Files:** .github/nightly-logs/12-apk-ux-coverage.log, .github/nightly-logs/12-apk-ux-pr-body.md
+**Why:** Audit status is PASS with 0 candidate files remaining
+**Change:** No UX issues found across 78 examined frontend files
+**Result:** apk-ux-audit-status.txt: PASS; apk-ux-audit.json: 0 candidate files reviewed; UX categories 1-10 checked
+**Nudges:** 0
+
+### [2026-09-29] PR #2014 [Stage 13]: Updated self-healing protocol findings for 2026-09-29: recorded Stage 7 watchdog rescue intervention in Section 1 and updated Section 3 consecutive no-diff metrics across Stages 1–13.
+**Domain:** pipeline | **Commit:** a078daf9f | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2014)
+**Files:** .github/nightly-logs/13-self-healing-protocol-coverage.log, .github/nightly-logs/13-self-healing-protocol-pr-body.md, .github/nightly-logs/13-self-healing-protocol.md
+**Why:** Daily pipeline self-healing audit pass across active 2026-09-29 run records, ledger events, and audit durations.
+**Change:** Updated self-healing protocol findings for 2026-09-29: recorded Stage 7 watchdog rescue intervention in Section 1 and updated Section 3 consecutive no-diff metrics across Stages 1–13.
+**Result:** git diff --check reported clean diff formatting; pnpm nightly:recap verified 10/10 completed stage PRs.
+**Nudges:** 0
+
+
 ### [2026-09-29] PR #2013 [Stage 10]: No APK or wrapper configuration changes required; wrapper invariants verified.
 **Domain:** apk | **Commit:** ba447f4ad | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2013)
 **Files:** .github/nightly-logs/10-apk-integrity-coverage.log, .github/nightly-logs/10-apk-integrity-pr-body.md
