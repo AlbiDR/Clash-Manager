@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-28
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-29] PR #2006 [Stage 3]: Pending migrations: 0, migration-quality: PASS, fold-state: DEGRADED, database-verification: DB-UNAVAILABLE. Read-only RLS/search_path/formatting audit passed.
+**Domain:** database | **Commit:** b07ca9893 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2006)
+**Files:** .github/nightly-logs/03-baseline-consolidation-coverage.log, .github/nightly-logs/03-baseline-consolidation-pr-body.md
+**Why:** Baseline master migration is up to date with zero unfolded migrations pending; read-only audit confirmed RLS compliance, search_path isolation, and formatting conventions.
+**Change:** Pending migrations: 0, migration-quality: PASS, fold-state: DEGRADED, database-verification: DB-UNAVAILABLE. Read-only RLS/search_path/formatting audit passed.
+**Result:** PASS (read-only audit clean, DB-UNAVAILABLE)
+**Nudges:** 0
+
+
 ### [2026-09-29] PR #2005 [Stage 2]: Extended deep-depth spec with tests for isAlreadyIngested non-chronological battle logs and invalid timestamps
 **Domain:** verification | **Commit:** d58d427b1 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2005)
 **Files:** .github/nightly-logs/02-verification-coverage.log, .github/nightly-logs/02-verification-pr-body.md, Backend/supabase/functions/ingest-royale-data/stages/stages-tests/deep-depth.spec.ts
