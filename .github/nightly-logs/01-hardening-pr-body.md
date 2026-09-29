@@ -4,9 +4,9 @@
 
 In plain terms: nothing needed fixing. This run checked the hardening area and found it already correct, so the only file here is the log recording that the check happened.
 
-**What was checked:** Audited 42 candidate files and Edge Functions across Priority List items (auth gaps, in-memory state, Valibot boundaries, layer isolation); zero threat vectors found
+**What was checked:** Audited 44 candidate files and Edge Functions across Priority List items (auth gaps, in-memory state, Valibot boundaries, layer isolation); zero threat vectors found
 
-**Why:** Bounded threat surface scan across 42 candidate files, unauthenticated Edge Functions, in-memory state, and Valibot schema boundaries confirmed zero unhandled security or runtime integrity risks
+**Why:** Bounded threat surface scan across 44 candidate files, unauthenticated Edge Functions, in-memory state, and Valibot schema boundaries confirmed zero unhandled security or runtime integrity risks
 
 **Result:** pnpm test passed 209 test files (2102 tests) and pnpm audit:version passed cleanly
 
@@ -15,12 +15,12 @@ In plain terms: nothing needed fixing. This run checked the hardening area and f
 <!--
 NIGHTLY_PR_METADATA:
   Domain: hardening
-  Cycle: nightly-cycle/2026-09-29
+  Cycle: nightly-cycle/2026-09-30
   Contract: b8cc17977cd40f02490c220999b57dcbf99eb8b7a2175f40feb87a2655548621
-  Why: Bounded threat surface scan across 42 candidate files, unauthenticated Edge Functions, in-memory state, and Valibot schema boundaries confirmed zero unhandled security or runtime integrity risks
-  Change: Audited 42 candidate files and Edge Functions across Priority List items (auth gaps, in-memory state, Valibot boundaries, layer isolation); zero threat vectors found
+  Why: Bounded threat surface scan across 44 candidate files, unauthenticated Edge Functions, in-memory state, and Valibot schema boundaries confirmed zero unhandled security or runtime integrity risks
+  Change: Audited 44 candidate files and Edge Functions across Priority List items (auth gaps, in-memory state, Valibot boundaries, layer isolation); zero threat vectors found
   Result: pnpm test passed 209 test files (2102 tests) and pnpm audit:version passed cleanly
   Files: .github/nightly-logs/00-pr-history.md, .github/nightly-logs/01-hardening-coverage.log
   Nudges: 0
-  Execution: a7fad8efaa6d323fa7e63bc1305e2a3ff17d4108
+  Execution: fea66c2716cc37814b608a398cff274ccaa98a0d
 -->
