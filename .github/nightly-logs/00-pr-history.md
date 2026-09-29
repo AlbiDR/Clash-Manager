@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-28
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-29] PR #2012 [Stage 9]: 42 candidates, dep-violations: 0, knip (2 devDeps, 5 binaries, 3 unused exp, 1 dup exp); streak: 0. Inspected core/config, useProgressiveList, deep-depth, protocol. Candidate BLITZ_DWELL_DEFAULT intentional. Defect hunt clean.
+**Domain:** architecture | **Commit:** 08aee1779 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2012)
+**Files:** .github/nightly-logs/09-refactor-proposals-coverage.log, .github/nightly-logs/09-refactor-proposals-pr-body.md
+**Why:** Substrate complies strictly with CleanStack Architecture ADR; candidate BLITZ_DWELL_DEFAULT duplicate export is an intentional domain derivation per decision log, useClashDataLoader exports are required by Vue Router DataLoaderPlugin, and Defect hunt on useProgressiveList time-sliced rendering produced 0 reproducible failures.
+**Change:** 42 candidates, dep-violations: 0, knip (2 devDeps, 5 binaries, 3 unused exp, 1 dup exp); streak: 0. Inspected core/config, useProgressiveList, deep-depth, protocol. Candidate BLITZ_DWELL_DEFAULT intentional. Defect hunt clean.
+**Result:** depcruise: 0 violations. knip: false positives proven. pnpm --dir Frontend-PWA test src/core/services/services-tests/useProgressiveList.spec.ts passed 24/24 tests.
+**Nudges:** 0
+
+
 ### [2026-09-29] PR #2011 [Stage 8]: Bumped valibot to ^1.5.0 in monorepo catalogs
 **Domain:** dependencies | **Commit:** 050cf735d | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2011)
 **Files:** .github/nightly-logs/08-dependency-audit-coverage.log, .github/nightly-logs/08-dependency-audit-pr-body.md, package.json, pnpm-lock.yaml, pnpm-workspace.yaml
