@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-28
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-29] PR #2008 [Stage 5]: Reconciled ingest-royale-data README with deep depth optimizations and reliability guards
+**Domain:** documentation | **Commit:** 860f02bf6 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2008)
+**Files:** .github/nightly-logs/05-documentation-readme-coverage.log, .github/nightly-logs/05-documentation-readme-pr-body.md, Backend/supabase/functions/ingest-royale-data/README.md
+**Why:** Document isAlreadyIngested RPC skipping, two-phase shadow lead registry sync, and dead recruit purging
+**Change:** Reconciled ingest-royale-data README with deep depth optimizations and reliability guards
+**Result:** PASSED (git diff --check clean, monorepo vitest passed 2102 tests)
+**Nudges:** 0
+
+
 ### [2026-09-29] PR #2007 [Stage 4]: Inspected 42 changed files and Edge Functions for SQL view substrate hygiene; zero structural rot or unreferenced views found.
 **Domain:** optimization | **Commit:** 4d48d18fc | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2007)
 **Files:** .github/nightly-logs/04-optimization-coverage.log, .github/nightly-logs/04-optimization-pr-body.md
