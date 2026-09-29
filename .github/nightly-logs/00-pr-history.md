@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-28
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-29] PR #2009 [Stage 6]: Audited doc-debt targets and confirmed accurate contracts
+**Domain:** documentation | **Commit:** 5352b9176 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2009)
+**Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, .github/nightly-logs/06-documentation-tsdoc-pr-body.md
+**Why:** All files in /tmp/nightly/doc-debt.txt were verified and their JSDoc/TSDoc annotations match current code
+**Change:** Audited doc-debt targets and confirmed accurate contracts
+**Result:** 32/32 royaleSchemas and 17/17 deep-depth tests passing
+**Nudges:** 0
+
+
 ### [2026-09-29] PR #2008 [Stage 5]: Reconciled ingest-royale-data README with deep depth optimizations and reliability guards
 **Domain:** documentation | **Commit:** 860f02bf6 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2008)
 **Files:** .github/nightly-logs/05-documentation-readme-coverage.log, .github/nightly-logs/05-documentation-readme-pr-body.md, Backend/supabase/functions/ingest-royale-data/README.md
