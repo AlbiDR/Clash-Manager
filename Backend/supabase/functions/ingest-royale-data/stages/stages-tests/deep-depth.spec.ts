@@ -376,6 +376,12 @@ describe("isAlreadyIngested answers false whenever it cannot prove the log is st
         expect(isAlreadyIngested(log("20260725T090000.000Z", "20260725T093153.000Z"), "20260725T093152.000Z")).toBe(false);
     });
 
+    it("evaluates unordered fetched battle times correctly by finding the actual newest battle", () => {
+        // [Trap] If non-chronological order in battle log is supplied, ensure max time is used for comparison
+        expect(isAlreadyIngested(log("20260725T080000.000Z", "20260725T100000.000Z", "20260725T090000.000Z"), "20260725T093000.000Z")).toBe(false);
+        expect(isAlreadyIngested(log("20260725T080000.000Z", "20260725T090000.000Z", "20260725T070000.000Z"), "20260725T090000.000Z")).toBe(true);
+    });
+
     it("is false with no stored time or an empty log", () => {
         expect(isAlreadyIngested(log("20260725T093152.000Z"), undefined)).toBe(false);
         expect(isAlreadyIngested([], "20260725T093152.000Z")).toBe(false);
@@ -384,5 +390,6 @@ describe("isAlreadyIngested answers false whenever it cannot prove the log is st
     it("is false when either side does not match the exact battleTime format", () => {
         expect(isAlreadyIngested(log("20260725T093152Z"), "20260725T093152.000Z")).toBe(false);
         expect(isAlreadyIngested(log("20260725T093152.000Z"), "2026-07-25 09:31:52+00")).toBe(false);
+        expect(isAlreadyIngested(log("20260725T093152.000Z", "INVALID_TIMESTAMP"), "20260725T093152.000Z")).toBe(false);
     });
 });
