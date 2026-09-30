@@ -4,23 +4,23 @@
 
 In plain terms: nothing needed fixing. This run checked the APK optimization area and found it already correct, so the only file here is the log recording that the check happened.
 
-**What was checked:** Calibration pass: verified 9/9 wrapper invariants, WebView cache mode, SW routes, Vite chunking, and asset footprint
+**What was checked:** Audited native WebView performance settings, Service Worker caching, and Vite manualChunks; zero source changes required
 
-**Why:** Full wrapper calibration audit passed with zero violations across all optimization targets
+**Why:** All 9 wrapper and caching performance invariants pass in pnpm audit:apk-perf and precache asset footprint is 11.1 KB across 6 essential icon assets
 
-**Result:** PASS: pnpm audit:apk-perf and pnpm test:apk-performance
+**Result:** pnpm audit:apk-perf and pnpm test:apk-performance passed with 0 violations
 
 **Files changed:** .github/nightly-logs/11-apk-optimization-coverage.log
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: apk
-  Cycle: nightly-cycle/2026-09-29
+  Cycle: nightly-cycle/2026-09-30
   Contract: 63c0229fe16cf4c98e352282307edbee4830cff68ea2d93c5c967a1f5cbd30ea
-  Why: Full wrapper calibration audit passed with zero violations across all optimization targets
-  Change: Calibration pass: verified 9/9 wrapper invariants, WebView cache mode, SW routes, Vite chunking, and asset footprint
-  Result: PASS: pnpm audit:apk-perf and pnpm test:apk-performance
+  Why: All 9 wrapper and caching performance invariants pass in pnpm audit:apk-perf and precache asset footprint is 11.1 KB across 6 essential icon assets
+  Change: Audited native WebView performance settings, Service Worker caching, and Vite manualChunks; zero source changes required
+  Result: pnpm audit:apk-perf and pnpm test:apk-performance passed with 0 violations
   Files: .github/nightly-logs/11-apk-optimization-coverage.log
   Nudges: 0
-  Execution: 2525e99a0b8c7bc5dc3bbd81a326aead170f7ac3
+  Execution: b2400e2c589e0cbd9285724097866bb63544ddfc
 -->
