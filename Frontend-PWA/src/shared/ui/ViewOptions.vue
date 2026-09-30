@@ -13,29 +13,55 @@ import Icon from "./Icon.vue";
  * and order are consequential when used, but are not consequential enough to
  * permanently claim a row of a console. It always opens as the same bottom
  * sheet, so keyboard, touch, and pointer users learn one dependable rhythm.
+ *
+ * @remarks
+ * Satisfies ADR Section II: Shared UI Component Contracts and ADR Section IV: Mobile Hybrid Shell.
+ *
+ * @public
  */
-interface ViewSortOption {
+export interface ViewSortOption {
+  /** Display label for the sorting option in selector UI. */
   label: string;
+  /** Unique domain identifier or field key for sort ordering. */
   value: string;
+  /** Short descriptive subtext for list display. */
   desc?: string;
+  /** Comprehensive descriptive explanation for accessible or detail modes. */
   fullDesc?: string;
 }
 
-const props = defineProps<{
-  /** Short, human-readable name of the view being shaped. */
+/**
+ * Component Props Contract for ViewOptions.
+ *
+ * @remarks
+ * Manages presentation state, bottom sheet visibility, search term query binding,
+ * and sort options configuration.
+ */
+export interface ViewOptionsProps {
+  /** Short, human-readable name of the view being shaped (e.g., "Roster", "Recruits"). */
   title: string;
+  /** Visibility state controlling whether the bottom sheet overlay is open. */
   open: boolean;
   /** Joins the console's primary Select/Done action as a compact segment. */
   embedded?: boolean;
+  /** Whether search input field is active for the current view. */
   showSearch?: boolean;
+  /** Reactive query string for active view filter. */
   searchQuery?: string;
+  /** Available sorting criteria definitions. */
   sortOptions?: ViewSortOption[];
+  /** Currently selected sort option value key. */
   currentSort?: string;
-}>();
+}
+
+const props = defineProps<ViewOptionsProps>();
 
 const emit = defineEmits<{
+  /** Emitted when bottom sheet open/close state toggles. */
   "update:open": [boolean];
+  /** Emitted when search query text input updates. */
   "update:search": [string];
+  /** Emitted when a new sort option value is selected. */
   "update:sort": [string];
 }>();
 
@@ -78,27 +104,51 @@ const {
   focusInput: () => searchInput.value?.focus(),
 });
 
+/**
+ * Initiates drag gesture on bottom sheet handle.
+ *
+ * @param touchEvent - Native touch start event payload.
+ */
 function beginSheetDrag(touchEvent: TouchEvent): void {
+  // Capture initial Y coordinate for vertical translation tracking
   dragStartY = touchEvent.touches[0]?.clientY ?? 0;
   didDrag = false;
   isDragging.value = true;
 }
 
+/**
+ * Tracks vertical drag displacement during sheet swipe down.
+ *
+ * @param touchEvent - Native touch move event payload.
+ */
 function trackSheetDrag(touchEvent: TouchEvent): void {
   if (!isDragging.value) return;
   const currentY = touchEvent.touches[0]?.clientY ?? dragStartY;
+  // Restrict translation offset to downward movement only
   dragOffset.value = Math.max(0, currentY - dragStartY);
   didDrag = dragOffset.value > 0;
 }
 
+/**
+ * Concludes drag gesture and determines sheet dismissal threshold.
+ *
+ * @remarks
+ * THREAT: Preventing accidental dismissals during minor touch jitter.
+ * Requiring a minimum 80px downward drag before triggering sheet dismissal.
+ */
 function finishSheetDrag(): void {
   if (!isDragging.value) return;
   isDragging.value = false;
+  // Threshold dismissal at 80px downward swipe
   if (dragOffset.value > 80) closeOptions();
   dragOffset.value = 0;
 }
 
+/**
+ * Handles click on bottom sheet handle, distinguishing explicit taps from drag gestures.
+ */
 function handleSheetHandleClick(): void {
+  // Ignore handle tap if event was initiated as part of a drag gesture
   if (didDrag) {
     didDrag = false;
     return;
@@ -106,25 +156,41 @@ function handleSheetHandleClick(): void {
   closeOptions();
 }
 
+/**
+ * Opens bottom sheet dialog overlay or toggles state if already open.
+ */
 function openOptions(): void {
   if (props.open) {
     closeOptions();
     return;
   }
+  // Store trigger or currently active element for focus restoration on sheet dismissal
   previouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
   emit("update:open", true);
 }
 
+/**
+ * Closes bottom sheet dialog overlay.
+ */
 function closeOptions(): void {
   if (!props.open) return;
   emit("update:open", false);
 }
 
+/**
+ * Selects a sort criteria option and dismisses bottom sheet.
+ *
+ * @param sortValue - Selected sort key value string.
+ */
 function selectSort(sortValue: string): void {
+  // Only emit update if value differs from current sort
   if (sortValue !== props.currentSort) emit("update:sort", sortValue);
   closeOptions();
 }
 
+/**
+ * Resets search filter query and sort criteria back to default initial values.
+ */
 function resetOptions(): void {
   if (hasSearchQuery.value) clearSearchField();
   if (props.currentSort !== defaultSortValue.value && defaultSortValue.value) {
@@ -132,9 +198,19 @@ function resetOptions(): void {
   }
 }
 
+/**
+ * Keyboard navigation handler for modal panel Escape key events.
+ *
+ * @remarks
+ * THREAT: Trapping Escape key in active modal search inputs before dismissing panel.
+ * First Escape clears active search query text; second Escape closes bottom sheet overlay.
+ *
+ * @param keyboardEvent - Native keyboard event payload.
+ */
 function handlePanelKeydown(keyboardEvent: KeyboardEvent): void {
   if (keyboardEvent.key !== "Escape") return;
 
+  // Stepwise Escape handling: clear search query first before closing modal
   if (hasSearchQuery.value) {
     keyboardEvent.preventDefault();
     clearSearchField();
@@ -145,20 +221,26 @@ function handlePanelKeydown(keyboardEvent: KeyboardEvent): void {
   closeOptions();
 }
 
+/**
+ * Restores keyboard focus to pre-dialog trigger or fallback button.
+ */
 function restoreFocus(): void {
   const target = previouslyFocused ?? triggerRef.value;
   previouslyFocused = null;
   target?.focus();
 }
 
+// Manage body scroll locks and focus management on panel open state transitions
 watch(() => props.open, async (isOpen) => {
   if (isOpen) {
+    // THREAT: Background body scrolling while modal sheet is open
     document.body.style.overflow = "hidden";
     await nextTick();
     panelRef.value?.focus();
     return;
   }
 
+  // Restore document body scrollability
   document.body.style.overflow = "";
   await nextTick();
   restoreFocus();
