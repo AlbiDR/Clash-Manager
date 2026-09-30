@@ -111,7 +111,7 @@
       "jsdom": "^29.1.1",
       "knip": "^6.38.0",
       "simple-git-hooks": "^2.13.1",
-      "supabase": "^2.117.0",
+      "supabase": "^2.118.0",
       "pinia": "^3.0.4",
       "rollup-plugin-visualizer": "^7.0.1",
       "tsx": "^4.23.15",
