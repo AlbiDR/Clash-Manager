@@ -58,7 +58,7 @@ public class BlitzService extends Service {
      * through the "delayMs" intent extra, and the slider here has to offer the
      * same range and the same stops or the two controls would disagree about
      * what a setting means. Neither side can import the other, so
-     * .github/scripts/android/blitz-dwell-parity.mjs reads both files and fails
+     * APK/verify-dwell-parity.mjs reads both files and fails
      * the build if they ever drift apart.
      */
     static final long DWELL_MIN_MS = 850L;

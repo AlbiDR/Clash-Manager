@@ -21,9 +21,16 @@
  * produces a generic TWA that strips this bridge).
  * Renaming a method here requires a matching change in that native layer, or the
  * Blitz / accessibility / external-link features silently break on device.
- * `verify-apk-integrity.mjs` asserts every method below survives a build.
+ * `verify-apk-integrity.mjs` asserts every method below survives a build, and
+ * `APK/verify-bridge-contract.mjs` fails CI if this interface and the Java
+ * `@JavascriptInterface` methods disagree on names, argument counts or types.
  */
 export interface AndroidBridge {
+  /**
+   * Always true inside the wrapper. Optional because the PWA detects the
+   * wrapper by the bridge object's presence and never needs to call this.
+   */
+  isAndroidWrapper?(): boolean;
   /** Opens a URL using the native Android ACTION_VIEW intent. */
   openExternalUrl(url: string): void;
   /**

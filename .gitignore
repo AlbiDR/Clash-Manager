@@ -122,3 +122,5 @@ APK/release/*
 
 
 APK/.build
+# Pinned toolchain downloads (APK/toolchain.json, fetched by APK/fetch-build-deps.mjs)
+APK/.deps

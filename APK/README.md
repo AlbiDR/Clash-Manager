@@ -38,15 +38,16 @@ Declared permissions: `SYSTEM_ALERT_WINDOW`, `FOREGROUND_SERVICE`, `FOREGROUND_S
 | `isAndroidWrapper()` | boolean | True when running inside the wrapper. |
 | `isAccessibilityActive()` | boolean | Whether the accessibility service is running. |
 | `hasOverlayPermission()` | boolean | Whether `SYSTEM_ALERT_WINDOW` is granted. |
+| `openOverlaySettings()` | void | Opens the per-app Android "Display over other apps" screen. |
 | `canRequestPackageInstalls()` | boolean | Whether Android allows this app to request user-confirmed APK installs. |
 | `openPackageInstallSettings()` | void | Opens the per-app Android screen for allowing APK install requests. |
 | `openAccessibilitySettings()` | void | Opens the system accessibility settings. |
 | `getAppVersionName()` / `getAppVersionCode()` / `getBuildNumber()` | string / number / number | Reports installed APK identity so updater checks never hand Android a downgrade. |
 | `getCoordinates()` / `saveCoordinates(ix, iy, cx, cy)` | string / void | Read and persist Blitz calibration coordinates. |
-| `startBlitz(tagsJson)` | void | Starts a Blitz sequence for the given player tags. |
+| `startBlitz(tagsJson, delayMs)` | void | Starts a Blitz sequence for the given player tags, dwelling `delayMs` on each profile. |
 | `openPlayerProfile(tag)` | void | Deep-links to a Clash Royale player profile. |
 | `openExternalUrl(url)` | void | Opens a URL via an Android intent. |
-| `downloadApkFile(url, filename, sha256?)` | void | Downloads the latest APK through `DownloadManager`, verifies SHA-256 when metadata provides it, then opens Android's installer for user confirmation. |
+| `downloadApkFile(url, filename, sha256?)` | boolean | Downloads the latest APK through `DownloadManager`, verifies SHA-256 when metadata provides it, then opens Android's installer for user confirmation. |
 
 The PWA-side contract for these methods lives in [`core/types`](../Frontend-PWA/src/core/types/README.md); changing a signature here means changing it there too.
 
@@ -58,18 +59,22 @@ The PWA-side contract for these methods lives in [`core/types`](../Frontend-PWA/
 | `android/` | Decoded APK: `AndroidManifest.xml`, `apktool.yml` (version), `classes.dex` (built from `src/`), `res/`. |
 | `release/` | The signed release APK, committed by CI. |
 | `reference/` | Reference archives (twa-manifest, web app manifest). |
-| `build-apk.sh` | Compiles `src/` to DEX, merges it into `android/`, then aligns, signs, and verifies. |
+| `build-apk.sh` | Compiles `src/` to DEX, merges it into `android/`, then aligns, signs, and verifies. `--check` proves the committed dex was built from `src/`. |
+| `toolchain.json`, `toolchain-env.sh`, `fetch-build-deps.mjs` | The pinned toolchain (JDK, build-tools, platform, apktool, compile and test jars) and its resolver. Downloads are sha256-checked and cached in the ignored `.deps/`. |
+| `test/`, `test-apk.sh` | JVM unit tests for the Java in `src/`, run without a device. |
 | `gen-android-icons.mjs` | Adaptive launcher-icon generator. |
-| `verify-apk-integrity.mjs`, `verify-android-source.mjs`, `verify-apk-drift.mjs`, `audit-wrapper-integrity.mjs` | The guardrails (see below). |
+| `verify-*.mjs`, `audit-wrapper-integrity.mjs` | The guardrails (see below). |
 
 ## Build
 
 ```bash
-pnpm apk:check            # compile from src/ and verify integrity, unsigned (typical dev flow)
+pnpm apk:check            # compile from src/, merge into android/classes.dex, package unsigned, verify integrity (typical dev flow)
+pnpm apk:check:source     # prove the committed classes.dex was built from src/ (writes no tracked file)
+pnpm apk:test             # run the JVM unit tests in test/
 pnpm icons:android        # regenerate adaptive launcher icons
 ```
 
-`build-apk.sh` requires JDK 17 (it rejects newer system JDKs) and the Android build-tools under `~/.bubblewrap/android_sdk`. Running it without `--no-sign` also signs, if a local keystore is present.
+Every tool version is pinned in [`toolchain.json`](toolchain.json): the JDK (25, the newest LTS; it only compiles, the phone runs ART), the Java source level, build-tools, the platform, apktool, and the jars the source compiles against. `toolchain-env.sh` finds a matching JDK and an Android SDK (`ANDROID_HOME`, `ANDROID_SDK_ROOT`, or the legacy `~/.bubblewrap/android_sdk`) and refuses any other JDK, because a different javac compiles different bytecode from the same source. `fetch-build-deps.mjs` downloads the pinned jars from their official repositories, checks each sha256, and caches them in the ignored `.deps/`. The same scripts run on a Mac, on Linux and in CI. After changing anything in `src/`, run `pnpm apk:check` and commit the rebuilt `android/classes.dex`; CI fails the push otherwise. Running `build-apk.sh` without `--no-sign` also signs, if a local keystore is present.
 
 Signed release builds run in CI (`.github/workflows/apk-release.yml`): it decodes the keystore from secrets, builds, aligns, signs, verifies the signature, runs the integrity gate, and commits the signed `release/clashmanager-v<version>+<buildNumber>.apk` back to Beta. `<buildNumber>` is CI's monotonic `github.run_number`, distinct from `versionCode` (which is derived purely from `<version>` - see `verify-apk-integrity.mjs`), so two builds of the same version can still be told apart from a downloaded file alone. `release/latest.json` points at that one tracked versioned filename and build number for scripts, older clients, DownloadManager save names, and already-current update checks.
 
@@ -78,6 +83,10 @@ Signed release builds run in CI (`.github/workflows/apk-release.yml`): it decode
 | Check | Command / trigger | What it protects |
 | :--- | :--- | :--- |
 | `verify-android-source.mjs` | `pnpm apk:verify:source`; runs on every `APK/**` push | The native layer is present in the source tree. |
+| `verify-dex-source.mjs` | `pnpm apk:check:source`; runs on every `APK/**` push | The committed `classes.dex` holds exactly the app classes `src/` compiles to: nothing stale, nothing unbuilt, no leftovers. |
+| `verify-bridge-contract.mjs` | `pnpm apk:verify:bridge`; runs on every push touching `APK/**` or the PWA contract | The Java `@JavascriptInterface` methods, the PWA's `AndroidBridge` type and the release gate's list agree on names, argument counts and types. |
+| `verify-dwell-parity.mjs` | `pnpm apk:verify:dwell`; runs on every push touching `APK/**` or the PWA config | BlitzService's dwell range, step and detents match the PWA's Blitz Speed settings. |
+| `test/` | `pnpm apk:test`; runs on every `APK/**` push | JVM unit tests for the Java (Blitz dwell mapping and formatting today). |
 | `verify-apk-integrity.mjs` | `pnpm apk:verify <path>`; release gate | A built APK still contains every custom component, permission, and bridge method (catches stripped builds). |
 | `audit-wrapper-integrity.mjs` | `pnpm audit:apk` | Manifest, color, shortcut, and version parity across the PWA manifest, `apktool.yml`, and friends. |
 | `verify-apk-drift.mjs` | manual | The committed APK matches a fresh build (catches "edited `android/` but forgot to rebuild"). |

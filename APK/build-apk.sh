@@ -1,19 +1,29 @@
 #!/usr/bin/env bash
 #
-# build-apk.sh - Local Clash Manager APK compilation & sanity checks.
+# build-apk.sh - Clash Manager APK compilation & sanity checks.
 #
-# Compiles the custom Java sources from APK/src/ into a DEX file,
-# merges them into the smali files extracted from the base APK, builds the
-# android/ directory, and runs apktool to verify build success and integrity.
+# Compiles the custom Java sources from APK/src/ into a DEX file, merges them
+# into the smali decoded from the committed APK/android/classes.dex, writes the
+# result back to APK/android/classes.dex, and packages android/ with apktool.
 #
-#   ./build-apk.sh --no-sign       # compile unsigned + verify integrity (typical dev flow)
+#   ./build-apk.sh --no-sign       # compile, merge, package unsigned + verify integrity (typical dev flow)
+#   ./build-apk.sh --check         # prove APK/android/classes.dex was built from APK/src; writes no tracked file (CI gate)
+#   ./build-apk.sh --dev           # --no-sign, then package "CM Dev": a debuggable copy under its own package id,
+#                                  # signed with the local debug key, that installs next to the real app
 #   ./build-apk.sh                 # build + sign (only if local keystore is available)
 #
-# Env overrides:
-#   JAVA_HOME              (default: JDK 17 - Gradle/apktool reject the system JDK 26)
+# Toolchain: every version (JDK, build-tools, platform, apktool, compile jars) is
+# pinned in APK/toolchain.json and resolved by toolchain-env.sh, so this runs
+# the same on any Mac, Linux box or CI runner. See toolchain-env.sh for the
+# JAVA_HOME, ANDROID_HOME and APKTOOL_JAR overrides.
+#
+# Env overrides (signing only):
 #   CLASHMANAGER_KEYSTORE  signing keystore (default: ~/.clash-manager-signing/android.keystore)
 #   CLASHMANAGER_KEY_ALIAS keystore alias   (default: android)
 #   CLASHMANAGER_KEY_PASS  keystore password (if set, signing runs non-interactively)
+#
+# Env overrides (--dev only):
+#   CLASHMANAGER_DEV_URL   PWA the dev variant loads (default: the production PWA)
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")" && pwd)"
@@ -22,65 +32,66 @@ SRC_DIR="${ROOT}/src"
 OUT="${ROOT}/release"
 TMP_DIR="${ROOT}/.build"
 
-mkdir -p "${OUT}"
+MODE="${1:-sign}"
+case "${MODE}" in
+  --no-sign|--check|--dev|sign) ;;
+  *) echo "usage: build-apk.sh [--no-sign|--check|--dev]"; exit 2 ;;
+esac
 
-export JAVA_HOME="${JAVA_HOME:-/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home}"
-BT="$(ls -d "${HOME}"/.bubblewrap/android_sdk/build-tools/* 2>/dev/null | sort -V | tail -1)"
-KEYSTORE="${CLASHMANAGER_KEYSTORE:-${HOME}/.clash-manager-signing/android.keystore}"
-KEY_ALIAS="${CLASHMANAGER_KEY_ALIAS:-android}"
+# shellcheck source=toolchain-env.sh
+source "$(dirname "$0")/toolchain-env.sh"
 
 [ -d "${ANDROID_DIR}" ] || { echo "✗ ${ANDROID_DIR} missing (the recovered project)"; exit 1; }
-[ -n "${BT}" ] || { echo "✗ Android build-tools not found under ~/.bubblewrap/android_sdk"; exit 1; }
 
-# Locate required compilation libraries from the Gradle cache and Android SDK
-ANDROID_JAR="${HOME}/.bubblewrap/android_sdk/platforms/android-36/android.jar"
-CP_LIBS="${HOME}/.gradle/caches/8.11.1/transforms/aafc4c61d3d07ce43d7cc3b1eec3ea16/transformed/androidbrowserhelper-2.6.2-runtime.jar:${HOME}/.gradle/caches/8.11.1/transforms/aafc4c61d3d07ce43d7cc3b1eec3ea16/transformed/androidbrowserhelper-2.6.2/jars/classes.jar:${HOME}/.gradle/caches/8.11.1/transforms/a5429f7b20c607b890f08b5283ad4ec0/transformed/core-1.13.0/jars/classes.jar:${HOME}/.gradle/caches/8.11.1/transforms/be57bd43967b699c12a0f6b8bd2f21c6/transformed/browser-1.9.0-alpha04/jars/classes.jar"
-
-echo "▶ Compiling custom Java source files..."
-rm -rf "${TMP_DIR}"
-mkdir -p "${TMP_DIR}/classes"
-mkdir -p "${TMP_DIR}/dex"
-
-# Compile clean Java source tree without debug information for minification
-javac -bootclasspath "${ANDROID_JAR}" -cp "${CP_LIBS}" -source 8 -target 8 -g:none -d "${TMP_DIR}/classes" "${SRC_DIR}/com/albidr/clashmanager/"*.java
-
-# Convert compiled classes to Dalvik DEX format using d8 with --release flag
-"${BT}/d8" --release $(find "${TMP_DIR}/classes" -name "*.class") --lib "${ANDROID_JAR}" --output "${TMP_DIR}/dex/"
-
-# Wrap classes.dex in a temporary zip so apktool can decode it
-echo "▶ Disassembling compiled classes to smali..."
-mkdir -p "${TMP_DIR}/fake-new-apk"
-cp "${TMP_DIR}/dex/classes.dex" "${TMP_DIR}/fake-new-apk/classes.dex"
-cd "${TMP_DIR}/fake-new-apk"
-zip -q -r "${TMP_DIR}/fake-new.apk" classes.dex
-cd - >/dev/null
-
-apktool d -f "${TMP_DIR}/fake-new.apk" -o "${TMP_DIR}/smali-new"
-
-# Extract base APK contents to preserve original dependency smali files
-echo "▶ Unpacking base project files for merging..."
-apktool d -f "${OUT}/clashmanager-unsigned.apk" -o "${TMP_DIR}/smali-orig" 2>/dev/null || {
-  # Fallback if no built unsigned APK exists yet: disassemble the current repo classes.dex
-  mkdir -p "${TMP_DIR}/fake-apk"
-  cp "${ANDROID_DIR}/classes.dex" "${TMP_DIR}/fake-apk/classes.dex"
-  cd "${TMP_DIR}/fake-apk"
-  zip -q -r "${TMP_DIR}/fake-base.apk" classes.dex
-  cd - >/dev/null
-  apktool d -f "${TMP_DIR}/fake-base.apk" -o "${TMP_DIR}/smali-orig"
+# Wraps a bare classes.dex in a zip so apktool can decode it to smali.
+decode_dex() {
+  local dex="$1" dest="$2" work
+  work="$(mktemp -d "${TMP_DIR}/wrap.XXXXXX")"
+  cp "${dex}" "${work}/classes.dex"
+  (cd "${work}" && zip -q -r wrapped.apk classes.dex)
+  "${APKTOOL[@]}" d -f -q "${work}/wrapped.apk" -o "${dest}" >/dev/null
+  rm -rf "${work}"
 }
 
-# Overwrite original Blitz/MainActivity/Accessibility smali files with our newly compiled clean smali classes
-echo "▶ Injecting new custom layer classes into smali tree..."
-# Remove any JADX-style synthetic lambda stubs that might linger in original smali
-rm -f "${TMP_DIR}/smali-orig"/smali/com/albidr/clashmanager/BlitzService\$\$\$ExternalSyntheticLambda*.smali
-rm -f "${TMP_DIR}/smali-orig"/smali/com/albidr/clashmanager/MainActivity\$AndroidBridge\$\$\$ExternalSyntheticLambda*.smali
+echo "▶ Compiling custom Java source files (JDK ${JDK_MAJOR}, Java ${JAVA_TARGET}, minSdk ${MIN_API}, build-tools ${BT_VERSION}, apktool ${APKTOOL_VERSION})..."
+rm -rf "${TMP_DIR}"
+mkdir -p "${TMP_DIR}/classes" "${TMP_DIR}/dex"
 
-# Copy new smali over
-cp "${TMP_DIR}/smali-new"/smali/com/albidr/clashmanager/*.smali "${TMP_DIR}/smali-orig/smali/com/albidr/clashmanager/"
+# Compile clean Java source tree without debug information for minification.
+javac "${JAVAC_PLATFORM[@]}" -g:none -d "${TMP_DIR}/classes" "${SRC_DIR}/com/albidr/clashmanager/"*.java
+
+# Convert compiled classes to Dalvik DEX format; D8_ARGS carries --release, the
+# app's --min-api and the compile classpath (see toolchain-env.sh).
+"${BT}/d8" "${D8_ARGS[@]}" $(find "${TMP_DIR}/classes" -name "*.class") --output "${TMP_DIR}/dex/"
+
+echo "▶ Disassembling compiled classes to smali..."
+decode_dex "${TMP_DIR}/dex/classes.dex" "${TMP_DIR}/smali-new"
+
+# The base is always the committed classes.dex. It carries the ~7,000 library
+# classes (androidx, kotlin, com.google) that have no source here, plus the
+# generated R classes. Using any other base, such as a leftover local build,
+# would let two machines start from different inputs.
+decode_dex "${ANDROID_DIR}/classes.dex" "${TMP_DIR}/smali-orig"
+
+if [ "${MODE}" = "--check" ]; then
+  echo "▶ Comparing APK/src against the committed classes.dex..."
+  node "${ROOT}/verify-dex-source.mjs" "${TMP_DIR}/smali-new" "${TMP_DIR}/smali-orig"
+  exit $?
+fi
+
+# Replace every app class with the freshly compiled set. Deleting first matters:
+# copying over the top would keep any class the source no longer produces (an
+# anonymous class that was removed, a synthetic helper from an older compiler),
+# and those orphans used to accumulate in the shipped dex. The generated R
+# classes have no Java source and stay.
+echo "▶ Injecting new custom layer classes into smali tree..."
+APP_SMALI="${TMP_DIR}/smali-orig/smali/com/albidr/clashmanager"
+find "${APP_SMALI}" -maxdepth 1 -name '*.smali' ! -name 'R.smali' ! -name 'R$*.smali' -delete
+cp "${TMP_DIR}/smali-new"/smali/com/albidr/clashmanager/*.smali "${APP_SMALI}/"
 
 # Reassemble the merged smali files into the final classes.dex file in our source-controlled directory
 echo "▶ Reassembling smali back to classes.dex..."
-apktool b "${TMP_DIR}/smali-orig" -o "${TMP_DIR}/rebuilt.apk"
+"${APKTOOL[@]}" b "${TMP_DIR}/smali-orig" -o "${TMP_DIR}/rebuilt.apk"
 unzip -q -o "${TMP_DIR}/rebuilt.apk" classes.dex -d "${TMP_DIR}/rebuilt-dex/"
 cp "${TMP_DIR}/rebuilt-dex/classes.dex" "${ANDROID_DIR}/classes.dex"
 
@@ -94,16 +105,56 @@ cp "${TMP_DIR}/rebuilt-dex/classes.dex" "${ANDROID_DIR}/classes.dex"
 # from a clean checkout and is unaffected - but a local build can otherwise report
 # (and verify-apk-integrity.mjs can otherwise pass) the WRONG version.
 rm -rf "${ANDROID_DIR}/build"
+mkdir -p "${OUT}"
 echo "▶ Building from android/ via apktool ..."
-apktool b "${ANDROID_DIR}" -o "${OUT}/clashmanager-unsigned.apk"
+"${APKTOOL[@]}" b "${ANDROID_DIR}" -o "${OUT}/clashmanager-unsigned.apk"
 
-if [ "${1:-}" = "--no-sign" ]; then
+export AAPT2="${BT}/aapt2"
+
+if [ "${MODE}" = "--no-sign" ] || [ "${MODE}" = "--dev" ]; then
   echo "▶ Verifying integrity (unsigned) ..."
   node "${ROOT}/verify-apk-integrity.mjs" "${OUT}/clashmanager-unsigned.apk"
   echo "✓ Unsigned APK: ${OUT}/clashmanager-unsigned.apk"
+  [ "${MODE}" = "--dev" ] || exit 0
+fi
+
+if [ "${MODE}" = "--dev" ]; then
+  echo "▶ Packaging the CM Dev variant ..."
+  DEV_DIR="${TMP_DIR}/dev-android"
+  rm -rf "${DEV_DIR}"
+  cp -R "${ANDROID_DIR}" "${DEV_DIR}"
+  rm -rf "${DEV_DIR}/build"
+  node "${ROOT}/make-dev-variant.mjs" "${DEV_DIR}" ${CLASHMANAGER_DEV_URL:+"${CLASHMANAGER_DEV_URL}"}
+  "${APKTOOL[@]}" b "${DEV_DIR}" -o "${TMP_DIR}/dev-unsigned.apk"
+
+  # Android's standard debug key, created the way the Android Gradle Plugin
+  # creates it. Its password is the public "android": it signs nothing but
+  # local dev builds, and it is never the release keystore.
+  DEBUG_KEYSTORE="${HOME}/.android/debug.keystore"
+  RELEASE_KEYSTORE="${CLASHMANAGER_KEYSTORE:-${HOME}/.clash-manager-signing/android.keystore}"
+  if [ -f "${RELEASE_KEYSTORE}" ] && [ "$(cd "$(dirname "${RELEASE_KEYSTORE}")" && pwd -P)/$(basename "${RELEASE_KEYSTORE}")" = "$(cd "$(dirname "${DEBUG_KEYSTORE}")" 2>/dev/null && pwd -P)/$(basename "${DEBUG_KEYSTORE}")" ]; then
+    echo "✗ the debug keystore path is the release keystore; refusing to sign a debuggable build with it"
+    exit 1
+  fi
+  if [ ! -f "${DEBUG_KEYSTORE}" ]; then
+    mkdir -p "$(dirname "${DEBUG_KEYSTORE}")"
+    keytool -genkeypair -keystore "${DEBUG_KEYSTORE}" -storepass android -keypass android \
+      -alias androiddebugkey -dname "CN=Android Debug,O=Android,C=US" -keyalg RSA -keysize 2048 -validity 10000 >/dev/null
+  fi
+  "${BT}/zipalign" -f -p 4 "${TMP_DIR}/dev-unsigned.apk" "${TMP_DIR}/dev-aligned.apk"
+  "${BT}/apksigner" sign --ks "${DEBUG_KEYSTORE}" --ks-key-alias androiddebugkey \
+    --ks-pass pass:android --key-pass pass:android \
+    --out "${OUT}/clashmanager-dev.apk" "${TMP_DIR}/dev-aligned.apk"
+
+  DEV_BADGING="$("${AAPT2}" dump badging "${OUT}/clashmanager-dev.apk")"
+  grep -q "package: name='com.albidr.clashmanager.dev'" <<< "${DEV_BADGING}" || { echo "✗ dev APK has the wrong package id"; exit 1; }
+  grep -q "application-debuggable" <<< "${DEV_BADGING}" || { echo "✗ dev APK is not debuggable"; exit 1; }
+  echo "✓ CM Dev APK: ${OUT}/clashmanager-dev.apk (install: node APK/apk-dev.mjs install)"
   exit 0
 fi
 
+KEYSTORE="${CLASHMANAGER_KEYSTORE:-${HOME}/.clash-manager-signing/android.keystore}"
+KEY_ALIAS="${CLASHMANAGER_KEY_ALIAS:-android}"
 [ -f "${KEYSTORE}" ] || { echo "✗ keystore not found: ${KEYSTORE} (set CLASHMANAGER_KEYSTORE)"; exit 1; }
 
 echo "▶ Zipalign ..."
