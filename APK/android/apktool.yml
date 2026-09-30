@@ -7,8 +7,8 @@ sdkInfo:
   minSdkVersion: 34
   targetSdkVersion: 36
 versionInfo:
-  versionCode: 14050122
-  versionName: 14.50.122
+  versionCode: 14050123
+  versionName: 14.50.123
 resourcesInfo:
   packageId: 127
 doNotCompress:
