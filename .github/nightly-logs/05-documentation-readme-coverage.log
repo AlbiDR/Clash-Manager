@@ -182,3 +182,6 @@
 * [2026-09-25] [Stage 5] [03:05Z-03:08Z 3m] [checks doc-debt=OK] CHANGED: Frontend-PWA/src/shared/ui/README.md -- Document AnimatedDigits.vue component in shared/ui README
 * [2026-09-26] [Stage 5] [03:22Z-03:27Z 5m] [checks doc-debt=OK] CLEAN: Codebase -- Audited codebase README files against implementation truth; verified zero documentation drift
 * [2026-09-27] [Stage 5] [03:14Z-03:17Z 3m] [checks doc-debt=OK] CLEAN: Codebase -- Audited doc debt file RecruitCard.vue and verified existing README prose is current
+* [2026-09-28] [Stage 5] [03:21Z-03:24Z 3m] [checks doc-debt=OK] CLEAN: Codebase -- Audit doc-debt target Frontend-PWA/src/core/api/SupabaseClient.ts
+* [2026-09-29] [Stage 5] [03:21Z-03:25Z 4m] [checks doc-debt=OK] CHANGED: Backend/supabase/functions/ingest-royale-data/README.md -- Reconciled ingest-royale-data README with deep depth optimizations and reliability guards
+* [2026-09-30] [Stage 5] [03:12Z-03:18Z 6m] [checks doc-debt=OK] CHANGED: Frontend-PWA/src/shared/ui/README.md -- Reconciled shared/ui README with ViewOptions bottom sheet component

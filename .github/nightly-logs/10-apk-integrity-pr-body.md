@@ -4,23 +4,23 @@
 
 In plain terms: nothing needed fixing. This run checked the APK integrity area and found it already correct, so the only file here is the log recording that the check happened.
 
-**What was checked:** Audited wrapper invariants: asset links, manifest parity, version code/name sync, release metadata (latest.json), and security policy via pnpm audit:apk and pnpm apk:verify:source; all intact with no mismatches.
+**What was checked:** Full PWA/APK wrapper integrity audit clean across manifest parity, asset links, version codes, security policy, and native source.
 
-**Why:** PWA and APK native wrapper configurations are strictly synchronized and aligned across all checks.
+**Why:** No wrapper or manifest mismatches found across PWA assets, Android config, and native source declarations.
 
-**Result:** pnpm audit:apk and pnpm apk:verify:source passed cleanly.
+**Result:** PASSED (pnpm audit:apk, pnpm apk:verify:source, test:apk-release, test:apk-slot-sync, test:apk-ux-audit)
 
 **Files changed:** .github/nightly-logs/10-apk-integrity-coverage.log
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: apk
-  Cycle: nightly-cycle/2026-09-27
+  Cycle: nightly-cycle/2026-09-30
   Contract: 4f9b40864d05ffea731090b36800572dd7affedd8532fcd17c8ded8c9e2fbc12
-  Why: PWA and APK native wrapper configurations are strictly synchronized and aligned across all checks.
-  Change: Audited wrapper invariants: asset links, manifest parity, version code/name sync, release metadata (latest.json), and security policy via pnpm audit:apk and pnpm apk:verify:source; all intact with no mismatches.
-  Result: pnpm audit:apk and pnpm apk:verify:source passed cleanly.
+  Why: No wrapper or manifest mismatches found across PWA assets, Android config, and native source declarations.
+  Change: Full PWA/APK wrapper integrity audit clean across manifest parity, asset links, version codes, security policy, and native source.
+  Result: PASSED (pnpm audit:apk, pnpm apk:verify:source, test:apk-release, test:apk-slot-sync, test:apk-ux-audit)
   Files: .github/nightly-logs/10-apk-integrity-coverage.log
   Nudges: 0
-  Execution: b695f47b866d30e84f2bb9d0d269d1a161ea3ddc
+  Execution: 0990d9a434bcbadb1442da19c574522a722febe9
 -->

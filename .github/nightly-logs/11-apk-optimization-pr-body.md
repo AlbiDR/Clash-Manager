@@ -6,21 +6,21 @@ In plain terms: nothing needed fixing. This run checked the APK optimization are
 
 **What was checked:** Audited native WebView performance settings, Service Worker caching, and Vite manualChunks; zero source changes required
 
-**Why:** All 9 wrapper and caching performance invariants pass in pnpm audit:apk-perf and precache footprint is 11.1 KB across 6 essential icon assets
+**Why:** All 9 wrapper and caching performance invariants pass in pnpm audit:apk-perf and precache asset footprint is 11.1 KB across 6 essential icon assets
 
-**Result:** pnpm audit:apk-perf PASS (9/9 invariants ok, 11.1 KB precache footprint)
+**Result:** pnpm audit:apk-perf and pnpm test:apk-performance passed with 0 violations
 
 **Files changed:** .github/nightly-logs/11-apk-optimization-coverage.log
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: apk
-  Cycle: nightly-cycle/2026-09-27
+  Cycle: nightly-cycle/2026-09-30
   Contract: 63c0229fe16cf4c98e352282307edbee4830cff68ea2d93c5c967a1f5cbd30ea
-  Why: All 9 wrapper and caching performance invariants pass in pnpm audit:apk-perf and precache footprint is 11.1 KB across 6 essential icon assets
+  Why: All 9 wrapper and caching performance invariants pass in pnpm audit:apk-perf and precache asset footprint is 11.1 KB across 6 essential icon assets
   Change: Audited native WebView performance settings, Service Worker caching, and Vite manualChunks; zero source changes required
-  Result: pnpm audit:apk-perf PASS (9/9 invariants ok, 11.1 KB precache footprint)
+  Result: pnpm audit:apk-perf and pnpm test:apk-performance passed with 0 violations
   Files: .github/nightly-logs/11-apk-optimization-coverage.log
   Nudges: 0
-  Execution: 77173c8f5271809d495eb10dc9e52a3d07e115b4
+  Execution: b2400e2c589e0cbd9285724097866bb63544ddfc
 -->

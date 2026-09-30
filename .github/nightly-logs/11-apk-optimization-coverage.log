@@ -119,3 +119,6 @@
 * [2026-09-25] [Stage 11] [09:22Z-09:24Z 2m] CLEAN: Codebase -- Audited native WebView settings, Service Worker caching, and Vite manualChunks; zero source changes required
 * [2026-09-26] [Stage 11] [09:31Z-09:40Z 9m] CLEAN: Codebase -- Audited native WebView performance settings, PWA service worker precache route and navigation preload, and Vite bundle chunking rules; zero source changes required
 * [2026-09-27] [Stage 11] [09:08Z-09:13Z 5m] CLEAN: Codebase -- Audited native WebView performance settings, Service Worker caching, and Vite manualChunks; zero source changes required
+* [2026-09-28] [Stage 11] [09:17Z-09:19Z 2m] CLEAN: Codebase -- Audited APK performance: all 9 wrapper, WebView, and caching invariants pass cleanly; precache footprint optimal (6 files, 11.1 KB)
+* [2026-09-29] [Stage 11] [09:05Z-09:09Z 3m] CLEAN: Codebase -- Calibration pass: verified 9/9 wrapper invariants, WebView cache mode, SW routes, Vite chunking, and asset footprint
+* [2026-09-30] [Stage 11] [09:09Z-09:11Z 2m] CLEAN: Codebase -- Audited native WebView performance settings, Service Worker caching, and Vite manualChunks; zero source changes required

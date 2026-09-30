@@ -49,7 +49,7 @@ import {
   ConsoleList
 } from "@shared";
 import { useLeaderboard } from "../composables/useLeaderboard";
-import { MemberCard } from "../components";
+import MemberCard from "../components/MemberCard.vue";
 import { VoyageBanner } from "@shared";
 
 useClashDataLoader();
