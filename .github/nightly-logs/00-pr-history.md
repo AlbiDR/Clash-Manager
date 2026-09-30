@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-29
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-30] PR #2025 [Stage 9]: Removed dead export ViewOptionsProps from ViewOptions.vue
+**Domain:** architecture | **Commit:** e2375bed3 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2025)
+**Files:** .github/nightly-logs/09-refactor-proposals-coverage.log, .github/nightly-logs/09-refactor-proposals-pr-body.md, Frontend-PWA/src/shared/ui/ViewOptions.vue
+**Why:** Target B4 dead export removal per knip report
+**Change:** Removed dead export ViewOptionsProps from ViewOptions.vue
+**Result:** PASSED (knip check and monorepo tests pass)
+**Nudges:** 0
+
+
 ### [2026-09-30] PR #2024 [Stage 8]: Bumped supabase devDependency from ^2.117.0 to ^2.118.0
 **Domain:** dependencies | **Commit:** fbf489c9d | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2024)
 **Files:** .github/nightly-logs/08-dependency-audit-coverage.log, .github/nightly-logs/08-dependency-audit-pr-body.md, package.json, pnpm-lock.yaml, pnpm-workspace.yaml
