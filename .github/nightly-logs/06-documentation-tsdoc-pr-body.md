@@ -1,26 +1,26 @@
 ### Nightly Stage 6: Documentation TSDoc - Interface Contract Architect
 
-**Status:** CLEAN
+**Status:** CHANGED
 
-In plain terms: nothing needed fixing. This run checked the documentation TSDoc area and found it already correct, so the only file here is the log recording that the check happened.
+In plain terms: this changes 1 code file, so the app's behaviour may be affected. No tests were added or changed alongside it.
 
-**What was checked:** Audited doc-debt targets and confirmed accurate contracts
+**What changed:** docs(tsdoc): harden ViewOptions TSDoc interface contracts and inline logic annotations
 
-**Why:** All files in /tmp/nightly/doc-debt.txt were verified and their JSDoc/TSDoc annotations match current code
+**Why:** Reconcile ViewOptions TSDoc contracts, ADR mappings, and inline decision logs
 
-**Result:** 32/32 royaleSchemas and 17/17 deep-depth tests passing
+**Result:** PASSED (vue-tsc and 9/9 ViewOptions unit tests passed)
 
-**Files changed:** .github/nightly-logs/06-documentation-tsdoc-coverage.log
+**Files changed:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, Frontend-PWA/src/shared/ui/ViewOptions.vue
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: documentation
-  Cycle: nightly-cycle/2026-09-29
+  Cycle: nightly-cycle/2026-09-30
   Contract: a9f522cc73babe487aa3df1b083524daba64c0dd03c9e1b446dd4bd70c376bae
-  Why: All files in /tmp/nightly/doc-debt.txt were verified and their JSDoc/TSDoc annotations match current code
-  Change: Audited doc-debt targets and confirmed accurate contracts
-  Result: 32/32 royaleSchemas and 17/17 deep-depth tests passing
-  Files: .github/nightly-logs/06-documentation-tsdoc-coverage.log
+  Why: Reconcile ViewOptions TSDoc contracts, ADR mappings, and inline decision logs
+  Change: docs(tsdoc): harden ViewOptions TSDoc interface contracts and inline logic annotations
+  Result: PASSED (vue-tsc and 9/9 ViewOptions unit tests passed)
+  Files: .github/nightly-logs/06-documentation-tsdoc-coverage.log, Frontend-PWA/src/shared/ui/ViewOptions.vue
   Nudges: 0
-  Execution: bb8924fb9bff994a4129fb378cf8428805641173
+  Execution: 64c264f07731202385a5d8880fdfbe63f48065e0
 -->
