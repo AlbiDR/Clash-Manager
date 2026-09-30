@@ -46,6 +46,8 @@ public class MainActivity extends Activity {
     private String mPendingTagsJson = null;
     private long mPendingDelayMs = BlitzService.DEFAULT_PROFILE_LOAD_DELAY_MS;
     private boolean mAwaitingOverlayPermission = false;
+    // Set when CM Dev is launched with BlitzService.EXTRA_REHEARSAL (APK/apk-dev.mjs start --rehearsal).
+    private boolean mBlitzRehearsal = false;
     private FrameLayout mRootLayout;
 
     private void registerApkDownloadReceiver(final long downloadId, final String filename, final String expectedSha256) {
@@ -160,6 +162,7 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle bundle) {
         super.onCreate(bundle);
         mTrustedHost = getString(getResources().getIdentifier("hostName", "string", getPackageName()));
+        mBlitzRehearsal = BlitzService.isRehearsal(this, getIntent());
 
         // Only ever true for a manifest explicitly marked android:debuggable="true"
         // (a local dev install) - the signed release manifest never sets that flag,
@@ -392,6 +395,9 @@ public class MainActivity extends Activity {
         var intent = new Intent(this, BlitzService.class);
         intent.putExtra("tags", tagsJson);
         intent.putExtra("delayMs", delayMs);
+        if (mBlitzRehearsal) {
+            intent.putExtra(BlitzService.EXTRA_REHEARSAL, true);
+        }
         startForegroundService(intent);
     }
 

@@ -7,7 +7,9 @@ import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.content.Context;
 import android.content.Intent;
+import android.content.pm.ApplicationInfo;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.ColorFilter;
@@ -21,6 +23,7 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewTreeObserver;
@@ -41,6 +44,25 @@ import org.json.JSONArray;
 import org.json.JSONException;
 
 public class BlitzService extends Service {
+
+    private static final String TAG = "ClashManagerBlitz";
+
+    /**
+     * Rehearsal runs the whole of Blitz (panel, markers, Start, the Stop pill,
+     * both taps, completion) without opening Clash Royale: the game switches USB
+     * debugging off while it is open, so a real run can never be watched from a
+     * development machine. The taps still go out, onto whatever is on screen.
+     * Only a debuggable build (CM Dev) honours it; the release ignores the extra.
+     */
+    static final String EXTRA_REHEARSAL = "blitzRehearsal";
+
+    static boolean isRehearsal(Context context, Intent intent) {
+        return intent != null
+            && intent.getBooleanExtra(EXTRA_REHEARSAL, false)
+            && (context.getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0;
+    }
+
+    private boolean mRehearsal = false;
 
     /**
      * Fallback wait-for-profile-to-render delay, used only if the JS layer's
@@ -212,8 +234,11 @@ public class BlitzService extends Service {
                 }
                 mCurrentIndex = 0;
                 mProfileLoadDelayMs = intent.getLongExtra("delayMs", DEFAULT_PROFILE_LOAD_DELAY_MS);
+                mRehearsal = isRehearsal(this, intent);
+                Log.i(TAG, "start: " + mTagsList.size() + " player(s), dwell " + mProfileLoadDelayMs + "ms"
+                    + (mRehearsal ? ", rehearsal (Clash Royale stays closed)" : ""));
             } catch (JSONException e) {
-                e.printStackTrace();
+                Log.e(TAG, "could not parse the player queue", e);
                 Toast.makeText(this, "Failed to parse player queue", Toast.LENGTH_SHORT).show();
                 stopSelf();
                 return START_STICKY;
@@ -270,6 +295,10 @@ public class BlitzService extends Service {
     // -------------------------------------------------------------------------
 
     private void launchClashRoyaleOnly() {
+        if (mRehearsal) {
+            Log.i(TAG, "rehearsal: not opening Clash Royale");
+            return;
+        }
         try {
             Intent launch = getPackageManager().getLaunchIntentForPackage("com.supercell.clashroyale");
             if (launch != null) {
@@ -974,6 +1003,7 @@ public class BlitzService extends Service {
         }
         mHandler.removeCallbacks(mCountdownRunnable);
         if (mCurrentIndex >= mTagsList.size()) {
+            Log.i(TAG, "complete: queue already finished");
             Toast.makeText(this, "Blitz complete", Toast.LENGTH_SHORT).show();
             stopSelf();
             return;
@@ -983,16 +1013,20 @@ public class BlitzService extends Service {
         if (tag.startsWith("#")) {
             tag = tag.substring(1);
         }
-        try {
-            Intent uri = Intent.parseUri(
-                "intent://playerInfo?id=" + tag
-                    + "#Intent;scheme=clashroyale;package=com.supercell.clashroyale;end", 1);
-            uri.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            startActivity(uri);
-        } catch (Exception e) {
-            e.printStackTrace();
-            Toast.makeText(this, "Could not open Clash Royale - is it installed?",
-                Toast.LENGTH_SHORT).show();
+        Log.i(TAG, "player " + (mCurrentIndex + 1) + "/" + mTagsList.size() + ": #" + tag
+            + (mRehearsal ? " (rehearsal: profile not opened)" : ""));
+        if (!mRehearsal) {
+            try {
+                var profile = Intent.parseUri(
+                    "intent://playerInfo?id=" + tag
+                        + "#Intent;scheme=clashroyale;package=com.supercell.clashroyale;end", Intent.URI_INTENT_SCHEME);
+                profile.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                startActivity(profile);
+            } catch (Exception e) {
+                Log.e(TAG, "could not open the profile of #" + tag, e);
+                Toast.makeText(this, "Could not open Clash Royale - is it installed?",
+                    Toast.LENGTH_SHORT).show();
+            }
         }
 
         updateOverlayUi();
@@ -1010,11 +1044,13 @@ public class BlitzService extends Service {
                 new ClashManagerAccessibilityService.TapSequenceCallback() {
                     @Override
                     public void onInviteTapped(float xPercent, float yPercent) {
+                        Log.i(TAG, "invite tap at " + xPercent + ", " + yPercent);
                         showTapIndicator(xPercent * dm.widthPixels, yPercent * dm.heightPixels, Color.parseColor("#0061a4"));
                     }
 
                     @Override
                     public void onCloseTapped(float xPercent, float yPercent) {
+                        Log.i(TAG, "close tap at " + xPercent + ", " + yPercent);
                         showTapIndicator(xPercent * dm.widthPixels, yPercent * dm.heightPixels, Color.parseColor("#ba1a1a"));
                     }
 
@@ -1030,6 +1066,7 @@ public class BlitzService extends Service {
                     }
                 }), mProfileLoadDelayMs);
         } else {
+            Log.w(TAG, "accessibility service is not connected: no taps sent");
             scheduleAdvance(mProfileLoadDelayMs);
         }
     }
@@ -1041,6 +1078,7 @@ public class BlitzService extends Service {
             mHandler.postDelayed(mCountdownRunnable, delay);
         } else {
             mHandler.postDelayed(() -> {
+                Log.i(TAG, "complete: " + mTagsList.size() + " player(s)");
                 Toast.makeText(this, "Blitz complete", Toast.LENGTH_SHORT).show();
                 stopSelf();
             }, delay);

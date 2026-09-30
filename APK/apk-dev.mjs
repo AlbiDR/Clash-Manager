@@ -14,6 +14,8 @@
  *
  *   node APK/apk-dev.mjs install [apk]      install CM Dev (default: APK/release/clashmanager-dev.apk)
  *   node APK/apk-dev.mjs start | stop       launch or force-stop CM Dev
+ *   node APK/apk-dev.mjs start --rehearsal  relaunch CM Dev so Blitz runs without opening Clash Royale
+ *                                          (the game switches USB debugging off while it is open)
  *   node APK/apk-dev.mjs shot [file.png]    screenshot of the phone (default: APK/.build/screen.png)
  *   node APK/apk-dev.mjs ui [file.xml]      the on-screen view hierarchy, including other apps and overlays
  *   node APK/apk-dev.mjs logs               CM Dev's log lines, PWA console output included
@@ -26,7 +28,7 @@
  */
 
 import { execFileSync } from "node:child_process";
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -34,6 +36,14 @@ import { DEV_PACKAGE } from "./make-dev-variant.mjs";
 
 const APK_DIR = path.dirname(fileURLToPath(import.meta.url));
 const ACTIVITY = `${DEV_PACKAGE}/com.albidr.clashmanager.MainActivity`;
+
+/** The launch extra BlitzService honours in debuggable builds, read from the Java so it has one definition. */
+function rehearsalExtra() {
+  const source = readFileSync(path.join(APK_DIR, "src", "com", "albidr", "clashmanager", "BlitzService.java"), "utf8");
+  const match = source.match(/EXTRA_REHEARSAL\s*=\s*"(\w+)"/);
+  if (!match) die("EXTRA_REHEARSAL not found in BlitzService.java");
+  return match[1];
+}
 // Hard timeout per adb call, matching the other APK scripts.
 const EXEC_TIMEOUT_MS = 120_000;
 
@@ -94,8 +104,13 @@ const commands = {
     const file = path.resolve(apk || path.join(APK_DIR, "release", "clashmanager-dev.apk"));
     console.log(adb(["install", "-r", file]).trim());
   },
-  start() {
-    console.log(adb(["shell", "am", "start", "-W", "-n", ACTIVITY]).trim());
+  start(flag) {
+    if (flag && flag !== "--rehearsal") die("usage: apk-dev.mjs start [--rehearsal]");
+    // MainActivity reads the extra in onCreate, so it must be recreated. Clearing the
+    // task recreates it inside the same process; a force-stop (-S) would also do it,
+    // but Android then leaves the accessibility service unbound until it is toggled.
+    const args = flag ? ["--activity-clear-top", "--ez", rehearsalExtra(), "true"] : [];
+    console.log(adb(["shell", "am", "start", "-W", ...args, "-n", ACTIVITY]).trim());
   },
   stop() {
     adb(["shell", "am", "force-stop", DEV_PACKAGE]);
