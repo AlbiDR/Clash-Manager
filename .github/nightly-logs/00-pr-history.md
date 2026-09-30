@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-29
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-30] PR #2021 [Stage 5]: Reconciled shared/ui README with ViewOptions bottom sheet component
+**Domain:** documentation | **Commit:** 4faa6970b | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2021)
+**Files:** .github/nightly-logs/05-documentation-readme-coverage.log, .github/nightly-logs/05-documentation-readme-pr-body.md, Frontend-PWA/src/shared/ui/README.md
+**Why:** Document ViewOptions.vue bottom sheet component, touch targets, haptics, and accessibility controls in shared/ui README
+**Change:** Reconciled shared/ui README with ViewOptions bottom sheet component
+**Result:** PASSED (git diff --check clean, pnpm test passed 2102 tests)
+**Nudges:** 0
+
+
 ### [2026-09-30] PR #2020 [Stage 4]: Inspected 22 changed files and Edge Functions for SQL view substrate hygiene; zero structural rot or unreferenced views found.
 **Domain:** optimization | **Commit:** 2684d5df0 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2020)
 **Files:** .github/nightly-logs/04-optimization-coverage.log, .github/nightly-logs/04-optimization-pr-body.md
