@@ -37,7 +37,7 @@ export interface ViewSortOption {
  * Manages presentation state, bottom sheet visibility, search term query binding,
  * and sort options configuration.
  */
-export interface ViewOptionsProps {
+interface ViewOptionsProps {
   /** Short, human-readable name of the view being shaped (e.g., "Roster", "Recruits"). */
   title: string;
   /** Visibility state controlling whether the bottom sheet overlay is open. */
