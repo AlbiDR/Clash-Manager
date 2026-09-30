@@ -79,15 +79,21 @@ if [ "${MODE}" = "--check" ]; then
   exit $?
 fi
 
-# Replace every app class with the freshly compiled set. Deleting first matters:
-# copying over the top would keep any class the source no longer produces (an
-# anonymous class that was removed, a synthetic helper from an older compiler),
-# and those orphans used to accumulate in the shipped dex. The generated R
-# classes have no Java source and stay.
+# Replace everything the source compile owns with the freshly compiled set.
+# Deleting first matters: copying over the top would keep any class the source
+# no longer produces (an anonymous class that was removed, a synthetic helper
+# from an older compiler), and those orphans used to accumulate in the shipped
+# dex. The compile owns two places: the app package, minus the generated R
+# classes (no Java source, they stay), and d8's own helper package, where it
+# puts classes such as RecordTag that desugared records extend. Everything d8
+# produced is then copied, whatever package it landed in: copying the app
+# package alone once shipped a dex without RecordTag, which crashed on the
+# first call that touched a record.
 echo "▶ Injecting new custom layer classes into smali tree..."
 APP_SMALI="${TMP_DIR}/smali-orig/smali/com/albidr/clashmanager"
 find "${APP_SMALI}" -maxdepth 1 -name '*.smali' ! -name 'R.smali' ! -name 'R$*.smali' -delete
-cp "${TMP_DIR}/smali-new"/smali/com/albidr/clashmanager/*.smali "${APP_SMALI}/"
+rm -rf "${TMP_DIR}/smali-orig/smali/com/android/tools/r8"
+cp -R "${TMP_DIR}/smali-new/smali/." "${TMP_DIR}/smali-orig/smali/"
 
 # Reassemble the merged smali files into the final classes.dex file in our source-controlled directory
 echo "▶ Reassembling smali back to classes.dex..."
