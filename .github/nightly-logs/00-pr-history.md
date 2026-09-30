@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-29
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-30] PR #2022 [Stage 6]: docs(tsdoc): harden ViewOptions TSDoc interface contracts and inline logic annotations
+**Domain:** documentation | **Commit:** 7dc2298ff | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2022)
+**Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, .github/nightly-logs/06-documentation-tsdoc-pr-body.md, Frontend-PWA/src/shared/ui/ViewOptions.vue
+**Why:** Reconcile ViewOptions TSDoc contracts, ADR mappings, and inline decision logs
+**Change:** docs(tsdoc): harden ViewOptions TSDoc interface contracts and inline logic annotations
+**Result:** PASSED (vue-tsc and 9/9 ViewOptions unit tests passed)
+**Nudges:** 0
+
+
 ### [2026-09-30] PR #2021 [Stage 5]: Reconciled shared/ui README with ViewOptions bottom sheet component
 **Domain:** documentation | **Commit:** 4faa6970b | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2021)
 **Files:** .github/nightly-logs/05-documentation-readme-coverage.log, .github/nightly-logs/05-documentation-readme-pr-body.md, Frontend-PWA/src/shared/ui/README.md
