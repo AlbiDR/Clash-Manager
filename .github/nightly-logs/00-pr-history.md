@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-29
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-30] PR #2024 [Stage 8]: Bumped supabase devDependency from ^2.117.0 to ^2.118.0
+**Domain:** dependencies | **Commit:** fbf489c9d | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2024)
+**Files:** .github/nightly-logs/08-dependency-audit-coverage.log, .github/nightly-logs/08-dependency-audit-pr-body.md, package.json, pnpm-lock.yaml, pnpm-workspace.yaml
+**Why:** Safe Tier 1 minor bump for supabase CLI in workspace catalogs
+**Change:** Bumped supabase devDependency from ^2.117.0 to ^2.118.0
+**Result:** pnpm audit:version reported 0 drift lines, pnpm test passed 2102 of 2102 tests
+**Nudges:** 0
+
+
 ### [2026-09-30] PR #2023 [Stage 7]: Scanned Frontend-PWA, Backend, root package.json, pnpm-workspace.yaml, 3 READMEs, useProgressiveList.ts, protocol.ts, apktool.yml, twa-manifest.json. Confirmed catalog protocol adherence and 0 version drift lines at ground truth 14.50.121.
 **Domain:** versioning | **Commit:** eb4707e91 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2023)
 **Files:** .github/nightly-logs/07-version-integrity-coverage.log, .github/nightly-logs/07-version-integrity-pr-body.md
