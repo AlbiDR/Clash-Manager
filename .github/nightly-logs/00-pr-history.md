@@ -15,6 +15,15 @@ LAST_AGED:   2026-09-30
 ---
 
 ## T1 -- Active (last 7 days)
+
+### [2026-09-30] PR #2030 [Stage 1]: Audited 42 candidate files and Edge Functions across Priority List items (auth gaps, in-memory state, Valibot boundaries, layer isolation); zero threat vectors found
+**Domain:** hardening | **Commit:** e748e57f9 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2030)
+**Files:** .github/nightly-logs/00-pr-history.md, .github/nightly-logs/01-hardening-coverage.log, .github/nightly-logs/01-hardening-pr-body.md
+**Why:** Audited Edge Functions (ingest-royale-data, sync-player-cards, query-royale-api, fetch-player-battlelog, ping, headhunter-scanner) across candidate files. Priority items clean: non-public routes validate bearer tokens/anon keys via clinicalServe with rate limiting, in-memory state is annotated EPHEMERAL, ingress payloads and RPC responses enforce Valibot schemas, no dead code/boundary issues.
+**Change:** Audited 42 candidate files and Edge Functions across Priority List items (auth gaps, in-memory state, Valibot boundaries, layer isolation); zero threat vectors found
+**Result:** Checked 42 files and Edge Function entrypoints; pnpm test passed 209 test files (2102 tests); git diff --check reported 0 clean diff lines
+**Nudges:** 0
+
 ### [2026-09-30] PR #2029 [Stage 13]: Audit complete: checked 12 preceding stages, 0 stability failures, 0 unfinalized sentinels, 0 watchdog interventions; CLEAN calibration streak 0.
 **Domain:** pipeline | **Commit:** 946096d16 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2029)
 **Files:** .github/nightly-logs/13-self-healing-protocol-coverage.log, .github/nightly-logs/13-self-healing-protocol-pr-body.md
