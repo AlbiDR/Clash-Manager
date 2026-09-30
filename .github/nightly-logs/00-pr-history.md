@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-29
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-30] PR #2027 [Stage 11]: Audited native WebView performance settings, Service Worker caching, and Vite manualChunks; zero source changes required
+**Domain:** apk | **Commit:** d67ccce2a | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2027)
+**Files:** .github/nightly-logs/11-apk-optimization-coverage.log, .github/nightly-logs/11-apk-optimization-pr-body.md
+**Why:** All 9 wrapper and caching performance invariants pass in pnpm audit:apk-perf and precache asset footprint is 11.1 KB across 6 essential icon assets
+**Change:** Audited native WebView performance settings, Service Worker caching, and Vite manualChunks; zero source changes required
+**Result:** pnpm audit:apk-perf and pnpm test:apk-performance passed with 0 violations
+**Nudges:** 0
+
+
 ### [2026-09-30] PR #2026 [Stage 10]: Full PWA/APK wrapper integrity audit clean across manifest parity, asset links, version codes, security policy, and native source.
 **Domain:** apk | **Commit:** bfdeb718c | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2026)
 **Files:** .github/nightly-logs/10-apk-integrity-coverage.log, .github/nightly-logs/10-apk-integrity-pr-body.md
