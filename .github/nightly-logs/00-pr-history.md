@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-29
 
 ## T1 -- Active (last 7 days)
 
+### [2026-09-30] PR #2029 [Stage 13]: Audit complete: checked 12 preceding stages, 0 stability failures, 0 unfinalized sentinels, 0 watchdog interventions; CLEAN calibration streak 0.
+**Domain:** pipeline | **Commit:** 946096d16 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2029)
+**Files:** .github/nightly-logs/13-self-healing-protocol-coverage.log, .github/nightly-logs/13-self-healing-protocol-pr-body.md
+**Why:** No new or amended findings for Section 1 or Section 2; protocol document left CLEAN.
+**Change:** Audit complete: checked 12 preceding stages, 0 stability failures, 0 unfinalized sentinels, 0 watchdog interventions; CLEAN calibration streak 0.
+**Result:** Checked 12 stage ledger rows in nightly-run-ledger.json and coverage logs; pnpm test passed 209 test files (2102 tests); git diff --check reported 0 clean diff lines
+**Nudges:** 1
+
+
 ### [2026-09-30] PR #2028 [Stage 12]: No APK UX issues found across 78 examined frontend files
 **Domain:** ux | **Commit:** e6c0d4e53 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2028)
 **Files:** .github/nightly-logs/12-apk-ux-coverage.log, .github/nightly-logs/12-apk-ux-pr-body.md
