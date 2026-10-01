@@ -15,6 +15,15 @@ LAST_AGED:   2026-10-01
 ---
 
 ## T1 -- Active (last 7 days)
+
+### [2026-10-01] PR #2043 [Stage 1]: Audited 42 candidate files and Edge Functions across Priority List items (auth gaps, in-memory state, Valibot boundaries, layer isolation); zero threat vectors found
+**Domain:** hardening | **Commit:** 9b72fd5b7 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2043)
+**Files:** .github/nightly-logs/00-pr-history.md, .github/nightly-logs/01-hardening-coverage.log, .github/nightly-logs/01-hardening-pr-body.md
+**Why:** Bounded threat surface scan confirmed zero unhandled security or runtime integrity risks
+**Change:** Audited 42 candidate files and Edge Functions across Priority List items (auth gaps, in-memory state, Valibot boundaries, layer isolation); zero threat vectors found
+**Result:** Checked 42 candidate files and Edge Function entrypoints; pnpm test passed 209 test files (2102 tests); git diff --check clean
+**Nudges:** 0
+
 ### [2026-10-01] PR #2042 [Stage 12]: Automated APK UX audit passed with 0 candidate violations across 78 files examined
 **Domain:** ux | **Commit:** 1ae2fd8e7 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2042)
 **Files:** .github/nightly-logs/12-apk-ux-coverage.log, .github/nightly-logs/12-apk-ux-pr-body.md
