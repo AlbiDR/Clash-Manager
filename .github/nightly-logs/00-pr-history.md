@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-30
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-01] PR #2042 [Stage 12]: Automated APK UX audit passed with 0 candidate violations across 78 files examined
+**Domain:** ux | **Commit:** 1ae2fd8e7 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2042)
+**Files:** .github/nightly-logs/12-apk-ux-coverage.log, .github/nightly-logs/12-apk-ux-pr-body.md
+**Why:** Audit status is PASS with no viable candidates in bounded scan across UX categories 1-10
+**Change:** Automated APK UX audit passed with 0 candidate violations across 78 files examined
+**Result:** apk-ux-audit-status.txt: PASS; apk-ux-audit.json: 0 candidate files reviewed; UX categories 1-10 checked
+**Nudges:** 0
+
+
 ### [2026-10-01] PR #2041 [Stage 13]: Audit pass complete: checked failure classes UNFINALIZED_SENTINEL, AD_LIBBED, RECOVERABLE; coverage logs for 2026-10-01 clean; consecutive-clean: 1
 **Domain:** pipeline | **Commit:** c954c1d77 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2041)
 **Files:** .github/nightly-logs/13-self-healing-protocol-coverage.log, .github/nightly-logs/13-self-healing-protocol-pr-body.md
