@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-30
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-01] PR #2041 [Stage 13]: Audit pass complete: checked failure classes UNFINALIZED_SENTINEL, AD_LIBBED, RECOVERABLE; coverage logs for 2026-10-01 clean; consecutive-clean: 1
+**Domain:** pipeline | **Commit:** c954c1d77 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2041)
+**Files:** .github/nightly-logs/13-self-healing-protocol-coverage.log, .github/nightly-logs/13-self-healing-protocol-pr-body.md
+**Why:** Pipeline operating cleanly across 2026-10-01 run sequence with 0 new stability or coherence findings
+**Change:** Audit pass complete: checked failure classes UNFINALIZED_SENTINEL, AD_LIBBED, RECOVERABLE; coverage logs for 2026-10-01 clean; consecutive-clean: 1
+**Result:** CLEAN pass verified across ledger, coverage logs, and toolchain state
+**Nudges:** 0
+
+
 ### [2026-10-01] PR #2040 [Stage 11]: Audited native WebView settings, Service Worker routes, Vite chunking, resource rules, and asset footprint; zero source changes required.
 **Domain:** apk | **Commit:** ecb7103da | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2040)
 **Files:** .github/nightly-logs/11-apk-optimization-coverage.log, .github/nightly-logs/11-apk-optimization-pr-body.md
