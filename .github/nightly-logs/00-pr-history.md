@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-30
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-01] PR #2038 [Stage 9]: 45 candidate files, 0 dep violations, knip: 2 devDeps, 5 binaries, 3 view loaders, 1 duplicate constant; clean-streak: 0. Evaluated @core/config and Frontend-PWA/src/features. Defect hunt on useProgressiveList and deep-depth verified green.
+**Domain:** architecture | **Commit:** 5b5aaa358 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2038)
+**Files:** .github/nightly-logs/09-refactor-proposals-coverage.log, .github/nightly-logs/09-refactor-proposals-pr-body.md
+**Why:** Substrate is fully compliant with CleanStack ADR structural boundaries; candidate knip exports represent framework entry points or intentional safety abstractions; defect hunt confirmed correct handling under edge conditions.
+**Change:** 45 candidate files, 0 dep violations, knip: 2 devDeps, 5 binaries, 3 view loaders, 1 duplicate constant; clean-streak: 0. Evaluated @core/config and Frontend-PWA/src/features. Defect hunt on useProgressiveList and deep-depth verified green.
+**Result:** PASS: pnpm type-check, Frontend-PWA vitest (2102 tests), and Backend vitest (297 tests) all passed cleanly.
+**Nudges:** 0
+
+
 ### [2026-10-01] PR #2037 [Stage 8]: package.json -- Bumped knip to ^6.39.0 in monorepo catalogs and updated major version watchlist
 **Domain:** dependencies | **Commit:** 2af3a9be5 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2037)
 **Files:** .github/nightly-logs/08-dependency-audit-coverage.log, .github/nightly-logs/08-dependency-audit-pr-body.md, package.json, pnpm-lock.yaml, pnpm-workspace.yaml
