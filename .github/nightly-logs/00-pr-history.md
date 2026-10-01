@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-30
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-01] PR #2035 [Stage 7]: Version integrity audit complete across catalog protocols, package manifests, and derived version locations. Ground truth version 14.50.121 is fully synchronized.
+**Domain:** versioning | **Commit:** f232d1006 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2035)
+**Files:** .github/nightly-logs/07-version-integrity-coverage.log, .github/nightly-logs/07-version-integrity-pr-body.md
+**Why:** Catalog protocol scan verified Frontend-PWA and Backend dependencies use catalog: syntax. Package version scan compared root, Frontend-PWA, and Backend package.json manifests (14.50.121). pnpm audit:version passed with zero drift across package manifests, README badges, useProgressiveList.ts, protocol.ts, apktool.yml, and twa-manifest.json.
+**Change:** Version integrity audit complete across catalog protocols, package manifests, and derived version locations. Ground truth version 14.50.121 is fully synchronized.
+**Result:** PASS: Catalog scan (Frontend-PWA, Backend catalog: protocol adherence), package version scan (root, Frontend-PWA, Backend 14.50.121), and pnpm audit:version validation all passed with zero drift.
+**Nudges:** 0
+
+
 ### [2026-10-01] PR #2034 [Stage 5]: Audited ViewOptions documentation debt target; confirmed shared/ui README is accurate and up to date.
 **Domain:** documentation | **Commit:** ca890f634 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2034)
 **Files:** .github/nightly-logs/05-documentation-readme-coverage.log, .github/nightly-logs/05-documentation-readme-pr-body.md
