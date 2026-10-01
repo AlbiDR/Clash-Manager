@@ -4,23 +4,23 @@
 
 In plain terms: nothing needed fixing. This run checked the optimization area and found it already correct, so the only file here is the log recording that the check happened.
 
-**What was checked:** Inspected 22 changed files and Edge Functions for SQL view substrate hygiene; zero structural rot or unreferenced views found.
+**What was checked:** Calibration pass: Inspected 22 changed files and widened scan to Edge Functions and L1 composables (useProgressiveList.ts); ordinary CLEAN count was 7; zero structural rot or unreferenced database views found.
 
-**Why:** Bounded audit completed across scope anchor changed files and Edge Functions; all 6 known database views remain unreferenced and no logic mutations are required.
+**Why:** Routine substrate and logic efficiency sweep found zero bottlenecks across changed files and widened surfaces.
 
-**Result:** PASSED (pnpm test: 209 files, 2102 tests passed)
+**Result:** PASSED: All inspections completed with 0 source mutations required.
 
 **Files changed:** .github/nightly-logs/04-optimization-coverage.log
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: optimization
-  Cycle: nightly-cycle/2026-09-30
+  Cycle: nightly-cycle/2026-10-01
   Contract: aa2c8988d1392624d60bb5e0229636b4e4503d27fc3a61008485cb2452cde7f5
-  Why: Bounded audit completed across scope anchor changed files and Edge Functions; all 6 known database views remain unreferenced and no logic mutations are required.
-  Change: Inspected 22 changed files and Edge Functions for SQL view substrate hygiene; zero structural rot or unreferenced views found.
-  Result: PASSED (pnpm test: 209 files, 2102 tests passed)
+  Why: Routine substrate and logic efficiency sweep found zero bottlenecks across changed files and widened surfaces.
+  Change: Calibration pass: Inspected 22 changed files and widened scan to Edge Functions and L1 composables (useProgressiveList.ts); ordinary CLEAN count was 7; zero structural rot or unreferenced database views found.
+  Result: PASSED: All inspections completed with 0 source mutations required.
   Files: .github/nightly-logs/04-optimization-coverage.log
   Nudges: 0
-  Execution: d14029268c9ab97b2069a801beac0d1523b3ee68
+  Execution: 5a31ca0001d6fe1481edd866dd0f3f6f3ad5673c
 -->
