@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-30
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-01] PR #2036 [Stage 6]: Audited doc-debt target ViewOptions.vue; confirmed interface contracts and annotations are synchronized with code reality
+**Domain:** documentation | **Commit:** fc7e31e74 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2036)
+**Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, .github/nightly-logs/06-documentation-tsdoc-pr-body.md
+**Why:** Target in /tmp/nightly/doc-debt.txt (Frontend-PWA/src/shared/ui/ViewOptions.vue) prose was verified accurate after dead export removal in PR #2025
+**Change:** Audited doc-debt target ViewOptions.vue; confirmed interface contracts and annotations are synchronized with code reality
+**Result:** PASSED (git diff check clean, prose verified accurate, 2102 tests passed)
+**Nudges:** 0
+
+
 ### [2026-10-01] PR #2035 [Stage 7]: Version integrity audit complete across catalog protocols, package manifests, and derived version locations. Ground truth version 14.50.121 is fully synchronized.
 **Domain:** versioning | **Commit:** f232d1006 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2035)
 **Files:** .github/nightly-logs/07-version-integrity-coverage.log, .github/nightly-logs/07-version-integrity-pr-body.md
