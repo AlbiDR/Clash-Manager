@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-30
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-01] PR #2032 [Stage 3]: Baseline current across 0 pending migrations; migration-quality PASS; fold-state DEGRADED; database verification DB-UNAVAILABLE; read-only RLS and formatting audit PASS
+**Domain:** database | **Commit:** 9e2a1ac77 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2032)
+**Files:** .github/nightly-logs/03-baseline-consolidation-coverage.log, .github/nightly-logs/03-baseline-consolidation-pr-body.md
+**Why:** Audit completed with 0 pending migrations and read-only audit verified clean baseline
+**Change:** Baseline current across 0 pending migrations; migration-quality PASS; fold-state DEGRADED; database verification DB-UNAVAILABLE; read-only RLS and formatting audit PASS
+**Result:** Audit clean across 0 pending migrations, migration-quality PASS, fold-state DEGRADED, DB-UNAVAILABLE
+**Nudges:** 0
+
+
 ### [2026-10-01] PR #2031 [Stage 2]: Completed logic integrity audit pass with zero regression.
 **Domain:** verification | **Commit:** 4fb69cb54 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2031)
 **Files:** .github/nightly-logs/02-verification-coverage.log, .github/nightly-logs/02-verification-pr-body.md
