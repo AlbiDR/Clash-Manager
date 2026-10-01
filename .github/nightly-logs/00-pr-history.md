@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-30
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-01] PR #2037 [Stage 8]: package.json -- Bumped knip to ^6.39.0 in monorepo catalogs and updated major version watchlist
+**Domain:** dependencies | **Commit:** 2af3a9be5 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2037)
+**Files:** .github/nightly-logs/08-dependency-audit-coverage.log, .github/nightly-logs/08-dependency-audit-pr-body.md, package.json, pnpm-lock.yaml, pnpm-workspace.yaml
+**Why:** Apply safe Tier 1 minor update for knip and maintain persistent Tier 2 major version watchlist.
+**Change:** package.json -- Bumped knip to ^6.39.0 in monorepo catalogs and updated major version watchlist
+**Result:** pnpm test:nightly-control-plane passed 105 of 105 tests across 11 suites
+**Nudges:** 0
+
+
 ### [2026-10-01] PR #2036 [Stage 6]: Audited doc-debt target ViewOptions.vue; confirmed interface contracts and annotations are synchronized with code reality
 **Domain:** documentation | **Commit:** fc7e31e74 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2036)
 **Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, .github/nightly-logs/06-documentation-tsdoc-pr-body.md
