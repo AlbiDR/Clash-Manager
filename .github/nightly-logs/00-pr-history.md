@@ -16,6 +16,15 @@ LAST_AGED:   2026-09-30
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-01] PR #2040 [Stage 11]: Audited native WebView settings, Service Worker routes, Vite chunking, resource rules, and asset footprint; zero source changes required.
+**Domain:** apk | **Commit:** ecb7103da | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2040)
+**Files:** .github/nightly-logs/11-apk-optimization-coverage.log, .github/nightly-logs/11-apk-optimization-pr-body.md
+**Why:** All 9 wrapper/caching invariants (webview-cache-mode, webview-offscreen-preraster, webview-dom-storage, webview-images-automatic, webview-media-no-gesture, manifest-hardware-accelerated, sw-precache-route, sw-navigation-preload, vite-manual-chunks) pass; precache footprint consists of 6 icons totaling 11.1 KB.
+**Change:** Audited native WebView settings, Service Worker routes, Vite chunking, resource rules, and asset footprint; zero source changes required.
+**Result:** pnpm audit:apk-perf passed 9/9 invariants; pnpm test:apk-performance passed 9/9 unit tests.
+**Nudges:** 0
+
+
 ### [2026-10-01] PR #2039 [Stage 10]: Verified asset links, manifest parity, version code/name sync, release metadata, and security policy via pnpm audit:apk and pnpm apk:verify:source
 **Domain:** apk | **Commit:** 58cda2ca6 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2039)
 **Files:** .github/nightly-logs/10-apk-integrity-coverage.log, .github/nightly-logs/10-apk-integrity-pr-body.md
