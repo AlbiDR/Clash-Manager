@@ -16,6 +16,15 @@ LAST_AGED:   2026-10-01
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-02] PR #2044 [Stage 2]: Audited 42 recently changed files and L1 core utility specs including useProgressiveList.ts, deep-depth.ts, royaleSchemas.ts, rpcSchemas.ts, and protocol.ts for coverage gaps.
+**Domain:** verification | **Commit:** 84d34971e | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2044)
+**Files:** .github/nightly-logs/02-verification-coverage.log, .github/nightly-logs/02-verification-pr-body.md
+**Why:** Completed daily logic integrity audit pass across recent changes and core validation boundaries with zero uncovered gaps identified.
+**Change:** Audited 42 recently changed files and L1 core utility specs including useProgressiveList.ts, deep-depth.ts, royaleSchemas.ts, rpcSchemas.ts, and protocol.ts for coverage gaps.
+**Result:** Vitest pnpm -F clash-manager-pwa test passed 2102 of 2102 tests, Vitest pnpm -F clash-manager-backend test passed 297 of 297 tests
+**Nudges:** 0
+
+
 ### [2026-10-01] PR #2043 [Stage 1]: Audited 42 candidate files and Edge Functions across Priority List items (auth gaps, in-memory state, Valibot boundaries, layer isolation); zero threat vectors found
 **Domain:** hardening | **Commit:** 9b72fd5b7 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2043)
 **Files:** .github/nightly-logs/00-pr-history.md, .github/nightly-logs/01-hardening-coverage.log, .github/nightly-logs/01-hardening-pr-body.md
