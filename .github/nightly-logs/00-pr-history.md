@@ -16,6 +16,15 @@ LAST_AGED:   2026-10-01
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-02] PR #2047 [Stage 5]: Audited ViewOptions documentation debt target; confirmed shared/ui README is accurate and up to date.
+**Domain:** documentation | **Commit:** b17a26b92 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2047)
+**Files:** .github/nightly-logs/05-documentation-readme-coverage.log, .github/nightly-logs/05-documentation-readme-pr-body.md
+**Why:** doc-debt target Frontend-PWA/src/shared/ui/ViewOptions.vue prose verified accurate after removal of unused ViewOptionsProps export in PR #2025
+**Change:** Audited ViewOptions documentation debt target; confirmed shared/ui README is accurate and up to date.
+**Result:** PASSED (git diff --check clean, prose verified accurate)
+**Nudges:** 0
+
+
 ### [2026-10-02] PR #2046 [Stage 4]: Inspected 42 changed files and Edge Functions for SQL view substrate hygiene; zero structural rot or unreferenced views found.
 **Domain:** optimization | **Commit:** 6487e5c0d | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2046)
 **Files:** .github/nightly-logs/04-optimization-coverage.log, .github/nightly-logs/04-optimization-pr-body.md
