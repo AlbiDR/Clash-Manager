@@ -16,6 +16,15 @@ LAST_AGED:   2026-10-01
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-02] PR #2051 [Stage 9]: Scan: 42 files; 0 dep-viols; knip: 3 unused, 1 dup; clean-streak: 1; opened: config/index.ts, NetworkSettings, MemberCard, useProgressiveList; closest: BLITZ_DWELL_DEFAULT (alias); hunt: useProgressiveList (20/20 pass)
+**Domain:** architecture | **Commit:** 43ff2e2a5 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2051)
+**Files:** .github/nightly-logs/09-refactor-proposals-coverage.log, .github/nightly-logs/09-refactor-proposals-pr-body.md
+**Why:** Substrate is fully compliant with CleanStack ADR. No viable refactoring targets or logic defects identified.
+**Change:** Scan: 42 files; 0 dep-viols; knip: 3 unused, 1 dup; clean-streak: 1; opened: config/index.ts, NetworkSettings, MemberCard, useProgressiveList; closest: BLITZ_DWELL_DEFAULT (alias); hunt: useProgressiveList (20/20 pass)
+**Result:** PASSED (2102/2102 PWA tests green, 297/297 Backend tests green, 0 depcruise violations)
+**Nudges:** 0
+
+
 ### [2026-10-02] PR #2050 [Stage 8]: Bumped @types/node catalog entry to ^26.6.4 and updated lockfile
 **Domain:** dependencies | **Commit:** 761a7ef00 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2050)
 **Files:** .github/nightly-logs/08-dependency-audit-coverage.log, .github/nightly-logs/08-dependency-audit-pr-body.md, package.json, pnpm-lock.yaml, pnpm-workspace.yaml
