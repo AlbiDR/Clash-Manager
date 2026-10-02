@@ -16,6 +16,15 @@ LAST_AGED:   2026-10-01
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-02] PR #2045 [Stage 3]: Calibration pass: CLEAN-since-calibration count: 7, 0 pending migrations, migration-quality PASS, fold-state DEGRADED, database-verification DB-UNAVAILABLE
+**Domain:** database | **Commit:** 1cc827073 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2045)
+**Files:** .github/nightly-logs/03-baseline-consolidation-coverage.log, .github/nightly-logs/03-baseline-consolidation-pr-body.md
+**Why:** Audit confirmed baseline current with zero pending migrations; completed calibration pass on 7th consecutive clean run
+**Change:** Calibration pass: CLEAN-since-calibration count: 7, 0 pending migrations, migration-quality PASS, fold-state DEGRADED, database-verification DB-UNAVAILABLE
+**Result:** 0 pending migrations, migration-quality PASS, fold-state DEGRADED, database-verification DB-UNAVAILABLE, RLS/search_path/formatting audit PASS
+**Nudges:** 0
+
+
 ### [2026-10-02] PR #2044 [Stage 2]: Audited 42 recently changed files and L1 core utility specs including useProgressiveList.ts, deep-depth.ts, royaleSchemas.ts, rpcSchemas.ts, and protocol.ts for coverage gaps.
 **Domain:** verification | **Commit:** 84d34971e | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2044)
 **Files:** .github/nightly-logs/02-verification-coverage.log, .github/nightly-logs/02-verification-pr-body.md
