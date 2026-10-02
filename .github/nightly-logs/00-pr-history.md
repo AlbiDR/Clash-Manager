@@ -16,6 +16,15 @@ LAST_AGED:   2026-10-01
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-02] PR #2050 [Stage 8]: Bumped @types/node catalog entry to ^26.6.4 and updated lockfile
+**Domain:** dependencies | **Commit:** 761a7ef00 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2050)
+**Files:** .github/nightly-logs/08-dependency-audit-coverage.log, .github/nightly-logs/08-dependency-audit-pr-body.md, package.json, pnpm-lock.yaml, pnpm-workspace.yaml
+**Why:** Routine Tier 1 patch update for @types/node
+**Change:** Bumped @types/node catalog entry to ^26.6.4 and updated lockfile
+**Result:** Workspace pnpm test passed all 2102 tests across 209 test files
+**Nudges:** 0
+
+
 ### [2026-10-02] PR #2049 [Stage 7]: Scanned Frontend-PWA and Backend package.json for catalog: adherence; verified package versions against ground truth 14.50.121. Ran pnpm audit:version confirming zero drift across all 10 monitored targets.
 **Domain:** versioning | **Commit:** 3bf036dda | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2049)
 **Files:** .github/nightly-logs/07-version-integrity-coverage.log, .github/nightly-logs/07-version-integrity-pr-body.md
