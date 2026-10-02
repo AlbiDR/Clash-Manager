@@ -16,6 +16,15 @@ LAST_AGED:   2026-10-01
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-02] PR #2052 [Stage 10]: Verified APK and PWA wrapper integrity across asset links, manifest parity, version sync, release metadata, and security policy
+**Domain:** apk | **Commit:** ac1cf561c | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2052)
+**Files:** .github/nightly-logs/10-apk-integrity-coverage.log, .github/nightly-logs/10-apk-integrity-pr-body.md
+**Why:** All wrapper configuration properties align cleanly across web manifest, twa-manifest.json, apktool.yml, assetlinks.json, latest.json, and AndroidManifest.xml
+**Change:** Verified APK and PWA wrapper integrity across asset links, manifest parity, version sync, release metadata, and security policy
+**Result:** pnpm audit:apk and pnpm apk:verify:source verified asset links, manifest parity, version 14.50.121/14050121 sync, clashmanager-v14.50.121+422.apk release metadata, and cleartext traffic prohibition
+**Nudges:** 0
+
+
 ### [2026-10-02] PR #2051 [Stage 9]: Scan: 42 files; 0 dep-viols; knip: 3 unused, 1 dup; clean-streak: 1; opened: config/index.ts, NetworkSettings, MemberCard, useProgressiveList; closest: BLITZ_DWELL_DEFAULT (alias); hunt: useProgressiveList (20/20 pass)
 **Domain:** architecture | **Commit:** 43ff2e2a5 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2051)
 **Files:** .github/nightly-logs/09-refactor-proposals-coverage.log, .github/nightly-logs/09-refactor-proposals-pr-body.md
