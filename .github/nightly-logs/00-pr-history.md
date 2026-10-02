@@ -16,6 +16,15 @@ LAST_AGED:   2026-10-01
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-02] PR #2049 [Stage 7]: Scanned Frontend-PWA and Backend package.json for catalog: adherence; verified package versions against ground truth 14.50.121. Ran pnpm audit:version confirming zero drift across all 10 monitored targets.
+**Domain:** versioning | **Commit:** 3bf036dda | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2049)
+**Files:** .github/nightly-logs/07-version-integrity-coverage.log, .github/nightly-logs/07-version-integrity-pr-body.md
+**Why:** Audit completed with zero version drift or catalog violations across monorepo manifests and derived files.
+**Change:** Scanned Frontend-PWA and Backend package.json for catalog: adherence; verified package versions against ground truth 14.50.121. Ran pnpm audit:version confirming zero drift across all 10 monitored targets.
+**Result:** pnpm audit:version reported 0 drift lines across 10 monitored files; pnpm test passed 2102 tests across 209 files.
+**Nudges:** 0
+
+
 ### [2026-10-02] PR #2048 [Stage 6]: Audited doc-debt target ViewOptions.vue; confirmed interface contracts and annotations are synchronized with code reality
 **Domain:** documentation | **Commit:** 930b50fd4 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2048)
 **Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, .github/nightly-logs/06-documentation-tsdoc-pr-body.md
