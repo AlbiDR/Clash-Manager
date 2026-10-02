@@ -6,7 +6,7 @@ In plain terms: nothing needed fixing. This run checked the documentation README
 
 **What was checked:** Audited ViewOptions documentation debt target; confirmed shared/ui README is accurate and up to date.
 
-**Why:** doc-debt target Frontend-PWA/src/shared/ui/ViewOptions.vue prose verified accurate after removal of unused ViewOptionsProps export
+**Why:** doc-debt target Frontend-PWA/src/shared/ui/ViewOptions.vue prose verified accurate after removal of unused ViewOptionsProps export in PR #2025
 
 **Result:** PASSED (git diff --check clean, prose verified accurate)
 
@@ -15,12 +15,12 @@ In plain terms: nothing needed fixing. This run checked the documentation README
 <!--
 NIGHTLY_PR_METADATA:
   Domain: documentation
-  Cycle: nightly-cycle/2026-10-01
+  Cycle: nightly-cycle/2026-10-02
   Contract: cea68a5bbba1bd2cbc6d3bdfe2639f37f3935b571beab59f5da1501b1180b22d
-  Why: doc-debt target Frontend-PWA/src/shared/ui/ViewOptions.vue prose verified accurate after removal of unused ViewOptionsProps export
+  Why: doc-debt target Frontend-PWA/src/shared/ui/ViewOptions.vue prose verified accurate after removal of unused ViewOptionsProps export in PR #2025
   Change: Audited ViewOptions documentation debt target; confirmed shared/ui README is accurate and up to date.
   Result: PASSED (git diff --check clean, prose verified accurate)
   Files: .github/nightly-logs/05-documentation-readme-coverage.log
   Nudges: 0
-  Execution: 8104561b76b2ae9a9f2e7647a7abceedeb2e821d
+  Execution: fd3050421e90139fd127d90185cb728bddaee88c
 -->
