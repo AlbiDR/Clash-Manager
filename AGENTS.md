@@ -44,6 +44,17 @@ the same human-readable recap text produced by `pnpm nightly:recap`, with no
 extra introduction, commentary, or sign-off. If something looks wrong or reads
 poorly, fix the script and its tests rather than working around it in a prompt.
 
+## Testing the Android app
+
+The APK is not tested by reading its code. There is an Android 16 emulator on
+this machine and an inspectable build of the app, CM Dev, that installs next to
+the owner's real one. Start with `pnpm apk:emulator`, then `pnpm apk:dev`, and
+follow `.github/agents/skills/apk-device-testing/SKILL.md`; the commands are
+documented in `APK/README.md` ("Seeing it run"). Two rules from that skill
+matter most: never force-stop CM Dev (Android then switches its accessibility
+service off), and never change accessibility or overlay permissions yourself.
+Those are security settings, and a person turns them on.
+
 ## Commit authorship
 
 Do not add a `Co-Authored-By:` trailer crediting yourself, and do not commit
