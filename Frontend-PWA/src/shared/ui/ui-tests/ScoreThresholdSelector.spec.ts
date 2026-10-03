@@ -112,19 +112,36 @@ describe("ScoreThresholdSelector", () => {
     expect(wrapper.emitted("select")![0]).toEqual([75, "le"]);
   });
 
-  it("commits the dragged value and publishes once on release", async () => {
+  it("publishes each reached score band while the drag is in progress", async () => {
     const wrapper = mountSelector();
+    const slider = wrapper.find(".sp-slider").element;
 
-    await dragTo(wrapper, 0.4);
+    firePointer(slider, "pointerdown", 0.4 * TRACK_WIDTH);
+    await nextTick();
 
-    // The value follows the finger, so several updates are expected.
+    // The selection is visible as soon as the drag begins, rather than waiting
+    // for its release. The selector emits its resolved value, not a stale model
+    // value that has not completed its parent round trip yet.
+    expect(wrapper.emitted("select")).toEqual([[40, "ge"]]);
+
+    firePointer(slider, "pointermove", 0.6 * TRACK_WIDTH);
+    await nextTick();
+
     const valueUpdates = wrapper.emitted("update:value")!;
-    expect(valueUpdates.at(-1)).toEqual([40]);
+    expect(valueUpdates.at(-1)).toEqual([60]);
+    expect(wrapper.emitted("select")).toEqual([[40, "ge"], [60, "ge"]]);
 
-    // [THREAT:] `select` rebuilds the batch selection downstream. Emitting it per
-    // pointer move would churn the selection for the length of a drag.
-    expect(wrapper.emitted("select")!.length).toBe(1);
-    expect(wrapper.emitted("select")![0]).toEqual([40, "ge"]);
+    // Pointer events can arrive repeatedly between the same five-point stops;
+    // they must not rebuild the identical batch selection each time.
+    firePointer(slider, "pointermove", 0.6 * TRACK_WIDTH);
+    await nextTick();
+    expect(wrapper.emitted("select")).toHaveLength(2);
+
+    // Releasing ends the gesture but does not reapply the threshold that was
+    // already reflected in the selected cards and count.
+    firePointer(slider, "pointerup", 0.6 * TRACK_WIDTH);
+    await nextTick();
+    expect(wrapper.emitted("select")).toHaveLength(2);
   });
 
   it("does not publish a selection for a release that never dragged", async () => {

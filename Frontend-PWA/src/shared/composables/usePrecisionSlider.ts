@@ -49,9 +49,9 @@ export interface PrecisionSliderApi {
   /** Every detent that should be drawn as a tick, with its own track position. */
   tickMarks: ComputedRef<readonly SliderTickMark[]>;
   /** Pointer press: captures the pointer and commits the value under it. */
-  handlePointerDown: (pointerEvent: PointerEvent) => void;
+  handlePointerDown: (pointerEvent: PointerEvent) => number | null;
   /** Pointer drag: commits the value under the pointer while captured. */
-  handlePointerMove: (pointerEvent: PointerEvent) => void;
+  handlePointerMove: (pointerEvent: PointerEvent) => number | null;
   /**
    * Pointer release or cancellation: releases capture and ends the drag.
    *
@@ -253,16 +253,16 @@ export function usePrecisionSlider(
    *
    * @param clientX - The pointer's horizontal viewport coordinate.
    */
-  function setValueFromClientX(clientX: number): void {
+  function setValueFromClientX(clientX: number): number | null {
     const track = trackElement.value;
-    if (!track) return;
+    if (!track) return null;
 
     const { thumbSize } = config.value;
     const bounds = track.getBoundingClientRect();
     const travelWidth = bounds.width - thumbSize;
 
     // [THREAT:] A collapsed or not-yet-laid-out track divides by zero.
-    if (travelWidth <= 0) return;
+    if (travelWidth <= 0) return null;
 
     const position = Math.min(
       1,
@@ -274,6 +274,7 @@ export function usePrecisionSlider(
 
     committedDuringDrag = committedValue;
     value.value = committedValue;
+    return committedValue;
   }
 
   /**
@@ -311,15 +312,16 @@ export function usePrecisionSlider(
    *
    * @param pointerEvent - The originating pointer event.
    */
-  function handlePointerDown(pointerEvent: PointerEvent): void {
+  function handlePointerDown(pointerEvent: PointerEvent): number | null {
     const target = pointerEvent.currentTarget as HTMLElement | null;
     // [DECISION LOG] Capture keeps the drag alive once the pointer leaves the
     // track, which is the normal case on a 4px target.
     target?.setPointerCapture?.(pointerEvent.pointerId);
     committedDuringDrag = null;
     isDragging.value = true;
-    setValueFromClientX(pointerEvent.clientX);
+    const committedValue = setValueFromClientX(pointerEvent.clientX);
     pointerEvent.preventDefault();
+    return committedValue;
   }
 
   /**
@@ -327,9 +329,9 @@ export function usePrecisionSlider(
    *
    * @param pointerEvent - The originating pointer event.
    */
-  function handlePointerMove(pointerEvent: PointerEvent): void {
-    if (!isDragging.value) return;
-    setValueFromClientX(pointerEvent.clientX);
+  function handlePointerMove(pointerEvent: PointerEvent): number | null {
+    if (!isDragging.value) return null;
+    return setValueFromClientX(pointerEvent.clientX);
   }
 
   /**
