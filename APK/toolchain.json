@@ -5,11 +5,27 @@
   "androidPlatform": "android-36",
   "buildTools": "37.0.0",
   "emulator": {
-    "$comment": "The virtual phone APK/apk-dev.mjs emulator creates and boots: the Android version and screen of the owner's Pixel 10, so a check on it means the same thing as a check on the phone. gpu host draws with the Mac's graphics chip; left on auto, the emulator fell back to SwiftShader, drawing on the CPU at about 8 cores and making the phone unusably slow.",
+    "$comment": "The virtual phone APK/apk-dev.mjs emulator creates and boots: the Android version and screen of the owner's Pixel 10, so a check on it means the same thing as a check on the phone. The screen is the Pixel 10's exact layout size (411 x 919 dp) drawn at a lower pixel density, 2.25x fewer pixels than its real 1080 x 2412 at 420; CSS layout is identical. Sound and cameras are not simulated: CM Dev uses neither. disabledPackages are preinstalled Google apps that sync in the background and that nothing here needs (apk-dev.mjs debloat; pm enable undoes it). gpu host draws with the Mac's graphics chip; left on auto, the emulator fell back to SwiftShader, drawing on the CPU at about 8 cores and making the phone unusably slow.",
     "avd": "cm-android-36",
     "systemImage": "system-images;android-36;google_apis;arm64-v8a",
-    "screen": { "width": 1080, "height": 2412, "density": 420 },
-    "gpu": "host"
+    "screen": { "width": 720, "height": 1608, "density": 280 },
+    "gpu": "host",
+    "disabledPackages": [
+      "com.google.android.apps.maps",
+      "com.google.android.apps.docs",
+      "com.google.android.apps.photos",
+      "com.google.android.youtube",
+      "com.google.android.apps.youtube.music",
+      "com.google.android.gm",
+      "com.google.android.calendar",
+      "com.google.android.apps.messaging",
+      "com.google.android.apps.accessibility.voiceaccess",
+      "com.google.android.apps.wellbeing",
+      "com.google.android.apps.restore",
+      "com.google.android.apps.wallpaper",
+      "com.google.android.googlequicksearchbox",
+      "com.google.android.as"
+    ]
   },
   "apktool": {
     "version": "3.0.3",

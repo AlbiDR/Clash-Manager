@@ -23,6 +23,7 @@
  *   node APK/apk-dev.mjs reverse <port>     make the phone's localhost:<port> reach this machine (dev server)
  *   node APK/apk-dev.mjs emulator           create (once) and boot the virtual phone pinned in toolchain.json,
  *                                          then print its serial for ANDROID_SERIAL
+ *   node APK/apk-dev.mjs debloat            disable the emulator's background apps listed in toolchain.json
  *
  * With more than one device attached, set ANDROID_SERIAL (adb reads it).
  * Read-only by design: nothing here taps, types or grants permissions. Those
@@ -95,7 +96,8 @@ function ensureAvd(sdk, avdHome, emulator) {
     "disk.dataPartition.size=6G", `image.sysdir.1=${imageDir}`, `tag.id=${tag}`, `target=${platform}`,
     `hw.lcd.width=${emulator.screen.width}`, `hw.lcd.height=${emulator.screen.height}`, `hw.lcd.density=${emulator.screen.density}`,
     "hw.keyboard=yes", "hw.mainKeys=no", "hw.gpu.enabled=yes", `hw.gpu.mode=${emulator.gpu}`,
-    "hw.accelerometer=yes", "hw.sensors.orientation=yes", "showDeviceFrame=no", "",
+    "hw.accelerometer=yes", "hw.sensors.orientation=yes", "showDeviceFrame=no",
+    "hw.audioInput=no", "hw.audioOutput=no", "hw.camera.back=none", "hw.camera.front=none", "",
   ].join("\n"));
   return created;
 }
@@ -260,6 +262,18 @@ const commands = {
       await sleep(2000);
     }
     die(`${emulator.avd} did not finish booting; see APK/.build/emulator.log`);
+  },
+  debloat() {
+    const serial = process.env.ANDROID_SERIAL || "";
+    if (!serial.startsWith("emulator-")) die("debloat is for the emulator only: set ANDROID_SERIAL=emulator-<port>");
+    const toolchain = JSON.parse(readFileSync(path.join(APK_DIR, "toolchain.json"), "utf8"));
+    const installed = new Set(adb(["shell", "pm", "list", "packages"]).split("\n").map((line) => line.replace("package:", "").trim()));
+    for (const pkg of toolchain.emulator.disabledPackages) {
+      if (!installed.has(pkg)) continue;
+      adb(["shell", "pm", "disable-user", "--user", "0", pkg]);
+      console.log(`disabled ${pkg}`);
+    }
+    console.log("undo one with: adb shell pm enable <package>");
   },
   reverse(port) {
     if (!/^\d+$/.test(port || "")) die("usage: apk-dev.mjs reverse <port>");
