@@ -126,7 +126,17 @@ onMounted(() => {
   // AUTO-REFRESH: Listen for Service Worker activation to force a page reload.
   if ('serviceWorker' in navigator && !isShowcaseMode.value) {
     let refreshing = false;
+    // [FIX] Only when a worker is replaced. The very first install also fires
+    // controllerchange (the new worker claims the page), but that page already
+    // came from the network and runs the newest code: reloading it threw away
+    // the first launch's loading and synced everything twice (seen on the
+    // Android emulator after a fresh install).
+    let hadWorker = Boolean(navigator.serviceWorker.controller);
     navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (!hadWorker) {
+        hadWorker = true;
+        return;
+      }
       if (refreshing) return;
       refreshing = true;
       console.log("[PWA] New version activated, refreshing...");

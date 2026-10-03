@@ -104,8 +104,9 @@ export function generateHtmlEntry(version: string): string {
     <!-- Critical Origin Preconnect -->
     <link rel="preconnect" href="https://hucktamloykszinwbtuh.supabase.co" crossorigin />
 
-    <!-- [OPTIMIZATION] Critical Asset Preloads for Hybrid Shell LCP -->
-    <link rel="preload" href="assets/branding/logo.svg" as="image" type="image/svg+xml" />
+    <!-- [OPTIMIZATION] Critical Asset Preloads for Hybrid Shell LCP.
+         No logo.svg here: only the web manifest uses it, never the page, so a
+         preload fetched it on every launch and the browser flagged it unused. -->
     <link rel="preload" href="./fonts/Inter-Variable.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" href="./fonts/JetBrainsMono-Bold.woff2" as="font" type="font/woff2" crossorigin />
 
