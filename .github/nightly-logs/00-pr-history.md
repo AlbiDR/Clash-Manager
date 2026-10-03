@@ -16,6 +16,15 @@ LAST_AGED:   2026-10-02
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-03] PR #2058 [Stage 3]: Audited master baseline SQL: 0 pending migrations, migration quality PASS, fold-state DEGRADED (56 replayed, 155 final-state objects, 73 verbatim, 5 reconciled), DB-UNAVAILABLE. Read-only RLS/search_path/formatting audit passed.
+**Domain:** database | **Commit:** 6a635e241 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2058)
+**Files:** .github/nightly-logs/03-baseline-consolidation-coverage.log, .github/nightly-logs/03-baseline-consolidation-pr-body.md
+**Why:** No pending migrations exist in /tmp/nightly/pending-migrations.txt and read-only audit of 20260531232406_master_migration.sql confirmed complete compliance.
+**Change:** Audited master baseline SQL: 0 pending migrations, migration quality PASS, fold-state DEGRADED (56 replayed, 155 final-state objects, 73 verbatim, 5 reconciled), DB-UNAVAILABLE. Read-only RLS/search_path/formatting audit passed.
+**Result:** pnpm audit:migrations reported 0 violations across 56 examined migrations with 170 baseline objects.
+**Nudges:** 0
+
+
 ### [2026-10-03] PR #2057 [Stage 2]: Frontend-PWA/src/shared/composables/composables-tests/usePrecisionSlider.spec.ts -- Expanded usePrecisionSlider spec for active drag moves, pointer capture, null track guard, non-positive step grids, and boundary detents.
 **Domain:** verification | **Commit:** e1e692f13 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2057)
 **Files:** .github/nightly-logs/02-verification-coverage.log, .github/nightly-logs/02-verification-pr-body.md, Frontend-PWA/src/shared/composables/composables-tests/usePrecisionSlider.spec.ts
