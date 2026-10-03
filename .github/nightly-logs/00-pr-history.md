@@ -16,6 +16,15 @@ LAST_AGED:   2026-10-02
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-03] PR #2057 [Stage 2]: Frontend-PWA/src/shared/composables/composables-tests/usePrecisionSlider.spec.ts -- Expanded usePrecisionSlider spec for active drag moves, pointer capture, null track guard, non-positive step grids, and boundary detents.
+**Domain:** verification | **Commit:** e1e692f13 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2057)
+**Files:** .github/nightly-logs/02-verification-coverage.log, .github/nightly-logs/02-verification-pr-body.md, Frontend-PWA/src/shared/composables/composables-tests/usePrecisionSlider.spec.ts
+**Why:** Close partial coverage gaps and edge cases in usePrecisionSlider interaction composable.
+**Change:** Frontend-PWA/src/shared/composables/composables-tests/usePrecisionSlider.spec.ts -- Expanded usePrecisionSlider spec for active drag moves, pointer capture, null track guard, non-positive step grids, and boundary detents.
+**Result:** All 2107 tests in Frontend-PWA and 297 tests in Backend passed. Mutation proof: commenting out setValueFromClientX in handlePointerMove was caught by 'updates value during handlePointerMove when drag is active'.
+**Nudges:** 0
+
+
 ### [2026-10-02] PR #2056 [Stage 1]: Audited 42 candidate files and Edge Functions across Priority List items (auth gaps, in-memory state, Valibot boundaries, layer isolation); zero threat vectors found
 **Domain:** hardening | **Commit:** 78973e66a | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2056)
 **Files:** .github/nightly-logs/00-pr-history.md, .github/nightly-logs/01-hardening-coverage.log, .github/nightly-logs/01-hardening-pr-body.md
