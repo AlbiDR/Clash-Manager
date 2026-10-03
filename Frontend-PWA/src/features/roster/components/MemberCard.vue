@@ -457,22 +457,22 @@ const memberAccessibilityLabel = computed(() => {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  :global(html:not([data-motion-preference="standard"])) .history-trigger,
-  :global(html:not([data-motion-preference="standard"])) .history-chevron,
-  :global(html:not([data-motion-preference="standard"])) .history-details-enter-active,
-  :global(html:not([data-motion-preference="standard"])) .history-details-leave-active,
-  :global(html:not([data-motion-preference="standard"])) .history-details-enter-active .history-details-body,
-  :global(html:not([data-motion-preference="standard"])) .history-details-leave-active .history-details-body {
+  html:not([data-motion-preference="standard"]) .history-trigger,
+  html:not([data-motion-preference="standard"]) .history-chevron,
+  html:not([data-motion-preference="standard"]) .history-details-enter-active,
+  html:not([data-motion-preference="standard"]) .history-details-leave-active,
+  html:not([data-motion-preference="standard"]) .history-details-enter-active .history-details-body,
+  html:not([data-motion-preference="standard"]) .history-details-leave-active .history-details-body {
     transition: none;
   }
 }
 
-:global(html[data-motion-preference="reduced"]) .history-trigger,
-:global(html[data-motion-preference="reduced"]) .history-chevron,
-:global(html[data-motion-preference="reduced"]) .history-details-enter-active,
-:global(html[data-motion-preference="reduced"]) .history-details-leave-active,
-:global(html[data-motion-preference="reduced"]) .history-details-enter-active .history-details-body,
-:global(html[data-motion-preference="reduced"]) .history-details-leave-active .history-details-body { transition: none; }
+html[data-motion-preference="reduced"] .history-trigger,
+html[data-motion-preference="reduced"] .history-chevron,
+html[data-motion-preference="reduced"] .history-details-enter-active,
+html[data-motion-preference="reduced"] .history-details-leave-active,
+html[data-motion-preference="reduced"] .history-details-enter-active .history-details-body,
+html[data-motion-preference="reduced"] .history-details-leave-active .history-details-body { transition: none; }
 
 .card-actions-margin {
   margin-top: var(--sys-space-16);

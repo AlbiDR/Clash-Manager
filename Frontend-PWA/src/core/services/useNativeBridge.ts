@@ -2,7 +2,8 @@
 // Copyright (C) 2026 AlbiDR
 
 import { ref, computed } from "vue";
-import { type WindowWithBridge, type AndroidBridge } from "@core/types";
+import { type WindowWithBridge, type AndroidBridge, type BlitzRunRecord } from "@core/types";
+import { useToast } from "@core/services/useToast";
 
 /**
  * NATIVE BRIDGE SERVICE (Layer 1)
@@ -27,10 +28,13 @@ const isAccessibilityAllowed = ref(false);
 const isOverlayAllowed = ref(false);
 const isPackageInstallAllowed = ref(false);
 
+// Shown only until the shell answers getCoordinates(). They mirror the shell's
+// Calibration.DEFAULT (APK/src/.../Calibration.java) as percentages; inviteY and
+// closeY had drifted (72.14 and 20.44), placing the markers away from the taps.
 const inviteX = ref(50.83);
-const inviteY = ref(72.14);
+const inviteY = ref(72.18);
 const closeX = ref(92.13);
-const closeY = ref(20.44);
+const closeY = ref(20.4);
 
 let isInitialized = false;
 
@@ -139,6 +143,118 @@ function saveCoordinates() {
   }
 }
 
+/** localStorage key holding the end time of the last Blitz run already reported. */
+const REPORTED_RUN_KEY = "cm.blitz.lastReportedRunEnd";
+let lastReportedRunEnd = 0;
+
+const BLITZ_RUN_OUTCOMES: readonly BlitzRunRecord["outcome"][] = ["running", "completed", "stopped", "failed"];
+
+/**
+ * Parses the shell's Blitz run record.
+ *
+ * @remarks
+ * [THREAT:] The native layer is an untrusted producer, and an older or newer
+ * shell may send a shape this build does not know; anything malformed is
+ * treated as "no record" rather than reported.
+ *
+ * @param raw - The unvalidated value returned by `getLastBlitzRun()`.
+ * @returns The record, or null when there is none or it is malformed.
+ */
+export function parseBlitzRun(raw: unknown): BlitzRunRecord | null {
+  if (typeof raw !== "string" || raw === "") return null;
+  try {
+    const run = JSON.parse(raw);
+    const isCount = (value: unknown) => typeof value === "number" && Number.isInteger(value) && value >= 0;
+    if (
+      !run || !isCount(run.startedAt) || !isCount(run.endedAt) || !isCount(run.players)
+      || !isCount(run.opened) || !isCount(run.invites) || !BLITZ_RUN_OUTCOMES.includes(run.outcome)
+    ) {
+      return null;
+    }
+    return {
+      startedAt: run.startedAt,
+      endedAt: run.endedAt,
+      players: run.players,
+      opened: run.opened,
+      invites: run.invites,
+      outcome: run.outcome,
+      rehearsal: run.rehearsal === true,
+    };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * One plain sentence about a finished Blitz run.
+ *
+ * @param run - A parsed run record.
+ * @returns The toast to show, or null while the run is still going.
+ */
+export function describeBlitzRun(run: BlitzRunRecord): { type: "success" | "info" | "error"; message: string } | null {
+  const players = `${run.players} ${run.players === 1 ? "player" : "players"}`;
+  const prefix = run.rehearsal ? "Rehearsal: " : "";
+  switch (run.outcome) {
+    case "completed":
+      return run.invites >= run.opened
+        ? { type: "success", message: `${prefix}Blitz finished. Tapped Invite for ${run.invites} of ${players}.` }
+        : { type: "info", message: `${prefix}Blitz finished, but only ${run.invites} of ${players} got an Invite tap. Check the Blitz accessibility setting.` };
+    case "stopped":
+      return { type: "info", message: `${prefix}Blitz stopped after ${run.opened} of ${players}.` };
+    case "failed":
+      return { type: "error", message: `${prefix}Blitz stopped: Clash Royale could not be opened.` };
+    default:
+      return null;
+  }
+}
+
+/**
+ * Reports the last Blitz run once, when the user is back in the app.
+ *
+ * @remarks
+ * [DECISION LOG] A run happens inside Clash Royale, where the PWA cannot watch
+ * it, so the shell records it and the PWA reports it on return. The end time of
+ * the reported run is kept in localStorage, so a run that ended while the app
+ * was closed is still reported once, and never twice.
+ */
+function reportLastBlitzRun() {
+  const bridge = (window as WindowWithBridge).AndroidBridge;
+  if (!bridge || typeof bridge.getLastBlitzRun !== "function") return;
+  const run = parseBlitzRun(bridge.getLastBlitzRun());
+  if (!run || run.endedAt === 0) return;
+
+  let stored = 0;
+  try {
+    stored = Number(localStorage.getItem(REPORTED_RUN_KEY)) || 0;
+  } catch {
+    // Storage unavailable: the in-memory mark below still prevents repeats.
+  }
+  if (run.endedAt <= Math.max(stored, lastReportedRunEnd)) return;
+  lastReportedRunEnd = run.endedAt;
+  try {
+    localStorage.setItem(REPORTED_RUN_KEY, String(run.endedAt));
+  } catch {
+    // Ignored, see above.
+  }
+
+  const summary = describeBlitzRun(run);
+  if (summary) useToast()[summary.type](summary.message);
+}
+
+/**
+ * Everything that may have changed while the user was in another app: Android
+ * settings, calibration moved in the native overlay, and a Blitz run.
+ *
+ * @remarks
+ * [FIX] Calibration used to load once, so a marker moved in the overlay was
+ * overwritten by the PWA's stale copy on its next save.
+ */
+function onReturnToApp() {
+  checkPermissions();
+  loadCoordinates();
+  reportLastBlitzRun();
+}
+
 /**
  * INITIALIZATION ENGINE
  *
@@ -152,12 +268,17 @@ function init() {
   if (isInitialized || typeof window === "undefined") return;
   isInitialized = true;
 
-  loadCoordinates();
-  checkPermissions();
+  onReturnToApp();
 
-  // Re-poll permissions whenever the user returns from system settings
+  // Re-poll whenever the user returns from system settings or from the game.
+  // A WebView does not always fire 'focus' on resume, so visibility is watched too.
   if (typeof window.addEventListener === "function") {
-    window.addEventListener("focus", checkPermissions);
+    window.addEventListener("focus", onReturnToApp);
+  }
+  if (typeof document !== "undefined" && typeof document.addEventListener === "function") {
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible") onReturnToApp();
+    });
   }
 }
 
@@ -290,8 +411,9 @@ export function resetNativeBridgeState() {
     isOverlayAllowed.value = false;
     isPackageInstallAllowed.value = false;
     inviteX.value = 50.83;
-    inviteY.value = 72.14;
+    inviteY.value = 72.18;
     closeX.value = 92.13;
-    closeY.value = 20.44;
+    closeY.value = 20.4;
+    lastReportedRunEnd = 0;
   }
 }
