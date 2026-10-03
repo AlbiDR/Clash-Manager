@@ -29,7 +29,7 @@ Java classes in [`src/com/albidr/clashmanager/`](src/com/albidr/clashmanager):
 | `Application` | App initialization entry point. |
 | `LauncherActivity`, `DelegationService` | Dormant TWA scaffolding, retained but not the launcher. |
 
-Declared permissions: `SYSTEM_ALERT_WINDOW`, `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_DATA_SYNC`, `POST_NOTIFICATIONS`, `VIBRATE`, `INTERNET`, `REQUEST_INSTALL_PACKAGES`.
+Declared permissions: `SYSTEM_ALERT_WINDOW`, `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_DATA_SYNC`, `POST_NOTIFICATIONS`, `VIBRATE`, `INTERNET`, `ACCESS_NETWORK_STATE` (lets WebView see when the phone goes offline, so `navigator.onLine` is true only when it is), `REQUEST_INSTALL_PACKAGES`.
 
 ## The JavaScript bridge
 
@@ -46,6 +46,7 @@ Declared permissions: `SYSTEM_ALERT_WINDOW`, `FOREGROUND_SERVICE`, `FOREGROUND_S
 | `getCoordinates()` / `saveCoordinates(ix, iy, cx, cy)` | string / void | Read and persist Blitz calibration coordinates. |
 | `getLastBlitzRun()` | string | The last Blitz run as JSON (players, profiles opened, invite taps, outcome), so the PWA can report a run it could not watch. |
 | `setThemeColors(background, dark)` | void | The PWA reports the colours it is showing, so the strips behind the status and navigation bars match the page and their icons stay readable. |
+| `getSafeAreaInsets()` | string | Where the status bar, cutout and navigation bar cover the page, in CSS pixels; the shell draws edge to edge and WebView does not report these through `env(safe-area-inset-*)`. |
 | `startBlitz(tagsJson, delayMs)` | void | Starts a Blitz sequence for the given player tags, dwelling `delayMs` on each profile. |
 | `openPlayerProfile(tag)` | void | Deep-links to a Clash Royale player profile. |
 | `openExternalUrl(url)` | void | Opens a URL via an Android intent. |

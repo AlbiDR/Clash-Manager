@@ -112,6 +112,7 @@ const EXPECT = {
     "isAndroidWrapper",
     "getLastBlitzRun",
     "setThemeColors",
+    "getSafeAreaInsets",
   ],
 };
 
