@@ -250,4 +250,11 @@ function onInteractionStart() {
   }
 }
 
+/* A phone in landscape is short on height, not width: the items drop to the
+   48px touch-target minimum, matching ConsoleHeader's short-landscape row. */
+@media (orientation: landscape) and (max-height: 520px) {
+  .dock-item {
+    height: var(--sys-space-48);
+  }
+}
 </style>
