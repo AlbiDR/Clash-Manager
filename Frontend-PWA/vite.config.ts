@@ -99,14 +99,15 @@ export default defineConfig({
       manifest: false, // Already exists in public/manifest.json
       injectManifest: {
         // [OPTIMIZATION] Included webp for high-resolution game assets and screenshots.
-        // Large branding screenshots and data-heavy game assets are excluded
-        // to minimize SW cache footprint and update bandwidth.
+        // Large branding screenshots are excluded to minimize SW cache footprint
+        // and update bandwidth. The game icons are precached: resized to the
+        // 128px their largest 32px use needs at 4x density, all nine weigh
+        // ~58KB, and the Laboratory then shows them offline too.
         // We also exclude the large variable font to prioritize the core app shell.
         globPatterns: ["**/*.{js,css,html,ico,png,svg,webp,woff2}"],
         globIgnores: [
           "assets/branding/*.webp",
           "assets/branding/og-card.*",
-          "assets/game/*.webp",
           "assets/icons/pwa-apple.png",
           "assets/icons/icon-512.png",
           "fonts/JetBrainsMono-Bold.woff2",

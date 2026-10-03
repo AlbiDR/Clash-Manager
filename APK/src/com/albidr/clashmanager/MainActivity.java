@@ -26,6 +26,8 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.FrameLayout;
 import android.widget.Toast;
+import android.window.OnBackInvokedCallback;
+import android.window.OnBackInvokedDispatcher;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
@@ -55,6 +57,16 @@ public class MainActivity extends Activity {
     private FrameLayout mRootLayout;
     // What the PWA last said it is showing; null until it reports (see setThemeColors).
     private Boolean mPageDark = null;
+    // Where the status bar, display cutout and navigation bar cover the page, in
+    // pixels; read by the bridge's binder thread, so volatile.
+    private volatile Insets mSafeArea = Insets.NONE;
+    // Steps the page back; registered only while it can (see updateBackHandling).
+    private final OnBackInvokedCallback mPageBack = () -> {
+        if (mWebView != null && mWebView.canGoBack()) {
+            mWebView.goBack();
+        }
+    };
+    private boolean mPageBackRegistered = false;
 
     private void registerApkDownloadReceiver(final long downloadId, final String filename, final String expectedSha256) {
         if (this.mApkDownloadReceiver != null) {
@@ -180,33 +192,32 @@ public class MainActivity extends Activity {
             WebView.setWebContentsDebuggingEnabled(true);
         }
 
-        // True edge-to-edge: draw behind system bars ourselves and consume the
-        // insets as padding, rather than relying on setStatusBarColor/
-        // setNavigationBarColor - both are no-ops once targetSdk reaches 35+,
-        // where the platform enforces edge-to-edge unconditionally.
+        // Edge to edge, as native apps draw: the page runs under see-through
+        // status and navigation bars and any camera cutout, and keeps its own
+        // content clear of them. Android 15+ enforces this; on Android 14 this
+        // call and Theme.ClashManager do the same. WebView does not report the
+        // bars through CSS env(safe-area-inset-*), so their size goes to the page
+        // through getSafeAreaInsets(). Only the keyboard is handled here: the page
+        // is lifted above it, because edge to edge Android no longer resizes the
+        // window for it (adjustResize in the manifest makes it report the
+        // keyboard's height instead of sliding the whole window up).
         WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
-
-        // No background of its own: the theme's window background (light or dark,
-        // matching the PWA) shows under the system bars and until the page paints.
         var frameLayout = new FrameLayout(this);
         ViewCompat.setOnApplyWindowInsetsListener(frameLayout, (view, insets) -> {
-            Insets bars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            view.setPadding(bars.left, bars.top, bars.right, bars.bottom);
+            Insets bars = insets.getInsets(WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout());
+            int keyboard = insets.getInsets(WindowInsetsCompat.Type.ime()).bottom;
+            view.setPadding(0, 0, 0, keyboard);
+            // The keyboard already covers the navigation bar, so the page need not clear it.
+            Insets area = keyboard > 0 ? Insets.of(bars.left, bars.top, bars.right, 0) : bars;
+            if (!area.equals(mSafeArea)) {
+                mSafeArea = area;
+                notifyPageOfSafeArea();
+            }
             return WindowInsetsCompat.CONSUMED;
         });
 
-        // Predictive back: registered directly against the dispatcher because this
-        // Activity extends the plain android.app.Activity, and once the manifest's
-        // enableOnBackInvokedCallback flag opts in, onBackPressed() is never called.
-        getOnBackInvokedDispatcher().registerOnBackInvokedCallback(
-            android.window.OnBackInvokedDispatcher.PRIORITY_DEFAULT,
-            () -> {
-                if (mWebView != null && mWebView.canGoBack()) {
-                    mWebView.goBack();
-                } else {
-                    finish();
-                }
-            });
+        // Back is handled by updateBackHandling(), registered against the dispatcher
+        // only while the page has history to go back through.
 
         this.mRootLayout = frameLayout;
         setContentView(frameLayout);
@@ -297,6 +308,26 @@ public class MainActivity extends Activity {
             }
 
             @Override
+            public void doUpdateVisitedHistory(WebView view, String url, boolean isReload) {
+                super.doUpdateVisitedHistory(view, url, isReload);
+                // Fires for the PWA's in-page navigations too (history.pushState).
+                if (view == mWebView) {
+                    updateBackHandling();
+                }
+            }
+
+            @Override
+            public void onPageFinished(WebView view, String url) {
+                super.onPageFinished(view, url);
+                // An inset change that arrived before this page committed found no
+                // trusted page to tell (notifyPageOfSafeArea checks the URL) and is
+                // not sent again, so the page is told once it is there.
+                if (view == mWebView) {
+                    notifyPageOfSafeArea();
+                }
+            }
+
+            @Override
             public void onReceivedError(WebView view, int errorCode, String description, String failingUrl) {
                 super.onReceivedError(view, errorCode, description, failingUrl);
                 Toast.makeText(MainActivity.this, "Load failed: " + description + "\nURL: " + failingUrl, Toast.LENGTH_LONG).show();
@@ -317,6 +348,8 @@ public class MainActivity extends Activity {
                 mRootLayout.removeView(mWebView);
                 mWebView.destroy();
                 initWebView();
+                // The fresh WebView has no history to go back through yet.
+                updateBackHandling();
                 return true;
             }
         });
@@ -384,6 +417,35 @@ public class MainActivity extends Activity {
         String requested = launchTarget(intent);
         if (requested != null && mWebView != null) {
             mWebView.loadUrl(requested);
+        }
+    }
+
+    /**
+     * Registers the page's Back handler only while the page can go back. At the
+     * start of its history Back then reaches Android, which plays its
+     * back-to-home animation and keeps the app in memory, so it reopens where it
+     * was. Always handling Back here meant calling finish() at the start screen,
+     * which discarded the page and reloaded it on the next launch.
+     */
+    private void updateBackHandling() {
+        boolean pageCanGoBack = mWebView != null && mWebView.canGoBack();
+        if (pageCanGoBack == mPageBackRegistered) return;
+        if (pageCanGoBack) {
+            getOnBackInvokedDispatcher().registerOnBackInvokedCallback(OnBackInvokedDispatcher.PRIORITY_DEFAULT, mPageBack);
+        } else {
+            getOnBackInvokedDispatcher().unregisterOnBackInvokedCallback(mPageBack);
+        }
+        mPageBackRegistered = pageCanGoBack;
+    }
+
+    /**
+     * Tells a page already running that the bars changed size (rotation, the
+     * keyboard, a switch of navigation mode), so it reads getSafeAreaInsets()
+     * again. Pages from other origins are left alone.
+     */
+    private void notifyPageOfSafeArea() {
+        if (mWebView != null && isTrustedOrigin(mWebView.getUrl())) {
+            mWebView.evaluateJavascript("window.dispatchEvent(new Event('shellinsetschange'))", null);
         }
     }
 
@@ -729,11 +791,12 @@ public class MainActivity extends Activity {
 
         /**
          * The PWA reports the background it is showing whenever its theme resolves
-         * or changes. The strips behind the status and navigation bars are this
-         * layout's background, so they take that colour, and the bar icons are
-         * picked to contrast with it. The window background from the theme only
-         * covers the moment before the page has painted: it follows the phone,
-         * while the page follows the app's own theme setting.
+         * or changes. The page itself paints behind the status and navigation
+         * bars; this layout takes the same colour for the space the keyboard
+         * opens below the page, and the bar icons are picked to contrast with it.
+         * The window background from the theme only covers the moment before the
+         * page has painted: it follows the phone, while the page follows the
+         * app's own theme setting.
          */
         @JavascriptInterface
         public void setThemeColors(String background, boolean dark) {
@@ -749,6 +812,20 @@ public class MainActivity extends Activity {
                 mRootLayout.setBackgroundColor(color);
                 applySystemBarAppearance();
             });
+        }
+
+        /**
+         * Where the status bar, display cutout and navigation bar cover the page,
+         * in CSS pixels: {"top":..,"right":..,"bottom":..,"left":..}. The page
+         * reads it before its first paint and again on "resize" and
+         * "shellinsetschange"; see BOOT_INSETS_SCRIPT in the PWA.
+         */
+        @JavascriptInterface
+        public String getSafeAreaInsets() {
+            Insets area = mSafeArea;
+            float density = getResources().getDisplayMetrics().density;
+            return "{\"top\":" + area.top / density + ",\"right\":" + area.right / density
+                + ",\"bottom\":" + area.bottom / density + ",\"left\":" + area.left / density + "}";
         }
 
         /** The last Blitz run as JSON (see BlitzRun), or an empty string when Blitz has never run. */

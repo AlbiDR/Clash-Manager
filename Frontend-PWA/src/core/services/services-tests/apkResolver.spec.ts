@@ -260,6 +260,19 @@ describe("apkResolver", () => {
       expect(filename).toBe("clashmanager-v14.43.1+173.apk");
     });
 
+    it("should send only CORS-safelisted headers, so the GitHub sources need no preflight", async () => {
+      // raw.githubusercontent.com rejects preflights and api.github.com does not allow
+      // Cache-Control: a header that triggers one makes both sources fail in every browser.
+      await resolveLatestApkFilename();
+      const safelisted = new Set(["accept", "accept-language", "content-language", "content-type", "range"]);
+      const calls = vi.mocked(fetch).mock.calls;
+      expect(calls.length).toBeGreaterThan(0);
+      for (const [, init] of calls) {
+        const names = [...new Headers((init as RequestInit | undefined)?.headers).keys()];
+        expect(names.filter((name) => !safelisted.has(name))).toEqual([]);
+      }
+    });
+
     it("should fall back to latest.json when GitHub contents API is unavailable", async () => {
       vi.stubGlobal("fetch", vi.fn().mockImplementation((url: string) => {
         if (url.includes("contents/APK/release")) {

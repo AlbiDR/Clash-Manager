@@ -81,9 +81,15 @@ export function useBadge() {
     typeof navigator !== "undefined" && "setAppBadge" in navigator;
   const hasServiceWorker =
     typeof navigator !== "undefined" && "serviceWorker" in navigator;
+  // The Android app's WebView has a service worker but no Notification API at all,
+  // so the worker could never show the notification an Android badge needs: every
+  // attempt failed inside it with "getNotifications is not a function".
+  const hasNotificationApi = typeof Notification !== "undefined";
 
   // Android has setAppBadge but it doesn't work - only notifications create badges
-  const isSupported = hasServiceWorker || (!isAndroid && hasStandardBadge);
+  const isSupported = isAndroid
+    ? hasServiceWorker && hasNotificationApi
+    : hasServiceWorker || hasStandardBadge;
 
   /**
    * Extended Navigator Interface for Badge API.
@@ -214,7 +220,7 @@ export function useBadge() {
     body?: string,
     channelId?: string,
   ) {
-    if (Notification.permission !== "granted") return;
+    if (!hasNotificationApi || Notification.permission !== "granted") return;
 
     // Suppression in Quiet Mode.
     if (modules.notificationQuietMode) return;

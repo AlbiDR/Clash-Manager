@@ -4,6 +4,7 @@ import { getAppShellStyles, getAppShellHtml } from './AppShell';
 import { lightTokens, darkTokens } from './tokens';
 import { BOOT_THEME_SCRIPT } from './themeContract';
 import { BOOT_MOTION_SCRIPT } from './motionContract';
+import { BOOT_INSETS_SCRIPT } from './insetsContract';
 
 /**
  * CLASH MANAGER - HTML Entry Point (TypeScript Source of Truth)
@@ -103,13 +104,15 @@ export function generateHtmlEntry(version: string): string {
     <!-- Critical Origin Preconnect -->
     <link rel="preconnect" href="https://hucktamloykszinwbtuh.supabase.co" crossorigin />
 
-    <!-- [OPTIMIZATION] Critical Asset Preloads for Hybrid Shell LCP -->
-    <link rel="preload" href="assets/branding/logo.svg" as="image" type="image/svg+xml" />
+    <!-- [OPTIMIZATION] Critical Asset Preloads for Hybrid Shell LCP.
+         No logo.svg here: only the web manifest uses it, never the page, so a
+         preload fetched it on every launch and the browser flagged it unused. -->
     <link rel="preload" href="./fonts/Inter-Variable.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" href="./fonts/JetBrainsMono-Bold.woff2" as="font" type="font/woff2" crossorigin />
 
     <script>${BOOT_THEME_SCRIPT}</script>
     <script>${BOOT_MOTION_SCRIPT}</script>
+    <script>${BOOT_INSETS_SCRIPT}</script>
     <script>
       (function() {
         // Boot-stuck guard: if Vue hasn't replaced the static app shell after 10s,

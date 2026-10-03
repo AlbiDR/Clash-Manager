@@ -105,7 +105,7 @@ watch(
   justify-content: center;
   align-items: flex-start;
   padding: var(--sys-space-16);
-  padding-top: calc(16px + env(safe-area-inset-top));
+  padding-top: calc(var(--sys-space-16) + var(--sys-safe-top));
   touch-action: none;
 }
 

@@ -240,7 +240,8 @@ onUnmounted(() => {
 <style scoped>
 .console-header {
   position: sticky;
-  top: 0;
+  /* Sticks just below the status bar: the page runs under it edge to edge. */
+  top: var(--sys-safe-top);
   z-index: var(--sys-z-header);
   background: var(--sys-surface-glass);
   backdrop-filter: var(--sys-surface-glass-blur);
@@ -544,6 +545,57 @@ onUnmounted(() => {
      surplus because horizontal travel is its actual interaction budget. */
   .selection-actions :deep(.selection-bar) {
     grid-template-columns: minmax(0, 1fr) minmax(176px, 184px);
+  }
+}
+
+/* [DECISION LOG] A PHONE TURNED SIDEWAYS GETS ONE HEADER ROW:
+   In landscape a phone is about 360px tall, and the title row stacked over
+   the controls row took 128px of it, leaving one and a half list rows above
+   the dock. The width is there instead, so the summary and the controls
+   share one row. 520px is the compact breakpoint the width queries above
+   use, applied to the height. The summary keeps its natural width so the
+   pressure stages never fire for want of room the controls are holding;
+   the controls give way instead, and fold to nothing once condensed. */
+@media (orientation: landscape) and (max-height: 520px) {
+  .console-header {
+    padding: var(--sys-space-10) var(--sys-space-14);
+    margin-bottom: var(--sys-space-12);
+  }
+
+  .header-main {
+    flex-direction: row;
+    align-items: center;
+    gap: var(--sys-space-16);
+  }
+
+  .header-summary {
+    flex: 0 0 auto;
+  }
+
+  /* The three-column grid above centres a gap between filters and actions
+     across the full header width; in a shared row it left the Laboratory's
+     player tag field a third of the space, too narrow for its placeholder. */
+  .header-controls {
+    flex: 1 1 0;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: var(--sys-space-12);
+  }
+
+  .refinement-controls,
+  .selection-actions {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  .console-header.is-condensed .header-summary {
+    flex: 1 1 auto;
+  }
+
+  .console-header.is-condensed .header-controls {
+    flex: 0 0 0;
+    margin-top: 0;
   }
 }
 </style>

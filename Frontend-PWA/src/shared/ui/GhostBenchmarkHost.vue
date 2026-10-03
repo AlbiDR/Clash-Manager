@@ -219,7 +219,7 @@ onUnmounted(() => {
   border: 1px solid var(--sys-surface-glass-border);
   border-radius: var(--sys-shape-corner-l) var(--sys-shape-corner-l) 0 0;
   padding: var(--sys-space-12) var(--sys-space-24);
-  padding-bottom: calc(var(--sys-space-24) + env(safe-area-inset-bottom));
+  padding-bottom: calc(var(--sys-space-24) + var(--sys-safe-bottom));
   box-shadow: var(--sys-elevation-3);
   transition: transform var(--sys-motion-duration-250) var(--sys-motion-spring);
 }

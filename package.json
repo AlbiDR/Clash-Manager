@@ -1,6 +1,6 @@
 {
   "name": "clash-manager-monorepo",
-  "version": "14.50.124",
+  "version": "14.50.135",
   "license": "GPL-3.0-only",
   "private": true,
   "scripts": {
@@ -14,6 +14,9 @@
     "apk:test": "./APK/test-apk.sh",
     "apk:verify:bridge": "node APK/verify-bridge-contract.mjs",
     "apk:verify:dwell": "node APK/verify-dwell-parity.mjs",
+    "apk:emulator": "node APK/apk-dev.mjs emulator",
+    "apk:emulator:app": "node APK/apk-dev.mjs mac-app",
+    "apk:dev": "./APK/build-apk.sh --dev && node APK/apk-dev.mjs install",
     "test:apk-native": "node --test APK/verify-bridge-contract.test.mjs APK/verify-dwell-parity.test.mjs APK/verify-dex-source.test.mjs",
     "build": "pnpm -r build",
     "test": "pnpm -r test",

@@ -50,7 +50,7 @@ If multiple potential layout leaks, touch target issues, or raw inputs are ident
 - **External Link Isolation:** Audit anchors and redirection actions to ensure external URLs enforce explicit targeting or call designated routing hooks, preventing external web pages from loading directly inside the primary webview container.
 
 ### B. Target B: Mobile Viewport and Layout Compliance
-- **Safe-Area Inset Propagation:** Inspect layout containers across feature views including fixed headers, footer navigation bars, floating docks, and drawer panels. Verify that height and padding values reference hardware safe-area environment variables (e.g. `env(safe-area-inset-top)`, `env(safe-area-inset-bottom)`) rather than hardcoded pixel values, so that the application shell does not overlap device notches or system navigation indicators on any screen size.
+- **Safe-Area Inset Propagation:** Inspect layout containers across feature views including fixed headers, footer navigation bars, floating docks, and drawer panels. Verify that offsets and padding at a screen edge use the safe-area tokens from `Frontend-PWA/src/core/theme/base.ts` (`var(--sys-safe-top)`, `var(--sys-safe-right)`, `var(--sys-safe-bottom)`, `var(--sys-safe-left)`, and `var(--sys-safe-center-x)` for a fixed element centred horizontally) rather than hardcoded pixel values, so that the application shell does not overlap device notches or system navigation indicators on any screen size. Never write `env(safe-area-inset-*)` directly: the Android app draws edge to edge and its WebView reports no `env()` insets, so the shell supplies them as `--shell-inset-*`, which only the tokens combine with `env()`. `theme-tests/insets.spec.ts` fails any raw `env(safe-area-inset-*)` outside `base.ts`.
 - **Touch Target Compliance:** Scan all interactive controls including icon buttons, badge filters, chip selectors, and inline action elements. Ensure each achieves a minimum tap footprint of `48px` in height or width, or contains compensating padding offsets, to maintain accurate touch accuracy on high-density mobile displays.
 - **Overscroll Behavior Control:** Inspect scrollable layout wrappers and panel containers. Verify the presence of overscroll prevention rules (such as `overscroll-behavior: contain`) to block standard browser pull-to-refresh interactions or rubber-banding effects that compete with application gestures.
 - **Keyboard Viewport Integration:** Audit text inputs and textareas to ensure focus events trigger viewport adjustments, avoiding hidden fields or layout distortion when the native soft keyboard is displayed.
@@ -77,7 +77,7 @@ If multiple potential layout leaks, touch target issues, or raw inputs are ident
 - Identify potential UX issues in this order. If multiple issues are found, select the first one encountered in the list sequence (1 through 10). Do not list options, do not ask the user for choice or direction, and do not pause. Select one autonomously and proceed immediately to Step 2.
   1. Raw `<select>` elements not yet replaced by a custom abstraction.
   2. Interactive click elements missing tactile feedback hooks.
-  3. Layout containers with hardcoded height values ignoring safe-area insets.
+  3. Layout containers with hardcoded height values ignoring the `--sys-safe-*` inset tokens.
   4. Interactive controls with a tap footprint below `48px`.
   5. Static structural text without `user-select: none` containment.
   6. External URLs loading inside the main webview without route isolation.

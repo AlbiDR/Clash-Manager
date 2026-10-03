@@ -10,7 +10,7 @@ const { toastOffset } = useUiCoordinator();
 // GPU Optimization: TranslateY instead of 'bottom' property transition
 const containerStyle = computed(() => ({
   // Base position fixed to bottom + safe area + Showcase frame inset
-  bottom: "calc(0px + env(safe-area-inset-bottom) + var(--safe-frame-offset, 0px))",
+  bottom: "calc(0px + var(--sys-safe-bottom) + var(--safe-frame-offset, 0px))",
   // Dynamic lift based on UI state (Fab/Dock visibility)
   transform: `translate(-50%, calc(-${toastOffset.value}px))`,
 }));
@@ -39,7 +39,7 @@ const containerStyle = computed(() => ({
 <style scoped>
 .toast-container {
   position: fixed;
-  left: 50%;
+  left: var(--sys-safe-center-x);
   display: flex;
   flex-direction: column;
   align-items: center;
