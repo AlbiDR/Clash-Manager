@@ -202,10 +202,15 @@ async function bootstrap() {
 
       // PERFORMANCE: High-Speed SUPABASE Fetch fallback
       // Rationale: If the initial refresh failed or was delayed, ensure background sync proceeds once online.
+      // [FIX] Only after a sync that did not succeed. A delayed one is already
+      // covered: startBackgroundSync joins the sync in flight. The ping handshake
+      // usually answers after the route loader's first sync has finished, so
+      // re-syncing on every "online" downloaded every view twice on most cold
+      // starts (seen on the Android emulator: a second identical batch ~4.5s in).
       watch(
         () => apiState.apiStatus.value,
         (apiStatus) => {
-          if (apiStatus === "online") {
+          if (apiStatus === "online" && clashDataStore.syncStatus !== "SUCCESS") {
             clashDataStore.startBackgroundSync();
           }
         },
