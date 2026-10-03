@@ -73,15 +73,18 @@ function sdkWithEmulator() {
 }
 
 /**
- * Writes the AVD definition for the pinned system image and screen, the same
- * two files avdmanager would write, so creating it needs no extra tool.
+ * Writes the AVD definition for the pinned system image, screen and graphics
+ * mode: the same two files avdmanager would write, so it needs no extra tool.
+ * The config is rewritten on every boot, so a change in toolchain.json always
+ * takes effect; the phone's own state (installed apps, granted settings) lives
+ * in its data image and is untouched. Returns true when the AVD is new.
  */
 function ensureAvd(sdk, avdHome, emulator) {
   const [, platform, tag, abi] = emulator.systemImage.split(";");
   const imageDir = emulator.systemImage.split(";").join("/") + "/";
   if (!existsSync(path.join(sdk, imageDir, "system.img"))) die(`system image ${emulator.systemImage} is not installed in ${sdk}`);
   const avdDir = path.join(avdHome, `${emulator.avd}.avd`);
-  if (existsSync(path.join(avdDir, "config.ini"))) return false;
+  const created = !existsSync(path.join(avdDir, "config.ini"));
   mkdirSync(avdDir, { recursive: true });
   writeFileSync(path.join(avdHome, `${emulator.avd}.ini`), [
     "avd.ini.encoding=UTF-8", `path=${avdDir}`, `path.rel=avd/${emulator.avd}.avd`, `target=${platform}`, "",
@@ -91,10 +94,10 @@ function ensureAvd(sdk, avdHome, emulator) {
     `abi.type=${abi}`, `hw.cpu.arch=${abi.startsWith("arm64") ? "arm64" : abi}`, "hw.cpu.ncore=4", "hw.ramSize=4096",
     "disk.dataPartition.size=6G", `image.sysdir.1=${imageDir}`, `tag.id=${tag}`, `target=${platform}`,
     `hw.lcd.width=${emulator.screen.width}`, `hw.lcd.height=${emulator.screen.height}`, `hw.lcd.density=${emulator.screen.density}`,
-    "hw.keyboard=yes", "hw.mainKeys=no", "hw.gpu.enabled=yes", "hw.gpu.mode=auto",
+    "hw.keyboard=yes", "hw.mainKeys=no", "hw.gpu.enabled=yes", `hw.gpu.mode=${emulator.gpu}`,
     "hw.accelerometer=yes", "hw.sensors.orientation=yes", "showDeviceFrame=no", "",
   ].join("\n"));
-  return true;
+  return created;
 }
 
 /** The serial of a running emulator that is this AVD, or null. */
@@ -108,6 +111,15 @@ function runningEmulator(avd) {
     }
   }) ?? null;
 }
+
+/** Whether CM Dev's accessibility service is in Android's switched-on list. */
+function accessibilityOn() {
+  const enabled = adb(["shell", "settings", "get", "secure", "enabled_accessibility_services"]).trim();
+  return enabled.split(":").some((entry) => entry.startsWith(`${DEV_PACKAGE}/`));
+}
+
+const ACCESSIBILITY_OFF_NOTE =
+  "Android switched CM Dev Blitz's accessibility service off. It is a security setting, so a person turns it on again (Settings > Accessibility > CM Dev Blitz) before taps can be tested.";
 
 function die(msg) {
   console.error(`✗ ${msg}`);
@@ -156,7 +168,11 @@ async function devtools(method, params) {
 const commands = {
   install(apk) {
     const file = path.resolve(apk || path.join(APK_DIR, "release", "clashmanager-dev.apk"));
+    const wasOn = accessibilityOn();
     console.log(adb(["install", "-r", file]).trim());
+    // Say so when the update cost the service its switch, rather than letting a
+    // later tap test fail with no obvious cause.
+    if (wasOn && !accessibilityOn()) console.log(ACCESSIBILITY_OFF_NOTE);
   },
   start(flag) {
     if (flag && flag !== "--rehearsal") die("usage: apk-dev.mjs start [--rehearsal]");
@@ -167,8 +183,13 @@ const commands = {
     console.log(adb(["shell", "am", "start", "-W", ...args, "-n", ACTIVITY]).trim());
   },
   stop() {
+    // A force-stop is the only way to end the app from outside, and on Android
+    // 14+ it also removes the app's accessibility service from the switched-on
+    // list. Prefer start, which reuses the running app.
+    const wasOn = accessibilityOn();
     adb(["shell", "am", "force-stop", DEV_PACKAGE]);
     console.log(`stopped ${DEV_PACKAGE}`);
+    if (wasOn) console.log(ACCESSIBILITY_OFF_NOTE);
   },
   shot(file) {
     const target = outPath(file, "screen.png");
@@ -214,7 +235,7 @@ const commands = {
     let serial = runningEmulator(emulator.avd);
     if (!serial) {
       const log = outPath(null, "emulator.log");
-      const child = spawn(path.join(sdk, "emulator", "emulator"), ["-avd", emulator.avd, "-no-boot-anim"], {
+      const child = spawn(path.join(sdk, "emulator", "emulator"), ["-avd", emulator.avd, "-no-boot-anim", "-gpu", emulator.gpu], {
         detached: true,
         stdio: ["ignore", openSync(log, "w"), openSync(log, "a")],
         env: { ...process.env, ANDROID_SDK_ROOT: sdk, ANDROID_AVD_HOME: avdHome },

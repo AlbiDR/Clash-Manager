@@ -5,10 +5,11 @@
   "androidPlatform": "android-36",
   "buildTools": "37.0.0",
   "emulator": {
-    "$comment": "The virtual phone APK/apk-dev.mjs emulator creates and boots: the Android version and screen of the owner's Pixel 10, so a check on it means the same thing as a check on the phone.",
+    "$comment": "The virtual phone APK/apk-dev.mjs emulator creates and boots: the Android version and screen of the owner's Pixel 10, so a check on it means the same thing as a check on the phone. gpu host draws with the Mac's graphics chip; left on auto, the emulator fell back to SwiftShader, drawing on the CPU at about 8 cores and making the phone unusably slow.",
     "avd": "cm-android-36",
     "systemImage": "system-images;android-36;google_apis;arm64-v8a",
-    "screen": { "width": 1080, "height": 2412, "density": 420 }
+    "screen": { "width": 1080, "height": 2412, "density": 420 },
+    "gpu": "host"
   },
   "apktool": {
     "version": "3.0.3",
