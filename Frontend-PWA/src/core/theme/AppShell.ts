@@ -55,6 +55,27 @@ export function getAppShellStyles(): string {
          position: sticky above it. See the note on .app-shell in App.vue. */
       overflow-x: clip;
       min-height: 100dvh;
+      /* In landscape a navigation bar or camera cutout covers one side. The
+         background still runs under it; the content stays beside it. */
+      padding-left: var(--sys-safe-left);
+      padding-right: var(--sys-safe-right);
+    }
+
+    /* The page runs edge to edge, under the status bar. This strip, in the
+       page's own background, covers the status bar so the list scrolls away
+       beneath it rather than behind the clock and battery icons. At rest it
+       matches the page and cannot be seen. This stylesheet stays for the life
+       of the page, so the one rule serves the skeleton and the live app. */
+    body::before {
+      content: "";
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: var(--sys-safe-top);
+      background: var(--sh-bg);
+      z-index: var(--sys-z-header);
+      pointer-events: none;
     }
 
     #app-shell {
@@ -62,14 +83,14 @@ export function getAppShellStyles(): string {
       max-width: var(--sys-layout-max-width);
       margin: 0 auto;
       padding: 0 var(--sys-space-12);
-      padding-top: calc(var(--sys-space-12) + env(safe-area-inset-top));
+      padding-top: calc(var(--sys-space-12) + var(--sys-safe-top));
       padding-bottom: var(--sys-space-120);
       contain: content;
     }
 
     .sh-header {
       position: sticky;
-      top: 0;
+      top: var(--sys-safe-top);
       z-index: 10;
       background: var(--sh-glass);
       border: 1px solid var(--sh-border);
@@ -126,8 +147,8 @@ export function getAppShellStyles(): string {
 
     .sh-dock {
       position: fixed;
-      bottom: calc(var(--sys-space-24) + env(safe-area-inset-bottom));
-      left: 50%;
+      bottom: calc(var(--sys-space-24) + var(--sys-safe-bottom));
+      left: var(--sys-safe-center-x);
       transform: translateX(-50%);
       background: var(--sh-glass);
       border: 1px solid var(--sh-border);

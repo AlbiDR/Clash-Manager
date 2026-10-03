@@ -210,6 +210,9 @@ function checkSecurity() {
     'android.permission.FOREGROUND_SERVICE',
     'android.permission.FOREGROUND_SERVICE_DATA_SYNC',
     'android.permission.INTERNET',
+    // Without it WebView cannot see connectivity: navigator.onLine stays true
+    // offline and the PWA's offline handling never runs.
+    'android.permission.ACCESS_NETWORK_STATE',
     'android.permission.VIBRATE',
     'android.permission.REQUEST_INSTALL_PACKAGES'
   ];

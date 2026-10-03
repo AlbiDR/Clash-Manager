@@ -136,6 +136,25 @@ describe("useBadge", () => {
     expect((navigator as any).setAppBadge).toBeUndefined();
   });
 
+  it("should not ask the service worker for notification badges inside the Android app's WebView", async () => {
+    // WebView has a service worker but no Notification API, so the worker's
+    // showNotification/getNotifications calls could only ever throw there.
+    const androidWebViewNavigator = {
+      userAgent: "Mozilla/5.0 (Linux; Android 16; wv) Chrome/133.0.0.0 Mobile Safari/537.36 ClashManagerAndroidWrapper",
+      serviceWorker: { controller: { postMessage: vi.fn() } },
+    };
+    vi.stubGlobal("navigator", androidWebViewNavigator);
+    vi.stubGlobal("Notification", undefined);
+
+    const { useBadge } = await import("../useBadge");
+    const { isSupported, setBadge, sendLocalNotification } = useBadge();
+
+    expect(isSupported).toBe(false);
+    await setBadge(5);
+    await expect(sendLocalNotification("Elite Recruit Found")).resolves.toBeUndefined();
+    expect(androidWebViewNavigator.serviceWorker.controller.postMessage).not.toHaveBeenCalled();
+  });
+
   it("should suppress badges in quiet mode on Android", async () => {
     vi.stubGlobal("navigator", {
       userAgent: "Android 10",

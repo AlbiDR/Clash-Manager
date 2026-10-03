@@ -116,6 +116,18 @@ describe('HtmlEntry Module', () => {
     expect(html).toContain('data-motion-preference');
   });
 
+  it('reads the Android shell insets before the first paint', () => {
+    // The APK draws edge to edge and its WebView reports no env(safe-area-inset-*),
+    // so this script is the only source of the bar sizes. Run any later, or not at
+    // all, and the first frame (the skeleton included) sits under the status bar.
+    const html = generateHtmlEntry(mockVersion);
+    const insetScript = html.indexOf('getSafeAreaInsets');
+
+    expect(insetScript).toBeGreaterThan(-1);
+    expect(insetScript).toBeLessThan(html.indexOf('<style id="critical-substrate">'));
+    expect(insetScript).toBeLessThan(html.indexOf('<div id="app">'));
+  });
+
   it('should include the boot-stuck guard mechanism', () => {
     const html = generateHtmlEntry(mockVersion);
     expect(html).toContain('cm_boot_retry');

@@ -4,23 +4,23 @@
 
 In plain terms: this is a documentation change to 1 file in the documentation README area. Nothing about how the app runs is affected.
 
-**What changed:** Reconciled shared/ui README with ViewOptions bottom sheet component
+**What changed:** Reconciled shared composables README with usePrecisionSlider details and useMotionPreference
 
-**Why:** Document ViewOptions.vue bottom sheet component, touch targets, haptics, and accessibility controls in shared/ui README
+**Why:** Reconciles README documentation drift with recent test suite expansions and implementation contracts
 
-**Result:** PASSED (git diff --check clean, pnpm test passed 2102 tests)
+**Result:** git diff --check passed clean
 
-**Files changed:** .github/nightly-logs/05-documentation-readme-coverage.log, Frontend-PWA/src/shared/ui/README.md
+**Files changed:** .github/nightly-logs/05-documentation-readme-coverage.log, Frontend-PWA/src/shared/composables/README.md
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: documentation
-  Cycle: nightly-cycle/2026-09-30
+  Cycle: nightly-cycle/2026-10-03
   Contract: cea68a5bbba1bd2cbc6d3bdfe2639f37f3935b571beab59f5da1501b1180b22d
-  Why: Document ViewOptions.vue bottom sheet component, touch targets, haptics, and accessibility controls in shared/ui README
-  Change: Reconciled shared/ui README with ViewOptions bottom sheet component
-  Result: PASSED (git diff --check clean, pnpm test passed 2102 tests)
-  Files: .github/nightly-logs/05-documentation-readme-coverage.log, Frontend-PWA/src/shared/ui/README.md
+  Why: Reconciles README documentation drift with recent test suite expansions and implementation contracts
+  Change: Reconciled shared composables README with usePrecisionSlider details and useMotionPreference
+  Result: git diff --check passed clean
+  Files: .github/nightly-logs/05-documentation-readme-coverage.log, Frontend-PWA/src/shared/composables/README.md
   Nudges: 0
-  Execution: 77f12e271a1bd7f64c5be0986f0efffe7147bf00
+  Execution: 6832d0e022fa0fa91dcaa5d5cbaa48830be3ce78
 -->

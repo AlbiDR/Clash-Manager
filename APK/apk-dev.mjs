@@ -21,14 +21,21 @@
  *   node APK/apk-dev.mjs logs               CM Dev's log lines, PWA console output included
  *   node APK/apk-dev.mjs eval "<js>"        evaluate JavaScript inside CM Dev's WebView (Chrome DevTools Protocol)
  *   node APK/apk-dev.mjs reverse <port>     make the phone's localhost:<port> reach this machine (dev server)
+ *   node APK/apk-dev.mjs emulator [--show]  create (once) and boot the virtual phone pinned in toolchain.json,
+ *                                          then print its serial for ANDROID_SERIAL; --show also brings
+ *                                          its window to the front (the Mac app's click, never an agent's run)
+ *   node APK/apk-dev.mjs debloat            disable the emulator's background apps listed in toolchain.json
+ *   node APK/apk-dev.mjs mac-app [dir]      build "Android Emulator.app" (default /Applications): a Dock-
+ *                                          pinnable app that starts the virtual phone without a terminal or agent
  *
  * With more than one device attached, set ANDROID_SERIAL (adb reads it).
  * Read-only by design: nothing here taps, types or grants permissions. Those
  * act on the owner's real accounts and settings and stay the owner's call.
  */
 
-import { execFileSync } from "node:child_process";
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { execFileSync, spawn } from "node:child_process";
+import { chmodSync, existsSync, mkdirSync, openSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -50,9 +57,92 @@ const EXEC_TIMEOUT_MS = 120_000;
 function adb(args, { binary = false } = {}) {
   return execFileSync("adb", args, {
     encoding: binary ? undefined : "utf8",
+    // stderr is kept with the error instead of printed: polling a booting
+    // emulator otherwise floods the terminal with "device offline".
+    stdio: ["ignore", "pipe", "pipe"],
     maxBuffer: 64 << 20,
     timeout: EXEC_TIMEOUT_MS,
   });
+}
+
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/** The SDK holding the emulator, searched in the same order as toolchain-env.sh. */
+function sdkWithEmulator() {
+  const candidates = [process.env.ANDROID_HOME, process.env.ANDROID_SDK_ROOT,
+    path.join(os.homedir(), ".bubblewrap", "android_sdk"), path.join(os.homedir(), "Library", "Android", "sdk")];
+  const sdk = candidates.find((dir) => dir && existsSync(path.join(dir, "emulator", "emulator")));
+  if (!sdk) die("no Android SDK with the emulator installed (see APK/README.md, Emulator)");
+  return sdk;
+}
+
+/**
+ * Writes the AVD definition for the pinned system image, screen and graphics
+ * mode: the same two files avdmanager would write, so it needs no extra tool.
+ * The config is rewritten on every boot, so a change in toolchain.json always
+ * takes effect; the phone's own state (installed apps, granted settings) lives
+ * in its data image and is untouched. Returns true when the AVD is new.
+ */
+function ensureAvd(sdk, avdHome, emulator) {
+  const [, platform, tag, abi] = emulator.systemImage.split(";");
+  const imageDir = emulator.systemImage.split(";").join("/") + "/";
+  if (!existsSync(path.join(sdk, imageDir, "system.img"))) die(`system image ${emulator.systemImage} is not installed in ${sdk}`);
+  const avdDir = path.join(avdHome, `${emulator.avd}.avd`);
+  const created = !existsSync(path.join(avdDir, "config.ini"));
+  mkdirSync(avdDir, { recursive: true });
+  writeFileSync(path.join(avdHome, `${emulator.avd}.ini`), [
+    "avd.ini.encoding=UTF-8", `path=${avdDir}`, `path.rel=avd/${emulator.avd}.avd`, `target=${platform}`, "",
+  ].join("\n"));
+  writeFileSync(path.join(avdDir, "config.ini"), [
+    `AvdId=${emulator.avd}`, `avd.ini.displayname=Clash Manager ${platform}`, "avd.ini.encoding=UTF-8",
+    `abi.type=${abi}`, `hw.cpu.arch=${abi.startsWith("arm64") ? "arm64" : abi}`, "hw.cpu.ncore=4", "hw.ramSize=4096",
+    "disk.dataPartition.size=6G", `image.sysdir.1=${imageDir}`, `tag.id=${tag}`, `target=${platform}`,
+    `hw.lcd.width=${emulator.screen.width}`, `hw.lcd.height=${emulator.screen.height}`, `hw.lcd.density=${emulator.screen.density}`,
+    "hw.keyboard=yes", "hw.mainKeys=no", "hw.gpu.enabled=yes", `hw.gpu.mode=${emulator.gpu}`,
+    "hw.accelerometer=yes", "hw.sensors.orientation=yes", "showDeviceFrame=no",
+    "hw.audioInput=no", "hw.audioOutput=no", "hw.camera.back=none", "hw.camera.front=none", "",
+  ].join("\n"));
+  return created;
+}
+
+/** The serial of a running emulator that is this AVD, or null. */
+function runningEmulator(avd) {
+  const serials = adb(["devices"]).split("\n").map((line) => line.split("\t")[0]).filter((serial) => serial.startsWith("emulator-"));
+  return serials.find((serial) => {
+    try {
+      return adb(["-s", serial, "emu", "avd", "name"]).split("\n")[0].trim() === avd;
+    } catch {
+      return false;
+    }
+  }) ?? null;
+}
+
+/** Whether CM Dev's accessibility service is in Android's switched-on list. */
+function accessibilityOn() {
+  const enabled = adb(["shell", "settings", "get", "secure", "enabled_accessibility_services"]).trim();
+  return enabled.split(":").some((entry) => entry.startsWith(`${DEV_PACKAGE}/`));
+}
+
+const ACCESSIBILITY_OFF_NOTE =
+  "Android switched CM Dev Blitz's accessibility service off. It is a security setting, so a person turns it on again (Settings > Accessibility > CM Dev Blitz) before taps can be tested.";
+
+/**
+ * Brings the virtual phone's window to the front on macOS. Used only for a
+ * person's click on the Mac app: done during an agent's test run, it would
+ * pull the window in front of whatever the owner is doing.
+ */
+function bringToFront(avd) {
+  if (process.platform !== "darwin") return;
+  let pid = "";
+  try {
+    pid = execFileSync("/usr/bin/pgrep", ["-f", `qemu-system.*-avd ${avd}`], { encoding: "utf8" }).trim().split("\n")[0];
+  } catch {
+    return;
+  }
+  if (!/^\d+$/.test(pid)) return;
+  execFileSync("/usr/bin/osascript", ["-l", "JavaScript", "-e",
+    `ObjC.import("AppKit"); const app = $.NSRunningApplication.runningApplicationWithProcessIdentifier(${pid}); app.unhide; app.activateWithOptions($.NSApplicationActivateAllWindows);`,
+  ], { stdio: "ignore" });
 }
 
 function die(msg) {
@@ -102,7 +192,11 @@ async function devtools(method, params) {
 const commands = {
   install(apk) {
     const file = path.resolve(apk || path.join(APK_DIR, "release", "clashmanager-dev.apk"));
+    const wasOn = accessibilityOn();
     console.log(adb(["install", "-r", file]).trim());
+    // Say so when the update cost the service its switch, rather than letting a
+    // later tap test fail with no obvious cause.
+    if (wasOn && !accessibilityOn()) console.log(ACCESSIBILITY_OFF_NOTE);
   },
   start(flag) {
     if (flag && flag !== "--rehearsal") die("usage: apk-dev.mjs start [--rehearsal]");
@@ -113,8 +207,13 @@ const commands = {
     console.log(adb(["shell", "am", "start", "-W", ...args, "-n", ACTIVITY]).trim());
   },
   stop() {
+    // A force-stop is the only way to end the app from outside, and on Android
+    // 14+ it also removes the app's accessibility service from the switched-on
+    // list. Prefer start, which reuses the running app.
+    const wasOn = accessibilityOn();
     adb(["shell", "am", "force-stop", DEV_PACKAGE]);
     console.log(`stopped ${DEV_PACKAGE}`);
+    if (wasOn) console.log(ACCESSIBILITY_OFF_NOTE);
   },
   shot(file) {
     const target = outPath(file, "screen.png");
@@ -134,9 +233,137 @@ const commands = {
   },
   async eval(expression) {
     if (!expression) die('usage: apk-dev.mjs eval "<js>"');
-    const { url, result } = await devtools("Runtime.evaluate", { expression, returnByValue: true, awaitPromise: true });
+    let response;
+    for (let attempt = 1; !response; attempt++) {
+      try {
+        response = await devtools("Runtime.evaluate", { expression, returnByValue: true, awaitPromise: true });
+      } catch (error) {
+        // The PWA reloads itself once when a new service worker takes over (the
+        // first launch on a fresh device, or after a deploy), which ends the page
+        // the expression was running in. Run it again on the new page.
+        if (attempt >= 3 || !/context was destroyed|target navigated|closed/i.test(error.message)) throw error;
+        await sleep(2000);
+      }
+    }
+    const { url, result } = response;
     if (result.exceptionDetails) die(`${result.exceptionDetails.exception?.description || result.exceptionDetails.text} (page ${url})`);
     console.log(JSON.stringify(result.result.value, null, 2));
+  },
+  async emulator(flag) {
+    if (flag && flag !== "--show") die("usage: apk-dev.mjs emulator [--show]");
+    const toolchain = JSON.parse(readFileSync(path.join(APK_DIR, "toolchain.json"), "utf8"));
+    const emulator = toolchain.emulator;
+    const sdk = sdkWithEmulator();
+    const avdHome = process.env.ANDROID_AVD_HOME || path.join(os.homedir(), ".android", "avd");
+    if (ensureAvd(sdk, avdHome, emulator)) console.log(`created ${emulator.avd} (${emulator.systemImage})`);
+
+    let serial = runningEmulator(emulator.avd);
+    if (!serial) {
+      const log = outPath(null, "emulator.log");
+      const child = spawn(path.join(sdk, "emulator", "emulator"), ["-avd", emulator.avd, "-no-boot-anim", "-gpu", emulator.gpu], {
+        detached: true,
+        stdio: ["ignore", openSync(log, "w"), openSync(log, "a")],
+        env: { ...process.env, ANDROID_SDK_ROOT: sdk, ANDROID_AVD_HOME: avdHome },
+      });
+      child.unref();
+      console.log(`starting ${emulator.avd} (log: ${log})`);
+    }
+    // Boot is done when Android says so, not when adb first sees the device.
+    const deadline = Date.now() + 5 * EXEC_TIMEOUT_MS;
+    while (Date.now() < deadline) {
+      serial = serial || runningEmulator(emulator.avd);
+      if (serial) {
+        try {
+          if (adb(["-s", serial, "shell", "getprop", "sys.boot_completed"]).trim() === "1") {
+            console.log(`ready: ${serial}  (export ANDROID_SERIAL=${serial})`);
+            if (flag === "--show") bringToFront(emulator.avd);
+            return;
+          }
+        } catch {
+          // Still booting: adb answers before the shell does.
+        }
+      }
+      await sleep(2000);
+    }
+    die(`${emulator.avd} did not finish booting; see APK/.build/emulator.log`);
+  },
+  debloat() {
+    const serial = process.env.ANDROID_SERIAL || "";
+    if (!serial.startsWith("emulator-")) die("debloat is for the emulator only: set ANDROID_SERIAL=emulator-<port>");
+    const toolchain = JSON.parse(readFileSync(path.join(APK_DIR, "toolchain.json"), "utf8"));
+    const installed = new Set(adb(["shell", "pm", "list", "packages"]).split("\n").map((line) => line.replace("package:", "").trim()));
+    for (const pkg of toolchain.emulator.disabledPackages) {
+      if (!installed.has(pkg)) continue;
+      adb(["shell", "pm", "disable-user", "--user", "0", pkg]);
+      console.log(`disabled ${pkg}`);
+    }
+    console.log("undo one with: adb shell pm enable <package>");
+  },
+  "mac-app"(dir) {
+    if (process.platform !== "darwin") die("mac-app builds a macOS application");
+    const appName = "Android Emulator";
+    const app = path.join(path.resolve(dir || "/Applications"), `${appName}.app`);
+    const repo = path.resolve(APK_DIR, "..");
+    const node = process.execPath;
+    const adbDir = path.dirname(execFileSync("/usr/bin/which", ["adb"], { encoding: "utf8" }).trim());
+    const version = JSON.parse(readFileSync(path.join(repo, "package.json"), "utf8")).version;
+    const contents = path.join(app, "Contents");
+    rmSync(app, { recursive: true, force: true });
+    mkdirSync(path.join(contents, "MacOS"), { recursive: true });
+    mkdirSync(path.join(contents, "Resources"), { recursive: true });
+
+    writeFileSync(path.join(contents, "Info.plist"), `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>CFBundleName</key><string>${appName}</string>
+  <key>CFBundleDisplayName</key><string>${appName}</string>
+  <key>CFBundleIdentifier</key><string>com.albidr.clashmanager.emulator</string>
+  <key>CFBundleExecutable</key><string>launcher</string>
+  <key>CFBundleIconFile</key><string>AppIcon</string>
+  <key>CFBundlePackageType</key><string>APPL</string>
+  <key>CFBundleShortVersionString</key><string>${version}</string>
+  <key>NSHighResolutionCapable</key><true/>
+</dict>
+</plist>
+`);
+
+    // An app started from Finder or the Dock gets no shell PATH, so the tools it
+    // needs are named by the absolute paths they have on this machine now.
+    const alert = (message) => `/usr/bin/osascript -e 'display alert "${appName}" message "${message}"'`;
+    const launcher = path.join(contents, "MacOS", "launcher");
+    writeFileSync(launcher, `#!/bin/zsh
+# Generated by APK/apk-dev.mjs mac-app. Rebuild it after moving the repository
+# or Node: node APK/apk-dev.mjs mac-app
+export PATH="${adbDir}:${path.dirname(node)}:/usr/bin:/bin"
+REPO="${repo}"
+if [ ! -f "$REPO/APK/apk-dev.mjs" ]; then
+  ${alert("The clash-manager folder has moved. Open it in a terminal and run: node APK/apk-dev.mjs mac-app")}
+  exit 1
+fi
+mkdir -p "$REPO/APK/.build"
+LOG="$REPO/APK/.build/emulator-app.log"
+"${node}" "$REPO/APK/apk-dev.mjs" emulator --show > "$LOG" 2>&1 || ${alert("The virtual phone did not start. Details: APK/.build/emulator-app.log")}
+`);
+    chmodSync(launcher, 0o755);
+
+    // APK/emulator-icon.svg, rendered by macOS itself, at every size it asks for.
+    const iconset = path.join(APK_DIR, ".build", "AppIcon.iconset");
+    rmSync(iconset, { recursive: true, force: true });
+    mkdirSync(iconset, { recursive: true });
+    const source = path.join(APK_DIR, ".build", "emulator-icon.png");
+    execFileSync("/usr/bin/sips", ["-s", "format", "png", path.join(APK_DIR, "emulator-icon.svg"), "--out", source], { stdio: "ignore" });
+    for (const size of [16, 32, 128, 256, 512]) {
+      for (const [scale, suffix] of [[1, ""], [2, "@2x"]]) {
+        const px = String(size * scale);
+        execFileSync("/usr/bin/sips", ["-z", px, px, source, "--out", path.join(iconset, `icon_${size}x${size}${suffix}.png`)], { stdio: "ignore" });
+      }
+    }
+    execFileSync("/usr/bin/iconutil", ["-c", "icns", iconset, "-o", path.join(contents, "Resources", "AppIcon.icns")]);
+    rmSync(iconset, { recursive: true, force: true });
+    execFileSync("/usr/bin/touch", [app]);
+    console.log(`built ${app}`);
+    console.log("Pin it: drag it from Applications onto the Dock.");
   },
   reverse(port) {
     if (!/^\d+$/.test(port || "")) die("usage: apk-dev.mjs reverse <port>");

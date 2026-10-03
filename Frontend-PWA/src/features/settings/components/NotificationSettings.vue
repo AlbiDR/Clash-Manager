@@ -47,12 +47,18 @@ const threshold = computed(() => modules.notificationThreshold);
            (useHeadhunter.ts:175), and nothing about it syncs anything. The
            description now states the consequence rather than repeating the
            switch position back at the reader, which the switch already shows. -->
+      <!-- Disabled with the reason where there is no Notification API at all
+           ("unsupported"), as in the Android app's WebView: switched on, it
+           raised alerts into nothing, the same silent decline Cloud Push had. -->
       <SettingRow
         label="Recruit Alerts"
-        :description="modules.experimentalNotifications
-          ? 'Alert me when a recruit clears the threshold below'
-          : 'No alerts are raised for new recruits'"
-        :active="modules.experimentalNotifications"
+        :description="notificationPermission === 'unsupported'
+          ? 'Unavailable: notifications are not supported here'
+          : modules.experimentalNotifications
+            ? 'Alert me when a recruit clears the threshold below'
+            : 'No alerts are raised for new recruits'"
+        :active="modules.experimentalNotifications && notificationPermission !== 'unsupported'"
+        :disabled="notificationPermission === 'unsupported'"
         mini
         @click="toggle('experimentalNotifications')"
       />

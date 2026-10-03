@@ -35,6 +35,26 @@ export const staticTokens = `
      pixels of dead air under every list. */
   --sys-layout-dock-clearance: 112px;
 
+  /* Where the screen's own furniture (status bar, notch, navigation bar)
+     covers the page. Browsers report it through env(safe-area-inset-*). The
+     Android shell draws edge to edge but its WebView reports none of it, so the
+     shell reports it instead as --shell-inset-* (set by BOOT_INSETS_SCRIPT,
+     core/theme/insetsContract.ts). The larger of the two wins, so the same CSS
+     is right in a browser, in an installed PWA and in the APK. Always use these
+     rather than env() directly; theme-tests/insets.spec.ts enforces it.
+     max() needs no fallback: every engine the build targets (vite.config.ts:
+     Chrome, Edge and Firefox 112, Safari 16.4) has it, and an older one could
+     not run the app's script anyway. */
+  --sys-safe-top: max(env(safe-area-inset-top), var(--shell-inset-top, 0px));
+  --sys-safe-right: max(env(safe-area-inset-right), var(--shell-inset-right, 0px));
+  --sys-safe-bottom: max(env(safe-area-inset-bottom), var(--shell-inset-bottom, 0px));
+  --sys-safe-left: max(env(safe-area-inset-left), var(--shell-inset-left, 0px));
+  /* The middle of what the screen leaves uncovered, for a fixed element centred
+     with this as its left and translateX(-50%). The page's content is centred
+     there too (body is padded by the side insets), so in landscape, with a
+     navigation bar or cutout on one side, the dock stays lined up with it. */
+  --sys-safe-center-x: calc(50% + (var(--sys-safe-left) - var(--sys-safe-right)) / 2);
+
   /* ── FONTS ── */
   --sys-font-family-body: "Inter", system-ui, sans-serif;
   --sys-font-family-mono: "JetBrains Mono", monospace;

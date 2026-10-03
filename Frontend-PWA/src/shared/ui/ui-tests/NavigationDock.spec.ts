@@ -110,6 +110,73 @@ describe("NavigationDock.vue", () => {
     expect(wrapper.find(".dock-item").attributes("disabled")).toBeUndefined();
   });
 
+  describe("history holds only the start tab and the current one", () => {
+    // Back on Android then returns to the start tab and exits from there,
+    // instead of walking through every tab visited.
+    const mockReplace = vi.fn();
+    const mockBack = vi.fn();
+    let afterEachListener: (() => void) | undefined;
+
+    function routerWithBackEntry(back: string | null) {
+      vi.mocked(useRouter).mockReturnValue({
+        push: mockPush,
+        replace: mockReplace,
+        back: mockBack,
+        afterEach: (listener: () => void) => {
+          afterEachListener = listener;
+          return () => { afterEachListener = undefined; };
+        },
+        options: { history: { state: { back } } },
+      } as any);
+    }
+
+    beforeEach(() => {
+      mockReplace.mockClear();
+      mockBack.mockClear();
+      afterEachListener = undefined;
+    });
+
+    it("replaces the entry when switching between two tabs other than the start tab", async () => {
+      vi.mocked(useRoute).mockReturnValue({ path: "/headhunter" } as any);
+      routerWithBackEntry(NAV_ITEMS[0].path);
+      const wrapper = shallowMount(NavigationDock);
+
+      await wrapper.findAll(".dock-item")[2].trigger("click");
+
+      expect(mockReplace).toHaveBeenCalledWith("/laboratory");
+      expect(mockPush).not.toHaveBeenCalled();
+    });
+
+    it("steps back onto the start tab already underneath instead of stacking another", async () => {
+      vi.mocked(useRoute).mockReturnValue({ path: "/laboratory" } as any);
+      routerWithBackEntry(NAV_ITEMS[0].path);
+      const wrapper = shallowMount(NavigationDock);
+
+      await wrapper.findAll(".dock-item")[0].trigger("click");
+
+      expect(mockBack).toHaveBeenCalledTimes(1);
+      expect(mockPush).not.toHaveBeenCalled();
+      expect(mockReplace).not.toHaveBeenCalled();
+      // The tap stays pending until the popped navigation lands.
+      expect(wrapper.findAll(".dock-item")[0].attributes("aria-busy")).toBe("true");
+      afterEachListener?.();
+      await Promise.resolve();
+      await wrapper.vm.$nextTick();
+      expect(afterEachListener).toBeUndefined();
+    });
+
+    it("replaces with the start tab when the app was opened on another tab", async () => {
+      vi.mocked(useRoute).mockReturnValue({ path: "/laboratory" } as any);
+      routerWithBackEntry(null);
+      const wrapper = shallowMount(NavigationDock);
+
+      await wrapper.findAll(".dock-item")[0].trigger("click");
+
+      expect(mockReplace).toHaveBeenCalledWith(NAV_ITEMS[0].path);
+      expect(mockBack).not.toHaveBeenCalled();
+    });
+  });
+
   it("does not call router.push when the active route is clicked", async () => {
     vi.mocked(useRoute).mockReturnValue({ path: "/roster" } as any);
     const wrapper = shallowMount(NavigationDock);

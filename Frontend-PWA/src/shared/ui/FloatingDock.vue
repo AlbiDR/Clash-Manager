@@ -181,8 +181,8 @@ function finishDockSwap() {
 .dock-container {
   position: fixed;
   /* Respect safe area insets for notched devices + Showcase Frame */
-  bottom: calc(var(--sys-space-24) + env(safe-area-inset-bottom) + var(--safe-frame-offset, 0px));
-  left: 50%;
+  bottom: calc(var(--sys-space-24) + var(--sys-safe-bottom) + var(--safe-frame-offset, 0px));
+  left: var(--sys-safe-center-x);
   transform: translate3d(-50%, 0, 0);
   background: var(--sys-surface-glass);
 
@@ -213,7 +213,7 @@ function finishDockSwap() {
 
 @media (hover: hover) and (pointer: fine) {
   .dock-container:hover {
-    bottom: calc(var(--sys-space-28) + env(safe-area-inset-bottom) + var(--safe-frame-offset, 0px));
+    bottom: calc(var(--sys-space-28) + var(--sys-safe-bottom) + var(--safe-frame-offset, 0px));
     box-shadow: 0 16px 48px var(--sys-overlay-dark-strong);
   }
 }

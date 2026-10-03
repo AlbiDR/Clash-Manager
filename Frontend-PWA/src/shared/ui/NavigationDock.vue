@@ -42,6 +42,35 @@ watch(
   },
 );
 
+/** The first tab: where Back lands from every other tab. */
+const START_PATH = NAV_ITEMS[0].path;
+
+/**
+ * [DECISION LOG] BACK RETURNS TO THE FIRST TAB, THEN LEAVES:
+ * Every tab switch pushed a history entry, so Back walked through every tab
+ * visited before the Android app finally closed. Bottom navigation on Android
+ * goes back to the start tab and then exits, so history now only ever holds
+ * the start tab and the tab in front of it: leaving the start tab pushes, a
+ * switch between two other tabs replaces, and returning to the start tab
+ * steps back onto the entry already there instead of stacking a second one.
+ *
+ * @param targetPath - The tab being opened.
+ */
+function navigateToTab(targetPath: string): Promise<unknown> {
+  if (route.path === START_PATH) return router.push(targetPath);
+  if (targetPath === START_PATH && router.options.history.state.back === START_PATH) {
+    // router.back() returns nothing; settle when the popped navigation lands.
+    return new Promise<void>((resolve) => {
+      const stopListening = router.afterEach(() => {
+        stopListening();
+        resolve();
+      });
+      router.back();
+    });
+  }
+  return router.replace(targetPath);
+}
+
 /**
  * [DECISION LOG] IDEMPOTENT NAVIGATION: Guards against redundant router
  * pushes if the user is already on the target route.
@@ -54,7 +83,7 @@ async function goTo(targetPath: string) {
   const currentTicket = ++navigationTicket;
   pendingPath.value = targetPath;
   try {
-    await router.push(targetPath);
+    await navigateToTab(targetPath);
   } catch (navigationError) {
     console.warn("[NavigationDock] Navigation failed", navigationError);
   } finally {
@@ -218,6 +247,14 @@ function onInteractionStart() {
     max-width: 80px;
     overflow: hidden;
     text-overflow: ellipsis;
+  }
+}
+
+/* A phone in landscape is short on height, not width: the items drop to the
+   48px touch-target minimum, matching ConsoleHeader's short-landscape row. */
+@media (orientation: landscape) and (max-height: 520px) {
+  .dock-item {
+    height: var(--sys-space-48);
   }
 }
 </style>

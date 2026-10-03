@@ -29,7 +29,7 @@ Java classes in [`src/com/albidr/clashmanager/`](src/com/albidr/clashmanager):
 | `Application` | App initialization entry point. |
 | `LauncherActivity`, `DelegationService` | Dormant TWA scaffolding, retained but not the launcher. |
 
-Declared permissions: `SYSTEM_ALERT_WINDOW`, `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_DATA_SYNC`, `POST_NOTIFICATIONS`, `VIBRATE`, `INTERNET`, `REQUEST_INSTALL_PACKAGES`.
+Declared permissions: `SYSTEM_ALERT_WINDOW`, `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_DATA_SYNC`, `POST_NOTIFICATIONS`, `VIBRATE`, `INTERNET`, `ACCESS_NETWORK_STATE` (lets WebView see when the phone goes offline, so `navigator.onLine` is true only when it is), `REQUEST_INSTALL_PACKAGES`.
 
 ## The JavaScript bridge
 
@@ -46,6 +46,7 @@ Declared permissions: `SYSTEM_ALERT_WINDOW`, `FOREGROUND_SERVICE`, `FOREGROUND_S
 | `getCoordinates()` / `saveCoordinates(ix, iy, cx, cy)` | string / void | Read and persist Blitz calibration coordinates. |
 | `getLastBlitzRun()` | string | The last Blitz run as JSON (players, profiles opened, invite taps, outcome), so the PWA can report a run it could not watch. |
 | `setThemeColors(background, dark)` | void | The PWA reports the colours it is showing, so the strips behind the status and navigation bars match the page and their icons stay readable. |
+| `getSafeAreaInsets()` | string | Where the status bar, cutout and navigation bar cover the page, in CSS pixels; the shell draws edge to edge and WebView does not report these through `env(safe-area-inset-*)`. |
 | `startBlitz(tagsJson, delayMs)` | void | Starts a Blitz sequence for the given player tags, dwelling `delayMs` on each profile. |
 | `openPlayerProfile(tag)` | void | Deep-links to a Clash Royale player profile. |
 | `openExternalUrl(url)` | void | Opens a URL via an Android intent. |
@@ -79,6 +80,14 @@ pnpm icons:android        # regenerate adaptive launcher icons
 Every tool version is pinned in [`toolchain.json`](toolchain.json): the JDK (25, the newest LTS; it only compiles, the phone runs ART), the Java source level, build-tools, the platform, apktool, and the jars the source compiles against. `toolchain-env.sh` finds a matching JDK and an Android SDK (`ANDROID_HOME`, `ANDROID_SDK_ROOT`, or the legacy `~/.bubblewrap/android_sdk`) and refuses any other JDK, because a different javac compiles different bytecode from the same source. `fetch-build-deps.mjs` downloads the pinned jars from their official repositories, checks each sha256, and caches them in the ignored `.deps/`. The same scripts run on a Mac, on Linux and in CI. After changing anything in `src/`, run `pnpm apk:check` and commit the rebuilt `android/classes.dex`; CI fails the push otherwise. Running `build-apk.sh` without `--no-sign` also signs, if a local keystore is present.
 
 Signed release builds run in CI (`.github/workflows/apk-release.yml`): it decodes the keystore from secrets, builds, aligns, signs, verifies the signature, runs the integrity gate, and commits the signed `release/clashmanager-v<version>+<buildNumber>.apk` back to Beta. `<buildNumber>` is CI's monotonic `github.run_number`, distinct from `versionCode` (which is derived purely from `<version>` - see `verify-apk-integrity.mjs`), so two builds of the same version can still be told apart from a downloaded file alone. `release/latest.json` points at that one tracked versioned filename and build number for scripts, older clients, DownloadManager save names, and already-current update checks.
+
+## Seeing it run
+
+`./APK/build-apk.sh --dev` builds **CM Dev**: the same native code under its own package id (`com.albidr.clashmanager.dev`), debuggable, signed with the local debug key, so it installs next to the real app. It loads the live PWA by default; `CLASHMANAGER_DEV_URL=http://localhost:5173/Clash-Manager/` points it at the local dev server, reached from the device with `node APK/apk-dev.mjs reverse 5173`.
+
+`node APK/apk-dev.mjs` drives it over adb: `install`, `start` (`--rehearsal` runs Blitz without opening Clash Royale, which switches USB debugging off while it is open), `shot`, `ui`, `logs`, `eval "<js>"` inside the WebView, and `emulator`.
+
+`node APK/apk-dev.mjs emulator` creates (once) and boots the virtual phone pinned in `toolchain.json` (Android 16 at the owner's Pixel 10 screen size) and prints its serial; with a phone also attached, set `ANDROID_SERIAL` to choose. It draws with the Mac's GPU, at the Pixel 10's exact layout size but a lower pixel density, without sound or cameras; `pnpm apk:emulator:app` builds **Android Emulator.app** in `/Applications`, which starts it from Finder or the Dock with no terminal or agent (rebuild it after moving the repository). `node APK/apk-dev.mjs debloat` disables the preinstalled Google apps that sync in the background (listed in `toolchain.json`, undone with `adb shell pm enable <package>`). It needs the SDK's `emulator` package and that system image installed. Clash Royale does not run there, so real-game checks stay on a phone; rehearsals cover the rest. Accessibility is a security setting and is switched on by a person, once per install.
 
 ## Guardrails
 

@@ -42,6 +42,12 @@ export interface AndroidBridge {
    * shells before 14.50.124 do not have it.
    */
   setThemeColors?(background: string, dark: boolean): void;
+  /**
+   * Where the status bar, display cutout and navigation bar cover the page, in
+   * CSS pixels, as JSON {top,right,bottom,left}. Read by BOOT_INSETS_SCRIPT.
+   * Optional: shells before 14.50.132 do not draw edge to edge.
+   */
+  getSafeAreaInsets?(): string;
   /** Opens a URL using the native Android ACTION_VIEW intent. */
   openExternalUrl(url: string): void;
   /**

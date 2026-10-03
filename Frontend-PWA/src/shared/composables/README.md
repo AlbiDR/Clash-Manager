@@ -16,6 +16,7 @@
 | `useViewport.ts` | Breakpoint and viewport reactivity. |
 | `usePointerCapability.ts` | Detects coarse/fine pointer capability (touch vs. mouse/trackpad) via media queries. |
 | `useTheme.ts` | Applies light/dark tokens, toggles the `dark` class, and rewrites the `theme-color` meta. |
+| `useMotionPreference.ts` | Layer 2 motion preference broker; persists user overrides to LocalStorage and updates root `data-motion-preference` DOM attributes. |
 | `useClipboard.ts` | Layer 2 browser-API broker for explicit copy affordances with `ClipboardState` reactivity, feedback duration settings, and automated scope disposal. |
 
 ## Interaction and gestures
@@ -43,7 +44,7 @@
 | `useCountdown.ts` | Interval timer for live expiry (e.g. Voyage). |
 | `useStatusPill.ts` | Expansion and label logic for the status pill. |
 | `useSelectionBar.ts` | Lifecycle for bulk-operation surfaces. |
-| `usePrecisionSlider.ts` | Value/position mapping, magnetic detents, pointer capture and the keyboard contract for every slider surface. |
+| `usePrecisionSlider.ts` | Domain-blind slider interaction logic with linear/log scale mapping, magnetic detent snapping (`SLIDER_SNAP_RADIUS_PX`), travel insets, pointer capture, and keyboard navigation. |
 
 ## Clan Voyage
 

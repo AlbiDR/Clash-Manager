@@ -126,7 +126,17 @@ onMounted(() => {
   // AUTO-REFRESH: Listen for Service Worker activation to force a page reload.
   if ('serviceWorker' in navigator && !isShowcaseMode.value) {
     let refreshing = false;
+    // [FIX] Only when a worker is replaced. The very first install also fires
+    // controllerchange (the new worker claims the page), but that page already
+    // came from the network and runs the newest code: reloading it threw away
+    // the first launch's loading and synced everything twice (seen on the
+    // Android emulator after a fresh install).
+    let hadWorker = Boolean(navigator.serviceWorker.controller);
     navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (!hadWorker) {
+        hadWorker = true;
+        return;
+      }
       if (refreshing) return;
       refreshing = true;
       console.log("[PWA] New version activated, refreshing...");
@@ -216,7 +226,7 @@ onMounted(() => {
      live container did not, so the entire page jumped upward by 12px plus the
      safe-area the moment Vue hydrated - the single largest layout shift in the
      app, and the first thing a reader sees. */
-  padding-top: calc(var(--sys-space-12) + env(safe-area-inset-top));
+  padding-top: calc(var(--sys-space-12) + var(--sys-safe-top));
   transition: transform var(--sys-motion-duration-200) var(--sys-motion-easing-decelerate);
   display: flex;
   flex-direction: column;
@@ -225,7 +235,7 @@ onMounted(() => {
 
 .connectivity-strip {
   position: fixed;
-  top: 0;
+  top: var(--sys-safe-top);
   left: 0;
   right: 0;
   height: 3px;

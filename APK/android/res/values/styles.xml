@@ -1097,13 +1097,16 @@
         <item name="android:windowNoTitle">true</item>
         <item name="android:windowActionBar">false</item>
         <item name="android:windowBackground">@color/cm_window_background</item>
-        <!-- The app draws edge to edge, under see-through system bars, so the
-             window background (which matches the PWA) shows behind them instead
-             of a bar of the system's own colour. Android 15+ enforces this
-             anyway; these keep Android 14 the same. -->
+        <!-- The page draws edge to edge, under see-through system bars and
+             beside a camera cutout, as on Android 15+ where this is enforced;
+             these keep Android 14 the same (there the cutout would otherwise
+             leave a black strip down one side in landscape).
+             Navigation-bar contrast stays on: with three-button navigation the
+             system then lays a light scrim behind the buttons as the page
+             scrolls under them, while gesture navigation stays fully clear. -->
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
         <item name="android:enforceStatusBarContrast">false</item>
-        <item name="android:enforceNavigationBarContrast">false</item>
+        <item name="android:windowLayoutInDisplayCutoutMode">always</item>
     </style>
 </resources>
