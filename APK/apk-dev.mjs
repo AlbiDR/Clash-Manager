@@ -24,7 +24,7 @@
  *   node APK/apk-dev.mjs emulator           create (once) and boot the virtual phone pinned in toolchain.json,
  *                                          then print its serial for ANDROID_SERIAL
  *   node APK/apk-dev.mjs debloat            disable the emulator's background apps listed in toolchain.json
- *   node APK/apk-dev.mjs mac-app [dir]      build "Clash Manager Emulator.app" (default /Applications): a Dock-
+ *   node APK/apk-dev.mjs mac-app [dir]      build "Android Emulator.app" (default /Applications): a Dock-
  *                                          pinnable app that starts the virtual phone without a terminal or agent
  *
  * With more than one device attached, set ANDROID_SERIAL (adb reads it).
@@ -279,7 +279,7 @@ const commands = {
   },
   "mac-app"(dir) {
     if (process.platform !== "darwin") die("mac-app builds a macOS application");
-    const appName = "Clash Manager Emulator";
+    const appName = "Android Emulator";
     const app = path.join(path.resolve(dir || "/Applications"), `${appName}.app`);
     const repo = path.resolve(APK_DIR, "..");
     const node = process.execPath;

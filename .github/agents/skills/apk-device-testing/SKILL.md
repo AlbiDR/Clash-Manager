@@ -19,8 +19,8 @@ node APK/apk-dev.mjs start | shot | ui | logs | eval "<js>"
 
 With the emulator and a phone both attached, set `ANDROID_SERIAL` (the
 emulator is `emulator-5554`). The owner's own phone is a Pixel 10 on
-Android 16. The owner can also start the emulator without any agent: the **Clash Manager
-Emulator** app in `/Applications` (built by `pnpm apk:emulator:app`) or a
+Android 16. The owner can also start the emulator without any agent: the **Android Emulator**
+app in `/Applications` (built by `pnpm apk:emulator:app`) or a
 double-click on `APK/Start Emulator.command`. If it is already running,
 `pnpm apk:emulator` just finds it.
 
