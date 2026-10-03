@@ -550,12 +550,12 @@ const scoreActionLabel = computed(() => {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  :global(html:not([data-motion-preference="standard"])) .card-details-enter-active .card-detail-sequence {
+  html:not([data-motion-preference="standard"]) .card-details-enter-active .card-detail-sequence {
     animation: none;
   }
 }
 
-:global(html[data-motion-preference="reduced"]) .card-details-enter-active .card-detail-sequence {
+html[data-motion-preference="reduced"] .card-details-enter-active .card-detail-sequence {
   animation: none;
 }
 

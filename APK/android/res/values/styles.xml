@@ -1087,4 +1087,23 @@
         <item name="android:textSize">@dimen/notification_action_text_size</item>
         <item name="android:textColor">@color/androidx_core_secondary_text_default_material_light</item>
     </style>
+    <!-- The app's window. It replaces Theme.Translucent.NoTitleBar from the TWA
+         template, which broke two things: a translucent window takes its
+         orientation from the activity behind it (the launcher, which never
+         rotates), and its permanently dark theme made WebView report
+         prefers-color-scheme: dark whatever the phone was set to. DayNight
+         follows the system, so the PWA's "auto" theme does too. -->
+    <style name="Theme.ClashManager" parent="@android:style/Theme.DeviceDefault.DayNight">
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowActionBar">false</item>
+        <item name="android:windowBackground">@color/cm_window_background</item>
+        <!-- The app draws edge to edge, under see-through system bars, so the
+             window background (which matches the PWA) shows behind them instead
+             of a bar of the system's own colour. Android 15+ enforces this
+             anyway; these keep Android 14 the same. -->
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:enforceStatusBarContrast">false</item>
+        <item name="android:enforceNavigationBarContrast">false</item>
+    </style>
 </resources>

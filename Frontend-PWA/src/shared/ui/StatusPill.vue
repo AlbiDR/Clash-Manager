@@ -464,25 +464,25 @@ onUnmounted(() => document.removeEventListener("click", handleClickOutside));
 @keyframes rotate { to { transform: rotate(360deg); } }
 
 @media (prefers-reduced-motion: reduce) {
-  :global(html:not([data-motion-preference="standard"])) .spinner,
-  :global(html:not([data-motion-preference="standard"])) .status-indicator.is-syncing::after,
-  :global(html:not([data-motion-preference="standard"])) .status-refresh-icon.is-syncing {
+  html:not([data-motion-preference="standard"]) .spinner,
+  html:not([data-motion-preference="standard"]) .status-indicator.is-syncing::after,
+  html:not([data-motion-preference="standard"]) .status-refresh-icon.is-syncing {
     animation: none;
   }
 
-  :global(html:not([data-motion-preference="standard"])) .status-indicator.is-syncing::after {
+  html:not([data-motion-preference="standard"]) .status-indicator.is-syncing::after {
     opacity: 0.45;
     transform: none;
   }
 
-  :global(html:not([data-motion-preference="standard"])) .status-refresh-action:hover:not(:disabled),
-  :global(html:not([data-motion-preference="standard"])) .status-refresh-action:active:not(:disabled) { transform: none; }
+  html:not([data-motion-preference="standard"]) .status-refresh-action:hover:not(:disabled),
+  html:not([data-motion-preference="standard"]) .status-refresh-action:active:not(:disabled) { transform: none; }
 }
 
-:global(html[data-motion-preference="reduced"]) .spinner,
-:global(html[data-motion-preference="reduced"]) .status-indicator.is-syncing::after,
-:global(html[data-motion-preference="reduced"]) .status-refresh-icon.is-syncing { animation: none; }
-:global(html[data-motion-preference="reduced"]) .status-indicator.is-syncing::after { opacity: 0.45; transform: none; }
-:global(html[data-motion-preference="reduced"]) .status-refresh-action:hover:not(:disabled),
-:global(html[data-motion-preference="reduced"]) .status-refresh-action:active:not(:disabled) { transform: none; }
+html[data-motion-preference="reduced"] .spinner,
+html[data-motion-preference="reduced"] .status-indicator.is-syncing::after,
+html[data-motion-preference="reduced"] .status-refresh-icon.is-syncing { animation: none; }
+html[data-motion-preference="reduced"] .status-indicator.is-syncing::after { opacity: 0.45; transform: none; }
+html[data-motion-preference="reduced"] .status-refresh-action:hover:not(:disabled),
+html[data-motion-preference="reduced"] .status-refresh-action:active:not(:disabled) { transform: none; }
 </style>

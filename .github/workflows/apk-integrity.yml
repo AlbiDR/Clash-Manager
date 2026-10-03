@@ -4,16 +4,29 @@
 # (clean Java source) and compiled into android/classes.dex by build-apk.sh.
 # This gate makes "someone repackaged it as a generic TWA" a red CI check
 # instead of a silent production regression.
+#
+# The native-source job closes the other half: the release packages the
+# COMMITTED classes.dex and never compiles APK/src, so a Java change that was
+# not rebuilt, or that no longer compiles, used to ship the old native code
+# without any check noticing. That job compiles the source with the toolchain
+# pinned in APK/toolchain.json, proves the committed dex was built from it,
+# runs the Java unit tests, and checks the two contracts the Java shares with
+# the PWA (the AndroidBridge interface and the Blitz dwell constants), which is
+# why the PWA files that hold those contracts are in the path filter.
 name: APK Native-Layer Integrity
 
 on:
   push:
     paths:
       - "APK/**"
+      - "Frontend-PWA/src/core/types/index.ts"
+      - "Frontend-PWA/src/core/config/index.ts"
       - ".github/workflows/apk-integrity.yml"
   pull_request:
     paths:
       - "APK/**"
+      - "Frontend-PWA/src/core/types/index.ts"
+      - "Frontend-PWA/src/core/config/index.ts"
 
 jobs:
   custom-layer-intact:
@@ -25,3 +38,66 @@ jobs:
           node-version: "24"
       - name: Verify APK/android retains the custom native layer
         run: node APK/verify-android-source.mjs APK/android
+
+  native-source:
+    name: Java source compiles, passes its tests, and matches the shipped dex
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      - name: Read the pinned toolchain
+        id: toolchain
+        run: |
+          echo "jdk=$(node APK/fetch-build-deps.mjs get jdkMajor)" >> "$GITHUB_OUTPUT"
+          echo "build_tools=$(node APK/fetch-build-deps.mjs get buildTools)" >> "$GITHUB_OUTPUT"
+          echo "platform=$(node APK/fetch-build-deps.mjs get androidPlatform)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ steps.toolchain.outputs.jdk }}
+
+      - uses: android-actions/setup-android@v4
+
+      - name: Install pinned Android packages
+        run: sdkmanager "build-tools;${{ steps.toolchain.outputs.build_tools }}" "platforms;${{ steps.toolchain.outputs.platform }}"
+
+      - name: Cache pinned build inputs
+        uses: actions/cache@v4
+        with:
+          path: APK/.deps
+          key: apk-deps-${{ hashFiles('APK/toolchain.json') }}
+
+      - name: AndroidBridge contract agrees across Java, TS and the release gate
+        run: node APK/verify-bridge-contract.mjs
+
+      - name: Blitz dwell domain matches between BlitzService and the PWA config
+        run: node APK/verify-dwell-parity.mjs
+
+      - name: Tests for the native checks
+        run: node --test APK/verify-bridge-contract.test.mjs APK/verify-dwell-parity.test.mjs APK/verify-dex-source.test.mjs
+
+      - name: Committed classes.dex was built from APK/src
+        run: ./APK/build-apk.sh --check
+
+      - name: Java unit tests
+        run: ./APK/test-apk.sh
+
+      - name: Full unsigned build passes the integrity gate
+        run: ./APK/build-apk.sh --no-sign
+
+      # The --check step above is the authority: it compares the app classes
+      # themselves. Byte identity of the whole reassembled dex is reported, not
+      # enforced, because it also depends on how apktool lays out the ~7,000
+      # library classes, which is not a property of APK/src.
+      - name: Report whether the rebuilt dex is byte-identical to the committed one
+        run: |
+          if git diff --quiet -- APK/android/classes.dex; then
+            echo "::notice::Rebuilt classes.dex is byte-identical to the committed one."
+          else
+            echo "::warning::Rebuilt classes.dex differs in bytes from the committed one, although its app classes match (see the --check step)."
+          fi

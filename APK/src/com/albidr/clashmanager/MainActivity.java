@@ -5,14 +5,15 @@ package com.albidr.clashmanager;
 import android.app.Activity;
 import android.app.DownloadManager;
 import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.ApplicationInfo;
+import android.content.res.Configuration;
 import android.database.Cursor;
 import android.graphics.Color;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Message;
 import android.os.ParcelFileDescriptor;
@@ -26,7 +27,6 @@ import android.webkit.WebViewClient;
 import android.widget.FrameLayout;
 import android.widget.Toast;
 import androidx.core.graphics.Insets;
-import androidx.core.view.OnApplyWindowInsetsListener;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -35,6 +35,8 @@ import java.security.MessageDigest;
 
 public class MainActivity extends Activity {
     private static final int MAX_APK_FILENAME_LENGTH = 96;
+    // Longest route a launch may ask for; a real one is a page name plus a short query.
+    private static final int MAX_LAUNCH_ROUTE_LENGTH = 2048;
 
     // Origin the bridge is allowed to talk to. Matches strings.xml/hostName - the
     // PWA's real host. Any other origin loaded into this WebView (an external
@@ -48,7 +50,11 @@ public class MainActivity extends Activity {
     private String mPendingTagsJson = null;
     private long mPendingDelayMs = BlitzService.DEFAULT_PROFILE_LOAD_DELAY_MS;
     private boolean mAwaitingOverlayPermission = false;
+    // Set when CM Dev is launched with BlitzService.EXTRA_REHEARSAL (APK/apk-dev.mjs start --rehearsal).
+    private boolean mBlitzRehearsal = false;
     private FrameLayout mRootLayout;
+    // What the PWA last said it is showing; null until it reports (see setThemeColors).
+    private Boolean mPageDark = null;
 
     private void registerApkDownloadReceiver(final long downloadId, final String filename, final String expectedSha256) {
         if (this.mApkDownloadReceiver != null) {
@@ -76,26 +82,22 @@ public class MainActivity extends Activity {
             }
         };
 
-        IntentFilter filter = new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE);
-        if (Build.VERSION.SDK_INT >= 33) {
-            registerReceiver(this.mApkDownloadReceiver, filter, Context.RECEIVER_EXPORTED);
-        } else {
-            registerReceiver(this.mApkDownloadReceiver, filter);
-        }
+        // DownloadManager runs in another process, so its broadcast needs an exported receiver.
+        registerReceiver(this.mApkDownloadReceiver, new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE), Context.RECEIVER_EXPORTED);
     }
 
     private String sha256ForDownload(DownloadManager dm, long downloadId) throws Exception {
-        MessageDigest digest = MessageDigest.getInstance("SHA-256");
+        var digest = MessageDigest.getInstance("SHA-256");
         try (ParcelFileDescriptor descriptor = dm.openDownloadedFile(downloadId);
              FileInputStream inputStream = new FileInputStream(descriptor.getFileDescriptor())) {
-            byte[] buffer = new byte[8192];
+            var buffer = new byte[8192];
             int bytesRead;
             while ((bytesRead = inputStream.read(buffer)) != -1) {
                 digest.update(buffer, 0, bytesRead);
             }
         }
         byte[] hash = digest.digest();
-        StringBuilder hex = new StringBuilder(hash.length * 2);
+        var hex = new StringBuilder(hash.length * 2);
         for (byte value : hash) {
             hex.append(String.format("%02x", value));
         }
@@ -103,13 +105,13 @@ public class MainActivity extends Activity {
     }
 
     private void openDownloadedApkInstaller(long downloadId, String filename, String expectedSha256) {
-        DownloadManager dm = (DownloadManager) getSystemService(Context.DOWNLOAD_SERVICE);
+        var dm = (DownloadManager) getSystemService(Context.DOWNLOAD_SERVICE);
         if (dm == null) {
             Toast.makeText(this, "Download finished, but installer could not open", Toast.LENGTH_LONG).show();
             return;
         }
 
-        DownloadManager.Query query = new DownloadManager.Query().setFilterById(downloadId);
+        var query = new DownloadManager.Query().setFilterById(downloadId);
         try (Cursor cursor = dm.query(query)) {
             if (cursor == null || !cursor.moveToFirst()) {
                 Toast.makeText(this, "Download finished, but installer could not open", Toast.LENGTH_LONG).show();
@@ -150,7 +152,7 @@ public class MainActivity extends Activity {
         }
 
         try {
-            Intent installIntent = new Intent(Intent.ACTION_VIEW);
+            var installIntent = new Intent(Intent.ACTION_VIEW);
             installIntent.setDataAndType(apkUri, "application/vnd.android.package-archive");
             installIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             installIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
@@ -165,7 +167,11 @@ public class MainActivity extends Activity {
     @Override
     protected void onCreate(Bundle bundle) {
         super.onCreate(bundle);
+        // Logged so a restart can be told apart from a handled change: the manifest
+        // declares rotation and dark mode as handled here, without recreating.
+        android.util.Log.i("ClashManagerMain", "activity created" + (bundle != null ? " (recreated by the system)" : ""));
         mTrustedHost = getString(getResources().getIdentifier("hostName", "string", getPackageName()));
+        mBlitzRehearsal = BlitzService.isRehearsal(this, getIntent());
 
         // Only ever true for a manifest explicitly marked android:debuggable="true"
         // (a local dev install) - the signed release manifest never sets that flag,
@@ -180,39 +186,31 @@ public class MainActivity extends Activity {
         // where the platform enforces edge-to-edge unconditionally.
         WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
 
-        FrameLayout frameLayout = new FrameLayout(this);
-        frameLayout.setBackgroundColor(Color.parseColor("#0B0E14"));
-        ViewCompat.setOnApplyWindowInsetsListener(frameLayout, new OnApplyWindowInsetsListener() {
-            @Override
-            public WindowInsetsCompat onApplyWindowInsets(android.view.View v, WindowInsetsCompat insets) {
-                Insets bars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-                v.setPadding(bars.left, bars.top, bars.right, bars.bottom);
-                return WindowInsetsCompat.CONSUMED;
-            }
+        // No background of its own: the theme's window background (light or dark,
+        // matching the PWA) shows under the system bars and until the page paints.
+        var frameLayout = new FrameLayout(this);
+        ViewCompat.setOnApplyWindowInsetsListener(frameLayout, (view, insets) -> {
+            Insets bars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+            view.setPadding(bars.left, bars.top, bars.right, bars.bottom);
+            return WindowInsetsCompat.CONSUMED;
         });
 
-        // Predictive back (Android 13+): registered directly against the
-        // dispatcher since this Activity extends the plain android.app.Activity,
-        // not AppCompatActivity/ComponentActivity, so onBackPressed() alone is
-        // never invoked once the app opts into the predictive-back contract via
-        // the manifest's enableOnBackInvokedCallback flag.
-        if (Build.VERSION.SDK_INT >= 33) {
-            getOnBackInvokedDispatcher().registerOnBackInvokedCallback(
-                android.window.OnBackInvokedDispatcher.PRIORITY_DEFAULT,
-                new android.window.OnBackInvokedCallback() {
-                    @Override
-                    public void onBackInvoked() {
-                        if (mWebView != null && mWebView.canGoBack()) {
-                            mWebView.goBack();
-                        } else {
-                            finish();
-                        }
-                    }
-                });
-        }
+        // Predictive back: registered directly against the dispatcher because this
+        // Activity extends the plain android.app.Activity, and once the manifest's
+        // enableOnBackInvokedCallback flag opts in, onBackPressed() is never called.
+        getOnBackInvokedDispatcher().registerOnBackInvokedCallback(
+            android.window.OnBackInvokedDispatcher.PRIORITY_DEFAULT,
+            () -> {
+                if (mWebView != null && mWebView.canGoBack()) {
+                    mWebView.goBack();
+                } else {
+                    finish();
+                }
+            });
 
         this.mRootLayout = frameLayout;
         setContentView(frameLayout);
+        applySystemBarAppearance();
         initWebView();
     }
 
@@ -234,9 +232,12 @@ public class MainActivity extends Activity {
      * in place after the renderer crashes, instead of the whole app going down with it.
      */
     private void initWebView() {
-        WebView webView = new WebView(this);
+        var webView = new WebView(this);
         this.mWebView = webView;
         this.mWebView.setHapticFeedbackEnabled(true);
+        // Transparent until the PWA paints, so the window background shows rather
+        // than WebView's default white flash in dark mode.
+        this.mWebView.setBackgroundColor(Color.TRANSPARENT);
         this.mRootLayout.addView(webView);
 
         WebSettings settings = this.mWebView.getSettings();
@@ -252,12 +253,8 @@ public class MainActivity extends Activity {
         settings.setGeolocationEnabled(false);
         settings.setLoadsImagesAutomatically(true);
         settings.setMediaPlaybackRequiresUserGesture(false);
-        if (Build.VERSION.SDK_INT >= 23) {
-            settings.setOffscreenPreRaster(true);
-        }
-        if (Build.VERSION.SDK_INT >= 26) {
-            settings.setSafeBrowsingEnabled(true);
-        }
+        settings.setOffscreenPreRaster(true);
+        settings.setSafeBrowsingEnabled(true);
         settings.setCacheMode(WebSettings.LOAD_CACHE_ELSE_NETWORK);
         // The manifest already forbids cleartext traffic app-wide; ALWAYS_ALLOW here
         // actively fought that by letting an https page embed http subresources.
@@ -274,50 +271,46 @@ public class MainActivity extends Activity {
 
         this.mWebView.setWebViewClient(new WebViewClient() {
             @Override
-            public boolean shouldOverrideUrlLoading(WebView webView2, String str) {
-                if (str.startsWith("clashroyale://") || str.startsWith("intent://")) {
-                    launchExternalIntent(str);
-                    return true;
-                }
-                if (!isTrustedOrigin(str)) {
-                    launchExternalIntent(str);
+            public boolean shouldOverrideUrlLoading(WebView view, String url) {
+                if (url.startsWith("clashroyale://") || url.startsWith("intent://") || !isTrustedOrigin(url)) {
+                    launchExternalIntent(url);
                     return true;
                 }
                 return false;
             }
 
             @Override
-            public void onPageStarted(WebView webView2, String str, android.graphics.Bitmap favicon) {
-                super.onPageStarted(webView2, str, favicon);
+            public void onPageStarted(WebView view, String url, android.graphics.Bitmap favicon) {
+                super.onPageStarted(view, url, favicon);
                 // Detach the native bridge the instant the WebView navigates off the
                 // PWA's own origin (an external https link opened in-place). It is
                 // re-attached only once navigation returns to the trusted origin, so a
                 // third-party page loaded in this WebView can never reach AndroidBridge.
-                boolean trusted = isTrustedOrigin(str);
+                boolean trusted = isTrustedOrigin(url);
                 if (trusted && !mBridgeAttached) {
-                    webView2.addJavascriptInterface(mBridge, "AndroidBridge");
+                    view.addJavascriptInterface(mBridge, "AndroidBridge");
                     mBridgeAttached = true;
                 } else if (!trusted && mBridgeAttached) {
-                    webView2.removeJavascriptInterface("AndroidBridge");
+                    view.removeJavascriptInterface("AndroidBridge");
                     mBridgeAttached = false;
                 }
             }
 
             @Override
-            public void onReceivedError(WebView webView2, int i, String str, String str2) {
-                super.onReceivedError(webView2, i, str, str2);
-                Toast.makeText(MainActivity.this, "Load failed: " + str + "\nURL: " + str2, Toast.LENGTH_LONG).show();
+            public void onReceivedError(WebView view, int errorCode, String description, String failingUrl) {
+                super.onReceivedError(view, errorCode, description, failingUrl);
+                Toast.makeText(MainActivity.this, "Load failed: " + description + "\nURL: " + failingUrl, Toast.LENGTH_LONG).show();
             }
 
             @Override
-            public boolean onRenderProcessGone(WebView webView2, RenderProcessGoneDetail detail) {
+            public boolean onRenderProcessGone(WebView view, RenderProcessGoneDetail detail) {
                 // WebView's contract (since API 26): if this isn't overridden, an unhandled
                 // renderer crash takes the whole host app down with it. The renderer crash
                 // itself lives in the platform's WebView, out of our control - but whether
                 // it kills this app is entirely up to us, so rebuild the WebView instead.
                 android.util.Log.w("ClashManagerMain", "WebView renderer process gone (didCrash="
                     + detail.didCrash() + "); rebuilding WebView instead of losing the app");
-                if (webView2 != mWebView) {
+                if (view != mWebView) {
                     // Stale callback from a WebView already replaced by an earlier recovery.
                     return true;
                 }
@@ -330,28 +323,139 @@ public class MainActivity extends Activity {
 
         this.mWebView.setWebChromeClient(new WebChromeClient() {
             @Override
-            public boolean onCreateWindow(WebView webView2, boolean z, boolean z2, Message message) {
-                String extra = webView2.getHitTestResult().getExtra();
+            public boolean onCreateWindow(WebView view, boolean isDialog, boolean isUserGesture, Message resultMsg) {
+                String extra = view.getHitTestResult().getExtra();
                 if (extra != null && (extra.startsWith("intent://") || extra.startsWith("clashroyale://") || extra.startsWith("http://") || extra.startsWith("https://"))) {
                     launchExternalIntent(extra);
                     return false;
                 }
 
-                WebView webView3 = new WebView(MainActivity.this);
-                webView3.setWebViewClient(new WebViewClient() {
+                // A window the page opens by script (window.open without a
+                // clickable link) is handed a throwaway WebView whose first
+                // navigation is sent out as an external intent.
+                var popup = new WebView(MainActivity.this);
+                popup.setWebViewClient(new WebViewClient() {
                     @Override
-                    public boolean shouldOverrideUrlLoading(WebView webView4, String str) {
-                        launchExternalIntent(str);
+                    public boolean shouldOverrideUrlLoading(WebView popupView, String url) {
+                        launchExternalIntent(url);
                         return true;
                     }
                 });
-                ((WebView.WebViewTransport) message.obj).setWebView(webView3);
-                message.sendToTarget();
+                ((WebView.WebViewTransport) resultMsg.obj).setWebView(popup);
+                resultMsg.sendToTarget();
                 return true;
             }
         });
 
-        this.mWebView.loadUrl(getString(getResources().getIdentifier("launchUrl", "string", getPackageName())));
+        String requested = launchTarget(getIntent());
+        this.mWebView.loadUrl(requested != null ? requested : launchUrl());
+    }
+
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        android.util.Log.i("ClashManagerMain", "configuration handled in place: orientation " + newConfig.orientation
+            + ", night " + ((newConfig.uiMode & Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES));
+        applySystemBarAppearance();
+    }
+
+    /**
+     * Status and navigation bar icons that contrast with what is behind them: the
+     * page's own theme once the PWA has reported it, the phone's until then.
+     */
+    private void applySystemBarAppearance() {
+        boolean dark = mPageDark != null
+            ? mPageDark
+            : (getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES;
+        var controller = WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView());
+        controller.setAppearanceLightStatusBars(!dark);
+        controller.setAppearanceLightNavigationBars(!dark);
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        if (BlitzService.isRehearsal(this, intent)) {
+            mBlitzRehearsal = true;
+        }
+        // singleTask: a shortcut, link or share reaching the running app arrives
+        // here. A plain launcher tap names no page and leaves the user where they were.
+        String requested = launchTarget(intent);
+        if (requested != null && mWebView != null) {
+            mWebView.loadUrl(requested);
+        }
+    }
+
+    private String launchUrl() {
+        return getString(getResources().getIdentifier("launchUrl", "string", getPackageName()));
+    }
+
+    /**
+     * The page a launch asks for, as a URL inside this app's own PWA, or null
+     * when it names none.
+     *
+     * Launcher shortcuts, links into the PWA, web+clash and clash-manager links
+     * and the share sheet each name a page, and each used to be dropped: every
+     * one of them opened the roster. The intent only ever chooses the route (the
+     * part after #); the origin always comes from this build's own launch URL,
+     * so a link can never point the bridge-carrying WebView at another site, and
+     * the dev build's shortcuts open the dev build's PWA. The mappings mirror the
+     * PWA's web manifest: share_target and protocol_handlers both land on
+     * #/headhunter with the same parameter names.
+     */
+    private String launchTarget(Intent intent) {
+        if (intent == null) return null;
+        String route = null;
+        Uri data = intent.getData();
+        if (Intent.ACTION_SEND.equals(intent.getAction())) {
+            String text = intent.getStringExtra(Intent.EXTRA_TEXT);
+            if (text != null && !text.trim().isEmpty()) {
+                String title = intent.getStringExtra(Intent.EXTRA_SUBJECT);
+                route = "/headhunter?text=" + Uri.encode(text) + (title == null ? "" : "&title=" + Uri.encode(title));
+            }
+        } else if (data != null) {
+            String scheme = data.getScheme();
+            if ("https".equals(scheme) || "http".equals(scheme)) {
+                route = data.getEncodedFragment();
+            } else if ("web+clash".equals(scheme)) {
+                route = "/headhunter?query=" + Uri.encode(data.toString());
+            } else if ("clash-manager".equals(scheme)) {
+                route = "/" + (data.getHost() == null ? "" : data.getHost()) + (data.getPath() == null ? "" : data.getPath());
+            }
+        }
+        if (route == null || !route.startsWith("/") || route.length() > MAX_LAUNCH_ROUTE_LENGTH) return null;
+        String launchUrl = launchUrl();
+        int hash = launchUrl.indexOf('#');
+        return (hash >= 0 ? launchUrl.substring(0, hash) : launchUrl) + "#" + route;
+    }
+
+    /**
+     * Why Blitz cannot tap. Android lists the service as switched on and still
+     * leaves it unbound after the app was force-stopped, until the user toggles
+     * it; "turn it on" would then point them at a switch that is already on.
+     */
+    private String accessibilityHint() {
+        var component = new ComponentName(this, ClashManagerAccessibilityService.class);
+        String label;
+        try {
+            label = getPackageManager().getServiceInfo(component, 0).loadLabel(getPackageManager()).toString();
+        } catch (Exception e) {
+            label = "Clash Manager Blitz";
+        }
+        String enabled = Settings.Secure.getString(getContentResolver(), Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES);
+        boolean switchedOn = false;
+        if (enabled != null) {
+            for (String entry : enabled.split(":")) {
+                if (component.equals(ComponentName.unflattenFromString(entry))) {
+                    switchedOn = true;
+                    break;
+                }
+            }
+        }
+        return switchedOn
+            ? "\"" + label + "\" is on but not connected. Turn it off and on again in Accessibility settings so Blitz can tap."
+            : "Turn on \"" + label + "\" in Accessibility settings so Blitz can tap Invite.";
     }
 
     /** True when the URL's host is the PWA's own origin (safe to keep the bridge attached for). */
@@ -375,19 +479,19 @@ public class MainActivity extends Activity {
      * confusion trick a hostile page could otherwise use to redirect an explicit intent
      * at an arbitrary component.
      */
-    private void launchExternalIntent(String str) {
+    private void launchExternalIntent(String url) {
         try {
             Intent intent;
-            if (str.startsWith("intent://")) {
-                intent = Intent.parseUri(str, Intent.URI_INTENT_SCHEME);
+            if (url.startsWith("intent://")) {
+                intent = Intent.parseUri(url, Intent.URI_INTENT_SCHEME);
                 intent.setSelector(null);
             } else {
-                intent = new Intent(Intent.ACTION_VIEW, Uri.parse(str));
+                intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
             }
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             startActivity(intent);
         } catch (Exception e) {
-            android.util.Log.w("ClashManagerMain", "Could not launch external intent for: " + str, e);
+            android.util.Log.w("ClashManagerMain", "Could not launch external intent for: " + url, e);
             Toast.makeText(this, "Could not open link", Toast.LENGTH_SHORT).show();
         }
     }
@@ -397,10 +501,10 @@ public class MainActivity extends Activity {
         super.onResume();
         if (this.mAwaitingOverlayPermission) {
             this.mAwaitingOverlayPermission = false;
-            if (Build.VERSION.SDK_INT >= 23 && Settings.canDrawOverlays(this)) {
-                String str = this.mPendingTagsJson;
-                if (str != null) {
-                    startBlitzService(str, this.mPendingDelayMs);
+            if (Settings.canDrawOverlays(this)) {
+                String pendingTags = this.mPendingTagsJson;
+                if (pendingTags != null) {
+                    startBlitzService(pendingTags, this.mPendingDelayMs);
                     this.mPendingTagsJson = null;
                 }
             } else {
@@ -409,23 +513,20 @@ public class MainActivity extends Activity {
         }
     }
 
-    @Override
-    public void onBackPressed() {
-        if (this.mWebView.canGoBack()) {
-            this.mWebView.goBack();
-        } else {
-            super.onBackPressed();
-        }
-    }
-
-    private void startBlitzService(String str, long delayMs) {
-        Intent intent = new Intent(this, BlitzService.class);
-        intent.putExtra("tags", str);
+    private void startBlitzService(String tagsJson, long delayMs) {
+        var intent = new Intent(this, BlitzService.class);
+        intent.putExtra("tags", tagsJson);
         intent.putExtra("delayMs", delayMs);
-        if (Build.VERSION.SDK_INT >= 26) {
+        if (mBlitzRehearsal) {
+            intent.putExtra(BlitzService.EXTRA_REHEARSAL, true);
+        }
+        try {
             startForegroundService(intent);
-        } else {
-            startService(intent);
+        } catch (android.app.ForegroundServiceStartNotAllowedException e) {
+            // Android only lets an app start a foreground service while it is in
+            // front. Uncaught, this refusal used to take the whole app down.
+            android.util.Log.w("ClashManagerMain", "Blitz could not start: app not in the foreground", e);
+            Toast.makeText(this, "Blitz could not start. Open Clash Manager and try again.", Toast.LENGTH_LONG).show();
         }
     }
 
@@ -438,9 +539,7 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public String getAppVersionName() {
             try {
-                return MainActivity.this.getPackageManager()
-                    .getPackageInfo(MainActivity.this.getPackageName(), 0)
-                    .versionName;
+                return getPackageManager().getPackageInfo(getPackageName(), 0).versionName;
             } catch (Exception e) {
                 android.util.Log.w("ClashManagerMain", "getAppVersionName failed", e);
                 return "";
@@ -450,12 +549,8 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public int getAppVersionCode() {
             try {
-                android.content.pm.PackageInfo packageInfo = MainActivity.this.getPackageManager()
-                    .getPackageInfo(MainActivity.this.getPackageName(), 0);
-                if (Build.VERSION.SDK_INT >= 28) {
-                    return (int) Math.min(packageInfo.getLongVersionCode(), Integer.MAX_VALUE);
-                }
-                return packageInfo.versionCode;
+                var packageInfo = getPackageManager().getPackageInfo(getPackageName(), 0);
+                return (int) Math.min(packageInfo.getLongVersionCode(), Integer.MAX_VALUE);
             } catch (Exception e) {
                 android.util.Log.w("ClashManagerMain", "getAppVersionCode failed", e);
                 return 0;
@@ -465,9 +560,8 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public int getBuildNumber() {
             try {
-                int buildNumberId = MainActivity.this.getResources()
-                    .getIdentifier("buildNumber", "string", MainActivity.this.getPackageName());
-                return Integer.parseInt(MainActivity.this.getString(buildNumberId));
+                int buildNumberId = getResources().getIdentifier("buildNumber", "string", getPackageName());
+                return Integer.parseInt(getString(buildNumberId));
             } catch (Exception e) {
                 android.util.Log.w("ClashManagerMain", "getBuildNumber failed", e);
                 return 0;
@@ -475,24 +569,21 @@ public class MainActivity extends Activity {
         }
 
         @JavascriptInterface
-        public void openExternalUrl(final String url) {
-            MainActivity.this.runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    Uri parsed = Uri.parse(url);
-                    String scheme = parsed.getScheme();
-                    if (!"https".equalsIgnoreCase(scheme) && !"http".equalsIgnoreCase(scheme)) {
-                        android.util.Log.w("ClashManagerMain", "openExternalUrl rejected non-http(s) scheme: " + scheme);
-                        return;
-                    }
-                    try {
-                        Intent intent = new Intent(Intent.ACTION_VIEW, parsed);
-                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                        MainActivity.this.startActivity(intent);
-                    } catch (Exception e) {
-                        android.util.Log.w("ClashManagerMain", "Could not open URL: " + url, e);
-                        Toast.makeText(MainActivity.this, "Could not open URL", Toast.LENGTH_SHORT).show();
-                    }
+        public void openExternalUrl(String url) {
+            runOnUiThread(() -> {
+                Uri parsed = Uri.parse(url);
+                String scheme = parsed.getScheme();
+                if (!"https".equalsIgnoreCase(scheme) && !"http".equalsIgnoreCase(scheme)) {
+                    android.util.Log.w("ClashManagerMain", "openExternalUrl rejected non-http(s) scheme: " + scheme);
+                    return;
+                }
+                try {
+                    var intent = new Intent(Intent.ACTION_VIEW, parsed);
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    startActivity(intent);
+                } catch (Exception e) {
+                    android.util.Log.w("ClashManagerMain", "Could not open URL: " + url, e);
+                    Toast.makeText(MainActivity.this, "Could not open URL", Toast.LENGTH_SHORT).show();
                 }
             });
         }
@@ -511,12 +602,12 @@ public class MainActivity extends Activity {
          * @param filename Suggested filename to save under in Downloads.
          */
         @JavascriptInterface
-        public boolean downloadApkFile(final String url, final String filename) {
+        public boolean downloadApkFile(String url, String filename) {
             return downloadApkFile(url, filename, null);
         }
 
         @JavascriptInterface
-        public boolean downloadApkFile(final String url, final String filename, final String expectedSha256) {
+        public boolean downloadApkFile(String url, String filename, String expectedSha256) {
             Uri parsed = Uri.parse(url);
             String scheme = parsed.getScheme();
             if (!"https".equalsIgnoreCase(scheme)) {
@@ -527,174 +618,143 @@ public class MainActivity extends Activity {
                 android.util.Log.w("ClashManagerMain", "downloadApkFile rejected invalid filename");
                 return false;
             }
-            MainActivity.this.runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        DownloadManager.Request request = new DownloadManager.Request(parsed);
-                        request.setTitle("Clash Manager Update");
-                        request.setDescription("Downloading " + filename);
-                        request.setNotificationVisibility(
-                            DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
-                        request.setDestinationInExternalPublicDir(
-                            android.os.Environment.DIRECTORY_DOWNLOADS, filename);
-                        request.setMimeType("application/vnd.android.package-archive");
-                        request.addRequestHeader("User-Agent", "ClashManager-Android");
-                        DownloadManager dm = (DownloadManager)
-                            MainActivity.this.getSystemService(Context.DOWNLOAD_SERVICE);
-                        long downloadId = dm.enqueue(request);
-                        MainActivity.this.registerApkDownloadReceiver(downloadId, filename, expectedSha256);
-                        Toast.makeText(MainActivity.this,
-                            "Download started -- installer opens when ready",
-                            Toast.LENGTH_LONG).show();
-                    } catch (Exception e) {
-                        android.util.Log.e("ClashManagerMain", "downloadApkFile failed: " + url, e);
-                        Toast.makeText(MainActivity.this,
-                            "Download failed -- check your connection",
-                            Toast.LENGTH_SHORT).show();
-                    }
+            runOnUiThread(() -> {
+                try {
+                    var request = new DownloadManager.Request(parsed);
+                    request.setTitle("Clash Manager Update");
+                    request.setDescription("Downloading " + filename);
+                    request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
+                    request.setDestinationInExternalPublicDir(android.os.Environment.DIRECTORY_DOWNLOADS, filename);
+                    request.setMimeType("application/vnd.android.package-archive");
+                    request.addRequestHeader("User-Agent", "ClashManager-Android");
+                    var dm = (DownloadManager) getSystemService(Context.DOWNLOAD_SERVICE);
+                    long downloadId = dm.enqueue(request);
+                    registerApkDownloadReceiver(downloadId, filename, expectedSha256);
+                    Toast.makeText(MainActivity.this, "Download started -- installer opens when ready", Toast.LENGTH_LONG).show();
+                } catch (Exception e) {
+                    android.util.Log.e("ClashManagerMain", "downloadApkFile failed: " + url, e);
+                    Toast.makeText(MainActivity.this, "Download failed -- check your connection", Toast.LENGTH_SHORT).show();
                 }
             });
             return true;
         }
 
         @JavascriptInterface
-        public void openPlayerProfile(final String tag) {
-            MainActivity.this.runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        String safeTag = tag == null ? "" : tag.replaceAll("[^0289CGJLPQRUVY]", "");
-                        if (safeTag.length() == 0) {
-                            android.util.Log.w("ClashManagerMain", "openPlayerProfile rejected invalid tag");
-                            return;
-                        }
-                        Intent uri = Intent.parseUri("intent://playerInfo?id=" + Uri.encode(safeTag) + "#Intent;scheme=clashroyale;package=com.supercell.clashroyale;end", Intent.URI_INTENT_SCHEME);
-                        uri.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                        MainActivity.this.startActivity(uri);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                        Toast.makeText(MainActivity.this, "Could not open Clash Royale - is it installed?", Toast.LENGTH_SHORT).show();
+        public void openPlayerProfile(String tag) {
+            runOnUiThread(() -> {
+                try {
+                    String safeTag = tag == null ? "" : tag.replaceAll("[^0289CGJLPQRUVY]", "");
+                    if (safeTag.isEmpty()) {
+                        android.util.Log.w("ClashManagerMain", "openPlayerProfile rejected invalid tag");
+                        return;
                     }
+                    var intent = Intent.parseUri("intent://playerInfo?id=" + Uri.encode(safeTag) + "#Intent;scheme=clashroyale;package=com.supercell.clashroyale;end", Intent.URI_INTENT_SCHEME);
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    startActivity(intent);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    Toast.makeText(MainActivity.this, "Could not open Clash Royale - is it installed?", Toast.LENGTH_SHORT).show();
                 }
             });
         }
 
         @JavascriptInterface
         public boolean hasOverlayPermission() {
-            if (Build.VERSION.SDK_INT >= 23) {
-                return Settings.canDrawOverlays(MainActivity.this);
-            }
-            return true;
+            return Settings.canDrawOverlays(MainActivity.this);
         }
 
         @JavascriptInterface
         public boolean canRequestPackageInstalls() {
-            if (Build.VERSION.SDK_INT >= 26) {
-                return MainActivity.this.getPackageManager().canRequestPackageInstalls();
-            }
-            return true;
+            return getPackageManager().canRequestPackageInstalls();
         }
 
         @JavascriptInterface
         public void openPackageInstallSettings() {
-            MainActivity.this.runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        Intent intent;
-                        if (Build.VERSION.SDK_INT >= 26) {
-                            intent = new Intent(
-                                Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
-                                Uri.parse("package:" + MainActivity.this.getPackageName()));
-                        } else {
-                            intent = new Intent(Settings.ACTION_SECURITY_SETTINGS);
-                        }
-                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                        MainActivity.this.startActivity(intent);
-                    } catch (Exception e) {
-                        android.util.Log.w("ClashManagerMain", "Could not open package install settings", e);
-                        Toast.makeText(MainActivity.this, "Could not open install settings", Toast.LENGTH_SHORT).show();
-                    }
+            runOnUiThread(() -> {
+                try {
+                    var intent = new Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, Uri.parse("package:" + getPackageName()));
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    startActivity(intent);
+                } catch (Exception e) {
+                    android.util.Log.w("ClashManagerMain", "Could not open package install settings", e);
+                    Toast.makeText(MainActivity.this, "Could not open install settings", Toast.LENGTH_SHORT).show();
                 }
             });
         }
 
         @JavascriptInterface
         public void openOverlaySettings() {
-            MainActivity.this.runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        try {
-                            MainActivity.this.startActivity(new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:" + MainActivity.this.getPackageName())));
-                        } catch (Exception unused) {
-                            MainActivity.this.startActivity(new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION));
-                        }
-                    } catch (Exception e) {
-                        android.util.Log.w("ClashManagerMain", "Could not open overlay settings", e);
-                        Toast.makeText(MainActivity.this, "Could not open overlay settings", Toast.LENGTH_SHORT).show();
-                    }
+            runOnUiThread(() -> {
+                try {
+                    openOverlayPermissionScreen();
+                } catch (Exception e) {
+                    android.util.Log.w("ClashManagerMain", "Could not open overlay settings", e);
+                    Toast.makeText(MainActivity.this, "Could not open overlay settings", Toast.LENGTH_SHORT).show();
                 }
             });
         }
 
         @JavascriptInterface
-        public void startBlitz(final String tagsJson, final long delayMs) {
-            MainActivity.this.runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    boolean overlaysAllowed = Build.VERSION.SDK_INT < 23 || Settings.canDrawOverlays(MainActivity.this);
-                    if (overlaysAllowed) {
-                        if (!ClashManagerAccessibilityService.isActive()) {
-                            Toast.makeText(MainActivity.this, "Tip: Enable Clash Manager in Accessibility Settings for automatic invites", Toast.LENGTH_LONG).show();
-                        }
-                        MainActivity.this.startBlitzService(tagsJson, delayMs);
-                        return;
+        public void startBlitz(String tagsJson, long delayMs) {
+            runOnUiThread(() -> {
+                if (Settings.canDrawOverlays(MainActivity.this)) {
+                    if (!ClashManagerAccessibilityService.isActive()) {
+                        Toast.makeText(MainActivity.this, accessibilityHint(), Toast.LENGTH_LONG).show();
                     }
-                    MainActivity.this.mPendingTagsJson = tagsJson;
-                    MainActivity.this.mPendingDelayMs = delayMs;
-                    MainActivity.this.mAwaitingOverlayPermission = true;
-                    Toast.makeText(MainActivity.this, "Grant 'Display over other apps' for Clash Manager, then return here", Toast.LENGTH_LONG).show();
-                    try {
-                        try {
-                            MainActivity.this.startActivity(new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:" + MainActivity.this.getPackageName())));
-                        } catch (Exception unused) {
-                            MainActivity.this.startActivity(new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION));
-                        }
-                    } catch (Exception unused2) {
-                        Toast.makeText(MainActivity.this, "Please grant 'Display over other apps' in system settings", Toast.LENGTH_LONG).show();
-                    }
+                    startBlitzService(tagsJson, delayMs);
+                    return;
+                }
+                mPendingTagsJson = tagsJson;
+                mPendingDelayMs = delayMs;
+                mAwaitingOverlayPermission = true;
+                Toast.makeText(MainActivity.this, "Grant 'Display over other apps' for Clash Manager, then return here", Toast.LENGTH_LONG).show();
+                try {
+                    openOverlayPermissionScreen();
+                } catch (Exception e) {
+                    Toast.makeText(MainActivity.this, "Please grant 'Display over other apps' in system settings", Toast.LENGTH_LONG).show();
                 }
             });
         }
 
         @JavascriptInterface
-        public void saveCoordinates(final float inviteX, final float inviteY, final float closeX, final float closeY) {
-            MainActivity.this.getSharedPreferences("blitz_prefs", 0).edit()
-                .putFloat("invite_x", inviteX)
-                .putFloat("invite_y", inviteY)
-                .putFloat("close_x", closeX)
-                .putFloat("close_y", closeY)
-                .apply();
-            MainActivity.this.runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    Toast.makeText(MainActivity.this, "Coordinates updated successfully", Toast.LENGTH_SHORT).show();
-                }
-            });
+        public void saveCoordinates(float inviteX, float inviteY, float closeX, float closeY) {
+            new Calibration(inviteX, inviteY, closeX, closeY).save(MainActivity.this, false);
+            runOnUiThread(() -> Toast.makeText(MainActivity.this, "Coordinates updated successfully", Toast.LENGTH_SHORT).show());
         }
 
         @JavascriptInterface
         public String getCoordinates() {
-            // Defaults must stay numerically identical to ClashManagerAccessibilityService's
-            // DEFAULT_INVITE_*/DEFAULT_CLOSE_* - previously drifted (0.7214/0.2044 here vs.
-            // 0.7218/0.204 there), so the Settings UI showed calibration markers in a
-            // different spot than where the accessibility service would actually tap.
-            return "{\"inviteX\":" + MainActivity.this.getSharedPreferences("blitz_prefs", 0).getFloat("invite_x", 0.5083f)
-                + ",\"inviteY\":" + MainActivity.this.getSharedPreferences("blitz_prefs", 0).getFloat("invite_y", 0.7218f)
-                + ",\"closeX\":" + MainActivity.this.getSharedPreferences("blitz_prefs", 0).getFloat("close_x", 0.9213f)
-                + ",\"closeY\":" + MainActivity.this.getSharedPreferences("blitz_prefs", 0).getFloat("close_y", 0.204f) + "}";
+            return Calibration.load(MainActivity.this).toJson();
+        }
+
+        /**
+         * The PWA reports the background it is showing whenever its theme resolves
+         * or changes. The strips behind the status and navigation bars are this
+         * layout's background, so they take that colour, and the bar icons are
+         * picked to contrast with it. The window background from the theme only
+         * covers the moment before the page has painted: it follows the phone,
+         * while the page follows the app's own theme setting.
+         */
+        @JavascriptInterface
+        public void setThemeColors(String background, boolean dark) {
+            int color;
+            try {
+                color = Color.parseColor(background);
+            } catch (Exception e) {
+                android.util.Log.w("ClashManagerMain", "setThemeColors rejected colour: " + background);
+                return;
+            }
+            runOnUiThread(() -> {
+                mPageDark = dark;
+                mRootLayout.setBackgroundColor(color);
+                applySystemBarAppearance();
+            });
+        }
+
+        /** The last Blitz run as JSON (see BlitzRun), or an empty string when Blitz has never run. */
+        @JavascriptInterface
+        public String getLastBlitzRun() {
+            return BlitzRun.lastJson(MainActivity.this);
         }
 
         @JavascriptInterface
@@ -704,19 +764,30 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public void openAccessibilitySettings() {
-            MainActivity.this.runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        Intent intent = new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS);
-                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                        MainActivity.this.startActivity(intent);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                        Toast.makeText(MainActivity.this, "Could not open Accessibility Settings", Toast.LENGTH_SHORT).show();
-                    }
+            runOnUiThread(() -> {
+                try {
+                    var intent = new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS);
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    startActivity(intent);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    Toast.makeText(MainActivity.this, "Could not open Accessibility Settings", Toast.LENGTH_SHORT).show();
                 }
             });
+        }
+    }
+
+    /**
+     * Opens this app's own "Display over other apps" screen, falling back to the
+     * system-wide list on the few builds that reject the per-package form.
+     * Shared by openOverlaySettings and the startBlitz permission prompt, which
+     * each carried their own copy of this.
+     */
+    private void openOverlayPermissionScreen() {
+        try {
+            startActivity(new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:" + getPackageName())));
+        } catch (Exception perPackageRejected) {
+            startActivity(new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION));
         }
     }
 }

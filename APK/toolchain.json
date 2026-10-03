@@ -1,0 +1,41 @@
+{
+  "$comment": "Pinned toolchain for building and testing the native layer in APK/src. build-apk.sh, test-apk.sh and CI all read this file, so a version changes in one place. Every download is checked against its sha256 before use. jdkMajor is the newest LTS JDK and only compiles; the phone runs ART, not a JVM. javaTarget is the source and bytecode level; above 8, javac compiles against a system image built from the platform's core-for-system-modules.jar (as the Android Gradle Plugin does), so only APIs Android actually has will compile. d8 desugars the result for the minSdkVersion in android/apktool.yml, and buildTools must be new enough for d8 to read that class file version (35.0.0 stops at Java 21; 37.0.0 reads 25). Changing jdkMajor, javaTarget, buildTools or apktool can change the compiled classes.dex; after bumping one, run ./APK/build-apk.sh --no-sign and commit the rebuilt APK/android/classes.dex.",
+  "jdkMajor": 25,
+  "javaTarget": 25,
+  "androidPlatform": "android-36",
+  "buildTools": "37.0.0",
+  "apktool": {
+    "version": "3.0.3",
+    "url": "https://github.com/iBotPeaches/Apktool/releases/download/v3.0.3/apktool_3.0.3.jar",
+    "sha256": "dbf930b076c6b9be08d57c449cacefc3bdd6b71ebd59b3066fc0e1f5b14f9423"
+  },
+  "compileClasspath": [
+    {
+      "coordinate": "androidx.core:core:1.13.0",
+      "url": "https://dl.google.com/android/maven2/androidx/core/core/1.13.0/core-1.13.0.aar",
+      "sha256": "1b96c8eb10c4b40283fdd6e9aa74ffff05fae4f15d54f61ba69d517fcd144695"
+    },
+    {
+      "coordinate": "androidx.browser:browser:1.9.0-alpha04",
+      "url": "https://dl.google.com/android/maven2/androidx/browser/browser/1.9.0-alpha04/browser-1.9.0-alpha04.aar",
+      "sha256": "191af80097a713a69862f68a08831436b674d87eaedcd51be1ebb8af36c8037e"
+    },
+    {
+      "coordinate": "com.google.androidbrowserhelper:androidbrowserhelper:2.6.2",
+      "url": "https://dl.google.com/android/maven2/com/google/androidbrowserhelper/androidbrowserhelper/2.6.2/androidbrowserhelper-2.6.2.aar",
+      "sha256": "105c15f3e0060b6551c2f2725284cbd2a8e041657a768c8d23d05f52d0a81afb"
+    }
+  ],
+  "testClasspath": [
+    {
+      "coordinate": "junit:junit:4.13.2",
+      "url": "https://repo1.maven.org/maven2/junit/junit/4.13.2/junit-4.13.2.jar",
+      "sha256": "8e495b634469d64fb8acfa3495a065cbacc8a0fff55ce1e31007be4c16dc57d3"
+    },
+    {
+      "coordinate": "org.hamcrest:hamcrest-core:1.3",
+      "url": "https://repo1.maven.org/maven2/org/hamcrest/hamcrest-core/1.3/hamcrest-core-1.3.jar",
+      "sha256": "66fdef91e9739348df7a096aa384a5685f4e875584cce89386a7a47251c4d8e9"
+    }
+  ]
+}
