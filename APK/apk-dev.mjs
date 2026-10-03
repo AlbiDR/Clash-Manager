@@ -21,8 +21,9 @@
  *   node APK/apk-dev.mjs logs               CM Dev's log lines, PWA console output included
  *   node APK/apk-dev.mjs eval "<js>"        evaluate JavaScript inside CM Dev's WebView (Chrome DevTools Protocol)
  *   node APK/apk-dev.mjs reverse <port>     make the phone's localhost:<port> reach this machine (dev server)
- *   node APK/apk-dev.mjs emulator           create (once) and boot the virtual phone pinned in toolchain.json,
- *                                          then print its serial for ANDROID_SERIAL
+ *   node APK/apk-dev.mjs emulator [--show]  create (once) and boot the virtual phone pinned in toolchain.json,
+ *                                          then print its serial for ANDROID_SERIAL; --show also brings
+ *                                          its window to the front (the Mac app's click, never an agent's run)
  *   node APK/apk-dev.mjs debloat            disable the emulator's background apps listed in toolchain.json
  *   node APK/apk-dev.mjs mac-app [dir]      build "Android Emulator.app" (default /Applications): a Dock-
  *                                          pinnable app that starts the virtual phone without a terminal or agent
@@ -124,6 +125,25 @@ function accessibilityOn() {
 
 const ACCESSIBILITY_OFF_NOTE =
   "Android switched CM Dev Blitz's accessibility service off. It is a security setting, so a person turns it on again (Settings > Accessibility > CM Dev Blitz) before taps can be tested.";
+
+/**
+ * Brings the virtual phone's window to the front on macOS. Used only for a
+ * person's click on the Mac app: done during an agent's test run, it would
+ * pull the window in front of whatever the owner is doing.
+ */
+function bringToFront(avd) {
+  if (process.platform !== "darwin") return;
+  let pid = "";
+  try {
+    pid = execFileSync("/usr/bin/pgrep", ["-f", `qemu-system.*-avd ${avd}`], { encoding: "utf8" }).trim().split("\n")[0];
+  } catch {
+    return;
+  }
+  if (!/^\d+$/.test(pid)) return;
+  execFileSync("/usr/bin/osascript", ["-l", "JavaScript", "-e",
+    `ObjC.import("AppKit"); const app = $.NSRunningApplication.runningApplicationWithProcessIdentifier(${pid}); app.unhide; app.activateWithOptions($.NSApplicationActivateAllWindows);`,
+  ], { stdio: "ignore" });
+}
 
 function die(msg) {
   console.error(`✗ ${msg}`);
@@ -229,7 +249,8 @@ const commands = {
     if (result.exceptionDetails) die(`${result.exceptionDetails.exception?.description || result.exceptionDetails.text} (page ${url})`);
     console.log(JSON.stringify(result.result.value, null, 2));
   },
-  async emulator() {
+  async emulator(flag) {
+    if (flag && flag !== "--show") die("usage: apk-dev.mjs emulator [--show]");
     const toolchain = JSON.parse(readFileSync(path.join(APK_DIR, "toolchain.json"), "utf8"));
     const emulator = toolchain.emulator;
     const sdk = sdkWithEmulator();
@@ -255,6 +276,7 @@ const commands = {
         try {
           if (adb(["-s", serial, "shell", "getprop", "sys.boot_completed"]).trim() === "1") {
             console.log(`ready: ${serial}  (export ANDROID_SERIAL=${serial})`);
+            if (flag === "--show") bringToFront(emulator.avd);
             return;
           }
         } catch {
@@ -321,7 +343,7 @@ if [ ! -f "$REPO/APK/apk-dev.mjs" ]; then
 fi
 mkdir -p "$REPO/APK/.build"
 LOG="$REPO/APK/.build/emulator-app.log"
-"${node}" "$REPO/APK/apk-dev.mjs" emulator > "$LOG" 2>&1 || ${alert("The virtual phone did not start. Details: APK/.build/emulator-app.log")}
+"${node}" "$REPO/APK/apk-dev.mjs" emulator --show > "$LOG" 2>&1 || ${alert("The virtual phone did not start. Details: APK/.build/emulator-app.log")}
 `);
     chmodSync(launcher, 0o755);
 
