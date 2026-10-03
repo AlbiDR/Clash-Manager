@@ -185,6 +185,21 @@ describe("NotificationSettings.vue", () => {
     expect(mockSettings.toggle).toHaveBeenCalledWith("experimentalNotifications");
   });
 
+  it("shows Recruit Alerts as unavailable where there is no Notification API", async () => {
+    // The Android app's WebView reports "unsupported": a live switch there
+    // would raise alerts that can never be shown.
+    mockModules.experimentalNotifications = true;
+    mockSettings.notificationPermission.value = "unsupported";
+    const wrapper = mount(NotificationSettings, {
+      props: { initiallyExpanded: true }
+    });
+    await nextTick();
+
+    const recruitAlertsRow = wrapper.findAll(".setting-row").find(r => r.text().includes("Recruit Alerts"));
+    expect(recruitAlertsRow!.attributes("disabled")).toBeDefined();
+    expect(recruitAlertsRow!.text()).toContain("Unavailable");
+  });
+
   it("offers a control for what the app badge counts", async () => {
     // `notificationBadgeHighPotential` changes what useHeadhunter counts onto
     // the app badge and had no control anywhere in Settings.
