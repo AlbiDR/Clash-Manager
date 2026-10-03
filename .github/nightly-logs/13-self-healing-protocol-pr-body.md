@@ -1,26 +1,26 @@
 ### Nightly Stage 13: Self-Healing Protocol - Pipeline Resilience Auditor
 
-**Status:** CLEAN
+**Status:** CHANGED
 
-In plain terms: nothing needed fixing. This run checked the self healing protocol area and found it already correct, so the only file here is the log recording that the check happened.
+In plain terms: no change was made to the project. This run ended as CHANGED and the only file here is the log recording that.
 
-**What was checked:** Audit complete: checked 12 preceding stages, 0 stability failures, 0 unfinalized sentinels, 0 watchdog interventions; CLEAN calibration streak 0.
+**What changed:** Updated self-healing protocol findings and metrics for 2026-10-03
 
-**Why:** No new or amended findings for Section 1 or Section 2; protocol document left CLEAN.
+**Why:** Audited preceding 12 stages on 2026-10-03: recorded 2 watchdog recovery nudges (Stage 6 and Stage 9; 16.7% intervention rate; Stage 9 DEGRADING health verdict) in Section 1 and updated Section 3 metrics.
 
-**Result:** Checked 12 stage ledger rows in nightly-run-ledger.json and coverage logs; pnpm test passed 209 test files (2102 tests); git diff --check reported 0 clean diff lines
+**Result:** git diff --check clean; pnpm test passed 209 test files and 2107 tests green
 
-**Files changed:** .github/nightly-logs/13-self-healing-protocol-coverage.log
+**Files changed:** .github/nightly-logs/13-self-healing-protocol-coverage.log, .github/nightly-logs/13-self-healing-protocol.md
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: pipeline
-  Cycle: nightly-cycle/2026-09-30
+  Cycle: nightly-cycle/2026-10-03
   Contract: df81a67e6d78a129caa22f2d9d3499a9aaf33de1a9f9c7718ff860013b7a86e1
-  Why: No new or amended findings for Section 1 or Section 2; protocol document left CLEAN.
-  Change: Audit complete: checked 12 preceding stages, 0 stability failures, 0 unfinalized sentinels, 0 watchdog interventions; CLEAN calibration streak 0.
-  Result: Checked 12 stage ledger rows in nightly-run-ledger.json and coverage logs; pnpm test passed 209 test files (2102 tests); git diff --check reported 0 clean diff lines
-  Files: .github/nightly-logs/13-self-healing-protocol-coverage.log
-  Nudges: 1
-  Execution: d18eaccced1c814a960b3621a7f3d4fb09892a99
+  Why: Audited preceding 12 stages on 2026-10-03: recorded 2 watchdog recovery nudges (Stage 6 and Stage 9; 16.7% intervention rate; Stage 9 DEGRADING health verdict) in Section 1 and updated Section 3 metrics.
+  Change: Updated self-healing protocol findings and metrics for 2026-10-03
+  Result: git diff --check clean; pnpm test passed 209 test files and 2107 tests green
+  Files: .github/nightly-logs/13-self-healing-protocol-coverage.log, .github/nightly-logs/13-self-healing-protocol.md
+  Nudges: 0
+  Execution: dab91dd557484739c0d6539aeb1a28dfcdc9a6f8
 -->

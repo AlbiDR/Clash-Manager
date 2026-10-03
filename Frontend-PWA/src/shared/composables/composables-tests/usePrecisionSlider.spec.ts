@@ -198,6 +198,65 @@ describe("usePrecisionSlider", () => {
       slider.handlePointerUp({ pointerId: 1, currentTarget: null } as unknown as PointerEvent);
       expect(slider.isDragging.value).toBe(false);
     });
+
+    it("updates value during handlePointerMove when drag is active", () => {
+      const { slider, value, pressAt } = createSlider({}, 0);
+      pressAt(0.2);
+      expect(value.value).toBe(20);
+
+      slider.handlePointerMove({
+        clientX: TRACK_LEFT + 0.8 * TRACK_WIDTH,
+      } as unknown as PointerEvent);
+
+      expect(value.value).toBe(80);
+    });
+
+    it("manages pointer capture during pointer down and up", () => {
+      const { slider } = createSlider({}, 50);
+      const setPointerCapture = vi.fn();
+      const releasePointerCapture = vi.fn();
+      const target = {
+        setPointerCapture,
+        releasePointerCapture,
+        hasPointerCapture: vi.fn((id: number) => id === 42),
+      } as unknown as HTMLElement;
+
+      slider.handlePointerDown({
+        clientX: TRACK_LEFT + 100,
+        pointerId: 42,
+        currentTarget: target,
+        preventDefault: vi.fn(),
+      } as unknown as PointerEvent);
+
+      expect(setPointerCapture).toHaveBeenCalledWith(42);
+
+      slider.handlePointerUp({
+        pointerId: 42,
+        currentTarget: target,
+      } as unknown as PointerEvent);
+
+      expect(releasePointerCapture).toHaveBeenCalledWith(42);
+    });
+
+    it("handles null track element safely without updating value", () => {
+      const value = ref(50);
+      const config = computed<PrecisionSliderConfig>(() => ({
+        min: 0, max: 100, step: 1, scale: "linear", detents: [], thumbSize: 0,
+      }));
+      const slider = usePrecisionSlider(value, config, ref(null));
+
+      slider.handlePointerDown({
+        clientX: TRACK_LEFT + 100, pointerId: 1, currentTarget: null, preventDefault: vi.fn(),
+      } as unknown as PointerEvent);
+
+      expect(value.value).toBe(50);
+    });
+
+    it("clamps without stepping when step is non-positive", () => {
+      const { value, pressAt } = createSlider({ step: 0 }, 50);
+      pressAt(0.333);
+      expect(value.value).toBeCloseTo(33.3, 1);
+    });
   });
 
   describe("keyboard contract", () => {
@@ -227,6 +286,16 @@ describe("usePrecisionSlider", () => {
       const { value, press } = createSlider({ detents: [25], step: 5 }, 50);
       press("ArrowRight");
       expect(value.value).toBe(55);
+    });
+
+    it("falls back to step when stepping past extreme detents", () => {
+      const { value, press } = createSlider({ detents: [25, 50, 75], step: 5 }, 10);
+      press("ArrowLeft");
+      expect(value.value).toBe(5);
+
+      value.value = 80;
+      press("ArrowRight");
+      expect(value.value).toBe(85);
     });
 
     it("steps when the slider declares no detents at all", () => {

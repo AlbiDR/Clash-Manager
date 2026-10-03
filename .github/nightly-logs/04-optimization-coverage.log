@@ -118,3 +118,6 @@
 * [2026-09-28] [Stage 4] [02:09Z-02:15Z 6m] CLEAN: Codebase -- Inspected 42 changed files and Edge Functions for SQL view substrate hygiene; zero structural rot or unreferenced views found.
 * [2026-09-29] [Stage 4] [02:17Z-02:22Z 4m] CLEAN: Codebase -- Inspected 42 changed files and Edge Functions for SQL view substrate hygiene; zero structural rot or unreferenced views found.
 * [2026-09-30] [Stage 4] [02:26Z-02:31Z 5m] CLEAN: Codebase -- Inspected 22 changed files and Edge Functions for SQL view substrate hygiene; zero structural rot or unreferenced views found.
+* [2026-10-01] [Stage 4] [02:22Z-02:26Z 4m] CLEAN: Codebase -- Calibration pass: Inspected 22 changed files and widened scan to Edge Functions and L1 composables (useProgressiveList.ts); ordinary CLEAN count was 7; zero structural rot or unreferenced database views found.
+* [2026-10-02] [Stage 4] [02:14Z-02:19Z 5m] CLEAN: Codebase -- Inspected 42 changed files and Edge Functions for SQL view substrate hygiene; zero structural rot or unreferenced views found.
+* [2026-10-03] [Stage 4] [02:13Z-02:18Z 6m] CLEAN: Codebase -- Inspected 16 changed files and Edge Functions for SQL view substrate hygiene; zero structural rot or unreferenced views found.
