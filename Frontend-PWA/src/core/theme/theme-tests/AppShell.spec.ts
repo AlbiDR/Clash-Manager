@@ -37,6 +37,16 @@ describe("AppShell", () => {
       expect(styles).toContain(".sh-card");
     });
 
+    it("keeps the skeleton clear of the system bars as the live app does", () => {
+      // Edge to edge, the first frame must already sit below the status bar, stick
+      // its header there and cover the bar's strip, or the page jumps (and the list
+      // shows behind the clock) when the live layout takes over.
+      const styles = getAppShellStyles();
+      expect(styles).toMatch(/#app-shell\s*{[^}]*padding-top:\s*calc\(var\(--sys-space-12\)\s*\+\s*var\(--sys-safe-top\)\)/);
+      expect(styles).toMatch(/\.sh-header\s*{[^}]*top:\s*var\(--sys-safe-top\)/);
+      expect(styles).toMatch(/body::before\s*{[^}]*height:\s*var\(--sys-safe-top\)/);
+    });
+
     it("should contain pulse animation for skeleton states", () => {
       const styles = getAppShellStyles();
       expect(styles).toContain("@keyframes sh-pulse");

@@ -216,7 +216,7 @@ onMounted(() => {
      live container did not, so the entire page jumped upward by 12px plus the
      safe-area the moment Vue hydrated - the single largest layout shift in the
      app, and the first thing a reader sees. */
-  padding-top: calc(var(--sys-space-12) + env(safe-area-inset-top));
+  padding-top: calc(var(--sys-space-12) + var(--sys-safe-top));
   transition: transform var(--sys-motion-duration-200) var(--sys-motion-easing-decelerate);
   display: flex;
   flex-direction: column;
@@ -225,7 +225,7 @@ onMounted(() => {
 
 .connectivity-strip {
   position: fixed;
-  top: 0;
+  top: var(--sys-safe-top);
   left: 0;
   right: 0;
   height: 3px;

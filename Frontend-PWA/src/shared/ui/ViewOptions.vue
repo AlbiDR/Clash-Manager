@@ -721,7 +721,7 @@ onUnmounted(() => {
   width: 100%;
   max-width: var(--sys-layout-max-width);
   max-height: min(70vh, 560px);
-  padding-bottom: calc(var(--sys-space-12) + env(safe-area-inset-bottom));
+  padding-bottom: calc(var(--sys-space-12) + var(--sys-safe-bottom));
   border-radius: var(--sys-shape-corner-large) var(--sys-shape-corner-large) 0 0;
   transition: transform var(--sys-motion-duration-300) var(--sys-motion-spring);
 }

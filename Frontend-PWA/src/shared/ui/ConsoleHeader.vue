@@ -240,7 +240,8 @@ onUnmounted(() => {
 <style scoped>
 .console-header {
   position: sticky;
-  top: 0;
+  /* Sticks just below the status bar: the page runs under it edge to edge. */
+  top: var(--sys-safe-top);
   z-index: var(--sys-z-header);
   background: var(--sys-surface-glass);
   backdrop-filter: var(--sys-surface-glass-blur);
