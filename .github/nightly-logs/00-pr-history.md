@@ -16,6 +16,15 @@ LAST_AGED:   2026-10-02
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-03] PR #2068 [Stage 13]: Updated self-healing protocol findings and metrics for 2026-10-03
+**Domain:** pipeline | **Commit:** 0efac4fcc | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2068)
+**Files:** .github/nightly-logs/13-self-healing-protocol-coverage.log, .github/nightly-logs/13-self-healing-protocol-pr-body.md, .github/nightly-logs/13-self-healing-protocol.md
+**Why:** Audited preceding 12 stages on 2026-10-03: recorded 2 watchdog recovery nudges (Stage 6 and Stage 9; 16.7% intervention rate; Stage 9 DEGRADING health verdict) in Section 1 and updated Section 3 metrics.
+**Change:** Updated self-healing protocol findings and metrics for 2026-10-03
+**Result:** git diff --check clean; pnpm test passed 209 test files and 2107 tests green
+**Nudges:** 0
+
+
 ### [2026-10-03] PR #2067 [Stage 12]: No APK UX issues found across 78 examined files
 **Domain:** ux | **Commit:** c08c3dc8a | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2067)
 **Files:** .github/nightly-logs/12-apk-ux-coverage.log, .github/nightly-logs/12-apk-ux-pr-body.md
