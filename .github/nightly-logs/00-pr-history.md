@@ -16,6 +16,23 @@ LAST_AGED:   2026-10-02
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-03] PR #2062 [Stage 6]: Audited doc-debt target usePrecisionSlider.ts; confirmed interface contracts and annotations are synchronized with code reality
+**Domain:** documentation | **Commit:** c4600086a | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2062)
+**Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, .github/nightly-logs/06-documentation-tsdoc-pr-body.md
+**Why:** Target in /tmp/nightly/doc-debt.txt (Frontend-PWA/src/shared/composables/usePrecisionSlider.ts) prose and TSDoc interface contracts were verified accurate following recent test additions
+**Change:** Audited doc-debt target usePrecisionSlider.ts; confirmed interface contracts and annotations are synchronized with code reality
+**Result:** PASSED (git diff --check clean, prose verified accurate, 35/35 usePrecisionSlider unit tests passed)
+**Nudges:** 0
+
+### [2026-10-03] PR #2061 [Stage 7]: Catalog scan (Frontend-PWA, Backend package.json) & version scan (root, Frontend-PWA, Backend package.json) verified 0 catalog violations & 0 version drift; pnpm audit:version passed (14.50.121).
+**Domain:** versioning | **Commit:** 0d946ec83 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2061)
+**Files:** .github/nightly-logs/07-version-integrity-coverage.log, .github/nightly-logs/07-version-integrity-pr-body.md
+**Why:** Monorepo version declarations, badges, substrate constants, and APK manifests are fully aligned with ground truth 14.50.121 and PNPM catalog adherence is maintained.
+**Change:** Catalog scan (Frontend-PWA, Backend package.json) & version scan (root, Frontend-PWA, Backend package.json) verified 0 catalog violations & 0 version drift; pnpm audit:version passed (14.50.121).
+**Result:** pnpm audit:version PASSED (Ground Truth 14.50.121); pnpm test PASSED (209 test files, 2107 tests).
+**Nudges:** 0
+
+
 ### [2026-10-03] PR #2060 [Stage 5]: Reconciled shared composables README with usePrecisionSlider details and useMotionPreference
 **Domain:** documentation | **Commit:** 80425c115 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2060)
 **Files:** .github/nightly-logs/05-documentation-readme-coverage.log, .github/nightly-logs/05-documentation-readme-pr-body.md, Frontend-PWA/src/shared/composables/README.md
