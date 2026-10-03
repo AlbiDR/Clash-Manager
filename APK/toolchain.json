@@ -4,6 +4,12 @@
   "javaTarget": 25,
   "androidPlatform": "android-36",
   "buildTools": "37.0.0",
+  "emulator": {
+    "$comment": "The virtual phone APK/apk-dev.mjs emulator creates and boots: the Android version and screen of the owner's Pixel 10, so a check on it means the same thing as a check on the phone.",
+    "avd": "cm-android-36",
+    "systemImage": "system-images;android-36;google_apis;arm64-v8a",
+    "screen": { "width": 1080, "height": 2412, "density": 420 }
+  },
   "apktool": {
     "version": "3.0.3",
     "url": "https://github.com/iBotPeaches/Apktool/releases/download/v3.0.3/apktool_3.0.3.jar",

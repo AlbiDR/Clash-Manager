@@ -80,6 +80,14 @@ Every tool version is pinned in [`toolchain.json`](toolchain.json): the JDK (25,
 
 Signed release builds run in CI (`.github/workflows/apk-release.yml`): it decodes the keystore from secrets, builds, aligns, signs, verifies the signature, runs the integrity gate, and commits the signed `release/clashmanager-v<version>+<buildNumber>.apk` back to Beta. `<buildNumber>` is CI's monotonic `github.run_number`, distinct from `versionCode` (which is derived purely from `<version>` - see `verify-apk-integrity.mjs`), so two builds of the same version can still be told apart from a downloaded file alone. `release/latest.json` points at that one tracked versioned filename and build number for scripts, older clients, DownloadManager save names, and already-current update checks.
 
+## Seeing it run
+
+`./APK/build-apk.sh --dev` builds **CM Dev**: the same native code under its own package id (`com.albidr.clashmanager.dev`), debuggable, signed with the local debug key, so it installs next to the real app. It loads the live PWA by default; `CLASHMANAGER_DEV_URL=http://localhost:5173/Clash-Manager/` points it at the local dev server, reached from the device with `node APK/apk-dev.mjs reverse 5173`.
+
+`node APK/apk-dev.mjs` drives it over adb: `install`, `start` (`--rehearsal` runs Blitz without opening Clash Royale, which switches USB debugging off while it is open), `shot`, `ui`, `logs`, `eval "<js>"` inside the WebView, and `emulator`.
+
+`node APK/apk-dev.mjs emulator` creates (once) and boots the virtual phone pinned in `toolchain.json` (Android 16 at the owner's Pixel 10 screen size) and prints its serial; with a phone also attached, set `ANDROID_SERIAL` to choose. It needs the SDK's `emulator` package and that system image installed. Clash Royale does not run there, so real-game checks stay on a phone; rehearsals cover the rest. Accessibility is a security setting and is switched on by a person, once per install.
+
 ## Guardrails
 
 | Check | Command / trigger | What it protects |

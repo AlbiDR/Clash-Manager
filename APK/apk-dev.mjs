@@ -21,14 +21,17 @@
  *   node APK/apk-dev.mjs logs               CM Dev's log lines, PWA console output included
  *   node APK/apk-dev.mjs eval "<js>"        evaluate JavaScript inside CM Dev's WebView (Chrome DevTools Protocol)
  *   node APK/apk-dev.mjs reverse <port>     make the phone's localhost:<port> reach this machine (dev server)
+ *   node APK/apk-dev.mjs emulator           create (once) and boot the virtual phone pinned in toolchain.json,
+ *                                          then print its serial for ANDROID_SERIAL
  *
  * With more than one device attached, set ANDROID_SERIAL (adb reads it).
  * Read-only by design: nothing here taps, types or grants permissions. Those
  * act on the owner's real accounts and settings and stay the owner's call.
  */
 
-import { execFileSync } from "node:child_process";
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { execFileSync, spawn } from "node:child_process";
+import { existsSync, mkdirSync, openSync, readFileSync, writeFileSync } from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -50,9 +53,60 @@ const EXEC_TIMEOUT_MS = 120_000;
 function adb(args, { binary = false } = {}) {
   return execFileSync("adb", args, {
     encoding: binary ? undefined : "utf8",
+    // stderr is kept with the error instead of printed: polling a booting
+    // emulator otherwise floods the terminal with "device offline".
+    stdio: ["ignore", "pipe", "pipe"],
     maxBuffer: 64 << 20,
     timeout: EXEC_TIMEOUT_MS,
   });
+}
+
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/** The SDK holding the emulator, searched in the same order as toolchain-env.sh. */
+function sdkWithEmulator() {
+  const candidates = [process.env.ANDROID_HOME, process.env.ANDROID_SDK_ROOT,
+    path.join(os.homedir(), ".bubblewrap", "android_sdk"), path.join(os.homedir(), "Library", "Android", "sdk")];
+  const sdk = candidates.find((dir) => dir && existsSync(path.join(dir, "emulator", "emulator")));
+  if (!sdk) die("no Android SDK with the emulator installed (see APK/README.md, Emulator)");
+  return sdk;
+}
+
+/**
+ * Writes the AVD definition for the pinned system image and screen, the same
+ * two files avdmanager would write, so creating it needs no extra tool.
+ */
+function ensureAvd(sdk, avdHome, emulator) {
+  const [, platform, tag, abi] = emulator.systemImage.split(";");
+  const imageDir = emulator.systemImage.split(";").join("/") + "/";
+  if (!existsSync(path.join(sdk, imageDir, "system.img"))) die(`system image ${emulator.systemImage} is not installed in ${sdk}`);
+  const avdDir = path.join(avdHome, `${emulator.avd}.avd`);
+  if (existsSync(path.join(avdDir, "config.ini"))) return false;
+  mkdirSync(avdDir, { recursive: true });
+  writeFileSync(path.join(avdHome, `${emulator.avd}.ini`), [
+    "avd.ini.encoding=UTF-8", `path=${avdDir}`, `path.rel=avd/${emulator.avd}.avd`, `target=${platform}`, "",
+  ].join("\n"));
+  writeFileSync(path.join(avdDir, "config.ini"), [
+    `AvdId=${emulator.avd}`, `avd.ini.displayname=Clash Manager ${platform}`, "avd.ini.encoding=UTF-8",
+    `abi.type=${abi}`, `hw.cpu.arch=${abi.startsWith("arm64") ? "arm64" : abi}`, "hw.cpu.ncore=4", "hw.ramSize=4096",
+    "disk.dataPartition.size=6G", `image.sysdir.1=${imageDir}`, `tag.id=${tag}`, `target=${platform}`,
+    `hw.lcd.width=${emulator.screen.width}`, `hw.lcd.height=${emulator.screen.height}`, `hw.lcd.density=${emulator.screen.density}`,
+    "hw.keyboard=yes", "hw.mainKeys=no", "hw.gpu.enabled=yes", "hw.gpu.mode=auto",
+    "hw.accelerometer=yes", "hw.sensors.orientation=yes", "showDeviceFrame=no", "",
+  ].join("\n"));
+  return true;
+}
+
+/** The serial of a running emulator that is this AVD, or null. */
+function runningEmulator(avd) {
+  const serials = adb(["devices"]).split("\n").map((line) => line.split("\t")[0]).filter((serial) => serial.startsWith("emulator-"));
+  return serials.find((serial) => {
+    try {
+      return adb(["-s", serial, "emu", "avd", "name"]).split("\n")[0].trim() === avd;
+    } catch {
+      return false;
+    }
+  }) ?? null;
 }
 
 function die(msg) {
@@ -134,9 +188,57 @@ const commands = {
   },
   async eval(expression) {
     if (!expression) die('usage: apk-dev.mjs eval "<js>"');
-    const { url, result } = await devtools("Runtime.evaluate", { expression, returnByValue: true, awaitPromise: true });
+    let response;
+    for (let attempt = 1; !response; attempt++) {
+      try {
+        response = await devtools("Runtime.evaluate", { expression, returnByValue: true, awaitPromise: true });
+      } catch (error) {
+        // The PWA reloads itself once when a new service worker takes over (the
+        // first launch on a fresh device, or after a deploy), which ends the page
+        // the expression was running in. Run it again on the new page.
+        if (attempt >= 3 || !/context was destroyed|target navigated|closed/i.test(error.message)) throw error;
+        await sleep(2000);
+      }
+    }
+    const { url, result } = response;
     if (result.exceptionDetails) die(`${result.exceptionDetails.exception?.description || result.exceptionDetails.text} (page ${url})`);
     console.log(JSON.stringify(result.result.value, null, 2));
+  },
+  async emulator() {
+    const toolchain = JSON.parse(readFileSync(path.join(APK_DIR, "toolchain.json"), "utf8"));
+    const emulator = toolchain.emulator;
+    const sdk = sdkWithEmulator();
+    const avdHome = process.env.ANDROID_AVD_HOME || path.join(os.homedir(), ".android", "avd");
+    if (ensureAvd(sdk, avdHome, emulator)) console.log(`created ${emulator.avd} (${emulator.systemImage})`);
+
+    let serial = runningEmulator(emulator.avd);
+    if (!serial) {
+      const log = outPath(null, "emulator.log");
+      const child = spawn(path.join(sdk, "emulator", "emulator"), ["-avd", emulator.avd, "-no-boot-anim"], {
+        detached: true,
+        stdio: ["ignore", openSync(log, "w"), openSync(log, "a")],
+        env: { ...process.env, ANDROID_SDK_ROOT: sdk, ANDROID_AVD_HOME: avdHome },
+      });
+      child.unref();
+      console.log(`starting ${emulator.avd} (log: ${log})`);
+    }
+    // Boot is done when Android says so, not when adb first sees the device.
+    const deadline = Date.now() + 5 * EXEC_TIMEOUT_MS;
+    while (Date.now() < deadline) {
+      serial = serial || runningEmulator(emulator.avd);
+      if (serial) {
+        try {
+          if (adb(["-s", serial, "shell", "getprop", "sys.boot_completed"]).trim() === "1") {
+            console.log(`ready: ${serial}  (export ANDROID_SERIAL=${serial})`);
+            return;
+          }
+        } catch {
+          // Still booting: adb answers before the shell does.
+        }
+      }
+      await sleep(2000);
+    }
+    die(`${emulator.avd} did not finish booting; see APK/.build/emulator.log`);
   },
   reverse(port) {
     if (!/^\d+$/.test(port || "")) die("usage: apk-dev.mjs reverse <port>");
