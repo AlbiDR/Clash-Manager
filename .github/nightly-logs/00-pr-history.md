@@ -16,6 +16,15 @@ LAST_AGED:   2026-10-02
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-03] PR #2063 [Stage 8]: Bumped dependency-cruiser to ^18.5.0 in monorepo catalog and refreshed lockfile
+**Domain:** dependencies | **Commit:** 39e3b09da | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2063)
+**Files:** .github/nightly-logs/08-dependency-audit-coverage.log, .github/nightly-logs/08-dependency-audit-pr-body.md, package.json, pnpm-lock.yaml, pnpm-workspace.yaml
+**Why:** Maintenance minor update for dependency hygiene
+**Change:** Bumped dependency-cruiser to ^18.5.0 in monorepo catalog and refreshed lockfile
+**Result:** pnpm test passed all test suites and depcruise checks
+**Nudges:** 0
+
+
 ### [2026-10-03] PR #2062 [Stage 6]: Audited doc-debt target usePrecisionSlider.ts; confirmed interface contracts and annotations are synchronized with code reality
 **Domain:** documentation | **Commit:** c4600086a | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2062)
 **Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, .github/nightly-logs/06-documentation-tsdoc-pr-body.md
