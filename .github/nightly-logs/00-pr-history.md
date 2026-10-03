@@ -16,6 +16,15 @@ LAST_AGED:   2026-10-02
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-03] PR #2066 [Stage 11]: Inspected APK wrapper performance settings, WebView caching mode LOAD_CACHE_ELSE_NETWORK, service worker precache route, Vite manual chunks, and precache footprint (6 assets, 11.1 KB). All 9 performance invariants verified optimal.
+**Domain:** apk | **Commit:** c3fe1ac4e | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2066)
+**Files:** .github/nightly-logs/11-apk-optimization-coverage.log, .github/nightly-logs/11-apk-optimization-pr-body.md
+**Why:** All APK wrapper performance invariants and bundle caching parameters are fully optimized and compliant with Stage 11 guidelines.
+**Change:** Inspected APK wrapper performance settings, WebView caching mode LOAD_CACHE_ELSE_NETWORK, service worker precache route, Vite manual chunks, and precache footprint (6 assets, 11.1 KB). All 9 performance invariants verified optimal.
+**Result:** PASS (pnpm audit:apk-perf)
+**Nudges:** 0
+
+
 ### [2026-10-03] PR #2065 [Stage 9]: (1) changed-files: 28, dep-violations: 0, knip: 3 unused exports (exempt router loaders), 1 duplicate export (BLITZ_DWELL_MIN/DEFAULT); (2) clean-calibration: 2; (3) inspected: usePrecisionSlider.ts; (4) candidate compliant, hunt passed.
 **Domain:** architecture | **Commit:** e7b580051 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2065)
 **Files:** .github/nightly-logs/09-refactor-proposals-coverage.log, .github/nightly-logs/09-refactor-proposals-pr-body.md
