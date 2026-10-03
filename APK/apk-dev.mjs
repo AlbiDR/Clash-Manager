@@ -325,11 +325,12 @@ LOG="$REPO/APK/.build/emulator-app.log"
 `);
     chmodSync(launcher, 0o755);
 
-    // The app's own launcher icon, at every size macOS asks for.
-    const source = path.join(repo, "Frontend-PWA", "public", "assets", "icons", "icon-512.png");
+    // APK/emulator-icon.svg, rendered by macOS itself, at every size it asks for.
     const iconset = path.join(APK_DIR, ".build", "AppIcon.iconset");
     rmSync(iconset, { recursive: true, force: true });
     mkdirSync(iconset, { recursive: true });
+    const source = path.join(APK_DIR, ".build", "emulator-icon.png");
+    execFileSync("/usr/bin/sips", ["-s", "format", "png", path.join(APK_DIR, "emulator-icon.svg"), "--out", source], { stdio: "ignore" });
     for (const size of [16, 32, 128, 256, 512]) {
       for (const [scale, suffix] of [[1, ""], [2, "@2x"]]) {
         const px = String(size * scale);

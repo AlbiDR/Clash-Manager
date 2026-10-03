@@ -1,0 +1,24 @@
+<!-- SPDX-License-Identifier: GPL-3.0-only -->
+<!-- Copyright (C) 2026 AlbiDR -->
+<!-- Icon of the macOS "Android Emulator" launcher (APK/apk-dev.mjs mac-app).
+     The Android robot is reproduced or modified from work created and shared
+     by Google and used according to terms described in the Creative Commons
+     3.0 Attribution License. -->
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1c2430"/>
+      <stop offset="1" stop-color="#0b0e14"/>
+    </linearGradient>
+  </defs>
+  <rect x="100" y="100" width="824" height="824" rx="185" fill="url(#bg)"/>
+  <g transform="translate(0 50)">
+    <g stroke="#3ddc84" stroke-width="26" stroke-linecap="round">
+      <line x1="388" y1="392" x2="326" y2="286"/>
+      <line x1="636" y1="392" x2="698" y2="286"/>
+    </g>
+    <path d="M 252 640 A 260 260 0 0 1 772 640 Z" fill="#3ddc84"/>
+    <circle cx="410" cy="532" r="28" fill="#0f141b"/>
+    <circle cx="614" cy="532" r="28" fill="#0f141b"/>
+  </g>
+</svg>
