@@ -60,13 +60,18 @@ let pendingApkResolution: Promise<ApkReleaseDownload | undefined> | undefined;
  * @remarks
  * [THREAT ANNOTATION]: Network Exhaustion/Stall Guard. Binds requests with a hard-timeout
  * abort controller and overrides storage directives with 'no-store' to guarantee fresh data ingress.
+ *
+ * [FIX] No `Cache-Control` request header. It is not a CORS-safelisted header, so it
+ * turned both GitHub requests into preflighted ones: raw.githubusercontent.com answers
+ * the preflight with 403 and api.github.com does not allow the header, so two of the
+ * three update sources failed on every check, in every browser. `cache: "no-store"`
+ * and the timestamp query already keep every response fresh.
  */
 async function fetchFresh(url: string, init: RequestInit = {}): Promise<Response> {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), APK_FETCH_TIMEOUT_MS);
   const { headers: initHeaders, ...fetchInit } = init;
   const headers = new Headers(initHeaders);
-  headers.set("Cache-Control", "no-cache");
 
   try {
     return await fetch(buildFreshUrl(url), {
