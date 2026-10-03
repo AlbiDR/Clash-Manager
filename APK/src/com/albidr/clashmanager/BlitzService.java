@@ -64,6 +64,12 @@ public class BlitzService extends Service {
 
     private boolean mRehearsal = false;
 
+    // The run as BlitzRun records it; mRunOutcome is null until Start is pressed.
+    private String mRunOutcome = null;
+    private long mRunStartedAt = 0L;
+    private int mRunOpened = 0;
+    private int mRunInvites = 0;
+
     /**
      * Fallback wait-for-profile-to-render delay, used only if the JS layer's
      * Blitz Speed setting (see BLITZ_SPEED_DELAYS in the PWA) somehow isn't
@@ -224,6 +230,16 @@ public class BlitzService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+        // startForegroundService() obliges every start to reach startForeground()
+        // within seconds, including starts that are then rejected below; a start
+        // that stopped first used to be a crash waiting for a malformed queue.
+        if (mWaitingView != null || mFloatingView != null) {
+            promoteToForeground(queueText());
+            Log.w(TAG, "start ignored: a run is already on screen");
+            Toast.makeText(this, "Blitz is already running. Finish or cancel it first.", Toast.LENGTH_LONG).show();
+            return START_NOT_STICKY;
+        }
+        promoteToForeground("Preparing Blitz Mode");
         String tagsExtra = intent != null ? intent.getStringExtra("tags") : null;
         if (tagsExtra != null) {
             try {
@@ -241,33 +257,53 @@ public class BlitzService extends Service {
                 Log.e(TAG, "could not parse the player queue", e);
                 Toast.makeText(this, "Failed to parse player queue", Toast.LENGTH_SHORT).show();
                 stopSelf();
-                return START_STICKY;
+                return START_NOT_STICKY;
             }
         }
         if (mTagsList.isEmpty()) {
             stopSelf();
-            return START_STICKY;
+            return START_NOT_STICKY;
         }
 
+        promoteToForeground(queueText());
+        mWindowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
+        launchClashRoyaleOnly();
+        setupWaitingOverlay();
+        // Not sticky: a run the system killed has lost its queue, so restarting
+        // the service with a null intent could only show an empty panel.
+        return START_NOT_STICKY;
+    }
+
+    private String queueText() {
+        return "Opening " + mTagsList.size() + " player profiles automatically";
+    }
+
+    private void promoteToForeground(String text) {
         startForeground(NOTIFICATION_ID,
             new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setContentTitle("Clash Manager - Blitz Mode")
-                .setContentText("Opening " + mTagsList.size() + " player profiles automatically")
+                .setContentText(text)
                 .setSmallIcon(android.R.drawable.ic_media_play)
                 .setContentIntent(PendingIntent.getActivity(this, 0,
                     new Intent(this, MainActivity.class), PendingIntent.FLAG_IMMUTABLE))
                 .setOngoing(true)
                 .build());
+    }
 
-        mWindowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
-        launchClashRoyaleOnly();
-        setupWaitingOverlay();
-        return START_STICKY;
+    /** Saves the run so the PWA can report it once the user is back in the app. */
+    private void recordRun(String outcome) {
+        mRunOutcome = outcome;
+        long endedAt = BlitzRun.RUNNING.equals(outcome) ? 0L : System.currentTimeMillis();
+        new BlitzRun(mRunStartedAt, endedAt, mTagsList.size(), mRunOpened, mRunInvites, outcome, mRehearsal).save(this);
     }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
+        if (BlitzRun.RUNNING.equals(mRunOutcome)) {
+            Log.i(TAG, "stopped after " + mRunOpened + " of " + mTagsList.size() + " player(s)");
+            recordRun(BlitzRun.STOPPED);
+        }
         mStopped = true;
         mHandler.removeCallbacksAndMessages(null);
         removeWaitingOverlay();
@@ -523,6 +559,10 @@ public class BlitzService extends Service {
             }
             transitionMarkersToRunningState();
             setupFloatingView();
+            mRunStartedAt = System.currentTimeMillis();
+            mRunOpened = 0;
+            mRunInvites = 0;
+            recordRun(BlitzRun.RUNNING);
             openNextPlayerProfile();
         });
         btnRow.addView(startBtn);
@@ -1004,6 +1044,7 @@ public class BlitzService extends Service {
         mHandler.removeCallbacks(mCountdownRunnable);
         if (mCurrentIndex >= mTagsList.size()) {
             Log.i(TAG, "complete: queue already finished");
+            recordRun(BlitzRun.COMPLETED);
             Toast.makeText(this, "Blitz complete", Toast.LENGTH_SHORT).show();
             stopSelf();
             return;
@@ -1023,11 +1064,17 @@ public class BlitzService extends Service {
                 profile.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                 startActivity(profile);
             } catch (Exception e) {
-                Log.e(TAG, "could not open the profile of #" + tag, e);
-                Toast.makeText(this, "Could not open Clash Royale - is it installed?",
-                    Toast.LENGTH_SHORT).show();
+                // Without the profile on screen the taps would land on whatever is
+                // showing instead, so the run ends here rather than tapping blind.
+                Log.e(TAG, "could not open the profile of #" + tag + "; run stopped", e);
+                recordRun(BlitzRun.FAILED);
+                Toast.makeText(this, "Could not open Clash Royale - Blitz stopped", Toast.LENGTH_LONG).show();
+                stopSelf();
+                return;
             }
         }
+        mRunOpened++;
+        recordRun(BlitzRun.RUNNING);
 
         updateOverlayUi();
 
@@ -1044,6 +1091,7 @@ public class BlitzService extends Service {
                 new ClashManagerAccessibilityService.TapSequenceCallback() {
                     @Override
                     public void onInviteTapped(float xPercent, float yPercent) {
+                        mRunInvites++;
                         Log.i(TAG, "invite tap at " + xPercent + ", " + yPercent);
                         showTapIndicator(xPercent * dm.widthPixels, yPercent * dm.heightPixels, Color.parseColor("#0061a4"));
                     }
@@ -1079,6 +1127,7 @@ public class BlitzService extends Service {
         } else {
             mHandler.postDelayed(() -> {
                 Log.i(TAG, "complete: " + mTagsList.size() + " player(s)");
+                recordRun(BlitzRun.COMPLETED);
                 Toast.makeText(this, "Blitz complete", Toast.LENGTH_SHORT).show();
                 stopSelf();
             }, delay);

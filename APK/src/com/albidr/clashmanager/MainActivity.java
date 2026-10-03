@@ -5,10 +5,12 @@ package com.albidr.clashmanager;
 import android.app.Activity;
 import android.app.DownloadManager;
 import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.ApplicationInfo;
+import android.content.res.Configuration;
 import android.database.Cursor;
 import android.graphics.Color;
 import android.net.Uri;
@@ -33,6 +35,8 @@ import java.security.MessageDigest;
 
 public class MainActivity extends Activity {
     private static final int MAX_APK_FILENAME_LENGTH = 96;
+    // Longest route a launch may ask for; a real one is a page name plus a short query.
+    private static final int MAX_LAUNCH_ROUTE_LENGTH = 2048;
 
     // Origin the bridge is allowed to talk to. Matches strings.xml/hostName - the
     // PWA's real host. Any other origin loaded into this WebView (an external
@@ -49,6 +53,8 @@ public class MainActivity extends Activity {
     // Set when CM Dev is launched with BlitzService.EXTRA_REHEARSAL (APK/apk-dev.mjs start --rehearsal).
     private boolean mBlitzRehearsal = false;
     private FrameLayout mRootLayout;
+    // What the PWA last said it is showing; null until it reports (see setThemeColors).
+    private Boolean mPageDark = null;
 
     private void registerApkDownloadReceiver(final long downloadId, final String filename, final String expectedSha256) {
         if (this.mApkDownloadReceiver != null) {
@@ -161,6 +167,9 @@ public class MainActivity extends Activity {
     @Override
     protected void onCreate(Bundle bundle) {
         super.onCreate(bundle);
+        // Logged so a restart can be told apart from a handled change: the manifest
+        // declares rotation and dark mode as handled here, without recreating.
+        android.util.Log.i("ClashManagerMain", "activity created" + (bundle != null ? " (recreated by the system)" : ""));
         mTrustedHost = getString(getResources().getIdentifier("hostName", "string", getPackageName()));
         mBlitzRehearsal = BlitzService.isRehearsal(this, getIntent());
 
@@ -177,8 +186,9 @@ public class MainActivity extends Activity {
         // where the platform enforces edge-to-edge unconditionally.
         WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
 
+        // No background of its own: the theme's window background (light or dark,
+        // matching the PWA) shows under the system bars and until the page paints.
         var frameLayout = new FrameLayout(this);
-        frameLayout.setBackgroundColor(Color.parseColor("#0B0E14"));
         ViewCompat.setOnApplyWindowInsetsListener(frameLayout, (view, insets) -> {
             Insets bars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             view.setPadding(bars.left, bars.top, bars.right, bars.bottom);
@@ -200,6 +210,7 @@ public class MainActivity extends Activity {
 
         this.mRootLayout = frameLayout;
         setContentView(frameLayout);
+        applySystemBarAppearance();
         initWebView();
     }
 
@@ -224,6 +235,9 @@ public class MainActivity extends Activity {
         var webView = new WebView(this);
         this.mWebView = webView;
         this.mWebView.setHapticFeedbackEnabled(true);
+        // Transparent until the PWA paints, so the window background shows rather
+        // than WebView's default white flash in dark mode.
+        this.mWebView.setBackgroundColor(Color.TRANSPARENT);
         this.mRootLayout.addView(webView);
 
         WebSettings settings = this.mWebView.getSettings();
@@ -333,7 +347,115 @@ public class MainActivity extends Activity {
             }
         });
 
-        this.mWebView.loadUrl(getString(getResources().getIdentifier("launchUrl", "string", getPackageName())));
+        String requested = launchTarget(getIntent());
+        this.mWebView.loadUrl(requested != null ? requested : launchUrl());
+    }
+
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        android.util.Log.i("ClashManagerMain", "configuration handled in place: orientation " + newConfig.orientation
+            + ", night " + ((newConfig.uiMode & Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES));
+        applySystemBarAppearance();
+    }
+
+    /**
+     * Status and navigation bar icons that contrast with what is behind them: the
+     * page's own theme once the PWA has reported it, the phone's until then.
+     */
+    private void applySystemBarAppearance() {
+        boolean dark = mPageDark != null
+            ? mPageDark
+            : (getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES;
+        var controller = WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView());
+        controller.setAppearanceLightStatusBars(!dark);
+        controller.setAppearanceLightNavigationBars(!dark);
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        if (BlitzService.isRehearsal(this, intent)) {
+            mBlitzRehearsal = true;
+        }
+        // singleTask: a shortcut, link or share reaching the running app arrives
+        // here. A plain launcher tap names no page and leaves the user where they were.
+        String requested = launchTarget(intent);
+        if (requested != null && mWebView != null) {
+            mWebView.loadUrl(requested);
+        }
+    }
+
+    private String launchUrl() {
+        return getString(getResources().getIdentifier("launchUrl", "string", getPackageName()));
+    }
+
+    /**
+     * The page a launch asks for, as a URL inside this app's own PWA, or null
+     * when it names none.
+     *
+     * Launcher shortcuts, links into the PWA, web+clash and clash-manager links
+     * and the share sheet each name a page, and each used to be dropped: every
+     * one of them opened the roster. The intent only ever chooses the route (the
+     * part after #); the origin always comes from this build's own launch URL,
+     * so a link can never point the bridge-carrying WebView at another site, and
+     * the dev build's shortcuts open the dev build's PWA. The mappings mirror the
+     * PWA's web manifest: share_target and protocol_handlers both land on
+     * #/headhunter with the same parameter names.
+     */
+    private String launchTarget(Intent intent) {
+        if (intent == null) return null;
+        String route = null;
+        Uri data = intent.getData();
+        if (Intent.ACTION_SEND.equals(intent.getAction())) {
+            String text = intent.getStringExtra(Intent.EXTRA_TEXT);
+            if (text != null && !text.trim().isEmpty()) {
+                String title = intent.getStringExtra(Intent.EXTRA_SUBJECT);
+                route = "/headhunter?text=" + Uri.encode(text) + (title == null ? "" : "&title=" + Uri.encode(title));
+            }
+        } else if (data != null) {
+            String scheme = data.getScheme();
+            if ("https".equals(scheme) || "http".equals(scheme)) {
+                route = data.getEncodedFragment();
+            } else if ("web+clash".equals(scheme)) {
+                route = "/headhunter?query=" + Uri.encode(data.toString());
+            } else if ("clash-manager".equals(scheme)) {
+                route = "/" + (data.getHost() == null ? "" : data.getHost()) + (data.getPath() == null ? "" : data.getPath());
+            }
+        }
+        if (route == null || !route.startsWith("/") || route.length() > MAX_LAUNCH_ROUTE_LENGTH) return null;
+        String launchUrl = launchUrl();
+        int hash = launchUrl.indexOf('#');
+        return (hash >= 0 ? launchUrl.substring(0, hash) : launchUrl) + "#" + route;
+    }
+
+    /**
+     * Why Blitz cannot tap. Android lists the service as switched on and still
+     * leaves it unbound after the app was force-stopped, until the user toggles
+     * it; "turn it on" would then point them at a switch that is already on.
+     */
+    private String accessibilityHint() {
+        var component = new ComponentName(this, ClashManagerAccessibilityService.class);
+        String label;
+        try {
+            label = getPackageManager().getServiceInfo(component, 0).loadLabel(getPackageManager()).toString();
+        } catch (Exception e) {
+            label = "Clash Manager Blitz";
+        }
+        String enabled = Settings.Secure.getString(getContentResolver(), Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES);
+        boolean switchedOn = false;
+        if (enabled != null) {
+            for (String entry : enabled.split(":")) {
+                if (component.equals(ComponentName.unflattenFromString(entry))) {
+                    switchedOn = true;
+                    break;
+                }
+            }
+        }
+        return switchedOn
+            ? "\"" + label + "\" is on but not connected. Turn it off and on again in Accessibility settings so Blitz can tap."
+            : "Turn on \"" + label + "\" in Accessibility settings so Blitz can tap Invite.";
     }
 
     /** True when the URL's host is the PWA's own origin (safe to keep the bridge attached for). */
@@ -398,7 +520,14 @@ public class MainActivity extends Activity {
         if (mBlitzRehearsal) {
             intent.putExtra(BlitzService.EXTRA_REHEARSAL, true);
         }
-        startForegroundService(intent);
+        try {
+            startForegroundService(intent);
+        } catch (android.app.ForegroundServiceStartNotAllowedException e) {
+            // Android only lets an app start a foreground service while it is in
+            // front. Uncaught, this refusal used to take the whole app down.
+            android.util.Log.w("ClashManagerMain", "Blitz could not start: app not in the foreground", e);
+            Toast.makeText(this, "Blitz could not start. Open Clash Manager and try again.", Toast.LENGTH_LONG).show();
+        }
     }
 
     public class AndroidBridge {
@@ -570,7 +699,7 @@ public class MainActivity extends Activity {
             runOnUiThread(() -> {
                 if (Settings.canDrawOverlays(MainActivity.this)) {
                     if (!ClashManagerAccessibilityService.isActive()) {
-                        Toast.makeText(MainActivity.this, "Tip: Enable Clash Manager in Accessibility Settings for automatic invites", Toast.LENGTH_LONG).show();
+                        Toast.makeText(MainActivity.this, accessibilityHint(), Toast.LENGTH_LONG).show();
                     }
                     startBlitzService(tagsJson, delayMs);
                     return;
@@ -596,6 +725,36 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public String getCoordinates() {
             return Calibration.load(MainActivity.this).toJson();
+        }
+
+        /**
+         * The PWA reports the background it is showing whenever its theme resolves
+         * or changes. The strips behind the status and navigation bars are this
+         * layout's background, so they take that colour, and the bar icons are
+         * picked to contrast with it. The window background from the theme only
+         * covers the moment before the page has painted: it follows the phone,
+         * while the page follows the app's own theme setting.
+         */
+        @JavascriptInterface
+        public void setThemeColors(String background, boolean dark) {
+            int color;
+            try {
+                color = Color.parseColor(background);
+            } catch (Exception e) {
+                android.util.Log.w("ClashManagerMain", "setThemeColors rejected colour: " + background);
+                return;
+            }
+            runOnUiThread(() -> {
+                mPageDark = dark;
+                mRootLayout.setBackgroundColor(color);
+                applySystemBarAppearance();
+            });
+        }
+
+        /** The last Blitz run as JSON (see BlitzRun), or an empty string when Blitz has never run. */
+        @JavascriptInterface
+        public String getLastBlitzRun() {
+            return BlitzRun.lastJson(MainActivity.this);
         }
 
         @JavascriptInterface

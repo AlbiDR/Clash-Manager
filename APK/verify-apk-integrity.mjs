@@ -110,6 +110,8 @@ const EXPECT = {
     "openExternalUrl",
     "downloadApkFile",
     "isAndroidWrapper",
+    "getLastBlitzRun",
+    "setThemeColors",
   ],
 };
 

@@ -106,10 +106,10 @@ const commands = {
   },
   start(flag) {
     if (flag && flag !== "--rehearsal") die("usage: apk-dev.mjs start [--rehearsal]");
-    // MainActivity reads the extra in onCreate, so it must be recreated. Clearing the
-    // task recreates it inside the same process; a force-stop (-S) would also do it,
-    // but Android then leaves the accessibility service unbound until it is toggled.
-    const args = flag ? ["--activity-clear-top", "--ez", rehearsalExtra(), "true"] : [];
+    // MainActivity is singleTask and reads the extra in onCreate and onNewIntent,
+    // so a plain start reaches it either way. Never force-stop (-S) for this:
+    // Android then leaves the accessibility service unbound until it is toggled.
+    const args = flag ? ["--ez", rehearsalExtra(), "true"] : [];
     console.log(adb(["shell", "am", "start", "-W", ...args, "-n", ACTIVITY]).trim());
   },
   stop() {

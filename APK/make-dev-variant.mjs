@@ -66,6 +66,11 @@ export function devManifest(manifest) {
   return out;
 }
 
+/** Launcher shortcuts name their target package; left alone they would open the real app. */
+export function devShortcuts(shortcuts) {
+  return replaceExactly(shortcuts, `android:targetPackage="${RELEASE_PACKAGE}"`, `android:targetPackage="${DEV_PACKAGE}"`, 3, "shortcut targets");
+}
+
 export function devStrings(strings, pwaUrl) {
   const scope = new URL(pwaUrl);
   scope.hash = "";
@@ -103,6 +108,8 @@ function main() {
   const strings = readFileSync(stringsPath, "utf8");
   const pwaUrl = url || releaseScopeUrl(strings);
   writeFileSync(manifestPath, devManifest(readFileSync(manifestPath, "utf8")));
+  const shortcutsPath = path.join(dir, "res", "xml", "shortcuts.xml");
+  writeFileSync(shortcutsPath, devShortcuts(readFileSync(shortcutsPath, "utf8")));
   writeFileSync(stringsPath, devStrings(strings, pwaUrl));
   console.log(`✓ dev variant: ${DEV_PACKAGE}, debuggable, loading ${pwaUrl}`);
 }

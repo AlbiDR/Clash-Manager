@@ -31,6 +31,17 @@ export interface AndroidBridge {
    * wrapper by the bridge object's presence and never needs to call this.
    */
   isAndroidWrapper?(): boolean;
+  /**
+   * The last Blitz run as JSON ({@link BlitzRunRecord}), or "" when Blitz has
+   * never run. Optional: shells before 14.50.124 do not record runs.
+   */
+  getLastBlitzRun?(): string;
+  /**
+   * Reports the page's background colour and darkness, so the shell paints the
+   * strips behind the system bars to match and picks readable icons. Optional:
+   * shells before 14.50.124 do not have it.
+   */
+  setThemeColors?(background: string, dark: boolean): void;
   /** Opens a URL using the native Android ACTION_VIEW intent. */
   openExternalUrl(url: string): void;
   /**
@@ -73,6 +84,25 @@ export interface AndroidBridge {
    *   the invite/close taps fire, per the user's Blitz Speed setting.
    */
   startBlitz(payload: string, delayMs: number): void;
+}
+
+/**
+ * What the native shell recorded about the last Blitz run (BlitzRun.java).
+ *
+ * @remarks
+ * A run happens inside Clash Royale, where the PWA cannot see it, so the shell
+ * keeps this record and the PWA reports it when the user comes back.
+ */
+export interface BlitzRunRecord {
+  startedAt: number;
+  /** 0 while the run is still going. */
+  endedAt: number;
+  players: number;
+  opened: number;
+  /** Invite taps dispatched; fewer than `opened` when accessibility was not connected. */
+  invites: number;
+  outcome: "running" | "completed" | "stopped" | "failed";
+  rehearsal: boolean;
 }
 
 /**

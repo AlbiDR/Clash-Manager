@@ -44,6 +44,8 @@ Declared permissions: `SYSTEM_ALERT_WINDOW`, `FOREGROUND_SERVICE`, `FOREGROUND_S
 | `openAccessibilitySettings()` | void | Opens the system accessibility settings. |
 | `getAppVersionName()` / `getAppVersionCode()` / `getBuildNumber()` | string / number / number | Reports installed APK identity so updater checks never hand Android a downgrade. |
 | `getCoordinates()` / `saveCoordinates(ix, iy, cx, cy)` | string / void | Read and persist Blitz calibration coordinates. |
+| `getLastBlitzRun()` | string | The last Blitz run as JSON (players, profiles opened, invite taps, outcome), so the PWA can report a run it could not watch. |
+| `setThemeColors(background, dark)` | void | The PWA reports the colours it is showing, so the strips behind the status and navigation bars match the page and their icons stay readable. |
 | `startBlitz(tagsJson, delayMs)` | void | Starts a Blitz sequence for the given player tags, dwelling `delayMs` on each profile. |
 | `openPlayerProfile(tag)` | void | Deep-links to a Clash Royale player profile. |
 | `openExternalUrl(url)` | void | Opens a URL via an Android intent. |
