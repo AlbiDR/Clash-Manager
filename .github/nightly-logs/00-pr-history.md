@@ -16,6 +16,23 @@ LAST_AGED:   2026-10-02
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-03] PR #2065 [Stage 9]: (1) changed-files: 28, dep-violations: 0, knip: 3 unused exports (exempt router loaders), 1 duplicate export (BLITZ_DWELL_MIN/DEFAULT); (2) clean-calibration: 2; (3) inspected: usePrecisionSlider.ts; (4) candidate compliant, hunt passed.
+**Domain:** architecture | **Commit:** e7b580051 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2065)
+**Files:** .github/nightly-logs/09-refactor-proposals-coverage.log, .github/nightly-logs/09-refactor-proposals-pr-body.md
+**Why:** Substrate is fully compliant with ADR Section I/II. Dead export candidates in knip.txt were proven required for dynamic framework resolution, and duplicate exports are intentionally distinct domain constants.
+**Change:** (1) changed-files: 28, dep-violations: 0, knip: 3 unused exports (exempt router loaders), 1 duplicate export (BLITZ_DWELL_MIN/DEFAULT); (2) clean-calibration: 2; (3) inspected: usePrecisionSlider.ts; (4) candidate compliant, hunt passed.
+**Result:** depcruise scanned 511 modules / 1501 dependencies with 0 violations; 209 unit test files / 2107 tests in Frontend-PWA passed cleanly.
+**Nudges:** 0
+
+### [2026-10-03] PR #2064 [Stage 10]: Verified PWA assetlinks, web manifest alignment, version code/name sync, release metadata, and cleartext traffic policy
+**Domain:** apk | **Commit:** d9dd132ae | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2064)
+**Files:** .github/nightly-logs/10-apk-integrity-coverage.log, .github/nightly-logs/10-apk-integrity-pr-body.md
+**Why:** All APK wrapper invariants were verified and found to be strictly aligned with PWA and build configs
+**Change:** Verified PWA assetlinks, web manifest alignment, version code/name sync, release metadata, and cleartext traffic policy
+**Result:** All checks passed via pnpm audit:apk, pnpm apk:verify:source, and pnpm test:apk-release
+**Nudges:** 0
+
+
 ### [2026-10-03] PR #2063 [Stage 8]: Bumped dependency-cruiser to ^18.5.0 in monorepo catalog and refreshed lockfile
 **Domain:** dependencies | **Commit:** 39e3b09da | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2063)
 **Files:** .github/nightly-logs/08-dependency-audit-coverage.log, .github/nightly-logs/08-dependency-audit-pr-body.md, package.json, pnpm-lock.yaml, pnpm-workspace.yaml
