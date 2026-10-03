@@ -1,26 +1,26 @@
 ### Nightly Stage 2: Verification - Logic Integrity Auditor
 
-**Status:** CLEAN
+**Status:** CHANGED
 
-In plain terms: nothing needed fixing. This run checked the verification area and found it already correct, so the only file here is the log recording that the check happened.
+In plain terms: this adds 1 test file in the verification area. No product code changed, so the app behaves exactly as it did before.
 
-**What was checked:** Audited 42 recently changed files and L1 core utility specs including useProgressiveList.ts, deep-depth.ts, royaleSchemas.ts, rpcSchemas.ts, and protocol.ts for coverage gaps.
+**What changed:** Frontend-PWA/src/shared/composables/composables-tests/usePrecisionSlider.spec.ts -- Expanded usePrecisionSlider spec for active drag moves, pointer capture, null track guard, non-positive step grids, and boundary detents.
 
-**Why:** Completed daily logic integrity audit pass across recent changes and core validation boundaries with zero uncovered gaps identified.
+**Why:** Close partial coverage gaps and edge cases in usePrecisionSlider interaction composable.
 
-**Result:** Vitest pnpm -F clash-manager-pwa test passed 2102 of 2102 tests, Vitest pnpm -F clash-manager-backend test passed 297 of 297 tests
+**Result:** All 2107 tests in Frontend-PWA and 297 tests in Backend passed. Mutation proof: commenting out setValueFromClientX in handlePointerMove was caught by 'updates value during handlePointerMove when drag is active'.
 
-**Files changed:** .github/nightly-logs/02-verification-coverage.log
+**Files changed:** .github/nightly-logs/02-verification-coverage.log, Frontend-PWA/src/shared/composables/composables-tests/usePrecisionSlider.spec.ts
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: verification
-  Cycle: nightly-cycle/2026-10-02
+  Cycle: nightly-cycle/2026-10-03
   Contract: b2e927ebff4e2ca5a343609133745d050f07d22fd9bf3e42481440c1d14079f0
-  Why: Completed daily logic integrity audit pass across recent changes and core validation boundaries with zero uncovered gaps identified.
-  Change: Audited 42 recently changed files and L1 core utility specs including useProgressiveList.ts, deep-depth.ts, royaleSchemas.ts, rpcSchemas.ts, and protocol.ts for coverage gaps.
-  Result: Vitest pnpm -F clash-manager-pwa test passed 2102 of 2102 tests, Vitest pnpm -F clash-manager-backend test passed 297 of 297 tests
-  Files: .github/nightly-logs/02-verification-coverage.log
+  Why: Close partial coverage gaps and edge cases in usePrecisionSlider interaction composable.
+  Change: Frontend-PWA/src/shared/composables/composables-tests/usePrecisionSlider.spec.ts -- Expanded usePrecisionSlider spec for active drag moves, pointer capture, null track guard, non-positive step grids, and boundary detents.
+  Result: All 2107 tests in Frontend-PWA and 297 tests in Backend passed. Mutation proof: commenting out setValueFromClientX in handlePointerMove was caught by 'updates value during handlePointerMove when drag is active'.
+  Files: .github/nightly-logs/02-verification-coverage.log, Frontend-PWA/src/shared/composables/composables-tests/usePrecisionSlider.spec.ts
   Nudges: 0
-  Execution: 20077de0ff2d0b8101ed0879392bd8028579c1f2
+  Execution: 11a01e4cf85adaab4fa11c42ccadae560dd27523
 -->
