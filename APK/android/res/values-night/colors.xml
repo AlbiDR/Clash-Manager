@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Dark counterpart of values/colors.xml cm_window_background (tokens.ts dark background). -->
+    <color name="cm_window_background">#0b0e14</color>
+</resources>

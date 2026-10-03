@@ -283,24 +283,24 @@ function finishDockSwap() {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  :global(html:not([data-motion-preference="standard"])) .dock-container.is-swapping {
+  html:not([data-motion-preference="standard"]) .dock-container.is-swapping {
     transition: none;
   }
 
-  :global(html:not([data-motion-preference="standard"])) .dock-swap-enter-active,
-  :global(html:not([data-motion-preference="standard"])) .dock-swap-leave-active {
+  html:not([data-motion-preference="standard"]) .dock-swap-enter-active,
+  html:not([data-motion-preference="standard"]) .dock-swap-leave-active {
     transition: opacity var(--sys-motion-duration-200) linear;
   }
 
-  :global(html:not([data-motion-preference="standard"])) .dock-swap-enter-from,
-  :global(html:not([data-motion-preference="standard"])) .dock-swap-leave-to {
+  html:not([data-motion-preference="standard"]) .dock-swap-enter-from,
+  html:not([data-motion-preference="standard"]) .dock-swap-leave-to {
     transform: none;
   }
 }
 
-:global(html[data-motion-preference="reduced"]) .dock-container.is-swapping { transition: none; }
-:global(html[data-motion-preference="reduced"]) .dock-swap-enter-active,
-:global(html[data-motion-preference="reduced"]) .dock-swap-leave-active { transition: opacity var(--sys-motion-duration-200) linear; }
-:global(html[data-motion-preference="reduced"]) .dock-swap-enter-from,
-:global(html[data-motion-preference="reduced"]) .dock-swap-leave-to { transform: none; }
+html[data-motion-preference="reduced"] .dock-container.is-swapping { transition: none; }
+html[data-motion-preference="reduced"] .dock-swap-enter-active,
+html[data-motion-preference="reduced"] .dock-swap-leave-active { transition: opacity var(--sys-motion-duration-200) linear; }
+html[data-motion-preference="reduced"] .dock-swap-enter-from,
+html[data-motion-preference="reduced"] .dock-swap-leave-to { transform: none; }
 </style>

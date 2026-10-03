@@ -1,6 +1,6 @@
 {
   "name": "clash-manager-monorepo",
-  "version": "14.50.121",
+  "version": "14.50.124",
   "license": "GPL-3.0-only",
   "private": true,
   "scripts": {
@@ -10,6 +10,11 @@
     "apk:check": "./APK/build-apk.sh --no-sign",
     "apk:verify": "node APK/verify-apk-integrity.mjs",
     "apk:verify:source": "node APK/verify-android-source.mjs APK/android",
+    "apk:check:source": "./APK/build-apk.sh --check",
+    "apk:test": "./APK/test-apk.sh",
+    "apk:verify:bridge": "node APK/verify-bridge-contract.mjs",
+    "apk:verify:dwell": "node APK/verify-dwell-parity.mjs",
+    "test:apk-native": "node --test APK/verify-bridge-contract.test.mjs APK/verify-dwell-parity.test.mjs APK/verify-dex-source.test.mjs",
     "build": "pnpm -r build",
     "test": "pnpm -r test",
     "version:bump": "node .github/scripts/project/bump-version.mjs",

@@ -3,6 +3,7 @@
 import { ref } from "vue";
 import { darkTokens, generateCssVariables, lightTokens } from "../../core/theme/tokens";
 import { THEME_STORAGE_KEY, resolveIsDark, type Theme } from "../../core/theme/themeContract";
+import type { WindowWithBridge } from "../../core/types";
 
 export type { Theme };
 
@@ -64,6 +65,12 @@ export function useTheme() {
     meta.name = "theme-color";
     meta.content = targetTokens.color.background;
     document.head.appendChild(meta);
+
+    // 4. Tell the Android shell what the page is showing. It paints the strips
+    // behind the status and navigation bars and picks their icon colour, and the
+    // app's theme setting can differ from the phone's, so the phone's dark mode
+    // alone cannot decide either. Older shells lack the method.
+    (window as WindowWithBridge).AndroidBridge?.setThemeColors?.(targetTokens.color.background, isDark);
   }
 
   /**

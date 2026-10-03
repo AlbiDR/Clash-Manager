@@ -79,4 +79,7 @@
     <color name="tooltip_background_dark">#e6616161</color>
     <color name="tooltip_background_light">#e6ffffff</color>
     <color name="windowBackground">#0b0e14</color>
+    <!-- Shown behind the PWA until it paints. Mirrors the PWA's background token
+         (Frontend-PWA/src/core/theme/tokens.ts): light here, dark in values-night. -->
+    <color name="cm_window_background">#fdfcff</color>
 </resources>

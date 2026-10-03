@@ -7,8 +7,9 @@ import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
+import android.content.pm.ApplicationInfo;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.ColorFilter;
@@ -18,11 +19,11 @@ import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewTreeObserver;
@@ -44,6 +45,31 @@ import org.json.JSONException;
 
 public class BlitzService extends Service {
 
+    private static final String TAG = "ClashManagerBlitz";
+
+    /**
+     * Rehearsal runs the whole of Blitz (panel, markers, Start, the Stop pill,
+     * both taps, completion) without opening Clash Royale: the game switches USB
+     * debugging off while it is open, so a real run can never be watched from a
+     * development machine. The taps still go out, onto whatever is on screen.
+     * Only a debuggable build (CM Dev) honours it; the release ignores the extra.
+     */
+    static final String EXTRA_REHEARSAL = "blitzRehearsal";
+
+    static boolean isRehearsal(Context context, Intent intent) {
+        return intent != null
+            && intent.getBooleanExtra(EXTRA_REHEARSAL, false)
+            && (context.getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0;
+    }
+
+    private boolean mRehearsal = false;
+
+    // The run as BlitzRun records it; mRunOutcome is null until Start is pressed.
+    private String mRunOutcome = null;
+    private long mRunStartedAt = 0L;
+    private int mRunOpened = 0;
+    private int mRunInvites = 0;
+
     /**
      * Fallback wait-for-profile-to-render delay, used only if the JS layer's
      * Blitz Speed setting (see BLITZ_SPEED_DELAYS in the PWA) somehow isn't
@@ -58,7 +84,7 @@ public class BlitzService extends Service {
      * through the "delayMs" intent extra, and the slider here has to offer the
      * same range and the same stops or the two controls would disagree about
      * what a setting means. Neither side can import the other, so
-     * .github/scripts/android/blitz-dwell-parity.mjs reads both files and fails
+     * APK/verify-dwell-parity.mjs reads both files and fails
      * the build if they ever drift apart.
      */
     static final long DWELL_MIN_MS = 850L;
@@ -151,21 +177,6 @@ public class BlitzService extends Service {
     private static final float MARKER_RING_SIZE_DP = 36.0f;
     private static final float MARKER_ANCHOR_SIZE_DP = 50.0f;
 
-    // Default calibration coordinates (normalized 0..1)
-    // Kept identical to ClashManagerAccessibilityService's fallback constants so the
-    // rendered marker, the tap-ripple feedback, and the dispatched tap always agree
-    // before the user has calibrated (saveCoordinates persists the real values after that).
-    private static final float DEFAULT_INVITE_X = 0.5083f;
-    private static final float DEFAULT_INVITE_Y = 0.7218f;
-    private static final float DEFAULT_CLOSE_X  = 0.9213f;
-    private static final float DEFAULT_CLOSE_Y  = 0.204f;
-
-    private static final String PREFS_BLITZ = "blitz_prefs";
-    private static final String PREF_INVITE_X = "invite_x";
-    private static final String PREF_INVITE_Y = "invite_y";
-    private static final String PREF_CLOSE_X  = "close_x";
-    private static final String PREF_CLOSE_Y  = "close_y";
-
     private View mInviteMarker;
     private View mCloseMarker;
     private TextView mStatusText;
@@ -197,12 +208,9 @@ public class BlitzService extends Service {
     private volatile boolean mStopped = false;
 
     private final Handler mHandler = new Handler(Looper.getMainLooper());
-    private final Runnable mCountdownRunnable = new Runnable() {
-        @Override
-        public void run() {
-            mCurrentIndex++;
-            openNextPlayerProfile();
-        }
+    private final Runnable mCountdownRunnable = () -> {
+        mCurrentIndex++;
+        openNextPlayerProfile();
     };
 
     // -------------------------------------------------------------------------
@@ -222,6 +230,16 @@ public class BlitzService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+        // startForegroundService() obliges every start to reach startForeground()
+        // within seconds, including starts that are then rejected below; a start
+        // that stopped first used to be a crash waiting for a malformed queue.
+        if (mWaitingView != null || mFloatingView != null) {
+            promoteToForeground(queueText());
+            Log.w(TAG, "start ignored: a run is already on screen");
+            Toast.makeText(this, "Blitz is already running. Finish or cancel it first.", Toast.LENGTH_LONG).show();
+            return START_NOT_STICKY;
+        }
+        promoteToForeground("Preparing Blitz Mode");
         String tagsExtra = intent != null ? intent.getStringExtra("tags") : null;
         if (tagsExtra != null) {
             try {
@@ -232,38 +250,60 @@ public class BlitzService extends Service {
                 }
                 mCurrentIndex = 0;
                 mProfileLoadDelayMs = intent.getLongExtra("delayMs", DEFAULT_PROFILE_LOAD_DELAY_MS);
+                mRehearsal = isRehearsal(this, intent);
+                Log.i(TAG, "start: " + mTagsList.size() + " player(s), dwell " + mProfileLoadDelayMs + "ms"
+                    + (mRehearsal ? ", rehearsal (Clash Royale stays closed)" : ""));
             } catch (JSONException e) {
-                e.printStackTrace();
+                Log.e(TAG, "could not parse the player queue", e);
                 Toast.makeText(this, "Failed to parse player queue", Toast.LENGTH_SHORT).show();
                 stopSelf();
-                return START_STICKY;
+                return START_NOT_STICKY;
             }
         }
         if (mTagsList.isEmpty()) {
             stopSelf();
-            return START_STICKY;
+            return START_NOT_STICKY;
         }
 
-        int pendingFlags = Build.VERSION.SDK_INT >= 23 ? PendingIntent.FLAG_IMMUTABLE : 0;
-        startForeground(NOTIFICATION_ID,
-            new NotificationCompat.Builder(this, CHANNEL_ID)
-                .setContentTitle("Clash Manager - Blitz Mode")
-                .setContentText("Opening " + mTagsList.size() + " player profiles automatically")
-                .setSmallIcon(android.R.drawable.ic_media_play)
-                .setContentIntent(PendingIntent.getActivity(this, 0,
-                    new Intent(this, MainActivity.class), pendingFlags))
-                .setOngoing(true)
-                .build());
-
+        promoteToForeground(queueText());
         mWindowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
         launchClashRoyaleOnly();
         setupWaitingOverlay();
-        return START_STICKY;
+        // Not sticky: a run the system killed has lost its queue, so restarting
+        // the service with a null intent could only show an empty panel.
+        return START_NOT_STICKY;
+    }
+
+    private String queueText() {
+        return "Opening " + mTagsList.size() + " player profiles automatically";
+    }
+
+    private void promoteToForeground(String text) {
+        startForeground(NOTIFICATION_ID,
+            new NotificationCompat.Builder(this, CHANNEL_ID)
+                .setContentTitle("Clash Manager - Blitz Mode")
+                .setContentText(text)
+                .setSmallIcon(android.R.drawable.ic_media_play)
+                .setContentIntent(PendingIntent.getActivity(this, 0,
+                    new Intent(this, MainActivity.class), PendingIntent.FLAG_IMMUTABLE))
+                .setOngoing(true)
+                .build());
+    }
+
+    /** Saves the run so the PWA can report it once the user is back in the app. */
+    private void recordRun(String outcome) {
+        mRunOutcome = outcome;
+        long endedAt = BlitzRun.RUNNING.equals(outcome) ? 0L : System.currentTimeMillis();
+        new BlitzRun(mRunStartedAt, endedAt, mTagsList.size(), mRunOpened, mRunInvites, outcome, mRehearsal).save(this);
     }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
+        if (BlitzRun.RUNNING.equals(mRunOutcome)) {
+            Log.i(TAG, "stopped after " + mRunOpened + " of " + mTagsList.size() + " player(s)");
+            recordRun(BlitzRun.STOPPED);
+        }
         mStopped = true;
         mHandler.removeCallbacksAndMessages(null);
         removeWaitingOverlay();
@@ -291,6 +331,10 @@ public class BlitzService extends Service {
     // -------------------------------------------------------------------------
 
     private void launchClashRoyaleOnly() {
+        if (mRehearsal) {
+            Log.i(TAG, "rehearsal: not opening Clash Royale");
+            return;
+        }
         try {
             Intent launch = getPackageManager().getLaunchIntentForPackage("com.supercell.clashroyale");
             if (launch != null) {
@@ -391,13 +435,13 @@ public class BlitzService extends Service {
         if (mWindowManager == null) {
             return;
         }
-        int overlayType = Build.VERSION.SDK_INT >= 26 ? 2038 : 2002;
+        int overlayType = WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY;
 
-        SharedPreferences prefs = getSharedPreferences(PREFS_BLITZ, MODE_PRIVATE);
-        float inviteXNorm = prefs.getFloat(PREF_INVITE_X, DEFAULT_INVITE_X);
-        float inviteYNorm = prefs.getFloat(PREF_INVITE_Y, DEFAULT_INVITE_Y);
-        float closeXNorm  = prefs.getFloat(PREF_CLOSE_X,  DEFAULT_CLOSE_X);
-        float closeYNorm  = prefs.getFloat(PREF_CLOSE_Y,  DEFAULT_CLOSE_Y);
+        var saved = Calibration.load(this);
+        float inviteXNorm = saved.inviteX();
+        float inviteYNorm = saved.inviteY();
+        float closeXNorm  = saved.closeX();
+        float closeYNorm  = saved.closeY();
 
         DisplayMetrics dm = getResources().getDisplayMetrics();
         float screenW = dm.widthPixels;
@@ -483,12 +527,7 @@ public class BlitzService extends Service {
         cancelBtn.setBackgroundColor(Color.TRANSPARENT);
         cancelBtn.setTextSize(TEXT_SIZE_BUTTON_SP);
         cancelBtn.setPadding(btnPadH, btnPadV, btnPadH, btnPadV);
-        cancelBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                stopSelf();
-            }
-        });
+        cancelBtn.setOnClickListener(v -> stopSelf());
         btnRow.addView(cancelBtn);
 
         // Spacer
@@ -507,23 +546,24 @@ public class BlitzService extends Service {
         startBg.setCornerRadius(BUTTON_CORNER_RADIUS_DP * dp);
         startBg.setColor(Color.parseColor(COLOR_BUTTON_START));
         startBtn.setBackground(startBg);
-        startBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                saveCoordinates(true);
-                Toast.makeText(BlitzService.this, "Coordinates saved", Toast.LENGTH_SHORT).show();
-                if (mWindowManager != null && mWaitingView != null) {
-                    try {
-                        mWindowManager.removeView(mWaitingView);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                    mWaitingView = null;
+        startBtn.setOnClickListener(v -> {
+            saveCoordinates(true);
+            Toast.makeText(this, "Coordinates saved", Toast.LENGTH_SHORT).show();
+            if (mWindowManager != null && mWaitingView != null) {
+                try {
+                    mWindowManager.removeView(mWaitingView);
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
-                transitionMarkersToRunningState();
-                setupFloatingView();
-                openNextPlayerProfile();
+                mWaitingView = null;
             }
+            transitionMarkersToRunningState();
+            setupFloatingView();
+            mRunStartedAt = System.currentTimeMillis();
+            mRunOpened = 0;
+            mRunInvites = 0;
+            recordRun(BlitzRun.RUNNING);
+            openNextPlayerProfile();
         });
         btnRow.addView(startBtn);
 
@@ -544,20 +584,17 @@ public class BlitzService extends Service {
         modifyBtn.setScaleType(ImageView.ScaleType.FIT_CENTER);
         modifyBtn.setColorFilter(Color.parseColor(COLOR_ICON_LOCKED));
 
-        modifyBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                mIsCalibrationUnlocked = !mIsCalibrationUnlocked;
-                if (mIsCalibrationUnlocked) {
-                    modifyBtn.setColorFilter(Color.parseColor(COLOR_ICON_UNLOCKED));
-                } else {
-                    modifyBtn.setColorFilter(Color.parseColor(COLOR_ICON_LOCKED));
-                    saveCoordinates(true);
-                }
-                updateWaitingOverlayTexts(titleView, subtitleView);
-                updateMarkerDraggability();
-                updateDwellRowVisibility();
+        modifyBtn.setOnClickListener(v -> {
+            mIsCalibrationUnlocked = !mIsCalibrationUnlocked;
+            if (mIsCalibrationUnlocked) {
+                modifyBtn.setColorFilter(Color.parseColor(COLOR_ICON_UNLOCKED));
+            } else {
+                modifyBtn.setColorFilter(Color.parseColor(COLOR_ICON_LOCKED));
+                saveCoordinates(true);
             }
+            updateWaitingOverlayTexts(titleView, subtitleView);
+            updateMarkerDraggability();
+            updateDwellRowVisibility();
         });
 
         // Wrap container + gear in a FrameLayout so the gear floats over the top-end corner
@@ -772,7 +809,7 @@ public class BlitzService extends Service {
         // (dm.widthPixels/heightPixels * percent), so without these flags the rendered
         // marker drifts down (and, depending on device insets, sideways) from the point
         // that actually gets tapped.
-        int overlayType = Build.VERSION.SDK_INT >= 26 ? 2038 : 2002;
+        int overlayType = WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY;
         final WindowManager.LayoutParams markerLp = new WindowManager.LayoutParams(
             WindowManager.LayoutParams.WRAP_CONTENT,
             WindowManager.LayoutParams.WRAP_CONTENT,
@@ -819,25 +856,25 @@ public class BlitzService extends Service {
                 if (mWaitingView == null || !mIsCalibrationUnlocked) {
                     return false;
                 }
-                switch (event.getAction()) {
-                    case MotionEvent.ACTION_DOWN:
+                return switch (event.getAction()) {
+                    case MotionEvent.ACTION_DOWN -> {
                         startX = markerLp.x;
                         startY = markerLp.y;
                         touchX = event.getRawX();
                         touchY = event.getRawY();
-                        return true;
-                    case MotionEvent.ACTION_MOVE:
+                        yield true;
+                    }
+                    case MotionEvent.ACTION_MOVE -> {
                         markerLp.x = startX + (int) (event.getRawX() - touchX);
                         markerLp.y = startY + (int) (event.getRawY() - touchY);
                         if (mWindowManager != null) {
                             mWindowManager.updateViewLayout(v, markerLp);
                         }
-                        return true;
-                    case MotionEvent.ACTION_UP:
-                        return true;
-                    default:
-                        return false;
-                }
+                        yield true;
+                    }
+                    case MotionEvent.ACTION_UP -> true;
+                    default -> false;
+                };
             }
         });
 
@@ -858,7 +895,7 @@ public class BlitzService extends Service {
         // least that big (plus a small margin for the stroke) or the OS surface hard-clips
         // the animation right where it should be fading out.
         int windowSize = (int) (size * 2.2f);
-        int overlayType = Build.VERSION.SDK_INT >= 26 ? 2038 : 2002;
+        int overlayType = WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY;
 
         FrameLayout indicatorContainer = new FrameLayout(this);
         final View indicator = new View(this);
@@ -906,16 +943,13 @@ public class BlitzService extends Service {
                 .scaleY(2.0f)
                 .setDuration(500L)
                 .setInterpolator(new DecelerateInterpolator())
-                .withEndAction(new Runnable() {
-                    @Override
-                    public void run() {
-                        try {
-                            if (mWindowManager != null) {
-                                mWindowManager.removeView(indicatorContainer);
-                            }
-                            mTapIndicatorViews.remove(indicatorContainer);
-                        } catch (Exception ignored) {
+                .withEndAction(() -> {
+                    try {
+                        if (mWindowManager != null) {
+                            mWindowManager.removeView(indicatorContainer);
                         }
+                        mTapIndicatorViews.remove(indicatorContainer);
+                    } catch (Exception ignored) {
                     }
                 })
                 .start();
@@ -955,23 +989,13 @@ public class BlitzService extends Service {
         float closeCX  = closeLp.x  + (closeW  / 2.0f);
         float closeCY  = closeLp.y  + (closeH  - halfRadius);
 
-        float normIX = clamp(inviteCX / screenW, 0f, 1f, DEFAULT_INVITE_X);
-        float normIY = clamp(inviteCY / screenH, 0f, 1f, DEFAULT_INVITE_Y);
-        float normCX = clamp(closeCX  / screenW, 0f, 1f, DEFAULT_CLOSE_X);
-        float normCY = clamp(closeCY  / screenH, 0f, 1f, DEFAULT_CLOSE_Y);
-
-        SharedPreferences.Editor editor = getSharedPreferences(PREFS_BLITZ, MODE_PRIVATE)
-            .edit()
-            .putFloat(PREF_INVITE_X, normIX)
-            .putFloat(PREF_INVITE_Y, normIY)
-            .putFloat(PREF_CLOSE_X,  normCX)
-            .putFloat(PREF_CLOSE_Y,  normCY);
-
-        if (commit) {
-            editor.commit();
-        } else {
-            editor.apply();
-        }
+        var fallback = Calibration.DEFAULT;
+        new Calibration(
+            clamp(inviteCX / screenW, 0f, 1f, fallback.inviteX()),
+            clamp(inviteCY / screenH, 0f, 1f, fallback.inviteY()),
+            clamp(closeCX  / screenW, 0f, 1f, fallback.closeX()),
+            clamp(closeCY  / screenH, 0f, 1f, fallback.closeY())
+        ).save(this, commit);
     }
 
     private static float clamp(float value, float min, float max, float fallback) {
@@ -1019,6 +1043,8 @@ public class BlitzService extends Service {
         }
         mHandler.removeCallbacks(mCountdownRunnable);
         if (mCurrentIndex >= mTagsList.size()) {
+            Log.i(TAG, "complete: queue already finished");
+            recordRun(BlitzRun.COMPLETED);
             Toast.makeText(this, "Blitz complete", Toast.LENGTH_SHORT).show();
             stopSelf();
             return;
@@ -1028,22 +1054,32 @@ public class BlitzService extends Service {
         if (tag.startsWith("#")) {
             tag = tag.substring(1);
         }
-        try {
-            Intent uri = Intent.parseUri(
-                "intent://playerInfo?id=" + tag
-                    + "#Intent;scheme=clashroyale;package=com.supercell.clashroyale;end", 1);
-            uri.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            startActivity(uri);
-        } catch (Exception e) {
-            e.printStackTrace();
-            Toast.makeText(this, "Could not open Clash Royale - is it installed?",
-                Toast.LENGTH_SHORT).show();
+        Log.i(TAG, "player " + (mCurrentIndex + 1) + "/" + mTagsList.size() + ": #" + tag
+            + (mRehearsal ? " (rehearsal: profile not opened)" : ""));
+        if (!mRehearsal) {
+            try {
+                var profile = Intent.parseUri(
+                    "intent://playerInfo?id=" + tag
+                        + "#Intent;scheme=clashroyale;package=com.supercell.clashroyale;end", Intent.URI_INTENT_SCHEME);
+                profile.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                startActivity(profile);
+            } catch (Exception e) {
+                // Without the profile on screen the taps would land on whatever is
+                // showing instead, so the run ends here rather than tapping blind.
+                Log.e(TAG, "could not open the profile of #" + tag + "; run stopped", e);
+                recordRun(BlitzRun.FAILED);
+                Toast.makeText(this, "Could not open Clash Royale - Blitz stopped", Toast.LENGTH_LONG).show();
+                stopSelf();
+                return;
+            }
         }
+        mRunOpened++;
+        recordRun(BlitzRun.RUNNING);
 
         updateOverlayUi();
 
         if (ClashManagerAccessibilityService.isActive()) {
-            final DisplayMetrics dm = getResources().getDisplayMetrics();
+            var dm = getResources().getDisplayMetrics();
             // Wait for Clash Royale's profile screen to render, then run the invite/close
             // taps chained off each gesture's own completion (see
             // ClashManagerAccessibilityService#runInviteCloseSequence) instead of two
@@ -1051,35 +1087,34 @@ public class BlitzService extends Service {
             // GESTURE_TOTAL_DELAY_MS schedule left no margin against Handler jitter and
             // could have the close tap's dispatchGesture() cancel an invite tap still in
             // flight.
-            mHandler.postDelayed(new Runnable() {
-                @Override
-                public void run() {
-                    ClashManagerAccessibilityService.runInviteCloseSequence(
-                        new ClashManagerAccessibilityService.TapSequenceCallback() {
-                            @Override
-                            public void onInviteTapped(float xPercent, float yPercent) {
-                                showTapIndicator(xPercent * dm.widthPixels, yPercent * dm.heightPixels, Color.parseColor("#0061a4"));
-                            }
+            mHandler.postDelayed(() -> ClashManagerAccessibilityService.runInviteCloseSequence(
+                new ClashManagerAccessibilityService.TapSequenceCallback() {
+                    @Override
+                    public void onInviteTapped(float xPercent, float yPercent) {
+                        mRunInvites++;
+                        Log.i(TAG, "invite tap at " + xPercent + ", " + yPercent);
+                        showTapIndicator(xPercent * dm.widthPixels, yPercent * dm.heightPixels, Color.parseColor("#0061a4"));
+                    }
 
-                            @Override
-                            public void onCloseTapped(float xPercent, float yPercent) {
-                                showTapIndicator(xPercent * dm.widthPixels, yPercent * dm.heightPixels, Color.parseColor("#ba1a1a"));
-                            }
+                    @Override
+                    public void onCloseTapped(float xPercent, float yPercent) {
+                        Log.i(TAG, "close tap at " + xPercent + ", " + yPercent);
+                        showTapIndicator(xPercent * dm.widthPixels, yPercent * dm.heightPixels, Color.parseColor("#ba1a1a"));
+                    }
 
-                            @Override
-                            public void onSequenceComplete() {
-                                // The tap sequence runs on ClashManagerAccessibilityService's own
-                                // Handler, independent of this service's, so it can still fire
-                                // after Stop was pressed and this service was destroyed.
-                                if (mStopped) {
-                                    return;
-                                }
-                                scheduleAdvance(0L);
-                            }
-                        });
-                }
-            }, mProfileLoadDelayMs);
+                    @Override
+                    public void onSequenceComplete() {
+                        // The tap sequence runs on ClashManagerAccessibilityService's own
+                        // Handler, independent of this service's, so it can still fire
+                        // after Stop was pressed and this service was destroyed.
+                        if (mStopped) {
+                            return;
+                        }
+                        scheduleAdvance(0L);
+                    }
+                }), mProfileLoadDelayMs);
         } else {
+            Log.w(TAG, "accessibility service is not connected: no taps sent");
             scheduleAdvance(mProfileLoadDelayMs);
         }
     }
@@ -1090,12 +1125,11 @@ public class BlitzService extends Service {
         if (mCurrentIndex < remaining) {
             mHandler.postDelayed(mCountdownRunnable, delay);
         } else {
-            mHandler.postDelayed(new Runnable() {
-                @Override
-                public void run() {
-                    Toast.makeText(BlitzService.this, "Blitz complete", Toast.LENGTH_SHORT).show();
-                    stopSelf();
-                }
+            mHandler.postDelayed(() -> {
+                Log.i(TAG, "complete: " + mTagsList.size() + " player(s)");
+                recordRun(BlitzRun.COMPLETED);
+                Toast.makeText(this, "Blitz complete", Toast.LENGTH_SHORT).show();
+                stopSelf();
             }, delay);
         }
     }
@@ -1172,12 +1206,7 @@ public class BlitzService extends Service {
         closeBg.setCornerRadius(BUTTON_CORNER_RADIUS_DP * dp);
         closeBg.setColor(Color.parseColor(COLOR_BUTTON_CANCEL));
         closeBtn.setBackground(closeBg);
-        closeBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                stopSelf();
-            }
-        });
+        closeBtn.setOnClickListener(v -> stopSelf());
         pill.addView(closeBtn);
 
         // Draggable pill
@@ -1188,7 +1217,7 @@ public class BlitzService extends Service {
         final WindowManager.LayoutParams pillLp = new WindowManager.LayoutParams(
             WindowManager.LayoutParams.WRAP_CONTENT,
             WindowManager.LayoutParams.WRAP_CONTENT,
-            Build.VERSION.SDK_INT >= 26 ? 2038 : 2002,
+            WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
                 | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN
                 | WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
@@ -1205,23 +1234,24 @@ public class BlitzService extends Service {
 
             @Override
             public boolean onTouch(View v, MotionEvent event) {
-                switch (event.getAction()) {
-                    case MotionEvent.ACTION_DOWN:
+                return switch (event.getAction()) {
+                    case MotionEvent.ACTION_DOWN -> {
                         initX = pillLp.x;
                         initY = pillLp.y;
                         initTouchX = event.getRawX();
                         initTouchY = event.getRawY();
-                        return true;
-                    case MotionEvent.ACTION_MOVE:
+                        yield true;
+                    }
+                    case MotionEvent.ACTION_MOVE -> {
                         pillLp.x = initX + (int) (event.getRawX() - initTouchX);
                         pillLp.y = initY + (int) (event.getRawY() - initTouchY);
                         if (mWindowManager != null && mFloatingView != null) {
                             mWindowManager.updateViewLayout(mFloatingView, pillLp);
                         }
-                        return true;
-                    default:
-                        return false;
-                }
+                        yield true;
+                    }
+                    default -> false;
+                };
             }
         });
 
@@ -1315,11 +1345,9 @@ public class BlitzService extends Service {
         thumb.setSize(thumbPx, thumbPx);
         seek.setThumb(thumb);
         seek.setThumbOffset(0);
-        if (Build.VERSION.SDK_INT >= 21) {
-            // Without this the platform punches a gap in the track under the thumb,
-            // which reads as a break in the scale rather than a handle on it.
-            seek.setSplitTrack(false);
-        }
+        // Without this the platform punches a gap in the track under the thumb,
+        // which reads as a break in the scale rather than a handle on it.
+        seek.setSplitTrack(false);
         // Half a thumb at each end, so the handle centre travels the width the
         // ratio maths assumes and never overhangs the track.
         seek.setPadding(thumbPx / 2, (int) (8.0f * dp), thumbPx / 2, (int) (8.0f * dp));
@@ -1578,14 +1606,11 @@ public class BlitzService extends Service {
     }
 
     private void createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= 26) {
-            NotificationChannel channel = new NotificationChannel(
-                CHANNEL_ID, "Blitz Mode Service", NotificationManager.IMPORTANCE_LOW);
-            channel.setDescription("Manages automated Blitz Mode player recruitment");
-            NotificationManager nm = (NotificationManager) getSystemService(NotificationManager.class);
-            if (nm != null) {
-                nm.createNotificationChannel(channel);
-            }
+        var channel = new NotificationChannel(CHANNEL_ID, "Blitz Mode Service", NotificationManager.IMPORTANCE_LOW);
+        channel.setDescription("Manages automated Blitz Mode player recruitment");
+        var nm = getSystemService(NotificationManager.class);
+        if (nm != null) {
+            nm.createNotificationChannel(channel);
         }
     }
 }

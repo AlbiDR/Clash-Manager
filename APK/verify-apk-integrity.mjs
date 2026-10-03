@@ -92,6 +92,7 @@ const EXPECT = {
   // The accessibility service is only functional with this intent-filter.
   accessibilityIntent: "android.accessibilityservice.AccessibilityService",
   // The JS<->native bridge methods the PWA depends on (compiled into the dex).
+  // APK/verify-bridge-contract.mjs keeps this list equal to the Java bridge.
   bridgeMethods: [
     "startBlitz",
     "saveCoordinates",
@@ -107,6 +108,10 @@ const EXPECT = {
     "getBuildNumber",
     "openPlayerProfile",
     "openExternalUrl",
+    "downloadApkFile",
+    "isAndroidWrapper",
+    "getLastBlitzRun",
+    "setThemeColors",
   ],
 };
 
@@ -149,13 +154,26 @@ function main() {
   let dexStrings = "";
   try {
     dexStrings = execSync(`unzip -p "${APK}" 'classes*.dex' | strings`, { encoding: "utf8", maxBuffer: 256 << 20, shell: "/bin/bash", timeout: EXEC_TIMEOUT_MS });
-  } catch { /* strings/unzip may warn; ignore */ }
+  } catch { /* handled below: an unreadable dex is a failure, not a skipped check */ }
 
   const problems = [];
 
   const pkg = (badging.match(/package: name='([^']+)'/) || [])[1];
   if (pkg === EXPECT.packageName) ok(`package ${pkg}`);
   else { fail(`package is '${pkg}', expected '${EXPECT.packageName}'`); problems.push("package"); }
+
+  // A dev build (APK/make-dev-variant.mjs) is debuggable and allows cleartext so
+  // it can be inspected and pointed at a local server. Neither may ever ship:
+  // a debuggable release lets any adb user attach to the WebView and call the
+  // privileged bridge. The package check above already rejects the dev id.
+  if (/^application-debuggable/m.test(badging)) {
+    fail("APK is debuggable - a dev build must never be released");
+    problems.push("debuggable");
+  } else ok("not debuggable");
+  if (/usesCleartextTraffic\([^)]*\)=true/.test(manifest)) {
+    fail("APK allows cleartext (http) traffic - only dev builds may");
+    problems.push("cleartext");
+  } else ok("cleartext traffic disabled");
 
   const version = (badging.match(/versionCode='(\d+)' versionName='([^']*)'/) || []);
   if (version[1]) ok(`version ${version[2]} (code ${version[1]})`);
@@ -205,7 +223,10 @@ function main() {
       else { fail(`MISSING bridge method ${m}()`); problems.push(`bridge:${m}`); }
     }
   } else {
-    console.warn("⚠ could not read dex strings (unzip/strings unavailable) - skipped bridge-method check");
+    // A release gate that cannot look must not pass. This used to warn and carry
+    // on, so a runner without unzip/strings shipped whatever it was given.
+    fail("could not read dex strings (unzip/strings unavailable) - cannot verify bridge methods");
+    problems.push("dex-unreadable");
   }
 
   console.log("");

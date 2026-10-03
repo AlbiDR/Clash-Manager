@@ -415,10 +415,10 @@ onUnmounted(() => {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  :global(html:not([data-motion-preference="standard"])) .toast.undo::after {
+  html:not([data-motion-preference="standard"]) .toast.undo::after {
     animation: none;
   }
 }
 
-:global(html[data-motion-preference="reduced"]) .toast.undo::after { animation: none; }
+html[data-motion-preference="reduced"] .toast.undo::after { animation: none; }
 </style>
