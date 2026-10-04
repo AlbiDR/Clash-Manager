@@ -111,31 +111,40 @@ function handleBlitzToggle() {
         @click="toggle('sortExplanation')"
       />
 
-      <SettingRow
-        label="Blitz Mode"
-        :description="isNativeWrapper ? 'Native foreground service' : 'Batch operations'"
-        :active="modules.blitzMode"
-        :loading="isRefreshing"
-        mini
-        @click="handleBlitzToggle()"
-      />
+      <div
+        class="blitz-controls"
+        role="group"
+        aria-label="Blitz Mode settings"
+      >
+        <SettingRow
+          label="Blitz Mode"
+          :description="isNativeWrapper ? 'Native foreground service' : 'Batch operations'"
+          :active="modules.blitzMode"
+          :loading="isRefreshing"
+          mini
+          @click="handleBlitzToggle()"
+        />
 
-      <!-- Blitz Dwell Time -->
-      <PrecisionSlider
-        v-if="modules.blitzMode"
-        :model-value="modules.blitzDwellMs"
-        label="Profile dwell time"
-        unit="MS"
-        :min="BLITZ_DWELL_MIN"
-        :max="BLITZ_DWELL_MAX"
-        :step="BLITZ_DWELL_STEP"
-        scale="log"
-        :detents="BLITZ_DWELL_DETENTS"
-        show-bounds
-        :consequence="blitzRunEstimate"
-        :consequence-chip="blitzRunChip"
-        @update:model-value="setBlitzDwell"
-      />
+        <div
+          v-if="modules.blitzMode"
+          class="blitz-details"
+        >
+          <PrecisionSlider
+            :model-value="modules.blitzDwellMs"
+            label="Profile dwell time"
+            unit="MS"
+            :min="BLITZ_DWELL_MIN"
+            :max="BLITZ_DWELL_MAX"
+            :step="BLITZ_DWELL_STEP"
+            scale="log"
+            :detents="BLITZ_DWELL_DETENTS"
+            show-bounds
+            :consequence="blitzRunEstimate"
+            :consequence-chip="blitzRunChip"
+            @update:model-value="setBlitzDwell"
+          />
+        </div>
+      </div>
     </div>
 
     <!-- Delegate Android Permissions and Calibration to AndroidCalibrationSettings -->
@@ -144,10 +153,16 @@ function handleBlitzToggle() {
 </template>
 
 <style scoped>
-.feature-controls {
+.feature-controls,
+.blitz-controls {
   display: flex;
   flex-direction: column;
   gap: var(--sys-space-8);
 }
 
+.blitz-details {
+  margin-inline-start: var(--sys-space-16);
+  padding-inline-start: var(--sys-space-16);
+  border-inline-start: var(--sys-border-width-glass) solid var(--sys-color-outline-variant);
+}
 </style>
