@@ -2,9 +2,7 @@
 // Copyright (C) 2026 AlbiDR
 
 import { vi } from "vitest";
-import { existsSync, mkdirSync, writeFileSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { ensureBonesSeed } from "./scripts/seed_bones";
 
 // Global mocks or config
 
@@ -15,15 +13,9 @@ import { fileURLToPath } from "node:url";
 // clean checkout has no bones file and no Chromium ever needs to boot for
 // tests. Seed an empty-but-valid shape synchronously so `getBone()` calls in
 // component tests resolve to `undefined` (their documented cold-start
-// behavior) instead of a module resolution error.
-const bonesPath = join(
-  dirname(fileURLToPath(import.meta.url)),
-  "src/core/theme/bones.generated.json",
-);
-if (!existsSync(bonesPath)) {
-  mkdirSync(dirname(bonesPath), { recursive: true });
-  writeFileSync(bonesPath, JSON.stringify({ components: {} }));
-}
+// behavior) instead of a module resolution error. The seed is shared with the
+// `type-check` script, which needs the same file for the same reason.
+ensureBonesSeed();
 
 // 2. Fix Network Fetch Failures
 // Mock global fetch to prevent real network requests and retry loops in CI.
