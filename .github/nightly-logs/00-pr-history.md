@@ -16,6 +16,23 @@ LAST_AGED:   2026-10-03
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-04] PR #2076 [Stage 8]: Bumped @supabase/supabase-js from ^2.117.0 to ^2.117.2 in package.json and pnpm-workspace.yaml catalogs, and re-locked dependencies
+**Domain:** dependencies | **Commit:** 2b32e7265 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2076)
+**Files:** .github/nightly-logs/08-dependency-audit-coverage.log, .github/nightly-logs/08-dependency-audit-pr-body.md, package.json, pnpm-lock.yaml, pnpm-workspace.yaml
+**Why:** Tier 1 patch bump for @supabase/supabase-js to maintain ecosystem hygiene and update persistent major version watchlist
+**Change:** Bumped @supabase/supabase-js from ^2.117.0 to ^2.117.2 in package.json and pnpm-workspace.yaml catalogs, and re-locked dependencies
+**Result:** pnpm test passed all 212 test files (2134 tests)
+**Nudges:** 0
+
+### [2026-10-04] PR #2077 [Stage 9]: (1) scan: 59 files, 0 dep-viols, knip: 3 unused, 1 dup; (2) clean-calib: 3; (3) inspected: core/config, NetworkSettings, ViewOptions, useProgressiveList, useBadge; (4) closest: BLITZ_DWELL_DEFAULT; hunt: useProgressiveList (24/24 pass)
+**Domain:** architecture | **Commit:** 54628bd15 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2077)
+**Files:** .github/nightly-logs/09-refactor-proposals-coverage.log, .github/nightly-logs/09-refactor-proposals-pr-body.md
+**Why:** Structural scan confirmed zero ADR layer or decoupling violations across all 59 candidate files. Duplicate exports in knip represent intentional domain constant derivations, and target C defect hunt on useProgressiveList confirmed green.
+**Change:** (1) scan: 59 files, 0 dep-viols, knip: 3 unused, 1 dup; (2) clean-calib: 3; (3) inspected: core/config, NetworkSettings, ViewOptions, useProgressiveList, useBadge; (4) closest: BLITZ_DWELL_DEFAULT; hunt: useProgressiveList (24/24 pass)
+**Result:** PASSED (depcruise 0 violations, 2134/2134 Frontend-PWA tests green, 297/297 Backend tests green)
+**Nudges:** 0
+
+
 ### [2026-10-04] PR #2075 [Stage 7]: Calibration pass: 7 ordinary clean runs. Catalog scan (Frontend-PWA, Backend package.json), version scan (root, Frontend-PWA, Backend package.json), and derived scan (pnpm audit:version) confirmed version 14.50.135 with 0 drift.
 **Domain:** versioning | **Commit:** 0dec5829f | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2075)
 **Files:** .github/nightly-logs/07-version-integrity-coverage.log, .github/nightly-logs/07-version-integrity-pr-body.md
