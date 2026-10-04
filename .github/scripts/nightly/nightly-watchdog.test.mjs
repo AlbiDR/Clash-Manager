@@ -43,6 +43,7 @@ import {
   sessionTelemetry,
   parseRunWindow,
   classifyPrBody,
+  describeDatabaseVerification,
   isSettlingHandoff,
   sessionSilentMinutes,
   PUBLISHER_SETTLE_MINUTES,
@@ -2378,4 +2379,36 @@ test("isSettlingHandoff needs a finished session that is holding something", () 
   assert.equal(isSettlingHandoff(base, exact), false);
   assert.equal(sessionSilentMinutes(base, exact), PUBLISHER_SETTLE_MINUTES);
   assert.equal(sessionSilentMinutes({}, exact), null);
+});
+
+// --- The CI database check (2026-10-04) --------------------------------------
+
+test("the database check is read from the newest run of its own workflow for the pull request's head", () => {
+  const pr = { number: 2071, head: { sha: "abc123" } };
+  const runs = [
+    { id: 10, name: "Nightly Database Verification", status: "completed", conclusion: "failure", html_url: "old" },
+    { id: 12, name: "Nightly PR Regression Gate", status: "completed", conclusion: "success", html_url: "gate" },
+    { id: 11, name: "Nightly Database Verification", status: "completed", conclusion: "success", html_url: "rerun" },
+  ];
+  assert.deepEqual(describeDatabaseVerification(pr, runs), {
+    pr: 2071, headSha: "abc123", runId: 11, status: "completed", conclusion: "success", url: "rerun",
+  }, "a re-run counts over the run it replaced, and another workflow never counts");
+  assert.equal(describeDatabaseVerification(pr, runs.filter(run => run.id === 12)), null, "no run of its own is no result");
+  assert.equal(describeDatabaseVerification({ number: 1 }, runs), null, "no head sha, nothing to attach to");
+});
+
+test("the database check is recorded on the database lane only, and a failed read never erases it", () => {
+  const date = "2026-10-05";
+  const lane = registry.stages.find(stage => stage.domain === "database");
+  const result = { pr: 2071, headSha: "abc123", runId: 11, status: "completed", conclusion: "failure", url: "u" };
+
+  const observed = { ...mergedObserved(date), databaseVerification: new Map([[lane.number, result]]) };
+  const entries = evaluateNightlyRun({ registry, date, observed, previousLedger: createEmptyLedger() });
+  assert.deepEqual(entries.find(entry => entry.stage === lane.number).evidence.databaseVerification, result);
+  assert.equal(entries.filter(entry => "databaseVerification" in entry.evidence).length, 1, "every other entry is unchanged");
+
+  // The next pass could not ask GitHub: the recorded result stands.
+  const previousLedger = { runs: { [date]: { [String(lane.number)]: { evidence: { databaseVerification: result } } } } };
+  const later = evaluateNightlyRun({ registry, date, observed: mergedObserved(date), previousLedger });
+  assert.deepEqual(later.find(entry => entry.stage === lane.number).evidence.databaseVerification, result);
 });

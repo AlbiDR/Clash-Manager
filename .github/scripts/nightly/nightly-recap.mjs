@@ -76,6 +76,7 @@ import {
   RECOVERED_KINDS,
   STANDING_KINDS,
   blindSpotCoverage,
+  databaseVerificationValue,
   evaluateBlindSpots,
   subCheckHistory,
 } from "./nightly-blind-spots.mjs";
@@ -346,6 +347,9 @@ export function classifyStage({ stage, entry, tag, declared, history, progress }
     health: entry?.evidence?.health ?? null,
     session: entry?.evidence?.session ?? null,
     bodyHealth: entry?.evidence?.body ?? null,
+    // The CI database check on this stage's pull request, as the watchdog
+    // recorded it. Only ever present for the database lane.
+    databaseVerification: entry?.evidence?.databaseVerification ?? null,
   };
 }
 
@@ -513,7 +517,7 @@ export function buildRecap({ ledger, registry, date, coverageByStage, prHistory,
   const historyByStage = Object.fromEntries(
     registry.stages.map(stage => [stage.number, parsePrHistoryEntries(prHistory, stage.number)]),
   );
-  const subChecks = subCheckHistory({ registry, coverageByStage: coverageByStage || {}, historyByStage, date });
+  const subChecks = subCheckHistory({ registry, coverageByStage: coverageByStage || {}, historyByStage, date, ledger });
   const stages = registry.stages.map(stage => {
     const evidenceDate = evidenceDateFor(stage.number, date);
     const tag = (tags || []).find(t => t.startsWith(`nightly/${evidenceDate}/stage-${stage.number}/pr-`)) || null;
@@ -833,9 +837,33 @@ function stageBlock(stage) {
     `${changeLabel(stage.outcome)}: ${sentencePart(semanticAction(stage))}`,
     ...(why ? [`${WHY_LABEL}: ${sentencePart(why)}`] : []),
     ...(result ? [`${RESULT_LABEL}: ${sentencePart(result)}`] : []),
+    ...databaseCheckLine(stage),
     ...stageNotes(stage),
     "",
   ];
+}
+
+/**
+ * The CI database check on the database lane's pull request, in its own line.
+ *
+ * Its own line rather than a blind-spot entry, because a FAIL is a check that
+ * RAN: the blind-spot reader counts it as answered, so without this line a
+ * failing database check would leave no trace in the report at all.
+ */
+function databaseCheckLine(stage) {
+  const run = stage.databaseVerification;
+  if (!run) return [];
+  const link = run.url ? ` See ${run.url}` : "";
+  // The FAIL line names no cause on purpose. The run fails on its first error,
+  // which can be the baseline not building at all (2026-09-03: schema "cron"
+  // does not exist), pgTAP, idempotency or the catalog comparison, and only
+  // the linked log says which.
+  switch (databaseVerificationValue(run)) {
+    case "PASS": return [`Database check: passed in CI on this pull request, so the baseline rebuilds the same database as the migrations.${link}`];
+    case "FAIL": return [`Database check: FAILED in CI on this pull request; the run's log says at which step.${link}`];
+    case "DEGRADED": return [`Database check: finished in CI without a verdict (${run.conclusion || "no conclusion"}).${link}`];
+    default: return [`Database check: still running in CI on this pull request.${link}`];
+  }
 }
 
 const JUDGED_VERDICTS = new Set([HEALTH.HEALTHY, HEALTH.DEGRADING, HEALTH.CHRONIC]);

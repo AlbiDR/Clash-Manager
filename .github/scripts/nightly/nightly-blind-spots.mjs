@@ -78,14 +78,43 @@ import { getCycleDate, getEvidenceDate } from "./nightly-events.mjs";
  * fold-state's FOLDED and UNFOLDED are not producer values, but agents narrate
  * fold-state.mjs's own verdicts with them, and both mean the check ran.
  */
+/**
+ * The semantic database check that runs in CI on the database lane's pull
+ * request, because the Jules runner has no database (it can only ever record
+ * DB-UNAVAILABLE). `workflow` is the workflow's `name:`, which the watchdog
+ * matches to find the run; a test pins the YAML to it. `domain` picks the lane
+ * from the stage registry rather than by number.
+ */
+export const DATABASE_VERIFICATION = Object.freeze({
+  workflow: "Nightly Database Verification",
+  domain: "database",
+  check: "database-verification",
+});
+
+/**
+ * The database-verification status a CI run, as the watchdog recorded it, stands
+ * for: PASS, FAIL, or DEGRADED for a run that finished without judging the
+ * baseline (cancelled, timed out). Null while it has not finished, which is
+ * "not reported yet", never a result.
+ */
+export function databaseVerificationValue(run) {
+  if (!run || String(run.status || "").toLowerCase() !== "completed") return null;
+  const conclusion = String(run.conclusion || "").toLowerCase();
+  if (conclusion === "success") return "PASS";
+  if (conclusion === "failure") return "FAIL";
+  return "DEGRADED";
+}
+
 export const SUB_CHECKS = Object.freeze([
   {
     id: "database-verification",
     label: "database verification",
     alias: /\b(?:database|db)(?:[- ]verification)?\b/i,
     selfNamed: /\bDB-(?:UN)?AVAILABLE\b/,
-    answered: ["DB-AVAILABLE"],
-    unanswered: ["DB-UNAVAILABLE", "SKIPPED"],
+    // PASS, FAIL and DEGRADED come from CI on the lane's pull request, never
+    // from the lane itself: see databaseVerificationValue.
+    answered: ["DB-AVAILABLE", "PASS", "FAIL"],
+    unanswered: ["DB-UNAVAILABLE", "SKIPPED", "DEGRADED"],
   },
   {
     id: "fold-state",
@@ -282,7 +311,7 @@ export function statedSubChecks({ structured = null, prose = "" } = {}) {
  * field removes this once every night carries it; until then, treat a reading
  * of a night older than about a week as resting on coverage logs alone.
  */
-export function subCheckHistory({ registry, coverageByStage = {}, historyByStage = {}, date }) {
+export function subCheckHistory({ registry, coverageByStage = {}, historyByStage = {}, date, ledger = null }) {
   const byStage = {};
   for (const stage of registry?.stages || []) {
     const last = getEvidenceDate(stage.number, date);
@@ -305,6 +334,17 @@ export function subCheckHistory({ registry, coverageByStage = {}, historyByStage
     }
     for (const entry of historyByStage[stage.number] || []) {
       if (entry?.date) add(entry.date, [entry.change, entry.result]);
+    }
+    // The CI database check the watchdog recorded for this lane's pull request.
+    // It answers the same question the lane could only mark DB-UNAVAILABLE, and
+    // later, so it wins over the lane's own statement for that night.
+    for (const [runDate, row] of Object.entries(ledger?.runs || {})) {
+      const value = databaseVerificationValue(row?.[String(stage.number)]?.evidence?.databaseVerification);
+      if (!value) continue;
+      const evidenceDate = getEvidenceDate(stage.number, runDate);
+      if (evidenceDate > last) continue;
+      structured.set(evidenceDate, { ...(structured.get(evidenceDate) || {}), [DATABASE_VERIFICATION.check]: value });
+      if (!prose.has(evidenceDate)) prose.set(evidenceDate, "");
     }
     byStage[stage.number] = [...prose.keys()].sort()
       .map(evidenceDate => ({
