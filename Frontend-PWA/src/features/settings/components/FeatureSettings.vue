@@ -21,6 +21,7 @@
 import { computed } from "vue";
 import { PrecisionSlider, SettingRow, SettingsCard } from "@shared";
 import {
+  usePowerSaving,
   BLITZ_BATCH_SHIFT_DELAY,
   BLITZ_DWELL_DETENTS,
   BLITZ_DWELL_MAX,
@@ -38,6 +39,7 @@ defineProps<{
 }>();
 
 const { modules, toggle, isRefreshing, rosterSize, setBlitzDwell } = useSettings();
+const { isPowerSaving } = usePowerSaving();
 const { isNativeWrapper, openAccessibilitySettings } = useNativeBridge();
 
 /**
@@ -92,6 +94,14 @@ function handleBlitzToggle() {
     :loading="isRefreshing"
     :initially-expanded="initiallyExpanded"
   >
+    <p
+      v-if="isPowerSaving"
+      class="power-saving-note"
+      role="status"
+    >
+      Battery Saver is on. Haptics, animations, blur effects, Keep Screen On,
+      and periodic refresh are paused. Dark mode is active. Your preferences will resume when it turns off.
+    </p>
     <div class="feature-controls">
       <SettingRow
         label="Ghost Benchmarking"
@@ -109,6 +119,15 @@ function handleBlitzToggle() {
         :loading="isRefreshing"
         mini
         @click="toggle('sortExplanation')"
+      />
+
+      <SettingRow
+        label="Haptic Feedback"
+        :description="isPowerSaving ? 'Paused while Battery Saver is on' : 'Vibration for taps and actions'"
+        :active="modules.hapticFeedback"
+        :loading="isRefreshing"
+        mini
+        @click="toggle('hapticFeedback')"
       />
 
       <div
@@ -164,5 +183,10 @@ function handleBlitzToggle() {
   margin-inline-start: var(--sys-space-16);
   padding-inline-start: var(--sys-space-16);
   border-inline-start: var(--sys-border-width-glass) solid var(--sys-color-outline-variant);
+}
+.power-saving-note {
+  margin: 0 0 var(--sys-space-12);
+  color: var(--sys-color-on-surface-variant);
+  font-size: var(--sys-typescale-body-sm);
 }
 </style>

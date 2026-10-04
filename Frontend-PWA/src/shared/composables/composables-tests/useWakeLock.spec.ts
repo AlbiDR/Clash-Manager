@@ -182,8 +182,7 @@ describe("useWakeLock", () => {
 
     // Now simulate visibility change back to visible
     (document as any).visibilityState = "visible";
-    const visibilityListener = eventListeners["visibilitychange"]?.[0];
-    if (visibilityListener) {
+    for (const visibilityListener of eventListeners["visibilitychange"] ?? []) {
       await visibilityListener();
     }
 
@@ -216,8 +215,7 @@ describe("useWakeLock", () => {
 
     // Now simulate visibility change back to visible
     (document as any).visibilityState = "visible";
-    const visibilityListener = eventListeners["visibilitychange"]?.[0];
-    if (visibilityListener) {
+    for (const visibilityListener of eventListeners["visibilitychange"] ?? []) {
       await visibilityListener();
     }
 

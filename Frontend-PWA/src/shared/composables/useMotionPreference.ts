@@ -1,12 +1,14 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
-import { ref, type Ref } from "vue";
+import { ref, watch, effectScope, type Ref } from "vue";
 import {
   MOTION_STORAGE_KEY,
   resolveMotionPreference,
   type MotionPreference,
 } from "../../core/theme/motionContract";
+
+import { usePowerSaving } from "@core/services/usePowerSaving";
 
 export type { MotionPreference };
 
@@ -50,12 +52,15 @@ const isInitialized = ref(false);
  * - WRITES to `localStorage` key `cm_motion_preference`.
  */
 export function useMotionPreference(): UseMotionPreferenceReturn {
+  const { isPowerSaving } = usePowerSaving();
+
   // [DECISION LOG] DOM ATTRIBUTES FOR CSS MOTION TARGETING
   // CSS targets `[data-motion-preference]` selectors on root documentElement.
   // SSR boundary check avoids window/document access errors during pre-rendering.
   function applyMotionPreference() {
     if (typeof document === "undefined") return;
-    document.documentElement.setAttribute("data-motion-preference", motionPreference.value);
+    document.documentElement.setAttribute("data-motion-preference",
+      isPowerSaving.value ? "reduced" : motionPreference.value);
   }
 
   // [DECISION LOG] EXPLICIT OVERRIDE PERSISTENCE
@@ -72,6 +77,9 @@ export function useMotionPreference(): UseMotionPreferenceReturn {
     if (isInitialized.value || typeof window === "undefined") return;
 
     motionPreference.value = resolveMotionPreference(localStorage.getItem(MOTION_STORAGE_KEY));
+    effectScope(true).run(() => {
+      watch(isPowerSaving, applyMotionPreference, { flush: "sync" });
+    });
     applyMotionPreference();
     isInitialized.value = true;
   }

@@ -23,6 +23,8 @@ const MODULES_KEY = "cm_modules_v2";
  * Defines the strict type contract for user preferences, feature toggles, and notification parameters.
  */
 export interface ModuleState {
+  /** Enables vibration feedback for taps and actions. */
+  hapticFeedback: boolean;
   /** Enables automated high-speed scanning and recruitment execution modes. */
   blitzMode: boolean;
   /** Milliseconds the sequencer waits for each profile to render before tapping. */
@@ -52,6 +54,7 @@ export interface ModuleState {
  * Serves as the authoritative baseline when initializing settings or recovering from schema parsing failures.
  */
 const DEFAULT_STATE: ModuleState = {
+  hapticFeedback: true,
   blitzMode: true,
   blitzDwellMs: BLITZ_DWELL_DEFAULT,
   ghostBenchmarking: true,
@@ -73,6 +76,7 @@ const DEFAULT_STATE: ModuleState = {
  * Prevents unvalidated, missing, or malformed settings from corrupting application state.
  */
 const ModuleStateSchema = v.object({
+  hapticFeedback: v.optional(v.boolean(), DEFAULT_STATE.hapticFeedback),
   blitzMode: v.optional(v.boolean(), DEFAULT_STATE.blitzMode),
   blitzDwellMs: v.optional(v.number(), DEFAULT_STATE.blitzDwellMs),
   ghostBenchmarking: v.optional(v.boolean(), DEFAULT_STATE.ghostBenchmarking),

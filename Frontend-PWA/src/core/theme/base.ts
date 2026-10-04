@@ -421,4 +421,14 @@ button, a, [role="button"], [role="link"], input, select, textarea {
   overscroll-behavior-y: auto;
 }
 
+
+/* Battery Saver removes ongoing decorative motion and backdrop processing. */
+:root[data-power-saving] *,
+:root[data-power-saving] *::before,
+:root[data-power-saving] *::after {
+  animation: none !important;
+  transition: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
 `;

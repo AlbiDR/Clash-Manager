@@ -26,6 +26,10 @@
  * `@JavascriptInterface` methods disagree on names, argument counts or types.
  */
 export interface AndroidBridge {
+  /** Actual Android Battery Saver state. Optional for older installed shells. */
+  isPowerSaveMode?(): boolean;
+  /** Applies the haptics preference to WebView's native feedback as well. */
+  setHapticFeedbackEnabled?(enabled: boolean): void;
   /**
    * Always true inside the wrapper. Optional because the PWA detects the
    * wrapper by the bridge object's presence and never needs to call this.

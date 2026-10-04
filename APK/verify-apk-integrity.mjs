@@ -94,6 +94,8 @@ const EXPECT = {
   // The JS<->native bridge methods the PWA depends on (compiled into the dex).
   // APK/verify-bridge-contract.mjs keeps this list equal to the Java bridge.
   bridgeMethods: [
+    "isPowerSaveMode",
+    "setHapticFeedbackEnabled",
     "startBlitz",
     "saveCoordinates",
     "getCoordinates",

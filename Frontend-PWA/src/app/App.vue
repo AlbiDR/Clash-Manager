@@ -1,6 +1,7 @@
 <!-- SPDX-License-Identifier: GPL-3.0-only -->
 <!-- Copyright (C) 2026 AlbiDR -->
 <script setup lang="ts">
+import { usePowerSaving } from "@core/services/usePowerSaving";
 import {
   ErrorBoundary,
   ToastContainer,
@@ -108,7 +109,12 @@ onMounted(() => {
       // The worker calls skipWaiting and the controllerchange listener below
       // reloads exactly once when a new version has taken control.
       await registration.update();
-      setInterval(() => void registration.update(), 60 * 60 * 1000);
+      const { isPowerSaving } = usePowerSaving();
+      setInterval(() => {
+        if (!isPowerSaving.value && document.visibilityState === "visible") {
+          void registration.update();
+        }
+      }, 60 * 60 * 1000);
     } catch (pwaRegistrationError) {
       console.warn("[PWA] Registration failed", pwaRegistrationError);
     }

@@ -18,6 +18,7 @@ export * from "./services/useClashSync";
 export * from "./services/useClashSyncUtils";
 export * from "./services/useStoragePersistence";
 export * from "./services/useAppSettings";
+export * from "./services/usePowerSaving";
 export * from "./services/useBenchmarking";
 export * from "./services/useSelectionStore";
 export * from "./services/useBadge";

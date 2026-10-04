@@ -1,7 +1,10 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
-import { ref, readonly } from "vue";
+import { ref, readonly, watch, effectScope } from "vue";
+import { useAppSettings } from "@core/services/useAppSettings";
+import { usePowerSaving } from "@core/services/usePowerSaving";
+import type { WindowWithBridge } from "@core/types";
 
 /**
  * MODULE: ADAPTIVE HAPTICS ENGINE (Layer 1 Core Service)
@@ -16,7 +19,7 @@ import { ref, readonly } from "vue";
  *   interaction tracking are instantiated exactly once per app lifecycle.
  * - Brokered Access: Business logic never touches `navigator.vibrate` directly.
  * - Adaptive Scaling: Automatically reduces vibration intensity when the
- *   device enters Low Power Mode or has a critical battery level.
+ *   browser reports a low battery while unplugged.
  *
  * OPTIMIZATIONS:
  * - Optimization #48: Adjusts feedback intensity based on battery status.
@@ -75,6 +78,14 @@ interface NavigatorWithBattery extends Navigator {
 function init() {
   if (isInitialized || typeof window === "undefined") return;
 
+  const { modules } = useAppSettings();
+  const { isPowerSaving } = usePowerSaving();
+  effectScope(true).run(() => {
+    watch(() => modules.hapticFeedback && !isPowerSaving.value, (enabled) => {
+      (window as WindowWithBridge).AndroidBridge?.setHapticFeedbackEnabled?.(enabled);
+    }, { immediate: true, flush: "sync" });
+  });
+
   // 1. Battery Awareness: Preserves device juice in low-power conditions.
   // [THREAT:] Unvalidated hardware boundaries and 'any' pathogens.
   // [DECISION LOG] Utilizing strict type narrowing for NavigatorWithBattery to
@@ -92,6 +103,9 @@ function init() {
         battery.addEventListener("levelchange", update);
         battery.addEventListener("chargingchange", update);
         update();
+      })
+      .catch(() => {
+        // Battery status is optional; unavailable status must not block feedback.
       });
   }
 
@@ -157,6 +171,9 @@ export function useHaptics() {
   const isSupported =
     typeof navigator !== "undefined" && "vibrate" in navigator;
 
+  const { modules } = useAppSettings();
+  const { isPowerSaving } = usePowerSaving();
+
   // [PERF] LAZY INIT: Call singleton initialization on first use.
   init();
 
@@ -166,7 +183,7 @@ export function useHaptics() {
    * @param pattern - Duration in ms or a pattern array.
    */
   const vibrate = (pattern: number | number[]) => {
-    if (!isSupported || !hasInteracted) return;
+    if (!isSupported || !hasInteracted || !modules.hapticFeedback || isPowerSaving.value) return;
 
     // [PERF] POWER CONSERVATION: Scale down intensity in low power mode.
     // [DECISION LOG] Adaptive haptic scaling: reductions are applied to

@@ -35,6 +35,8 @@ Declared permissions: `SYSTEM_ALERT_WINDOW`, `FOREGROUND_SERVICE`, `FOREGROUND_S
 
 | Method | Returns | Purpose |
 | :--- | :--- | :--- |
+| `isPowerSaveMode()` | boolean | Reads Android Battery Saver; changes dispatch `cm-power-save-change` to the trusted page. |
+| `setHapticFeedbackEnabled(enabled)` | void | Applies the user preference to native WebView feedback, suppressed while Battery Saver is on. |
 | `isAndroidWrapper()` | boolean | True when running inside the wrapper. |
 | `isAccessibilityActive()` | boolean | Whether the accessibility service is running. |
 | `hasOverlayPermission()` | boolean | Whether `SYSTEM_ALERT_WINDOW` is granted. |

@@ -16,6 +16,7 @@ import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Message;
+import android.os.PowerManager;
 import android.os.ParcelFileDescriptor;
 import android.provider.Settings;
 import android.webkit.JavascriptInterface;
@@ -64,6 +65,8 @@ public class MainActivity extends Activity {
     private AndroidBridge mBridge;
     private boolean mBridgeAttached = false;
     private BroadcastReceiver mApkDownloadReceiver = null;
+    private BroadcastReceiver mPowerSaveReceiver = null;
+    private boolean mHapticFeedbackEnabled = true;
     private String mPendingTagsJson = null;
     private long mPendingDelayMs = BlitzService.DEFAULT_PROFILE_LOAD_DELAY_MS;
     private boolean mAwaitingOverlayPermission = false;
@@ -254,10 +257,22 @@ public class MainActivity extends Activity {
         setContentView(frameLayout);
         applySystemBarAppearance();
         initWebView();
+        mPowerSaveReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                notifyPageOfPowerSaving();
+            }
+        };
+        registerReceiver(mPowerSaveReceiver,
+            new IntentFilter(PowerManager.ACTION_POWER_SAVE_MODE_CHANGED), Context.RECEIVER_NOT_EXPORTED);
     }
 
     @Override
     protected void onDestroy() {
+        if (mPowerSaveReceiver != null) {
+            unregisterReceiver(mPowerSaveReceiver);
+            mPowerSaveReceiver = null;
+        }
         if (this.mApkDownloadReceiver != null) {
             try {
                 unregisterReceiver(this.mApkDownloadReceiver);
@@ -280,7 +295,7 @@ public class MainActivity extends Activity {
         // belonged to the destroyed one. The bridge is reattached only by
         // loadTrustedPage() before a known-good page starts loading.
         this.mBridgeAttached = false;
-        this.mWebView.setHapticFeedbackEnabled(true);
+        this.mWebView.setHapticFeedbackEnabled(mHapticFeedbackEnabled && !isSystemPowerSaving());
         // Transparent until the PWA paints, so the window background shows rather
         // than WebView's default white flash in dark mode.
         this.mWebView.setBackgroundColor(Color.TRANSPARENT);
@@ -363,6 +378,7 @@ public class MainActivity extends Activity {
                 // not sent again, so the page is told once it is there.
                 if (view == mWebView) {
                     notifyPageOfSafeArea();
+                    notifyPageOfPowerSaving();
                 }
             }
 
@@ -490,6 +506,19 @@ public class MainActivity extends Activity {
      * keyboard, a switch of navigation mode), so it reads getSafeAreaInsets()
      * again. Pages from other origins are left alone.
      */
+    private boolean isSystemPowerSaving() {
+        PowerManager powerManager = getSystemService(PowerManager.class);
+        return powerManager != null && powerManager.isPowerSaveMode();
+    }
+
+    private void notifyPageOfPowerSaving() {
+        if (mWebView == null) return;
+        mWebView.setHapticFeedbackEnabled(mHapticFeedbackEnabled && !isSystemPowerSaving());
+        if (isTrustedOrigin(mWebView.getUrl())) {
+            mWebView.evaluateJavascript("window.dispatchEvent(new Event('cm-power-save-change'));", null);
+        }
+    }
+
     private void notifyPageOfSafeArea() {
         if (mWebView != null && isTrustedOrigin(mWebView.getUrl())) {
             mWebView.evaluateJavascript("window.dispatchEvent(new Event('shellinsetschange'))", null);
@@ -750,6 +779,7 @@ public class MainActivity extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
+        notifyPageOfPowerSaving();
         if (this.mAwaitingOverlayPermission) {
             this.mAwaitingOverlayPermission = false;
             if (Settings.canDrawOverlays(this)) {
@@ -782,6 +812,21 @@ public class MainActivity extends Activity {
     }
 
     public class AndroidBridge {
+        @JavascriptInterface
+        public boolean isPowerSaveMode() {
+            return isSystemPowerSaving();
+        }
+
+        @JavascriptInterface
+        public void setHapticFeedbackEnabled(boolean enabled) {
+            runOnUiThread(() -> {
+                mHapticFeedbackEnabled = enabled;
+                if (mWebView != null) {
+                    mWebView.setHapticFeedbackEnabled(enabled && !isSystemPowerSaving());
+                }
+            });
+        }
+
         @JavascriptInterface
         public boolean isAndroidWrapper() {
             return true;
