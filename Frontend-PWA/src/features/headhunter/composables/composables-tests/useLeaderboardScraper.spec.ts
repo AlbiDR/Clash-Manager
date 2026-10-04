@@ -63,6 +63,45 @@ describe("useLeaderboardScraper", () => {
     expect(scraper.isHarvesting.value).toBe(false);
   });
 
+  it("caps an oversized harvest to the native Blitz queue capacity", async () => {
+    const { scoutLeaderboard } = await import("@core/api/RecruitClient");
+    const items = Array.from({ length: 51 }, (_, index) => ({
+      tag: `#PLAYER${index}`,
+      name: `Player ${index}`,
+    }));
+    vi.mocked(scoutLeaderboard).mockResolvedValue({ items, region: "Global" });
+    const scraper = useLeaderboardScraper(selectionStore, mockBlitzTrigger);
+
+    await scraper.executeHarvest("global");
+
+    expect(selectionStore.selectedIds.value).toEqual(
+      Array.from({ length: 50 }, (_, index) => `PLAYER${index}`),
+    );
+    expect(mockBlitzTrigger).toHaveBeenCalledOnce();
+    expect(mockInfo).toHaveBeenCalledWith(
+      "Harvested 51 recruits from Global; Blitz queued the first 50.",
+    );
+  });
+
+  it("deduplicates harvested tags before invoking the native Blitz bridge", async () => {
+    const { scoutLeaderboard } = await import("@core/api/RecruitClient");
+    vi.mocked(scoutLeaderboard).mockResolvedValue({
+      items: [
+        { tag: "#FREE1", name: "Free One" },
+        { tag: "#FREE1", name: "Free One duplicate" },
+        { tag: "#FREE2", name: "Free Two" },
+      ],
+      region: "Local",
+    });
+    const scraper = useLeaderboardScraper(selectionStore, mockBlitzTrigger);
+
+    await scraper.executeHarvest("local");
+
+    expect(selectionStore.selectedIds.value).toEqual(["FREE1", "FREE2"]);
+    expect(mockBlitzTrigger).toHaveBeenCalledOnce();
+    expect(mockInfo).toHaveBeenCalledWith("Successfully harvested 2 recruits from Local leaderboard.");
+  });
+
   it("clears feature-owned activity after failure", async () => {
     const { scoutLeaderboard } = await import("@core/api/RecruitClient");
     vi.mocked(scoutLeaderboard).mockRejectedValue(new Error("Internal Server Error"));

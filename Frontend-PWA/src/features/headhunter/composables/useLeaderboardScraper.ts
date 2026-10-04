@@ -6,6 +6,7 @@ import { useSelectionStore } from "@core/services/useSelectionStore";
 import { useToast } from "@core/services/useToast";
 import { useHaptics } from "@shared";
 import { scoutLeaderboard } from "@core/api/RecruitClient";
+import { BLITZ_MAX_QUEUE_PLAYERS } from "@core/config";
 
 /**
  * COMPOSABLE: useLeaderboardScraper
@@ -103,13 +104,20 @@ export function useLeaderboardScraper(
       // [DECISION LOG] TAG SANITIZATION
       // Rationale: Standardizing on tags without the leading hash ensures consistency
       // across the selection store, local lookups, and future database writes.
-      const sanitizedTags = clanlessPlayers.map((harvestedPlayer) => harvestedPlayer.tag.replace(/^#/, ""));
+      const sanitizedTags = Array.from(new Set(
+        clanlessPlayers.map((harvestedPlayer) => harvestedPlayer.tag.replace(/^#/, "")),
+      ));
+      const queuedTags = sanitizedTags.slice(0, BLITZ_MAX_QUEUE_PLAYERS);
 
       clearSelection();
-      selectAll(sanitizedTags);
+      selectAll(queuedTags);
 
       haptics.tap();
-      info(`Successfully harvested ${sanitizedTags.length} recruits from ${region} leaderboard.`);
+      if (sanitizedTags.length > queuedTags.length) {
+        info(`Harvested ${sanitizedTags.length} recruits from ${region}; Blitz queued the first ${queuedTags.length}.`);
+      } else {
+        info(`Successfully harvested ${queuedTags.length} recruits from ${region} leaderboard.`);
+      }
 
       // Trigger the recruitment Blitz sequence immediately
       onBlitzTrigger();
