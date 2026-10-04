@@ -97,6 +97,7 @@ const EXPECT = {
     "isPowerSaveMode",
     "setHapticFeedbackEnabled",
     "startBlitz",
+    "openProfiles",
     "saveCoordinates",
     "getCoordinates",
     "isAccessibilityActive",

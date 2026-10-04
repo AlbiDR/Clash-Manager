@@ -43,6 +43,7 @@ const mockClient = {
   from: vi.fn(() => mockFrom),
   channel: vi.fn(() => mockChannel),
   removeChannel: vi.fn(),
+  realtime: { isConnected: vi.fn(() => true) },
 };
 (mockClient as any).schema = vi.fn(() => mockClient);
 
@@ -52,8 +53,9 @@ function subscribeToBlacklistForTest(
   onInsert: (playerTag: string) => void | Promise<void>,
   onDelete: (playerTag: string) => void | Promise<void>,
   onError = vi.fn(),
+  onResync?: () => void | Promise<void>,
 ): () => void {
-  const cleanup = RecruitClient.subscribeToBlacklist(onInsert, onDelete, onError);
+  const cleanup = RecruitClient.subscribeToBlacklist(onInsert, onDelete, onError, onResync);
   realtimeCleanups.push(cleanup);
   return cleanup;
 }
@@ -72,6 +74,7 @@ describe("RecruitClient", () => {
     mockClient.rpc.mockResolvedValue({ data: null, error: null });
     mockClient.channel.mockImplementation(() => mockChannel);
     mockClient.removeChannel.mockResolvedValue(undefined);
+    mockClient.realtime.isConnected.mockReturnValue(true);
     mockChannel.on.mockReturnThis();
     mockChannel.subscribe.mockReturnThis();
   });
@@ -406,18 +409,71 @@ describe("RecruitClient", () => {
       expect(onError.mock.calls[0]![0].cause).toBe(subscriberFailure);
     });
 
-    it("propagates asynchronous channel failures to every subscriber", () => {
+    it("propagates a channel the server refused to every subscriber", () => {
       const firstOnError = vi.fn();
       const secondOnError = vi.fn();
       subscribeToBlacklistForTest(vi.fn(), vi.fn(), firstOnError);
       subscribeToBlacklistForTest(vi.fn(), vi.fn(), secondOnError);
       const subscriptionStatusHandler = vi.mocked(mockChannel.subscribe).mock.calls[0]![0];
-      const channelFailure = new Error("socket unavailable");
+      const channelFailure = new Error("join refused");
 
       subscriptionStatusHandler("CHANNEL_ERROR", channelFailure);
 
       expect(firstOnError.mock.calls[0]![0].cause).toBe(channelFailure);
       expect(secondOnError.mock.calls[0]![0].cause).toBe(channelFailure);
+    });
+
+    it("reports a refusal once until the channel joins again", () => {
+      const onError = vi.fn();
+      subscribeToBlacklistForTest(vi.fn(), vi.fn(), onError);
+      const subscriptionStatusHandler = vi.mocked(mockChannel.subscribe).mock.calls[0]![0];
+
+      subscriptionStatusHandler("CHANNEL_ERROR", new Error("join refused"));
+      subscriptionStatusHandler("CHANNEL_ERROR", new Error("join refused"));
+      expect(onError).toHaveBeenCalledOnce();
+
+      subscriptionStatusHandler("SUBSCRIBED");
+      subscriptionStatusHandler("CHANNEL_ERROR", new Error("join refused"));
+      expect(onError).toHaveBeenCalledTimes(2);
+    });
+
+    it("does not report a dropped connection, and resyncs once the channel is back", () => {
+      const onError = vi.fn();
+      const onResync = vi.fn();
+      subscribeToBlacklistForTest(vi.fn(), vi.fn(), onError, onResync);
+      const subscriptionStatusHandler = vi.mocked(mockChannel.subscribe).mock.calls[0]![0];
+
+      subscriptionStatusHandler("SUBSCRIBED");
+      expect(onResync).not.toHaveBeenCalled();
+
+      // The app went to the background and its WebSocket closed.
+      mockClient.realtime.isConnected.mockReturnValue(false);
+      subscriptionStatusHandler("CHANNEL_ERROR", new Error("socket closed: 1006"));
+      subscriptionStatusHandler("CHANNEL_ERROR", new Error("channel error: connection lost"));
+      expect(onError).not.toHaveBeenCalled();
+      expect(onResync).not.toHaveBeenCalled();
+
+      mockClient.realtime.isConnected.mockReturnValue(true);
+      subscriptionStatusHandler("SUBSCRIBED");
+      expect(onResync).toHaveBeenCalledOnce();
+
+      subscriptionStatusHandler("SUBSCRIBED");
+      expect(onResync).toHaveBeenCalledOnce();
+    });
+
+    it("reports a failed resync through the error channel", async () => {
+      const onError = vi.fn();
+      const resyncFailure = new Error("refresh failed");
+      subscribeToBlacklistForTest(vi.fn(), vi.fn(), onError, () => Promise.reject(resyncFailure));
+      const subscriptionStatusHandler = vi.mocked(mockChannel.subscribe).mock.calls[0]![0];
+
+      mockClient.realtime.isConnected.mockReturnValue(false);
+      subscriptionStatusHandler("CHANNEL_ERROR", new Error("socket closed: 1006"));
+      mockClient.realtime.isConnected.mockReturnValue(true);
+      subscriptionStatusHandler("SUBSCRIBED");
+
+      await vi.waitFor(() => expect(onError).toHaveBeenCalledOnce());
+      expect(onError.mock.calls[0]![0].cause).toBe(resyncFailure);
     });
 
     it("does not report successful channel subscription statuses", () => {

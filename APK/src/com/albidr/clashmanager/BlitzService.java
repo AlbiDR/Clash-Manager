@@ -67,12 +67,12 @@ public class BlitzService extends Service {
     static final String EXTRA_REHEARSAL = "blitzRehearsal";
 
     /**
-     * Blitz deliberately operates on one reviewable set of players at a time.
-     * Both the active recruit rotation and a Clash Royale clan roster are capped
-     * at this size, so accepting more would turn a malformed bridge payload into
-     * a long, unattended tap sequence.
+     * False when the run only opens profiles: no Invite or Close taps, and no
+     * tap targets on screen. The Roster sends its own clan members, who cannot
+     * be invited, so it opens profiles only. Absent means true, which is what
+     * every caller before this extra existed expects.
      */
-    private static final int MAX_QUEUE_PLAYERS = 50;
+    static final String EXTRA_SEND_INVITES = "sendInvites";
 
     // Mirrors the defensive 3..15-character body envelope in RoyaleTagSchema:
     // a leading '#' is display syntax, not part of the deep-link player id.
@@ -87,6 +87,7 @@ public class BlitzService extends Service {
     }
 
     private boolean mRehearsal = false;
+    private boolean mSendInvites = true;
 
     // The run as BlitzRun records it; mRunOutcome is null until Start is pressed.
     private String mRunOutcome = null;
@@ -329,7 +330,7 @@ public class BlitzService extends Service {
             return START_NOT_STICKY;
         }
         if (playerQueue == null) {
-            Log.w(TAG, "start rejected: player queue is empty, malformed, duplicated, or too large");
+            Log.w(TAG, "start rejected: player queue is empty, malformed, or duplicated");
             Toast.makeText(this, "Player queue is invalid", Toast.LENGTH_SHORT).show();
             stopSelf();
             return START_NOT_STICKY;
@@ -341,7 +342,9 @@ public class BlitzService extends Service {
         mStopped = false;
         mProfileLoadDelayMs = getSteppedDwell(intent.getLongExtra("delayMs", DEFAULT_PROFILE_LOAD_DELAY_MS));
         mRehearsal = isRehearsal(this, intent);
+        mSendInvites = intent.getBooleanExtra(EXTRA_SEND_INVITES, true);
         Log.i(TAG, "start: " + mTagsList.size() + " player(s), dwell " + mProfileLoadDelayMs + "ms"
+            + (mSendInvites ? "" : ", profiles only (no taps)")
             + (mRehearsal ? ", rehearsal (Clash Royale stays closed)" : ""));
 
         promoteToForeground(queueText());
@@ -362,9 +365,14 @@ public class BlitzService extends Service {
      *
      * The WebView normally supplies this JSON itself, but that is not a reason
      * to let a malformed value become a game deep link. Tags are normalized to
-     * the player-id form expected by Clash Royale, duplicates are rejected so a
-     * bad payload cannot invite the same player repeatedly, and the queue stays
-     * bounded before the service opens its calibration overlay.
+     * the player-id form expected by Clash Royale, and duplicates are rejected so
+     * a bad payload cannot invite the same player repeatedly.
+     *
+     * The queue has no upper size. A leaderboard harvest queues every clanless
+     * player it finds, and that number is set by the leaderboards, not by this
+     * service. What keeps a long run reviewable is the setup panel, which shows
+     * the player count and the run's estimated length before anything happens,
+     * and the Stop pill, which ends the run at any point.
      *
      * @return a canonical, non-empty player queue, or {@code null} when the
      *     payload violates the native boundary
@@ -403,7 +411,7 @@ public class BlitzService extends Service {
     }
 
     private static boolean isSupportedQueueSize(int queueSize) {
-        return queueSize > 0 && queueSize <= MAX_QUEUE_PLAYERS;
+        return queueSize > 0;
     }
 
     /** Returns the canonical no-hash player id, or {@code null} for bad input. */
@@ -438,7 +446,8 @@ public class BlitzService extends Service {
     private void recordRun(String outcome) {
         mRunOutcome = outcome;
         long endedAt = BlitzRun.RUNNING.equals(outcome) ? 0L : System.currentTimeMillis();
-        new BlitzRun(mRunStartedAt, endedAt, mTagsList.size(), mRunOpened, mRunInvites, outcome, mRehearsal).save(this);
+        new BlitzRun(mRunStartedAt, endedAt, mTagsList.size(), mRunOpened, mRunInvites, outcome, mRehearsal, mSendInvites)
+            .save(this);
     }
 
     @Override
@@ -525,11 +534,15 @@ public class BlitzService extends Service {
 
     private static String formatBlitzSetupSubtitle(
         boolean calibrationUnlocked,
+        boolean sendInvites,
         int playerCount,
         long dwellMs
     ) {
         if (calibrationUnlocked) {
-            return "Drag targets, set profile dwell, then start";
+            // A profiles-only run has no tap targets to drag.
+            return sendInvites
+                ? "Drag targets, set profile dwell, then start"
+                : "Set profile dwell, then start";
         }
         return playerCount + " players \u00b7 " + formatDwell(dwellMs)
             + " each \u00b7 about " + formatBlitzRunEstimate(dwellMs, playerCount);
@@ -552,6 +565,7 @@ public class BlitzService extends Service {
         // and it hints that the gear is worth a tap.
         subtitleView.setText(formatBlitzSetupSubtitle(
             mIsCalibrationUnlocked,
+            mSendInvites,
             mTagsList.size(),
             mProfileLoadDelayMs));
     }
@@ -641,19 +655,24 @@ public class BlitzService extends Service {
         mOverlayDisplayWidth = dm.widthPixels;
         mOverlayDisplayHeight = dm.heightPixels;
 
-        mInviteMarker = createDraggableMarker(
-            VIEW_ID_BLITZ_INVITE_MARKER,
-            "Invite",
-            Color.parseColor(COLOR_PRIMARY),
-            Math.round(calculateBlitzMarkerCenter(inviteXNorm, dm.widthPixels)),
-            Math.round(calculateBlitzMarkerCenter(inviteYNorm, dm.heightPixels)));
-        mCloseMarker = createDraggableMarker(
-            VIEW_ID_BLITZ_CLOSE_MARKER,
-            "Close",
-            Color.parseColor(COLOR_ERROR),
-            Math.round(calculateBlitzMarkerCenter(closeXNorm, dm.widthPixels)),
-            Math.round(calculateBlitzMarkerCenter(closeYNorm, dm.heightPixels)));
-        updateMarkerDraggability();
+        // A profiles-only run sends no taps, so it shows no targets. Every
+        // marker path below already treats a null marker as absent, and
+        // saveCoordinates() leaves the stored calibration untouched.
+        if (mSendInvites) {
+            mInviteMarker = createDraggableMarker(
+                VIEW_ID_BLITZ_INVITE_MARKER,
+                "Invite",
+                Color.parseColor(COLOR_PRIMARY),
+                Math.round(calculateBlitzMarkerCenter(inviteXNorm, dm.widthPixels)),
+                Math.round(calculateBlitzMarkerCenter(inviteYNorm, dm.heightPixels)));
+            mCloseMarker = createDraggableMarker(
+                VIEW_ID_BLITZ_CLOSE_MARKER,
+                "Close",
+                Color.parseColor(COLOR_ERROR),
+                Math.round(calculateBlitzMarkerCenter(closeXNorm, dm.widthPixels)),
+                Math.round(calculateBlitzMarkerCenter(closeYNorm, dm.heightPixels)));
+            updateMarkerDraggability();
+        }
 
         // -- Container --
         LinearLayout container = new LinearLayout(this);
@@ -852,8 +871,10 @@ public class BlitzService extends Service {
         mWaitingView = wrapper;
         mWaitingLayoutParams = lp;
         try {
-            mWindowManager.addView(mInviteMarker, mInviteMarker.getLayoutParams());
-            mWindowManager.addView(mCloseMarker, mCloseMarker.getLayoutParams());
+            if (mInviteMarker != null && mCloseMarker != null) {
+                mWindowManager.addView(mInviteMarker, mInviteMarker.getLayoutParams());
+                mWindowManager.addView(mCloseMarker, mCloseMarker.getLayoutParams());
+            }
             mWindowManager.addView(mWaitingView, lp);
         } catch (Exception e) {
             e.printStackTrace();
@@ -1622,7 +1643,11 @@ public class BlitzService extends Service {
 
         updateOverlayUi();
 
-        if (ClashManagerAccessibilityService.isActive()) {
+        if (!mSendInvites) {
+            // Profiles only: each profile stays up for the dwell, then the next
+            // deep link replaces it. No gesture is dispatched.
+            scheduleAdvance(mProfileLoadDelayMs);
+        } else if (ClashManagerAccessibilityService.isActive()) {
             var dm = getResources().getDisplayMetrics();
             // Wait for Clash Royale's profile screen to render, then run the invite/close
             // taps chained off each gesture's own completion (see
