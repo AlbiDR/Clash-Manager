@@ -2,9 +2,17 @@
 // Copyright (C) 2026 AlbiDR
 
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
-import { COMMIT_SENTINEL, findDocDebt, parseLog } from './doc-debt.mjs';
+import {
+  COMMIT_SENTINEL,
+  documentationLaneLog,
+  findDocDebt,
+  laneLogDomains,
+  parseLog,
+  parseVerified,
+} from './doc-debt.mjs';
 
 const FILE = 'Frontend-PWA/src/core/services/useBenchmarking.ts';
 
@@ -73,18 +81,81 @@ test('tracks each file independently within one commit', () => {
 });
 
 test('parses git log output split on a printable sentinel', () => {
+  const first = 'a'.repeat(40);
+  const second = 'b'.repeat(40);
   const raw = [
-    `${COMMIT_SENTINEL}refactor(core): first`,
+    `${COMMIT_SENTINEL}${first} refactor(core): first`,
     'a.ts',
     'b.ts',
-    `${COMMIT_SENTINEL}docs(tsdoc): second`,
+    `${COMMIT_SENTINEL}${second} docs(tsdoc): second`,
     'a.ts',
     '',
   ].join('\n');
   assert.deepEqual(parseLog(raw), [
-    { subject: 'refactor(core): first', files: ['a.ts', 'b.ts'] },
-    { subject: 'docs(tsdoc): second', files: ['a.ts'] },
+    { hash: first, subject: 'refactor(core): first', files: ['a.ts', 'b.ts'] },
+    { hash: second, subject: 'docs(tsdoc): second', files: ['a.ts'] },
   ]);
+});
+
+// The real registry, so a renamed log or domain fails here rather than
+// silently switching the lane rule off.
+const registry = JSON.parse(readFileSync(new URL('../../nightly-config/stages.json', import.meta.url), 'utf8'));
+const laneDomains = laneLogDomains(registry);
+const logOf = number => registry.stages.find(stage => stage.number === number).coverageLog;
+const VIEW_OPTIONS = 'Frontend-PWA/src/shared/ui/ViewOptions.vue';
+
+test('a documentation lane commit counts as documentation whatever its subject says', () => {
+  // Four of eight S05/S06 merges from 2026-10-01 to 10-04 carried subjects
+  // like these, which match no documentation subject.
+  for (const subject of ['Nightly Stage 6: Documentation TSDoc - Interface Contract Architect (#2074)', '[Stage 6] Documentation TSDoc (#2062)']) {
+    const debt = findDocDebt([
+      { subject, files: [logOf(6), FILE] },
+      { subject: 'refactor(core): change behaviour', files: [FILE] },
+      { subject: 'docs(tsdoc): first description', files: [FILE] },
+    ], { laneDomains });
+    assert.deepEqual(debt, [], subject);
+  }
+});
+
+test('a commit touching several lanes\' logs is no lane\'s commit', () => {
+  // A repository-wide rewrite: every coverage log and every source file at once.
+  // Read as documentation, it marked 428 files described in one commit.
+  const debt = findDocDebt([
+    { subject: 'fix(pipeline): repository-wide rewrite', files: [logOf(5), logOf(6), logOf(9), FILE] },
+    { subject: 'docs(tsdoc): first description', files: [FILE] },
+  ], { laneDomains });
+  assert.equal(debt.length, 1, 'still a code change, so the description is behind it');
+  assert.equal(documentationLaneLog([logOf(5), logOf(6)], laneDomains), null);
+  assert.equal(documentationLaneLog([logOf(9), FILE], laneDomains), null, 'a code lane is not a documentation lane');
+  assert.equal(documentationLaneLog([logOf(6), FILE], laneDomains), logOf(6));
+});
+
+test('a file a documentation lane verified as accurate leaves the list until its code changes again', () => {
+  // ViewOptions.vue: described, changed by a refactor, then audited and found
+  // accurate on 2026-10-01, 10-02 and 10-04 while staying listed every night.
+  const described = { subject: 'chore(docs): harden ViewOptions TSDoc (#2036)', files: [VIEW_OPTIONS] };
+  const refactor = { subject: 'chore(refactor): remove dead export ViewOptionsProps (#2025)', files: [VIEW_OPTIONS] };
+  const verifiedClean = { subject: 'Nightly Stage 6: Documentation TSDoc (#2074)', files: [logOf(6)], verified: [VIEW_OPTIONS] };
+  const cleanUnverified = { subject: 'Nightly Stage 6: Documentation TSDoc (#2048)', files: [logOf(6)] };
+
+  assert.equal(findDocDebt([cleanUnverified, refactor, described], { laneDomains }).length, 1, 'a clean run with no record changes nothing');
+  assert.deepEqual(findDocDebt([verifiedClean, refactor, described], { laneDomains }), []);
+  const changedAgain = { subject: 'fix(ui): change ViewOptions behaviour', files: [VIEW_OPTIONS] };
+  assert.equal(findDocDebt([changedAgain, verifiedClean, refactor, described], { laneDomains }).length, 1, 'and returns when the code moves on');
+});
+
+test('a verification is read only from the metadata block, and only for documented sources', () => {
+  const body = [
+    '**Verified accurate:** Frontend-PWA/src/not-the-field.ts',
+    '<!--',
+    'NIGHTLY_PR_METADATA:',
+    '  Domain: documentation',
+    `  Verified: ${VIEW_OPTIONS}, README.md, ${VIEW_OPTIONS}, Frontend-PWA/src/shared/ui/AnimatedDigits.vue`,
+    '-->',
+  ].join('\n');
+  assert.deepEqual(parseVerified(body), [VIEW_OPTIONS, 'Frontend-PWA/src/shared/ui/AnimatedDigits.vue']);
+  assert.deepEqual(parseVerified('Verified: Frontend-PWA/src/a.ts'), [], 'outside a metadata block it is prose');
+  assert.deepEqual(parseVerified(''), []);
 });
 
 test('output is deterministically ordered', () => {
