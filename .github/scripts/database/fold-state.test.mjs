@@ -186,3 +186,126 @@ test('a bare baseline trigger against an OR REPLACE incremental is not silently 
   assert.notEqual(triggerOf(report).status, 'reconciled');
   await rm(directory, { recursive: true, force: true });
 });
+
+// --- Routine settings, dropped policies, and what DEGRADED may hide ----------
+//
+// Added 2026-10-04. Until then ALTER FUNCTION ... SET/RESET and DROP POLICY
+// were "unsupported", and any unsupported or semantic-only statement made the
+// whole report DEGRADED, which hid 74 unfolded objects from Stage 3.
+
+async function fixtureWith(baseline, migration) {
+  const directory = await mkdtemp(path.join(os.tmpdir(), 'fold-state-'));
+  await writeFile(path.join(directory, '20260531232406_master_migration.sql'), baseline);
+  await writeFile(path.join(directory, '20260531232407_change.sql'), migration);
+  return directory;
+}
+
+const ROUTINES = `
+CREATE SCHEMA IF NOT EXISTS app;
+CREATE OR REPLACE FUNCTION app.touch(p_id bigint, p_at timestamp with time zone) RETURNS void
+    LANGUAGE plpgsql SECURITY DEFINER
+    SET search_path TO 'public', 'app', 'pg_temp'
+    AS $$ BEGIN PERFORM 1; END; $$;
+CREATE OR REPLACE FUNCTION app.plain(p_id bigint) RETURNS void
+    LANGUAGE plpgsql
+    AS $$ BEGIN EXECUTE 'SET search_path TO evil'; END; $$;
+CREATE OR REPLACE FUNCTION app.pair(p_id bigint) RETURNS void LANGUAGE sql AS $$ SELECT 1 $$;
+CREATE OR REPLACE FUNCTION app.pair(p_id text) RETURNS void LANGUAGE sql AS $$ SELECT 1 $$;
+CREATE POLICY "app read access" ON app.items FOR SELECT USING (true);
+`;
+
+const configOf = (report, fragment) => report.objects.find(item => item.key.startsWith('FUNCTION_CONFIG:') && item.key.includes(fragment));
+const policyOf = report => report.objects.find(item => item.key.startsWith('POLICY:'));
+
+test('a routine setting the baseline already carries is reconciled, whatever the quoting', async t => {
+  // The real 2026-09-15 shape: unquoted in the ALTER, single-quoted in the
+  // baseline, and a type-only signature with a multi-word type.
+  const directory = await fixtureWith(ROUTINES, 'ALTER FUNCTION app.touch(bigint, timestamp with time zone) SET search_path TO public, app, pg_temp;\n');
+  t.after(() => rm(directory, { recursive: true, force: true }));
+  const report = await checkFoldState({ migrationsDir: directory });
+  assert.deepEqual(report.unsupported, []);
+  assert.equal(configOf(report, 'app.touch').status, 'reconciled');
+  assert.equal(report.status, 'FOLDED');
+});
+
+test('a routine setting the baseline lacks or contradicts is unfolded', async t => {
+  const directory = await fixtureWith(ROUTINES, [
+    'ALTER FUNCTION app.touch(bigint, timestamp with time zone) SET search_path TO app, public, pg_temp;',
+    'ALTER FUNCTION app.plain(bigint) SET search_path TO evil;',
+  ].join('\n'));
+  t.after(() => rm(directory, { recursive: true, force: true }));
+  const report = await checkFoldState({ migrationsDir: directory });
+  assert.equal(configOf(report, 'app.touch').status, 'unfolded', 'search_path order is meaningful');
+  assert.equal(configOf(report, 'app.plain').status, 'unfolded', "a SET inside a body is not the routine's own");
+  assert.equal(report.status, 'UNFOLDED');
+});
+
+test('RESET expects the baseline routine to carry no such setting', async t => {
+  const directory = await fixtureWith(ROUTINES, [
+    'ALTER FUNCTION app.plain(bigint) RESET search_path;',
+    'ALTER FUNCTION app.touch(bigint, timestamp with time zone) RESET search_path;',
+  ].join('\n'));
+  t.after(() => rm(directory, { recursive: true, force: true }));
+  const report = await checkFoldState({ migrationsDir: directory });
+  assert.equal(configOf(report, 'app.plain').status, 'reconciled');
+  assert.equal(configOf(report, 'app.touch').status, 'unfolded');
+});
+
+test('a later redefinition withdraws an earlier setting, and a later reset overrides it', async t => {
+  // The real 2026-09-17 shape: RESET plan_cache_mode, then CREATE OR REPLACE
+  // of the same routine, which sets its whole configuration again.
+  const directory = await fixtureWith(ROUTINES, [
+    'ALTER FUNCTION app.plain(bigint) SET plan_cache_mode = force_custom_plan;',
+    "CREATE OR REPLACE FUNCTION app.plain(p_id bigint) RETURNS void LANGUAGE plpgsql AS $$ BEGIN EXECUTE 'SET search_path TO evil'; END; $$;",
+    'ALTER FUNCTION app.touch(bigint, timestamp with time zone) SET plan_cache_mode = force_custom_plan;',
+    'ALTER FUNCTION app.touch(bigint, timestamp with time zone) RESET plan_cache_mode;',
+  ].join('\n'));
+  t.after(() => rm(directory, { recursive: true, force: true }));
+  const report = await checkFoldState({ migrationsDir: directory });
+  assert.equal(configOf(report, 'app.plain'), undefined, 'the redefinition sets the final configuration');
+  assert.equal(configOf(report, 'app.touch').status, 'reconciled', 'set then reset leaves nothing to carry');
+});
+
+test('an ALTER FUNCTION the checker cannot pin to one routine is left to a database, never folded', async t => {
+  // Reporting it unfolded would send Stage 3 to fold a routine the checker
+  // could not identify.
+  const directory = await fixtureWith(ROUTINES, [
+    'ALTER FUNCTION app.pair(integer) SET search_path TO public;',
+    'ALTER FUNCTION app.missing(bigint) SET search_path TO public;',
+  ].join('\n'));
+  t.after(() => rm(directory, { recursive: true, force: true }));
+  const report = await checkFoldState({ migrationsDir: directory });
+  assert.equal(configOf(report, 'app.pair').status, 'semantic-only');
+  assert.equal(configOf(report, 'app.missing').status, 'unfolded', 'the baseline lacks the routine altogether');
+  assert.equal(configOf(report, 'app.missing').reason, 'ABSENT');
+});
+
+test('SET FROM CURRENT and RESET ALL stay unsupported', async t => {
+  const directory = await fixtureWith(ROUTINES, 'ALTER FUNCTION app.plain(bigint) SET search_path FROM CURRENT;\nALTER FUNCTION app.plain(bigint) RESET ALL;\n');
+  t.after(() => rm(directory, { recursive: true, force: true }));
+  const report = await checkFoldState({ migrationsDir: directory });
+  assert.equal(report.unsupported.length, 2, 'their final value depends on the session, not the text');
+  assert.equal(report.status, 'DEGRADED');
+});
+
+test('a dropped policy is checked against quoted names with spaces, never vacuously', async t => {
+  // identifyDefinition cannot read "app read access", so an absence check on
+  // its keys would report every dropped policy folded.
+  const kept = await fixtureWith(ROUTINES, 'DROP POLICY IF EXISTS "app read access" ON app.items;\n');
+  const gone = await fixtureWith(ROUTINES, 'DROP POLICY IF EXISTS "app write access" ON app.items;\n');
+  t.after(() => Promise.all([kept, gone].map(directory => rm(directory, { recursive: true, force: true }))));
+  assert.equal(policyOf(await checkFoldState({ migrationsDir: kept })).status, 'unfolded', 'the baseline still creates a dropped policy');
+  assert.equal(policyOf(await checkFoldState({ migrationsDir: gone })).status, 'folded');
+});
+
+test('known folding work is never hidden behind work only a database can check', async t => {
+  const directory = await fixture(`
+CREATE TABLE app.extra (id bigint);
+DO $$ BEGIN PERFORM 1; END $$;
+`);
+  t.after(() => rm(directory, { recursive: true, force: true }));
+  const report = await checkFoldState({ migrationsDir: directory });
+  assert.equal(report.counts['semantic-only'], 1);
+  assert.equal(report.counts.unfolded, 1);
+  assert.equal(report.status, 'UNFOLDED', 'DEGRADED here hid the pending list from Stage 3 for weeks');
+});
