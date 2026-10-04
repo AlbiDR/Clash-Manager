@@ -9,8 +9,6 @@ describe("useTheme", () => {
     // Reset modules to clear singleton state (isInitialized, theme)
     vi.resetModules();
     vi.unstubAllGlobals();
-    const mod = await import("../useTheme");
-    useTheme = mod.useTheme;
 
     vi.clearAllMocks();
     localStorage.clear();
@@ -41,6 +39,9 @@ describe("useTheme", () => {
     }));
 
     vi.useFakeTimers();
+
+    const mod = await import("../useTheme");
+    useTheme = mod.useTheme;
   });
 
   afterEach(() => {
@@ -60,13 +61,15 @@ describe("useTheme", () => {
     expect(document.documentElement.classList.contains("dark")).toBe(true);
   });
 
-  it("applies dark class when system preference is dark and theme is auto", () => {
+  it("applies dark class when system preference is dark and theme is auto", async () => {
     vi.stubGlobal("matchMedia", vi.fn().mockReturnValue({
       matches: true,
       addEventListener: vi.fn(),
     }));
 
-    const { init } = useTheme();
+    vi.resetModules();
+    const mod = await import("../useTheme");
+    const { init } = mod.useTheme();
     init();
 
     expect(document.documentElement.classList.contains("dark")).toBe(true);
@@ -127,6 +130,29 @@ describe("useTheme", () => {
       expect(document.documentElement.style.getPropertyValue("--sys-color-primary")).toBe("#0061a4");
       expect(document.documentElement.style.getPropertyValue("--sys-color-background")).toBe("#fdfcff");
     });
+
+    it("invokes AndroidBridge.setThemeColors with current background and isDark state when available", () => {
+      const setThemeColorsSpy = vi.fn();
+      (window as any).AndroidBridge = { setThemeColors: setThemeColorsSpy };
+
+      const { setTheme } = useTheme();
+      setTheme("dark");
+
+      expect(setThemeColorsSpy).toHaveBeenCalledWith("#0b0e14", true);
+
+      setTheme("light");
+      expect(setThemeColorsSpy).toHaveBeenCalledWith("#fdfcff", false);
+    });
+
+    it("handles missing AndroidBridge or setThemeColors gracefully", () => {
+      delete (window as any).AndroidBridge;
+      const { setTheme } = useTheme();
+
+      expect(() => setTheme("dark")).not.toThrow();
+
+      (window as any).AndroidBridge = {};
+      expect(() => setTheme("light")).not.toThrow();
+    });
   });
 
   describe("Manifest Cache & Events", () => {
@@ -135,7 +161,7 @@ describe("useTheme", () => {
       expect(() => clearManifestCache()).not.toThrow();
     });
 
-    it("registers matchMedia listener and reacts to changes in auto mode", () => {
+    it("registers matchMedia listener and reacts to changes in auto mode", async () => {
       const addListenerSpy = vi.fn();
       const matchesMock = {
         matches: false,
@@ -143,7 +169,9 @@ describe("useTheme", () => {
       };
       vi.stubGlobal("matchMedia", vi.fn().mockReturnValue(matchesMock));
 
-      const { init } = useTheme();
+      vi.resetModules();
+      const mod = await import("../useTheme");
+      const { init } = mod.useTheme();
       init();
 
       expect(addListenerSpy).toHaveBeenCalledWith("change", expect.any(Function));
@@ -157,6 +185,30 @@ describe("useTheme", () => {
       callback();
       expect(document.documentElement.classList.contains("dark")).toBe(true);
     });
+
+    it("ignores matchMedia change events when theme mode is explicitly dark or light", async () => {
+      const addListenerSpy = vi.fn();
+      const matchesMock = {
+        matches: false,
+        addEventListener: addListenerSpy,
+      };
+      vi.stubGlobal("matchMedia", vi.fn().mockReturnValue(matchesMock));
+
+      vi.resetModules();
+      const mod = await import("../useTheme");
+      const { init, setTheme } = mod.useTheme();
+      init();
+
+      setTheme("light");
+      expect(document.documentElement.classList.contains("dark")).toBe(false);
+
+      const callback = addListenerSpy.mock.calls[0][1];
+      matchesMock.matches = true;
+
+      // System switched to dark, but explicit preference is 'light'
+      callback();
+      expect(document.documentElement.classList.contains("dark")).toBe(false);
+    });
   });
 
   describe("Error Handling & State Integrity", () => {
@@ -168,22 +220,21 @@ describe("useTheme", () => {
       expect(theme.value).toBe("auto");
     });
 
-    it("prevents multiple initializations", () => {
+    it("prevents multiple initializations", async () => {
       const matchMediaSpy = vi.fn().mockReturnValue({
         matches: false,
         addEventListener: vi.fn(),
       });
       vi.stubGlobal("matchMedia", matchMediaSpy);
 
-      const { init } = useTheme();
+      vi.resetModules();
+      const mod = await import("../useTheme");
+      const { init } = mod.useTheme();
 
       init();
       init();
 
       // On second init, it should return early.
-      // The module-level mediaQuery is created on first import, not inside useTheme().
-      // applyTheme inside init calls matchMedia again if not cached, but it uses the module level mediaQuery.
-      // Actually, applyTheme uses mediaQuery from useTheme closure.
       expect(matchMediaSpy).toHaveBeenCalledTimes(1);
     });
   });
