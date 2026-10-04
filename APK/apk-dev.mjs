@@ -304,7 +304,10 @@ const commands = {
     const appName = "Android Emulator";
     const app = path.join(path.resolve(dir || "/Applications"), `${appName}.app`);
     const repo = path.resolve(APK_DIR, "..");
-    const node = process.execPath;
+    // `which` gives the stable path (/opt/homebrew/bin/node); process.execPath is the
+    // versioned Cellar path, which a brew upgrade deletes and silently breaks the app.
+    let node = process.execPath;
+    try { node = execFileSync("/usr/bin/which", ["node"], { encoding: "utf8" }).trim() || node; } catch { /* keep execPath */ }
     const adbDir = path.dirname(execFileSync("/usr/bin/which", ["adb"], { encoding: "utf8" }).trim());
     const version = JSON.parse(readFileSync(path.join(repo, "package.json"), "utf8")).version;
     const contents = path.join(app, "Contents");
