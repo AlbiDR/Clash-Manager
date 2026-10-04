@@ -259,42 +259,72 @@ jobs:
             git add APK/release/latest.json
           }
 
-          write_release
+          # The release commit is always built on the branch's CURRENT tip,
+          # never on the head_sha this run checked out, because the branch can
+          # move while the APK builds.
+          #
+          # [FIX] 2026-10-05: when the branch had moved, this used to run
+          # `git reset --soft origin/$TARGET_BRANCH` and then `git commit
+          # --amend`. After a soft reset HEAD IS the remote tip, so the amend
+          # rewrote someone else's commit and the push could never be a
+          # fast-forward; and the soft reset kept the index from the stale
+          # checkout, so that rewritten commit also reverted every file the
+          # other push had changed. v14.50.142's APK was lost to it twice (the
+          # rerun took the same path). A hard reset to the fetched tip, then
+          # re-applying only the APK files from RUNNER_TEMP, leaves nothing
+          # from the stale checkout in the commit.
+          #
+          # A push can still lose a race to one landing between the fetch and
+          # the push. The loop retries only while the branch keeps moving: a
+          # rejection with the branch unchanged is a real failure, so it can
+          # neither loop forever nor hide one.
+          publish_release() {
+            REMOTE_TIP=""
+            git fetch origin "$TARGET_BRANCH" || return 1
+            REMOTE_TIP="$(git rev-parse "origin/$TARGET_BRANCH")" || return 1
 
-          if git diff --cached --quiet; then
-            echo "No APK changes to commit"
-          else
-            git commit -m "chore(apk): update signed release APK to v${VERSION}+${BUILD_NUMBER}"
-
-            # Fetch latest remote changes
-            git fetch origin "$TARGET_BRANCH"
-
-            # If the remote has moved, reset branch pointer but keep our new APK file intact
-            if [ "$(git rev-parse HEAD~1)" != "$(git rev-parse "origin/$TARGET_BRANCH")" ]; then
-              echo "Remote branch moved. Syncing and resolving conflict..."
-              git reset --soft "origin/$TARGET_BRANCH"
-              write_release
-              git commit --amend -m "chore(apk): update signed release APK to v${VERSION}+${BUILD_NUMBER}"
+            # Match on VERSION alone, never VERSION+BUILD_NUMBER. BUILD_NUMBER
+            # is github.run_number, so it is unique to THIS run: a concurrent
+            # run that already published this version always carries a
+            # different one (v14.46.25: run +270 was rejected while +269 held
+            # the identical signed artifact). The artifact identity is the
+            # version; the build number is only provenance.
+            if git ls-tree --name-only "origin/$TARGET_BRANCH" APK/release/ \
+              | grep -q "clashmanager-v${VERSION}+.*\.apk"; then
+              echo "A signed APK for v${VERSION} is already on $TARGET_BRANCH; nothing left to publish."
+              return 0
             fi
 
-            git push origin "HEAD:$TARGET_BRANCH" || {
-              echo "Push failed. Checking whether this version is already published..."
-              git fetch origin "$TARGET_BRANCH"
-              # Match on VERSION alone, never VERSION+BUILD_NUMBER. BUILD_NUMBER
-              # is github.run_number, so it is unique to THIS run: grepping for
-              # it can only ever match a commit this same run pushed, which is
-              # not the case this fallback exists for. A concurrent run always
-              # carries a different build number, so the old check failed 100%
-              # of the races it was written to absorb (v14.46.25: run +270 was
-              # rejected while +269 held the identical signed artifact).
-              # The artifact identity is the version; the build number is only
-              # provenance.
-              git ls-tree --name-only "origin/$TARGET_BRANCH" APK/release/ \
-                | grep -q "clashmanager-v${VERSION}+.*\.apk" \
-                && echo "A signed APK for v${VERSION} is already on $TARGET_BRANCH; nothing left to publish." \
-                || exit 1
-            }
-          fi
+            # Rebuilding on the current tip also means a rerun of an older
+            # build would replace a newer APK that landed meanwhile, walking
+            # the in-app updater backwards. Never publish over a newer version.
+            PUBLISHED_VERSION="$(git show "origin/$TARGET_BRANCH:APK/release/latest.json" 2>/dev/null \
+              | sed -n 's/.*"version": *"\([^"]*\)".*/\1/p')"
+            if [ -n "$PUBLISHED_VERSION" ] \
+              && [ "$(printf '%s\n%s\n' "$PUBLISHED_VERSION" "$VERSION" | sort -V | tail -n 1)" != "$VERSION" ]; then
+              echo "$TARGET_BRANCH already publishes v${PUBLISHED_VERSION}, newer than v${VERSION}; not replacing it."
+              return 0
+            fi
+
+            git reset --hard "origin/$TARGET_BRANCH" || return 1
+            write_release || return 1
+            if git diff --cached --quiet; then
+              echo "No APK changes to commit"
+              return 0
+            fi
+            git commit -m "chore(apk): update signed release APK to v${VERSION}+${BUILD_NUMBER}" || return 1
+            git push origin "HEAD:$TARGET_BRANCH"
+          }
+
+          until publish_release; do
+            REJECTED_TIP="$REMOTE_TIP"
+            git fetch origin "$TARGET_BRANCH"
+            if [ "$(git rev-parse "origin/$TARGET_BRANCH")" = "$REJECTED_TIP" ]; then
+              echo "::error::Publishing to $TARGET_BRANCH failed and the branch did not move, so this was not a race."
+              exit 1
+            fi
+            echo "$TARGET_BRANCH moved during the push. Rebuilding the release commit on the new tip."
+          done
 
       # Pushes made with this workflow's GITHUB_TOKEN do not start other
       # push-triggered workflows. Dispatch the PWA deploy explicitly so its
