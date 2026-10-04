@@ -152,6 +152,7 @@ describe("BaseCard.vue", () => {
       const wrapper = mountBaseCard();
       const expandBtn = wrapper.find(".expand-btn");
 
+      expect(expandBtn.attributes("type")).toBe("button");
       await expandBtn.trigger("click");
       expect(mockHandlers.handleExpandClick).toHaveBeenCalled();
     });

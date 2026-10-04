@@ -608,10 +608,14 @@ describe("useConsoleController", () => {
         visible: false,
         label: "Done",
         isProcessing: false,
-        isBlasting: false,
         selectionCount: 0,
-        blitzEnabled: false,
-        harvestEnabled: false,
+        actions: [{
+          id: "complete-selection",
+          label: "Done",
+          accessibleLabel: "Done with selection",
+          icon: "check",
+          tone: "primary",
+        }],
         dismissIcon: "close",
       });
     });
@@ -621,10 +625,8 @@ describe("useConsoleController", () => {
         visible: true,
         label: "Custom Action",
         isProcessing: true,
-        isBlasting: false,
         selectionCount: 5,
-        blitzEnabled: true,
-        harvestEnabled: false,
+        actions: [{ id: "custom", label: "Custom", icon: "check" }],
         dismissIcon: "arrow-back",
       });
 
@@ -638,10 +640,8 @@ describe("useConsoleController", () => {
         visible: false,
         label: "Done",
         isProcessing: false,
-        isBlasting: false,
         selectionCount: 0,
-        blitzEnabled: false,
-        harvestEnabled: false,
+        actions: [],
         dismissIcon: "close",
       });
 
@@ -698,6 +698,7 @@ describe("useConsoleController", () => {
     it("uses clearSelection as fab-dismiss fallback when onDismiss and override are absent", () => {
       const { layoutEvents } = useConsoleController(createOptions());
       expect(typeof layoutEvents.value["fab-dismiss"]).toBe("function");
+      expect(layoutEvents.value["fab-cancel-operation"]).toBeUndefined();
     });
   });
 });

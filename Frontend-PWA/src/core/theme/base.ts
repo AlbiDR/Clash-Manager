@@ -10,6 +10,11 @@ export const staticTokens = `
 :root {
   /* ── LAYOUT ── */
   --sys-layout-max-width: 720px;
+  /* Two control panels fit exactly inside the content width with one spacing
+     gutter between them. Responsive grids consume this intrinsic panel width
+     through auto-fit, so loaded and skeleton layouts do not need duplicated
+     media-query thresholds. */
+  --sys-layout-two-panel-min-width: 352px;
   /* A search field wider than this stops helping. The queries it takes are
      player names and tags - a handful of characters - so past roughly twenty
      of them the extra width is empty box. Without a ceiling the field grew to
@@ -29,6 +34,16 @@ export const staticTokens = `
   --sys-layout-header-row-max-height: 120px;
   --sys-layout-search-min-width: 160px;
   --sys-layout-search-max-width: 320px;
+  /* Floating navigation is rendered twice during boot: once by the static
+     first-paint shell and once by Vue. These measurements are therefore a
+     shared geometry contract, not component-local guesses. */
+  --sys-layout-dock-compact-max-width: 460px;
+  --sys-layout-dock-item-min-width: 64px;
+  --sys-layout-dock-icon-size: 22px;
+  --sys-layout-dock-label-max-width: 80px;
+  --sys-layout-fab-status-min-width: 90px;
+  --sys-layout-dock-active-grow: 1.2;
+  --sys-layout-dock-compact-active-grow: 2;
   /* What the list must clear to sit above the dock. A measurement of another
      element, not a step on the spacing scale, so it is named rather than
      rounded onto one - 112px snapped to the nearest step would have put eight
@@ -58,6 +73,12 @@ export const staticTokens = `
   /* ── FONTS ── */
   --sys-font-family-body: "Inter", system-ui, sans-serif;
   --sys-font-family-mono: "JetBrains Mono", monospace;
+  --sys-font-weight-strong: 700;
+  --sys-font-weight-dock: 850;
+  --sys-font-weight-heavy: 900;
+
+  /* ── BORDER WIDTHS ── */
+  --sys-border-width-glass: 0.5px;
 
   /* ── SHAPE CORNERS (ascending order) ── */
   /* Seven marks take a radius small enough only to stop a corner looking cut:
@@ -147,6 +168,14 @@ export const staticTokens = `
   --sys-overlay-light-subtle:  rgba(255, 255, 255, 0.04);
   --sys-overlay-light-soft:    rgba(255, 255, 255, 0.08);
   --sys-overlay-light-medium:  rgba(255, 255, 255, 0.16);
+  --sys-opacity-dock-placeholder: 0.34;
+  --sys-opacity-disabled: 0.5;
+  --sys-opacity-muted: 0.6;
+  --sys-opacity-pressed: 0.9;
+  --sys-interaction-pressed-scale: 0.93;
+  /* The selected destination owns a primary-coloured elevation rather than a
+     neutral surface shadow. Keep it named so shell and live dock cannot drift. */
+  --sys-elevation-dock-active: 0 6px 16px rgba(var(--sys-color-primary-rgb), 0.4);
 
   /* ── MOTION DURATIONS (interaction) ── */
   --sys-motion-duration-100: 0.1s;

@@ -11,7 +11,7 @@ import { useHeadhunter } from "./useHeadhunter";
 import { useRecruitBlacklist } from "./useRecruitBlacklist";
 import { RECRUITER_SORT_OPTIONS } from "@core/utils/sortOptions";
 import { RecruiterSort } from "@core/utils/sortStrategies";
-import type { Recruit } from "@core/types";
+import type { ConsoleFabAction, ConsoleFabState, Recruit } from "@core/types";
 import { useBlitzMode } from "@core/services/useBlitzMode";
 import { useSelectionStore } from "@core/services/useSelectionStore";
 import { useLeaderboardScraper } from "./useLeaderboardScraper";
@@ -78,6 +78,82 @@ export function useRecruiter() {
    */
   const scraper = useLeaderboardScraper(selectionStore, blitz.handleBlitz);
 
+  const recruiterFabState = computed<ConsoleFabState>(() => {
+    const baseState = blitz.fabState.value;
+    if (!baseState.visible || baseState.activity?.exclusive || !blitz.isBlitzEnabled.value) {
+      return {
+        ...baseState,
+        dismissIcon: "trash",
+        dismissLabel: "Dismiss selected recruits",
+      };
+    }
+
+    const activeMode = scraper.activeHarvestMode.value;
+    const harvestActions: ConsoleFabAction[] = [
+      {
+        id: "harvest-global",
+        label: "Global Harvest",
+        accessibleLabel: "Global Harvest",
+        icon: "globe",
+        tone: "secondary",
+        compact: true,
+        disabled: scraper.isHarvesting.value,
+        busy: activeMode === "global",
+      },
+      {
+        id: "harvest-local",
+        label: "Local Harvest",
+        accessibleLabel: "Local Harvest",
+        icon: "map_pin",
+        tone: "secondary",
+        compact: true,
+        disabled: scraper.isHarvesting.value,
+        busy: activeMode === "local",
+      },
+    ];
+
+    return {
+      ...baseState,
+      actions: [
+        ...baseState.actions.map((action) => ({
+          ...action,
+          disabled: action.disabled || scraper.isHarvesting.value,
+        })),
+        ...harvestActions,
+      ],
+      activity: activeMode
+        ? {
+            label: "Harvest",
+            status: `${activeMode === "local" ? "Local" : "Global"} Harvest in progress`,
+            cancelLabel: "Abort Harvest",
+            exclusive: false,
+          }
+        : undefined,
+      dismissIcon: "trash",
+      dismissLabel: "Dismiss selected recruits",
+    };
+  });
+
+  function handleFabCommand(commandId: string, event: MouseEvent) {
+    if (commandId === "harvest-global") {
+      void scraper.executeHarvest("global");
+      return;
+    }
+    if (commandId === "harvest-local") {
+      void scraper.executeHarvest("local");
+      return;
+    }
+    blitz.handleFabCommand(commandId, event);
+  }
+
+  function handleActiveOperationCancel() {
+    if (scraper.isHarvesting.value) {
+      scraper.abortHarvest();
+      return;
+    }
+    blitz.stopBlitz();
+  }
+
   /**
    * CONSOLE CONTROLLER CONFIGURATION
    * [DECISION LOG] We delegate display logic (sorting, filtering, search) to
@@ -98,25 +174,15 @@ export function useRecruiter() {
     onDismiss: dismissBulk,
     selectionStore,
     // [DECISION LOG] Harvest scouts external clanless players from the Clash
-    // Royale leaderboard, which only makes sense on this recruiting view — not
+    // Royale leaderboard, which only makes sense on this recruiting view, not
     // on Roster, which manages existing clan members. Roster shares this same
     // Blitz FAB but must not advertise Harvest as available.
-    fabState: computed(() => ({
-      ...blitz.fabState.value,
-      harvestEnabled: true,
-      dismissIcon: "trash",
-      // Unlike Roster, this action persists a dismissal. Its name must stay
-      // distinct from the harmless Clear action in the console header.
-      dismissLabel: "Dismiss selected recruits",
-    })),
+    fabState: recruiterFabState,
     layoutEvents: computed(() => ({
-      "fab-action": blitz.handleAction,
-      "fab-blitz": blitz.handleBlitz,
+      "fab-command": handleFabCommand,
       "clear-selection": blitz.clearSelection,
       "fab-dismiss": dismissBulk,
-      "fab-global-harvest": () => scraper.executeHarvest("global"),
-      "fab-local-harvest": () => scraper.executeHarvest("local"),
-      "fab-abort-harvest": scraper.abortHarvest,
+      "fab-cancel-operation": handleActiveOperationCancel,
     }))
   });
 

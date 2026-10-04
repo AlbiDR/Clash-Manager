@@ -13,18 +13,12 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 describe('useToast', () => {
-  let useToast: any;
+  let useToast: typeof import('../useToast').useToast;
 
   beforeEach(async () => {
     vi.useFakeTimers();
     vi.resetModules();
     vi.clearAllMocks();
-
-    if (typeof crypto === 'undefined') {
-      (global as any).crypto = { randomUUID: () => Math.random().toString(36) };
-    } else {
-      vi.spyOn(crypto, 'randomUUID').mockImplementation(() => Math.random().toString(36) as any);
-    }
 
     const module = await import('../useToast');
     useToast = module.useToast;
@@ -60,6 +54,35 @@ describe('useToast', () => {
 
     vi.advanceTimersByTime(1000);
     expect(toasts.value).toHaveLength(0);
+  });
+
+  it('should resume from the remaining lifetime instead of restarting duration', () => {
+    const toastDurationMs = 3000;
+    const elapsedBeforePauseMs = 1200;
+    const expectedRemainingMs = toastDurationMs - elapsedBeforePauseMs;
+    const { add, pauseDismissal, resumeDismissal, toasts } = useToast();
+
+    const id = add({ type: 'info', message: 'Readable', duration: toastDurationMs });
+    vi.advanceTimersByTime(elapsedBeforePauseMs);
+    pauseDismissal(id);
+
+    vi.advanceTimersByTime(toastDurationMs);
+    expect(toasts.value).toHaveLength(1);
+
+    resumeDismissal(id);
+    vi.advanceTimersByTime(expectedRemainingMs - 1);
+    expect(toasts.value).toHaveLength(1);
+
+    vi.advanceTimersByTime(1);
+    expect(toasts.value).toHaveLength(0);
+  });
+
+  it('should keep timer handles private to the service', () => {
+    const { add, toasts } = useToast();
+
+    add({ type: 'info', message: 'Encapsulated lifetime' });
+
+    expect(Object.hasOwn(toasts.value[0], 'timer')).toBe(false);
   });
 
   it('should manually remove a toast', () => {

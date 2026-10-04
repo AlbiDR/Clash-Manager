@@ -89,6 +89,7 @@ function handleKeydown(keyboardEvent: KeyboardEvent) {
         v-model="localTag"
         type="text"
         class="tag-input"
+        aria-label="Player tag"
         placeholder="PLAYER TAG..."
         spellcheck="false"
         autocomplete="off"
@@ -97,6 +98,7 @@ function handleKeydown(keyboardEvent: KeyboardEvent) {
       
       <button
         v-tactile
+        type="button"
         class="lock-btn"
         :aria-label="props.isFetching ? 'Looking up player' : 'Lock in target player'"
         :disabled="props.isFetching"
@@ -143,7 +145,10 @@ function handleKeydown(keyboardEvent: KeyboardEvent) {
 }
 
 .input-box:focus-within {
-  border-color: rgba(var(--sys-color-primary-rgb), 0.3);
+  border-color: var(--sys-color-primary);
+  box-shadow:
+    inset 0 2px 4px var(--sys-overlay-dark-subtle),
+    0 0 0 2px rgba(var(--sys-color-primary-rgb), 0.2);
 }
 
 .prefix-icon {
@@ -194,13 +199,20 @@ function handleKeydown(keyboardEvent: KeyboardEvent) {
   inset: calc(-1 * var(--sys-space-4));
 }
 
-.lock-btn:hover:not(:disabled) {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(var(--sys-color-primary-rgb), 0.3);
+@media (hover: hover) and (pointer: fine) {
+  .lock-btn:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(var(--sys-color-primary-rgb), 0.3);
+  }
 }
 
 .lock-btn:active:not(:disabled) {
   transform: scale(0.95);
+}
+
+.lock-btn:focus-visible {
+  outline: 2px solid var(--sys-color-primary);
+  outline-offset: var(--sys-space-2);
 }
 
 .lock-btn:disabled {

@@ -69,7 +69,7 @@ const engineStatus = computed(() => {
 
     <!-- 1. Progression Row (Always full width) -->
     <div class="progression-row">
-      <label class="section-label label-section">Target Progress</label>
+      <span class="section-label label-section">Target Progress</span>
       <div class="king-level-display">
         <div
           class="level-badge current"
@@ -101,7 +101,7 @@ const engineStatus = computed(() => {
 
     <!-- 2. Resources Grid (Unified & Symmetrical) -->
     <div class="metrics-section">
-      <label class="section-label label-section">Required for Projection</label>
+      <span class="section-label label-section">Required for Projection</span>
       <div
         class="resources-grid"
         :class="{ 'triple': result.totalGemsSpent > 0 }"
@@ -167,7 +167,7 @@ const engineStatus = computed(() => {
 .player-tag {
   font-family: var(--sys-font-family-mono);
   font-size: 13px;
-  opacity: 0.5;
+  color: var(--sys-color-on-surface-variant);
   font-weight: 700;
   letter-spacing: 0.05em;
 }
@@ -179,7 +179,7 @@ const engineStatus = computed(() => {
 }
 
 .projection-badge {
-  color: var(--sys-color-on-primary-container);
+  color: var(--sys-color-on-surface);
   padding: var(--sys-space-6) var(--sys-space-10);
   border-radius: var(--sys-shape-corner-small);
   display: flex;
@@ -257,7 +257,15 @@ const engineStatus = computed(() => {
 }
 
 .level-badge.current {
-  opacity: 0.5;
+  color: var(--sys-color-on-surface-variant);
+}
+
+.level-badge.current .num {
+  color: var(--sys-color-on-surface-variant);
+}
+
+.level-badge.current .level-icon {
+  opacity: 0.65;
   filter: grayscale(0.2);
 }
 
@@ -303,7 +311,10 @@ const engineStatus = computed(() => {
 
 @media (min-width: 321px) and (max-width: 640px) {
   .resources-grid.triple {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr 1fr;
+  }
+  .resources-grid.triple .res-slab.gems {
+    grid-column: 1 / -1;
   }
   .resources-grid {
     grid-template-columns: 1fr 1fr;

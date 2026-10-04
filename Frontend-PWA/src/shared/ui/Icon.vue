@@ -2,7 +2,11 @@
 <!-- Copyright (C) 2026 AlbiDR -->
 <script setup lang="ts">
 import { computed } from "vue";
-import { ICONS, ICON_VIEW_BOXES, type IconPath } from "../../core/theme/icons";
+import {
+  getIconPaths,
+  getIconViewBox,
+  type IconPath,
+} from "../../core/theme/icons";
 
 const props = defineProps<{
   name: string;
@@ -16,20 +20,21 @@ const sizePx = computed(() => {
   return props.size || "24px";
 });
 
-const iconPaths = computed<readonly IconPath[]>(() => {
-  const definition = ICONS[props.name];
-  if (!definition) return [];
-  return typeof definition === "string" ? [{ d: definition }] : definition;
-});
+// SVG length attributes reject CSS functions such as var() even though the
+// equivalent CSS width and height declarations are valid. Omit the attributes
+// for token-driven sizes and let the inline style remain the single authority.
+const sizeAttribute = computed(() => sizePx.value.includes("(") ? undefined : sizePx.value);
 
-const resolvedViewBox = computed(() => props.viewBox || ICON_VIEW_BOXES[props.name] || "0 0 24 24");
+const iconPaths = computed<readonly IconPath[]>(() => getIconPaths(props.name));
+
+const resolvedViewBox = computed(() => props.viewBox || getIconViewBox(props.name));
 </script>
 
 <template>
   <svg
     class="icon"
-    :width="sizePx"
-    :height="sizePx"
+    :width="sizeAttribute"
+    :height="sizeAttribute"
     :viewBox="resolvedViewBox"
     role="img"
     v-bind="{ 'aria-hidden': 'true' }"

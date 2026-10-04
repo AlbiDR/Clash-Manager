@@ -11,7 +11,19 @@
  * and immediately - remove this docblock if that is intentional.
  */
 import { describe, it, expect } from "vitest";
+import { readFileSync } from "node:fs";
 import { getAppShellStyles, getAppShellHtml } from "../AppShell";
+import { getIconPaths } from "../icons";
+import { NAV_ITEMS } from "../../utils/navigation";
+
+const FLOATING_DOCK_SOURCE = readFileSync(
+  new URL("../../../shared/ui/FloatingDock.vue", import.meta.url),
+  "utf8",
+);
+const NAVIGATION_DOCK_SOURCE = readFileSync(
+  new URL("../../../shared/ui/NavigationDock.vue", import.meta.url),
+  "utf8",
+);
 
 describe("AppShell", () => {
   describe("getAppShellStyles", () => {
@@ -26,14 +38,14 @@ describe("AppShell", () => {
       expect(styles).toContain(":root");
       expect(styles).toContain("html.dark");
       expect(styles).toContain("--sh-bg");
-      expect(styles).toContain("--sh-primary");
+      expect(styles).toContain("--sh-text");
     });
 
     it("should contain critical app shell layout classes", () => {
       const styles = getAppShellStyles();
       expect(styles).toContain("#app-shell");
       expect(styles).toContain(".sh-header");
-      expect(styles).toContain(".sh-dock");
+      expect(styles).toContain("#app-shell .dock-container");
       expect(styles).toContain(".sh-card");
     });
 
@@ -51,6 +63,44 @@ describe("AppShell", () => {
       const styles = getAppShellStyles();
       expect(styles).toContain("@keyframes sh-pulse");
       expect(styles).toContain(".sh-pulse");
+    });
+
+    it("sources first-paint and live dock geometry from the same tokens", () => {
+      const styles = getAppShellStyles();
+      const sharedTokens = [
+        "--sys-surface-glass",
+        "--sys-surface-glass-blur",
+        "--sys-surface-glass-border",
+        "--sys-border-width-glass",
+        "--sys-elevation-3",
+        "--sys-layout-dock-compact-max-width",
+      ];
+      const itemTokens = [
+        "--sys-layout-dock-item-min-width",
+        "--sys-layout-dock-icon-size",
+        "--sys-layout-dock-label-max-width",
+        "--sys-layout-dock-active-grow",
+        "--sys-layout-dock-compact-active-grow",
+        "--sys-font-weight-dock",
+        "--sys-elevation-dock-active",
+        "--sys-opacity-dock-placeholder",
+      ];
+
+      for (const token of sharedTokens) {
+        expect(styles).toContain(`var(${token})`);
+        expect(FLOATING_DOCK_SOURCE).toContain(`var(${token})`);
+      }
+      for (const token of itemTokens) {
+        expect(styles).toContain(`var(${token})`);
+        expect(NAVIGATION_DOCK_SOURCE).toContain(`var(${token})`);
+      }
+
+      const shellBreakpoint = styles.match(/@media \(max-width:\s*([^)]+)\)/)?.[1];
+      const liveBreakpoint = FLOATING_DOCK_SOURCE.match(/@media \(max-width:\s*([^)]+)\)/)?.[1];
+      const itemBreakpoint = NAVIGATION_DOCK_SOURCE.match(/@media \(max-width:\s*([^)]+)\)/)?.[1];
+      expect(shellBreakpoint).toBe(liveBreakpoint);
+      expect(shellBreakpoint).toBe(itemBreakpoint);
+      expect(FLOATING_DOCK_SOURCE).not.toContain("96%");
     });
   });
 
@@ -81,12 +131,32 @@ describe("AppShell", () => {
       expect(cardCount).toBeGreaterThanOrEqual(8);
     });
 
-    it("should contain the navigation dock with icons", () => {
+    it("renders the same semantic navigation structure as the live dock", () => {
       const html = getAppShellHtml();
-      expect(html).toContain('class="sh-dock"');
-      expect(html).toContain('role="navigation"');
-      expect(html).toContain("<svg");
-      expect(html).toContain("Roster");
+      expect(html).toContain('class="dock-container"');
+      expect(html).toContain('<nav class="dock-mode" aria-label="Main navigation">');
+
+      const buttons = Array.from(html.matchAll(/<button\b([^>]*)>/g));
+      expect(buttons).toHaveLength(NAV_ITEMS.length);
+
+      NAV_ITEMS.forEach((item, index) => {
+        const attributes = buttons[index][1];
+        expect(attributes).toContain('type="button"');
+        expect(attributes).toContain(`aria-label="${item.label}"`);
+        expect(attributes.includes('aria-current="page"')).toBe(index === 0);
+      });
+    });
+
+    it("defers SVG to Icon.vue while preserving each icon footprint", () => {
+      const html = getAppShellHtml();
+      expect(html).not.toContain("<svg");
+      expect(html).not.toContain("<path");
+      expect(html.match(/class="dock-icon dock-icon-placeholder"/g)).toHaveLength(NAV_ITEMS.length);
+      expect(NAVIGATION_DOCK_SOURCE).toMatch(/<Icon\s+v-if="areIconsMounted"/);
+      expect(NAVIGATION_DOCK_SOURCE).toMatch(/<span\s+v-else\s+class="dock-icon dock-icon-placeholder"/);
+      NAV_ITEMS.forEach((item) => {
+        expect(getIconPaths(item.icon).length, `${item.icon} is missing from the live registry`).toBeGreaterThan(0);
+      });
     });
   });
 });

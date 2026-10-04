@@ -36,6 +36,7 @@ const handleInput = (inputEvent: Event, resourceKey: string) => {
     class="vault-card surface-panel"
     data-bone="VaultCard.panel"
     :class="{ 'is-loading': isSimulating }"
+    :aria-busy="isSimulating"
   >
     <h3
       class="panel-header"
@@ -65,6 +66,7 @@ const handleInput = (inputEvent: Event, resourceKey: string) => {
             type="number" 
             :value="inventory.gold" 
             class="res-input"
+            aria-label="Gold owned"
             @input="handleInput($event, 'gold')"
           >
         </div>
@@ -83,6 +85,7 @@ const handleInput = (inputEvent: Event, resourceKey: string) => {
             type="number" 
             :value="inventory.gems" 
             class="res-input"
+            aria-label="Gems owned"
             @input="handleInput($event, 'gems')"
           >
         </div>
@@ -111,6 +114,7 @@ const handleInput = (inputEvent: Event, resourceKey: string) => {
               type="number" 
               :value="wildCardCount"
               class="wc-input"
+              :aria-label="`${rarity} wild cards owned`"
               @input="handleInput($event, `wc_${rarity.toLowerCase()}`)"
             >
           </div>
@@ -153,7 +157,7 @@ const handleInput = (inputEvent: Event, resourceKey: string) => {
 .res-label {
   font-size: 12px;
   font-weight: 700;
-  opacity: 0.6;
+  color: var(--sys-color-on-surface-variant);
 }
 
 .res-input {

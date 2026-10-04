@@ -204,6 +204,7 @@ const scoreActionLabel = computed(() => {
         <!-- Expand Button -->
         <button
           v-tactile
+          type="button"
           class="expand-btn hit-target"
           :class="{ 'is-active': props.expanded }"
           :aria-expanded="props.expanded"
@@ -400,6 +401,16 @@ const scoreActionLabel = computed(() => {
   color: var(--sys-color-primary);
 }
 
+.score-section:focus-visible,
+.expand-btn:focus-visible {
+  outline: 2px solid var(--sys-color-primary);
+  outline-offset: 2px;
+}
+
+.score-section:focus-visible {
+  border-radius: var(--sys-shape-corner-input);
+}
+
 .stat-pod {
   position: relative;
   width: var(--sys-space-48);
@@ -419,14 +430,16 @@ const scoreActionLabel = computed(() => {
   contain: layout;
   box-shadow: inset 0 1px 1px var(--sys-overlay-light-subtle);
 }
-.stat-pod:hover {
-  transform: scale(1.1);
-  z-index: 10;
+@media (hover: hover) and (pointer: fine) {
+  .stat-pod:hover {
+    transform: scale(1.1);
+    z-index: 10;
+  }
 }
 
 /* Default (no score): plain neutral fill. Written as :not(.score-tint)
    rather than a plain .stat-pod rule so it never competes on specificity
-   with the global .score-tint fill below — Vue's scoped-style attribute
+   with the global .score-tint fill below; Vue's scoped-style attribute
    selector would otherwise outrank a same-specificity global class
    regardless of source order. */
 .stat-pod:not(.score-tint) {

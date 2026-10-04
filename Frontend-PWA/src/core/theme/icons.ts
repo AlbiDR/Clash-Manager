@@ -8,6 +8,7 @@ const PATH_TRIANGLE_EXCLAMATION = "M12 2L1 21h22L12 2zm0 3.45L20.53 19H3.47L12 5
 const PATH_MOON = "M12,3c-4.97,0-9,4.03-9,9s4.03,9,9,9s9-4.03,9-9c0-0.46-0.04-0.92-0.1-1.36c-0.98,1.37-2.58,2.26-4.4,2.26 c-2.98,0-5.4-2.42-5.4-5.4c0-1.81,0.89-3.42,2.26-4.4C12.92,3.04,12.46,3,12,3L12,3z";
 const PATH_FLAG = "M14.4 6L14 4H5v17h2v-7h5.6l.4 2h7V6h-5.6z";
 const PATH_STAR = "M12,17.27L18.18,21l-1.64-7.03L22,9.24l-7.19-0.61L12,2L9.19,8.63L2,9.24l5.46,4.73L5.82,21L12,17.27z";
+const PATH_FLASK = "M13,11.33L18,18H6l5-6.67V6h2 M15.96,4H8.04C7.62,4,7.39,4.48,7.65,4.81L9,6.5v4.17L3.2,18.4C2.71,19.06,3.18,20,4,20h16 c0.82,0,1.29-0.94,0.8-1.6L15,10.67V6.5l1.35-1.69C16.61,4.48,16.38,4,15.96,4L15.96,4z";
 const PATH_ROSTER = "M3,21C2.717,21 2.479,20.904 2.288,20.712C2.097,20.52 2.001,20.283 2,20L2,10C2,9.717 2.096,9.479 2.288,9.288C2.48,9.097 2.717,9.001 3,9L6.5,9C6.783,9 7.021,9.096 7.213,9.288C7.405,9.48 7.501,9.717 7.5,10L7.5,20C7.5,20.283 7.404,20.521 7.212,20.713C7.02,20.905 6.783,21.001 6.5,21L3,21ZM10.25,21C9.967,21 9.729,20.904 9.538,20.712C9.347,20.52 9.251,20.283 9.25,20L9.25,4C9.25,3.717 9.346,3.479 9.538,3.288C9.73,3.097 9.967,3.001 10.25,3L13.75,3C14.033,3 14.271,3.096 14.463,3.288C14.655,3.48 14.751,3.717 14.75,4L14.75,20C14.75,20.283 14.654,20.521 14.462,20.713C14.27,20.905 14.033,21.001 13.75,21L10.25,21ZM17.5,21C17.217,21 16.979,20.904 16.788,20.712C16.597,20.52 16.501,20.283 16.5,20L16.5,12C16.5,11.717 16.596,11.479 16.788,11.288C16.98,11.097 17.217,11.001 17.5,11L21,11C21.283,11 21.521,11.096 21.713,11.288C21.905,11.48 22.001,11.717 22,12L22,20C22,20.283 21.904,20.521 21.712,20.713C21.52,20.905 21.283,21.001 21,21L17.5,21Z";
 const PATHS_CLASH_ROYALE = Object.freeze([
   { d: "M13 15v16l11 6 11-6V15h-6l-5-3-5 3z", fill: "#11569c" },
@@ -22,16 +23,18 @@ export interface IconPath {
   opacity?: number;
 }
 
-export type IconDefinition = string | readonly IconPath[];
+type IconDefinition = string | readonly IconPath[];
 
 /** Non-standard view boxes are owned by the icon registry, not its callers. */
-export const ICON_VIEW_BOXES: Readonly<Record<string, string>> = Object.freeze({
+const ICON_VIEW_BOXES: Readonly<Record<string, string>> = Object.freeze({
   "clash-royale": "11 10 26 29",
 });
 
-export const ICONS: Readonly<Record<string, IconDefinition>> = Object.freeze({
+const ICONS = Object.freeze({
   // Navigation
   roster: PATH_ROSTER,
+  headhunter: PATH_DISCOVERY,
+  laboratory: PATH_FLASK,
   leaderboard: PATH_CHART_BAR,
   recruiter: PATH_DISCOVERY,
   "clash-royale": PATHS_CLASH_ROYALE,
@@ -102,8 +105,7 @@ export const ICONS: Readonly<Record<string, IconDefinition>> = Object.freeze({
     "M19,3H5C3.9,3,3,3.9,3,5v14c0,1.1,0.9,2,2,2h14c1.1,0,2-0.9,2-2V5C21,3.9,20.1,3,19,3z M19,19H5V5h14V19z M7,7h2v2H7V7z M11,7h2v2h-2V7z M15,7h2v2h-2V7z M7,11h2v2H7V11z M11,11h2v2h-2V11z M15,11h2v2h-2V11z M7,15h2v2H7V15z M11,15h2v2h-2V15z M15,15h2v2h-2V15z",
   lightning: "M7,2v11h3v9l7-12h-4l4-8H7z",
   leaf: "M17,8C8,10 5.9,16.17 3.82,21.34L5.71,22L6.66,19.7C7.14,19.87 7.64,20 8,20C19,20 22,3 22,3C21,5 14,5.25 9,6.25C4,7.25 2,11.5 2,13.5C2,15.5 3.75,17.25 3.75,17.25C7,8 17,8 17,8Z",
-  flask:
-    "M13,11.33L18,18H6l5-6.67V6h2 M15.96,4H8.04C7.62,4,7.39,4.48,7.65,4.81L9,6.5v4.17L3.2,18.4C2.71,19.06,3.18,20,4,20h16 c0.82,0,1.29-0.94,0.8-1.6L15,10.67V6.5l1.35-1.69C16.61,4.48,16.38,4,15.96,4L15.96,4z",
+  flask: PATH_FLASK,
   moon: PATH_MOON,
   star: PATH_STAR,
 
@@ -135,4 +137,24 @@ export const ICONS: Readonly<Record<string, IconDefinition>> = Object.freeze({
     "M12,4V2C6.48,2,2,6.48,2,12h2C4,7.58,7.58,4,12,4z",
   copy:
     "M16,1H4C2.9,1,2,1.9,2,3v14h2V3h12V1z M19,5H8C6.9,5,6,5.9,6,7v14c0,1.1,0.9,2,2,2h11c1.1,0,2-0.9,2-2V7C21,5.9,20.1,5,19,5z M19,21H8V7h11V21z",
-});
+}) satisfies Readonly<Record<string, IconDefinition>>;
+
+/** A registry-backed icon name. Consumers cannot point at a missing glyph. */
+export type IconName = keyof typeof ICONS;
+
+const EMPTY_ICON_PATHS: readonly IconPath[] = Object.freeze([]);
+
+/**
+ * Resolves either compact registry spelling to the one shape Icon.vue uses,
+ * so callers never grow private branches for string and multi-path glyphs.
+ */
+export function getIconPaths(name: string): readonly IconPath[] {
+  const definition = ICONS[name as IconName];
+  if (!definition) return EMPTY_ICON_PATHS;
+  return typeof definition === "string" ? [{ d: definition }] : definition;
+}
+
+/** Resolves the coordinate space from the same registry as the path data. */
+export function getIconViewBox(name: string): string {
+  return ICON_VIEW_BOXES[name] || "0 0 24 24";
+}

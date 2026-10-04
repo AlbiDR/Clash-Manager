@@ -2,11 +2,8 @@
 <!-- Copyright (C) 2026 AlbiDR -->
 <script setup lang="ts">
 import { useRoute, useRouter } from "vue-router";
-import { computed, ref, watch } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import Icon from "./Icon.vue";
-import RosterIcon from "./RosterIcon.vue";
-import LaboratoryIcon from "./LaboratoryIcon.vue";
-import HeadhunterIcon from "./HeadhunterIcon.vue";
 import { NAV_ITEMS } from "@core";
 import { useHaptics } from "../composables/useHaptics";
 
@@ -32,7 +29,15 @@ const router = useRouter();
 const haptics = useHaptics();
 const pendingPath = ref<string | null>(null);
 const displayPath = computed(() => pendingPath.value ?? route.path);
+const areIconsMounted = ref(false);
 let navigationTicket = 0;
+
+// The static substrate renders these geometry-preserving placeholders too.
+// Keeping them for Vue's initial patch makes the two DOM trees identical;
+// only after mount may the shared Icon primitive introduce SVG markup.
+onMounted(() => {
+  areIconsMounted.value = true;
+});
 
 watch(
   () => route.path,
@@ -121,26 +126,29 @@ function onInteractionStart() {
       v-if="displayPath === navItemCandidate.path"
       class="capsule-bg"
     />
-    
-    <RosterIcon
-      v-if="navItemCandidate.name === 'roster'"
-      class="dock-icon dock-icon-custom"
+
+    <!-- Pending navigation keeps the destination optimistically selected, but
+         color alone cannot explain why it has not opened yet. This local ring
+         is deliberately out of flow so labels and icons never shift while the
+         router's data loader settles. -->
+    <span
+      v-if="pendingPath === navItemCandidate.path"
+      class="pending-indicator"
+      aria-hidden="true"
     />
-    <LaboratoryIcon
-      v-else-if="navItemCandidate.name === 'laboratory'"
-      class="dock-icon dock-icon-custom"
-    />
-    <HeadhunterIcon
-      v-else-if="navItemCandidate.name === 'headhunter'"
-      class="dock-icon dock-icon-custom"
-    />
+
     <Icon
-      v-else
+      v-if="areIconsMounted"
       :name="navItemCandidate.icon"
-      size="22"
+      size="var(--sys-layout-dock-icon-size)"
       class="dock-icon"
     />
-    
+    <span
+      v-else
+      class="dock-icon dock-icon-placeholder"
+      aria-hidden="true"
+    />
+
     <span
       v-if="navItemCandidate.label"
       class="dock-label"
@@ -151,17 +159,21 @@ function onInteractionStart() {
 </template>
 
 <style scoped>
-.dock-icon-custom {
+.dock-icon-placeholder {
   display: block;
-  flex-shrink: 0;
-  width: 22px;
-  height: 22px;
+  width: var(--sys-layout-dock-icon-size);
+  height: var(--sys-layout-dock-icon-size);
+  flex: 0 0 var(--sys-layout-dock-icon-size);
+  border-radius: var(--sys-shape-corner-small);
+  background: currentColor;
+  opacity: var(--sys-opacity-dock-placeholder);
 }
+
 .dock-item {
   position: relative;
   height: var(--sys-space-56);
   flex: 1;
-  min-width: 64px;
+  min-width: var(--sys-layout-dock-item-min-width);
   padding: 0 var(--sys-space-12);
   border-radius: var(--sys-shape-corner-full);
   display: flex;
@@ -169,7 +181,7 @@ function onInteractionStart() {
   justify-content: center;
   gap: var(--sys-space-10);
   font-size: var(--sys-typescale-body-rg);
-  font-weight: 850;
+  font-weight: var(--sys-font-weight-dock);
   color: var(--sys-color-on-surface);
   cursor: pointer;
   transition:
@@ -192,14 +204,40 @@ function onInteractionStart() {
   background: rgba(var(--sys-color-primary-rgb), 0.1);
 }
 
+/* The active capsule alone is not a reliable focus marker: a keyboard reader
+   can move from the active tab to an inactive one with no visual change. */
+.dock-item:focus-visible {
+  outline: var(--sys-space-2) solid var(--sys-color-primary);
+  outline-offset: var(--sys-space-2);
+}
+
 .dock-item.active {
   color: var(--sys-color-on-primary);
-  flex: 1.2;
+  flex: var(--sys-layout-dock-active-grow);
 }
 
 .dock-item.pending {
-  color: var(--sys-color-primary);
   opacity: 1;
+}
+
+/* `displayPath` points at the pending destination, so that button is both
+   active and pending. Preserve the active capsule's contrast instead of
+   painting primary ink on the same primary ground. */
+.dock-item.active.pending {
+  color: var(--sys-color-on-primary);
+}
+
+.pending-indicator {
+  position: absolute;
+  top: var(--sys-space-6);
+  right: var(--sys-space-8);
+  width: var(--sys-space-10);
+  height: var(--sys-space-10);
+  border: var(--sys-space-2) solid currentColor;
+  border-top-color: transparent;
+  border-radius: var(--sys-shape-corner-full);
+  animation: spin var(--sys-motion-ambient-spin) linear infinite;
+  pointer-events: none;
 }
 
 .dock-item.active:active {
@@ -219,8 +257,11 @@ function onInteractionStart() {
   background: var(--sys-color-primary);
   border-radius: var(--sys-shape-corner-full);
   z-index: -1;
+  box-shadow: var(--sys-elevation-dock-active);
+}
+
+.dock-item.pending .capsule-bg {
   animation: pop-in var(--sys-motion-duration-300) var(--sys-motion-easing-spring-nav);
-  box-shadow: 0 6px 16px rgba(var(--sys-color-primary-rgb), 0.4);
 }
 
 .dock-label {
@@ -240,21 +281,34 @@ function onInteractionStart() {
     display: none;
   }
   .dock-item.active {
-    flex: 2;
+    flex: var(--sys-layout-dock-compact-active-grow);
   }
   .dock-item.active .dock-label {
     display: block;
-    max-width: 80px;
+    max-width: var(--sys-layout-dock-label-max-width);
     overflow: hidden;
     text-overflow: ellipsis;
   }
 }
 
-/* A phone in landscape is short on height, not width: the items drop to the
-   48px touch-target minimum, matching ConsoleHeader's short-landscape row. */
+/* A phone in landscape is short on height, not width. Keep the rail clear of
+   primary content by using icon-only 48px targets at the trailing edge. The
+   button aria-labels preserve the same accessible navigation names. */
 @media (orientation: landscape) and (max-height: 520px) {
   .dock-item {
+    flex: 0 0 var(--sys-space-48);
+    min-width: var(--sys-space-48);
+    width: var(--sys-space-48);
     height: var(--sys-space-48);
+    padding: 0;
+  }
+
+  .dock-item.active {
+    flex: 0 0 var(--sys-space-48);
+  }
+
+  .dock-label {
+    display: none;
   }
 }
 </style>

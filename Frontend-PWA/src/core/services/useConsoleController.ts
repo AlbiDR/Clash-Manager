@@ -177,10 +177,14 @@ export function useConsoleController<T extends { id: string; n?: string }>(
       visible: isSelectionMode.value,
       label: "Done",
       isProcessing: false,
-      isBlasting: false,
       selectionCount: selectedIds.value.length,
-      blitzEnabled: false,
-      harvestEnabled: false,
+      actions: [{
+        id: "complete-selection",
+        label: "Done",
+        accessibleLabel: "Done with selection",
+        icon: "check",
+        tone: "primary" as const,
+      }],
       dismissIcon: "close",
     };
   });

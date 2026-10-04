@@ -461,7 +461,7 @@ onUnmounted(() => {
 }
 
 /* This variant visually completes the primary action cluster supplied by
-   SelectionBar. It remains the same trigger and same sheet—not a second UI. */
+   SelectionBar. It remains the same trigger and same sheet, not a second UI. */
 .view-options-trigger.is-embedded {
   width: var(--sys-space-48);
   min-width: var(--sys-space-48);

@@ -22,19 +22,14 @@ describe("useUiCoordinator", () => {
       label: "Open",
       actionHref: undefined,
       isProcessing: false,
-      isBlasting: false,
       selectionCount: 0,
-      blitzEnabled: false,
+      actions: [],
+      activity: null,
       dismissLabel: "Clear selection",
-      onAction: undefined,
-      onBlitz: undefined,
-      onDismiss: undefined,
+      onCommand: null,
+      onDismiss: null,
+      onCancelOperation: null,
     });
-    // @ts-expect-error - reset internal callbacks to null
-    const { fabState } = useUiCoordinator();
-    fabState.onAction = null;
-    fabState.onBlitz = null;
-    fabState.onDismiss = null;
   });
 
   it("should have correct initial state", () => {
@@ -43,6 +38,8 @@ describe("useUiCoordinator", () => {
     expect(dockVisible.value).toBe(true);
     expect(fabState.label).toBe("Open");
     expect(fabState.dismissLabel).toBe("Clear selection");
+    expect(fabState.actions).toEqual([]);
+    expect(fabState.activity).toBeNull();
   });
 
   it("should update FAB visibility and dock visibility accordingly", () => {
@@ -59,17 +56,17 @@ describe("useUiCoordinator", () => {
 
   it("should update fabState correctly", () => {
     const { fabState, updateFabState } = useUiCoordinator();
-    const onAction = vi.fn();
+    const onCommand = vi.fn();
 
     updateFabState({
       label: "Delete",
       selectionCount: 5,
-      onAction
+      onCommand,
     });
 
     expect(fabState.label).toBe("Delete");
     expect(fabState.selectionCount).toBe(5);
-    expect(fabState.onAction).toBe(onAction);
+    expect(fabState.onCommand).toBe(onCommand);
     // Unchanged values should remain
     expect(fabState.isProcessing).toBe(false);
   });
@@ -109,26 +106,30 @@ describe("useUiCoordinator", () => {
     updateFabState({
       label: "Seeded",
       isProcessing: true,
-      isBlasting: true,
       selectionCount: 7,
-      blitzEnabled: true,
+      actions: [{ id: "seed", label: "Seed", icon: "check" }],
+      activity: {
+        label: "Seed",
+        status: "Running",
+        cancelLabel: "Cancel seed",
+      },
     });
 
     updateFabState({
       label: "",
       isProcessing: false,
-      isBlasting: false,
       selectionCount: 0,
-      blitzEnabled: false,
+      actions: [],
+      activity: null,
     });
 
     // A truthiness guard (`if (value)`) instead of an explicit undefined check
-    // would leave all five of these at their seeded values.
+    // would leave all of these at their seeded values.
     expect(fabState.label).toBe("");
     expect(fabState.isProcessing).toBe(false);
-    expect(fabState.isBlasting).toBe(false);
     expect(fabState.selectionCount).toBe(0);
-    expect(fabState.blitzEnabled).toBe(false);
+    expect(fabState.actions).toEqual([]);
+    expect(fabState.activity).toBeNull();
   });
 
   it("should treat undefined as leave-untouched rather than reset", () => {
@@ -182,8 +183,8 @@ describe("useUiCoordinator", () => {
     const keysBeforeMerge = Object.keys(fabState).sort();
 
     updateFabState({ label: "First" });
-    updateFabState({ selectionCount: 3, isHarvesting: true });
-    updateFabState({ activeHarvester: "global", harvestEnabled: true });
+    updateFabState({ selectionCount: 3, actions: [{ id: "next", label: "Next", icon: "check" }] });
+    updateFabState({ activity: { label: "Work", status: "Running", cancelLabel: "Cancel work" } });
 
     expect(Object.keys(fabState).sort()).toEqual(keysBeforeMerge);
   });

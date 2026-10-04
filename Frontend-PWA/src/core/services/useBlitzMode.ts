@@ -7,6 +7,7 @@ import { useToast } from "@core/services/useToast";
 import { ref, computed, onUnmounted, getCurrentInstance } from "vue";
 import { useSelectionStore } from "@core/services/useSelectionStore";
 import { useNativeBridge } from "@core/services/useNativeBridge";
+import type { ConsoleFabState } from "@core/types";
 import {
   BLITZ_DWELL_DEFAULT,
   BLITZ_SAFETY_DELAY,
@@ -18,6 +19,10 @@ import {
 interface BlitzOptions {
   throttleMs?: number;
 }
+
+const OPEN_PROFILE_COMMAND = "open-profile";
+const START_BATCH_COMMAND = "start-batch";
+const ADVANCE_BATCH_COMMAND = "advance-batch";
 
 /**
  * COMPOSABLE: useBlitzMode
@@ -105,16 +110,15 @@ export function useBlitzMode(
   /**
    * UI State for the Floating Action Button (FAB).
    */
-  const fabState = computed(() => {
+  const fabState = computed<ConsoleFabState>(() => {
     if (!isSelectionMode.value) {
       return {
         visible: false,
         label: "",
         actionHref: undefined,
         isProcessing: false,
-        isBlasting: false,
         selectionCount: 0,
-        blitzEnabled: false,
+        actions: [],
         dismissIcon: "trash",
         dismissLabel: "Clear selection",
       };
@@ -142,14 +146,52 @@ export function useBlitzMode(
         ? batchExecutionQueue.value[0]
         : selectedIds.value[0];
 
+    const actions = isBlitzActive.value
+      ? [{
+          id: ADVANCE_BATCH_COMMAND,
+          label: "Next",
+          accessibleLabel: "Open Next Profile",
+          icon: "chevron_right",
+          tone: "primary" as const,
+          compact: true,
+        }]
+      : isBlitzEnabled.value
+        ? [{
+            id: START_BATCH_COMMAND,
+            label: "Blitz",
+            accessibleLabel: totalSelectedCount === 0
+              ? "Select one or more entries to start Blitz"
+              : `Start Blitz for ${totalSelectedCount} selected`,
+            icon: "lightning",
+            tone: "secondary" as const,
+            disabled: totalSelectedCount === 0,
+            badge: totalSelectedCount > 0 ? totalSelectedCount : undefined,
+            supportingLabel: totalSelectedCount > 0 ? "selected" : undefined,
+          }]
+        : [{
+            id: OPEN_PROFILE_COMMAND,
+            label,
+            accessibleLabel: label,
+            icon: "check",
+            tone: "primary" as const,
+            disabled: totalSelectedCount === 0,
+          }];
+
     return {
       visible: true,
       label,
       actionHref: targetId ? buildDeepLink(targetId) : undefined,
       isProcessing: isProcessing.value,
-      isBlasting: isBlitzActive.value,
       selectionCount: totalSelectedCount,
-      blitzEnabled: isBlitzEnabled.value,
+      actions,
+      activity: isBlitzActive.value
+        ? {
+            label: "Blitz",
+            status: label,
+            cancelLabel: "Cancel Blitz",
+            exclusive: true,
+          }
+        : undefined,
       dismissIcon: "trash",
       dismissLabel: "Clear selection",
     };
@@ -308,6 +350,17 @@ export function useBlitzMode(
     }, BLITZ_BATCH_SHIFT_DELAY);
   }
 
+  /** Dispatches only command identifiers produced by this composable. */
+  function handleFabCommand(commandId: string, event: MouseEvent) {
+    if (commandId === START_BATCH_COMMAND) {
+      handleBlitz();
+      return;
+    }
+    if (commandId === OPEN_PROFILE_COMMAND || commandId === ADVANCE_BATCH_COMMAND) {
+      handleAction(event);
+    }
+  }
+
   if (getCurrentInstance()) {
     onUnmounted(() => {
       stopBlitz();
@@ -325,8 +378,10 @@ export function useBlitzMode(
   return {
     fabState,
     isProcessing,
+    isBlitzEnabled,
     handleAction,
     handleBlitz,
+    handleFabCommand,
     stopBlitz,
     clearSelection: clearSelectionWithStop,
   };

@@ -4,7 +4,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { mount } from "@vue/test-utils";
 import ConsoleLayout from "../ConsoleLayout.vue";
 import EmptyState from "../EmptyState.vue";
-import { defineComponent, h, nextTick, markRaw } from "vue";
+import { defineComponent, h, KeepAlive, nextTick, markRaw, shallowRef, type Component } from "vue";
 
 // Mock Core Services (Deep Imports per Mocking Rule)
 const mockSetFabVisible = vi.fn();
@@ -113,7 +113,11 @@ describe("ConsoleLayout", () => {
 
     const skeletons = wrapper.findAll(".mock-skeleton");
     expect(skeletons.length).toBe(8);
-    expect(wrapper.find(".list-container").exists()).toBe(true);
+    const loadingRegion = wrapper.find(".skeleton-list");
+    expect(loadingRegion.attributes("role")).toBe("status");
+    expect(loadingRegion.attributes("aria-busy")).toBe("true");
+    expect(loadingRegion.attributes("aria-label")).toBe("Loading Test Title");
+    expect(skeletons.every((skeleton) => skeleton.attributes("aria-hidden") === "true")).toBe(true);
   });
 
   it("forces skeleton display when Blueprint Mode is active", () => {
@@ -176,6 +180,29 @@ describe("ConsoleLayout", () => {
     expect(wrapper.emitted("update:search")).toEqual([[""]]);
   });
 
+  it("does not compete with Clear search using a feature empty action", () => {
+    const wrapper = mount(ConsoleLayout, {
+      props: {
+        ...defaultProps,
+        isEmpty: true,
+        searchQuery: "No match",
+      },
+      slots: {
+        "empty-action": '<button class="feature-empty-action">Scan Again</button>',
+      },
+      global: {
+        ...globalConfig,
+        stubs: {
+          ...globalConfig.stubs,
+          EmptyState,
+        },
+      },
+    });
+
+    expect(wrapper.find(".empty-recovery-action").exists()).toBe(true);
+    expect(wrapper.find(".feature-empty-action").exists()).toBe(false);
+  });
+
   it("renders error state when syncError and isEmpty are present", () => {
     const wrapper = mount(ConsoleLayout, {
       props: {
@@ -197,9 +224,9 @@ describe("ConsoleLayout", () => {
       visible: true,
       label: "Action",
       isProcessing: false,
-      isBlasting: false,
       selectionCount: 0,
-      blitzEnabled: false,
+      actions: [{ id: "action", label: "Action", icon: "check" }],
+      dismissLabel: "Dismiss selected entries",
     };
 
     const wrapper = mount(ConsoleLayout, {
@@ -213,6 +240,10 @@ describe("ConsoleLayout", () => {
     expect(mockUpdateFabState).toHaveBeenCalledWith(
       expect.objectContaining({
         label: "Action",
+        actions: [{ id: "action", label: "Action", icon: "check" }],
+        onCommand: expect.any(Function),
+        dismissLabel: "Dismiss selected entries",
+        onCancelOperation: expect.any(Function),
       })
     );
 
@@ -230,6 +261,64 @@ describe("ConsoleLayout", () => {
     );
     await nextTick();
     expect(mockSetFabVisible).toHaveBeenCalledWith(false);
+  });
+
+  it("restores FAB visibility when a cached console is activated again", async () => {
+    const PassiveView = defineComponent({ render: () => h("div", "Passive") });
+    const activeView = shallowRef<Component>(ConsoleLayout);
+    const fabState = {
+      visible: true,
+      label: "Action",
+      isProcessing: false,
+      selectionCount: 1,
+      actions: [{ id: "action", label: "Action", icon: "check" }],
+    };
+    const Host = defineComponent({
+      setup: () => () => h(KeepAlive, null, [
+        activeView.value === ConsoleLayout
+          ? h(ConsoleLayout, { ...defaultProps, fabState })
+          : h(PassiveView),
+      ]),
+    });
+    mount(Host, { global: globalConfig });
+    await nextTick();
+
+    activeView.value = PassiveView;
+    await nextTick();
+    expect(mockSetFabVisible).toHaveBeenLastCalledWith(false);
+
+    activeView.value = ConsoleLayout;
+    await nextTick();
+    await nextTick();
+    expect(mockSetFabVisible).toHaveBeenLastCalledWith(true);
+  });
+
+  it("emits a domain-blind active-operation cancellation event", () => {
+    const wrapper = mount(ConsoleLayout, {
+      props: {
+        ...defaultProps,
+        fabState: {
+          visible: true,
+          label: "1 / 2",
+          isProcessing: false,
+          selectionCount: 2,
+          actions: [],
+          activity: {
+            label: "Blitz",
+            status: "1 / 2",
+            cancelLabel: "Cancel Blitz",
+            exclusive: true,
+          },
+        },
+      },
+      global: globalConfig,
+    });
+
+    const latestCoordinatorState = mockUpdateFabState.mock.calls.at(-1)![0];
+    latestCoordinatorState.onCancelOperation();
+
+    expect(wrapper.emitted("fab-cancel-operation")).toEqual([[]]);
+    expect(wrapper.emitted("fab-dismiss")).toBeUndefined();
   });
 
   it("handles pull-to-refresh interactions", async () => {
@@ -267,16 +356,22 @@ describe("ConsoleLayout", () => {
     expect(wrapper.emitted("refresh")).toBeTruthy();
   });
 
-  it("synchronizes harvesting state and callbacks correctly", async () => {
+  it("synchronizes feature commands and activity callbacks correctly", () => {
+    const actions = [
+      { id: "harvest-global", label: "Global Harvest", icon: "globe" },
+      { id: "harvest-local", label: "Local Harvest", icon: "map_pin" },
+    ];
     const fabState = {
       visible: true,
       label: "Action",
       isProcessing: false,
-      isBlasting: false,
       selectionCount: 0,
-      blitzEnabled: true,
-      isHarvesting: true,
-      activeHarvester: "global" as const,
+      actions,
+      activity: {
+        label: "Harvest",
+        status: "Global Harvest in progress",
+        cancelLabel: "Abort Harvest",
+      },
     };
 
     const wrapper = mount(ConsoleLayout, {
@@ -289,24 +384,25 @@ describe("ConsoleLayout", () => {
 
     expect(mockUpdateFabState).toHaveBeenCalledWith(
       expect.objectContaining({
-        isHarvesting: true,
-        activeHarvester: "global",
-        onGlobalHarvest: expect.any(Function),
-        onLocalHarvest: expect.any(Function),
-        onAbortHarvest: expect.any(Function),
+        actions,
+        activity: fabState.activity,
+        onCommand: expect.any(Function),
+        onCancelOperation: expect.any(Function),
       })
     );
 
     const calls = mockUpdateFabState.mock.calls;
     const lastCallArg = calls[calls.length - 1][0];
     
-    lastCallArg.onGlobalHarvest();
-    expect(wrapper.emitted("fab-global-harvest")).toBeTruthy();
+    const event = new MouseEvent("click");
+    lastCallArg.onCommand("harvest-global", event);
+    lastCallArg.onCommand("harvest-local", event);
+    lastCallArg.onCancelOperation();
 
-    lastCallArg.onLocalHarvest();
-    expect(wrapper.emitted("fab-local-harvest")).toBeTruthy();
-
-    lastCallArg.onAbortHarvest();
-    expect(wrapper.emitted("fab-abort-harvest")).toBeTruthy();
+    expect(wrapper.emitted("fab-command")).toEqual([
+      ["harvest-global", event],
+      ["harvest-local", event],
+    ]);
+    expect(wrapper.emitted("fab-cancel-operation")).toEqual([[]]);
   });
 });

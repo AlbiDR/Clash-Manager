@@ -3,6 +3,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { getBone } from "@core/theme/bones";
+import LaboratoryDashboard from "./LaboratoryDashboard.vue";
 
 /**
  * LABORATORY SKELETON
@@ -36,9 +37,8 @@ const trajectoryLevelPill = computed(() => px(getBone("TrajectoryItem", "levelPi
 
 <template>
   <div class="laboratory-skeleton">
-    <div class="dashboard-grid">
-      <!-- 1. The Vault & Settings (Sidebar Grid) -->
-      <div class="dashboard-sidebar">
+    <LaboratoryDashboard>
+      <template #sidebar>
         <!-- Vault Skeleton -->
         <div class="sk-panel surface-panel skeleton-anim">
           <div class="sk-panel-header">
@@ -73,7 +73,7 @@ const trajectoryLevelPill = computed(() => px(getBone("TrajectoryItem", "levelPi
                 />
                 <div
                   class="sk-input"
-                  style="height: 28px; width: 100%;"
+                  style="height: var(--sys-space-48); width: 100%;"
                 />
               </div>
             </div>
@@ -99,7 +99,7 @@ const trajectoryLevelPill = computed(() => px(getBone("TrajectoryItem", "levelPi
             />
             <div
               class="sk-button-m"
-              style="height: 36px;"
+              style="height: var(--sys-space-44);"
             />
             <div
               class="sk-input"
@@ -136,7 +136,7 @@ const trajectoryLevelPill = computed(() => px(getBone("TrajectoryItem", "levelPi
             </div>
           </div>
         </div>
-      </div>
+      </template>
 
       <!-- 2. Result Summary Skeleton -->
       <div
@@ -154,14 +154,20 @@ const trajectoryLevelPill = computed(() => px(getBone("TrajectoryItem", "levelPi
               style="width: 80px;"
             />
           </div>
-          <div
-            class="sk-pill"
-            :style="{ width: summaryStatusBadge.width, height: summaryStatusBadge.height, borderRadius: '12px' }"
-          />
+          <div class="sk-header-badges">
+            <div
+              class="sk-pill"
+              :style="{ height: summaryStatusBadge.height, borderRadius: '12px' }"
+            />
+            <div
+              class="sk-pill"
+              :style="{ height: summaryStatusBadge.height, borderRadius: '12px' }"
+            />
+          </div>
         </div>
         <div
           class="sk-label-box"
-          style="width: 100px; margin-top: var(--sys-space-16); margin-bottom: var(--sys-space-8);"
+          style="width: 100px; margin-top: var(--sys-space-24); margin-bottom: var(--sys-space-8);"
         />
         <div class="sk-progression-row">
           <div
@@ -182,9 +188,9 @@ const trajectoryLevelPill = computed(() => px(getBone("TrajectoryItem", "levelPi
           class="sk-label-box"
           style="width: 120px; margin-top: var(--sys-space-24); margin-bottom: var(--sys-space-8);"
         />
-        <div class="sk-grid-3">
+        <div class="sk-metrics-grid">
           <div
-            v-for="i in 3"
+            v-for="i in 2"
             :key="i"
             class="sk-input"
             style="height: 60px; border-radius: var(--sys-shape-corner-large);"
@@ -250,34 +256,11 @@ const trajectoryLevelPill = computed(() => px(getBone("TrajectoryItem", "levelPi
           </div>
         </div>
       </div>
-    </div>
+    </LaboratoryDashboard>
   </div>
 </template>
 
 <style scoped>
-.laboratory-skeleton {
-  padding-bottom: var(--sys-space-120);
-}
-
-.dashboard-grid {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sys-space-20);
-  padding: 0 var(--sys-space-4);
-}
-
-.dashboard-sidebar {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: var(--sys-space-16);
-}
-
-@media (min-width: 640px) {
-  .dashboard-sidebar {
-    grid-template-columns: 1fr 1fr;
-  }
-}
-
 /* [THREAT:] This block used to restate the global `.surface-panel` primitive
    (core/theme/components.ts) with `padding: var(--sys-space-18)` in place of its
    `var(--sys-space-20)` and no elevation at all. Vue's scoped attribute beats
@@ -294,7 +277,7 @@ const trajectoryLevelPill = computed(() => px(getBone("TrajectoryItem", "levelPi
   display: flex;
   align-items: center;
   gap: var(--sys-space-8);
-  margin-bottom: var(--sys-space-24);
+  margin-bottom: var(--sys-space-20);
 }
 
 .sk-grid-2 {
@@ -303,14 +286,14 @@ const trajectoryLevelPill = computed(() => px(getBone("TrajectoryItem", "levelPi
   gap: var(--sys-space-16);
 }
 
-.sk-grid-3 {
+.sk-metrics-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--sys-space-12);
 }
 
-@media (max-width: 640px) {
-  .sk-grid-3 {
+@media (max-width: 320px) {
+  .sk-metrics-grid {
     grid-template-columns: 1fr;
   }
 }
@@ -327,7 +310,7 @@ const trajectoryLevelPill = computed(() => px(getBone("TrajectoryItem", "levelPi
   gap: var(--sys-space-14);
   padding-top: var(--sys-space-16);
   border-top: 1px solid var(--sys-color-outline-variant);
-  margin-top: var(--sys-space-24);
+  margin-top: var(--sys-space-28);
 }
 
 .sk-wc-row {
@@ -362,14 +345,26 @@ const trajectoryLevelPill = computed(() => px(getBone("TrajectoryItem", "levelPi
 
 .sk-summary-header {
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
+  flex-direction: column;
+  gap: var(--sys-space-16);
+  margin-bottom: var(--sys-space-24);
+}
+
+.sk-header-badges {
+  display: flex;
+  gap: var(--sys-space-8);
+  width: 100%;
+}
+
+.sk-header-badges .sk-pill {
+  flex: 1 1 0;
+  min-width: 0;
 }
 
 .sk-progression-row {
   display: flex;
   align-items: center;
-  gap: var(--sys-space-24);
+  gap: var(--sys-space-8);
 }
 
 .section-title {
@@ -389,11 +384,11 @@ const trajectoryLevelPill = computed(() => px(getBone("TrajectoryItem", "levelPi
 .sk-traj-item {
   display: flex;
   align-items: center;
-  gap: var(--sys-space-16);
+  gap: var(--sys-space-12);
   background: var(--sk-fill);
   border: 1px solid var(--sys-color-outline-variant);
   border-radius: var(--sys-shape-corner-large);
-  padding: var(--sys-space-14) var(--sys-space-18);
+  padding: var(--sys-space-10) var(--sys-space-14);
 }
 
 .sk-traj-info {

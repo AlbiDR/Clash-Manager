@@ -18,6 +18,7 @@ const mockRemove = vi.fn();
 const mockSuccess = vi.fn();
 const mockInfo = vi.fn();
 const mockError = vi.fn();
+const mockOpenInGame = vi.fn();
 const mockTombstones = ref(new Set<string>());
 const mockIsOnline = ref(true);
 
@@ -181,6 +182,13 @@ vi.mock("@core/services/useToast", () => ({
   })),
 }));
 
+vi.mock("@core/services/useExternalLink", () => ({
+  buildDeepLink: (targetId: string) => `clashroyale://playerInfo?id=${targetId}`,
+  useExternalLink: () => ({
+    openInGame: mockOpenInGame,
+  }),
+}));
+
 // Mock vue-router for useDeepLinkHandler
 vi.mock("vue-router", () => ({
   useRoute: vi.fn(() => ({
@@ -233,6 +241,21 @@ describe("useRecruiter", () => {
     selectedIds.value = ["1"];
     layoutEvents.value["fab-dismiss"]();
     expect(mockHide).toHaveBeenCalledWith(["1"]);
+  });
+
+  it("cancels the active Blitz run without dismissing or clearing selected recruits", () => {
+    const [{ fabState, layoutEvents, selectedIds }] = withSetup(() => useRecruiter());
+    selectedIds.value = ["1"];
+
+    layoutEvents.value["fab-command"]!("start-batch", new MouseEvent("click"));
+    expect(fabState.value.activity?.label).toBe("Blitz");
+
+    layoutEvents.value["fab-cancel-operation"]();
+
+    expect(fabState.value.activity).toBeUndefined();
+    expect(selectedIds.value).toEqual(["1"]);
+    expect(mockHide).not.toHaveBeenCalled();
+    expect(mockDismissRecruitsAction).not.toHaveBeenCalled();
   });
 
   it("names its destructive dock action separately from clearing a selection", () => {
@@ -308,19 +331,23 @@ describe("useRecruiter", () => {
   });
 
   describe("fabState and layoutEvents delegates", () => {
-    it("enables harvest in fabState", () => {
-      const [{ layoutProps }] = withSetup(() => useRecruiter());
-      expect(layoutProps.value.fabState.harvestEnabled).toBe(true);
+    it("publishes feature-owned harvest commands in fabState", () => {
+      const [{ layoutProps, selectedIds }] = withSetup(() => useRecruiter());
+      selectedIds.value = ["1"];
+
+      expect(layoutProps.value.fabState.actions.map((action) => action.id)).toEqual([
+        "start-batch",
+        "harvest-global",
+        "harvest-local",
+      ]);
     });
 
     it("binds layoutEvents delegates correctly", () => {
       const [{ layoutEvents }] = withSetup(() => useRecruiter());
-      expect(typeof layoutEvents.value["fab-action"]).toBe("function");
-      expect(typeof layoutEvents.value["fab-blitz"]).toBe("function");
+      expect(typeof layoutEvents.value["fab-command"]).toBe("function");
+      expect(typeof layoutEvents.value["fab-cancel-operation"]).toBe("function");
       expect(typeof layoutEvents.value["clear-selection"]).toBe("function");
-      expect(typeof layoutEvents.value["fab-global-harvest"]).toBe("function");
-      expect(typeof layoutEvents.value["fab-local-harvest"]).toBe("function");
-      expect(typeof layoutEvents.value["fab-abort-harvest"]).toBe("function");
+      expect(typeof layoutEvents.value["fab-dismiss"]).toBe("function");
 
       // Execute non-throwing delegates to exercise callbacks
       expect(() => layoutEvents.value["clear-selection"]()).not.toThrow();

@@ -9,7 +9,7 @@ import { useBlitzMode } from "@core/services/useBlitzMode";
 import { useSelectionStore } from "@core/services/useSelectionStore";
 import { LEADERBOARD_SORT_OPTIONS } from "@core/utils/sortOptions";
 import { LeaderboardSort } from "@core/utils/sortStrategies";
-import type { LeaderboardMember } from "@core/types";
+import type { ConsoleFabState, LeaderboardMember } from "@core/types";
 
 /**
  * Session-scoped disclosure preference shared by every roster card.
@@ -90,20 +90,19 @@ export function useLeaderboard() {
     scoreGetter: (member: LeaderboardMember) => member.performanceScore || 0,
     selectionStore,
     // [DECISION LOG] Harvest scouts external clanless players from the Clash
-    // Royale leaderboard for recruiting — that's Headhunter's job, not
+    // Royale leaderboard for recruiting; that's Headhunter's job, not
     // Roster's (which manages existing clan members). Explicitly disabled
     // here so the shared Blitz FAB never advertises Harvest as available on
     // this view (see useRecruiter.ts for the Headhunter-side counterpart).
-    fabState: computed(() => ({
+    fabState: computed<ConsoleFabState>(() => ({
       ...blitz.fabState.value,
       dismissIcon: "close",
-      harvestEnabled: false,
     })),
     layoutEvents: computed(() => ({
-      "fab-action": blitz.handleAction,
-      "fab-blitz": blitz.handleBlitz,
+      "fab-command": blitz.handleFabCommand,
       "clear-selection": blitz.clearSelection,
       "fab-dismiss": blitz.clearSelection,
+      "fab-cancel-operation": blitz.stopBlitz,
     })),
   });
 
