@@ -31,6 +31,75 @@ function unquote(value) {
   return value.replaceAll('"', '').toLowerCase();
 }
 
+/** Splits an argument list at its top-level commas, so numeric(10,2) stays whole. */
+function splitArguments(value) {
+  const parts = [];
+  let depth = 0;
+  let start = 0;
+  for (let index = 0; index < value.length; index += 1) {
+    if (value[index] === '(') depth += 1;
+    else if (value[index] === ')') depth -= 1;
+    else if (value[index] === ',' && depth === 0) {
+      parts.push(value.slice(start, index));
+      start = index + 1;
+    }
+  }
+  parts.push(value.slice(start));
+  return parts.map(part => part.trim()).filter(Boolean);
+}
+
+function normalizeType(value) {
+  return value.replaceAll('"', '').replace(/\s+/g, ' ').trim().toLowerCase();
+}
+
+/**
+ * `name(args) rest` as a routine name, its argument types and what follows, or
+ * null when the parentheses do not balance. The argument modes are dropped, as
+ * identifyDefinition drops them; argument NAMES cannot be told apart from
+ * multi-word types here, so signatureMatches tolerates either.
+ */
+function routineTarget(text) {
+  const head = text.match(/^([\w".]+)\s*\(/);
+  if (!head) return null;
+  let depth = 0;
+  for (let index = head[0].length; index < text.length; index += 1) {
+    if (text[index] === '(') depth += 1;
+    else if (text[index] === ')') {
+      if (depth > 0) {
+        depth -= 1;
+        continue;
+      }
+      const args = splitArguments(text.slice(head[0].length, index))
+        .map(argument => normalizeType(argument.replace(/^(?:INOUT|IN|OUT|VARIADIC)\s+/i, '')));
+      return { name: unquote(head[1]), args, rest: text.slice(index + 1).trim() };
+    }
+  }
+  return null;
+}
+
+/** A setting's value as a comparable list: quotes, case and spacing do not matter, order does. */
+function settingValue(raw) {
+  return raw.split(',').map(item => item.replace(/['"]/g, '').trim().toLowerCase()).filter(Boolean).join(', ');
+}
+
+/** A policy name as identifyDefinition would key it: quotes off, "" unescaped, lower case. */
+function policyName(raw) {
+  const quoted = raw.match(/^"((?:[^"]|"")*)"$/);
+  return (quoted ? quoted[1].replaceAll('""', '"') : raw).toLowerCase();
+}
+
+/**
+ * The POLICY key a CREATE POLICY statement declares, quote-aware. identifyDefinition
+ * cannot read a quoted name containing spaces ("voyage read access"), so an
+ * absence check built on its keys would pass vacuously for exactly the names
+ * this repository uses.
+ */
+function createdPolicyKey(statement) {
+  const match = statement.executable.replace(/\s+/g, ' ').trim()
+    .match(/^CREATE POLICY ("(?:[^"]|"")+"|[A-Za-z_][\w$]*) ON ([\w".]+)/i);
+  return match ? `POLICY:${policyName(match[1])}@${unquote(match[2])}` : null;
+}
+
 function mutation(statement) {
   const sql = statement.executable.replace(/\s+/g, ' ').trim();
   let match = sql.match(/^DROP (FUNCTION|VIEW|MATERIALIZED VIEW|TABLE|TYPE|INDEX)(?: IF EXISTS)? ([\w".]+)/i);
@@ -58,6 +127,23 @@ function mutation(statement) {
   // which is the truth rather than 'unsupported'.
   match = sql.match(/^ALTER TABLE(?: IF EXISTS)? ([\w".]+) SET \(/i);
   if (match) return { key: `STORAGE:${unquote(match[1])}:${compact(sql)}`, mode: 'exact', sql };
+  // A routine's configuration (search_path, plan_cache_mode), which a folded
+  // baseline carries as a SET clause on that routine's own CREATE FUNCTION.
+  // Until 2026-10-04 these were "unsupported", which made the whole report
+  // DEGRADED for statements a baseline can be checked against statically.
+  // SET ... FROM CURRENT and RESET ALL stay unsupported: their final value
+  // depends on the session, not on the text.
+  match = sql.match(/^ALTER FUNCTION (.+)$/i);
+  if (match) {
+    const target = routineTarget(match[1]);
+    const setting = target?.rest.match(/^SET ([\w.]+)\s*(?:TO|=)\s*(.+?);?$/i);
+    const reset = target?.rest.match(/^RESET ([\w.]+);?$/i);
+    const configKey = parameter => `FUNCTION_CONFIG:${target.name}(${target.args.join(',')}):${parameter.toLowerCase()}`;
+    if (setting) return { key: configKey(setting[1]), mode: 'function-config', target, parameter: setting[1].toLowerCase(), value: settingValue(setting[2]), sql };
+    if (reset && reset[1].toLowerCase() !== 'all') return { key: configKey(reset[1]), mode: 'function-config-reset', target, parameter: reset[1].toLowerCase(), sql };
+  }
+  match = sql.match(/^DROP POLICY(?: IF EXISTS)? ("(?:[^"]|"")+"|[A-Za-z_][\w$]*) ON ([\w".]+)/i);
+  if (match) return { key: `POLICY:${policyName(match[1])}@${unquote(match[2])}`, mode: 'policy-absent', sql };
   if (/^(?:BEGIN|COMMIT);?$/i.test(sql) || /^(?:INSERT|UPDATE|DELETE|SELECT SETVAL)\b/i.test(sql)) return { mode: 'data-only' };
   if (/^SELECT CRON\.SCHEDULE\b/i.test(sql)) return { key: `SCHEDULE:${compact(sql)}`, mode: 'exact', sql };
   if (/^SELECT\s+[\w".]+\s*\(/i.test(sql)) return { mode: 'data-only' };
@@ -117,7 +203,45 @@ function reconcileDefinition(key, baselineSql, migrationSql, baselineSource) {
   return null;
 }
 
-function evaluateMutation(item, baselineSource, definitions, exactStatements) {
+/** Whether a baseline FUNCTION key declares the routine an ALTER FUNCTION names. */
+function signatureMatches(key, target) {
+  const types = splitArguments(key.slice(`FUNCTION:${target.name}(`.length, -1)).map(normalizeType);
+  // Either side may carry an argument name the other does not, and a name
+  // cannot be told from the first word of a multi-word type, so a type matches
+  // the argument whole or the argument less its first word.
+  return types.length === target.args.length
+    && types.every((type, index) => type === target.args[index] || type === target.args[index].split(' ').slice(1).join(' '));
+}
+
+/** The value a CREATE FUNCTION's own SET clause gives a parameter, or null if it sets none. */
+function configuredValue(sql, parameter) {
+  // Bodies are dropped first: a SET inside a function body is not the function's.
+  const header = sql.replace(/\$([A-Za-z_]\w*)?\$[\s\S]*?\$\1\$/g, ' ');
+  const match = header.match(new RegExp(`\\bSET\\s+${parameter.replace('.', '\\.')}\\s*(?:TO|=)\\s*([^\\n;]+)`, 'i'));
+  if (!match) return null;
+  const value = match[1].split(/\s+(?:AS|LANGUAGE|SECURITY|IMMUTABLE|STABLE|VOLATILE|STRICT|RETURNS|COST|ROWS|PARALLEL|SET)\b/i)[0];
+  return settingValue(value);
+}
+
+/**
+ * A routine configuration against the baseline's CREATE FUNCTION for it.
+ *
+ * Absent routine: unfolded, because the baseline lacks the routine itself.
+ * Ambiguous routine (several overloads, or none matching): semantic-only, a
+ * database must decide. That is deliberately never "unfolded": it would send
+ * Stage 3 to fold something the checker could not actually identify.
+ */
+function evaluateFunctionConfig(item, definitions) {
+  const candidates = [...definitions.values()].filter(definition => definition.kind === 'FUNCTION' && definition.name === item.target.name);
+  if (candidates.length === 0) return 'unfolded';
+  const matching = candidates.filter(definition => signatureMatches(definition.key, item.target));
+  if (matching.length !== 1) return 'semantic-only';
+  const configured = configuredValue(matching[0].sql, item.parameter);
+  if (item.mode === 'function-config') return configured === item.value ? 'reconciled' : 'unfolded';
+  return configured === null ? 'reconciled' : 'unfolded';
+}
+
+function evaluateMutation(item, baselineSource, definitions, exactStatements, baselinePolicies) {
   const tableSql = definitions.get(`TABLE:${unquote(item.table ?? '')}`)?.sql ?? '';
   const columnPattern = item.column ? new RegExp(`(?:^|[(,\\n])\\s*"?${unquote(item.column)}"?\\s+`, 'i') : null;
   const columnSql = item.column ? tableSql.match(new RegExp(`(?:^|[(,\\n])\\s*"?${unquote(item.column)}"?\\s+[^,\\n]+`, 'i'))?.[0] ?? '' : '';
@@ -132,6 +256,9 @@ function evaluateMutation(item, baselineSource, definitions, exactStatements) {
     case 'identity-present': return columnPattern.test(tableSql) && /GENERATED ALWAYS AS IDENTITY/i.test(columnSql) ? 'reconciled' : 'unfolded';
     case 'identity-absent': return columnPattern.test(tableSql) && !/GENERATED ALWAYS AS IDENTITY/i.test(columnSql) ? 'reconciled' : 'unfolded';
     case 'semantic-only': return 'semantic-only';
+    case 'function-config':
+    case 'function-config-reset': return evaluateFunctionConfig(item, definitions);
+    case 'policy-absent': return baselinePolicies.has(item.key) ? 'unfolded' : 'folded';
     default: return 'unsupported';
   }
 }
@@ -150,18 +277,32 @@ export async function checkFoldState({ migrationsDir = path.join(REPO_ROOT, 'Bac
     if (item) definitions.set(item.key, { ...item, sql: statement.executable });
   }
   const exactStatements = new Set(baselineParsed.statements.map(statement => compact(statement.executable)));
+  const baselinePolicies = new Set(baselineParsed.statements.map(createdPolicyKey).filter(Boolean));
   const expected = new Map();
   const unsupported = [];
+  // A later CREATE or DROP of a routine replaces its whole configuration, so an
+  // earlier ALTER FUNCTION ... SET no longer describes the final state. Its
+  // expectation is withdrawn; the later statement is checked on its own.
+  const supersedeConfig = routineName => {
+    for (const key of [...expected.keys()]) {
+      if (key.startsWith(`FUNCTION_CONFIG:${routineName}(`)) expected.delete(key);
+    }
+  };
   for (const filename of migrationNames) {
     const parsed = lexSql(await readFile(path.join(migrationsDir, filename), 'utf8'));
     if (parsed.error) throw new Error(`${filename}: ${parsed.error}`);
     for (const statement of parsed.statements) {
       const item = identifyDefinition(statement);
-      if (item) expected.set(item.key, { ...item, mode: 'definition', sql: statement.executable, source: filename });
-      else {
+      if (item) {
+        if (item.kind === 'FUNCTION') supersedeConfig(item.name);
+        expected.set(item.key, { ...item, mode: 'definition', sql: statement.executable, source: filename });
+      } else {
         const operation = mutation(statement);
         if (!operation) unsupported.push({ source: filename, statement: compact(statement.executable).slice(0, 160) });
-        else if (operation.mode !== 'data-only') expected.set(operation.key, { ...operation, source: filename });
+        else if (operation.mode !== 'data-only') {
+          if (operation.key?.startsWith('FUNCTION:') && operation.mode === 'absent') supersedeConfig(operation.key.slice('FUNCTION:'.length));
+          expected.set(operation.key, { ...operation, source: filename });
+        }
       }
     }
   }
@@ -177,24 +318,33 @@ export async function checkFoldState({ migrationsDir = path.join(REPO_ROOT, 'Bac
         objects.push(reason ? { key, source: item.source, status: 'reconciled', reason } : { key, source: item.source, status: 'unfolded', reason: 'DIVERGENT' });
       }
     } else {
-      const status = evaluateMutation(item, baselineSource, definitions, exactStatements);
+      const status = evaluateMutation(item, baselineSource, definitions, exactStatements, baselinePolicies);
+      const routineAbsent = item.mode.startsWith('function-config')
+        && ![...definitions.values()].some(definition => definition.kind === 'FUNCTION' && definition.name === item.target.name);
       objects.push({
         key,
         source: item.source,
         status,
-        reason: status === 'reconciled' ? `declarative ${item.mode}` : status === 'unfolded' ? 'DIVERGENT' : undefined,
+        reason: status === 'reconciled' ? `declarative ${item.mode}` : status === 'unfolded' ? (routineAbsent ? 'ABSENT' : 'DIVERGENT') : undefined,
       });
     }
   }
   const counts = Object.fromEntries(['folded', 'reconciled', 'unfolded', 'semantic-only'].map(status => [status, objects.filter(item => item.status === status).length]));
-  // DEGRADED means "a human or a disposable database needs to look", not
-  // "something is wrong". The nightly runner has no database credentials (see
-  // Stage 3's prompt: db-verification is recorded as DB-UNAVAILABLE, never
-  // attempted), so a migration set containing any semantic-only statement
-  // (a DO block, a cron schedule) makes this the permanent nightly ceiling
-  // regardless of actual schema health. Treat consecutive DEGRADED nights as
-  // expected, not as a chronic condition to chase.
-  const status = unsupported.length || counts['semantic-only'] ? 'DEGRADED' : counts.unfolded ? 'UNFOLDED' : 'FOLDED';
+  // UNFOLDED outranks DEGRADED, because known folding work is actionable and
+  // must never be hidden behind what a database still has to confirm.
+  //
+  // It used to be the other way round, and that hid real work for weeks. From
+  // 2026-09-14 the migrations held DO blocks, so every report was DEGRADED and
+  // exited 2, and update-nightly-context.sh only lists pending migrations on
+  // exit 1. Stage 3 was told "0 pending migrations" every night while 74
+  // objects from about 30 migrations went unfolded into the baseline.
+  //
+  // DEGRADED now means only that nothing is known to need folding but a
+  // database still has to look (a DO block, an ambiguous routine). The
+  // nightly runner has no database (Stage 3 records DB-UNAVAILABLE), so that
+  // is a ceiling here, and the semantic check runs in CI on Stage 3's pull
+  // request instead (nightly-database-verification.yml).
+  const status = counts.unfolded ? 'UNFOLDED' : unsupported.length || counts['semantic-only'] ? 'DEGRADED' : 'FOLDED';
   return { version: 1, status, baseline: baselineName, migrationsReplayed: migrationNames.length, counts, objects, unsupported };
 }
 
@@ -207,16 +357,26 @@ function printHuman(report) {
   console.log(`semantic-only:         ${report.counts['semantic-only']}`);
   console.log(`unfolded:              ${report.counts.unfolded}\n`);
   for (const item of report.objects.filter(item => item.status === 'reconciled')) console.log(`RECONCILED ${item.key} ${item.reason}\n           <- ${item.source}`);
+  const semantic = report.objects.filter(item => item.status === 'semantic-only');
+  const printSemantic = () => {
+    for (const item of semantic) console.log(`  SEMANTIC ${item.key} <- ${item.source}`);
+    for (const item of report.unsupported) console.log(`  UNSUPPORTED ${item.statement} <- ${item.source}`);
+  };
   if (report.status === 'FOLDED') console.log('RESULT: FOLDED -- baseline is current, no folding work pending.');
   else if (report.status === 'UNFOLDED') {
     console.log('RESULT: UNFOLDED -- the following objects need folding:');
     for (const item of report.objects.filter(item => item.status === 'unfolded')) console.log(`  ${item.reason.padEnd(10)} ${item.key} <- ${item.source}`);
     console.log('\nMigrations owning unfolded objects:');
     for (const source of [...new Set(report.objects.filter(item => item.status === 'unfolded').map(item => item.source))].sort()) console.log(`  ${source}`);
+    // Still printed, because folding the list above does not make these
+    // checkable: they remain for a database to confirm once it is done.
+    if (semantic.length || report.unsupported.length) {
+      console.log('\nAlso awaiting semantic database verification:');
+      printSemantic();
+    }
   } else {
     console.log('RESULT: DEGRADED -- static analysis requires semantic database verification.');
-    for (const item of report.objects.filter(item => item.status === 'semantic-only')) console.log(`  SEMANTIC ${item.key} <- ${item.source}`);
-    for (const item of report.unsupported) console.log(`  UNSUPPORTED ${item.statement} <- ${item.source}`);
+    printSemantic();
   }
 }
 
