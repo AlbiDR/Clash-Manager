@@ -75,3 +75,4 @@
 * [2026-10-01] [Stage 2] [00:07Z-00:15Z 8m] CLEAN: Codebase -- Completed logic integrity audit pass with zero regression.
 * [2026-10-02] [Stage 2] [00:05Z-00:13Z 8m] CLEAN: Codebase -- Audited 42 recently changed files and L1 core utility specs including useProgressiveList.ts, deep-depth.ts, royaleSchemas.ts, rpcSchemas.ts, and protocol.ts for coverage gaps.
 * [2026-10-03] [Stage 2] [00:27Z-00:41Z 14m] CHANGED: Frontend-PWA/src/shared/composables/composables-tests/usePrecisionSlider.spec.ts -- Frontend-PWA/src/shared/composables/composables-tests/usePrecisionSlider.spec.ts -- Expanded usePrecisionSlider spec for active drag moves, pointer capture, null track guard, non-positive step grids, and boundary detents.
+* [2026-10-04] [Stage 2] [00:15Z-00:36Z 21m] CHANGED: Frontend-PWA/src/shared/composables/composables-tests/useTheme.spec.ts -- Expanded Frontend-PWA useTheme composable unit test suite
