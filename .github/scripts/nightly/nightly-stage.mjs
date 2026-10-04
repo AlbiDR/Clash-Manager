@@ -1287,7 +1287,9 @@ function validateBootstrap(repoRoot, registry) {
   invariant(content.includes("git pull --ff-only origin Nightly"), "Bootstrap setup must use a fast-forward-only pull.");
   invariant(content.includes("fold-state-status.txt"), "Bootstrap setup must seed fold-state status.");
   invariant(content.includes("apk-ux-audit-status.txt"), "Bootstrap setup must seed APK UX audit status.");
-  invariant(content.includes("depcruise-state.txt"), "Bootstrap setup must seed dependency-cruiser status.");
+  invariant(content.includes("dependency-cruiser-status.txt"), "Bootstrap setup must seed dependency-cruiser status.");
+  invariant(content.includes("baseline-tests-status.txt"), "Bootstrap setup must seed baseline test status.");
+  invariant(content.includes("knip-status.txt"), "Bootstrap setup must seed dead-export scan status.");
   invariant(content.includes("clean-calibration.json"), "Bootstrap setup must seed CLEAN calibration status.");
   invariant(!content.includes("### Termination Contract"), "Bootstrap still contains the obsolete termination contract.");
   invariant(
@@ -1386,7 +1388,11 @@ function validateContracts(repoRoot, registry) {
   invariant(contextScript.includes("clean-calibration-due"), "Context script must report CLEAN calibration state in the toolchain manifest.");
   invariant(contextScript.includes('echo "DEGRADED" > "$CONTEXT_DIR/fold-state-status.txt"'), "Context script must preserve degraded fold state.");
   invariant(contextScript.includes('echo "SKIPPED" > "$CONTEXT_DIR/fold-state-status.txt"'), "Context script must report skipped fold scans.");
-  invariant(contextScript.includes('echo "SKIPPED" > "$CONTEXT_DIR/depcruise-state.txt"'), "Context script must report skipped dependency scans.");
+  invariant(contextScript.includes('echo "SKIPPED" > "$CONTEXT_DIR/dependency-cruiser-status.txt"'), "Context script must report skipped dependency scans.");
+  // An unfinished run is a check that could not answer, never a FAIL.
+  invariant(contextScript.includes('echo "DEGRADED" > "$CONTEXT_DIR/baseline-tests-status.txt"'), "Context script must report an unfinished baseline test run as degraded.");
+  invariant(contextScript.includes('echo "DEGRADED" > "$CONTEXT_DIR/dependency-cruiser-status.txt"'), "Context script must report an unfinished dependency scan as degraded.");
+  invariant(contextScript.includes('echo "DEGRADED" > "$CONTEXT_DIR/knip-status.txt"'), "Context script must report a dead-export scan that produced nothing as degraded.");
 
   const watchdogWorkflow = readFileSync(path.join(repoRoot, ".github/workflows/nightly-watchdog.yml"), "utf8");
   invariant(

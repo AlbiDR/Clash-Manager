@@ -122,6 +122,35 @@ export const SUB_CHECKS = Object.freeze([
     answered: ["OK"],
     unanswered: ["DEGRADED", "SKIPPED"],
   },
+  // The three below ran every night for years as *-state.txt files nobody
+  // collected, so S02 and S09 never once said whether their own checks could
+  // run. They are read from the structured [checks] field only, which is why
+  // their alias is null. There is no prose history to recover (none of the
+  // three appears with a status token in any coverage log or history entry),
+  // and prose would misread S13: its instructions say it "receives SKIPPED for
+  // baseline tests and dependency-cruiser", and a summary repeating that would
+  // otherwise count as S13's own check failing to run.
+  {
+    id: "baseline-tests",
+    label: "baseline test run",
+    alias: null,
+    answered: ["PASS", "FAIL"],
+    unanswered: ["DEGRADED", "SKIPPED"],
+  },
+  {
+    id: "dependency-cruiser",
+    label: "dependency-cruiser scan",
+    alias: null,
+    answered: ["PASS", "FAIL"],
+    unanswered: ["DEGRADED", "SKIPPED"],
+  },
+  {
+    id: "knip",
+    label: "dead-export scan",
+    alias: null,
+    answered: ["OK"],
+    unanswered: ["DEGRADED", "SKIPPED"],
+  },
 ]);
 
 export const BLIND_SPOT_KINDS = Object.freeze({
@@ -175,6 +204,9 @@ function escapeRegExp(value) {
  * because a stage that restates a value restates the one it ended on.
  */
 function proseValue(check, text) {
+  // A check with no prose spelling is reported through the structured field
+  // alone. See the null-alias entries in SUB_CHECKS.
+  if (!check.alias) return null;
   const vocabulary = [...check.answered, ...check.unanswered].map(escapeRegExp).join("|");
   const pattern = new RegExp(
     `${check.alias.source}[^A-Za-z]{0,4}(?:(?:status|state)[^A-Za-z]{0,3})?(${vocabulary})\\b`,

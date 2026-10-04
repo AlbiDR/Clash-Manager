@@ -132,10 +132,11 @@ echo "SKIPPED" > /tmp/nightly/database-verification-status.txt
 echo "SKIPPED" > /tmp/nightly/apk-ux-audit-status.txt
 echo '{"version":1,"status":"SKIPPED"}' > /tmp/nightly/apk-ux-audit.json
 echo "Skipped in bootstrap" > /tmp/nightly/apk-ux-audit.txt
-echo "SKIPPED" > /tmp/nightly/baseline-test-state.txt
+echo "SKIPPED" > /tmp/nightly/baseline-tests-status.txt
 echo "Skipped in bootstrap" > /tmp/nightly/baseline-test-output.txt
 touch /tmp/nightly/dep-violations.txt
-echo "SKIPPED" > /tmp/nightly/depcruise-state.txt
+echo "SKIPPED" > /tmp/nightly/dependency-cruiser-status.txt
+echo "SKIPPED" > /tmp/nightly/knip-status.txt
 echo '{"stage":null,"due":false,"consecutiveClean":0,"status":"SKIPPED"}' > /tmp/nightly/clean-calibration.json
 echo "calibration-due: NO" > /tmp/nightly/clean-calibration.txt
 echo "setup-seeded: true" > /tmp/nightly/toolchain.txt
