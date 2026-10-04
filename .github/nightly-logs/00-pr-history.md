@@ -16,6 +16,15 @@ LAST_AGED:   2026-10-03
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-04] PR #2078 [Stage 10]: Calibration pass: Full APK wrapper invariant audit verified (asset links, manifest parity, release metadata, version codes, cleartext policy); 7 ordinary clean runs since calibration.
+**Domain:** apk | **Commit:** 940f5d24f | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2078)
+**Files:** .github/nightly-logs/10-apk-integrity-coverage.log, .github/nightly-logs/10-apk-integrity-pr-body.md
+**Why:** No wrapper or manifest mismatches detected across full calibration scan.
+**Change:** Calibration pass: Full APK wrapper invariant audit verified (asset links, manifest parity, release metadata, version codes, cleartext policy); 7 ordinary clean runs since calibration.
+**Result:** PASSED via pnpm audit:apk and pnpm apk:verify:source
+**Nudges:** 0
+
+
 ### [2026-10-04] PR #2076 [Stage 8]: Bumped @supabase/supabase-js from ^2.117.0 to ^2.117.2 in package.json and pnpm-workspace.yaml catalogs, and re-locked dependencies
 **Domain:** dependencies | **Commit:** 2b32e7265 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2076)
 **Files:** .github/nightly-logs/08-dependency-audit-coverage.log, .github/nightly-logs/08-dependency-audit-pr-body.md, package.json, pnpm-lock.yaml, pnpm-workspace.yaml
