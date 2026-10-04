@@ -15,6 +15,31 @@ LAST_AGED:   2026-10-03
 ---
 
 ## T1 -- Active (last 7 days)
+
+### [2026-10-04] PR #2070 [Stage 1]: Audited Edge Function endpoints, in-memory state variables, Valibot boundary schemas, and cross-layer architectural isolations across 42 files; zero threat vectors found
+**Domain:** hardening | **Commit:** b2692ba15 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2070)
+**Files:** .github/nightly-logs/00-pr-history.md, .github/nightly-logs/01-hardening-coverage.log, .github/nightly-logs/01-hardening-pr-body.md
+**Why:** Runtime and security audit verified zero unhandled threats across all priority surfaces
+**Change:** Audited Edge Function endpoints, in-memory state variables, Valibot boundary schemas, and cross-layer architectural isolations across 42 files; zero threat vectors found
+**Result:** pnpm test passed 212 test files and 2131 tests green
+**Nudges:** 0
+
+### [2026-10-04] PR #2069 [Stage 2]: Expanded Frontend-PWA useTheme composable unit test suite
+**Domain:** verification | **Commit:** 0d37bdb96 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2069)
+**Files:** .github/nightly-logs/02-verification-coverage.log, .github/nightly-logs/02-verification-pr-body.md, Frontend-PWA/src/shared/composables/composables-tests/useTheme.spec.ts
+**Why:** Close test coverage gap for AndroidBridge status/navigation bar theme color synchronization, matchMedia change event suppression in explicit modes, and graceful missing bridge fallbacks
+**Change:** Expanded Frontend-PWA useTheme composable unit test suite
+**Result:** Added unit tests to useTheme.spec.ts for AndroidBridge.setThemeColors, missing bridge fallback, and matchMedia change suppression in light/dark modes. Verified mutation catching by commenting out AndroidBridge invocation line in useTheme.ts (caught by expect(setThemeColorsSpy).toHaveBeenCalledWith('#0b0e14', true)). All 14 tests in useTheme.spec.ts pass.
+**Nudges:** 0
+
+### [2026-10-04] PR #2071 [Stage 3]: Pending migrations: 0, migration-quality: PASS, fold-state: DEGRADED, database-verification: DB-UNAVAILABLE. Read-only audit verified RLS, search_path isolation, and formatting compliance.
+**Domain:** database | **Commit:** a349c30e1 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2071)
+**Files:** .github/nightly-logs/03-baseline-consolidation-coverage.log, .github/nightly-logs/03-baseline-consolidation-pr-body.md
+**Why:** Baseline SQL is current with zero pending migrations; read-only audit confirmed schema compliance.
+**Change:** Pending migrations: 0, migration-quality: PASS, fold-state: DEGRADED, database-verification: DB-UNAVAILABLE. Read-only audit verified RLS, search_path isolation, and formatting compliance.
+**Result:** pnpm audit:migrations PASS (56 migrations examined, 0 violations); static baseline verified.
+**Nudges:** 0
+
 ### [2026-10-03] PR #2068 [Stage 13]: Updated self-healing protocol findings and metrics for 2026-10-03
 **Domain:** pipeline | **Commit:** 0efac4fcc | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2068)
 **Files:** .github/nightly-logs/13-self-healing-protocol-coverage.log, .github/nightly-logs/13-self-healing-protocol-pr-body.md, .github/nightly-logs/13-self-healing-protocol.md
