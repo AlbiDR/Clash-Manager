@@ -112,8 +112,17 @@ export function evaluateStageHealth(history) {
     return { verdict: HEALTH.UNKNOWN, runs: runs.length, reason: "not enough recorded runs to compare" };
   }
 
-  const earlier = runs.slice(0, runs.length - half);
+  // Two halves of EQUAL length, so an odd history drops its oldest run.
+  //
+  // The earlier half used to absorb the odd run, and that alone raised false
+  // alarms: with the same number of interventions in each half, the shorter
+  // recent half always shows the higher rate. S12 on 2026-10-01 was reported
+  // DEGRADING at "20% to 21%", 5 of 25 then 5 of 24, with no change in how
+  // often it needed help; with equal halves it is HEALTHY. The rule itself is
+  // unchanged: S09 on 2026-10-03 stays DEGRADING, because its dropped oldest
+  // run was an intervention and equal halves read 4 of 25 then 5 of 25.
   const recent = runs.slice(runs.length - half);
+  const earlier = runs.slice(runs.length - 2 * half, runs.length - half);
   const rate = window => window.filter(run => run.needed).length / window.length;
   const earlierRate = rate(earlier);
   const recentRate = rate(recent);
