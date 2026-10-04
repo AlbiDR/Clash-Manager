@@ -16,6 +16,7 @@ import {
   getStageEvents,
   validateNightlyEvents,
 } from "./nightly-events.mjs";
+import { prNumberFromTag } from "./nightly-ledger.mjs";
 import { validateExecutionProvenance } from "./nightly-provenance.mjs";
 import {
   buildRecap,
@@ -170,7 +171,7 @@ export function buildStageExplanation(inputs, stageNumber) {
   const evidenceDate = evidenceDateFor(stageNumber, inputs.date);
   const tag = (inputs.tags || []).find(candidate => candidate.startsWith(`nightly/${evidenceDate}/stage-${stageNumber}/pr-`)) || null;
   const declared = declaredCoverageRecord(inputs.coverageByStage?.[stageNumber], stageNumber, evidenceDate);
-  const history = parsePrHistoryEntry(inputs.prHistory, stageNumber, evidenceDate);
+  const history = parsePrHistoryEntry(inputs.prHistory, stageNumber, evidenceDate, prNumberFromTag(tag));
   const progress = runProgress(inputs);
   const entry = inputs.ledger?.runs?.[inputs.date]?.[String(stageNumber)] || null;
   const events = getStageEvents(inputs.ledger, inputs.date, stageNumber);

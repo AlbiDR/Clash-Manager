@@ -255,7 +255,18 @@ test("metadata and native handoff are complete without pending placeholders", ()
     // absent rather than zero. Absence is ignorance, never innocence.
     nudges: null,
     execution: null,
+    // Rendered as "unrecorded" with no cycle id, which is an absence.
+    cycle: null,
   });
+
+  // The cycle the stage runner writes is the one the merge coordinator files
+  // its tag under, so it has to survive this round trip exactly.
+  const withCycle = renderPrBody(stage, "CHANGED", "Added loader boundary coverage", [stage.coverageLog], {
+    why: "The loader path lacked regression coverage.",
+    result: "The focused spec passed and guards the failure boundary.",
+    cycleId: "nightly-cycle/2026-10-04",
+  });
+  assert.equal(extractMetadata({ body: withCycle, title: "Verification run" }).cycle, "nightly-cycle/2026-10-04");
 
   const handoff = renderHandoff(stage, "CHANGED", "Added loader boundary coverage", "a1b2c3d4");
   assert.match(handoff, /nightly\/stage-2-verification-a1b2c3d4/);

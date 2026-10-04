@@ -50,6 +50,21 @@ export function getCycleId(date) {
   return `nightly-cycle/${date}`;
 }
 
+/**
+ * The cycle date a cycle id names, or null when it names none.
+ *
+ * The inverse of getCycleId, kept beside it so the id format has one home.
+ * Returns null rather than throwing: it reads ids out of pull request bodies,
+ * where "unrecorded", a truncated value or a hand-edited one are all possible,
+ * and a caller that cannot learn the cycle must fall back, not fail.
+ */
+export function parseCycleId(cycleId) {
+  const match = /^nightly-cycle\/(\d{4}-\d{2}-\d{2})$/.exec(String(cycleId || "").trim());
+  if (!match) return null;
+  // A well-formed shape is not a real date: 2026-02-30 matches the pattern.
+  return new Date(`${match[1]}T00:00:00.000Z`).toISOString().slice(0, 10) === match[1] ? match[1] : null;
+}
+
 export function getEvidenceDate(stageNumber, cycleDate) {
   assertEvent(Number.isInteger(stageNumber) && stageNumber >= 1 && stageNumber <= 13, `Invalid nightly stage: ${stageNumber}`);
   assertEvent(/^\d{4}-\d{2}-\d{2}$/.test(String(cycleDate || "")), `Invalid nightly cycle date: ${cycleDate}`);
