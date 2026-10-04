@@ -11,7 +11,7 @@ BEGIN;
 -- arbitrary player tags and lookback windows.
 --
 -- This zero-argument bridge exposes only the win-rate projection that
--- `roster_view` already publishes for active, valid roster members. It keeps
+-- `roster_view` already exposes for active, valid roster members. It keeps
 -- the generic helper private while allowing the view to remain readable.
 CREATE OR REPLACE FUNCTION features.get_active_roster_win_rates()
 RETURNS TABLE (
