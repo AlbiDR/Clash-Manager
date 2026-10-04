@@ -180,8 +180,20 @@ export function parsePrHistoryEntries(content, stageNumber) {
 }
 
 /** The rich block Stage 1's aging pass writes for each merged PR. */
-export function parsePrHistoryEntry(content, stageNumber, date) {
-  return parsePrHistoryEntries(content, stageNumber).find(entry => entry.date === date) || null;
+/**
+ * One stage's history entry for a run: by pull request number when the merge
+ * tag names one, by date only when nothing does.
+ *
+ * The number is the stronger key. An entry's date is copied from its tag's
+ * name, so a tag filed under the wrong date (see stageTagDate in
+ * merge-nightly-core.mjs) files its history entry there too, and a date lookup
+ * then misses this run's entry or returns another run's. A pull request number
+ * cannot belong to two runs.
+ */
+export function parsePrHistoryEntry(content, stageNumber, date, prNumber = null) {
+  const entries = parsePrHistoryEntries(content, stageNumber);
+  if (Number.isInteger(prNumber)) return entries.find(entry => entry.prNumber === prNumber) || null;
+  return entries.find(entry => entry.date === date) || null;
 }
 
 // The ledger states that count as a stage having reached a result, and so as
@@ -510,7 +522,7 @@ export function buildRecap({ ledger, registry, date, coverageByStage, prHistory,
       entry: ledger?.runs?.[date]?.[String(stage.number)] ?? null,
       tag,
       declared: declaredCoverageRecord(coverageByStage[stage.number], stage.number, evidenceDate),
-      history: parsePrHistoryEntry(prHistory, stage.number, evidenceDate),
+      history: parsePrHistoryEntry(prHistory, stage.number, evidenceDate, prNumberFromTag(tag)),
       progress,
     });
   }).map(stage => ({
@@ -1269,7 +1281,15 @@ function thinEvidenceSection(recap) {
   // differs: a placeholder means the stage did not say, an absent entry means
   // the record no longer exists. A stage that never merged is excluded, since
   // its own failure already explains why it published nothing.
-  const agedOut = (recap.stages || []).filter(s => s.merged && !s.title && !s.why && !s.result);
+  const noDetail = (recap.stages || []).filter(s => s.merged && !s.title && !s.why && !s.result);
+  // Aging can only explain a record whose pull request is still known. When no
+  // pull request is known at all, nothing under this run's date names one, and
+  // blaming the aging pass for that is a benign cause attached to a missing
+  // record. It happened on 2026-10-04: Stage 1 merged after midnight, its tag
+  // was filed under the next day, and the recap of a run hours old said its
+  // detail had "aged out".
+  const agedOut = noDetail.filter(s => s.prNumber != null);
+  const unfiled = noDetail.filter(s => s.prNumber == null);
 
   const lines = [];
   if (thin.length > 0) {
@@ -1288,6 +1308,12 @@ function thinEvidenceSection(recap) {
     lines.push(
       `Detail aged out: ${agedOut.length} of ${recap.total} merged stages no longer have an entry in the pull request history, so no Why or Result survives for them.`
       + ` Stage 1's aging pass prunes older entries; the run itself is unaffected.`,
+    );
+  }
+  if (unfiled.length > 0) {
+    lines.push(
+      `Evidence not filed: ${joinList(unfiled.map(s => stageTag(s.stage)))} merged, but no merge tag or history entry is filed under this run's date, so ${unfiled.length === 1 ? "its pull request and its" : "their pull requests and their"} Why and Result cannot be shown.`
+      + ` This is not aging: the merge was recorded under a different date, or never recorded.`,
     );
   }
   return lines.length > 0 ? [...lines, ""] : [];
