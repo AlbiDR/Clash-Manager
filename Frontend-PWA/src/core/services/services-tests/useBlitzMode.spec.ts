@@ -166,6 +166,41 @@ describe("useBlitzMode", () => {
       delete (window as WindowWithBridge).AndroidBridge;
     });
 
+    it("opens profiles without inviting when sendInvites is false", () => {
+      const mockStartBlitz = vi.fn();
+      const mockOpenProfiles = vi.fn();
+      (window as WindowWithBridge).AndroidBridge = {
+        startBlitz: mockStartBlitz,
+        openProfiles: mockOpenProfiles,
+      } as unknown as AndroidBridge;
+
+      const { handleBlitz, isBlitzEnabled } = useBlitzMode(selectionStore, { sendInvites: false });
+      selectionStore.selectAll(["M1", "M2"]);
+      expect(isBlitzEnabled.value).toBe(true);
+      handleBlitz();
+
+      expect(mockOpenProfiles).toHaveBeenCalledWith(JSON.stringify(["M1", "M2"]), expect.any(Number));
+      expect(mockStartBlitz).not.toHaveBeenCalled();
+
+      delete (window as WindowWithBridge).AndroidBridge;
+    });
+
+    it("withholds a profiles-only Blitz from a shell that can only invite", () => {
+      const mockStartBlitz = vi.fn();
+      (window as WindowWithBridge).AndroidBridge = { startBlitz: mockStartBlitz } as AndroidBridge;
+
+      const { handleBlitz, isBlitzEnabled, fabState } = useBlitzMode(selectionStore, { sendInvites: false });
+      selectionStore.selectAll(["M1", "M2"]);
+
+      expect(isBlitzEnabled.value).toBe(false);
+      // The FAB falls back to opening one profile per tap.
+      expect(fabState.value.actions.map((action) => action.label)).toEqual(["Open (1/2)"]);
+      handleBlitz();
+      expect(mockStartBlitz).not.toHaveBeenCalled();
+
+      delete (window as WindowWithBridge).AndroidBridge;
+    });
+
     it("renders FAB state correctly when selection mode is active with zero selected items", () => {
       selectionStore.setForceSelectionMode(true);
       selectionStore.selectedIds.value = [];

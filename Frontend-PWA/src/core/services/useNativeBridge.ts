@@ -179,6 +179,8 @@ export function parseBlitzRun(raw: unknown): BlitzRunRecord | null {
       invites: run.invites,
       outcome: run.outcome,
       rehearsal: run.rehearsal === true,
+      // Absent from shells that predate profiles-only runs, all of which invited.
+      inviting: run.inviting !== false,
     };
   } catch {
     return null;
@@ -196,6 +198,11 @@ export function describeBlitzRun(run: BlitzRunRecord): { type: "success" | "info
   const prefix = run.rehearsal ? "Rehearsal: " : "";
   switch (run.outcome) {
     case "completed":
+      // A profiles-only run never taps Invite, so its invite count says nothing.
+      if (run.inviting === false) {
+        const profiles = `${run.opened} ${run.opened === 1 ? "profile" : "profiles"}`;
+        return { type: "success", message: `${prefix}Blitz finished. Opened ${profiles}.` };
+      }
       return run.invites >= run.opened
         ? { type: "success", message: `${prefix}Blitz finished. Tapped Invite for ${run.invites} of ${players}.` }
         : { type: "info", message: `${prefix}Blitz finished, but only ${run.invites} of ${players} got an Invite tap. Check the Blitz accessibility setting.` };

@@ -94,6 +94,15 @@ export interface AndroidBridge {
    *   the invite/close taps fire, per the user's Blitz Speed setting.
    */
   startBlitz(payload: string, delayMs: number): void;
+  /**
+   * Blitz without the Invite and Close taps: opens each profile for `delayMs`,
+   * then the next. Used by the Roster, whose players are already in the clan.
+   * Optional: shells before 14.50.142 do not have it.
+   *
+   * @param payload - JSON-encoded array of player tags.
+   * @param delayMs - Milliseconds each profile stays open.
+   */
+  openProfiles?(payload: string, delayMs: number): void;
 }
 
 /**
@@ -113,6 +122,11 @@ export interface BlitzRunRecord {
   invites: number;
   outcome: "running" | "completed" | "stopped" | "failed";
   rehearsal: boolean;
+  /**
+   * False for a profiles-only run (Roster), which never taps Invite. Shells
+   * before 14.50.142 do not send it; every run they record sent invites.
+   */
+  inviting: boolean;
 }
 
 /**

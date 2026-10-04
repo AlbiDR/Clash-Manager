@@ -17,6 +17,7 @@ const run = (overrides: Partial<BlitzRunRecord> = {}): BlitzRunRecord => ({
   invites: 10,
   outcome: "completed",
   rehearsal: false,
+  inviting: true,
   ...overrides,
 });
 
@@ -32,6 +33,12 @@ describe("parseBlitzRun", () => {
     expect(parseBlitzRun(JSON.stringify({ ...run(), outcome: "exploded" }))).toBeNull();
     expect(parseBlitzRun(JSON.stringify({ ...run(), opened: -1 }))).toBeNull();
     expect(parseBlitzRun(JSON.stringify({ ...run(), players: "10" }))).toBeNull();
+  });
+
+  it("treats a record from a shell without profiles-only runs as an inviting run", () => {
+    const { inviting: _omitted, ...olderShellRecord } = run();
+    expect(parseBlitzRun(JSON.stringify(olderShellRecord))?.inviting).toBe(true);
+    expect(parseBlitzRun(JSON.stringify(run({ inviting: false })))?.inviting).toBe(false);
   });
 });
 
@@ -51,6 +58,17 @@ describe("describeBlitzRun", () => {
     expect(describeBlitzRun(run({ outcome: "failed" }))?.type).toBe("error");
     expect(describeBlitzRun(run({ players: 1, opened: 1, invites: 1 }))?.message).toBe("Blitz finished. Tapped Invite for 1 of 1 player.");
     expect(describeBlitzRun(run({ rehearsal: true }))?.message).toMatch(/^Rehearsal: Blitz finished/);
+  });
+
+  it("reports a profiles-only run by profiles opened, not by Invite taps", () => {
+    expect(describeBlitzRun(run({ inviting: false, invites: 0 }))).toEqual({
+      type: "success",
+      message: "Blitz finished. Opened 10 profiles.",
+    });
+    expect(describeBlitzRun(run({ inviting: false, invites: 0, players: 1, opened: 1 }))?.message)
+      .toBe("Blitz finished. Opened 1 profile.");
+    expect(describeBlitzRun(run({ inviting: false, outcome: "stopped", opened: 3 }))?.message)
+      .toBe("Blitz stopped after 3 of 10 players.");
   });
 
   it("says nothing about a run that is still going", () => {

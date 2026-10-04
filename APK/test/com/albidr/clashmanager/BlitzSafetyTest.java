@@ -47,12 +47,6 @@ public class BlitzSafetyTest {
         return (List<String>) callBlitz("normalizePlayerQueue", new Class<?>[] { List.class }, tags);
     }
 
-    private static int queueCapacity() throws Exception {
-        Field field = BlitzService.class.getDeclaredField("MAX_QUEUE_PLAYERS");
-        field.setAccessible(true);
-        return field.getInt(null);
-    }
-
     private static int maximumPlayerTagLength() throws Exception {
         Field field = BlitzService.class.getDeclaredField("MAX_PLAYER_TAG_LENGTH");
         field.setAccessible(true);
@@ -93,27 +87,35 @@ public class BlitzSafetyTest {
     }
 
     @Test
-    public void queueCapacityRequiresOneBoundedReviewableRun() throws Exception {
-        int capacity = queueCapacity();
+    public void queueAcceptsAnyNonEmptySize() throws Exception {
         assertTrue(supportsQueueSize(1));
-        assertTrue(supportsQueueSize(capacity));
+        assertTrue(supportsQueueSize(Integer.MAX_VALUE));
         assertFalse(supportsQueueSize(0));
-        assertFalse(supportsQueueSize(capacity + 1));
         assertFalse(supportsQueueSize(-1));
     }
 
     @Test
-    public void playerQueueRejectsDuplicateMalformedAndOversizedPayloads() throws Exception {
+    public void playerQueueRejectsDuplicateAndMalformedPayloads() throws Exception {
         assertEquals(Arrays.asList("9PP900", "PQR"), normalizePlayerQueue(Arrays.asList("#9pp900", "pqr")));
         assertNull(normalizePlayerQueue(Arrays.asList("9PP900", "#9pp900")));
         assertNull(normalizePlayerQueue(Arrays.asList("PQR", "not-a-tag")));
+        assertNull(normalizePlayerQueue(new ArrayList<>()));
+    }
 
-        List<String> oversizedQueue = new ArrayList<>();
-        int queueSizeBeyondCapacity = queueCapacity() + 1;
-        for (int i = 0; i < queueSizeBeyondCapacity; i++) {
-            oversizedQueue.add("PQR");
+    @Test
+    public void largeLeaderboardHarvestIsAcceptedWhole() throws Exception {
+        // A harvest queues every clanless player it finds, well past the 50
+        // the queue was once capped at. Distinct tags from the tag alphabet.
+        String alphabet = "0289CGJLPQRUVY";
+        List<String> harvest = new ArrayList<>();
+        for (char first : alphabet.toCharArray()) {
+            for (char second : alphabet.toCharArray()) {
+                harvest.add("#P" + first + second);
+            }
         }
-        assertNull(normalizePlayerQueue(oversizedQueue));
+        List<String> queue = normalizePlayerQueue(harvest);
+        assertEquals(harvest.size(), queue.size());
+        assertEquals("P00", queue.get(0));
     }
 
     @Test

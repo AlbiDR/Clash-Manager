@@ -18,6 +18,12 @@ import {
 
 interface BlitzOptions {
   throttleMs?: number;
+  /**
+   * Whether the native run taps Invite and Close on each profile. Defaults to
+   * true. The Roster passes false: its players are already in the clan, so the
+   * run only opens their profiles.
+   */
+  sendInvites?: boolean;
 }
 
 const OPEN_PROFILE_COMMAND = "open-profile";
@@ -43,7 +49,7 @@ const ADVANCE_BATCH_COMMAND = "advance-batch";
  * - Invokes external application protocols via `useExternalLink`.
  *
  * @param selectionStore - The generalized selection store to use.
- * @param options - Configuration for throttling.
+ * @param options - Throttling, and whether a native run sends invites.
  * @returns Reactive state and handlers for batch recruitment operations.
  */
 export function useBlitzMode(
@@ -93,8 +99,21 @@ export function useBlitzMode(
     return true;
   });
 
+  const sendInvites = options.sendInvites ?? true;
+
+  /**
+   * [DECISION LOG] A profiles-only run needs the shell's openProfiles(). A shell
+   * without it only offers startBlitz(), which taps Invite, so Blitz is withheld
+   * there and the FAB falls back to opening profiles one tap at a time.
+   */
+  const canRunNatively = computed(() =>
+    sendInvites || typeof nativeBridge.value?.openProfiles === "function"
+  );
+
   const isBlitzEnabled = computed(() => {
-    return !!modules.blitzMode && (isNativeWrapper.value || isTrusted.value);
+    if (!modules.blitzMode) return false;
+    if (isNativeWrapper.value) return canRunNatively.value;
+    return isTrusted.value;
   });
 
   /**
@@ -277,7 +296,12 @@ export function useBlitzMode(
     // This allows the native Android app to handle the full batch in a single
     // high-performance loop, bypassing web-layer constraints.
     if (nativeBridge.value) {
-      nativeBridge.value.startBlitz(JSON.stringify(selectedIds.value), throttleMs.value);
+      const payload = JSON.stringify(selectedIds.value);
+      if (sendInvites) {
+        nativeBridge.value.startBlitz(payload, throttleMs.value);
+      } else {
+        nativeBridge.value.openProfiles?.(payload, throttleMs.value);
+      }
       return;
     }
 
