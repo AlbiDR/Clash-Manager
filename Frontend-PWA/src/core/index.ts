@@ -2,6 +2,7 @@
 // Copyright (C) 2026 AlbiDR
 // Logic Engine
 export * from "./config";
+export { NetworkError } from "./api/ApiErrors";
 export * from "./api/SupabaseClient";
 export * from "./api/VoyageClient";
 export * from "./api/RecruitClient";
@@ -17,11 +18,11 @@ export * from "./services/useClashSync";
 export * from "./services/useClashSyncUtils";
 export * from "./services/useStoragePersistence";
 export * from "./services/useAppSettings";
+export * from "./services/usePowerSaving";
 export * from "./services/useBenchmarking";
 export * from "./services/useSelectionStore";
 export * from "./services/useBadge";
 export * from "./services/apkResolver";
-export * from "./services/usePwaManager";
 export * from "./services/useConsoleController";
 export * from "./services/useBlitzMode";
 export * from "./services/useConsoleSelection";

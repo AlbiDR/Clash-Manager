@@ -12,6 +12,14 @@
     "substrate.config",
     "substrate.headhunter_epoch_state"
   ],
+  "serviceRoleOnlyFunctions": [
+    "drivers.get_player_battle_stats(integer,text[])",
+    "drivers.on_voyage_active_change()",
+    "drivers.sync_voyage_finalization_job()",
+    "public.report_heartbeat(text,text,text,jsonb)",
+    "public.report_telemetry(text,text,jsonb)",
+    "public.update_telemetry(uuid,text,jsonb)"
+  ],
   "immutableFileHashes": {
     "Backend/supabase/migrations/20260614082900_add_trail_battle_type.sql": "8c94c134ce891e5a50d8d2fd25f78e904cbcecb01101e4ace3cd12dc70034ce2",
     "Backend/supabase/migrations/20260615004900_fix_zero_crown_voyage_contributions.sql": "9a64a67cc931c9ca55b594fbc387d83c57a8bf4c058e8b63e3ab9f2fbeb9b9b9",
@@ -68,7 +76,11 @@
     "Backend/supabase/migrations/20260926233013_event_gate_voyage_finalization.sql": "f5a27df8d2e4fd728e732b0e9288448bd044b5d2731e6ec9ea2c52efb87820a0",
     "Backend/supabase/migrations/20260926233152_latest_battle_times_for_ingest_skip.sql": "38b0be38b508df955cb8cb8a67e32d31b66197b94f1cd341f12c43ea7f3fb323",
     "Backend/supabase/migrations/20260927005354_score_duels_per_round.sql": "3ad13055c44e12c041dd260a4cba731638cc8d8dec9849cdf0b64b44bf0891ed",
-    "Backend/supabase/migrations/20260927115312_record_watchdog_lease_failure_response.sql": "d6d95a0672292abdb248ef62f969fd7a0bee00d07eaf4aa307762db52bd79cda"
+    "Backend/supabase/migrations/20260927115312_record_watchdog_lease_failure_response.sql": "d6d95a0672292abdb248ef62f969fd7a0bee00d07eaf4aa307762db52bd79cda",
+    "Backend/supabase/migrations/20261003225327_restrict_telemetry_rpc_execution.sql": "506ae0b4d10478eb836c5f11c02eb700d3f20ad74af79e1932c0b2e141d6da66",
+    "Backend/supabase/migrations/20261004015410_restore_roster_view_battle_stats_bridge.sql": "964de8979fa4a9b30c3e05ffeeaf2ce92f2aecf952420c4687c0820e46dddac8",
+    "Backend/supabase/migrations/20261004105808_enable_blacklist_realtime.sql": "11baf30b5738f581277bae7f182e9ab2a14bcf28c10704547add5dc15a8c7e42",
+    "Backend/supabase/migrations/20261004020000_restrict_internal_function_execution.sql": "cc8fc8fb5c0f31e3bae12734e1cd318d669132ff7890f43c4214638b89d9ac03"
   },
   "exemptions": []
 }

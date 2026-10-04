@@ -15,7 +15,7 @@ import { calculateRpos, calculateWeightedWinRate } from "../../../_shared/utils.
  * payload -- the wiring `utils.spec.ts` cannot see.
  *
  * All Supabase/network/Deno-only boundaries are mocked so this runs under a
- * plain Node/Vitest invocation; see Backend/vitest.config.ts for how the
+ * plain Node/Vitest invocation; see Backend/vitest.config.mts for how the
  * `npm:`-scheme imports inside the mocked-out modules would otherwise fail
  * to resolve under Node.
  */

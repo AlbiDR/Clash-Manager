@@ -1,43 +1,22 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
-
-import { useLeaderboardScraper } from "../useLeaderboardScraper";
-import { useSelectionStore } from "@core/services/useSelectionStore";
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import { useSelectionStore } from "@core/services/useSelectionStore";
+import { useLeaderboardScraper } from "../useLeaderboardScraper";
 
-const { mockUpdateFabState, mockInfo, mockError, mockTap } = vi.hoisted(() => ({
-  mockUpdateFabState: vi.fn(),
+const { mockInfo, mockError, mockTap } = vi.hoisted(() => ({
   mockInfo: vi.fn(),
   mockError: vi.fn(),
   mockTap: vi.fn(),
 }));
 
-vi.mock("@core/services/useUiCoordinator", () => ({
-  useUiCoordinator: () => ({
-    updateFabState: mockUpdateFabState,
-  }),
-}));
-
-vi.mock("@core/services/useToast", () => ({
-  useToast: () => ({
-    info: mockInfo,
-    error: mockError,
-  }),
-}));
-
-vi.mock("@shared/composables/useHaptics", () => ({
-  useHaptics: () => ({
-    tap: mockTap,
-  }),
-}));
-
-vi.mock("@core/api/RecruitClient", () => ({
-  scoutLeaderboard: vi.fn(),
-}));
+vi.mock("@core/services/useToast", () => ({ useToast: () => ({ info: mockInfo, error: mockError }) }));
+vi.mock("@shared/composables/useHaptics", () => ({ useHaptics: () => ({ tap: mockTap }) }));
+vi.mock("@core/api/RecruitClient", () => ({ scoutLeaderboard: vi.fn() }));
 
 describe("useLeaderboardScraper", () => {
   let selectionStore: ReturnType<typeof useSelectionStore>;
-  let mockBlitzTrigger: () => void;
+  let mockBlitzTrigger: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -45,101 +24,112 @@ describe("useLeaderboardScraper", () => {
     mockBlitzTrigger = vi.fn();
   });
 
-  it("handles successful global harvest and triggers Blitz", async () => {
+  it("owns successful global-harvest activity and triggers Blitz", async () => {
     const { scoutLeaderboard } = await import("@core/api/RecruitClient");
-    const mockItems = [
-      { tag: "#PRO1", name: "Pro One", clan: { name: "Some Clan" } },
-      { tag: "#FREE1", name: "Free One" }, // Clanless
-    ];
-
     vi.mocked(scoutLeaderboard).mockResolvedValue({
-      items: mockItems,
+      items: [
+        { tag: "#PRO1", name: "Pro One", clan: { name: "Some Clan" } },
+        { tag: "#FREE1", name: "Free One" },
+      ],
       region: "Global",
     });
+    const scraper = useLeaderboardScraper(selectionStore, mockBlitzTrigger);
 
-    const { executeHarvest } = useLeaderboardScraper(selectionStore, mockBlitzTrigger);
+    const harvestPromise = scraper.executeHarvest("global");
+    expect(scraper.isHarvesting.value).toBe(true);
+    expect(scraper.activeHarvestMode.value).toBe("global");
+    await harvestPromise;
 
-    await executeHarvest("global");
-
-    // Must set loading state during harvest
-    expect(mockUpdateFabState).toHaveBeenCalledWith(
-      expect.objectContaining({
-        isHarvesting: true,
-        activeHarvester: "global",
-      })
-    );
-
-    // Converts player tag correctly by removing leading hash
     expect(selectionStore.selectedIds.value).toEqual(["FREE1"]);
-    expect(mockBlitzTrigger).toHaveBeenCalled();
+    expect(mockBlitzTrigger).toHaveBeenCalledOnce();
     expect(mockInfo).toHaveBeenCalledWith("Successfully harvested 1 recruits from Global leaderboard.");
     expect(mockTap).toHaveBeenCalled();
+    expect(scraper.isHarvesting.value).toBe(false);
+    expect(scraper.activeHarvestMode.value).toBeNull();
   });
 
-  it("handles empty harvest gracefully", async () => {
+  it("handles an empty harvest", async () => {
     const { scoutLeaderboard } = await import("@core/api/RecruitClient");
-    const mockItems = [
-      { tag: "#PRO1", name: "Pro One", clan: { name: "Some Clan" } },
-    ];
-
     vi.mocked(scoutLeaderboard).mockResolvedValue({
-      items: mockItems,
+      items: [{ tag: "#PRO1", name: "Pro One", clan: { name: "Some Clan" } }],
       region: "France",
     });
+    const scraper = useLeaderboardScraper(selectionStore, mockBlitzTrigger);
 
-    const { executeHarvest } = useLeaderboardScraper(selectionStore, mockBlitzTrigger);
-
-    await executeHarvest("local");
-
+    await scraper.executeHarvest("local");
     expect(selectionStore.selectedIds.value).toEqual([]);
     expect(mockBlitzTrigger).not.toHaveBeenCalled();
     expect(mockInfo).toHaveBeenCalledWith("Harvest complete: zero clanless players found on local leaderboards.");
+    expect(scraper.isHarvesting.value).toBe(false);
   });
 
-  it("handles fetch failure by showing toast error", async () => {
+  it("caps an oversized harvest to the native Blitz queue capacity", async () => {
     const { scoutLeaderboard } = await import("@core/api/RecruitClient");
-    vi.mocked(scoutLeaderboard).mockRejectedValue(
-      new Error("Internal Server Error"),
+    const items = Array.from({ length: 51 }, (_, index) => ({
+      tag: `#PLAYER${index}`,
+      name: `Player ${index}`,
+    }));
+    vi.mocked(scoutLeaderboard).mockResolvedValue({ items, region: "Global" });
+    const scraper = useLeaderboardScraper(selectionStore, mockBlitzTrigger);
+
+    await scraper.executeHarvest("global");
+
+    expect(selectionStore.selectedIds.value).toEqual(
+      Array.from({ length: 50 }, (_, index) => `PLAYER${index}`),
     );
-
-    const { executeHarvest } = useLeaderboardScraper(selectionStore, mockBlitzTrigger);
-
-    await executeHarvest("global");
-
-    expect(mockBlitzTrigger).not.toHaveBeenCalled();
-    expect(mockError).toHaveBeenCalledWith("Internal Server Error");
-    expect(mockUpdateFabState).toHaveBeenCalledWith(
-      expect.objectContaining({
-        isHarvesting: false,
-        activeHarvester: null,
-      })
+    expect(mockBlitzTrigger).toHaveBeenCalledOnce();
+    expect(mockInfo).toHaveBeenCalledWith(
+      "Harvested 51 recruits from Global; Blitz queued the first 50.",
     );
   });
 
-  it("supports harvest abort mechanism", async () => {
+  it("deduplicates harvested tags before invoking the native Blitz bridge", async () => {
     const { scoutLeaderboard } = await import("@core/api/RecruitClient");
-    vi.mocked(scoutLeaderboard).mockImplementation(() => {
-      return new Promise((_, reject) => {
-        const err = new Error("The user aborted a request.");
-        err.name = "AbortError";
-        reject(err);
-      });
+    vi.mocked(scoutLeaderboard).mockResolvedValue({
+      items: [
+        { tag: "#FREE1", name: "Free One" },
+        { tag: "#FREE1", name: "Free One duplicate" },
+        { tag: "#FREE2", name: "Free Two" },
+      ],
+      region: "Local",
     });
+    const scraper = useLeaderboardScraper(selectionStore, mockBlitzTrigger);
 
-    const { executeHarvest, abortHarvest } = useLeaderboardScraper(selectionStore, mockBlitzTrigger);
+    await scraper.executeHarvest("local");
 
-    const harvestPromise = executeHarvest("global");
-    abortHarvest();
+    expect(selectionStore.selectedIds.value).toEqual(["FREE1", "FREE2"]);
+    expect(mockBlitzTrigger).toHaveBeenCalledOnce();
+    expect(mockInfo).toHaveBeenCalledWith("Successfully harvested 2 recruits from Local leaderboard.");
+  });
 
+  it("clears feature-owned activity after failure", async () => {
+    const { scoutLeaderboard } = await import("@core/api/RecruitClient");
+    vi.mocked(scoutLeaderboard).mockRejectedValue(new Error("Internal Server Error"));
+    const scraper = useLeaderboardScraper(selectionStore, mockBlitzTrigger);
+
+    await scraper.executeHarvest("global");
+    expect(mockError).toHaveBeenCalledWith("Internal Server Error");
+    expect(scraper.isHarvesting.value).toBe(false);
+    expect(scraper.activeHarvestMode.value).toBeNull();
+  });
+
+  it("supports cancellation", async () => {
+    const { scoutLeaderboard } = await import("@core/api/RecruitClient");
+    vi.mocked(scoutLeaderboard).mockImplementation((_mode, signal) => new Promise((_, reject) => {
+      signal.addEventListener("abort", () => {
+        const abortError = new Error("The user aborted a request.");
+        abortError.name = "AbortError";
+        reject(abortError);
+      });
+    }));
+    const scraper = useLeaderboardScraper(selectionStore, mockBlitzTrigger);
+
+    const harvestPromise = scraper.executeHarvest("global");
+    scraper.abortHarvest();
     await harvestPromise;
 
     expect(mockBlitzTrigger).not.toHaveBeenCalled();
-    // Verify that the loading state gets cleared when abort occurs
-    expect(mockUpdateFabState).toHaveBeenCalledWith(
-      expect.objectContaining({
-        isHarvesting: false,
-        activeHarvester: null,
-      })
-    );
+    expect(scraper.isHarvesting.value).toBe(false);
+    expect(scraper.activeHarvestMode.value).toBeNull();
   });
 });

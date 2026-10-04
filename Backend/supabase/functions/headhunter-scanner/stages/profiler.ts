@@ -10,7 +10,7 @@ import {
     RECENT_SCAN_THRESHOLD_MS,
     CONCURRENCY_PROFILER
 } from "../../_shared/config.ts";
-import * as v from "npm:valibot@1.4.2";
+import * as v from "npm:valibot@1.5.0";
 import { RoyalePlayerSchema, RecruitFateSchema, StaleRecruitSchema } from "../../_shared/schemas.ts";
 
 /**

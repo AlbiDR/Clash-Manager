@@ -155,6 +155,7 @@ const toggleCollapse = () => {
       <div class="header-actions">
         <slot name="header-extra" />
         <button
+          type="button"
           class="expand-btn"
           :class="{ rotated: !isCollapsed }"
           :aria-expanded="!isCollapsed"
@@ -279,6 +280,11 @@ const toggleCollapse = () => {
   transform: rotate(180deg);
   opacity: 1;
   color: var(--sys-color-primary);
+}
+
+.expand-btn:focus-visible {
+  outline: 2px solid var(--sys-color-primary);
+  outline-offset: 2px;
 }
 
 .card-body {

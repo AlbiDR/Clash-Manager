@@ -43,6 +43,20 @@ describe("useAppSettings", () => {
     expect(modules.blitzMode).toBe(!initial);
   });
 
+  it("persists the haptics choice across app sessions", async () => {
+    const { useAppSettings } = await import("../useAppSettings");
+    const { toggle, init } = useAppSettings();
+    init();
+    toggle("hapticFeedback");
+    await nextTick();
+
+    vi.resetModules();
+    const { useAppSettings: reloadSettings } = await import("../useAppSettings");
+    const reloaded = reloadSettings();
+    reloaded.init();
+    expect(reloaded.modules.hapticFeedback).toBe(false);
+  });
+
   it("ignores toggle calls on non-boolean modules", async () => {
     const { useAppSettings } = await import("../useAppSettings");
     const { modules, toggle } = useAppSettings();
@@ -61,6 +75,7 @@ describe("useAppSettings", () => {
       const validData = {
         blitzMode: true,
         blitzDwellMs: 3000,
+        hapticFeedback: false,
         notificationThreshold: 50,
       };
       localStorage.setItem("cm_modules_v2", JSON.stringify(validData));
@@ -71,6 +86,7 @@ describe("useAppSettings", () => {
 
       expect(modules.blitzMode).toBe(true);
       expect(modules.blitzDwellMs).toBe(3000);
+      expect(modules.hapticFeedback).toBe(false);
       expect(modules.notificationThreshold).toBe(50);
       expect(modules.sortExplanation).toBe(true); // Default preserved
     });
@@ -113,6 +129,7 @@ describe("useAppSettings", () => {
       expect(modules.ghostBenchmarking).toBe(true); // Default applied by Valibot
       expect(modules.notificationThreshold).toBe(75); // Default applied by Valibot
       expect(modules.sortExplanation).toBe(true); // Default applied by Valibot
+      expect(modules.hapticFeedback).toBe(true);
     });
   });
 

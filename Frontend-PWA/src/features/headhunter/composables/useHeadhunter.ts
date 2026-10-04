@@ -128,14 +128,20 @@ export function useHeadhunter() {
   // INSERT: a recruit was dismissed (on this or another device) - apply local removal.
   // DELETE: a recruit was undismissed - trigger a full pool refresh to restore their data.
   // The returned cleanup function removes the Supabase channel on component unmount.
-  const stopBlacklistSync = subscribeToBlacklist(
-    (playerTag) => {
-      // Normalize: Realtime sends #ABC123; store recruit IDs are ABC123 (without prefix).
-      const id = playerTag.startsWith('#') ? playerTag.slice(1) : playerTag;
-      applyLocalDismissal([id]);
-    },
-    () => { clashDataStore.refreshFromSupabase(); },
-  );
+  const stopBlacklistSync = isSyntheticMode.value
+    ? () => undefined
+    : subscribeToBlacklist(
+        (playerTag) => {
+          // Normalize: Realtime sends #ABC123; store recruit IDs are ABC123 (without prefix).
+          const id = playerTag.startsWith('#') ? playerTag.slice(1) : playerTag;
+          applyLocalDismissal([id]);
+        },
+        () => clashDataStore.refreshFromSupabase(),
+        (blacklistSubscriptionError) => {
+          console.error("[Headhunter] Blacklist synchronization failed", blacklistSubscriptionError);
+          toastError(blacklistSubscriptionError.message);
+        },
+      );
   if (getCurrentInstance()) {
     onUnmounted(stopBlacklistSync);
   }

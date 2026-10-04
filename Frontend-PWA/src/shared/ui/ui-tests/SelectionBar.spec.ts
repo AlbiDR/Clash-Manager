@@ -89,11 +89,19 @@ describe("SelectionBar", () => {
     expect(wrapper.emitted("clear")).toBeTruthy();
   });
 
-  it("shows loading state when prop is set", () => {
+  it("shows an inert, announced loading state", async () => {
     const wrapper = mount(SelectionBar, {
       props: { count: 0, totalCount: 50, loading: true },
     });
     expect(wrapper.classes()).toContain("is-loading");
+    expect(wrapper.attributes("aria-busy")).toBe("true");
     expect(wrapper.find(".loading-overlay").exists()).toBe(true);
+    expect(wrapper.find(".selection-loading-status").text()).toBe("Loading selection controls");
+
+    const action = wrapper.find<HTMLButtonElement>(".morph-btn");
+    expect(action.element.disabled).toBe(true);
+    await action.trigger("click");
+    expect(wrapper.emitted("select-score")).toBeUndefined();
+    expect(wrapper.emitted("clear")).toBeUndefined();
   });
 });

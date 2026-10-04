@@ -15,9 +15,8 @@ import { useHaptics, useWakeLock } from "@shared";
 import { useSystemInfo } from "@core/services/useSystemInfo";
 import { useApiState } from "@core/api/useApiState";
 import { useBadge } from "@core/services/useBadge";
-import { usePwaManager } from "@core/services/usePwaManager";
+import { usePwaManager } from "@shared/composables/usePwaManager";
 import { computed, ref, onMounted } from "vue";
-// import { registerSW } from "virtual:pwa-register";
 
 /**
  * COMPOSABLE: useSettings
@@ -122,9 +121,8 @@ export function useSettings() {
   const currentTestCount = ref(1);
 
   onMounted(() => {
-    // [DECISION LOG] Delegating PWA lifecycle orchestration to the Layer 1 manager.
-    // This ensures infrastructure boot logic is centralized and decoupled from
-    // the feature layer.
+    // [DECISION LOG] Probe PWA capabilities through the app shell's one
+    // authoritative service-worker registration.
     initPwaLifecycle();
   });
 

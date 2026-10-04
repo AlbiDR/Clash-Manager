@@ -115,6 +115,12 @@ public class BlitzDwellTest {
     }
 
     @Test
+    public void steppedDwellRejectsOverflowingBridgeValuesAtTheNearestSafeBound() throws Exception {
+        assertEquals(BlitzService.DWELL_MIN_MS, steppedDwell(Long.MIN_VALUE));
+        assertEquals(BlitzService.DWELL_MAX_MS, steppedDwell(Long.MAX_VALUE));
+    }
+
+    @Test
     public void dragWithinTheSnapRadiusLandsOnTheDetent() throws Exception {
         float travelPx = 1000f;
         float snapRadiusPx = 6f;

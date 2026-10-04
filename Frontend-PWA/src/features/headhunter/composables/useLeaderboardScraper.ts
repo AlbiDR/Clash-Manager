@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
-import { ref } from "vue";
+import { computed, ref } from "vue";
 import { useSelectionStore } from "@core/services/useSelectionStore";
-import { useUiCoordinator } from "@core/services/useUiCoordinator";
 import { useToast } from "@core/services/useToast";
 import { useHaptics } from "@shared";
 import { scoutLeaderboard } from "@core/api/RecruitClient";
+import { BLITZ_MAX_QUEUE_PLAYERS } from "@core/config";
 
 /**
  * COMPOSABLE: useLeaderboardScraper
@@ -28,7 +28,6 @@ import { scoutLeaderboard } from "@core/api/RecruitClient";
  * @returns State and actions for managing the leaderboard harvest lifecycle.
  *
  * @sideeffects
- * - Updates the Global FAB state via `useUiCoordinator`.
  * - Triggers haptic feedback via `useHaptics`.
  * - Displays toast notifications via `useToast`.
  */
@@ -37,11 +36,12 @@ export function useLeaderboardScraper(
   onBlitzTrigger: () => void
 ) {
   const { selectAll, clearSelection } = selectionStore;
-  const { updateFabState } = useUiCoordinator();
   const { info, error } = useToast();
   const haptics = useHaptics();
 
   const activeController = ref<AbortController | null>(null);
+  const activeHarvestMode = ref<"global" | "local" | null>(null);
+  const isHarvesting = computed(() => activeHarvestMode.value !== null);
 
   /**
    * Aborts the active fetch operation and restores UI states.
@@ -54,11 +54,7 @@ export function useLeaderboardScraper(
     if (activeController.value) {
       activeController.value.abort();
       activeController.value = null;
-      
-      updateFabState({
-        isHarvesting: false,
-        activeHarvester: null,
-      });
+      activeHarvestMode.value = null;
       
       haptics.tap();
       info("Harvest operation aborted");
@@ -80,12 +76,7 @@ export function useLeaderboardScraper(
 
     haptics.tap();
     activeController.value = new AbortController();
-
-    updateFabState({
-      isHarvesting: true,
-      activeHarvester: mode,
-      onAbortHarvest: abortHarvest,
-    });
+    activeHarvestMode.value = mode;
 
     try {
       const payload = await scoutLeaderboard(
@@ -105,10 +96,7 @@ export function useLeaderboardScraper(
       if (clanlessPlayers.length === 0) {
         const boardType = mode === "local" ? "local leaderboards" : "the Global leaderboard";
         info(`Harvest complete: zero clanless players found on ${boardType}.`);
-        updateFabState({
-          isHarvesting: false,
-          activeHarvester: null,
-        });
+        activeHarvestMode.value = null;
         activeController.value = null;
         return;
       }
@@ -116,13 +104,20 @@ export function useLeaderboardScraper(
       // [DECISION LOG] TAG SANITIZATION
       // Rationale: Standardizing on tags without the leading hash ensures consistency
       // across the selection store, local lookups, and future database writes.
-      const sanitizedTags = clanlessPlayers.map((harvestedPlayer) => harvestedPlayer.tag.replace(/^#/, ""));
+      const sanitizedTags = Array.from(new Set(
+        clanlessPlayers.map((harvestedPlayer) => harvestedPlayer.tag.replace(/^#/, "")),
+      ));
+      const queuedTags = sanitizedTags.slice(0, BLITZ_MAX_QUEUE_PLAYERS);
 
       clearSelection();
-      selectAll(sanitizedTags);
+      selectAll(queuedTags);
 
       haptics.tap();
-      info(`Successfully harvested ${sanitizedTags.length} recruits from ${region} leaderboard.`);
+      if (sanitizedTags.length > queuedTags.length) {
+        info(`Harvested ${sanitizedTags.length} recruits from ${region}; Blitz queued the first ${queuedTags.length}.`);
+      } else {
+        info(`Successfully harvested ${queuedTags.length} recruits from ${region} leaderboard.`);
+      }
 
       // Trigger the recruitment Blitz sequence immediately
       onBlitzTrigger();
@@ -133,10 +128,7 @@ export function useLeaderboardScraper(
       const errorMessage = harvestError instanceof Error ? harvestError.message : "Failed to harvest leaderboard players";
       error(errorMessage);
     } finally {
-      updateFabState({
-        isHarvesting: false,
-        activeHarvester: null,
-      });
+      activeHarvestMode.value = null;
       activeController.value = null;
     }
   }
@@ -144,5 +136,7 @@ export function useLeaderboardScraper(
   return {
     executeHarvest,
     abortHarvest,
+    activeHarvestMode,
+    isHarvesting,
   };
 }

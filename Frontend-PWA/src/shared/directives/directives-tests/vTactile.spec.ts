@@ -29,7 +29,10 @@ describe("vTactile directive", () => {
 
   const TestComponent = defineComponent({
     directives: { tactile: vTactile },
-    props: ["onTap", "onLongPress"],
+    props: {
+      onTap: { type: Function, default: undefined },
+      onLongPress: { type: Function, default: undefined },
+    },
     template: `
       <div v-tactile="{ onTap, onLongPress }" class="target" style="width: 100px; height: 100px;">
         <button class="btn-action">Action</button>
@@ -37,6 +40,8 @@ describe("vTactile directive", () => {
         <div class="hit-target">Hit Target</div>
         <div class="normal">Normal</div>
       </div>
+      <button v-tactile="{ onTap }" class="disabled" disabled>Disabled</button>
+      <div v-tactile="{ onTap }" class="aria-disabled" aria-disabled="true">Unavailable</div>
     `,
   });
 
@@ -144,6 +149,21 @@ describe("vTactile directive", () => {
     dispatchPointerEvent(target.element, "pointerup");
 
     expect(mockOnTap).not.toHaveBeenCalled();
+  });
+
+  it("should not acknowledge disabled or aria-disabled controls", () => {
+    const wrapper = mount(TestComponent, {
+      props: { onTap: mockOnTap, onLongPress: mockOnLongPress }
+    });
+
+    for (const selector of [".disabled", ".aria-disabled"]) {
+      const control = wrapper.find(selector);
+      dispatchPointerEvent(control.element, "pointerdown");
+      dispatchPointerEvent(control.element, "pointerup");
+    }
+
+    expect(mockOnTap).not.toHaveBeenCalled();
+    expect(vibrateSpy).not.toHaveBeenCalled();
   });
 
   it("should prevent context menu", async () => {

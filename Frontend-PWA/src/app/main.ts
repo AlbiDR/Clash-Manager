@@ -28,6 +28,8 @@ import App from "./App.vue";
 
 import router from "./router";
 
+import { usePowerSaving } from "@core/services/usePowerSaving";
+
 // REMOVED: Synchronous import of autoAnimatePlugin
 // import { autoAnimatePlugin } from '@formkit/auto-animate/vue'
 
@@ -194,6 +196,7 @@ async function bootstrap() {
       const apiState = useApiState();
       const wakeLock = useWakeLock();
       const storagePersistence = useStoragePersistence();
+      void storagePersistence.init();
 
       // [VR5] Data hydration (loadLocal + startBackgroundSync) is now owned
       // by the route-level DataLoaderPlugin. The loader fires on the very
@@ -241,8 +244,9 @@ async function bootstrap() {
       // VISIBILITY_REFRESH_THRESHOLD) or the router loader (only fires on navigation).
       // Without this, roster/member data (last-seen, active membership) would keep
       // showing the same in-memory snapshot indefinitely in a long-lived session.
+      const { isPowerSaving } = usePowerSaving();
       setInterval(() => {
-        if (document.visibilityState === "visible") {
+        if (document.visibilityState === "visible" && !isPowerSaving.value) {
           // [FIX] Same permanent-offline lockout as the visibility-refresh handler
           // above, addressed for the case where the app is left open and
           // foregrounded continuously rather than backgrounded and resumed.

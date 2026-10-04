@@ -59,6 +59,7 @@ const {
     <template #empty-action>
       <button
         v-tactile
+        type="button"
         class="btn-primary"
         @click="refresh"
       >
@@ -96,9 +97,3 @@ const {
     </ConsoleList>
   </ConsoleLayout>
 </template>
-
-<style scoped>
-.btn-primary {
-  margin-top: var(--sys-space-16);
-}
-</style>

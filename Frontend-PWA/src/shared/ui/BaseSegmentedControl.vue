@@ -19,7 +19,7 @@
  *
  * **Haptics are therefore brokered imperatively, not via `v-tactile`.** The
  * directive's guard inspects `event.target`, so it fires for every `vTactile`
- * instance in the bubble path — a `.hit-target` segment suppresses its own
+ * instance in the bubble path; a `.hit-target` segment suppresses its own
  * directive just as it suppresses the container's. Opting out of the container
  * and binding the directive locally are mutually exclusive.
  */

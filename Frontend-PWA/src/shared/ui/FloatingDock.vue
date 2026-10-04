@@ -157,13 +157,14 @@ function finishDockSwap() {
       @leave-cancelled="finishDockSwap"
     >
       <!-- Navigation Dock Mode -->
-      <div
+      <nav
         v-if="dockVisible"
         key="navigation"
         class="dock-mode"
+        aria-label="Main navigation"
       >
         <NavigationDock />
-      </div>
+      </nav>
 
       <!-- Selection FAB Mode -->
       <div
@@ -185,15 +186,15 @@ function finishDockSwap() {
   left: var(--sys-safe-center-x);
   transform: translate3d(-50%, 0, 0);
   background: var(--sys-surface-glass);
+  backdrop-filter: var(--sys-surface-glass-blur);
+  -webkit-backdrop-filter: var(--sys-surface-glass-blur);
 
-  border: 1px solid var(--sys-surface-glass-border);
+  border: var(--sys-border-width-glass) solid var(--sys-surface-glass-border);
   padding: var(--sys-space-6);
   border-radius: var(--sys-shape-corner-full);
   display: flex;
   gap: var(--sys-space-6);
-  box-shadow:
-    0 12px 40px var(--sys-overlay-dark-strong),
-    0 0 0 1px var(--sys-overlay-light-subtle);
+  box-shadow: var(--sys-elevation-3);
   z-index: var(--sys-z-dock);
   /* Disable double-tap zoom delay */
   touch-action: manipulation;
@@ -214,7 +215,7 @@ function finishDockSwap() {
 @media (hover: hover) and (pointer: fine) {
   .dock-container:hover {
     bottom: calc(var(--sys-space-28) + var(--sys-safe-bottom) + var(--safe-frame-offset, 0px));
-    box-shadow: 0 16px 48px var(--sys-overlay-dark-strong);
+    box-shadow: var(--sys-elevation-4);
   }
 }
 
@@ -260,15 +261,19 @@ function finishDockSwap() {
 
 @media (max-width: 600px) {
   .dock-container {
-    width: calc(100% - var(--sys-space-32));
-    max-width: 460px;
+    width: calc(
+      100% - var(--sys-safe-left) - var(--sys-safe-right) - var(--sys-space-32)
+    );
+    max-width: var(--sys-layout-dock-compact-max-width);
     padding: var(--sys-space-4);
     gap: var(--sys-space-4);
   }
   /* Ensure FAB mode shrink-wraps on mobile to avoid empty space */
   .dock-container.fab-mode {
     width: auto;
-    max-width: calc(100% - 32px);
+    max-width: calc(
+      100% - var(--sys-safe-left) - var(--sys-safe-right) - var(--sys-space-32)
+    );
     justify-content: center;
   }
 
@@ -279,6 +284,21 @@ function finishDockSwap() {
   .dock-container:not(.fab-mode) .dock-mode {
     flex: 1 1 auto;
     width: 100%;
+  }
+}
+
+/* On short landscape phones, a centered rail covers the primary content and
+   actions even though there is ample horizontal room beside them. Anchor the
+   compact rail to the trailing safe edge; selection actions inherit the same
+   predictable placement. */
+@media (orientation: landscape) and (max-height: 520px) {
+  .dock-container {
+    right: calc(var(--sys-safe-right) + var(--sys-space-16) + var(--safe-frame-offset, 0px));
+    bottom: calc(var(--sys-space-12) + var(--sys-safe-bottom) + var(--safe-frame-offset, 0px));
+    left: auto;
+    transform: translate3d(0, 0, 0);
+    padding: var(--sys-space-4);
+    gap: var(--sys-space-4);
   }
 }
 

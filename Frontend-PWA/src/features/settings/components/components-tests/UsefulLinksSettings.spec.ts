@@ -22,7 +22,7 @@ import * as useSettingsModule from "../../composables/useSettings";
 import * as useExternalLinkModule from "@core/services/useExternalLink";
 import * as useNativeBridgeModule from "@core/services/useNativeBridge";
 import * as localeModule from "@core/utils/locale";
-import { resetApkResolutionCacheForTests } from "@core/services/usePwaManager";
+import { resetApkResolutionCacheForTests } from "@core/services/apkResolver";
 
 vi.mock("../../composables/useSettings", () => ({
   useSettings: vi.fn()

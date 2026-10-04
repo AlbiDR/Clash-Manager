@@ -66,6 +66,21 @@ describe("VaultCard.vue", () => {
     expect(wcInputs[4].element.value).toBe("1");    // Champion
   });
 
+  it("gives every inventory field a resource-specific accessible name", () => {
+    const wrapper = mountVaultCard();
+
+    expect(wrapper.findAll("input.res-input").map(input => input.attributes("aria-label")))
+      .toEqual(["Gold owned", "Gems owned"]);
+    expect(wrapper.findAll("input.wc-input").map(input => input.attributes("aria-label")))
+      .toEqual([
+        "Common wild cards owned",
+        "Rare wild cards owned",
+        "Epic wild cards owned",
+        "Legendary wild cards owned",
+        "Champion wild cards owned",
+      ]);
+  });
+
   it("emits update event when gold input changes", async () => {
     const wrapper = mountVaultCard();
     const goldInput = wrapper.findAll("input.res-input")[0];
@@ -120,6 +135,7 @@ describe("VaultCard.vue", () => {
     const wrapper = mountVaultCard({ isSimulating: true });
 
     expect(wrapper.classes()).toContain("is-loading");
+    expect(wrapper.attributes("aria-busy")).toBe("true");
     // Styles for is-loading include pointer-events: none, verified via class presence
   });
 

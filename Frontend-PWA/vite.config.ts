@@ -6,7 +6,7 @@ import { defineConfig } from "vitest/config";
 import vue from "@vitejs/plugin-vue";
 import { VitePWA } from "vite-plugin-pwa";
 import { visualizer } from "rollup-plugin-visualizer";
-import packageJson from "./package.json";
+import packageJson from "./package.json" with { type: "json" };
 
 // View-specific components excluded from monolithic UI bundle.
 // This allows them to be bundled with their respective lazy-loaded views,
@@ -19,6 +19,61 @@ const VIEW_SPECIFIC_COMPONENTS = [
   "SkeletonSettingsCard.vue",
   "/src/features/",
 ];
+
+/**
+ * Keep stable, cache-friendly bundles while allowing feature views to remain
+ * lazy. Vite 8 delegates bundling to Rolldown, whose `codeSplitting` API
+ * replaces the old Rollup-compatible `manualChunks` callback.
+ */
+function getChunkGroupName(id: string): string | null {
+  if (id.includes("node_modules")) {
+    // Core Vue Ecosystem (Prioritized for fast PWA boot)
+    if (
+      id.includes("vue") ||
+      id.includes("vue-router") ||
+      id.includes("pinia")
+    ) {
+      return "vendor-core";
+    }
+    // Auxiliary Libraries (Consolidated to reduce HTTP overhead in WebView)
+    if (
+      id.includes("valibot") ||
+      id.includes("workbox-") ||
+      id.includes("@formkit") ||
+      id.includes("@supabase")
+    ) {
+      return "vendor-aux";
+    }
+    return "vendor-stable";
+  }
+  if (id.includes("/src/core/")) {
+    return "core-logic";
+  }
+  if (id.includes("/src/shared/")) {
+    if (VIEW_SPECIFIC_COMPONENTS.some((component) => id.includes(component))) {
+      return null;
+    }
+    return "shared-ui";
+  }
+  if (id.includes("/src/features/")) {
+    return null; // Features should be lazy chunks by default
+  }
+  return null;
+}
+
+// The visualizer is useful for an intentional bundle investigation, but it is
+// not a customer-facing asset. Keep it outside `dist` so it cannot be deployed
+// or added to the service worker's precache.
+const bundleVisualizer = process.env.ANALYZE === "true"
+  ? visualizer({
+      filename: "stats.html",
+      title: "Clash Manager PWA Bundle Analysis",
+      template: "treemap",
+      gzipSize: true,
+      brotliSize: true,
+      open: true,
+    })
+  : undefined;
 
 export default defineConfig({
   define: {
@@ -45,41 +100,10 @@ export default defineConfig({
     },
     sourcemap: false,
     cssCodeSplit: true,
-    rollupOptions: {
+    rolldownOptions: {
       output: {
-        manualChunks(id) {
-          if (id.includes("node_modules")) {
-            // Core Vue Ecosystem (Prioritized for fast PWA boot)
-            if (
-              id.includes("vue") ||
-              id.includes("vue-router") ||
-              id.includes("pinia")
-            ) {
-              return "vendor-core";
-            }
-            // Auxiliary Libraries (Consolidated to reduce HTTP overhead in WebView)
-            if (
-              id.includes("valibot") ||
-              id.includes("workbox-") ||
-              id.includes("@formkit") ||
-              id.includes("@supabase")
-            ) {
-              return "vendor-aux";
-            }
-            return "vendor-stable";
-          }
-          if (id.includes("/src/core/")) {
-            return "core-logic";
-          }
-          if (id.includes("/src/shared/")) {
-            if (VIEW_SPECIFIC_COMPONENTS.some((comp) => id.includes(comp))) {
-              return;
-            }
-            return "shared-ui";
-          }
-          if (id.includes("/src/features/")) {
-            return; // Features should be lazy chunks by default
-          }
+        codeSplitting: {
+          groups: [{ debugName: "app-cache-groups", name: getChunkGroupName }],
         },
       },
     },
@@ -130,14 +154,7 @@ export default defineConfig({
         return html; // Content already synthesized, this hook remains for future dynamic logic
       },
     },
-    visualizer({
-      filename: "dist/stats.html",
-      title: "Clash Manager PWA Bundle Analysis",
-      template: "treemap",
-      gzipSize: true,
-      brotliSize: true,
-      open: process.env.ANALYZE === "true",
-    }),
+    bundleVisualizer,
   ],
   test: {
     globals: true,

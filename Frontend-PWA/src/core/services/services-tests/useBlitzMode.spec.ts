@@ -3,6 +3,7 @@
 import { useBlitzMode } from "../useBlitzMode";
 import { useSelectionStore } from "@core/services/useSelectionStore";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import type { AndroidBridge, WindowWithBridge } from "@core/types";
 
 const mockOpenInGame = vi.fn();
 const mockInfo = vi.fn();
@@ -10,6 +11,7 @@ const mockError = vi.fn();
 const mockModules = vi.hoisted(() => ({
   blitzMode: true,
   blitzSpeed: "fast",
+  blitzDwellMs: undefined as number | undefined,
 }));
 
 vi.mock("@core/services/useExternalLink", () => ({
@@ -39,6 +41,7 @@ describe("useBlitzMode", () => {
     vi.clearAllMocks();
     mockModules.blitzMode = true;
     mockModules.blitzSpeed = "fast";
+    mockModules.blitzDwellMs = undefined;
     selectionStore = useSelectionStore();
   });
 
@@ -93,7 +96,10 @@ describe("useBlitzMode", () => {
 
       handleBlitz();
 
-      expect(fabState.value.isBlasting).toBe(true);
+      expect(fabState.value.activity).toMatchObject({
+        label: "Blitz",
+        exclusive: true,
+      });
       expect(mockOpenInGame).toHaveBeenCalledWith("R1");
       expect(fabState.value.label).toBe("1 / 3");
 
@@ -106,7 +112,7 @@ describe("useBlitzMode", () => {
       expect(fabState.value.label).toBe("3 / 3");
 
       vi.advanceTimersByTime(1500);
-      expect(fabState.value.isBlasting).toBe(false);
+      expect(fabState.value.activity).toBeUndefined();
       expect(mockInfo).toHaveBeenCalledWith("Blitz sequence complete · 3 profiles");
     });
 
@@ -116,34 +122,37 @@ describe("useBlitzMode", () => {
 
       selectionStore.selectAll(["R1", "R2"]);
       handleBlitz();
-      expect(fabState.value.isBlasting).toBe(true);
+      expect(fabState.value.activity?.label).toBe("Blitz");
 
       clearSelection();
-      expect(fabState.value.isBlasting).toBe(false);
+      expect(fabState.value.activity).toBeUndefined();
       expect(selectionStore.selectedIds.value).toEqual([]);
     });
     it("keeps blitz disabled via AndroidBridge when blitzMode module is off", () => {
       mockModules.blitzMode = false;
       // Simulate native wrapper: inject the bridge before creating the composable
       const mockStartBlitz = vi.fn();
-      (window as any).AndroidBridge = { startBlitz: mockStartBlitz, isAndroidWrapper: () => true };
+      (window as WindowWithBridge).AndroidBridge = {
+        startBlitz: mockStartBlitz,
+        isAndroidWrapper: () => true,
+      } as AndroidBridge;
 
-      const { fabState, handleBlitz } = useBlitzMode(selectionStore);
+      const { isBlitzEnabled, handleBlitz } = useBlitzMode(selectionStore);
       selectionStore.selectAll(["R1", "R2"]);
 
-      expect(fabState.value.blitzEnabled).toBe(false);
+      expect(isBlitzEnabled.value).toBe(false);
 
       handleBlitz();
       expect(mockStartBlitz).not.toHaveBeenCalled();
       expect(mockError).toHaveBeenCalledWith("Blitz Mode is disabled");
 
       // Clean up bridge injection
-      delete (window as any).AndroidBridge;
+      delete (window as WindowWithBridge).AndroidBridge;
     });
 
     it("delegates startBlitz to AndroidBridge when available", () => {
       const mockStartBlitz = vi.fn();
-      (window as any).AndroidBridge = { startBlitz: mockStartBlitz };
+      (window as WindowWithBridge).AndroidBridge = { startBlitz: mockStartBlitz } as AndroidBridge;
 
       const { handleBlitz } = useBlitzMode(selectionStore);
       selectionStore.selectAll(["R1", "R2"]);
@@ -154,7 +163,7 @@ describe("useBlitzMode", () => {
       // Web-side openInGame must NOT be called (native handles it)
       expect(mockOpenInGame).not.toHaveBeenCalled();
 
-      delete (window as any).AndroidBridge;
+      delete (window as WindowWithBridge).AndroidBridge;
     });
 
     it("renders FAB state correctly when selection mode is active with zero selected items", () => {
@@ -176,14 +185,14 @@ describe("useBlitzMode", () => {
       selectionStore.selectAll(["R1"]);
 
       const mockStartBlitz = vi.fn();
-      (window as any).AndroidBridge = { startBlitz: mockStartBlitz };
+      (window as WindowWithBridge).AndroidBridge = { startBlitz: mockStartBlitz } as AndroidBridge;
 
       handleBlitz();
 
       expect(mockStartBlitz).toHaveBeenCalledWith(JSON.stringify(["R1"]), 1500);
 
-      delete (window as any).AndroidBridge;
-      delete mockModules.blitzDwellMs;
+      delete (window as WindowWithBridge).AndroidBridge;
+      mockModules.blitzDwellMs = undefined;
     });
 
     it("supports manual advancement via handleAction during active blitz sequence", () => {
@@ -249,7 +258,7 @@ describe("useBlitzMode", () => {
       expect(mockOpenInGame).toHaveBeenNthCalledWith(2, "R3");
 
       vi.advanceTimersByTime(2000);
-      expect(fabState.value.isBlasting).toBe(false);
+      expect(fabState.value.activity).toBeUndefined();
     });
   });
 });

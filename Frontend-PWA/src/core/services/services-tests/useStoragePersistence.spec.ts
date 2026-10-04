@@ -33,6 +33,7 @@ describe("useStoragePersistence", () => {
   const getTestComponent = () => ({
     setup() {
       const persistence = useStoragePersistence();
+      void persistence.init();
       return { ...persistence };
     },
     template: "<div></div>",
@@ -53,6 +54,16 @@ describe("useStoragePersistence", () => {
 
     expect(mockPersisted).toHaveBeenCalled();
     expect(wrapper.vm.isPersisted).toBe(true);
+  });
+
+  it("initializes safely outside component setup", async () => {
+    mockPersisted.mockResolvedValue(true);
+    const persistence = useStoragePersistence();
+
+    await persistence.init();
+
+    expect(persistence.isSupported.value).toBe(true);
+    expect(persistence.isPersisted.value).toBe(true);
   });
 
   it("requests persistence and updates state", async () => {

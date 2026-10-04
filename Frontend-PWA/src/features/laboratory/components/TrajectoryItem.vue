@@ -168,10 +168,12 @@ defineProps<{
   box-shadow: 0 4px 28px -8px rgba(var(--sys-color-rarity-champion-rgb), 0.5);
 }
 
-.trajectory-item:hover {
-  transform: translateY(-1px);
-  filter: brightness(1.05);
-  background: var(--sys-color-surface-container);
+@media (hover: hover) and (pointer: fine) {
+  .trajectory-item:hover {
+    transform: translateY(-1px);
+    filter: brightness(1.05);
+    background: var(--sys-color-surface-container);
+  }
 }
 
 .upgrade-info {
@@ -202,7 +204,7 @@ defineProps<{
   border: 1px solid var(--sys-color-outline-variant);
 }
 
-.level-pill .prev { opacity: 0.4; }
+.level-pill .prev { color: var(--sys-color-on-surface-variant); }
 .level-pill .next { color: var(--sys-color-primary); }
 .level-pill .divider { opacity: 0.2; }
 
@@ -253,9 +255,9 @@ defineProps<{
 }
 
 .eff-label {
-  font-size: 8px;
+  font-size: var(--sys-typescale-label-sm);
   font-weight: 900;
-  opacity: 0.5;
+  color: var(--sys-color-on-surface-variant);
   letter-spacing: 0.05em;
   text-align: left;
 }
@@ -296,8 +298,7 @@ defineProps<{
 .cost-item.gold { color: var(--sys-color-on-surface); }
 .cost-item.xp { 
   color: var(--sys-color-on-surface-variant); 
-  font-size: 11px;
-  opacity: 0.6;
+  font-size: var(--sys-typescale-meta);
 }
 
 .res-icon {

@@ -5,7 +5,7 @@
 
 > The common kernel every Edge Function is built on: the request handler, Clash Royale API access, secret loading, and validation schemas.
 
-**Imported by:** [`ingest-royale-data`](../ingest-royale-data/README.md), [`headhunter-scanner`](../headhunter-scanner/README.md), [`query-royale-api`](../query-royale-api/README.md), [`fetch-player-battlelog`](../fetch-player-battlelog/README.md), and [`sync-player-cards`](../sync-player-cards/README.md) - all five Edge Functions. Imports nothing from them.
+**Imported by:** [`ingest-royale-data`](../ingest-royale-data/README.md), [`headhunter-scanner`](../headhunter-scanner/README.md), [`query-royale-api`](../query-royale-api/README.md), [`fetch-player-battlelog`](../fetch-player-battlelog/README.md), [`sync-player-cards`](../sync-player-cards/README.md), and `ping` - all six Edge Functions. Imports nothing from them.
 
 ## Responsibilities
 
@@ -30,14 +30,17 @@ Since public client-facing functions accept the public anon key (the PWA has no 
 - **Garbage Collection:** Opportunistically sweeps expired buckets once the in-memory Map exceeds the safety threshold (`RATE_LIMIT_BUCKET_SWEEP_THRESHOLD`), preventing unbounded memory growth.
 - **Isolate Tradeoff:** Throttling uses an in-memory per-worker Map. While state is transient and resets on cold boots, this accepted tradeoff completely bypasses external store latency and coordination overhead per ADR KISS/YAGNI.
 
-### 3. Error Propagation & Information-Disclosure Safeguards
-To satisfy the Error Propagation and Readability Contracts (ADR Section IV), errors are never thrown as raw strings. The `errors.ts` module defines a closed union of stable `ProtocolErrorCode` types (`UNAUTHORIZED`, `METHOD_NOT_ALLOWED`, `MALFORMED_BODY`, `MALFORMED_PAYLOAD`, `RATE_LIMITED`, `TELEMETRY_UNAVAILABLE`, `INTERNAL_ERROR`), mapping each to its canonical HTTP status and a strict, client-safe message.
+### 3. Bounded Body Admission Control
+Before JSON parsing, `clinicalServe` rejects request bodies above **16 KiB** with a client-safe `413 PAYLOAD_TOO_LARGE`. It checks a valid `Content-Length` only as a fast path and counts every stream chunk itself, so a chunked or falsely declared request cannot make the isolate buffer an unbounded body. The ceiling is deliberately well above the largest current schema (50 tournament strings × 64 characters plus JSON overhead), while absent bodies still flow to each schema as `{}` and malformed in-limit bodies still return `400 MALFORMED_BODY`.
+
+### 4. Error Propagation & Information-Disclosure Safeguards
+To satisfy the Error Propagation and Readability Contracts (ADR Section IV), errors are never thrown as raw strings. The `errors.ts` module defines a closed union of stable `ProtocolErrorCode` types (`UNAUTHORIZED`, `METHOD_NOT_ALLOWED`, `MALFORMED_BODY`, `PAYLOAD_TOO_LARGE`, `MALFORMED_PAYLOAD`, `RATE_LIMITED`, `TELEMETRY_UNAVAILABLE`, `INTERNAL_ERROR`), mapping each to its canonical HTTP status and a strict, client-safe message.
 Any uncaught error or unclassified exception caught at the control surface is automatically processed by `classifyThrown()` and degraded to `INTERNAL_ERROR`. This completely eliminates the threat of information disclosure (such as database schemas, table topologies, or API key pool configurations) to external callers.
 
-### 4. Opt-In Restricted CORS & Preflight Headers
+### 5. Opt-In Restricted CORS & Preflight Headers
 To protect player and clan data exposure from malicious third-party web pages, functions queryable from browser JS use opt-in restricted CORS. Verified origin domains are matched dynamically against the configured allow-list and reflected back (avoiding the wildcard `*`), coupled with `Vary: Origin` headers for cache safety. Internal service-to-service cron triggers fallback to default CORS headers. OPTIONS preflight requests explicitly allow `authorization`, `content-type`, `apikey`, `x-client-info`, `cache-control`, and `pragma` headers to ensure compatibility with client wrappers.
 
-### 5. Closed Payload Contract Guard
+### 6. Closed Payload Contract Guard
 To enforce strict schema boundaries at the L5 control surface (ADR Section III), `protocol.ts` evaluates inbound JSON object payloads against schema entries reflected via `ObjectSchemaShapeSchema`. Top-level undeclared fields are immediately rejected before business logic invocation with a `MALFORMED_PAYLOAD` protocol error response containing `{ kind: 'undeclared_field', path: [fieldName] }` details.
 
 ## Contents

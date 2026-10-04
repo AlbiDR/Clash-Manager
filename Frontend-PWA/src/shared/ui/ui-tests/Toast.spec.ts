@@ -59,6 +59,7 @@ describe("Toast.vue", () => {
       props: defaultProps,
     });
     const closeBtn = wrapper.find(".close-btn");
+    expect(closeBtn.attributes("type")).toBe("button");
     await closeBtn.trigger("click");
     expect(wrapper.emitted("dismiss")).toBeTruthy();
     expect(wrapper.emitted("dismiss")![0]).toEqual(["test-id"]);
@@ -71,6 +72,7 @@ describe("Toast.vue", () => {
     const actionBtn = wrapper.find(".action-btn");
     expect(actionBtn.exists()).toBe(true);
     expect(actionBtn.text()).toBe("UNDO");
+    expect(actionBtn.attributes("type")).toBe("button");
 
     await actionBtn.trigger("click");
     expect(wrapper.emitted("action")).toBeTruthy();
@@ -105,55 +107,64 @@ describe("Toast.vue", () => {
     expect(wrapper.emitted("action")).toBeFalsy();
   });
 
-  it("emits dismiss automatically after duration", () => {
+  it("requests dismissal pause and resume on mouse enter and leave", async () => {
     const wrapper = mount(Toast, {
       props: { ...defaultProps, duration: 3000 },
     });
 
-    vi.advanceTimersByTime(2999);
-    expect(wrapper.emitted("dismiss")).toBeFalsy();
-
-    vi.advanceTimersByTime(1);
-    expect(wrapper.emitted("dismiss")).toBeTruthy();
-    expect(wrapper.emitted("dismiss")![0]).toEqual(["test-id"]);
-  });
-
-  it("pauses and resumes timer on mouse enter/leave", async () => {
-    const wrapper = mount(Toast, {
-      props: { ...defaultProps, duration: 3000 },
-    });
-
-    vi.advanceTimersByTime(1500);
-
-    // Mouse enter: clear timer
     await wrapper.trigger("mouseenter");
-    vi.advanceTimersByTime(2000); // Total 3500 passed
-    expect(wrapper.emitted("dismiss")).toBeFalsy();
-
-    // Mouse leave: restart timer
     await wrapper.trigger("mouseleave");
-    vi.advanceTimersByTime(3000);
-    expect(wrapper.emitted("dismiss")).toBeTruthy();
+
+    expect(wrapper.emitted("pause-dismissal")).toEqual([["test-id"]]);
+    expect(wrapper.emitted("resume-dismissal")).toEqual([["test-id"]]);
   });
 
-  it("does not pause an undo window on hover", async () => {
+  it("requests one pause while keyboard focus remains inside", async () => {
+    const wrapper = mount(Toast, {
+      props: { ...defaultProps, duration: 3000 },
+    });
+
+    await wrapper.trigger("focusin");
+    await wrapper.trigger("focusin");
+
+    await wrapper.trigger("focusout");
+
+    expect(wrapper.emitted("pause-dismissal")).toEqual([["test-id"]]);
+    expect(wrapper.emitted("resume-dismissal")).toEqual([["test-id"]]);
+  });
+
+  it("does not request resume until pointer and focus holds are both released", async () => {
+    const wrapper = mount(Toast, {
+      props: { ...defaultProps, duration: 3000 },
+    });
+
+    await wrapper.trigger("mouseenter");
+    await wrapper.trigger("focusin");
+    await wrapper.trigger("mouseleave");
+    expect(wrapper.emitted("resume-dismissal")).toBeUndefined();
+
+    await wrapper.trigger("focusout");
+    expect(wrapper.emitted("pause-dismissal")).toEqual([["test-id"]]);
+    expect(wrapper.emitted("resume-dismissal")).toEqual([["test-id"]]);
+  });
+
+  it("does not request an undo-window pause on hover", async () => {
     const wrapper = mount(Toast, {
       props: { ...defaultProps, type: "undo", duration: 3000 },
     });
 
     await wrapper.trigger("mouseenter");
-    vi.advanceTimersByTime(3000);
-
-    expect(wrapper.emitted("dismiss")).toBeTruthy();
+    expect(wrapper.emitted("pause-dismissal")).toBeUndefined();
   });
 
-  it("clears timer on unmount", () => {
-    const spy = vi.spyOn(window, "clearTimeout");
+  it("releases an active interaction hold on unmount", async () => {
     const wrapper = mount(Toast, {
       props: { ...defaultProps, duration: 3000 },
     });
+    await wrapper.trigger("mouseenter");
     wrapper.unmount();
-    expect(spy).toHaveBeenCalled();
+
+    expect(wrapper.emitted("resume-dismissal")).toEqual([["test-id"]]);
   });
 
   describe("copyToastMessage functionality", () => {
@@ -186,6 +197,7 @@ describe("Toast.vue", () => {
       });
 
       const copyBtn = wrapper.find(".copy-btn");
+      expect(copyBtn.attributes("type")).toBe("button");
       expect(copyBtn.findComponent(Icon).props("name")).toBe("copy");
 
       await copyBtn.trigger("click");
@@ -199,7 +211,7 @@ describe("Toast.vue", () => {
       expect(copyBtn.findComponent(Icon).props("name")).toBe("copy");
     });
 
-    it("pauses auto-dismiss timer when copy is triggered and resumes timer after tick duration", async () => {
+    it("holds dismissal during copy feedback and releases it afterward", async () => {
       const writeTextMock = vi.fn().mockResolvedValue(undefined);
       Object.assign(navigator, {
         clipboard: {
@@ -211,16 +223,14 @@ describe("Toast.vue", () => {
         props: { ...defaultProps, type: "info", duration: 3000 },
       });
 
-      vi.advanceTimersByTime(1000); // 1000ms elapsed out of 3000ms
-
       const copyBtn = wrapper.find(".copy-btn");
-      await copyBtn.trigger("click"); // Clears timer and sets 2000ms tick delay
+      await copyBtn.trigger("click");
 
-      vi.advanceTimersByTime(2500); // tick ended at 2000ms and started a fresh 3000ms timer; 500ms into it
-      expect(wrapper.emitted("dismiss")).toBeFalsy();
+      expect(wrapper.emitted("pause-dismissal")).toEqual([["test-id"]]);
+      expect(wrapper.emitted("resume-dismissal")).toBeUndefined();
 
-      vi.advanceTimersByTime(2500); // 3000ms since that restart, so dismissal fires
-      expect(wrapper.emitted("dismiss")).toBeTruthy();
+      vi.advanceTimersByTime(2000);
+      expect(wrapper.emitted("resume-dismissal")).toEqual([["test-id"]]);
     });
 
     it("communicates unavailable clipboard access without throwing", async () => {

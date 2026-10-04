@@ -52,31 +52,24 @@ jobs:
       - name: Backend test suite
         run: pnpm --dir Backend test
 
+      - name: App availability gate tests
+        run: node --test .github/scripts/database/verify-app-availability.test.mjs
+
       - name: Setup Deno
         uses: denoland/setup-deno@v2
         with:
           deno-version: v2.x
 
-      # `--node-modules-dir=auto` is load-bearing: without it `deno check` aborts
-      # at dependency resolution ("Could not find a matching package for
-      # npm:@supabase/supabase-js") and never type-checks anything at all. The
-      # gate below was therefore reporting a dependency error rather than the 6
-      # errors it is counting down, so the count could never reach zero and the
-      # step could never be promoted to blocking. Passed as a flag rather than
-      # added to a Backend/deno.json, so nothing about `supabase functions
-      # deploy` bundling changes.
-      #
-      # Reporting, not blocking, and deliberately so: `deno check` finds 6 real
-      # errors today (4 valibot generic-inference failures in _shared/protocol.ts
-      # that collapse `parsed.output` to `unknown`, and 2 audit-action contract
-      # violations in fetch-player-battlelog). Making it blocking now would red
-      # every Backend deploy before anyone has had a chance to fix them, which
-      # is how a gate gets deleted rather than satisfied. Flip continue-on-error
-      # to false the moment that count reaches zero.
-      - name: Deno type-check edge functions (reporting)
-        continue-on-error: true
+      # Check only the Edge Function import graph. Without `--no-config`, Deno
+      # walks up to the monorepo package.json and attempts to resolve every PWA
+      # build dependency too; a newly released Vite plugin then blocked this
+      # unrelated backend gate under Deno's minimum-dependency-age policy.
+      # The dedicated lock records every exact transitive Edge dependency while
+      # leaving Supabase's deploy-time bundling configuration unchanged.
+      # `--node-modules-dir=auto` remains load-bearing for npm: imports.
+      - name: Deno type-check edge functions
         working-directory: Backend
-        run: deno check --node-modules-dir=auto supabase/functions/*/index.ts
+        run: deno check --no-config --lock=deno.edge.lock --frozen-lockfile --node-modules-dir=auto supabase/functions/*/index.ts
 
   deploy:
     needs: verify
@@ -128,11 +121,51 @@ jobs:
         run: |
           # 0. Context: We work from the Backend root
           cd Backend
+
+          # The eu-west-1 pooler can intermittently accept the management
+          # connection while rejecting the immediately following Postgres
+          # connection. Retrying only those transient transport failures keeps
+          # a valid migration deploy from failing after its repository gates
+          # have passed, while surfacing SQL and migration errors immediately.
+          retry_pooler_command() {
+            local label="$1"
+            local exit_status
+            shift
+
+            for attempt in 1 2 3; do
+              local output_file
+              output_file="$(mktemp)"
+
+              if "$@" >"$output_file" 2>&1; then
+                cat "$output_file"
+                rm -f "$output_file"
+                return 0
+              else
+                exit_status=$?
+              fi
+
+              cat "$output_file"
+              if ! grep -Eqi 'Connection terminated due to connection timeout|context deadline exceeded|failed to connect to postgres|failed to receive message' "$output_file"; then
+                rm -f "$output_file"
+                return "$exit_status"
+              fi
+              rm -f "$output_file"
+
+              if [ "$attempt" -lt 3 ]; then
+                local delay_seconds=$((attempt * 30))
+                echo "[RETRY] $label failed to reach the Supabase pooler; retrying in ${delay_seconds}s (attempt $((attempt + 1))/3)."
+                sleep "$delay_seconds"
+              fi
+            done
+
+            echo "[ERROR] $label could not reach the Supabase pooler after 3 attempts."
+            return 1
+          }
           
           # 1. Authoritative Linking
           if [ -n "$SUPABASE_DB_PASSWORD" ]; then
             echo "[LINK] Establishing Authoritative Link..."
-            supabase link --project-ref "$PROJECT_ID" --password "$SUPABASE_DB_PASSWORD"
+            retry_pooler_command "Supabase link" supabase link --project-ref "$PROJECT_ID" --password "$SUPABASE_DB_PASSWORD"
           fi
 
           # 2. Sync The Configuration and Key Farm
@@ -195,7 +228,7 @@ jobs:
 
             # The Binary Stack is now consolidated. 
             # We assume a clean state based on the 20260411160000 baseline.
-            supabase db push --include-all --linked --yes
+            retry_pooler_command "database migration push" supabase db push --include-all --linked --yes
 
             # 3b. Cron schedule SSOT. cron.job is data, not schema, so migrations
             # deliberately do not create it (that would make every local stack and
@@ -292,3 +325,11 @@ jobs:
           supabase functions deploy query-royale-api --project-ref "$PROJECT_ID" --no-verify-jwt
           supabase functions deploy fetch-player-battlelog --project-ref "$PROJECT_ID" --no-verify-jwt
           supabase functions deploy ping --project-ref "$PROJECT_ID" --no-verify-jwt
+
+      - name: Verify live app availability
+        env:
+          PROJECT_ID: ${{ vars.SUPABASE_PROJECT_ID }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
+        run: node .github/scripts/database/verify-app-availability.mjs

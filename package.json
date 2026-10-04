@@ -17,6 +17,7 @@
     "apk:emulator": "node APK/apk-dev.mjs emulator",
     "apk:emulator:app": "node APK/apk-dev.mjs mac-app",
     "apk:dev": "./APK/build-apk.sh --dev && node APK/apk-dev.mjs install",
+    "apk:device": "node APK/device-acceptance.mjs",
     "test:apk-native": "node --test APK/verify-bridge-contract.test.mjs APK/verify-dwell-parity.test.mjs APK/verify-dex-source.test.mjs",
     "build": "pnpm -r build",
     "test": "pnpm -r test",
@@ -78,7 +79,7 @@
     "audit:cron": "node .github/scripts/database/audit-cron-schedule.mjs",
     "test:cron-schedule": "node --test .github/scripts/database/audit-cron-schedule.test.mjs",
     "test:credential-fanout": "node --test .github/scripts/project/credential-fanout.test.mjs",
-    "verify:push": "pnpm --dir Frontend-PWA type-check && pnpm -r test"
+    "verify:push": "pnpm --dir Frontend-PWA type-check && pnpm --dir Frontend-PWA lint && pnpm -r test"
   },
   "devDependencies": {
     "@ast-grep/cli": "catalog:",
@@ -97,10 +98,22 @@
     "pre-push": "node .github/scripts/project/commit-trailers.mjs --check-push && pnpm verify:push"
   },
   "engines": {
-    "node": ">=24.0.0",
+    "node": ">=24.15.0",
     "pnpm": ">=10.0.0"
   },
   "packageManager": "pnpm@10.32.1",
+  "pnpm": {
+    "overrides": {
+      "@vite-pwa/assets-generator>sharp": "0.35.5",
+      "@vue/compiler-sfc>postcss": "8.5.28",
+      "minimatch@10>brace-expansion": "5.0.12",
+      "postcss>nanoid": "3.3.19",
+      "vite>postcss": "8.5.28"
+    },
+    "patchedDependencies": {
+      "vite-plugin-pwa@2.0.0": "patches/vite-plugin-pwa@2.0.0.patch"
+    }
+  },
   "workspaces": [
     "Backend",
     "Frontend-PWA"
@@ -111,12 +124,12 @@
       "@formkit/auto-animate": "^0.10.0",
       "@supabase/supabase-js": "^2.117.2",
       "@types/node": "^26.6.4",
-      "@vite-pwa/assets-generator": "^1.0.2",
+      "@vite-pwa/assets-generator": "^2.0.0",
       "@vitejs/plugin-vue": "^6.0.8",
       "@vue/test-utils": "^2.5.0",
       "@vue/tsconfig": "^0.9.1",
       "dependency-cruiser": "^18.5.0",
-      "jsdom": "^29.1.1",
+      "jsdom": "^30.1.1",
       "knip": "^6.39.0",
       "simple-git-hooks": "^2.13.1",
       "supabase": "^2.118.0",
@@ -125,8 +138,8 @@
       "tsx": "^4.23.15",
       "typescript": "~5.9.3",
       "valibot": "^1.5.0",
-      "vite": "^7.3.6",
-      "vite-plugin-pwa": "^1.3.0",
+      "vite": "^8.3.2",
+      "vite-plugin-pwa": "^2.0.0",
       "vitest": "^4.1.11",
       "@vitest/coverage-v8": "^4.1.11",
       "vue": "^3.5.43",

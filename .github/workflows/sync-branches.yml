@@ -122,7 +122,9 @@ jobs:
 
       - name: Resolve pnpm store path
         id: pnpm-store
-        run: echo "path=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
+        run: |
+          store_path="$(pnpm store path --silent)"
+          echo "path=$store_path" >> "$GITHUB_OUTPUT"
 
       - name: Restore pnpm store cache
         uses: actions/cache@v4

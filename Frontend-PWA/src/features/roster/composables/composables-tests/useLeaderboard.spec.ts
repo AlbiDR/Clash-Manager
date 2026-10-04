@@ -16,9 +16,18 @@ const mockData = ref({
 let capturedControllerConfig: any = null;
 
 const mockBlitz = {
-  fabState: ref({ count: 2, visible: true, dismissIcon: "trash", harvestEnabled: true }),
+  fabState: ref({
+    visible: true,
+    label: "Open (1/2)",
+    isProcessing: false,
+    selectionCount: 2,
+    actions: [{ id: "start-batch", label: "Blitz", icon: "lightning" }],
+    dismissIcon: "trash",
+  }),
   handleAction: vi.fn(),
   handleBlitz: vi.fn(),
+  handleFabCommand: vi.fn(),
+  stopBlitz: vi.fn(),
   clearSelection: vi.fn(),
 };
 
@@ -151,16 +160,19 @@ describe("useLeaderboard", () => {
     const controller = useLeaderboard();
     const fabState = capturedControllerConfig.fabState.value;
     expect(fabState.dismissIcon).toBe("close");
-    expect(fabState.harvestEnabled).toBe(false);
-    expect(fabState.count).toBe(2);
+    expect(fabState.actions.map((action: { id: string }) => action.id)).toEqual(["start-batch"]);
+    expect(fabState.selectionCount).toBe(2);
 
     expect(controller.fabState.value.dismissIcon).toBe("close");
-    expect(controller.fabState.value.harvestEnabled).toBe(false);
+    expect(controller.fabState.value.actions).toEqual(mockBlitz.fabState.value.actions);
 
     const layoutEvents = capturedControllerConfig.layoutEvents.value;
-    expect(layoutEvents["fab-action"]).toBe(mockBlitz.handleAction);
-    expect(layoutEvents["fab-blitz"]).toBe(mockBlitz.handleBlitz);
+    expect(layoutEvents["fab-command"]).toBe(mockBlitz.handleFabCommand);
     expect(layoutEvents["clear-selection"]).toBe(mockBlitz.clearSelection);
     expect(layoutEvents["fab-dismiss"]).toBe(mockBlitz.clearSelection);
+    expect(layoutEvents["fab-cancel-operation"]).toBe(mockBlitz.stopBlitz);
+
+    layoutEvents["fab-cancel-operation"]();
+    expect(mockBlitz.stopBlitz).toHaveBeenCalledOnce();
   });
 });

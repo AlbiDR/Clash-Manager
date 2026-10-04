@@ -1,6 +1,6 @@
+<!-- SPDX-License-Identifier: GPL-3.0-only -->
+<!-- Copyright (C) 2026 AlbiDR -->
 <script setup lang="ts">
-// SPDX-License-Identifier: GPL-3.0-only
-// Copyright (C) 2026 AlbiDR
 
 /**
  * ============================================================================
@@ -53,10 +53,16 @@ const {
   <div
     class="selection-bar animate-pop"
     :class="{ 'is-active': isActive, 'is-loading': props.loading }"
+    role="group"
+    :aria-label="props.loading ? 'Loading selection controls' : 'Selection controls'"
     :aria-busy="props.loading ? 'true' : 'false'"
   >
     <!-- Left Cluster: Strategy & Selection Tools -->
-    <div class="sel-group strategy">
+    <div
+      class="sel-group strategy"
+      :inert="props.loading ? true : undefined"
+      :aria-hidden="props.loading ? 'true' : undefined"
+    >
       <!-- Score Dynamic Selector -->
       <ScoreThresholdSelector
         v-model:mode="filterMode"
@@ -71,9 +77,12 @@ const {
     <div
       class="sel-group management"
       :class="{ 'has-view-options': $slots['view-options'] }"
+      :inert="props.loading ? true : undefined"
+      :aria-hidden="props.loading ? 'true' : undefined"
     >
       <button
         v-tactile
+        type="button"
         class="morph-btn"
         :class="{
           'is-active-sel': isActive,
@@ -81,6 +90,7 @@ const {
         }"
         :aria-label="isActive ? `Clear ${props.count} selected` : 'Select by score threshold'"
         :title="isActive ? `Clear ${props.count} selected` : 'Select by score threshold'"
+        :disabled="props.loading"
         @click="
           isActive
             ? emit('clear')
@@ -113,9 +123,16 @@ const {
     <div
       v-if="props.loading"
       class="loading-overlay"
+      aria-hidden="true"
     >
       <div class="sk-line skeleton-anim" />
     </div>
+    <span
+      v-if="props.loading"
+      class="selection-loading-status"
+      role="status"
+      aria-live="polite"
+    >Loading selection controls</span>
   </div>
 </template>
 
@@ -138,6 +155,38 @@ const {
 
 .selection-bar.is-active {
   box-shadow: none;
+}
+
+.selection-bar.is-loading .sel-group {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.loading-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.sk-line {
+  width: 100%;
+  height: 100%;
+  border-radius: var(--sys-shape-corner-medium);
+  background: var(--sys-color-surface-container-highest);
+  border: 1px solid var(--sys-color-outline-variant);
+}
+
+.selection-loading-status {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .sel-group {

@@ -68,6 +68,7 @@ const UNRESOLVABLE_COMPONENTS = [
   'shared/ui/EventManagement.vue',
   'shared/ui/MomentumPill.vue',
   'shared/ui/RoleBadge.vue',
+  'shared/ui/SelectionFab.vue',
   'shared/ui/SettingsCard.vue',
   'shared/ui/Toast.vue',
 ];

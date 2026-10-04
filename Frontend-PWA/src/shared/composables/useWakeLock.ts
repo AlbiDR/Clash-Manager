@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
-import { ref, readonly } from "vue";
+import { ref, readonly, watch, effectScope } from "vue";
+
+import { usePowerSaving } from "@core/services/usePowerSaving";
 
 /**
  * [TIP] USE WAKE LOCK
@@ -38,23 +40,29 @@ let shouldBeActive = false;
 
 // EPHEMERAL: intentionally resets on cold start
 let wakeLockSentinel: WakeLockSentinel | null = null;
+const { isPowerSaving } = usePowerSaving();
 
 async function request() {
-  if (!isSupported) return;
+  if (!isSupported || isPowerSaving.value) return;
   try {
     // [THREAT:] Unsafe cast to 'any' for navigator bypasses type safety.
     // [DECISION LOG] Using NavigatorWithWakeLock interface to ensure structural integrity of the hardware bridge.
-    wakeLockSentinel = await (navigator as NavigatorWithWakeLock).wakeLock.request("screen");
-    if (!wakeLockSentinel) return;
+    const sentinel = await (navigator as NavigatorWithWakeLock).wakeLock.request("screen");
+    if (!sentinel) return;
+    if (isPowerSaving.value) {
+      await sentinel.release();
+      return;
+    }
 
+    wakeLockSentinel = sentinel;
     isActive.value = true;
     shouldBeActive = true;
 
-    wakeLockSentinel.addEventListener("release", () => {
+    sentinel.addEventListener("release", () => {
       // [THREAT:] System-level releases (tab hidden, low battery) can cause silent desync between UI and hardware.
       // [DECISION LOG] If released by system, isActive becomes false visually.
       // We rely on visibilitychange listener to re-acquire if shouldBeActive is true.
-      if (wakeLockSentinel !== null) {
+      if (wakeLockSentinel === sentinel) {
         isActive.value = false;
         wakeLockSentinel = null;
       }
@@ -78,6 +86,20 @@ async function release() {
   }
   isActive.value = false;
 }
+
+// Suspend the screen lock without discarding the user's intent.
+effectScope(true).run(() => {
+  watch(isPowerSaving, async (saving) => {
+    if (saving) {
+      const sentinel = wakeLockSentinel;
+      wakeLockSentinel = null;
+      isActive.value = false;
+      await sentinel?.release();
+    } else if (shouldBeActive && document.visibilityState === "visible") {
+      await request();
+    }
+  }, { flush: "sync" });
+});
 
 async function toggle() {
   if (isActive.value) {

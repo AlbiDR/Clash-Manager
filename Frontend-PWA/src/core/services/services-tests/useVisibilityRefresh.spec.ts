@@ -3,7 +3,7 @@
 
 import { describe, it, expect, vi } from "vitest";
 import { mount } from "@vue/test-utils";
-import { defineComponent, ref } from "vue";
+import { defineComponent, ref, type PropType, type Ref } from "vue";
 import { useVisibilityRefresh } from "../useVisibilityRefresh";
 import * as visibilityUtils from "../../utils/visibility";
 
@@ -13,7 +13,16 @@ vi.mock("../../utils/visibility", () => ({
 
 describe("useVisibilityRefresh", () => {
   const TestComponent = defineComponent({
-    props: ["refreshFn", "isRefreshing"],
+    props: {
+      refreshFn: {
+        type: Function as PropType<() => void | Promise<void>>,
+        required: true,
+      },
+      isRefreshing: {
+        type: Object as PropType<Ref<boolean>>,
+        default: undefined,
+      },
+    },
     setup(props) {
       useVisibilityRefresh(props.refreshFn, props.isRefreshing);
       return {};

@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
-import { ref } from "vue";
+import { ref, watch, effectScope } from "vue";
 import { darkTokens, generateCssVariables, lightTokens } from "../../core/theme/tokens";
 import { THEME_STORAGE_KEY, resolveIsDark, type Theme } from "../../core/theme/themeContract";
 import type { WindowWithBridge } from "../../core/types";
+
+import { usePowerSaving } from "@core/services/usePowerSaving";
 
 export type { Theme };
 
@@ -36,11 +38,13 @@ export function useTheme() {
       ? window.matchMedia("(prefers-color-scheme: dark)")
       : null;
 
+  const { isPowerSaving } = usePowerSaving();
+
   function applyTheme() {
     if (typeof document === "undefined" || !mediaQuery) return;
 
     const root = document.documentElement;
-    const isDark = resolveIsDark(theme.value, mediaQuery.matches);
+    const isDark = isPowerSaving.value || resolveIsDark(theme.value, mediaQuery.matches);
     const targetTokens = isDark ? darkTokens : lightTokens;
     const variables = generateCssVariables(targetTokens);
     
@@ -99,6 +103,9 @@ export function useTheme() {
       });
     }
 
+    effectScope(true).run(() => {
+      watch(isPowerSaving, applyTheme, { flush: "sync" });
+    });
     applyTheme();
     isInitialized.value = true;
   }

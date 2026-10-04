@@ -47,7 +47,6 @@ export { default as WarHistoryChart } from "./ui/WarHistoryChart.vue";
 export { default as VoyageHistoryChart } from "./ui/VoyageHistoryChart.vue";
 export { default as EventManagement } from "./ui/EventManagement.vue";
 export { default as VoyageBanner } from "./ui/VoyageBanner.vue";
-export { default as VoyageSetupForm } from "./ui/VoyageSetupForm.vue";
 
 // Directives
 export { vTactile } from "./directives/vTactile";
@@ -83,6 +82,10 @@ export type { ClipboardState } from "./composables/useClipboard";
 export { useCardMechanics } from "./composables/useCardMechanics";
 export { useHaptics, resetHapticsState } from "./composables/useHaptics";
 export { useWakeLock } from "./composables/useWakeLock";
+export {
+  resetPwaInstallPromptForTests,
+  usePwaManager,
+} from "./composables/usePwaManager";
 export { useVoyageStatus } from "./composables/useVoyageStatus";
 export { useVoyageForm } from "./composables/useVoyageForm";
 export { useVoyageStore } from "./composables/useVoyageStore";

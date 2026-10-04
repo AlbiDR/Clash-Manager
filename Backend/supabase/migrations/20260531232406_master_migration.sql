@@ -3860,6 +3860,16 @@ BEGIN
 END;
 $function$;
 
+-- Operational telemetry writes are service-to-service only. PostgreSQL grants
+-- function execution to PUBLIC by default, so assert the intended boundary.
+REVOKE ALL ON FUNCTION public.report_heartbeat(text, text, text, jsonb) FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.report_telemetry(text, text, jsonb) FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.update_telemetry(uuid, text, jsonb) FROM PUBLIC, anon, authenticated;
+
+GRANT EXECUTE ON FUNCTION public.report_heartbeat(text, text, text, jsonb) TO service_role;
+GRANT EXECUTE ON FUNCTION public.report_telemetry(text, text, jsonb) TO service_role;
+GRANT EXECUTE ON FUNCTION public.update_telemetry(uuid, text, jsonb) TO service_role;
+
 CREATE OR REPLACE FUNCTION public.report_dead_recruit(p_player_tag text)
  RETURNS void
  LANGUAGE plpgsql

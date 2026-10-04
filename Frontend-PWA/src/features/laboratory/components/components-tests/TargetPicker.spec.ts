@@ -51,6 +51,17 @@ describe("TargetPicker.vue", () => {
     expect((input.element as HTMLInputElement).value).toBe("#ABCDEF");
   });
 
+  it("names the tag field and keeps the lock action non-submitting", () => {
+    const wrapper = mount(TargetPicker, {
+      props: {
+        trackedTag: "#ABCDEF",
+      },
+    });
+
+    expect(wrapper.find("input").attributes("aria-label")).toBe("Player tag");
+    expect(wrapper.find(".lock-btn").attributes("type")).toBe("button");
+  });
+
   it("should update local state when trackedTag prop changes", async () => {
     const wrapper = mount(TargetPicker, {
       props: {

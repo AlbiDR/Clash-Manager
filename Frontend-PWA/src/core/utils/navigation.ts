@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
+import type { IconName } from "../theme/icons";
+
 /**
  * NAVIGATION METADATA (Layer 1)
  * ----------------------------------------------------------------------------
@@ -22,9 +24,7 @@ export interface NavItem {
   /** Human-readable label displayed in the UI. */
   label: string;
   /** Identifier for the icon associated with the route. */
-  icon: string;
-  /** Optional SVG viewBox override when the icon coordinate space differs from the default 0 0 24 24. */
-  viewBox?: string;
+  icon: IconName;
 }
 
 /**
@@ -34,7 +34,7 @@ export interface NavItem {
  * Satisfies ADR Section IV: Navigation SSOT. Provides the central registry
  * used by the NavigationDock and other UI layout components.
  */
-export const NAV_ITEMS: NavItem[] = [
+export const NAV_ITEMS = Object.freeze([
   {
     path: "/roster",
     name: "roster",
@@ -59,4 +59,4 @@ export const NAV_ITEMS: NavItem[] = [
     label: "Settings",
     icon: "settings",
   },
-];
+]) satisfies readonly NavItem[];

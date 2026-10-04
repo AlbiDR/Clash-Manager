@@ -2,11 +2,11 @@
 // Copyright (C) 2026 AlbiDR
 
 /**
- * PWA Manager Service Unit Tests
+ * PWA Manager Composable Unit Tests
  *
  * @remarks
  * **Architectural Context:**
- * - **Domain:** Layer 1 Core Services (@core)
+ * - **Domain:** Layer 2 Shared Composables (@shared)
  * - **Satisfaction:** ADR Section IV: Resilience & Operational Security.
  *
  * This test suite validates stable latest APK download dispatch, DownloadManager
@@ -15,12 +15,15 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import {
-  resolveLatestApkFilename,
-  resetApkResolutionCacheForTests,
   resetPwaInstallPromptForTests,
   usePwaManager,
 } from "../usePwaManager";
-import { idb } from "../StorageService";
+import {
+  resolveLatestApkFilename,
+  resetApkResolutionCacheForTests,
+} from "@core/services/apkResolver";
+import { idb } from "@core/services/StorageService";
+import { UI_STABILITY_DELAY } from "@core/config";
 
 const mockHaptics = {
   medium: vi.fn(),
@@ -42,13 +45,13 @@ vi.mock("@shared/composables/useHaptics", () => ({
   useHaptics: vi.fn(() => mockHaptics),
 }));
 
-vi.mock("../useToast", () => ({
+vi.mock("@core/services/useToast", () => ({
   useToast: vi.fn(() => mockToast),
 }));
 
 const mockConfirm = vi.fn();
 
-vi.mock("../useConfirm", () => ({
+vi.mock("@core/services/useConfirm", () => ({
   useConfirm: vi.fn(() => ({
     active: { value: null },
     resolve: vi.fn(),
@@ -56,13 +59,13 @@ vi.mock("../useConfirm", () => ({
   })),
 }));
 
-vi.mock("../useNativeBridge", () => ({
+vi.mock("@core/services/useNativeBridge", () => ({
   useNativeBridge: vi.fn(() => ({
     bridge: mockNativeBridge,
   })),
 }));
 
-vi.mock("../StorageService", () => ({
+vi.mock("@core/services/StorageService", () => ({
   idb: {
     destroyAll: vi.fn(),
     clear: vi.fn(),
@@ -215,6 +218,57 @@ describe("usePwaManager", () => {
       await forceUpdate();
 
       expect(mockToast.error).toHaveBeenCalledWith("Update check failed");
+    });
+  });
+
+  describe("service worker lifecycle ownership", () => {
+    it("activates a waiting worker through the existing registration", async () => {
+      const postMessage = vi.fn();
+      const getRegistration = vi.fn().mockResolvedValue({
+        waiting: { postMessage },
+      });
+      vi.stubGlobal("navigator", {
+        serviceWorker: { getRegistration, getRegistrations: vi.fn() },
+      });
+
+      const { updateServiceWorker } = usePwaManager();
+      await updateServiceWorker.value(true);
+
+      expect(getRegistration).toHaveBeenCalledTimes(1);
+      expect(postMessage).toHaveBeenCalledWith({ type: "SKIP_WAITING" });
+    });
+
+    it("probes push through the app shell registration without registering another worker", async () => {
+      vi.useFakeTimers();
+      const originalProd = import.meta.env.PROD;
+      // @ts-expect-error -- Vitest exposes the transformed environment as read-only.
+      import.meta.env.PROD = true;
+
+      try {
+        const getSubscription = vi.fn().mockResolvedValue({ endpoint: "https://push.example/subscription" });
+        const getRegistration = vi.fn();
+        vi.stubGlobal("navigator", {
+          serviceWorker: {
+            ready: Promise.resolve({ pushManager: { getSubscription } }),
+            getRegistration,
+            getRegistrations: vi.fn(),
+          },
+        });
+        vi.stubGlobal("Notification", { permission: "granted" });
+
+        const { initPwaLifecycle, notificationPermission, isPushSubscribed } = usePwaManager();
+        initPwaLifecycle();
+        await vi.advanceTimersByTimeAsync(UI_STABILITY_DELAY);
+
+        expect(notificationPermission.value).toBe("granted");
+        expect(getSubscription).toHaveBeenCalledTimes(1);
+        expect(isPushSubscribed.value).toBe(true);
+        expect(getRegistration).not.toHaveBeenCalled();
+      } finally {
+        // @ts-expect-error -- Restore the transformed environment after the probe.
+        import.meta.env.PROD = originalProd;
+        vi.useRealTimers();
+      }
     });
   });
 

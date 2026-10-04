@@ -5,8 +5,8 @@ import {
   createSupabaseClient,
   getSupabaseUrl,
   getSupabaseKey,
-  NetworkError,
 } from "./SupabaseClient";
+import { NetworkError } from "./ApiErrors";
 import type {
   ApiResponse,
   DismissResponse,
@@ -20,6 +20,117 @@ import {
   BlacklistEventSchema,
   LeaderboardHarvestSchema,
 } from "./RecruitSchemas";
+
+const BLACKLIST_CHANNEL_NAME = "cm-blacklist-sync";
+
+type BlacklistSubscriber = {
+  onInsert: (playerTag: string) => void | Promise<void>;
+  onDelete: (playerTag: string) => void | Promise<void>;
+  onError: (error: BlacklistSubscriptionError) => void;
+};
+
+/** Typed transport failure propagated from Layer 1 to the subscribing feature. */
+export class BlacklistSubscriptionError extends NetworkError {
+  readonly cause: unknown;
+
+  constructor(message: string, cause: unknown) {
+    super(message);
+    this.name = "BlacklistSubscriptionError";
+    this.cause = cause;
+    Object.setPrototypeOf(this, BlacklistSubscriptionError.prototype);
+  }
+}
+
+type BlacklistChannel = ReturnType<
+  ReturnType<typeof createSupabaseClient>["channel"]
+>;
+
+type BlacklistSubscription = {
+  client: ReturnType<typeof createSupabaseClient>;
+  channel: BlacklistChannel;
+  subscribers: Set<BlacklistSubscriber>;
+};
+
+// `createSupabaseClient()` is deliberately a singleton. Realtime's `channel()`
+// therefore returns the same channel for a repeated topic, and its API rejects
+// adding Postgres callbacks after that channel has subscribed. Keep one physical
+// channel and fan its validated events out to each logical caller instead.
+let blacklistSubscription: BlacklistSubscription | null = null;
+let blacklistChannelGeneration = 0;
+
+function notifyBlacklistSubscribers(
+  subscribers: Set<BlacklistSubscriber>,
+  event: keyof Pick<BlacklistSubscriber, "onInsert" | "onDelete">,
+  playerTag: string,
+): void {
+  const eventName = event.slice(2).toLowerCase();
+  for (const subscriber of subscribers) {
+    try {
+      const callbackResult = subscriber[event](playerTag);
+      if (callbackResult instanceof Promise) {
+        void callbackResult.catch((subscriberError: unknown) => {
+          subscriber.onError(new BlacklistSubscriptionError(
+            `Blacklist ${eventName} handler failed`,
+            subscriberError,
+          ));
+        });
+      }
+    } catch (subscriberError) {
+      // One consumer's feature-level failure must not silence the other active
+      // consumers of this shared transport channel.
+      subscriber.onError(new BlacklistSubscriptionError(
+        `Blacklist ${eventName} handler failed`,
+        subscriberError,
+      ));
+    }
+  }
+}
+
+function notifyBlacklistErrors(
+  subscribers: Set<BlacklistSubscriber>,
+  error: BlacklistSubscriptionError,
+): void {
+  for (const subscriber of subscribers) subscriber.onError(error);
+}
+
+function nextBlacklistChannelName(): string {
+  blacklistChannelGeneration += 1;
+  // The first app lifetime keeps the established topic. A fresh generation
+  // receives a distinct topic so a rapid remount cannot receive the still
+  // joined channel while Supabase finishes its asynchronous removeChannel().
+  return blacklistChannelGeneration === 1
+    ? BLACKLIST_CHANNEL_NAME
+    : `${BLACKLIST_CHANNEL_NAME}-${blacklistChannelGeneration}`;
+}
+
+function releaseBlacklistSubscriber(
+  subscription: BlacklistSubscription,
+  subscriber: BlacklistSubscriber,
+): void {
+  subscription.subscribers.delete(subscriber);
+  if (subscription.subscribers.size > 0) return;
+
+  // Clear the in-memory lease before the asynchronous Realtime leave completes,
+  // so a later app lifetime can establish a fresh subscription instead of
+  // retaining callbacks from an unmounted shell.
+  blacklistSubscription = null;
+
+  try {
+    void Promise.resolve(subscription.client.removeChannel(subscription.channel)).catch(
+      (channelRemovalError: unknown) => {
+        subscriber.onError(new BlacklistSubscriptionError(
+          "Failed to remove blacklist subscription",
+          channelRemovalError,
+        ));
+      },
+    );
+  } catch (channelRemovalError) {
+    subscriber.onError(new BlacklistSubscriptionError(
+      "Failed to remove blacklist subscription",
+      channelRemovalError,
+    ));
+  }
+}
 
 /**
  * RECRUIT CLIENT (Layer 1)
@@ -172,57 +283,104 @@ export async function scoutLeaderboard(
  *
  * @param onInsert - Called with the player_tag when a blacklist row is inserted.
  * @param onDelete - Called with the player_tag when a blacklist row is deleted.
- * @returns Cleanup function; call on component unmount.
+ * @param onError - Receives typed setup, validation, callback, channel, and cleanup failures.
+ * @returns Cleanup function; call on component unmount. Multiple callers share
+ * one physical Realtime channel, while retaining independent callbacks and
+ * cleanup leases.
  */
 export function subscribeToBlacklist(
-  onInsert: (playerTag: string) => void,
-  onDelete: (playerTag: string) => void,
+  onInsert: (playerTag: string) => void | Promise<void>,
+  onDelete: (playerTag: string) => void | Promise<void>,
+  onError: (error: BlacklistSubscriptionError) => void,
 ): () => void {
-  const supabase = createSupabaseClient();
+  const subscriber: BlacklistSubscriber = { onInsert, onDelete, onError };
 
-  try {
-    const channel = supabase
-      .channel('cm-blacklist-sync')
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'drivers', table: 'recruit_blacklist' },
-        (realtimePayload: unknown) => {
-          // [THREAT:] Unvalidated realtime payloads (Target C) can cause runtime crashes.
-          // [DECISION LOG] Replaced implicit 'any' and unsafe casting with strict
-          // Valibot validation using BlacklistEventSchema to ensure data integrity.
-          const blacklistValidation = v.safeParse(BlacklistEventSchema, realtimePayload);
-          if (blacklistValidation.success && 'new' in blacklistValidation.output) {
-            onInsert(blacklistValidation.output.new.player_tag);
-          }
-        },
-      )
-      .on(
-        'postgres_changes',
-        { event: 'DELETE', schema: 'drivers', table: 'recruit_blacklist' },
-        (realtimePayload: unknown) => {
-          // [THREAT:] Unvalidated realtime payloads (Target C) can cause runtime crashes.
-          // [DECISION LOG] Replaced implicit 'any' and unsafe casting with strict
-          // Valibot validation using BlacklistEventSchema to ensure data integrity.
-          const blacklistValidation = v.safeParse(BlacklistEventSchema, realtimePayload);
-          if (blacklistValidation.success && 'old' in blacklistValidation.output) {
-            onDelete(blacklistValidation.output.old.player_tag);
-          }
-        },
-      )
-      .subscribe((_status, realtimeSubscriptionError) => {
-        // [DECISION LOG] Renamed callback parameter from 'err' to 'realtimeSubscriptionError'
-        // to eliminate anemic variable pathogens and satisfy ADR Section VII (Naming Conventions)
-        // at callback boundaries in Layer 1 Core.
+  if (!blacklistSubscription) {
+    const client = createSupabaseClient();
+    const subscribers = new Set<BlacklistSubscriber>();
+
+    try {
+      const channel = client
+        .channel(nextBlacklistChannelName())
+        .on(
+          "postgres_changes",
+          { event: "INSERT", schema: "drivers", table: "recruit_blacklist" },
+          (realtimePayload: unknown) => {
+            // [THREAT:] Unvalidated realtime payloads (Target C) can cause runtime crashes.
+            // [DECISION LOG] Replaced implicit 'any' and unsafe casting with strict
+            // Valibot validation using BlacklistEventSchema to ensure data integrity.
+            const blacklistValidation = v.safeParse(BlacklistEventSchema, realtimePayload);
+            if (blacklistValidation.success && "new" in blacklistValidation.output) {
+              notifyBlacklistSubscribers(
+                subscribers,
+                "onInsert",
+                blacklistValidation.output.new.player_tag,
+              );
+            } else {
+              notifyBlacklistErrors(subscribers, new BlacklistSubscriptionError(
+                "Invalid blacklist insert event",
+                blacklistValidation.issues,
+              ));
+            }
+          },
+        )
+        .on(
+          "postgres_changes",
+          { event: "DELETE", schema: "drivers", table: "recruit_blacklist" },
+          (realtimePayload: unknown) => {
+            // [THREAT:] Unvalidated realtime payloads (Target C) can cause runtime crashes.
+            // [DECISION LOG] Replaced implicit 'any' and unsafe casting with strict
+            // Valibot validation using BlacklistEventSchema to ensure data integrity.
+            const blacklistValidation = v.safeParse(BlacklistEventSchema, realtimePayload);
+            if (blacklistValidation.success && "old" in blacklistValidation.output) {
+              notifyBlacklistSubscribers(
+                subscribers,
+                "onDelete",
+                blacklistValidation.output.old.player_tag,
+              );
+            } else {
+              notifyBlacklistErrors(subscribers, new BlacklistSubscriptionError(
+                "Invalid blacklist delete event",
+                blacklistValidation.issues,
+              ));
+            }
+          },
+        );
+
+      blacklistSubscription = {
+        client,
+        channel,
+        subscribers,
+      };
+
+      channel.subscribe((_status, realtimeSubscriptionError) => {
+        // [DECISION LOG] Renamed callback parameter from 'err' to realtimeSubscriptionError
+        // to keep callback-boundary diagnostics descriptive and intact.
         if (realtimeSubscriptionError) {
-          console.warn("[Realtime] Subscription error:", realtimeSubscriptionError);
+          notifyBlacklistErrors(subscribers, new BlacklistSubscriptionError(
+            "Blacklist subscription failed",
+            realtimeSubscriptionError,
+          ));
         }
       });
-
-    return () => { supabase.removeChannel(channel); };
-  } catch (realtimeSetupError) {
-    console.warn("[Realtime] Failed to initialize subscription:", realtimeSetupError);
-    return () => {};
+    } catch (realtimeSetupError) {
+      blacklistSubscription = null;
+      throw new BlacklistSubscriptionError(
+        "Failed to initialize blacklist subscription",
+        realtimeSetupError,
+      );
+    }
   }
+
+  const subscription = blacklistSubscription;
+  subscription.subscribers.add(subscriber);
+
+  let released = false;
+  return () => {
+    if (released) return;
+    released = true;
+    releaseBlacklistSubscriber(subscription, subscriber);
+  };
 }
 
 /**

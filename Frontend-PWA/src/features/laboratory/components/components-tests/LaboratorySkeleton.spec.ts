@@ -23,6 +23,11 @@ describe("LaboratorySkeleton.vue", () => {
     // Verify skeleton animation classes are present
     const animators = wrapper.findAll(".skeleton-anim");
     expect(animators.length).toBeGreaterThanOrEqual(4);
+
+    // Summary geometry mirrors the real card: two header badges and the two
+    // always-present XP/Gold metric slabs.
+    expect(wrapper.findAll(".sk-header-badges .sk-pill")).toHaveLength(2);
+    expect(wrapper.findAll(".sk-metrics-grid .sk-input")).toHaveLength(2);
   });
 
   it("renders the trajectory list section", () => {

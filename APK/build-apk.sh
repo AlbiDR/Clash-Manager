@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-#
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 AlbiDR
+
 # build-apk.sh - Clash Manager APK compilation & sanity checks.
 #
 # Compiles the custom Java sources from APK/src/ into a DEX file, merges them
@@ -58,7 +60,7 @@ rm -rf "${TMP_DIR}"
 mkdir -p "${TMP_DIR}/classes" "${TMP_DIR}/dex"
 
 # Compile clean Java source tree without debug information for minification.
-javac "${JAVAC_PLATFORM[@]}" -g:none -d "${TMP_DIR}/classes" "${SRC_DIR}/com/albidr/clashmanager/"*.java
+javac "${JAVAC_PLATFORM[@]}" -Xlint:deprecation -g:none -d "${TMP_DIR}/classes" "${SRC_DIR}/com/albidr/clashmanager/"*.java
 
 # Convert compiled classes to Dalvik DEX format; D8_ARGS carries --release, the
 # app's --min-api and the compile classpath (see toolchain-env.sh).
