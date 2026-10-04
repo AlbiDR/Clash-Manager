@@ -58,6 +58,14 @@ BEGIN;
 
 -- Enable extensions
 CREATE EXTENSION IF NOT EXISTS moddatetime;
+-- pg_cron and pg_net were enabled on the live project outside any migration, so
+-- a database rebuilt from this file had neither: substrate.cron_health and the
+-- cron.schedule calls below failed with 'schema "cron" does not exist', and
+-- every net.http_post caller would fail on its first run. Same schemas as the
+-- live project (Supabase requires pg_cron in pg_catalog). IF NOT EXISTS keeps
+-- both no-ops wherever they are already enabled.
+CREATE EXTENSION IF NOT EXISTS pg_cron WITH SCHEMA pg_catalog;
+CREATE EXTENSION IF NOT EXISTS pg_net WITH SCHEMA extensions;
 
 CREATE SCHEMA IF NOT EXISTS substrate;
 CREATE SCHEMA IF NOT EXISTS drivers;
