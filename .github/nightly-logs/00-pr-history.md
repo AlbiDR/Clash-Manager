@@ -16,6 +16,15 @@ LAST_AGED:   2026-10-03
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-04] PR #2075 [Stage 7]: Calibration pass: 7 ordinary clean runs. Catalog scan (Frontend-PWA, Backend package.json), version scan (root, Frontend-PWA, Backend package.json), and derived scan (pnpm audit:version) confirmed version 14.50.135 with 0 drift.
+**Domain:** versioning | **Commit:** 0dec5829f | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2075)
+**Files:** .github/nightly-logs/07-version-integrity-coverage.log, .github/nightly-logs/07-version-integrity-pr-body.md
+**Why:** Calibration due (threshold 7 reached). Widened candidate scan confirmed monorepo-wide version consistency across all manifests and derived declarations.
+**Change:** Calibration pass: 7 ordinary clean runs. Catalog scan (Frontend-PWA, Backend package.json), version scan (root, Frontend-PWA, Backend package.json), and derived scan (pnpm audit:version) confirmed version 14.50.135 with 0 drift.
+**Result:** pnpm audit:version passed with Ground Truth Version: 14.50.135, zero drift or catalog violations detected.
+**Nudges:** 0
+
+
 ### [2026-10-04] PR #2074 [Stage 6]: Audited doc-debt targets AnimatedDigits.vue and ViewOptions.vue; confirmed interface contracts and annotations are synchronized with code reality
 **Domain:** documentation | **Commit:** cfd555e05 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2074)
 **Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, .github/nightly-logs/06-documentation-tsdoc-pr-body.md
