@@ -75,6 +75,7 @@ const sliderConfig = computed(() => ({
   scale: "linear" as const,
   detents: SCORE_THRESHOLD_DETENTS,
   thumbSize: 0,
+  pointerMode: "relative" as const,
 }));
 
 const {
@@ -167,8 +168,8 @@ function handleModeToggle(): void {
  */
 function handleTrackPointerDown(pointerEvent: PointerEvent): void {
   if (props.disabled) return;
-  lastPublishedDragValue = null;
-  publishLiveSelection(handlePointerDown(pointerEvent));
+  lastPublishedDragValue = value.value;
+  handlePointerDown(pointerEvent);
 }
 
 /**
@@ -343,7 +344,7 @@ function handleTrackKeyDown(keyboardEvent: KeyboardEvent): void {
   padding: 0 var(--sys-space-8);
   border-radius: var(--sys-shape-corner-small);
   cursor: ew-resize;
-  touch-action: none;
+  touch-action: pan-y;
   outline: none;
   -webkit-tap-highlight-color: transparent;
 }

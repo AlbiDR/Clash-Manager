@@ -36,6 +36,8 @@ export interface PrecisionSliderConfig {
   detents: readonly number[];
   /** Rendered handle diameter in pixels. Travel is inset by half of it at each end. */
   thumbSize: number;
+  /** Relative dragging preserves the value on press and adjusts it by horizontal travel. */
+  pointerMode?: "absolute" | "relative";
 }
 
 /**
@@ -48,7 +50,7 @@ export interface PrecisionSliderApi {
   ratio: ComputedRef<number>;
   /** Every detent that should be drawn as a tick, with its own track position. */
   tickMarks: ComputedRef<readonly SliderTickMark[]>;
-  /** Pointer press: captures the pointer and commits the value under it. */
+  /** Pointer press: captures the pointer; relative mode preserves the current value. */
   handlePointerDown: (pointerEvent: PointerEvent) => number | null;
   /** Pointer drag: commits the value under the pointer while captured. */
   handlePointerMove: (pointerEvent: PointerEvent) => number | null;
@@ -135,6 +137,8 @@ export function usePrecisionSlider(
    * composable itself computed removes the race entirely.
    */
   let committedDuringDrag: number | null = null;
+  let dragStartX = 0;
+  let dragStartRatio = 0;
 
   /**
    * Resolves the scale actually used for mapping.
@@ -308,7 +312,7 @@ export function usePrecisionSlider(
   );
 
   /**
-   * Begins a drag and commits the value under the pointer.
+   * Begins a drag; compact relative controls do not jump to the press position.
    *
    * @param pointerEvent - The originating pointer event.
    */
@@ -318,10 +322,11 @@ export function usePrecisionSlider(
     // track, which is the normal case on a 4px target.
     target?.setPointerCapture?.(pointerEvent.pointerId);
     committedDuringDrag = null;
+    dragStartX = pointerEvent.clientX;
+    dragStartRatio = getRatioForValue(value.value);
     isDragging.value = true;
-    const committedValue = setValueFromClientX(pointerEvent.clientX);
     pointerEvent.preventDefault();
-    return committedValue;
+    return config.value.pointerMode === "relative" ? null : setValueFromClientX(pointerEvent.clientX);
   }
 
   /**
@@ -331,6 +336,16 @@ export function usePrecisionSlider(
    */
   function handlePointerMove(pointerEvent: PointerEvent): number | null {
     if (!isDragging.value) return null;
+    if (config.value.pointerMode === "relative") {
+      const bounds = trackElement.value?.getBoundingClientRect();
+      if (!bounds) return null;
+      const { thumbSize } = config.value;
+      // Touching either edge of the compact pill must not relocate its value.
+      return setValueFromClientX(
+        bounds.left + thumbSize / 2 + dragStartRatio * (bounds.width - thumbSize)
+          + pointerEvent.clientX - dragStartX,
+      );
+    }
     return setValueFromClientX(pointerEvent.clientX);
   }
 

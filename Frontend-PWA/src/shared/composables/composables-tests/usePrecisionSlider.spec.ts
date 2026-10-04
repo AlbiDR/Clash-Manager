@@ -119,6 +119,16 @@ describe("usePrecisionSlider", () => {
   });
 
   describe("pointer commitment", () => {
+    it("preserves the value on relative press and moves from the existing threshold", () => {
+      const { slider, value, pressAt } = createSlider({ pointerMode: "relative" }, 50);
+      expect(pressAt(0.8)).toBeNull();
+      expect(value.value).toBe(50);
+      expect(slider.handlePointerMove({ clientX: TRACK_LEFT + 0.9 * TRACK_WIDTH } as PointerEvent)).toBe(60);
+      expect(value.value).toBe(60);
+      expect(slider.handlePointerMove({ clientX: TRACK_LEFT + 0.7 * TRACK_WIDTH } as PointerEvent)).toBe(40);
+      expect(value.value).toBe(40);
+    });
+
     it("commits the value under the pointer", () => {
       const { value, pressAt } = createSlider({}, 0);
       pressAt(0.4);
