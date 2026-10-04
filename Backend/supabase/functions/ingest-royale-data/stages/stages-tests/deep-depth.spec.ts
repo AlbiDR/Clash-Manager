@@ -15,8 +15,8 @@ import type { IngestionResult, AuditEntry } from "../../../_shared/types.ts";
  *       not an unconditional `true`.
  *
  * All Supabase/network/Deno-only boundaries are mocked so this runs under a
- * plain Node/Vitest invocation; the `npm:valibot@1.4.2` schema imports are
- * resolved for real via the `npm:` specifier rewrite in Backend/vitest.config.ts,
+ * plain Node/Vitest invocation; the `npm:valibot@1.5.0` schema imports are
+ * resolved for real via the `npm:` specifier rewrite in Backend/vitest.config.mts,
  * so validation logic is exercised as-written rather than stubbed out.
  */
 

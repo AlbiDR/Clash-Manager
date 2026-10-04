@@ -58,6 +58,14 @@ BEGIN;
 
 -- Enable extensions
 CREATE EXTENSION IF NOT EXISTS moddatetime;
+-- pg_cron and pg_net were enabled on the live project outside any migration, so
+-- a database rebuilt from this file had neither: substrate.cron_health and the
+-- cron.schedule calls below failed with 'schema "cron" does not exist', and
+-- every net.http_post caller would fail on its first run. Same schemas as the
+-- live project (Supabase requires pg_cron in pg_catalog). IF NOT EXISTS keeps
+-- both no-ops wherever they are already enabled.
+CREATE EXTENSION IF NOT EXISTS pg_cron WITH SCHEMA pg_catalog;
+CREATE EXTENSION IF NOT EXISTS pg_net WITH SCHEMA extensions;
 
 CREATE SCHEMA IF NOT EXISTS substrate;
 CREATE SCHEMA IF NOT EXISTS drivers;
@@ -3851,6 +3859,16 @@ BEGIN
     WHERE id = p_id;
 END;
 $function$;
+
+-- Operational telemetry writes are service-to-service only. PostgreSQL grants
+-- function execution to PUBLIC by default, so assert the intended boundary.
+REVOKE ALL ON FUNCTION public.report_heartbeat(text, text, text, jsonb) FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.report_telemetry(text, text, jsonb) FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.update_telemetry(uuid, text, jsonb) FROM PUBLIC, anon, authenticated;
+
+GRANT EXECUTE ON FUNCTION public.report_heartbeat(text, text, text, jsonb) TO service_role;
+GRANT EXECUTE ON FUNCTION public.report_telemetry(text, text, jsonb) TO service_role;
+GRANT EXECUTE ON FUNCTION public.update_telemetry(uuid, text, jsonb) TO service_role;
 
 CREATE OR REPLACE FUNCTION public.report_dead_recruit(p_player_tag text)
  RETURNS void

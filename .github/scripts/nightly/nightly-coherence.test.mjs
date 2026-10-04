@@ -347,3 +347,33 @@ test("the regression gate tests everything except the pipeline's own bookkeeping
   const notBookkeeping = ignored.filter(p => !p.startsWith(".github/nightly-logs/"));
   assert.deepEqual(notBookkeeping, [], "only the pipeline's own logs may skip the suite");
 });
+
+test("the regression gate compares the same lightweight source-quality checks at head and base", () => {
+  // A Nightly PR used to run only `pnpm -r test`, so a type or lint error could
+  // merge even though the PR would later fail the Beta/Stable intelligence
+  // check. Keep the command in one root script: comparing a head command with
+  // a different base command would turn inherited-failure attribution into a
+  // coincidence. Production builds are deliberately excluded; this gate runs
+  // for every stage PR and deploy owns the release build.
+  const pkg = JSON.parse(readFileSync(new URL("../../../package.json", DIR), "utf8"));
+  const verification = pkg.scripts["verify:push"];
+  assert.equal(
+    verification,
+    "pnpm --dir Frontend-PWA type-check && pnpm --dir Frontend-PWA lint && pnpm -r test",
+    "verify:push must cover PWA types, PWA lint, and every workspace test suite",
+  );
+  assert.doesNotMatch(verification, /\bbuild\b/, "the per-PR gate must not duplicate the production build");
+
+  const gate = readWorkflow("nightly-pr-regression-gate.yml");
+  const headCommand = capture(
+    gate,
+    /- name: Run source-quality checks at the pull request head\n(?: {8}.*\n)+? {8}run: (.+)\n/,
+    "the head source-quality command",
+  );
+  assert.equal(headCommand, "pnpm verify:push", "the head must run the shared source-quality script");
+  assert.match(
+    gate,
+    /\n          if pnpm verify:push; then/,
+    "a red head must be compared with the identical script at the merge base",
+  );
+});

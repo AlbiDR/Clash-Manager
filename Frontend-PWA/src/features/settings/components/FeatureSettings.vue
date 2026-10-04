@@ -21,6 +21,7 @@
 import { computed } from "vue";
 import { PrecisionSlider, SettingRow, SettingsCard } from "@shared";
 import {
+  usePowerSaving,
   BLITZ_BATCH_SHIFT_DELAY,
   BLITZ_DWELL_DETENTS,
   BLITZ_DWELL_MAX,
@@ -38,6 +39,7 @@ defineProps<{
 }>();
 
 const { modules, toggle, isRefreshing, rosterSize, setBlitzDwell } = useSettings();
+const { isPowerSaving } = usePowerSaving();
 const { isNativeWrapper, openAccessibilitySettings } = useNativeBridge();
 
 /**
@@ -92,6 +94,14 @@ function handleBlitzToggle() {
     :loading="isRefreshing"
     :initially-expanded="initiallyExpanded"
   >
+    <p
+      v-if="isPowerSaving"
+      class="power-saving-note"
+      role="status"
+    >
+      Battery Saver is on. Haptics, animations, blur effects, Keep Screen On,
+      and periodic refresh are paused. Dark mode is active. Your preferences will resume when it turns off.
+    </p>
     <div class="feature-controls">
       <SettingRow
         label="Ghost Benchmarking"
@@ -112,30 +122,48 @@ function handleBlitzToggle() {
       />
 
       <SettingRow
-        label="Blitz Mode"
-        :description="isNativeWrapper ? 'Native foreground service' : 'Batch operations'"
-        :active="modules.blitzMode"
+        label="Haptic Feedback"
+        :description="isPowerSaving ? 'Paused while Battery Saver is on' : 'Vibration for taps and actions'"
+        :active="modules.hapticFeedback"
         :loading="isRefreshing"
         mini
-        @click="handleBlitzToggle()"
+        @click="toggle('hapticFeedback')"
       />
 
-      <!-- Blitz Dwell Time -->
-      <PrecisionSlider
-        v-if="modules.blitzMode"
-        :model-value="modules.blitzDwellMs"
-        label="Profile dwell time"
-        unit="MS"
-        :min="BLITZ_DWELL_MIN"
-        :max="BLITZ_DWELL_MAX"
-        :step="BLITZ_DWELL_STEP"
-        scale="log"
-        :detents="BLITZ_DWELL_DETENTS"
-        show-bounds
-        :consequence="blitzRunEstimate"
-        :consequence-chip="blitzRunChip"
-        @update:model-value="setBlitzDwell"
-      />
+      <div
+        class="blitz-controls"
+        role="group"
+        aria-label="Blitz Mode settings"
+      >
+        <SettingRow
+          label="Blitz Mode"
+          :description="isNativeWrapper ? 'Native foreground service' : 'Batch operations'"
+          :active="modules.blitzMode"
+          :loading="isRefreshing"
+          mini
+          @click="handleBlitzToggle()"
+        />
+
+        <div
+          v-if="modules.blitzMode"
+          class="blitz-details"
+        >
+          <PrecisionSlider
+            :model-value="modules.blitzDwellMs"
+            label="Profile dwell time"
+            unit="MS"
+            :min="BLITZ_DWELL_MIN"
+            :max="BLITZ_DWELL_MAX"
+            :step="BLITZ_DWELL_STEP"
+            scale="log"
+            :detents="BLITZ_DWELL_DETENTS"
+            show-bounds
+            :consequence="blitzRunEstimate"
+            :consequence-chip="blitzRunChip"
+            @update:model-value="setBlitzDwell"
+          />
+        </div>
+      </div>
     </div>
 
     <!-- Delegate Android Permissions and Calibration to AndroidCalibrationSettings -->
@@ -144,10 +172,21 @@ function handleBlitzToggle() {
 </template>
 
 <style scoped>
-.feature-controls {
+.feature-controls,
+.blitz-controls {
   display: flex;
   flex-direction: column;
   gap: var(--sys-space-8);
 }
 
+.blitz-details {
+  margin-inline-start: var(--sys-space-16);
+  padding-inline-start: var(--sys-space-16);
+  border-inline-start: var(--sys-border-width-glass) solid var(--sys-color-outline-variant);
+}
+.power-saving-note {
+  margin: 0 0 var(--sys-space-12);
+  color: var(--sys-color-on-surface-variant);
+  font-size: var(--sys-typescale-body-sm);
+}
 </style>

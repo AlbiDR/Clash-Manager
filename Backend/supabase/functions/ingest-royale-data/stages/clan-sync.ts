@@ -4,7 +4,7 @@
 import { supabase } from "../client.ts";
 import { fetchWithRotation } from "../../_shared/muscle.ts";
 import { IngestionResult, AuditEntry } from "../../_shared/types.ts";
-import * as v from "npm:valibot@1.4.2";
+import * as v from "npm:valibot@1.5.0";
 import {
     RoyaleClanSchema,
     createRoyaleFlexibleListSchema,

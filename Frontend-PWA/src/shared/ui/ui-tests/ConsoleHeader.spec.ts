@@ -40,6 +40,27 @@ describe("ConsoleHeader", () => {
     expect(wrapper.findComponent({ name: "StatusPill" }).exists()).toBe(true);
   });
 
+  it("replaces fresh-load zero counts with an announced placeholder", () => {
+    const wrapper = mount(ConsoleHeader, {
+      props: {
+        title: "Roster",
+        stats: { label: "Members", value: "0" },
+        status: { type: "loading", text: "Syncing" },
+        loading: true,
+      },
+    });
+
+    const count = wrapper.find(".title-label");
+    expect(count.attributes("aria-label")).toBe("Members loading");
+    expect(count.attributes("aria-busy")).toBe("true");
+    expect(count.find(".title-label-skeleton").exists()).toBe(true);
+    expect(count.text()).not.toContain("0");
+
+    const status = wrapper.findComponent({ name: "StatusPill" });
+    expect(status.props("type")).toBe("loading");
+    expect(status.props("text")).toBe("Syncing");
+  });
+
   it("forwards a status-detail refresh without adding a permanent header action", async () => {
     const wrapper = mount(ConsoleHeader, {
       props: {

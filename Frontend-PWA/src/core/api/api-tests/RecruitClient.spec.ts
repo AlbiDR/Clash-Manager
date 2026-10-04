@@ -10,7 +10,7 @@
  * `document`, `window`, `localStorage` or mounts a component will fail loudly
  * and immediately - remove this docblock if that is intentional.
  */
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import * as RecruitClient from "../RecruitClient";
 
 // Mock Supabase JS Client
@@ -46,6 +46,18 @@ const mockClient = {
 };
 (mockClient as any).schema = vi.fn(() => mockClient);
 
+let realtimeCleanups: Array<() => void> = [];
+
+function subscribeToBlacklistForTest(
+  onInsert: (playerTag: string) => void | Promise<void>,
+  onDelete: (playerTag: string) => void | Promise<void>,
+  onError = vi.fn(),
+): () => void {
+  const cleanup = RecruitClient.subscribeToBlacklist(onInsert, onDelete, onError);
+  realtimeCleanups.push(cleanup);
+  return cleanup;
+}
+
 vi.mock("@supabase/supabase-js", () => {
   return {
     createClient: vi.fn(() => mockClient),
@@ -55,10 +67,107 @@ vi.mock("@supabase/supabase-js", () => {
 describe("RecruitClient", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    realtimeCleanups = [];
     // vi.clearAllMocks() wipes mock implementations; restore safe defaults.
     mockClient.rpc.mockResolvedValue({ data: null, error: null });
+    mockClient.channel.mockImplementation(() => mockChannel);
+    mockClient.removeChannel.mockResolvedValue(undefined);
     mockChannel.on.mockReturnThis();
     mockChannel.subscribe.mockReturnThis();
+  });
+
+  afterEach(() => {
+    realtimeCleanups.forEach(cleanup => cleanup());
+    vi.unstubAllGlobals();
+  });
+
+  describe("Leaderboard harvest", () => {
+    const harvestedPlayer = { tag: "#SCOUT", name: "Scout" };
+
+    it("returns a validated direct harvest and forwards cancellation", async () => {
+      const signal = new AbortController().signal;
+      const fetchMock = vi.fn().mockResolvedValue({
+        ok: true,
+        json: vi.fn().mockResolvedValue({ items: [harvestedPlayer], region: "global" }),
+      });
+      vi.stubGlobal("fetch", fetchMock);
+
+      await expect(RecruitClient.scoutLeaderboard("global", signal)).resolves.toEqual({
+        items: [harvestedPlayer],
+        region: "global",
+      });
+      expect(fetchMock).toHaveBeenCalledWith(
+        expect.stringContaining("/functions/v1/query-royale-api"),
+        expect.objectContaining({
+          method: "POST",
+          body: JSON.stringify({ endpoint: "global" }),
+          signal,
+        }),
+      );
+    });
+
+    it("unwraps and validates an enveloped harvest", async () => {
+      vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
+        ok: true,
+        json: vi.fn().mockResolvedValue({ data: { items: [harvestedPlayer] } }),
+      }));
+
+      await expect(RecruitClient.scoutLeaderboard("local")).resolves.toEqual({
+        items: [harvestedPlayer],
+        region: "Unknown",
+      });
+    });
+
+    it("uses the server's failure message", async () => {
+      vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
+        ok: false,
+        status: 403,
+        json: vi.fn().mockResolvedValue({ error: "Leaderboard denied" }),
+      }));
+
+      await expect(RecruitClient.scoutLeaderboard("global")).rejects.toThrow(
+        "Leaderboard denied",
+      );
+    });
+
+    it("falls back to the HTTP status when an error body has no message", async () => {
+      vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
+        ok: false,
+        status: 429,
+        json: vi.fn().mockResolvedValue({}),
+      }));
+
+      await expect(RecruitClient.scoutLeaderboard("global")).rejects.toThrow(
+        "Query failed with status 429",
+      );
+    });
+
+    it("falls back to the HTTP status when the error body is unreadable", async () => {
+      vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
+        ok: false,
+        status: 502,
+        json: vi.fn().mockRejectedValue(new Error("invalid JSON")),
+      }));
+
+      await expect(RecruitClient.scoutLeaderboard("local")).rejects.toThrow("HTTP 502");
+    });
+
+    it("rejects a malformed successful harvest", async () => {
+      vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
+        ok: true,
+        json: vi.fn().mockResolvedValue({ items: [{ tag: 42 }] }),
+      }));
+      const consoleError = vi.spyOn(console, "error").mockImplementation(() => undefined);
+
+      await expect(RecruitClient.scoutLeaderboard("global")).rejects.toThrow(
+        "Invalid response structure from harvest engine.",
+      );
+      expect(consoleError).toHaveBeenCalledWith(
+        "[Scout] Validation failed:",
+        expect.any(Array),
+      );
+      consoleError.mockRestore();
+    });
   });
 
   describe("Scouting", () => {
@@ -149,7 +258,7 @@ describe("RecruitClient", () => {
       const onInsert = vi.fn();
       const onDelete = vi.fn();
 
-      RecruitClient.subscribeToBlacklist(onInsert, onDelete);
+      subscribeToBlacklistForTest(onInsert, onDelete);
 
       expect(mockChannel.on).toHaveBeenCalledWith(
         'postgres_changes',
@@ -170,7 +279,7 @@ describe("RecruitClient", () => {
       const onInsert = vi.fn();
       const onDelete = vi.fn();
 
-      RecruitClient.subscribeToBlacklist(onInsert, onDelete);
+      subscribeToBlacklistForTest(onInsert, onDelete);
 
       // Find the INSERT handler
       const insertHandler = vi.mocked(mockChannel.on).mock.calls.find(
@@ -186,11 +295,24 @@ describe("RecruitClient", () => {
       expect(onInsert).not.toHaveBeenCalled();
     });
 
+    it("propagates invalid external events through the typed error callback", () => {
+      const onError = vi.fn();
+      subscribeToBlacklistForTest(vi.fn(), vi.fn(), onError);
+
+      const insertHandler = vi.mocked(mockChannel.on).mock.calls.find(
+        call => call[1].event === "INSERT"
+      )![2];
+      insertHandler({ new: { invalid: true } });
+
+      expect(onError).toHaveBeenCalledWith(expect.any(RecruitClient.BlacklistSubscriptionError));
+      expect(onError.mock.calls[0]![0].message).toBe("Invalid blacklist insert event");
+    });
+
     it("onDelete callback is triggered on DELETE event with valid payload", () => {
       const onInsert = vi.fn();
       const onDelete = vi.fn();
 
-      RecruitClient.subscribeToBlacklist(onInsert, onDelete);
+      subscribeToBlacklistForTest(onInsert, onDelete);
 
       // Find the DELETE handler
       const deleteHandler = vi.mocked(mockChannel.on).mock.calls.find(
@@ -206,11 +328,188 @@ describe("RecruitClient", () => {
       expect(onDelete).not.toHaveBeenCalled();
     });
 
-    it("cleanup function removes the channel", () => {
-      const cleanup = RecruitClient.subscribeToBlacklist(vi.fn(), vi.fn());
+    it("shares one channel across callers and retains it until the final cleanup", () => {
+      const rootOnInsert = vi.fn();
+      const transientOnInsert = vi.fn();
+      const rootCleanup = subscribeToBlacklistForTest(rootOnInsert, vi.fn());
+      const transientCleanup = subscribeToBlacklistForTest(transientOnInsert, vi.fn());
+
+      expect(mockClient.channel).toHaveBeenCalledTimes(1);
+      expect(mockChannel.on).toHaveBeenCalledTimes(2);
+      expect(mockChannel.subscribe).toHaveBeenCalledTimes(1);
+
+      const insertHandler = vi.mocked(mockChannel.on).mock.calls.find(
+        call => call[1].event === "INSERT"
+      )![2];
+
+      // A Headhunter view can unmount without tearing down the app-shell's
+      // subscription or starving its callback.
+      transientCleanup();
+      expect(mockClient.removeChannel).not.toHaveBeenCalled();
+
+      insertHandler({ new: { player_tag: "#ROOT" } });
+      expect(rootOnInsert).toHaveBeenCalledWith("#ROOT");
+      expect(transientOnInsert).not.toHaveBeenCalled();
+
+      rootCleanup();
+      expect(mockClient.removeChannel).toHaveBeenCalledWith(mockChannel);
+    });
+
+    it("delivers one validated event to every active logical subscriber", () => {
+      const firstOnDelete = vi.fn();
+      const secondOnDelete = vi.fn();
+      subscribeToBlacklistForTest(vi.fn(), firstOnDelete);
+      subscribeToBlacklistForTest(vi.fn(), secondOnDelete);
+
+      const deleteHandler = vi.mocked(mockChannel.on).mock.calls.find(
+        call => call[1].event === "DELETE"
+      )![2];
+
+      deleteHandler({ old: { player_tag: "#SHARED" } });
+      expect(firstOnDelete).toHaveBeenCalledWith("#SHARED");
+      expect(secondOnDelete).toHaveBeenCalledWith("#SHARED");
+    });
+
+    it("isolates a failing subscriber and propagates its typed callback error", () => {
+      const subscriberFailure = new Error("feature callback failed");
+      const firstOnError = vi.fn();
+      const secondOnInsert = vi.fn();
+      subscribeToBlacklistForTest(() => { throw subscriberFailure; }, vi.fn(), firstOnError);
+      subscribeToBlacklistForTest(secondOnInsert, vi.fn());
+
+      const insertHandler = vi.mocked(mockChannel.on).mock.calls.find(
+        call => call[1].event === "INSERT"
+      )![2];
+      insertHandler({ new: { player_tag: "#SHARED" } });
+
+      expect(firstOnError).toHaveBeenCalledWith(expect.any(RecruitClient.BlacklistSubscriptionError));
+      expect(firstOnError.mock.calls[0]![0].cause).toBe(subscriberFailure);
+      expect(secondOnInsert).toHaveBeenCalledWith("#SHARED");
+    });
+
+    it("propagates an asynchronously rejected subscriber callback", async () => {
+      const subscriberFailure = new Error("async feature callback failed");
+      const onError = vi.fn();
+      subscribeToBlacklistForTest(
+        () => Promise.reject(subscriberFailure),
+        vi.fn(),
+        onError,
+      );
+
+      const insertHandler = vi.mocked(mockChannel.on).mock.calls.find(
+        call => call[1].event === "INSERT"
+      )![2];
+      insertHandler({ new: { player_tag: "#ASYNC" } });
+
+      await vi.waitFor(() => expect(onError).toHaveBeenCalledOnce());
+      expect(onError.mock.calls[0]![0]).toBeInstanceOf(RecruitClient.BlacklistSubscriptionError);
+      expect(onError.mock.calls[0]![0].cause).toBe(subscriberFailure);
+    });
+
+    it("propagates asynchronous channel failures to every subscriber", () => {
+      const firstOnError = vi.fn();
+      const secondOnError = vi.fn();
+      subscribeToBlacklistForTest(vi.fn(), vi.fn(), firstOnError);
+      subscribeToBlacklistForTest(vi.fn(), vi.fn(), secondOnError);
+      const subscriptionStatusHandler = vi.mocked(mockChannel.subscribe).mock.calls[0]![0];
+      const channelFailure = new Error("socket unavailable");
+
+      subscriptionStatusHandler("CHANNEL_ERROR", channelFailure);
+
+      expect(firstOnError.mock.calls[0]![0].cause).toBe(channelFailure);
+      expect(secondOnError.mock.calls[0]![0].cause).toBe(channelFailure);
+    });
+
+    it("does not report successful channel subscription statuses", () => {
+      const onError = vi.fn();
+      subscribeToBlacklistForTest(vi.fn(), vi.fn(), onError);
+      const subscriptionStatusHandler = vi.mocked(mockChannel.subscribe).mock.calls[0]![0];
+
+      subscriptionStatusHandler("SUBSCRIBED");
+
+      expect(onError).not.toHaveBeenCalled();
+    });
+
+    it("throws a typed error when the channel cannot be initialized", () => {
+      const setupFailure = new Error("channel setup failed");
+      mockClient.channel.mockImplementationOnce(() => { throw setupFailure; });
+
+      expect(() => subscribeToBlacklistForTest(vi.fn(), vi.fn())).toThrow(
+        RecruitClient.BlacklistSubscriptionError,
+      );
+    });
+
+    it("propagates synchronous channel cleanup failures", () => {
+      const cleanupFailure = new Error("synchronous cleanup failed");
+      const onError = vi.fn();
+      mockClient.removeChannel.mockImplementationOnce(() => { throw cleanupFailure; });
+      const cleanup = subscribeToBlacklistForTest(vi.fn(), vi.fn(), onError);
 
       cleanup();
-      expect(mockClient.removeChannel).toHaveBeenCalledWith(mockChannel);
+
+      expect(onError).toHaveBeenCalledOnce();
+      expect(onError.mock.calls[0]![0].cause).toBe(cleanupFailure);
+    });
+
+    it("propagates asynchronous channel cleanup failures", async () => {
+      const cleanupFailure = new Error("asynchronous cleanup failed");
+      const onError = vi.fn();
+      mockClient.removeChannel.mockRejectedValueOnce(cleanupFailure);
+      const cleanup = subscribeToBlacklistForTest(vi.fn(), vi.fn(), onError);
+
+      cleanup();
+
+      await vi.waitFor(() => expect(onError).toHaveBeenCalledOnce());
+      expect(onError.mock.calls[0]![0].cause).toBe(cleanupFailure);
+    });
+
+    it("uses a fresh topic if a new subscriber arrives before asynchronous cleanup settles", () => {
+      const strictChannels = new Map<string, typeof mockChannel>();
+      mockClient.channel.mockImplementation((topic: string) => {
+        const existingChannel = strictChannels.get(topic);
+        if (existingChannel) return existingChannel;
+
+        let subscribed = false;
+        const channel = {
+          on: vi.fn(),
+          subscribe: vi.fn(),
+        } as typeof mockChannel;
+        channel.on.mockImplementation(() => {
+          if (subscribed) {
+            throw new Error("cannot add callbacks after subscribe()");
+          }
+          return channel;
+        });
+        channel.subscribe.mockImplementation(() => {
+          subscribed = true;
+          return channel;
+        });
+        strictChannels.set(topic, channel);
+        return channel;
+      });
+
+      let finishFirstRemoval: (() => void) | undefined;
+      mockClient.removeChannel
+        .mockImplementationOnce(
+          () => new Promise<void>(resolve => { finishFirstRemoval = resolve; }),
+        )
+        .mockResolvedValueOnce(undefined);
+
+      const firstCleanup = subscribeToBlacklistForTest(vi.fn(), vi.fn());
+      const firstTopic = vi.mocked(mockClient.channel).mock.calls[0]![0];
+      firstCleanup();
+
+      // This mirrors a rapid component remount. The old topic is still joined
+      // until Supabase resolves removeChannel(), so reusing it would throw when
+      // adding the Postgres listeners. A new lifecycle must not touch it.
+      expect(() => subscribeToBlacklistForTest(vi.fn(), vi.fn())).not.toThrow();
+      const secondTopic = vi.mocked(mockClient.channel).mock.calls[1]![0];
+
+      expect(secondTopic).not.toBe(firstTopic);
+      expect(strictChannels.get(firstTopic)!.on).toHaveBeenCalledTimes(2);
+      expect(strictChannels.get(secondTopic)!.on).toHaveBeenCalledTimes(2);
+
+      finishFirstRemoval?.();
     });
   });
 });

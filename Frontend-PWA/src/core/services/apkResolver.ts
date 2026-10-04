@@ -14,6 +14,8 @@
  * Satisfies CleanStack Architecture Layer 1 standards.
  */
 
+import * as v from "valibot";
+
 import {
   APK_LATEST_METADATA_URL,
   APK_RELEASE_CONTENTS_API_URL,
@@ -34,6 +36,23 @@ import {
   selectNewestReleaseApk,
   selectNewestReleaseDownload,
 } from "./apkResolverUtils";
+
+/** GitHub's contents response shape at the external-data trust boundary. */
+const GitHubReleaseContentsSchema = v.array(v.object({
+  download_url: v.optional(v.nullable(v.string())),
+  name: v.optional(v.string()),
+  type: v.optional(v.string()),
+}));
+
+/** Release metadata shape shared by the same-origin and remote latest.json feeds. */
+const ApkReleaseMetadataSchema = v.object({
+  buildNumber: v.optional(v.number()),
+  changelog: v.optional(v.union([v.string(), v.array(v.string())])),
+  filename: v.string(),
+  sha256: v.optional(v.string()),
+  sizeBytes: v.optional(v.number()),
+  version: v.optional(v.string()),
+});
 
 // Re-export everything from apkResolverUtils to guarantee backward compatibility and zero broken imports.
 export * from "./apkResolverUtils";
@@ -95,10 +114,13 @@ async function resolveApkReleaseFromContentsApi(): Promise<ApkReleaseDownload | 
     const response = await fetchFresh(APK_RELEASE_CONTENTS_API_URL);
     if (!response.ok) return undefined;
 
-    const contents = (await response.json()) as GitHubReleaseContent[];
-    if (!Array.isArray(contents)) return undefined;
+    const contentsValidation = v.safeParse(
+      GitHubReleaseContentsSchema,
+      await response.json(),
+    );
+    if (!contentsValidation.success) return undefined;
 
-    const release = selectNewestReleaseApk(contents);
+    const release = selectNewestReleaseApk(contentsValidation.output satisfies GitHubReleaseContent[]);
     return release
       ? {
         ...release,
@@ -128,14 +150,20 @@ async function resolveApkReleaseFromMetadataUrl(
   try {
     const response = await fetchFresh(metadataUrl);
     if (response.ok) {
-      const latestReleaseMetadata = (await response.json()) as {
-        buildNumber?: number;
-        changelog?: string[] | string;
-        filename?: string;
-        sha256?: string;
-        sizeBytes?: number;
-        version?: string;
-      };
+      const contentType = response.headers?.get("content-type")?.toLowerCase();
+      // Development and static hosts may serve the SPA shell for an absent
+      // latest.json. Treat that expected fallback response as a source miss.
+      if (contentType?.includes("text/html") || contentType?.includes("application/xhtml+xml")) {
+        return undefined;
+      }
+
+      const metadataValidation = v.safeParse(
+        ApkReleaseMetadataSchema,
+        await response.json(),
+      );
+      if (!metadataValidation.success) return undefined;
+
+      const latestReleaseMetadata = metadataValidation.output;
       const downloadUrl = isReleaseApkFilename(latestReleaseMetadata.filename)
         ? buildDownloadUrl(latestReleaseMetadata.filename)
         : undefined;
@@ -162,7 +190,11 @@ async function resolveApkReleaseFromMetadataUrl(
       }
     }
   } catch (resolveApkError: unknown) {
-    console.warn(`[PWA] ${sourceName} APK metadata resolution failed`, resolveApkError);
+    // Invalid JSON is an ordinary source miss: the remaining resolvers still
+    // run and may provide the release. Preserve warnings for operational errors.
+    if (!(resolveApkError instanceof Error && resolveApkError.name === "SyntaxError")) {
+      console.warn(`[PWA] ${sourceName} APK metadata resolution failed`, resolveApkError);
+    }
   }
 
   return undefined;

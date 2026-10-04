@@ -3,9 +3,9 @@
 
 # Clash Manager PWA
 
-[![Client](https://img.shields.io/badge/Client-v14.50.135-42b883?style=flat-square&logo=vue.js&logoColor=white)](README.md)
+[![Client](https://img.shields.io/badge/Client-v14.50.141-42b883?style=flat-square&logo=vue.js&logoColor=white)](README.md)
 [![Vue 3.5](https://img.shields.io/badge/Vue-3.5-42b883?style=flat-square&logo=vue.js&logoColor=white)](https://vuejs.org)
-[![Vite 7](https://img.shields.io/badge/Vite-7-646CFF?style=flat-square&logo=vite&logoColor=white)](https://vite.dev)
+[![Vite 8](https://img.shields.io/badge/Vite-8-646CFF?style=flat-square&logo=vite&logoColor=white)](https://vite.dev)
 
 The Vue 3.5 progressive web app: an installable, offline-first dashboard for Clash Royale clan leaders. It reads the scored roster and recruit data from the [backend](../Backend/README.md) and adds the Roster, Headhunter, Laboratory, and Settings consoles.
 
@@ -34,6 +34,10 @@ pnpm build          # type-check + production build
 pnpm test           # Vitest
 pnpm type-check     # vue-tsc
 ```
+
+To inspect the production bundle without deploying its report, run
+`ANALYZE=true pnpm build`. This writes an ignored `stats.html` beside this
+README; ordinary builds do not emit or precache it.
 
 ---
 
@@ -76,7 +80,7 @@ A custom "Neo-Material" system in [`src/core/theme/`](src/core/theme/README.md),
 | Routing | Vue Router 5 (experimental data loaders), hash history |
 | State | Pinia |
 | Validation | Valibot (boundaries on all external data) |
-| Build | Vite 7, vue-tsc |
+| Build | Vite 8, vue-tsc |
 | PWA | vite-plugin-pwa, Workbox (custom `injectManifest` service worker) |
 | Data | @supabase/supabase-js |
 | Testing | Vitest, @vue/test-utils, jsdom |

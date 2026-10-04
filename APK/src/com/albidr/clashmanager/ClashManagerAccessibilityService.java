@@ -10,6 +10,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 import android.view.accessibility.AccessibilityEvent;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class ClashManagerAccessibilityService extends AccessibilityService {
     private static final String TAG = "ClashManagerAccessibility";
@@ -20,14 +21,19 @@ public class ClashManagerAccessibilityService extends AccessibilityService {
     // fixed total delay) guarantees the close tap never races the invite tap
     // regardless of Handler/system scheduling jitter.
     private static final long INTER_TAP_BUFFER_MS = 80L;
-    private static ClashManagerAccessibilityService sInstance;
+    private static volatile ClashManagerAccessibilityService sInstance;
+    private volatile boolean mConnected = false;
     private final Handler mHandler = new Handler(Looper.getMainLooper());
 
-    /** Callback for {@link #runInviteCloseSequence}, fired at each tap's actual dispatch time. */
+    /** Callback for {@link #runInviteCloseSequence}, fired only for an accepted gesture. */
     public interface TapSequenceCallback {
+        /** Whether the caller still owns this sequence and can receive callbacks. */
+        boolean isSequenceActive();
         void onInviteTapped(float xPercent, float yPercent);
         void onCloseTapped(float xPercent, float yPercent);
         void onSequenceComplete();
+        /** A tap was rejected, cancelled, or lost its original accessibility service. */
+        void onSequenceFailed();
     }
 
     @Override
@@ -41,78 +47,146 @@ public class ClashManagerAccessibilityService extends AccessibilityService {
     @Override
     protected void onServiceConnected() {
         super.onServiceConnected();
+        mConnected = true;
         sInstance = this;
     }
 
     @Override
     public void onDestroy() {
+        disconnect(this);
         super.onDestroy();
-        sInstance = null;
     }
 
     @Override
     public boolean onUnbind(Intent intent) {
-        sInstance = null;
+        disconnect(this);
         return super.onUnbind(intent);
     }
 
     public static boolean isActive() {
-        return sInstance != null;
+        return activeService() != null;
+    }
+
+    private static ClashManagerAccessibilityService activeService() {
+        ClashManagerAccessibilityService service = sInstance;
+        return isCurrentService(service) ? service : null;
+    }
+
+    private static boolean isCurrentService(ClashManagerAccessibilityService service) {
+        return service != null && sInstance == service && service.mConnected;
+    }
+
+    /**
+     * Clears only this instance. An older service can finish after Android has
+     * already connected its replacement; clearing the static field blindly in
+     * that case would make the new, healthy service disappear from Blitz.
+     */
+    private static void disconnect(ClashManagerAccessibilityService service) {
+        service.mConnected = false;
+        if (sInstance == service) {
+            sInstance = null;
+        }
     }
 
     /**
      * Runs the invite tap, then the close tap, chained off each gesture's actual
-     * completion (or cancellation) rather than a fixed total delay. Replaces the old
-     * pair of independently-scheduled tapInvite()/tapClose() calls, whose fixed delays
+     * completion rather than a fixed total delay. Replaces the old pair of
+     * independently-scheduled tapInvite()/tapClose() calls, whose fixed delays
      * left zero margin against Handler jitter and could have the close tap's
-     * dispatchGesture() call cancel an invite tap still in flight.
+     * dispatchGesture() call cancel an invite tap still in flight. A rejected,
+     * cancelled, or cross-service gesture reports failure instead of pretending
+     * the profile is safe to advance past.
      */
     public static void runInviteCloseSequence(TapSequenceCallback callback) {
-        ClashManagerAccessibilityService service = sInstance;
+        if (!isCallbackActive(callback)) {
+            return;
+        }
+        ClashManagerAccessibilityService service = activeService();
         if (service == null) {
-            if (callback != null) callback.onSequenceComplete();
+            notifyFailure(callback);
             return;
         }
         var target = Calibration.load(service);
 
         service.performTap(target.inviteX(), target.inviteY(),
             () -> {
-                if (callback != null) callback.onInviteTapped(target.inviteX(), target.inviteY());
+                if (canContinue(service, callback) && callback != null) {
+                    callback.onInviteTapped(target.inviteX(), target.inviteY());
+                }
             },
             () -> {
-                // The service can be disconnected between the two taps.
-                ClashManagerAccessibilityService afterInvite = sInstance;
-                if (afterInvite == null) {
-                    if (callback != null) callback.onSequenceComplete();
+                if (!isCallbackActive(callback)) {
                     return;
                 }
-                afterInvite.mHandler.postDelayed(() -> {
-                    ClashManagerAccessibilityService beforeClose = sInstance;
-                    if (beforeClose == null) {
-                        if (callback != null) callback.onSequenceComplete();
+                // Never migrate the close tap to a replacement accessibility
+                // service. The original service owns the gesture lifecycle.
+                if (!isCurrentService(service)) {
+                    notifyFailure(callback);
+                    return;
+                }
+                service.mHandler.postDelayed(() -> {
+                    if (!isCallbackActive(callback)) {
                         return;
                     }
-                    beforeClose.performTap(target.closeX(), target.closeY(),
+                    if (!isCurrentService(service)) {
+                        notifyFailure(callback);
+                        return;
+                    }
+                    service.performTap(target.closeX(), target.closeY(),
                         () -> {
-                            if (callback != null) callback.onCloseTapped(target.closeX(), target.closeY());
+                            if (canContinue(service, callback) && callback != null) {
+                                callback.onCloseTapped(target.closeX(), target.closeY());
+                            }
                         },
                         () -> {
-                            if (callback != null) callback.onSequenceComplete();
-                        });
+                            if (!isCallbackActive(callback)) {
+                                return;
+                            }
+                            if (!isCurrentService(service)) {
+                                notifyFailure(callback);
+                                return;
+                            }
+                            if (callback != null) {
+                                callback.onSequenceComplete();
+                            }
+                        },
+                        () -> notifyFailure(callback));
                 }, INTER_TAP_BUFFER_MS);
-            });
+            },
+            () -> notifyFailure(callback));
+    }
+
+    private static boolean isCallbackActive(TapSequenceCallback callback) {
+        return callback == null || callback.isSequenceActive();
+    }
+
+    private static boolean canContinue(ClashManagerAccessibilityService service, TapSequenceCallback callback) {
+        return isCurrentService(service) && isCallbackActive(callback);
+    }
+
+    private static void notifyFailure(TapSequenceCallback callback) {
+        if (callback != null && callback.isSequenceActive()) {
+            callback.onSequenceFailed();
+        }
     }
 
     /**
-     * Dispatches a single tap. `onDispatched` fires synchronously right before the
-     * gesture is sent (so UI feedback like a tap ripple lines up with the real tap
-     * instant); `onDone` fires once the gesture completes OR is cancelled, so a caller
-     * chaining a follow-up tap never stalls forever on a blocked gesture.
+     * Dispatches a single tap. `onDispatched` fires only after Android accepts
+     * the gesture, so counters and visual feedback never claim a rejected
+     * dispatch. `onCompleted` and `onFailed` are mutually exclusive, including
+     * the false return from dispatchGesture(), which otherwise has no callback.
      */
-    private void performTap(float xPercent, float yPercent, Runnable onDispatched, Runnable onDone) {
+    private void performTap(
+        float xPercent,
+        float yPercent,
+        Runnable onDispatched,
+        Runnable onCompleted,
+        Runnable onFailed
+    ) {
+        AtomicBoolean terminal = new AtomicBoolean(false);
         if (Float.isNaN(xPercent) || Float.isInfinite(xPercent) || Float.isNaN(yPercent) || Float.isInfinite(yPercent)) {
             Log.e(TAG, "Cannot perform tap: coordinates are NaN or Infinite");
-            if (onDone != null) onDone.run();
+            finish(terminal, onFailed);
             return;
         }
         var dm = getResources().getDisplayMetrics();
@@ -125,21 +199,41 @@ public class ClashManagerAccessibilityService extends AccessibilityService {
         gestureBuilder.addStroke(new GestureDescription.StrokeDescription(path, 0L, TAP_DURATION_MS));
 
         Log.d(TAG, "Dispatching tap gesture to coordinates: (" + xVal + ", " + yVal + ") [" + xPercent + "x" + yPercent + "]");
-        if (onDispatched != null) onDispatched.run();
-        dispatchGesture(gestureBuilder.build(), new AccessibilityService.GestureResultCallback() {
+        boolean accepted;
+        try {
+            accepted = dispatchGesture(gestureBuilder.build(), new AccessibilityService.GestureResultCallback() {
             @Override
             public void onCompleted(GestureDescription gestureDescription) {
                 super.onCompleted(gestureDescription);
-                Log.d(ClashManagerAccessibilityService.TAG, "Tap gesture successfully dispatched");
-                if (onDone != null) onDone.run();
+                Log.d(ClashManagerAccessibilityService.TAG, "Tap gesture completed");
+                finish(terminal, onCompleted);
             }
 
             @Override
             public void onCancelled(GestureDescription gestureDescription) {
                 super.onCancelled(gestureDescription);
                 Log.w(ClashManagerAccessibilityService.TAG, "Tap gesture was cancelled/blocked by system");
-                if (onDone != null) onDone.run();
+                finish(terminal, onFailed);
             }
-        }, null);
+            }, null);
+        } catch (RuntimeException e) {
+            Log.w(TAG, "Tap gesture dispatch threw", e);
+            finish(terminal, onFailed);
+            return;
+        }
+        if (!accepted) {
+            Log.w(TAG, "Tap gesture dispatch was rejected");
+            finish(terminal, onFailed);
+            return;
+        }
+        if (onDispatched != null) {
+            onDispatched.run();
+        }
+    }
+
+    private static void finish(AtomicBoolean terminal, Runnable callback) {
+        if (terminal.compareAndSet(false, true) && callback != null) {
+            callback.run();
+        }
     }
 }

@@ -70,6 +70,23 @@ test("the PR history block supplies the richer why/result detail", () => {
   assert.equal(parsePrHistoryEntry(history, 12, "2026-08-27"), null);
 });
 
+test("a history entry is found by its pull request number when the merge tag names one", () => {
+  // The 2026-10-04 shape: Stage 1 for that cycle merged after midnight, so its
+  // entry was written under 2026-10-04, while its run's Stage 1 evidence date
+  // is 2026-10-03. The next night's Stage 1 then lands under 2026-10-04 too.
+  const history = [
+    "### [2026-10-04] PR #2082 [Stage 1]: the next cycle's audit",
+    "**Why:** next cycle",
+    "",
+    "### [2026-10-04] PR #2070 [Stage 1]: this cycle's audit",
+    "**Why:** this cycle",
+  ].join("\n");
+  assert.equal(parsePrHistoryEntry(history, 1, "2026-10-03", 2070).why, "this cycle", "found despite the date it was filed under");
+  assert.equal(parsePrHistoryEntry(history, 1, "2026-10-04", 2070).why, "this cycle", "and never another run's entry from the same date");
+  assert.equal(parsePrHistoryEntry(history, 1, "2026-10-03"), null, "with no number, the date is all there is");
+  assert.equal(parsePrHistoryEntry(history, 1, "2026-10-04", 9999), null, "a number with no entry is not answered by the date");
+});
+
 test("prNumberFromTag reads only a well-formed merge tag", () => {
   assert.equal(prNumberFromTag("nightly/2026-08-27/stage-1/pr-1589"), 1589);
   assert.equal(prNumberFromTag("v14.46.23"), null);
@@ -714,6 +731,32 @@ test("a run whose history has been pruned says so, instead of just looking terse
   // An absent field is not a placeholder: claiming the stage left one would
   // report a defect this run did not have.
   assert.doesNotMatch(text, /^Thin evidence:/m);
+});
+
+test("a merged stage with no known pull request is not blamed on the aging pass", () => {
+  // The real S01 of 2026-10-04: the ledger knew it merged, but its tag had been
+  // filed under the next day, so nothing under this run's date named a pull
+  // request. The recap of a run hours old said its detail had "aged out".
+  const text = renderRecap(singleStage({
+    stage: 1, slug: "hardening", outcome: "CLEAN", merged: true, prNumber: null,
+    summary: "Audited 42 files; zero threat vectors found",
+  }));
+
+  assert.doesNotMatch(text, /^Detail aged out:/m);
+  assert.match(text, /^Evidence not filed: S01 merged, but no merge tag or history entry is filed under this run's date/m);
+  assert.match(text, /This is not aging/);
+});
+
+test("aged and unfiled stages are told apart in the same run", () => {
+  const text = renderRecap(singleStage(null, {
+    total: 2, merged: 2, clean: 2,
+    stages: [
+      { stage: 1, slug: "hardening", outcome: "CLEAN", merged: true, prNumber: null, summary: "s" },
+      { stage: 2, slug: "verification", outcome: "CLEAN", merged: true, prNumber: 1500, summary: "s" },
+    ],
+  }));
+  assert.match(text, /^Detail aged out: 1 of 2 merged stages/m);
+  assert.match(text, /^Evidence not filed: S01 merged/m);
 });
 
 test("a stage that never merged is not reported as having lost its history", () => {
@@ -1592,4 +1635,19 @@ test("archived evidence refs count as tags, so runs older than a week keep their
 test("a missing tag or archive listing yields no names rather than throwing", () => {
   assert.deepEqual(evidenceRefNames(null, null), []);
   assert.deepEqual(evidenceRefNames("", "refs/other/2026-08-20/stage-2/pr-1504"), []);
+});
+
+test("the CI database check is printed in the database lane's block, a failure most of all", () => {
+  // A FAIL is a check that ran, so the blind-spot reader counts it as answered;
+  // without this line a failing database check would leave no trace.
+  const s03 = run => renderRecap(singleStage({
+    stage: 3, slug: "baseline-consolidation", outcome: "CLEAN", merged: true, prNumber: 2071,
+    summary: "0 pending migrations", databaseVerification: run,
+  }));
+  assert.match(s03({ status: "completed", conclusion: "failure", url: "https://example.test/run/11" }),
+    /^Database check: FAILED in CI on this pull request; the run's log says at which step\. See https:\/\/example\.test\/run\/11$/m);
+  assert.match(s03({ status: "completed", conclusion: "success" }), /^Database check: passed in CI on this pull request/m);
+  assert.match(s03({ status: "completed", conclusion: "cancelled" }), /^Database check: finished in CI without a verdict \(cancelled\)\.$/m);
+  assert.match(s03({ status: "in_progress" }), /^Database check: still running in CI on this pull request\.$/m);
+  assert.doesNotMatch(s03(null), /Database check/, "no recorded run, no line");
 });

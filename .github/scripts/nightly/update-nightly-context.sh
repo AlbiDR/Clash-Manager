@@ -20,6 +20,12 @@ REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null) || {
 }
 cd "$REPO_ROOT"
 
+# The status run_bounded returns when the command never produced one of its
+# own: it timed out or could not start. Named because callers branch on it to
+# tell "the check could not run" from "the check ran and failed"; the value is
+# the timeout(1) convention.
+RUN_BOUNDED_UNFINISHED=124
+
 run_bounded() {
   local timeout_seconds="$1"
   shift
@@ -27,14 +33,14 @@ run_bounded() {
   # shellcheck disable=SC2016
   node -e '
     const { spawnSync } = require("node:child_process");
-    const [timeoutSeconds, command, ...args] = process.argv.slice(1);
+    const [unfinished, timeoutSeconds, command, ...args] = process.argv.slice(1);
     const result = spawnSync(command, args, {
       stdio: "inherit",
       timeout: Number(timeoutSeconds) * 1000,
     });
     if (result.error) console.error(`bounded command failed: ${result.error.message}`);
-    process.exit(Number.isInteger(result.status) ? result.status : 124);
-  ' "$timeout_seconds" "$@"
+    process.exit(Number.isInteger(result.status) ? result.status : Number(unfinished));
+  ' "$RUN_BOUNDED_UNFINISHED" "$timeout_seconds" "$@"
 }
 
 REQUESTED_STAGE_NUM="${NIGHTLY_STAGE_NUM:-}"
@@ -335,16 +341,28 @@ if [ "${STAGE_NUM}" = "2" ] || [ "$FORCE_TESTS" = "true" ]; then
   RUN_TESTS="true"
 fi
 
+# Written as <check>-status.txt like every other sub-check, so finalize records
+# it in the stage's coverage line and the recap's blind-spot reader can see it.
+# It used to be baseline-test-state.txt, which no reader collected: S02 ran this
+# every night and never once reported whether it could. A suite that did not
+# finish is DEGRADED, not FAIL: FAIL told the lane the suite had pre-existing
+# failures when it had only run out of time.
 if [ "$RUN_TESTS" = "true" ]; then
   echo "Running baseline test suite dynamically for Stage ${STAGE_NUM}..."
-  if run_bounded 300 pnpm test --run > "$CONTEXT_DIR/baseline-test-output.txt" 2>&1; then
-    echo "PASS" > "$CONTEXT_DIR/baseline-test-state.txt"
+  set +e
+  run_bounded 300 pnpm test --run > "$CONTEXT_DIR/baseline-test-output.txt" 2>&1
+  BASELINE_TESTS_RC=$?
+  set -e
+  if [ "$BASELINE_TESTS_RC" -eq 0 ]; then
+    echo "PASS" > "$CONTEXT_DIR/baseline-tests-status.txt"
+  elif [ "$BASELINE_TESTS_RC" -eq "$RUN_BOUNDED_UNFINISHED" ]; then
+    echo "DEGRADED" > "$CONTEXT_DIR/baseline-tests-status.txt"
   else
-    echo "FAIL" > "$CONTEXT_DIR/baseline-test-state.txt"
+    echo "FAIL" > "$CONTEXT_DIR/baseline-tests-status.txt"
   fi
-  echo "Test baseline state: $(cat "$CONTEXT_DIR/baseline-test-state.txt")"
+  echo "Test baseline state: $(cat "$CONTEXT_DIR/baseline-tests-status.txt")"
 else
-  echo "SKIPPED" > "$CONTEXT_DIR/baseline-test-state.txt"
+  echo "SKIPPED" > "$CONTEXT_DIR/baseline-tests-status.txt"
   echo "Skipped: Baseline tests run dynamically only for Stage 2." > "$CONTEXT_DIR/baseline-test-output.txt"
 fi
 
@@ -362,13 +380,17 @@ if [ "$RUN_DEPCRUISE" = "true" ]; then
     --output-type err-long > "$CONTEXT_DIR/dep-violations.txt" 2>&1
   DEPCRUISE_RC=$?
   set -e
+  # A <check>-status.txt for the same reason as baseline-tests above; it was
+  # depcruise-state.txt, which no reader collected.
   if [ "$DEPCRUISE_RC" -eq 0 ]; then
-    echo "PASS" > "$CONTEXT_DIR/depcruise-state.txt"
+    echo "PASS" > "$CONTEXT_DIR/dependency-cruiser-status.txt"
+  elif [ "$DEPCRUISE_RC" -eq "$RUN_BOUNDED_UNFINISHED" ]; then
+    echo "DEGRADED" > "$CONTEXT_DIR/dependency-cruiser-status.txt"
   else
-    echo "FAIL" > "$CONTEXT_DIR/depcruise-state.txt"
+    echo "FAIL" > "$CONTEXT_DIR/dependency-cruiser-status.txt"
   fi
 else
-  echo "SKIPPED" > "$CONTEXT_DIR/depcruise-state.txt"
+  echo "SKIPPED" > "$CONTEXT_DIR/dependency-cruiser-status.txt"
   echo "Skipped: Dependency scan runs dynamically only for Stage 9." > "$CONTEXT_DIR/dep-violations.txt"
 fi
 DEP_LINES=$(wc -l < "$CONTEXT_DIR/dep-violations.txt" | tr -d ' ')
@@ -390,12 +412,19 @@ if [ "$RUN_DEPCRUISE" = "true" ]; then
   run_bounded 120 pnpm knip --no-progress > "$CONTEXT_DIR/knip.txt" 2>&1
   KNIP_RC=$?
   set -e
-  # knip exits non-zero when it FINDS something, so a non-zero code is a
-  # result, not an error. Only an empty file means it failed to produce one.
+  # knip exits 1 when it FINDS something and 0 when it finds nothing, so both
+  # are a scan that ran. 2 is knip's own "could not load the project", and an
+  # empty file or an unfinished run produced no scan at all.
   if [ ! -s "$CONTEXT_DIR/knip.txt" ]; then
     echo "knip produced no output (exit ${KNIP_RC}). Treat this as NOT SCANNED, never as clean." > "$CONTEXT_DIR/knip.txt"
+    echo "DEGRADED" > "$CONTEXT_DIR/knip-status.txt"
+  elif [ "$KNIP_RC" -eq 0 ] || [ "$KNIP_RC" -eq 1 ]; then
+    echo "OK" > "$CONTEXT_DIR/knip-status.txt"
+  else
+    echo "DEGRADED" > "$CONTEXT_DIR/knip-status.txt"
   fi
 else
+  echo "SKIPPED" > "$CONTEXT_DIR/knip-status.txt"
   echo "Skipped: dead-export scan runs dynamically only for Stage 9." > "$CONTEXT_DIR/knip.txt"
 fi
 KNIP_LINES=$(wc -l < "$CONTEXT_DIR/knip.txt" | tr -d ' ')
@@ -430,8 +459,9 @@ PLIMIT_VER=$(node -e 'try{console.log(require(process.argv[1]).version)}catch(e)
   echo "migration-quality: $(cat "$CONTEXT_DIR/migration-quality-status.txt")"
   echo "database-verification: $(cat "$CONTEXT_DIR/database-verification-status.txt")"
   echo "apk-ux-audit: $(cat "$CONTEXT_DIR/apk-ux-audit-status.txt")"
-  echo "baseline-tests: $(cat "$CONTEXT_DIR/baseline-test-state.txt")"
-  echo "dependency-cruiser: $(cat "$CONTEXT_DIR/depcruise-state.txt")"
+  echo "baseline-tests: $(cat "$CONTEXT_DIR/baseline-tests-status.txt")"
+  echo "dependency-cruiser: $(cat "$CONTEXT_DIR/dependency-cruiser-status.txt")"
+  echo "knip: $(cat "$CONTEXT_DIR/knip-status.txt")"
   echo "clean-calibration-due: ${CALIBRATION_DUE}"
   echo "clean-streak: ${CLEAN_STREAK}"
   echo "pending-migrations: ${MIGRATION_COUNT}"

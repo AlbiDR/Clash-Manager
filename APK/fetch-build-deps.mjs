@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
@@ -70,9 +69,36 @@ async function resolveArtifact(entry) {
   return file;
 }
 
+/**
+ * Fails closed when a manually declared compile dependency resolves to an
+ * artifact which lacks a class javac must be able to read. This matters for
+ * Kotlin multiplatform modules: their root metadata jar is hash-valid but is
+ * not their JVM implementation jar.
+ */
+function verifyRequiredEntries(dependency, jar) {
+  if (dependency.requiredEntries === undefined) return;
+  if (!Array.isArray(dependency.requiredEntries) || dependency.requiredEntries.length === 0
+    || dependency.requiredEntries.some((entry) => typeof entry !== "string" || entry.length === 0)) {
+    die(`${dependency.coordinate || path.basename(jar)} has invalid requiredEntries`);
+  }
+  const contents = new Set(execFileSync("unzip", ["-Z1", jar], {
+    encoding: "utf8",
+    maxBuffer: 256 << 20,
+    timeout: EXEC_TIMEOUT_MS,
+  }).split("\n"));
+  for (const requiredEntry of dependency.requiredEntries) {
+    if (!contents.has(requiredEntry)) {
+      die(`${dependency.coordinate || path.basename(jar)} compile jar lacks required entry ${requiredEntry}`);
+    }
+  }
+}
+
 /** An .aar is a zip whose compiled code lives in classes.jar; javac needs that jar. */
-function compileJarFor(artifact) {
-  if (!artifact.endsWith(".aar")) return artifact;
+function compileJarFor(dependency, artifact) {
+  if (!artifact.endsWith(".aar")) {
+    verifyRequiredEntries(dependency, artifact);
+    return artifact;
+  }
   const jar = artifact.replace(/\.aar$/, ".classes.jar");
   if (!existsSync(jar)) {
     const bytes = execFileSync("unzip", ["-p", artifact, "classes.jar"], {
@@ -83,6 +109,7 @@ function compileJarFor(artifact) {
     writeFileSync(`${jar}.partial`, bytes);
     renameSync(`${jar}.partial`, jar);
   }
+  verifyRequiredEntries(dependency, jar);
   return jar;
 }
 
@@ -90,7 +117,7 @@ async function classpath(kind) {
   const entries = toolchain[`${kind}Classpath`];
   if (!Array.isArray(entries)) die(`unknown classpath '${kind}' (expected compile or test)`);
   const jars = [];
-  for (const entry of entries) jars.push(compileJarFor(await resolveArtifact(entry)));
+  for (const entry of entries) jars.push(compileJarFor(entry, await resolveArtifact(entry)));
   return jars.join(":");
 }
 

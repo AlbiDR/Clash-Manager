@@ -2,10 +2,13 @@
 <!-- Copyright (C) 2026 AlbiDR -->
 <script setup lang="ts">
 import { Icon, SettingRow, SettingsCard, vTactile } from "@shared";
+import { usePowerSaving } from "@core/services/usePowerSaving";
 import { useSettings } from "../composables/useSettings";
 defineProps<{
   initiallyExpanded?: boolean;
 }>();
+
+const { isPowerSaving } = usePowerSaving();
 
 const {
   theme,
@@ -23,6 +26,14 @@ const {
     icon="gear"
     :initially-expanded="initiallyExpanded"
   >
+    <p
+      v-if="isPowerSaving"
+      class="theme-sub-label"
+      role="status"
+    >
+      Battery Saver is using dark mode and reduced motion, and pausing Keep Screen On.
+      Your selections will resume when it turns off.
+    </p>
     <div class="theme-selection-area">
       <div class="theme-label-group">
         <span class="theme-main-label">System Theme</span>

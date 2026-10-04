@@ -15,6 +15,7 @@ import path from "node:path";
 import { PLAIN_PREFIX, RESULT_LABEL, WHY_LABEL, changeLabel, countOf, displayArea, evidenceResidue, isBareVerdict, placeholderResult, placeholderWhy } from "./nightly-prose.mjs";
 import { getContractFingerprint, validateStageContract } from "./nightly-contract.mjs";
 import { getCycleDate, getCycleId } from "./nightly-events.mjs";
+import { DOCUMENTATION_DOMAIN, DOCUMENTED_SOURCE, VERIFIED_FIELD } from "./doc-debt.mjs";
 import { fileURLToPath } from "node:url";
 
 const FINAL_STATUSES = new Set(["CHANGED", "CLEAN", "SKIPPED", "PARTIAL-RUN"]);
@@ -551,6 +552,57 @@ function executionMetadataLine(executionRevision) {
     : "";
 }
 
+/**
+ * The files a documentation lane checked and found accurate, as finalize will
+ * record them, already resolved by resolveVerified. Omitted when there are
+ * none, so every other stage's body is byte-identical to before.
+ */
+function verifiedMetadataLine(verified) {
+  return Array.isArray(verified) && verified.length > 0 ? `\n  ${VERIFIED_FIELD}: ${verified.join(", ")}` : "";
+}
+
+function verifiedBodyLine(verified) {
+  return Array.isArray(verified) && verified.length > 0 ? `\n\n**Verified accurate:** ${verified.join(", ")}` : "";
+}
+
+/**
+ * What finalize records from --verified: documented source files a
+ * documentation lane opened and found accurate, comma-separated.
+ *
+ * doc-debt.mjs reads the result back as documentation of those files at this
+ * commit, so a clean check clears the file until its code changes again. That
+ * is a claim, so it is narrow: only a documentation lane can make it, only on a
+ * CLEAN or CHANGED run, and only for a documented source path that exists in
+ * this checkout.
+ *
+ * Never throws. finalize is a chokepoint, so anything it cannot record is
+ * dropped with a note on stderr: a bad value costs the record, never the stage.
+ */
+export function resolveVerified(raw, stage, status, repoRoot) {
+  const requested = String(raw ?? "").split(",").map(item => item.trim().replace(/^\.\//, "")).filter(Boolean);
+  if (requested.length === 0) return [];
+  if (stage.domain !== DOCUMENTATION_DOMAIN) {
+    console.error(`Nightly: --verified is recorded only for documentation lanes; stage ${stage.number} dropped it.`);
+    return [];
+  }
+  if (status !== "CLEAN" && status !== "CHANGED") {
+    console.error(`Nightly: --verified is recorded only for a CLEAN or CHANGED run; ${status} dropped it.`);
+    return [];
+  }
+  const kept = [];
+  const dropped = [];
+  for (const item of requested) {
+    const usable = DOCUMENTED_SOURCE.test(item)
+      && !item.split("/").includes("..")
+      && existsSync(path.join(repoRoot, item));
+    (usable ? kept : dropped).push(item);
+  }
+  if (dropped.length > 0) {
+    console.error(`Nightly: --verified dropped ${dropped.join(", ")}: not a documented source file in this checkout.`);
+  }
+  return [...new Set(kept)];
+}
+
 export function renderPrBody(stage, status, summary, changedPaths, details = {}) {
   const normalizedSummary = cleanSummary(summary);
   const files = changedPaths.join(", ") || stage.coverageLog;
@@ -570,7 +622,7 @@ ${plain}
 
 **${RESULT_LABEL}:** ${result}
 
-**Files changed:** ${files}
+**Files changed:** ${files}${verifiedBodyLine(details.verified)}
 
 <!--
 NIGHTLY_PR_METADATA:
@@ -580,7 +632,7 @@ NIGHTLY_PR_METADATA:
   Why: ${why}
   Change: ${normalizedSummary}
   Result: ${result}
-  Files: ${files}${nudgeMetadataLine(details.nudges)}${executionMetadataLine(details.executionRevision)}
+  Files: ${files}${verifiedMetadataLine(details.verified)}${nudgeMetadataLine(details.nudges)}${executionMetadataLine(details.executionRevision)}
 -->
 `;
 }
@@ -1174,18 +1226,20 @@ function finalizeCommand(repoRoot, stage, status, summary, dryRun, details = {})
   const runId = state.runId || randomBytes(4).toString("hex");
   const cycleId = state.cycleId || getCycleId(getCycleDate(stage.number, date));
   const nudges = stateObserved ? (state.resultRefused ? 1 : 0) : null;
+  const verified = resolveVerified(details.verified, stage, status, repoRoot);
   const prBody = renderPrBody(stage, status, normalizedSummary, paths, {
     why,
     result,
     nudges,
     cycleId,
     executionRevision: state.executionRevision,
+    verified,
   });
   // The handoff no longer carries the body, only the path to it.
   const handoff = renderHandoff(stage, status, normalizedSummary, runId);
 
   if (dryRun) {
-    console.log(JSON.stringify({ command: "finalize", dryRun: true, stage: stage.number, status, finalLine, why, result, paths }, null, 2));
+    console.log(JSON.stringify({ command: "finalize", dryRun: true, stage: stage.number, status, finalLine, why, result, paths, verified }, null, 2));
     return;
   }
 
@@ -1287,7 +1341,9 @@ function validateBootstrap(repoRoot, registry) {
   invariant(content.includes("git pull --ff-only origin Nightly"), "Bootstrap setup must use a fast-forward-only pull.");
   invariant(content.includes("fold-state-status.txt"), "Bootstrap setup must seed fold-state status.");
   invariant(content.includes("apk-ux-audit-status.txt"), "Bootstrap setup must seed APK UX audit status.");
-  invariant(content.includes("depcruise-state.txt"), "Bootstrap setup must seed dependency-cruiser status.");
+  invariant(content.includes("dependency-cruiser-status.txt"), "Bootstrap setup must seed dependency-cruiser status.");
+  invariant(content.includes("baseline-tests-status.txt"), "Bootstrap setup must seed baseline test status.");
+  invariant(content.includes("knip-status.txt"), "Bootstrap setup must seed dead-export scan status.");
   invariant(content.includes("clean-calibration.json"), "Bootstrap setup must seed CLEAN calibration status.");
   invariant(!content.includes("### Termination Contract"), "Bootstrap still contains the obsolete termination contract.");
   invariant(
@@ -1386,7 +1442,11 @@ function validateContracts(repoRoot, registry) {
   invariant(contextScript.includes("clean-calibration-due"), "Context script must report CLEAN calibration state in the toolchain manifest.");
   invariant(contextScript.includes('echo "DEGRADED" > "$CONTEXT_DIR/fold-state-status.txt"'), "Context script must preserve degraded fold state.");
   invariant(contextScript.includes('echo "SKIPPED" > "$CONTEXT_DIR/fold-state-status.txt"'), "Context script must report skipped fold scans.");
-  invariant(contextScript.includes('echo "SKIPPED" > "$CONTEXT_DIR/depcruise-state.txt"'), "Context script must report skipped dependency scans.");
+  invariant(contextScript.includes('echo "SKIPPED" > "$CONTEXT_DIR/dependency-cruiser-status.txt"'), "Context script must report skipped dependency scans.");
+  // An unfinished run is a check that could not answer, never a FAIL.
+  invariant(contextScript.includes('echo "DEGRADED" > "$CONTEXT_DIR/baseline-tests-status.txt"'), "Context script must report an unfinished baseline test run as degraded.");
+  invariant(contextScript.includes('echo "DEGRADED" > "$CONTEXT_DIR/dependency-cruiser-status.txt"'), "Context script must report an unfinished dependency scan as degraded.");
+  invariant(contextScript.includes('echo "DEGRADED" > "$CONTEXT_DIR/knip-status.txt"'), "Context script must report a dead-export scan that produced nothing as degraded.");
 
   const watchdogWorkflow = readFileSync(path.join(repoRoot, ".github/workflows/nightly-watchdog.yml"), "utf8");
   invariant(
@@ -1421,12 +1481,13 @@ export function runCli(argv = process.argv.slice(2), cwd = process.cwd()) {
   }
   if (command === "finalize") {
     invariant(
-      [...options.keys()].every(key => ["stage", "status", "summary", "why", "result", "dry-run"].includes(key)),
-      "finalize accepts only --stage, --status, --summary, --why, --result, and --dry-run.",
+      [...options.keys()].every(key => ["stage", "status", "summary", "why", "result", "verified", "dry-run"].includes(key)),
+      "finalize accepts only --stage, --status, --summary, --why, --result, --verified, and --dry-run.",
     );
     finalizeCommand(repoRoot, stage, options.get("status"), options.get("summary"), dryRun, {
       why: options.get("why"),
       result: options.get("result"),
+      verified: options.get("verified"),
     });
     return;
   }

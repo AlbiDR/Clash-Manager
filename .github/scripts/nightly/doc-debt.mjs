@@ -29,7 +29,19 @@
  * and narrowly: only files where documentation is provably behind the code.
  *
  * Lane identity comes from the conventional-commit subject rather than the
- * author, because every nightly lane commits as the same bot.
+ * author, because every nightly lane commits as the same bot. A documentation
+ * lane's own commit is ALSO recognised by the coverage log it touched, because
+ * the subject is not reliable: of the eight S05/S06 merges from 2026-10-01 to
+ * 2026-10-04, four were titled "Nightly Stage 6: ..." or "[Stage 5] ..." and
+ * matched no documentation subject at all.
+ *
+ * A CLEAN CHECK CLEARS THE FILE
+ * A documentation lane that opens a listed file and finds its prose already
+ * accurate passes `--verified <path>` to finalize, which writes a Verified line
+ * into the description it commits. That counts as documenting the file at that
+ * commit. Without it a clean check left no trace, so the same file came back
+ * every night: ViewOptions.vue was audited and found accurate by both lanes on
+ * 2026-10-01, 10-02 and 10-04, and stayed listed throughout.
  *
  * KNOWN IMPRECISION, stated so a lane does not chase it
  * The semver bump rewrites a version marker inside a couple of source files
@@ -38,14 +50,60 @@
  * that marker comment. Frontend-PWA/src/core/services/useProgressiveList.ts
  * and Backend/supabase/functions/_shared/protocol.ts are the usual two. A lane
  * that opens such a file and finds the prose already accurate should record it
- * as accurate and move on, not manufacture an edit.
+ * as accurate (`--verified`) and move on, not manufacture an edit.
  * ============================================================================
  */
 
 import { execFileSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
+
+/** The registry domain of the lanes that describe code rather than change it. */
+export const DOCUMENTATION_DOMAIN = 'documentation';
+
+/**
+ * The metadata field a documentation lane writes for files it checked and found
+ * accurate. Defined here, where it is read, and imported by the stage runner
+ * that writes it, so the two can never spell it differently.
+ */
+export const VERIFIED_FIELD = 'Verified';
+
+/** Every stage's coverage log, mapped to that stage's registry domain. */
+export function laneLogDomains(registry) {
+  return new Map((registry?.stages || []).map(stage => [stage.coverageLog, stage.domain]));
+}
+
+/**
+ * The documentation lane's coverage log if this commit is that lane's own,
+ * else null.
+ *
+ * A lane's own merge touches its own coverage log and no other lane's. That is
+ * the definition, not a tolerance: a commit touching several logs is not any
+ * lane's work. Four repository-wide commits in this history (about 1,000 files
+ * each, including every coverage log) would otherwise read as documentation
+ * lanes describing 428 source files at once.
+ */
+export function documentationLaneLog(files, laneDomains) {
+  const touched = files.filter(file => laneDomains.has(file));
+  return touched.length === 1 && laneDomains.get(touched[0]) === DOCUMENTATION_DOMAIN ? touched[0] : null;
+}
+
+/**
+ * The documented sources a committed description's Verified field names.
+ *
+ * Read only inside the NIGHTLY_PR_METADATA block, so prose elsewhere in a file
+ * can never be mistaken for the field. Anything that is not a documented source
+ * path is dropped: an empty list and an absent field mean the same thing here.
+ */
+export function parseVerified(body) {
+  const block = /NIGHTLY_PR_METADATA:\s*([\s\S]*?)-->/.exec(String(body || ''));
+  if (!block) return [];
+  const field = new RegExp(`^\\s*${VERIFIED_FIELD}:\\s*(.*)$`, 'm').exec(block[1]);
+  if (!field) return [];
+  return [...new Set(field[1].split(',').map(item => item.trim()).filter(item => DOCUMENTED_SOURCE.test(item)))];
+}
 
 /** Subjects written by lanes that change behaviour. */
 export const CODE_SUBJECT = /^(?:refactor|perf|fix)\(|^chore\((?:refactor|optimize|verify|deps|database)\)/i;
@@ -71,16 +129,26 @@ function git(args) {
  * Walks history newest-first and returns the files whose most recent
  * behaviour-changing commit is newer than their most recent documentation
  * commit. Index 0 is the newest commit, so a LOWER index means more recent.
+ *
+ * `laneDomains` maps each stage's coverage log to its domain (laneLogDomains):
+ * a documentation lane's own commit counts as documentation whatever its
+ * subject says. An entry's `verified` files are ones the lane checked and found
+ * accurate at that commit, which describes them as surely as an edit would.
  */
-export function findDocDebt(log) {
+export function findDocDebt(log, { laneDomains = new Map() } = {}) {
   const newestCode = new Map();
   const newestDoc = new Map();
 
   log.forEach((entry, index) => {
-    const kind = CODE_SUBJECT.test(entry.subject) ? 'code' : DOC_SUBJECT.test(entry.subject) ? 'doc' : null;
+    const laneCommit = documentationLaneLog(entry.files, laneDomains) !== null;
+    const kind = laneCommit ? 'doc'
+      : CODE_SUBJECT.test(entry.subject) ? 'code'
+        : DOC_SUBJECT.test(entry.subject) ? 'doc'
+          : null;
     if (!kind) return;
     const target = kind === 'code' ? newestCode : newestDoc;
-    for (const file of entry.files) {
+    const files = kind === 'doc' ? [...entry.files, ...(entry.verified || [])] : entry.files;
+    for (const file of files) {
       if (!DOCUMENTED_SOURCE.test(file)) continue;
       if (!target.has(file)) target.set(file, { index, subject: entry.subject });
     }
@@ -102,23 +170,70 @@ export function findDocDebt(log) {
   return debt.sort((a, b) => a.file.localeCompare(b.file));
 }
 
+/** `git log` output in readLog's format: sentinel, hash and subject, then the files. */
 export function parseLog(raw) {
   return raw
     .split(COMMIT_SENTINEL)
     .map(block => block.trim())
     .filter(Boolean)
     .map(block => {
-      const lines = block.split('\n');
-      return { subject: lines[0].trim(), files: lines.slice(1).map(line => line.trim()).filter(Boolean) };
+      const [head, ...rest] = block.split('\n');
+      const match = /^([0-9a-f]{40})(?: (.*))?$/.exec(head.trim());
+      return {
+        hash: match ? match[1] : null,
+        subject: (match ? match[2] || '' : head).trim(),
+        files: rest.map(line => line.trim()).filter(Boolean),
+      };
     });
 }
 
-export function readLog() {
-  return parseLog(git(['log', '--no-merges', '--name-only', `--format=${COMMIT_SENTINEL}%s`]));
+/**
+ * History newest-first, with each documentation-lane commit's Verified files
+ * read from the descriptions that commit wrote.
+ *
+ * The descriptions are found as the Markdown files the commit touched beside
+ * the lane's own coverage log, rather than by rebuilding the stage runner's
+ * sidecar name here, so the runner stays the only place that names it. A file
+ * that cannot be read costs that one commit its verification, never the scan.
+ */
+export function readLog({ laneDomains = new Map(), show = (hash, file) => git(['show', `${hash}:${file}`]) } = {}) {
+  const log = parseLog(git(['log', '--no-merges', '--name-only', `--format=${COMMIT_SENTINEL}%H %s`]));
+  for (const entry of log) {
+    const laneLog = entry.hash ? documentationLaneLog(entry.files, laneDomains) : null;
+    if (!laneLog) continue;
+    const laneDir = path.posix.dirname(laneLog);
+    entry.verified = [...new Set(entry.files
+      .filter(file => path.posix.dirname(file) === laneDir && file.endsWith('.md'))
+      .flatMap(file => {
+        try {
+          return parseVerified(show(entry.hash, file));
+        } catch {
+          return [];
+        }
+      }))];
+  }
+  return log;
+}
+
+/**
+ * The documentation lanes from the stage registry, or none if it cannot be
+ * read. None falls back to subject-only lane identity, the behaviour before
+ * the registry was consulted, and says so: a refinement that cannot load must
+ * not cost the lanes their whole signal.
+ */
+function loadLaneDomains() {
+  try {
+    const registry = JSON.parse(readFileSync(new URL('../../nightly-config/stages.json', import.meta.url), 'utf8'));
+    return laneLogDomains(registry);
+  } catch (error) {
+    console.error(`doc-debt: stage registry unreadable (${error.message}); lane commits are recognised by subject only.`);
+    return new Map();
+  }
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const debt = findDocDebt(readLog());
+  const laneDomains = loadLaneDomains();
+  const debt = findDocDebt(readLog({ laneDomains }), { laneDomains });
   if (process.argv.includes('--json')) {
     console.log(JSON.stringify({ version: 1, count: debt.length, debt }, null, 2));
   } else if (debt.length === 0) {

@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 AlbiDR
+
 # Fails if a change strips the custom native layer from the recovered android/
 # project. The release APK's Blitz overlay service, accessibility tap-gesture
 # service and WebView bridge are authored in APK/src/com/albidr/clashmanager/
@@ -52,9 +55,12 @@ jobs:
       - name: Read the pinned toolchain
         id: toolchain
         run: |
-          echo "jdk=$(node APK/fetch-build-deps.mjs get jdkMajor)" >> "$GITHUB_OUTPUT"
-          echo "build_tools=$(node APK/fetch-build-deps.mjs get buildTools)" >> "$GITHUB_OUTPUT"
-          echo "platform=$(node APK/fetch-build-deps.mjs get androidPlatform)" >> "$GITHUB_OUTPUT"
+          jdk="$(node APK/fetch-build-deps.mjs get jdkMajor)"
+          build_tools="$(node APK/fetch-build-deps.mjs get buildTools)"
+          platform="$(node APK/fetch-build-deps.mjs get androidPlatform)"
+          echo "jdk=$jdk" >> "$GITHUB_OUTPUT"
+          echo "build_tools=$build_tools" >> "$GITHUB_OUTPUT"
+          echo "platform=$platform" >> "$GITHUB_OUTPUT"
 
       - uses: actions/setup-java@v4
         with:

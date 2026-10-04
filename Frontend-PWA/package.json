@@ -1,7 +1,7 @@
 {
   "name": "clash-manager-pwa",
   "private": true,
-  "version": "14.50.135",
+  "version": "14.50.141",
   "license": "GPL-3.0-only",
   "description": "A modern, material design PWA for managing Clash Royale clans.",
   "author": "AlbiDR",
@@ -20,7 +20,7 @@
     "test": "vitest run --pool=threads",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage",
-    "type-check": "vue-tsc --build --force",
+    "type-check": "tsx scripts/seed_bones.ts && vue-tsc --build --force",
     "lint": "eslint ."
   },
   "dependencies": {
@@ -34,7 +34,7 @@
     "workbox-window": "catalog:"
   },
   "engines": {
-    "node": ">=24.0.0",
+    "node": ">=24.15.0",
     "pnpm": ">=10.0.0"
   },
   "devDependencies": {

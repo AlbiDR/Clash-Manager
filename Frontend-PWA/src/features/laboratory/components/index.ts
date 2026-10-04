@@ -2,6 +2,7 @@
 // Copyright (C) 2026 AlbiDR
 
 export { default as LaboratorySkeleton } from './LaboratorySkeleton.vue';
+export { default as LaboratoryDashboard } from './LaboratoryDashboard.vue';
 export { default as ParameterCard } from './ParameterCard.vue';
 export { default as SummaryCard } from './SummaryCard.vue';
 export { default as TargetPicker } from './TargetPicker.vue';

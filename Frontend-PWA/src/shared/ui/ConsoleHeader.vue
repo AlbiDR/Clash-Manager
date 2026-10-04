@@ -110,6 +110,16 @@ const hasFilters = computed(() => hasRenderableSlotContent(slots.filters?.() ?? 
 const hasControls = computed(() => hasFilters.value);
 
 const hasExtra = computed(() => hasRenderableSlotContent(slots.extra?.() ?? []));
+const displayStatus = computed(() => {
+  if (props.loading) {
+    return {
+      type: "loading" as const,
+      text: props.status?.type === "loading" ? props.status.text : "Loading",
+      nominal: false,
+    };
+  }
+  return props.status;
+});
 /**
  * The header condenses while the reader travels away from the top, and refuses
  * to while any control it hosts is in use - a live selection or view-options
@@ -180,32 +190,43 @@ onUnmounted(() => {
           <div
             v-if="props.stats"
             class="title-label"
-            :class="{ 'has-compact-value': props.stats.compactValue }"
-            :aria-label="`${props.stats.value} ${props.stats.label}`"
+            :class="{
+              'has-compact-value': props.stats.compactValue,
+              'is-loading': props.loading,
+            }"
+            :aria-label="props.loading ? `${props.stats.label} loading` : `${props.stats.value} ${props.stats.label}`"
+            :aria-busy="props.loading ? 'true' : 'false'"
           >
             <span
-              class="count-value"
+              v-if="props.loading"
+              class="title-label-skeleton skeleton-anim"
               aria-hidden="true"
-            >
-              <span class="count-value-full">{{ props.stats.value }}</span>
+            />
+            <template v-else>
               <span
-                v-if="props.stats.compactValue"
-                class="count-value-compact"
-              >{{ props.stats.compactValue }}</span>
-            </span>
-            <span
-              class="count-label label-caption"
-              aria-hidden="true"
-            >{{ props.stats.label }}</span>
+                class="count-value"
+                aria-hidden="true"
+              >
+                <span class="count-value-full">{{ props.stats.value }}</span>
+                <span
+                  v-if="props.stats.compactValue"
+                  class="count-value-compact"
+                >{{ props.stats.compactValue }}</span>
+              </span>
+              <span
+                class="count-label label-caption"
+                aria-hidden="true"
+              >{{ props.stats.label }}</span>
+            </template>
           </div>
         </div>
 
         <div class="action-group">
           <StatusPill
-            v-if="props.status && !props.loading"
-            :type="props.status.type"
-            :text="props.status.text"
-            :nominal="props.status.nominal"
+            v-if="displayStatus"
+            :type="displayStatus.type"
+            :text="displayStatus.text"
+            :nominal="displayStatus.nominal"
             :remote-info="props.remoteInfo"
             :compression-stage="pressureStage"
             @refresh="emit('refresh')"
@@ -376,6 +397,19 @@ onUnmounted(() => {
 }
 
 .count-value-compact { display: none; }
+
+.title-label.is-loading {
+  align-items: center;
+  min-width: 78px;
+}
+
+.title-label-skeleton {
+  display: block;
+  width: 62px;
+  height: var(--sys-space-16);
+  border-radius: var(--sys-shape-corner-extra-small);
+  background: var(--sk-fill-secondary);
+}
 
 .count-label {
   color: var(--sys-color-on-surface-variant);

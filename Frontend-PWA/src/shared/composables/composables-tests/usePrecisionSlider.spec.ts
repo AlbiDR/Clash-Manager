@@ -53,10 +53,10 @@ function createSlider(
    *
    * @param position - A 0..1 position.
    */
-  function pressAt(position: number): void {
+  function pressAt(position: number): number | null {
     const thumbSize = config.value.thumbSize;
     const travel = TRACK_WIDTH - thumbSize;
-    slider.handlePointerDown({
+    return slider.handlePointerDown({
       clientX: TRACK_LEFT + thumbSize / 2 + position * travel,
       pointerId: 1,
       currentTarget: null,
@@ -119,6 +119,16 @@ describe("usePrecisionSlider", () => {
   });
 
   describe("pointer commitment", () => {
+    it("preserves the value on relative press and moves from the existing threshold", () => {
+      const { slider, value, pressAt } = createSlider({ pointerMode: "relative" }, 50);
+      expect(pressAt(0.8)).toBeNull();
+      expect(value.value).toBe(50);
+      expect(slider.handlePointerMove({ clientX: TRACK_LEFT + 0.9 * TRACK_WIDTH } as PointerEvent)).toBe(60);
+      expect(value.value).toBe(60);
+      expect(slider.handlePointerMove({ clientX: TRACK_LEFT + 0.7 * TRACK_WIDTH } as PointerEvent)).toBe(40);
+      expect(value.value).toBe(40);
+    });
+
     it("commits the value under the pointer", () => {
       const { value, pressAt } = createSlider({}, 0);
       pressAt(0.4);
@@ -186,7 +196,7 @@ describe("usePrecisionSlider", () => {
 
     it("only follows a move while a drag is active", () => {
       const { slider, value } = createSlider({}, 50);
-      slider.handlePointerMove({ clientX: TRACK_LEFT } as unknown as PointerEvent);
+      expect(slider.handlePointerMove({ clientX: TRACK_LEFT } as unknown as PointerEvent)).toBeNull();
       expect(value.value).toBe(50);
       expect(slider.isDragging.value).toBe(false);
     });
@@ -362,6 +372,17 @@ describe("usePrecisionSlider", () => {
       expect(
         slider.handlePointerUp({ pointerId: 1, currentTarget: null } as unknown as PointerEvent),
       ).toBe(30);
+    });
+
+    it("reports each pointer value while a drag is active", () => {
+      const { slider, pressAt } = createSlider({}, 0);
+
+      expect(pressAt(0.2)).toBe(20);
+      expect(
+        slider.handlePointerMove({
+          clientX: TRACK_LEFT + 0.8 * TRACK_WIDTH,
+        } as unknown as PointerEvent),
+      ).toBe(80);
     });
 
     it("returns null for a release that never dragged", () => {

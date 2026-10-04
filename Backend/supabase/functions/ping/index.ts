@@ -1,8 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
-import * as v from "npm:valibot@1.4.2";
+import * as v from "npm:valibot@1.5.0";
 import { clinicalServe } from "../_shared/protocol.ts";
+import {
+  RATE_LIMIT_IP_MAX_REQUESTS,
+  RATE_LIMIT_IP_WINDOW_MS,
+} from "../_shared/config.ts";
 import { supabase, CONFIG } from "./client.ts";
 
 /**
@@ -21,6 +25,9 @@ import { supabase, CONFIG } from "./client.ts";
  * [SECURITY] Accepts only the anon key as bearer credential: unlike the other
  * anon-reachable functions, there is no privileged `INTERNAL_BEARER_TOKEN` path here,
  * since a version probe carries no sensitive data and needs no cron-triggered caller.
+ * The probe still creates telemetry and heartbeat writes, so its public credential is
+ * volume-bounded just like the data-bearing public functions. Its CORS contract remains
+ * deliberately permissive because the response is public health metadata only.
  */
 const PayloadSchema = v.object({});
 
@@ -32,6 +39,11 @@ Deno.serve((request) =>
     eventType: "HEALTH_CHECK",
     componentId: "PING",
     schema: PayloadSchema,
+    rateLimit: {
+      maxRequests: RATE_LIMIT_IP_MAX_REQUESTS,
+      windowMs: RATE_LIMIT_IP_WINDOW_MS,
+    },
+    corsRestricted: false,
     handler: async () => ({}),
   })
 );

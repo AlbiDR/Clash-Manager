@@ -2,6 +2,7 @@
 <!-- Copyright (C) 2026 AlbiDR -->
 
 <script setup lang="ts">
+/* eslint-disable vue/no-v-html -- formatHeaderDescription escapes raw input before emitting a fixed markup vocabulary. */
 import { watch } from "vue";
 import { formatHeaderDescription } from "@core";
 import { vTactile } from "../directives/vTactile";
@@ -28,7 +29,7 @@ import Icon from "./Icon.vue";
 const props = defineProps<{
   /** Boolean state flag indicating if the overlay modal is currently visible. */
   show: boolean;
-  /** HTML-formatted markdown string containing the detailed analysis text. */
+  /** Raw markdown-like detailed analysis text; the formatter escapes it before rendering. */
   content: string | null;
   /** Optional title override displayed in the header. Defaults to "Heuristic Analysis". */
   title?: string;
@@ -84,6 +85,7 @@ watch(
             </button>
           </div>
 
+          <!-- The formatter HTML-escapes the input first, then emits only its fixed markup vocabulary. -->
           <div
             class="expansion-content scrollable-area"
             v-html="formatHeaderDescription(content)"

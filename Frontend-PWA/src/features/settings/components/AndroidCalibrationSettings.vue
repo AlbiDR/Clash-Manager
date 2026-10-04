@@ -16,7 +16,7 @@
  * @remarks Satisfies CleanStack ADR Section IV: Hardware/Browser Brokering.
  */
 import { watch } from "vue";
-import { vTactile } from "@shared";
+import { Icon, vTactile } from "@shared";
 import { useNativeBridge } from "@core/services/useNativeBridge";
 
 const {
@@ -80,18 +80,12 @@ watch([inviteX, inviteY, closeX, closeY], saveCoordinates);
           <span class="permission-label">Accessibility Service</span>
           <span class="permission-status">{{ isAccessibilityAllowed ? 'Allowed' : 'Not allowed' }}</span>
         </span>
-        <svg
+        <Icon
           class="permission-arrow"
-          viewBox="0 0 24 24"
-          width="16"
-          height="16"
+          name="chevron_right"
+          size="16"
           aria-hidden="true"
-        >
-          <path
-            d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6-6-6z"
-            fill="currentColor"
-          />
-        </svg>
+        />
       </button>
 
       <!-- Overlay (Draw over other apps) -->
@@ -109,18 +103,12 @@ watch([inviteX, inviteY, closeX, closeY], saveCoordinates);
           <span class="permission-label">Display Over Other Apps</span>
           <span class="permission-status">{{ isOverlayAllowed ? 'Allowed' : 'Not allowed' }}</span>
         </span>
-        <svg
+        <Icon
           class="permission-arrow"
-          viewBox="0 0 24 24"
-          width="16"
-          height="16"
+          name="chevron_right"
+          size="16"
           aria-hidden="true"
-        >
-          <path
-            d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6-6-6z"
-            fill="currentColor"
-          />
-        </svg>
+        />
       </button>
 
       <!-- APK install requests -->
@@ -141,18 +129,12 @@ watch([inviteX, inviteY, closeX, closeY], saveCoordinates);
             {{ isPackageInstallAllowed ? 'Allowed' : isPackageInstallSettingsSupported ? 'Confirm in Android' : 'Update shell first' }}
           </span>
         </span>
-        <svg
+        <Icon
           class="permission-arrow"
-          viewBox="0 0 24 24"
-          width="16"
-          height="16"
+          name="chevron_right"
+          size="16"
           aria-hidden="true"
-        >
-          <path
-            d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6-6-6z"
-            fill="currentColor"
-          />
-        </svg>
+        />
       </button>
     </div>
   </div>

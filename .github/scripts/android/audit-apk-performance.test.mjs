@@ -23,7 +23,11 @@ const SOURCES = {
   androidManifest: '<application android:hardwareAccelerated="true" />',
   serviceWorker: 'precacheAndRoute(self.__WB_MANIFEST || []);\nawait self.registration.navigationPreload.enable();',
   viteConfig: `
-    manualChunks(id) { return "vendor"; }
+    rolldownOptions: {
+      output: {
+        codeSplitting: { groups: [{ name: getChunkGroupName }] },
+      },
+    },
     globPatterns: ["**/*.{js,css,png,webp}"],
     globIgnores: ["assets/branding/*.webp"],
     maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
@@ -45,6 +49,11 @@ test('a healthy wrapper passes with no violations', () => {
   assert.equal(report.status, 'PASS');
   assert.deepEqual(report.violations, []);
   assert.ok(report.invariants.every(i => i.status === 'PRESENT'));
+});
+
+test('the Vite chunking invariant accepts both Rolldown groups and legacy manualChunks', () => {
+  assert.equal(run().status, 'PASS');
+  assert.equal(run({ viteConfig: `${SOURCES.viteConfig}\nmanualChunks(id) { return id; }` }).status, 'PASS');
 });
 
 test('every declared invariant can actually fail', () => {

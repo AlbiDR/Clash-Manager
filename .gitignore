@@ -122,5 +122,8 @@ APK/release/*
 
 
 APK/.build
+# Durable screenshots, logs and JSON reports made by APK/device-acceptance.mjs.
+# Kept separate because APK/build-apk.sh intentionally clears APK/.build.
+APK/.device-acceptance
 # Pinned toolchain downloads (APK/toolchain.json, fetched by APK/fetch-build-deps.mjs)
 APK/.deps

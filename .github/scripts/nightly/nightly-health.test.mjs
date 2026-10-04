@@ -81,6 +81,32 @@ test("verdicts are comparative, so a uniformly flaky stage is not falsely DEGRAD
   assert.equal(result.recentRate, result.earlierRate);
 });
 
+// `needed` at the given positions of an otherwise unremarkable history.
+const neededAt = (length, positions) => history(Array.from({ length }, (_, index) => positions.includes(index)));
+
+test("an odd history is not DEGRADING merely because its recent half is shorter", () => {
+  // The shape of S12's report on 2026-10-01, "20% to 21%": 49 runs with 5
+  // interventions in each half, the latest among them. The earlier half used to
+  // take the odd run, 5 of 25 against 5 of 24, so an unchanged count read as a
+  // rise. On the real ledger the verdict is HEALTHY once the halves are equal.
+  //
+  // S09's "19% to 20%" on 2026-10-03 had the same artifact but is NOT this
+  // case: its dropped oldest run was itself an intervention, so with equal
+  // halves it reads 4 of 25 then 5 of 25, a real rise, and stays DEGRADING.
+  const result = evaluateStageHealth(neededAt(49, [2, 8, 13, 18, 23, 28, 34, 40, 44, 48]));
+  assert.equal(result.verdict, HEALTH.HEALTHY);
+  assert.equal(result.recentRate, result.earlierRate);
+  // And at 51 runs, the length behind S09's report.
+  assert.equal(evaluateStageHealth(neededAt(51, [3, 9, 14, 19, 24, 30, 36, 41, 45, 50])).verdict, HEALTH.HEALTHY);
+});
+
+test("an odd history whose recent half really is worse is still DEGRADING", () => {
+  // Equal halves must not blunt the signal: 4 then 6 in halves of 24.
+  const result = evaluateStageHealth(neededAt(49, [3, 9, 15, 21, 26, 30, 35, 40, 44, 48]));
+  assert.equal(result.verdict, HEALTH.DEGRADING);
+  assert.ok(result.recentRate > result.earlierRate);
+});
+
 test("stageInterventionHistory reads dates in order from the ledger itself", () => {
   const ledger = {
     schemaVersion: 1,

@@ -1,5 +1,5 @@
 {
-  "$comment": "Pinned toolchain for building and testing the native layer in APK/src. build-apk.sh, test-apk.sh and CI all read this file, so a version changes in one place. Every download is checked against its sha256 before use. jdkMajor is the newest LTS JDK and only compiles; the phone runs ART, not a JVM. javaTarget is the source and bytecode level; above 8, javac compiles against a system image built from the platform's core-for-system-modules.jar (as the Android Gradle Plugin does), so only APIs Android actually has will compile. d8 desugars the result for the minSdkVersion in android/apktool.yml, and buildTools must be new enough for d8 to read that class file version (35.0.0 stops at Java 21; 37.0.0 reads 25). Changing jdkMajor, javaTarget, buildTools or apktool can change the compiled classes.dex; after bumping one, run ./APK/build-apk.sh --no-sign and commit the rebuilt APK/android/classes.dex.",
+  "$comment": "Pinned toolchain for building and testing the native layer in APK/src. build-apk.sh, test-apk.sh and CI all read this file, so a version changes in one place. Every download is checked against its sha256 before use; requiredEntries additionally guards a manually resolved JVM compile jar against a hash-valid metadata-only artifact. jdkMajor is the newest LTS JDK and only compiles; the phone runs ART, not a JVM. javaTarget is the source and bytecode level; above 8, javac compiles against a system image built from the platform's core-for-system-modules.jar (as the Android Gradle Plugin does), so only APIs Android actually has will compile. d8 desugars the result for the minSdkVersion in android/apktool.yml, and buildTools must be new enough for d8 to read that class file version (35.0.0 stops at Java 21; 37.0.0 reads 25). Changing jdkMajor, javaTarget, buildTools or apktool can change the compiled classes.dex; after bumping one, run ./APK/build-apk.sh --no-sign and commit the rebuilt APK/android/classes.dex.",
   "jdkMajor": 25,
   "javaTarget": 25,
   "androidPlatform": "android-36",
@@ -33,6 +33,24 @@
     "sha256": "dbf930b076c6b9be08d57c449cacefc3bdd6b71ebd59b3066fc0e1f5b14f9423"
   },
   "compileClasspath": [
+    {
+      "coordinate": "androidx.annotation:annotation-jvm:1.8.1",
+      "url": "https://dl.google.com/android/maven2/androidx/annotation/annotation-jvm/1.8.1/annotation-jvm-1.8.1.jar",
+      "sha256": "9aab326d9492800991854360ac248f493ce7f7c3183519309b78ace9e240f6f6",
+      "requiredEntries": [
+        "androidx/annotation/RestrictTo.class",
+        "androidx/annotation/RestrictTo$Scope.class"
+      ]
+    },
+    {
+      "coordinate": "org.jetbrains.kotlin:kotlin-stdlib:1.8.22",
+      "url": "https://repo1.maven.org/maven2/org/jetbrains/kotlin/kotlin-stdlib/1.8.22/kotlin-stdlib-1.8.22.jar",
+      "sha256": "03a5c3965cc37051128e64e46748e394b6bd4c97fa81c6de6fc72bfd44e3421b",
+      "requiredEntries": [
+        "kotlin/annotation/AnnotationRetention.class",
+        "kotlin/annotation/AnnotationTarget.class"
+      ]
+    },
     {
       "coordinate": "androidx.core:core:1.13.0",
       "url": "https://dl.google.com/android/maven2/androidx/core/core/1.13.0/core-1.13.0.aar",

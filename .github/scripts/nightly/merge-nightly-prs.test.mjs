@@ -40,7 +40,9 @@ import {
   renderFailureBlock,
   renderHistoryBlock,
   sortStagePrs,
+  stageCycleDate,
   stageNumber,
+  stageTagDate,
   summarizeFiles,
   GATE_VERDICT,
   judgeGateRun,
@@ -233,7 +235,74 @@ NIGHTLY_PR_METADATA:
     // measured zero would report a guard that never had to fire.
     nudges: null,
     execution: "1234567",
+    // No Cycle line: unknown, and stageTagDate falls back to the clock.
+    cycle: null,
   });
+});
+
+// PR #2070's own metadata block, verbatim apart from the shortened Change.
+// Stage 1 for the 2026-10-04 cycle: it finished its work at 23:27 on
+// 2026-10-03, stalled before publishing, was nudged, and merged at 01:29 on
+// 2026-10-04.
+const PR_2070_BODY = `<!--
+NIGHTLY_PR_METADATA:
+  Domain: hardening
+  Cycle: nightly-cycle/2026-10-04
+  Why: Runtime and security audit verified zero unhandled threats across all priority surfaces
+  Change: Audited Edge Function endpoints across 42 files; zero threat vectors found
+  Result: pnpm test passed 212 test files and 2131 tests green
+  Files: .github/nightly-logs/00-pr-history.md, .github/nightly-logs/01-hardening-coverage.log
+  Nudges: 0
+  Execution: be87791ec6b1e8eaa8f04a3fbcbde75256e59b2c
+-->`;
+
+test("the cycle a stage declared survives PR metadata and annotated-tag parsing", () => {
+  assert.equal(extractMetadata({ title: "t", body: PR_2070_BODY }).cycle, "nightly-cycle/2026-10-04");
+  // The stage runner writes "unrecorded" when it could not learn its cycle;
+  // that is an absence, not a cycle.
+  assert.equal(extractMetadata({ title: "t", body: PR_2070_BODY.replace("nightly-cycle/2026-10-04", "unrecorded") }).cycle, null);
+
+  assert.equal(parseTagContent("PR: #2070\nCycle: nightly-cycle/2026-10-04").cycle, "nightly-cycle/2026-10-04");
+  // Every tag written before the field existed.
+  assert.equal(parseTagContent("PR: #2056\nDomain: hardening").cycle, null);
+  assert.equal(parseTagContent("Cycle: nightly-cycle/2026-02-30").cycle, null, "a well-formed shape is not a real date");
+});
+
+test("a Stage 1 tag is filed under its declared cycle, not the clock at merge", () => {
+  const cycle = "nightly-cycle/2026-10-04";
+  // Merged after midnight, as PR #2070 did. The clock said 2026-10-04, which is
+  // the NEXT cycle's Stage 1 slot.
+  assert.deepEqual(stageTagDate(1, cycle, new Date("2026-10-04T01:29:33Z")), { date: "2026-10-03", source: "cycle" });
+  // Merged before midnight, the normal case: the same answer, which is the point.
+  assert.deepEqual(stageTagDate(1, cycle, new Date("2026-10-03T23:35:00Z")), { date: "2026-10-03", source: "cycle" });
+  // Every other stage runs inside its cycle's own day.
+  assert.deepEqual(stageTagDate(2, cycle, new Date("2026-10-04T23:59:00Z")), { date: "2026-10-04", source: "cycle" });
+  assert.deepEqual(stageTagDate(13, cycle, new Date("2026-10-05T00:10:00Z")), { date: "2026-10-04", source: "cycle" });
+});
+
+test("a description with no usable cycle still gets a tag, filed by the clock", () => {
+  // Never throws: a lost tag is worse than one filed by the old rule.
+  const now = new Date("2026-10-04T01:29:33Z");
+  assert.deepEqual(stageTagDate(1, null, now), { date: "2026-10-04", source: "clock" });
+  assert.deepEqual(stageTagDate(1, "unrecorded", now), { date: "2026-10-04", source: "clock" });
+  assert.deepEqual(stageTagDate(99, "nightly-cycle/2026-10-04", now), { date: "2026-10-04", source: "clock" });
+});
+
+test("a coordinator failure is recorded against the cycle the pull request declared", () => {
+  // Stage 1 blocked at 23:40 on 2026-10-03 belongs to the 2026-10-04 cycle. The
+  // clock would have written its BLOCKED row onto the previous cycle's Stage 1.
+  const before = new Date("2026-10-03T23:40:00Z");
+  assert.equal(stageCycleDate({ title: "t", body: PR_2070_BODY }, before), "2026-10-04");
+  assert.equal(stageCycleDate({ title: "t", body: "no metadata at all" }, before), "2026-10-03");
+});
+
+test("a cycle the published description lost is recovered from the committed sidecar", () => {
+  const sidecar = extractMetadata({ title: "t", body: PR_2070_BODY });
+  const damaged = extractMetadata({ title: "t", body: PR_2070_BODY.replace(/^ {2}Cycle: .*\n/m, "") });
+  assert.equal(damaged.cycle, null);
+  const { meta, upgraded } = preferStatedMetadata(sidecar, damaged, registry.stages.find(s => s.number === 1));
+  assert.equal(meta.cycle, "nightly-cycle/2026-10-04");
+  assert.ok(upgraded.includes("cycle"));
 });
 
 test("execution revision survives PR metadata and annotated-tag parsing", () => {

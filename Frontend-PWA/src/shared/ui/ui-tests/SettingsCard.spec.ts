@@ -61,6 +61,14 @@ describe('SettingsCard.vue', () => {
     expect(wrapper.find('.card-body').exists()).toBe(false);
   });
 
+  it('uses a non-submit button for the header disclosure control', () => {
+    const wrapper = shallowMount(SettingsCard, {
+      props: defaultProps
+    });
+
+    expect(wrapper.find('.expand-btn').attributes('type')).toBe('button');
+  });
+
   it('reflects loading state in aria-busy attribute', () => {
     const wrapper = shallowMount(SettingsCard, {
       props: { ...defaultProps, loading: true }

@@ -6,15 +6,16 @@ import {
   CLIPBOARD_FEEDBACK_DURATION_MS,
   useClipboard,
 } from "../composables/useClipboard";
+import { DEFAULT_TOAST_DURATION_MS } from "@core/services/useToast";
 import { vTactile } from "../directives/vTactile";
-import { computed, ref, onMounted, onUnmounted } from "vue";
+import { computed, ref, onUnmounted } from "vue";
 
 /**
  * ============================================================================
  * [SHARED UI] TOAST NOTIFICATION
  * ----------------------------------------------------------------------------
  * Standardized transient feedback molecule for system events.
- * Features auto-dismissal, single-flight action buttons, and clipboard copy.
+ * Presents service-managed auto-dismissal, single-flight actions, and clipboard copy.
  *
  * @remarks
  * **Architectural Context:**
@@ -41,17 +42,23 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  /** Emitted when the toast is dismissed (either manually or via timeout). */
+  /** Emitted when the toast is manually dismissed. */
   dismiss: [id: string];
   /** Emitted when the user clicks the action button. */
   action: [id: string];
+  /** Requests that the service preserve the current remaining lifetime. */
+  "pause-dismissal": [id: string];
+  /** Requests that the service continue from the preserved remaining lifetime. */
+  "resume-dismissal": [id: string];
 }>();
-
-/** @internal Internal timer ID used for auto-dismissal cleanup. */
-let timer: number | undefined;
 
 /** @internal Holds the transient copy acknowledgement without leaking it after dismissal. */
 let copyFeedbackTimer: number | undefined;
+
+type DismissalHold = "pointer" | "focus" | "clipboard";
+
+/** Interaction reasons currently keeping this toast readable. */
+const dismissalHolds = new Set<DismissalHold>();
 
 /** @internal Prevents duplicate emission of action callbacks. */
 const isHandlingAction = ref(false);
@@ -65,27 +72,6 @@ const copyLabel = computed(() => {
   if (clipboardState.value === "unavailable") return "Copy unavailable";
   return "Copy message";
 });
-
-/**
- * Initializes auto-dismissal timer when a non-zero duration prop is set.
- *
- * [DECISION LOG] Timer creation is bypassed while `showCopiedTick` is active
- * to prevent auto-dismissal during user clipboard feedback interaction.
- */
-function startTimer() {
-  if (props.duration && !showCopiedTick.value) {
-    timer = window.setTimeout(() => {
-      emit("dismiss", props.id);
-    }, props.duration);
-  }
-}
-
-/**
- * Clears active auto-dismissal timeout handle to pause notification lifecycle.
- */
-function clearTimer() {
-  if (timer) clearTimeout(timer);
-}
 
 /** Clears a pending copy acknowledgement when the toast is retried or unmounted. */
 function clearCopyFeedbackTimer() {
@@ -102,6 +88,62 @@ function handleMainClick() {
   if (props.actionLabel) {
     triggerAction();
   }
+}
+
+/**
+ * Adds an interaction hold and pauses the service clock on the first hold.
+ * The component coordinates interaction reasons only. The service remains the
+ * sole owner of elapsed and remaining lifetime state.
+ */
+function holdDismissal(reason: DismissalHold) {
+  if (dismissalHolds.has(reason)) return;
+  const shouldPauseService = dismissalHolds.size === 0;
+  dismissalHolds.add(reason);
+  if (shouldPauseService) emit("pause-dismissal", props.id);
+}
+
+/** Removes one interaction hold and resumes only after every hold is gone. */
+function releaseDismissal(reason: DismissalHold) {
+  if (!dismissalHolds.delete(reason)) return;
+  if (dismissalHolds.size === 0) emit("resume-dismissal", props.id);
+}
+
+/** Releases a paused service clock if the visual owner leaves unexpectedly. */
+function releaseAllDismissalHolds() {
+  if (dismissalHolds.size === 0) return;
+  dismissalHolds.clear();
+  emit("resume-dismissal", props.id);
+}
+
+function handlePointerEnter() {
+  if (props.type === "undo") return;
+  holdDismissal("pointer");
+}
+
+function handlePointerLeave() {
+  if (props.type === "undo") return;
+  releaseDismissal("pointer");
+}
+
+function handleFocusIn() {
+  if (props.type === "undo") return;
+  holdDismissal("focus");
+}
+
+function handleFocusOut(focusEvent: FocusEvent) {
+  if (props.type === "undo") return;
+
+  const toastElement = focusEvent.currentTarget as HTMLElement | null;
+  const nextFocusedElement = focusEvent.relatedTarget;
+  if (
+    toastElement
+    && nextFocusedElement instanceof Node
+    && toastElement.contains(nextFocusedElement)
+  ) {
+    return;
+  }
+
+  releaseDismissal("focus");
 }
 
 /**
@@ -125,23 +167,29 @@ function triggerAction() {
  * [THREAT] Clipboard API rejection on unsecured context caught gracefully without crashing host UI.
  */
 async function copyToastMessage() {
+  holdDismissal("clipboard");
   const copied = await copyText(props.message, { feedbackDurationMs: 0 });
-  if (!copied) return;
+  if (!copied) {
+    releaseDismissal("clipboard");
+    return;
+  }
 
   clearCopyFeedbackTimer();
   showCopiedTick.value = true;
-  clearTimer();
   copyFeedbackTimer = window.setTimeout(() => {
     showCopiedTick.value = false;
     copyFeedbackTimer = undefined;
-    startTimer();
+    releaseDismissal("clipboard");
   }, CLIPBOARD_FEEDBACK_DURATION_MS);
 }
 
-onMounted(startTimer);
+function dismissToast() {
+  emit("dismiss", props.id);
+}
+
 onUnmounted(() => {
-  clearTimer();
   clearCopyFeedbackTimer();
+  releaseAllDismissalHolds();
 });
 </script>
 
@@ -149,9 +197,11 @@ onUnmounted(() => {
   <div
     class="toast"
     :class="[type, { 'is-actionable': !!actionLabel }]"
-    :style="type === 'undo' ? { '--toast-duration': `${duration ?? 5000}ms` } : undefined"
-    @mouseenter="type !== 'undo' && clearTimer()"
-    @mouseleave="type !== 'undo' && startTimer()"
+    :style="type === 'undo' ? { '--toast-duration': `${duration ?? DEFAULT_TOAST_DURATION_MS}ms` } : undefined"
+    @mouseenter="handlePointerEnter"
+    @mouseleave="handlePointerLeave"
+    @focusin="handleFocusIn"
+    @focusout="handleFocusOut"
     @click="handleMainClick"
   >
     <!-- Visual Indicator for Undo (Progress circle or icon) -->
@@ -194,6 +244,7 @@ onUnmounted(() => {
     <button
       v-if="type === 'error' || type === 'info'"
       v-tactile
+      type="button"
       class="copy-btn"
       :class="{ 'is-copied': showCopiedTick, 'is-unavailable': clipboardState === 'unavailable' }"
       :aria-label="copyLabel"
@@ -209,6 +260,7 @@ onUnmounted(() => {
     <button
       v-if="actionLabel"
       v-tactile
+      type="button"
       class="action-btn"
       :disabled="isHandlingAction"
       @click.stop="triggerAction"
@@ -218,9 +270,10 @@ onUnmounted(() => {
 
     <button
       v-tactile
+      type="button"
       class="close-btn"
       aria-label="Dismiss notification"
-      @click.stop="$emit('dismiss', id)"
+      @click.stop="dismissToast"
     >
       <Icon
         name="close"
@@ -234,7 +287,10 @@ onUnmounted(() => {
 .toast {
   position: relative;
   display: flex;
-  align-items: flex-start; /* Align top for multiline compatibility */
+  /* Real 48px controls need a common center line. Multiline copy retains the
+     flexible middle column while actions stay stable instead of hanging from
+     undersized first-line hit targets. */
+  align-items: center;
   gap: var(--sys-space-12);
   background: var(--sys-surface-glass);
 
@@ -242,8 +298,14 @@ onUnmounted(() => {
   padding: var(--sys-space-12) var(--sys-space-16);
   border-radius: var(--sys-shape-corner-m); /* Subtle rounded corners for multiline layout compatibility */
   box-shadow: 0 8px 32px var(--sys-overlay-dark-medium);
-  min-width: 280px;
-  max-width: 90vw;
+  min-width: min(
+    280px,
+    calc(100vw - var(--sys-safe-left) - var(--sys-safe-right) - var(--sys-space-24))
+  );
+  max-width: min(
+    90vw,
+    calc(100vw - var(--sys-safe-left) - var(--sys-safe-right) - var(--sys-space-24))
+  );
   border: 1px solid var(--sys-surface-glass-border);
   pointer-events: auto;
   transition:
@@ -306,7 +368,6 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   opacity: 0.9;
-  margin-top: var(--sys-space-1); /* Align perfectly with first text line */
 }
 
 .undo-icon {
@@ -330,7 +391,11 @@ onUnmounted(() => {
   color: inherit;
   opacity: 0.6;
   cursor: pointer;
-  padding: var(--sys-space-6);
+  width: var(--sys-space-48);
+  min-width: var(--sys-space-48);
+  height: var(--sys-space-48);
+  min-height: var(--sys-space-48);
+  padding: 0;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -340,8 +405,7 @@ onUnmounted(() => {
     background-color var(--sys-motion-duration-200) var(--sys-motion-easing-standard),
     color var(--sys-motion-duration-200) var(--sys-motion-easing-standard),
     transform var(--sys-motion-duration-200) var(--sys-motion-spring);
-  margin-left: var(--sys-space-2);
-  margin-top: -var(--sys-space-1); /* Align with first line */
+  flex: 0 0 var(--sys-space-48);
 }
 .copy-btn:hover {
   opacity: 1;
@@ -361,11 +425,16 @@ onUnmounted(() => {
   color: var(--sys-color-inverse-surface);
   border: none;
   border-radius: var(--sys-shape-corner-full);
-  padding: var(--sys-space-6) var(--sys-space-14);
+  min-height: var(--sys-space-48);
+  padding: 0 var(--sys-space-14);
   font-weight: 800;
   font-size: 12px;
   text-transform: uppercase;
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
 }
 .action-btn:active {
   opacity: 0.8;
@@ -389,24 +458,17 @@ onUnmounted(() => {
   color: inherit;
   opacity: 0.5;
   cursor: pointer;
-  /* A 16px glyph at 4px padding is a 24px target. The pseudo-element widens
-     the hit area to 48px without moving the glyph or reflowing the toast. */
-  position: relative;
-  padding: var(--sys-space-4);
+  width: var(--sys-space-48);
+  min-width: var(--sys-space-48);
+  height: var(--sys-space-48);
+  min-height: var(--sys-space-48);
+  padding: 0;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: opacity var(--sys-motion-duration-200);
-  margin-left: -var(--sys-space-4);
-  margin-top: var(--sys-space-1); /* Align with first line */
-}
-/* Widens a 24px glyph button to the 48px touch minimum without moving the
-   glyph or reflowing the toast. Same technique as ErrorBoundary's hit target. */
-.close-btn::after {
-  content: "";
-  position: absolute;
-  inset: calc(-1 * var(--sys-space-12));
+  flex: 0 0 var(--sys-space-48);
 }
 
 .close-btn:hover {
@@ -414,11 +476,18 @@ onUnmounted(() => {
   background: var(--sys-overlay-light-soft);
 }
 
+.copy-btn:focus-visible,
+.action-btn:focus-visible,
+.close-btn:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  html:not([data-motion-preference="standard"]) .toast.undo::after {
+  :global(:root:not([data-motion-preference="standard"]) .toast.undo::after) {
     animation: none;
   }
 }
 
-html[data-motion-preference="reduced"] .toast.undo::after { animation: none; }
+:global(:root[data-motion-preference="reduced"] .toast.undo::after) { animation: none; }
 </style>

@@ -26,6 +26,10 @@
  * `@JavascriptInterface` methods disagree on names, argument counts or types.
  */
 export interface AndroidBridge {
+  /** Actual Android Battery Saver state. Optional for older installed shells. */
+  isPowerSaveMode?(): boolean;
+  /** Applies the haptics preference to WebView's native feedback as well. */
+  setHapticFeedbackEnabled?(enabled: boolean): void;
   /**
    * Always true inside the wrapper. Optional because the PWA detects the
    * wrapper by the bridge object's presence and never needs to call this.
@@ -217,11 +221,49 @@ export interface DismissResponse {
   message?: string;
 }
 
+/** A single command rendered by the shared contextual-action island. */
+export interface ConsoleFabAction {
+  /** Stable, feature-owned identifier returned when the command is invoked. */
+  id: string;
+  /** Visible action label. Hidden only when `compact` is true. */
+  label: string;
+  /** Accessible name when the visible label alone is not sufficiently descriptive. */
+  accessibleLabel?: string;
+  /** Name resolved by the shared icon registry. */
+  icon: string;
+  /** Semantic visual emphasis, mapped to design-system colour roles. */
+  tone?: "primary" | "secondary";
+  /** Renders an icon-only, minimum-touch-target button. */
+  compact?: boolean;
+  /** Prevents command dispatch while its prerequisite is unavailable. */
+  disabled?: boolean;
+  /** Replaces the icon with a progress indicator and exposes `aria-busy`. */
+  busy?: boolean;
+  /** Optional compact value rendered beside the label. */
+  badge?: string | number;
+  /** Optional supporting word rendered after the badge at wider widths. */
+  supportingLabel?: string;
+}
+
+/** Feature-owned description of a cancellable operation shown by shared UI. */
+export interface ConsoleFabActivity {
+  /** Short operation name used to label the control group. */
+  label: string;
+  /** Live status text announced while the operation is active. */
+  status: string;
+  /** Exact accessible label for the cancellation control. */
+  cancelLabel: string;
+  /** Replaces ordinary commands with operation-specific commands when true. */
+  exclusive?: boolean;
+}
+
 /**
- * Shared UI State for the Global FAB (Floating Action Button).
+ * Shared UI state for the contextual action island used by console views.
  *
  * @remarks
- * Formalizes the contract for the management button used in Console views.
+ * Core and shared layers intentionally know only about commands and activity.
+ * Feature names, labels, command identifiers, and cancellation semantics are
+ * supplied by the owning feature at the composition boundary.
  */
 export interface ConsoleFabState {
   /** Indicates if the FAB should be rendered. */
@@ -232,24 +274,12 @@ export interface ConsoleFabState {
   actionHref?: string;
   /** Indicates if a background operation is currently in progress. */
   isProcessing: boolean;
-  /** Indicates if the system is preparing a "Blasting" operation (batch sync). */
-  isBlasting: boolean;
   /** The current number of items selected in the batch. */
   selectionCount: number;
-  /** Indicates if "Blitz Mode" (high-speed processing) is enabled. */
-  blitzEnabled: boolean;
-  /**
-   * Indicates if the Global/Local Harvest actions are wired up for this view.
-   * Harvest scouts external clanless players from the Clash Royale leaderboard,
-   * which only makes sense for a recruiting view (Headhunter) — not for Roster,
-   * which manages existing clan members. Distinct from `blitzEnabled` because
-   * both views share the same Blitz FAB but only one supports Harvest.
-   */
-  harvestEnabled?: boolean;
-  /** Indicates if a leaderboard harvest operation is currently active. */
-  isHarvesting?: boolean;
-  /** The active harvester mode (local or global). */
-  activeHarvester?: "global" | "local" | null;
+  /** Ordered commands owned by the active feature. */
+  actions: readonly ConsoleFabAction[];
+  /** Optional cancellable activity owned by the active feature. */
+  activity?: ConsoleFabActivity;
   /** Optional icon override for the dismiss/close button. */
   dismissIcon?: string;
   /**
@@ -269,7 +299,7 @@ export interface ConsoleFabState {
  *
  * @typeParam T - The type of items being managed in the console.
  */
-export interface ConsoleLayoutEvents<T = any> {
+export interface ConsoleLayoutEvents<T = unknown> {
   /** Triggers a manual data refresh. */
   refresh: () => void | Promise<void>;
   /** Updates the active search filter. */
@@ -284,8 +314,12 @@ export interface ConsoleLayoutEvents<T = any> {
   "select-score": (threshold: number, mode: "ge" | "le", customScoreGetter?: (item: T) => number) => void;
   /** Triggered when the management FAB is dismissed. */
   "fab-dismiss": () => void;
+  /** Dispatches a feature-owned contextual command. */
+  "fab-command"?: (commandId: string, event: MouseEvent) => void;
+  /** Cancels an active operation without invoking the view's dismiss action. */
+  "fab-cancel-operation"?: () => void;
   /** Allows for feature-specific event extensions. */
-  [key: string]: ((...args: any[]) => void | Promise<void>) | undefined;
+  [key: string]: ((...args: never[]) => void | Promise<void>) | undefined;
 }
 
 /**

@@ -6,7 +6,7 @@ import { supabase, CONFIG, syncVault } from "./client.ts";
 import { clinicalServe } from "../_shared/protocol.ts";
 import { normalizeTag } from "../_shared/utils.ts";
 import { RoyaleTagSchema } from "../_shared/schemas.ts";
-import * as v from "npm:valibot@1.4.2";
+import * as v from "npm:valibot@1.5.0";
 
 /**
  * Supabase Edge Function: ingest-royale-data
@@ -40,4 +40,3 @@ Deno.serve(async (req) => {
         }
     });
 });
-

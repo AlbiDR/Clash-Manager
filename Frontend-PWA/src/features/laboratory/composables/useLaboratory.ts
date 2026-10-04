@@ -205,7 +205,9 @@ export function useLaboratory() {
     if (isSimulating.value) return { type: "loading", text: "Computing Trajectory..." } as const;
     if (fetchError.value) return { type: "error", text: "Extraction Failed" } as const;
     const tag = trackedPlayerTag.value || clashData.value?.playerTag;
-    if (!tag) return { type: "warning", text: "Target Required" } as const;
+    // The status pill shares a 360dp title row with "Laboratory". Keep this
+    // concise there; the empty state below carries the full explanation.
+    if (!tag) return { type: "warning", text: "No Target" } as const;
     return { type: "success", text: "Operational", nominal: true } as const;
   });
 
@@ -219,7 +221,13 @@ export function useLaboratory() {
    */
   const layoutProps = computed(() => ({
     status: status.value,
-    loading: isFetching.value && !observation.value,
+    // The first simulation result arrives on a later idle batch than the
+    // observation. Keep the representative dashboard skeleton in place across
+    // that handoff so it cannot collapse to only Vault + Parameters and then
+    // expand again when Summary + Trajectory appear. Once an operation exists,
+    // subsequent recalculations deliberately keep the dashboard visible.
+    loading: (isFetching.value && !observation.value)
+      || (isSimulating.value && !operation.value),
     isRefreshing: isFetching.value,
     syncError: fetchError.value || undefined,
     isEmpty: isEmpty.value,
@@ -227,7 +235,7 @@ export function useLaboratory() {
       ? 'Target Required' 
       : (fetchError.value || "Target Profile Not Found"),
     emptyHint: !(trackedPlayerTag.value || clashData.value?.playerTag) 
-      ? 'No PlayerTag configured. Please enter one above or in Project Properties.' 
+      ? 'No player tag is configured. Enter one above or in Settings.'
       : 'Ensure your inventory is correctly entered in The Vault.',
     emptyIcon: !(trackedPlayerTag.value || clashData.value?.playerTag) ? 'flask' : 'crosshair',
     remoteInfo: currentSource.value ? {

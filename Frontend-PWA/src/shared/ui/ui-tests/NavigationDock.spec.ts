@@ -6,6 +6,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { shallowMount } from "@vue/test-utils";
 import NavigationDock from "../NavigationDock.vue";
+import Icon from "../Icon.vue";
 import { useRoute, useRouter } from "vue-router";
 import * as hapticsModule from "@shared/composables/useHaptics";
 import { NAV_ITEMS } from "../../../core/utils/navigation";
@@ -33,15 +34,19 @@ describe("NavigationDock.vue", () => {
     vi.mocked(useRouter).mockReturnValue({ push: mockPush } as any);
   });
 
-  it("renders all navigation items", () => {
+  it("renders all navigation items through the shared icon primitive", async () => {
     vi.mocked(useRoute).mockReturnValue({ path: "/roster" } as any);
     const wrapper = shallowMount(NavigationDock);
+    await wrapper.vm.$nextTick();
 
     const buttons = wrapper.findAll(".dock-item");
     expect(buttons.length).toBe(NAV_ITEMS.length);
 
     NAV_ITEMS.forEach((item, index) => {
       expect(buttons[index].attributes("aria-label")).toBe(item.label);
+      const icon = buttons[index].getComponent(Icon);
+      expect(icon.props("name")).toBe(item.icon);
+      expect(icon.props("size")).toBe("var(--sys-layout-dock-icon-size)");
     });
   });
 
@@ -53,6 +58,7 @@ describe("NavigationDock.vue", () => {
     expect(activeItem.exists()).toBe(true);
     expect(activeItem.attributes("aria-label")).toBe("Laboratory");
     expect(wrapper.find(".capsule-bg").exists()).toBe(true);
+    expect(wrapper.find(".pending-indicator").exists()).toBe(false);
   });
 
   it("calls router.push when a different route is clicked", async () => {
@@ -86,7 +92,10 @@ describe("NavigationDock.vue", () => {
     buttons[1].trigger("click");
     await wrapper.vm.$nextTick();
     expect(buttons[1].classes()).toContain("active");
+    expect(buttons[1].classes()).toContain("pending");
     expect(buttons[1].attributes("aria-busy")).toBe("true");
+    expect(buttons[1].find(".pending-indicator").exists()).toBe(true);
+    expect(buttons[1].find(".pending-indicator").attributes("aria-hidden")).toBe("true");
 
     buttons[2].trigger("click");
     await wrapper.vm.$nextTick();
@@ -95,6 +104,9 @@ describe("NavigationDock.vue", () => {
     expect(mockPush).toHaveBeenCalledWith("/headhunter");
     expect(mockPush).toHaveBeenCalledWith("/laboratory");
     expect(buttons[2].classes()).toContain("active");
+    expect(buttons[2].classes()).toContain("pending");
+    expect(buttons[2].find(".pending-indicator").exists()).toBe(true);
+    expect(buttons[1].find(".pending-indicator").exists()).toBe(false);
     expect(buttons[2].attributes("disabled")).toBeUndefined();
 
     resolveFirstNavigation();
@@ -108,6 +120,7 @@ describe("NavigationDock.vue", () => {
     await wrapper.vm.$nextTick();
 
     expect(wrapper.find(".dock-item").attributes("disabled")).toBeUndefined();
+    expect(wrapper.find(".pending-indicator").exists()).toBe(false);
   });
 
   describe("history holds only the start tab and the current one", () => {

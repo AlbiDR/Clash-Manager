@@ -2,8 +2,9 @@
 // Copyright (C) 2026 AlbiDR
 
 import { describe, it, expect, vi, beforeAll } from "vitest";
-import * as v from "npm:valibot@1.4.2";
-import { clinicalServe } from "../protocol.ts";
+import type { SupabaseClient } from "npm:@supabase/supabase-js@2.117.0";
+import * as v from "npm:valibot@1.5.0";
+import { clinicalServe, MAX_REQUEST_BODY_BYTES } from "../protocol.ts";
 import { ProtocolError } from "../errors.ts";
 
 /**
@@ -77,6 +78,27 @@ function makeRawRequest(body: string, authToken = BEARER_TOKEN, extraHeaders?: R
   });
 }
 
+function makeStreamingRequest(
+  body: ReadableStream<Uint8Array>,
+  authToken = BEARER_TOKEN,
+  extraHeaders?: Record<string, string>,
+): Request {
+  // WHATWG Request requires duplex: "half" for a streaming POST body in the Node
+  // test runtime. It intentionally has no Content-Length, mirroring chunked HTTP.
+  const init = {
+    method: "POST",
+    headers: {
+      ...(authToken !== undefined ? { Authorization: `Bearer ${authToken}` } : {}),
+      "Content-Type": "application/json",
+      ...extraHeaders,
+    },
+    body,
+    duplex: "half",
+  } as RequestInit;
+
+  return new Request("https://example.test/fn", init);
+}
+
 function makeSupabaseMock(rpcImpl: (fn: string, args: unknown) => Promise<{ data: unknown; error: unknown }>) {
   const calls: Array<{ fn: string; args: unknown }> = [];
   const supabase = {
@@ -84,7 +106,7 @@ function makeSupabaseMock(rpcImpl: (fn: string, args: unknown) => Promise<{ data
       calls.push({ fn, args });
       return rpcImpl(fn, args);
     }),
-  };
+  } as unknown as SupabaseClient;
   return { supabase, calls };
 }
 
@@ -874,15 +896,110 @@ describe("clinicalServe", () => {
       expect(handler).toHaveBeenCalledWith({}, expect.any(Function), expect.any(Function));
     });
 
-    it("returns 400 MALFORMED_BODY when the request body stream fails to read", async () => {
-      const { supabase } = makeSupabaseMock(async () => ({ data: null, error: null }));
-
-      const brokenReq = new Request("https://example.test/fn", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${BEARER_TOKEN}` },
+    it("rejects an over-limit declared body with a client-safe 413 before consuming it", async () => {
+      const { supabase, calls } = makeSupabaseMock(async () => ({ data: null, error: null }));
+      const handler = vi.fn(async () => ({ ok: true }));
+      const body = "x".repeat(MAX_REQUEST_BODY_BYTES + 1);
+      const request = makeRawRequest(body, BEARER_TOKEN, {
+        "Content-Length": String(body.length),
+        Origin: "https://app.test.co",
+        "x-forwarded-for": "198.51.100.110",
       });
-      // Force text() to reject
-      vi.spyOn(brokenReq, "text").mockRejectedValueOnce(new Error("Stream unreadable"));
+
+      expect(request.bodyUsed).toBe(false);
+
+      const response = await clinicalServe({
+        req: request,
+        supabase,
+        bearerToken: BEARER_TOKEN,
+        eventType: "TEST_EVENT",
+        componentId: "declared-body-cap-spec",
+        schema: EMPTY_SCHEMA,
+        rateLimit: { maxRequests: 10, windowMs: 60_000 },
+        handler,
+      });
+
+      expect(response.status).toBe(413);
+      expect(response.headers.get("Content-Type")).toContain("application/json");
+      expect(response.headers.get("Access-Control-Allow-Origin")).toBe("https://app.test.co");
+      await expect(response.json()).resolves.toEqual({
+        error: "Payload Too Large",
+        code: "PAYLOAD_TOO_LARGE",
+      });
+      // The declared-size fast path must reject before a body reader is acquired.
+      expect(request.bodyUsed).toBe(false);
+      expect(handler).not.toHaveBeenCalled();
+      expect(calls).toHaveLength(0);
+    });
+
+    it("bounds a chunked stream even when it has no Content-Length", async () => {
+      const { supabase, calls } = makeSupabaseMock(async () => ({ data: null, error: null }));
+      const handler = vi.fn(async () => ({ ok: true }));
+      const request = makeStreamingRequest(new ReadableStream<Uint8Array>({
+        start(controller) {
+          controller.enqueue(new Uint8Array(MAX_REQUEST_BODY_BYTES));
+          controller.enqueue(new Uint8Array([0x78]));
+          controller.close();
+        },
+      }), BEARER_TOKEN, { "x-forwarded-for": "198.51.100.111" });
+
+      // A streaming Request represents a chunked/lengthless HTTP body in this runtime.
+      expect(request.headers.get("Content-Length")).toBeNull();
+
+      const response = await clinicalServe({
+        req: request,
+        supabase,
+        bearerToken: BEARER_TOKEN,
+        eventType: "TEST_EVENT",
+        componentId: "streamed-body-cap-spec",
+        schema: EMPTY_SCHEMA,
+        rateLimit: { maxRequests: 10, windowMs: 60_000 },
+        handler,
+      });
+
+      expect(response.status).toBe(413);
+      await expect(response.json()).resolves.toEqual({
+        error: "Payload Too Large",
+        code: "PAYLOAD_TOO_LARGE",
+      });
+      expect(handler).not.toHaveBeenCalled();
+      // Rejection occurs before telemetry registration, so hostile input cannot turn
+      // into a database write simply by being large.
+      expect(calls).toHaveLength(0);
+    });
+
+    it("accepts a valid body exactly at the byte ceiling", async () => {
+      const { supabase } = makeSupabaseMock(async (fn) => {
+        if (fn === "report_telemetry") return { data: { id: "tid-body-cap-boundary" }, error: null };
+        return { data: null, error: null };
+      });
+      const handler = vi.fn(async (payload) => ({ payload }));
+      // A JSON string has exactly two quote bytes around its ASCII content.
+      const body = `"${"x".repeat(MAX_REQUEST_BODY_BYTES - 2)}"`;
+      expect(new TextEncoder().encode(body)).toHaveLength(MAX_REQUEST_BODY_BYTES);
+
+      const response = await clinicalServe({
+        req: makeRawRequest(body),
+        supabase,
+        bearerToken: BEARER_TOKEN,
+        eventType: "TEST_EVENT",
+        componentId: "exact-body-cap-spec",
+        schema: v.string(),
+        handler,
+      });
+
+      expect(response.status).toBe(200);
+      expect(handler).toHaveBeenCalledTimes(1);
+    });
+
+    it("returns 400 MALFORMED_BODY when the request body stream fails to read", async () => {
+      const { supabase, calls } = makeSupabaseMock(async () => ({ data: null, error: null }));
+      const handler = vi.fn(async () => ({ ok: true }));
+      const brokenReq = makeStreamingRequest(new ReadableStream<Uint8Array>({
+        start(controller) {
+          controller.error(new Error("Stream unreadable"));
+        },
+      }));
 
       const response = await clinicalServe({
         req: brokenReq,
@@ -891,12 +1008,14 @@ describe("clinicalServe", () => {
         eventType: "TEST_EVENT",
         componentId: "unreadable-stream-spec",
         schema: EMPTY_SCHEMA,
-        handler: async () => ({ ok: true }),
+        handler,
       });
 
       expect(response.status).toBe(400);
       const body = await response.json();
       expect(body.code).toBe("MALFORMED_BODY");
+      expect(handler).not.toHaveBeenCalled();
+      expect(calls).toHaveLength(0);
     });
   });
 

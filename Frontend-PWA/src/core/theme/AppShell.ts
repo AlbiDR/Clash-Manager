@@ -3,6 +3,7 @@
 import { lightTokens, darkTokens, generateCssVariables } from './tokens';
 import { staticTokens } from './base';
 import { getBone } from './bones';
+import { NAV_ITEMS } from '../utils/navigation';
 
 /**
  * CLASH MANAGER - App Shell (TypeScript Source of Truth)
@@ -12,6 +13,14 @@ import { getBone } from './bones';
 // Zero semantic content - just serializes a flat var record as CSS declarations.
 function serializeVars(vars: Record<string, string>): string {
   return Object.entries(vars).map(([k, v]) => `${k}: ${v};`).join('\n');
+}
+
+function escapeHtml(value: string): string {
+  return value
+    .replaceAll('&', '&amp;')
+    .replaceAll('"', '&quot;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;');
 }
 
 // Shell-only aliases, theme-agnostic by construction: each is a var()
@@ -27,7 +36,6 @@ const SHELL_ALIASES = `
   --sh-surf-h: var(--sys-color-surface-container-high);
   --sh-text: var(--sys-color-on-surface);
   --sh-outline: var(--sys-color-outline);
-  --sh-primary: var(--sys-color-primary);
   --sh-glass: var(--sys-color-surface-container);
   --sh-border: var(--sys-color-outline-variant);
   --sh-sk: var(--sys-color-surface-container-highest);
@@ -145,24 +153,90 @@ export function getAppShellStyles(): string {
     .sh-score { width: var(--sys-space-48); height: var(--sys-space-48); background: var(--sh-sk); border-radius: var(--sys-shape-corner-input); margin-right: var(--sys-space-4); }
     .sh-expand { width: 36px; height: 36px; background: var(--sh-surf-h); border-radius: var(--sys-shape-corner-medium); opacity: 0.6; }
 
-    .sh-dock {
+    #app-shell .dock-container {
       position: fixed;
-      bottom: calc(var(--sys-space-24) + var(--sys-safe-bottom));
+      bottom: calc(var(--sys-space-24) + var(--sys-safe-bottom) + var(--safe-frame-offset, 0px));
       left: var(--sys-safe-center-x);
-      transform: translateX(-50%);
-      background: var(--sh-glass);
-      border: 1px solid var(--sh-border);
+      transform: translate3d(-50%, 0, 0);
+      background: var(--sys-surface-glass);
+      backdrop-filter: var(--sys-surface-glass-blur);
+      -webkit-backdrop-filter: var(--sys-surface-glass-blur);
+      border: var(--sys-border-width-glass) solid var(--sys-surface-glass-border);
       padding: var(--sys-space-6);
       border-radius: var(--sys-shape-corner-full);
       display: flex;
-      gap: var(--sys-space-4);
-      z-index: var(--sys-z-sticky);
+      gap: var(--sys-space-6);
+      z-index: var(--sys-z-dock);
       box-shadow: var(--sys-elevation-3);
+      touch-action: manipulation;
+      pointer-events: auto;
+      user-select: none;
+      contain: layout paint style;
+      isolation: isolate;
+      box-sizing: border-box;
     }
 
-    .sh-d-item { padding: var(--sys-space-10) var(--sys-space-20); border-radius: var(--sys-shape-corner-full); display: flex; gap: var(--sys-space-8); align-items: center; color: var(--sh-outline); }
-    .sh-d-item.active { background: var(--sh-primary); color: var(--sys-color-on-primary); }
-    .sh-d-icon { width: 22px; height: 22px; background: currentColor; opacity: 0.8; }
+    #app-shell .dock-mode { display: flex; align-items: center; min-width: 0; }
+    #app-shell .dock-item {
+      position: relative;
+      box-sizing: border-box;
+      height: var(--sys-space-56);
+      flex: 1;
+      min-width: var(--sys-layout-dock-item-min-width);
+      padding: 0 var(--sys-space-12);
+      border-radius: var(--sys-shape-corner-full);
+      display: flex;
+      gap: var(--sys-space-10);
+      align-items: center;
+      justify-content: center;
+      color: var(--sh-text);
+      font-size: var(--sys-typescale-body-rg);
+      font-weight: var(--sys-font-weight-dock);
+      font-family: inherit;
+      white-space: nowrap;
+      background: none;
+      border: none;
+      transform: translateZ(0);
+      touch-action: manipulation;
+    }
+    #app-shell .dock-item.active { color: var(--sys-color-on-primary); flex: var(--sys-layout-dock-active-grow); }
+    #app-shell .dock-item:focus-visible { outline: var(--sys-space-2) solid var(--sys-color-primary); outline-offset: var(--sys-space-2); }
+    #app-shell .capsule-bg { position: absolute; inset: 0; background: var(--sys-color-primary); border-radius: var(--sys-shape-corner-full); z-index: -1; box-shadow: var(--sys-elevation-dock-active); }
+    #app-shell .dock-icon-placeholder { display: block; width: var(--sys-layout-dock-icon-size); height: var(--sys-layout-dock-icon-size); flex: 0 0 var(--sys-layout-dock-icon-size); border-radius: var(--sys-shape-corner-small); background: currentColor; opacity: var(--sys-opacity-dock-placeholder); }
+    #app-shell .dock-label { white-space: nowrap; letter-spacing: var(--sys-tracking-neg-1); }
+
+    @media (max-width: 600px) {
+      #app-shell .dock-container {
+        width: calc(100% - var(--sys-safe-left) - var(--sys-safe-right) - var(--sys-space-32));
+        max-width: var(--sys-layout-dock-compact-max-width);
+        padding: var(--sys-space-4);
+        gap: var(--sys-space-4);
+      }
+      #app-shell .dock-mode { flex: 1 1 auto; width: 100%; }
+      #app-shell .dock-item { flex: 1; min-width: 0; padding: 0; gap: var(--sys-space-4); font-size: var(--sys-typescale-body-sm); }
+      #app-shell .dock-item .dock-label { display: none; }
+      #app-shell .dock-item.active { flex: var(--sys-layout-dock-compact-active-grow); }
+      #app-shell .dock-item.active .dock-label { display: block; max-width: var(--sys-layout-dock-label-max-width); overflow: hidden; text-overflow: ellipsis; }
+    }
+    @media (orientation: landscape) and (max-height: 520px) {
+      #app-shell .dock-container {
+        right: calc(var(--sys-safe-right) + var(--sys-space-16) + var(--safe-frame-offset, 0px));
+        bottom: calc(var(--sys-space-12) + var(--sys-safe-bottom) + var(--safe-frame-offset, 0px));
+        left: auto;
+        transform: translate3d(0, 0, 0);
+        padding: var(--sys-space-4);
+        gap: var(--sys-space-4);
+      }
+      #app-shell .dock-item {
+        flex: 0 0 var(--sys-space-48);
+        min-width: var(--sys-space-48);
+        width: var(--sys-space-48);
+        height: var(--sys-space-48);
+        padding: 0;
+      }
+      #app-shell .dock-item.active { flex: 0 0 var(--sys-space-48); }
+      #app-shell .dock-label { display: none; }
+    }
     .sh-pulse {
       opacity: 0.85;
       animation: sh-pulse 1.5s infinite ease-in-out;
@@ -172,6 +246,14 @@ export function getAppShellStyles(): string {
 }
 
 export function getAppShellHtml(): string {
+  const shellNavigation = NAV_ITEMS.map((navigationItem, navigationIndex) => `
+          <button type="button" class="dock-item${navigationIndex === 0 ? ' active' : ''}" aria-label="${escapeHtml(navigationItem.label)}"${navigationIndex === 0 ? ' aria-current="page"' : ''}>
+            ${navigationIndex === 0 ? '<div class="capsule-bg"></div>' : ''}
+            <span class="dock-icon dock-icon-placeholder" aria-hidden="true"></span>
+            <span class="dock-label">${escapeHtml(navigationItem.label)}</span>
+          </button>
+  `).join('');
+
   return `
     <main id="app-shell">
       <div class="sh-header">
@@ -204,26 +286,10 @@ export function getAppShellHtml(): string {
         `).join('')}
       </div>
 
-      <div class="sh-dock" role="navigation" aria-label="Main Navigation">
-        <div class="sh-d-item active" role="link" aria-label="Roster View" tabindex="0">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" role="img" aria-hidden="true">
-            <title>Roster Icon</title>
-            <path d="M3,3v18h18V3H3z M17,17h-2v-5h2V17z M13,17h-2v-9h2V17z M9,17H7V9h2V17z" vector-effect="non-scaling-stroke"/>
-          </svg>
-          <span style="font-size: var(--sys-typescale-body-md); font-weight: 750; font-family: var(--sys-font-family-body);">Roster</span>
-        </div>
-        <div class="sh-d-item" role="link" aria-label="Headhunter View" tabindex="0">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" role="img" aria-hidden="true">
-            <title>Headhunter Icon</title>
-            <path d="M12,2C6.48,2,2,6.48,2,12s4.48,10,10,10s10-4.48,10-10S17.52,2,12,2z M12,17c-2.76,0-5-2.24-5-5s2.24-5,5-5s5,2.24,5,5S14.76,17,12,17z" vector-effect="non-scaling-stroke"/>
-          </svg>
-        </div>
-        <div class="sh-d-item" role="link" aria-label="Settings View" tabindex="0">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" role="img" aria-hidden="true">
-            <title>Settings Icon</title>
-            <path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.74,8.87C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.07,0.94l-2.03,1.58c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z" vector-effect="non-scaling-stroke" />
-          </svg>
-        </div>
+      <div class="dock-container">
+        <nav class="dock-mode" aria-label="Main navigation">
+          ${shellNavigation}
+        </nav>
       </div>
     </main>
   `;

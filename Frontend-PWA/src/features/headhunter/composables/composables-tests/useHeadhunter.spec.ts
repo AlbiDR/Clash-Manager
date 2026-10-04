@@ -132,6 +132,18 @@ describe("useHeadhunter", () => {
     expect(mockSetBadge).toHaveBeenCalledWith(1);
   });
 
+  it("surfaces typed blacklist subscription failures through the presentation channel", async () => {
+    const { subscribeToBlacklist } = await import("@core/api/RecruitClient");
+    const { useHeadhunter } = await import("../useHeadhunter");
+    useHeadhunter();
+    const onError = vi.mocked(subscribeToBlacklist).mock.calls.at(-1)![2];
+    const subscriptionFailure = new Error("Realtime unavailable");
+
+    onError(subscriptionFailure as never);
+
+    expect(mockToastError).toHaveBeenCalledWith("Realtime unavailable");
+  });
+
   it("should update badge with total count if setting is disabled", async () => {
     const { useHeadhunter } = await import("../useHeadhunter");
     useHeadhunter();
@@ -221,11 +233,11 @@ describe("useHeadhunter", () => {
 
 
   it("should bypass network calls in synthetic mode", async () => {
+    mockIsSyntheticMode.value = true;
     const { useHeadhunter } = await import("../useHeadhunter");
     const { dismissRecruitsAction } = useHeadhunter();
-    const { dismissRecruits } = await import("@core/api/RecruitClient");
+    const { dismissRecruits, subscribeToBlacklist } = await import("@core/api/RecruitClient");
 
-    mockIsSyntheticMode.value = true;
     mockClashData.value = sampleData;
     await nextTick();
 
@@ -233,6 +245,7 @@ describe("useHeadhunter", () => {
 
     expect(mockUpdateLocalData).toHaveBeenCalled();
     expect(dismissRecruits).not.toHaveBeenCalled();
+    expect(subscribeToBlacklist).not.toHaveBeenCalled();
     expect(mockPost).not.toHaveBeenCalled();
   });
 

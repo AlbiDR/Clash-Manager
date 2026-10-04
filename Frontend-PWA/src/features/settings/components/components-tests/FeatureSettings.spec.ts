@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
+/* eslint-disable vue/one-component-per-file -- Test-local component doubles belong with the spec that owns them. */
 
 import { mount } from "@vue/test-utils";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
@@ -16,13 +17,25 @@ vi.mock("../../composables/useSettings", () => ({
 // Functional stubs to allow prop inspection
 const SettingsCardStub = defineComponent({
   name: "SettingsCard",
-  props: ["title", "icon", "loading", "initiallyExpanded"],
+  props: {
+    title: { type: String, required: true },
+    icon: { type: String, required: true },
+    loading: Boolean,
+    initiallyExpanded: Boolean,
+  },
   template: '<div class="settings-card-stub"><slot /></div>'
 });
 
 const SettingRowStub = defineComponent({
   name: "SettingRow",
-  props: ["label", "description", "active", "loading", "mini"],
+  props: {
+    label: { type: String, required: true },
+    description: { type: String, required: true },
+    active: Boolean,
+    loading: Boolean,
+    mini: Boolean,
+  },
+  emits: ["click"],
   template: '<div class="setting-row-stub" @click="$emit(\'click\')">{{ label }} {{ description }}</div>'
 });
 
@@ -35,6 +48,7 @@ describe("FeatureSettings.vue", () => {
   const mockModules = reactive({
     ghostBenchmarking: false,
     sortExplanation: true,
+    hapticFeedback: true,
     blitzMode: false,
     blitzDwellMs: 850,
   });
@@ -47,6 +61,7 @@ describe("FeatureSettings.vue", () => {
     vi.clearAllMocks();
     mockModules.ghostBenchmarking = false;
     mockModules.sortExplanation = true;
+    mockModules.hapticFeedback = true;
     mockModules.blitzMode = false;
     mockModules.blitzDwellMs = 850;
     mockIsRefreshing.value = false;
@@ -96,10 +111,11 @@ describe("FeatureSettings.vue", () => {
     const wrapper = mountComponent();
     const rows = wrapper.findAllComponents(SettingRowStub);
 
-    expect(rows).toHaveLength(3);
+    expect(rows).toHaveLength(4);
     expect(rows[0].props("label")).toBe("Ghost Benchmarking");
     expect(rows[1].props("label")).toBe("Sorting Descriptions");
-    expect(rows[2].props("label")).toBe("Blitz Mode");
+    expect(rows[2].props("label")).toBe("Haptic Feedback");
+    expect(rows[3].props("label")).toBe("Blitz Mode");
   });
 
   it("synchronizes row active state with modules", () => {
@@ -108,7 +124,8 @@ describe("FeatureSettings.vue", () => {
 
     expect(rows[0].props("active")).toBe(false); // ghostBenchmarking
     expect(rows[1].props("active")).toBe(true);  // sortExplanation
-    expect(rows[2].props("active")).toBe(false); // blitzMode
+    expect(rows[2].props("active")).toBe(true); // hapticFeedback
+    expect(rows[3].props("active")).toBe(false); // blitzMode
   });
 
   it("calls toggle with correct module name when feature rows are clicked", async () => {
@@ -120,12 +137,15 @@ describe("FeatureSettings.vue", () => {
 
     await rows[1].trigger("click");
     expect(mockToggle).toHaveBeenCalledWith("sortExplanation");
+
+    await rows[2].trigger("click");
+    expect(mockToggle).toHaveBeenCalledWith("hapticFeedback");
   });
 
   describe("Blitz Mode toggle (PWA mode)", () => {
     it("calls toggle('blitzMode') when clicked in PWA mode", async () => {
       const wrapper = mountComponent();
-      const blitzRow = wrapper.findAllComponents(SettingRowStub)[2];
+      const blitzRow = wrapper.findAllComponents(SettingRowStub)[3];
 
       await blitzRow.trigger("click");
       expect(mockToggle).toHaveBeenCalledWith("blitzMode");
@@ -181,5 +201,6 @@ describe("FeatureSettings.vue", () => {
     expect(rows[0].props("loading")).toBe(true);
     expect(rows[1].props("loading")).toBe(true);
     expect(rows[2].props("loading")).toBe(true);
+    expect(rows[3].props("loading")).toBe(true);
   });
 });

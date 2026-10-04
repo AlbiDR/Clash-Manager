@@ -3,7 +3,7 @@
 
 import { supabase } from "./client.ts";
 import { ScannerStats, AuditEntry, RecruitSource } from "../_shared/types.ts";
-import * as v from "npm:valibot@1.4.2";
+import * as v from "npm:valibot@1.5.0";
 import { HeadhunterContextSchema } from "../_shared/schemas.ts";
 import { runShadowScout } from "./stages/shadow-scout.ts";
 import { runTournamentDiscovery } from "./stages/tournament-finder.ts";

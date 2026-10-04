@@ -3,6 +3,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ref, nextTick } from 'vue';
 import { setActivePinia, createPinia } from 'pinia';
+import { asGems, asGold, asXP } from '@core/utils/economy';
+import type { PlayerData } from '../../logic';
 
 // --- Mocks ---
 
@@ -48,14 +50,14 @@ const localStorageMock = {
 vi.stubGlobal('localStorage', localStorageMock);
 
 // --- Logic Mocks ---
-const mockHydrate = vi.fn();
+const mockHydrate = vi.fn<(raw: unknown) => PlayerData | undefined>();
 vi.mock('../../logic', async (importOriginal) => {
-  const actual = await importOriginal<any>();
+  const actual = await importOriginal<typeof import('../../logic')>();
   return {
     ...actual,
     ProfileHydrator: {
       ...actual.ProfileHydrator,
-      hydrate: (raw: any) => mockHydrate(raw) || actual.ProfileHydrator.hydrate(raw)
+      hydrate: (raw: unknown) => mockHydrate(raw) ?? actual.ProfileHydrator.hydrate(raw)
     },
     calculateProgressionPath: vi.fn(function* () {
       yield { history: [], totalXp: 0, inventory: { gold: 0, gems: 0, wildCards: {} } };
@@ -216,6 +218,48 @@ describe('useLaboratory', () => {
       expect(layoutProps.value.status.text).toBe('Scanning Vault...');
     });
 
+    it('keeps the initial skeleton until the first operation without hiding later recalculations', async () => {
+      const { useLaboratory } = await import('../useLaboratory');
+      const { useLaboratoryStore } = await import('../../stores/useLaboratoryStore');
+      const store = useLaboratoryStore();
+      const emptyWildCards = {
+        Common: 0,
+        Rare: 0,
+        Epic: 0,
+        Legendary: 0,
+        Champion: 0
+      } as const;
+      const observation: PlayerData = {
+        profile: { name: 'User', tag: '#PLAYER', kingLevel: 14, xpIntoLevel: asXP(0) },
+        inventory: { gold: asGold(100), gems: asGems(10), wildCards: emptyWildCards },
+        cards: []
+      };
+
+      store.setObservation(observation);
+      store.setOperation(null);
+      store.setSimulating(true);
+      const { layoutProps } = useLaboratory();
+
+      expect(layoutProps.value.loading).toBe(true);
+
+      store.setOperation({
+        actions: [],
+        totalXpGained: 0,
+        projectedKingLevel: 14,
+        finalProfile: observation.profile,
+        finalGold: 100,
+        finalGems: 10,
+        totalGoldSpent: 0,
+        totalGemsSpent: 0,
+        totalWildCardsUsed: emptyWildCards
+      });
+      await nextTick();
+
+      expect(layoutProps.value.loading).toBe(false);
+      expect(layoutProps.value.status.text).toBe('Computing Trajectory...');
+      store.setSimulating(false);
+    });
+
     it('should reflect error state', async () => {
       mockGetPlayerProfile.mockRejectedValue(new Error("Fail"));
 
@@ -229,14 +273,16 @@ describe('useLaboratory', () => {
       expect(layoutProps.value.status.text).toBe('Extraction Failed');
     });
 
-    it('should reflect "Target Required" when no tag is present', async () => {
+    it('uses a compact warning status when no tag is present', async () => {
       mockClashData.value.playerTag = "";
 
       const { useLaboratory } = await import('../useLaboratory');
       const { layoutProps } = useLaboratory();
 
       expect(layoutProps.value.status.type).toBe('warning');
-      expect(layoutProps.value.status.text).toBe('Target Required');
+      expect(layoutProps.value.status.text).toBe('No Target');
+      expect(layoutProps.value.emptyMessage).toBe('Target Required');
+      expect(layoutProps.value.emptyHint).toBe('No player tag is configured. Enter one above or in Settings.');
     });
 
     it('should reflect "Operational" when a valid tag is present and ready', async () => {

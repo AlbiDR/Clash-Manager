@@ -6,17 +6,23 @@ import { mount } from "@vue/test-utils";
 import ToastContainer from "../ToastContainer.vue";
 import Toast from "../Toast.vue";
 import { ref } from "vue";
+import type { ToastOptions } from "../../../core/services/useToast";
 
 // Mocking @core services with deep imports to avoid barrel side effects
-const mockToasts = ref([]);
+const mockToasts = ref<ToastOptions[]>([]);
 const mockRemove = vi.fn();
+const mockPauseDismissal = vi.fn();
+const mockResumeDismissal = vi.fn();
 const mockTriggerAction = vi.fn();
 const mockToastOffset = ref(110);
 
 vi.mock("../../../core/services/useToast", () => ({
+  DEFAULT_TOAST_DURATION_MS: 5000,
   useToast: () => ({
     toasts: mockToasts,
     remove: mockRemove,
+    pauseDismissal: mockPauseDismissal,
+    resumeDismissal: mockResumeDismissal,
     triggerAction: mockTriggerAction,
   }),
 }));
@@ -29,9 +35,12 @@ vi.mock("../../../core/services/useUiCoordinator", () => ({
 
 // Component uses barrel import, so we mock it to return our controlled mocks
 vi.mock("../../../core", () => ({
+  DEFAULT_TOAST_DURATION_MS: 5000,
   useToast: () => ({
     toasts: mockToasts,
     remove: mockRemove,
+    pauseDismissal: mockPauseDismissal,
+    resumeDismissal: mockResumeDismissal,
     triggerAction: mockTriggerAction,
   }),
   useUiCoordinator: () => ({
@@ -50,7 +59,7 @@ describe("ToastContainer.vue", () => {
     mockToasts.value = [
       { id: "1", type: "success", message: "One" },
       { id: "2", type: "error", message: "Two" },
-    ] as any;
+    ];
 
     const wrapper = mount(ToastContainer, {
       global: {
@@ -78,6 +87,7 @@ describe("ToastContainer.vue", () => {
     });
 
     const container = wrapper.find(".toast-container");
+    expect(container.attributes("style")).toContain("--toast-offset: 150px");
     expect(container.attributes("style")).toContain("transform: translate(-50%, calc(-150px));");
   });
 
@@ -97,7 +107,7 @@ describe("ToastContainer.vue", () => {
   });
 
   it("delegates dismiss event to useToast.remove", async () => {
-    mockToasts.value = [{ id: "1", type: "success", message: "One" }] as any;
+    mockToasts.value = [{ id: "1", type: "success", message: "One" }];
     const wrapper = mount(ToastContainer, {
       global: {
         stubs: {
@@ -113,7 +123,7 @@ describe("ToastContainer.vue", () => {
   });
 
   it("delegates action event to useToast.triggerAction", async () => {
-    mockToasts.value = [{ id: "1", type: "undo", message: "One" }] as any;
+    mockToasts.value = [{ id: "1", type: "undo", message: "One" }];
     const wrapper = mount(ToastContainer, {
       global: {
         stubs: {
@@ -126,5 +136,23 @@ describe("ToastContainer.vue", () => {
     await toast.vm.$emit("action", "1");
 
     expect(mockTriggerAction).toHaveBeenCalledWith("1");
+  });
+
+  it("delegates interaction holds to the service lifetime owner", async () => {
+    mockToasts.value = [{ id: "1", type: "info", message: "One" }];
+    const wrapper = mount(ToastContainer, {
+      global: {
+        stubs: {
+          TransitionGroup: true,
+        },
+      },
+    });
+
+    const toast = wrapper.getComponent(Toast);
+    await toast.vm.$emit("pause-dismissal", "1");
+    await toast.vm.$emit("resume-dismissal", "1");
+
+    expect(mockPauseDismissal).toHaveBeenCalledWith("1");
+    expect(mockResumeDismissal).toHaveBeenCalledWith("1");
   });
 });

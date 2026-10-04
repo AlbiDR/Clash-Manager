@@ -4,7 +4,7 @@
 import { supabase } from "../client.ts";
 import { ScannerStats, AuditEntry, RecruitSource } from "../../_shared/types.ts";
 import { SHADOW_DISCOVERY_LIMIT } from "../../_shared/config.ts";
-import * as v from "npm:valibot@1.4.2";
+import * as v from "npm:valibot@1.5.0";
 import { ShadowTargetSchema } from "../../_shared/schemas.ts";
 
 /**

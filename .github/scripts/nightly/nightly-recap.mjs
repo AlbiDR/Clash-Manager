@@ -76,6 +76,7 @@ import {
   RECOVERED_KINDS,
   STANDING_KINDS,
   blindSpotCoverage,
+  databaseVerificationValue,
   evaluateBlindSpots,
   subCheckHistory,
 } from "./nightly-blind-spots.mjs";
@@ -180,8 +181,20 @@ export function parsePrHistoryEntries(content, stageNumber) {
 }
 
 /** The rich block Stage 1's aging pass writes for each merged PR. */
-export function parsePrHistoryEntry(content, stageNumber, date) {
-  return parsePrHistoryEntries(content, stageNumber).find(entry => entry.date === date) || null;
+/**
+ * One stage's history entry for a run: by pull request number when the merge
+ * tag names one, by date only when nothing does.
+ *
+ * The number is the stronger key. An entry's date is copied from its tag's
+ * name, so a tag filed under the wrong date (see stageTagDate in
+ * merge-nightly-core.mjs) files its history entry there too, and a date lookup
+ * then misses this run's entry or returns another run's. A pull request number
+ * cannot belong to two runs.
+ */
+export function parsePrHistoryEntry(content, stageNumber, date, prNumber = null) {
+  const entries = parsePrHistoryEntries(content, stageNumber);
+  if (Number.isInteger(prNumber)) return entries.find(entry => entry.prNumber === prNumber) || null;
+  return entries.find(entry => entry.date === date) || null;
 }
 
 // The ledger states that count as a stage having reached a result, and so as
@@ -334,6 +347,9 @@ export function classifyStage({ stage, entry, tag, declared, history, progress }
     health: entry?.evidence?.health ?? null,
     session: entry?.evidence?.session ?? null,
     bodyHealth: entry?.evidence?.body ?? null,
+    // The CI database check on this stage's pull request, as the watchdog
+    // recorded it. Only ever present for the database lane.
+    databaseVerification: entry?.evidence?.databaseVerification ?? null,
   };
 }
 
@@ -501,7 +517,7 @@ export function buildRecap({ ledger, registry, date, coverageByStage, prHistory,
   const historyByStage = Object.fromEntries(
     registry.stages.map(stage => [stage.number, parsePrHistoryEntries(prHistory, stage.number)]),
   );
-  const subChecks = subCheckHistory({ registry, coverageByStage: coverageByStage || {}, historyByStage, date });
+  const subChecks = subCheckHistory({ registry, coverageByStage: coverageByStage || {}, historyByStage, date, ledger });
   const stages = registry.stages.map(stage => {
     const evidenceDate = evidenceDateFor(stage.number, date);
     const tag = (tags || []).find(t => t.startsWith(`nightly/${evidenceDate}/stage-${stage.number}/pr-`)) || null;
@@ -510,7 +526,7 @@ export function buildRecap({ ledger, registry, date, coverageByStage, prHistory,
       entry: ledger?.runs?.[date]?.[String(stage.number)] ?? null,
       tag,
       declared: declaredCoverageRecord(coverageByStage[stage.number], stage.number, evidenceDate),
-      history: parsePrHistoryEntry(prHistory, stage.number, evidenceDate),
+      history: parsePrHistoryEntry(prHistory, stage.number, evidenceDate, prNumberFromTag(tag)),
       progress,
     });
   }).map(stage => ({
@@ -821,9 +837,33 @@ function stageBlock(stage) {
     `${changeLabel(stage.outcome)}: ${sentencePart(semanticAction(stage))}`,
     ...(why ? [`${WHY_LABEL}: ${sentencePart(why)}`] : []),
     ...(result ? [`${RESULT_LABEL}: ${sentencePart(result)}`] : []),
+    ...databaseCheckLine(stage),
     ...stageNotes(stage),
     "",
   ];
+}
+
+/**
+ * The CI database check on the database lane's pull request, in its own line.
+ *
+ * Its own line rather than a blind-spot entry, because a FAIL is a check that
+ * RAN: the blind-spot reader counts it as answered, so without this line a
+ * failing database check would leave no trace in the report at all.
+ */
+function databaseCheckLine(stage) {
+  const run = stage.databaseVerification;
+  if (!run) return [];
+  const link = run.url ? ` See ${run.url}` : "";
+  // The FAIL line names no cause on purpose. The run fails on its first error,
+  // which can be the baseline not building at all (2026-09-03: schema "cron"
+  // does not exist), pgTAP, idempotency or the catalog comparison, and only
+  // the linked log says which.
+  switch (databaseVerificationValue(run)) {
+    case "PASS": return [`Database check: passed in CI on this pull request, so the baseline rebuilds the same database as the migrations.${link}`];
+    case "FAIL": return [`Database check: FAILED in CI on this pull request; the run's log says at which step.${link}`];
+    case "DEGRADED": return [`Database check: finished in CI without a verdict (${run.conclusion || "no conclusion"}).${link}`];
+    default: return [`Database check: still running in CI on this pull request.${link}`];
+  }
 }
 
 const JUDGED_VERDICTS = new Set([HEALTH.HEALTHY, HEALTH.DEGRADING, HEALTH.CHRONIC]);
@@ -1269,7 +1309,15 @@ function thinEvidenceSection(recap) {
   // differs: a placeholder means the stage did not say, an absent entry means
   // the record no longer exists. A stage that never merged is excluded, since
   // its own failure already explains why it published nothing.
-  const agedOut = (recap.stages || []).filter(s => s.merged && !s.title && !s.why && !s.result);
+  const noDetail = (recap.stages || []).filter(s => s.merged && !s.title && !s.why && !s.result);
+  // Aging can only explain a record whose pull request is still known. When no
+  // pull request is known at all, nothing under this run's date names one, and
+  // blaming the aging pass for that is a benign cause attached to a missing
+  // record. It happened on 2026-10-04: Stage 1 merged after midnight, its tag
+  // was filed under the next day, and the recap of a run hours old said its
+  // detail had "aged out".
+  const agedOut = noDetail.filter(s => s.prNumber != null);
+  const unfiled = noDetail.filter(s => s.prNumber == null);
 
   const lines = [];
   if (thin.length > 0) {
@@ -1288,6 +1336,12 @@ function thinEvidenceSection(recap) {
     lines.push(
       `Detail aged out: ${agedOut.length} of ${recap.total} merged stages no longer have an entry in the pull request history, so no Why or Result survives for them.`
       + ` Stage 1's aging pass prunes older entries; the run itself is unaffected.`,
+    );
+  }
+  if (unfiled.length > 0) {
+    lines.push(
+      `Evidence not filed: ${joinList(unfiled.map(s => stageTag(s.stage)))} merged, but no merge tag or history entry is filed under this run's date, so ${unfiled.length === 1 ? "its pull request and its" : "their pull requests and their"} Why and Result cannot be shown.`
+      + ` This is not aging: the merge was recorded under a different date, or never recorded.`,
     );
   }
   return lines.length > 0 ? [...lines, ""] : [];

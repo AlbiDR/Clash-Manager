@@ -30,9 +30,11 @@ import {
   composeCommitSubject,
   formatRunWindow,
   readSubCheckStatuses,
+  resolveVerified,
   subCheckField,
 } from "./nightly-stage.mjs";
 import { parseCoverageLine } from "./coverage-log-line.mjs";
+import { parseVerified } from "./doc-debt.mjs";
 import { extractMetadata, parseStageBranch } from "./merge-nightly-core.mjs";
 import { placeholderResult } from "./nightly-prose.mjs";
 
@@ -255,7 +257,18 @@ test("metadata and native handoff are complete without pending placeholders", ()
     // absent rather than zero. Absence is ignorance, never innocence.
     nudges: null,
     execution: null,
+    // Rendered as "unrecorded" with no cycle id, which is an absence.
+    cycle: null,
   });
+
+  // The cycle the stage runner writes is the one the merge coordinator files
+  // its tag under, so it has to survive this round trip exactly.
+  const withCycle = renderPrBody(stage, "CHANGED", "Added loader boundary coverage", [stage.coverageLog], {
+    why: "The loader path lacked regression coverage.",
+    result: "The focused spec passed and guards the failure boundary.",
+    cycleId: "nightly-cycle/2026-10-04",
+  });
+  assert.equal(extractMetadata({ body: withCycle, title: "Verification run" }).cycle, "nightly-cycle/2026-10-04");
 
   const handoff = renderHandoff(stage, "CHANGED", "Added loader boundary coverage", "a1b2c3d4");
   assert.match(handoff, /nightly\/stage-2-verification-a1b2c3d4/);
@@ -1091,9 +1104,18 @@ test("the producer vocabulary is pinned, and finalize can carry every value it w
     "audit-duration=DEGRADED",
     "audit-duration=OK",
     "audit-duration=SKIPPED",
+    // S02's baseline run: DEGRADED is a run that never finished, not a FAIL.
+    "baseline-tests=DEGRADED",
+    "baseline-tests=FAIL",
+    "baseline-tests=PASS",
+    "baseline-tests=SKIPPED",
     "database-verification=DB-AVAILABLE",
     "database-verification=DB-UNAVAILABLE",
     "database-verification=SKIPPED",
+    "dependency-cruiser=DEGRADED",
+    "dependency-cruiser=FAIL",
+    "dependency-cruiser=PASS",
+    "dependency-cruiser=SKIPPED",
     "doc-debt=DEGRADED",
     "doc-debt=OK",
     "doc-debt=SKIPPED",
@@ -1101,6 +1123,9 @@ test("the producer vocabulary is pinned, and finalize can carry every value it w
     "fold-state=DEGRADED",
     "fold-state=PENDING",
     "fold-state=SKIPPED",
+    "knip=DEGRADED",
+    "knip=OK",
+    "knip=SKIPPED",
     "migration-quality=DEGRADED",
     "migration-quality=FAIL",
     "migration-quality=PASS",
@@ -1151,6 +1176,64 @@ function finalizeInContext(t, { stageNumber, contextDir, statusFiles = {}, state
   );
   return { outcome, log: readFileSync(logPath, "utf8") };
 }
+
+test("--verified is recorded only for a documentation lane's finished run, and only for real source files", t => {
+  const repoRoot = mkdtempSync(path.join(os.tmpdir(), "nightly-verified-test-"));
+  t.after(() => rmSync(repoRoot, { recursive: true, force: true }));
+  const real = "Frontend-PWA/src/shared/ui/ViewOptions.vue";
+  mkdirSync(path.join(repoRoot, path.dirname(real)), { recursive: true });
+  writeFileSync(path.join(repoRoot, real), "<template />\n");
+  const doc = getStage(registry, 6);
+
+  assert.deepEqual(resolveVerified(`./${real}, ${real}`, doc, "CLEAN", repoRoot), [real]);
+  assert.deepEqual(resolveVerified(real, doc, "CHANGED", repoRoot), [real]);
+  assert.deepEqual(resolveVerified(real, doc, "PARTIAL-RUN", repoRoot), [], "an unfinished run vouches for nothing");
+  assert.deepEqual(resolveVerified(real, getStage(registry, 9), "CLEAN", repoRoot), [], "only a documentation lane can vouch for prose");
+  assert.deepEqual(
+    resolveVerified(`README.md, Frontend-PWA/src/missing.ts, Frontend-PWA/../../outside.ts, ${real}`, doc, "CLEAN", repoRoot),
+    [real],
+    "not a documented source, not in this checkout, or outside it",
+  );
+  assert.deepEqual(resolveVerified(undefined, doc, "CLEAN", repoRoot), []);
+  assert.deepEqual(resolveVerified(" , ", doc, "CLEAN", repoRoot), []);
+});
+
+test("the verification the stage runner writes is the one doc-debt reads", () => {
+  const stage = getStage(registry, 6);
+  const real = "Frontend-PWA/src/shared/ui/ViewOptions.vue";
+  const body = renderPrBody(stage, "CLEAN", "Audited ViewOptions.vue", [stage.coverageLog], { why: "w", result: "r", verified: [real] });
+  assert.deepEqual(parseVerified(body), [real]);
+  assert.match(body, /\*\*Verified accurate:\*\* Frontend-PWA\/src\/shared\/ui\/ViewOptions\.vue/);
+  // The coordinator's parser is undisturbed: Files is still Files.
+  assert.equal(extractMetadata({ body, title: "t" }).files, stage.coverageLog);
+  // No verification, no line, so every other stage's body is unchanged.
+  assert.doesNotMatch(renderPrBody(stage, "CLEAN", "Audited", [stage.coverageLog], { why: "w", result: "r" }), /Verified/);
+});
+
+test("finalize --verified reaches the committed description end to end", t => {
+  const repoRoot = createTemporaryRepo();
+  t.after(() => rmSync(repoRoot, { recursive: true, force: true }));
+  const contextDir = temporaryContext(t);
+  const stage = getStage(registry, 6);
+  const real = "Frontend-PWA/src/shared/ui/ViewOptions.vue";
+  mkdirSync(path.join(repoRoot, path.dirname(real)), { recursive: true });
+  writeFileSync(path.join(repoRoot, real), "<template />\n");
+  assert.equal(run("git", ["add", real], repoRoot).status, 0);
+  assert.equal(run("git", ["commit", "-m", "test: seed a documented source"], repoRoot).status, 0);
+  const logPath = path.join(repoRoot, stage.coverageLog);
+  mkdirSync(path.dirname(logPath), { recursive: true });
+  writeFileSync(logPath, `${sentinelLine("2026-08-08", 6)}\n`);
+
+  const outcome = run(
+    process.execPath,
+    [scriptPath, "finalize", "--stage", "6", "--status", "CLEAN", "--summary", "Audited ViewOptions.vue",
+      "--result", "vue-tsc passed with 0 errors", "--verified", real],
+    repoRoot,
+    { NIGHTLY_CONTEXT_DIR: contextDir, NIGHTLY_TODAY: "2026-08-08", NIGHTLY_NOW_EPOCH: "1000" },
+  );
+  assert.equal(outcome.status, 0, outcome.stderr);
+  assert.deepEqual(parseVerified(readFileSync(path.join(repoRoot, prBodySidecarPath(stage)), "utf8")), [real]);
+});
 
 test("finalize records the sub-check statuses it finds in the context dir", t => {
   const contextDir = temporaryContext(t);

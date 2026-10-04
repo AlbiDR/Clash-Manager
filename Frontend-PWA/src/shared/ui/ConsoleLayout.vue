@@ -1,7 +1,17 @@
 <!-- SPDX-License-Identifier: GPL-3.0-only -->
 <!-- Copyright (C) 2026 AlbiDR -->
 <script setup lang="ts">
-import { watch, onUnmounted, nextTick, toRef, computed, ref, type Component } from "vue";
+import {
+  watch,
+  onActivated,
+  onDeactivated,
+  onUnmounted,
+  nextTick,
+  toRef,
+  computed,
+  ref,
+  type Component,
+} from "vue";
 import {
   useUiCoordinator,
   useShowcaseMode,
@@ -75,12 +85,9 @@ const emit = defineEmits<{
   "select-all": [];
   "select-score": [threshold: number, mode: "ge" | "le"];
   "clear-selection": [];
-  "fab-action": [MouseEvent];
-  "fab-blitz": [];
+  "fab-command": [commandId: string, event: MouseEvent];
   "fab-dismiss": [];
-  "fab-global-harvest": [];
-  "fab-local-harvest": [];
-  "fab-abort-harvest": [];
+  "fab-cancel-operation": [];
 }>();
 
 const { setFabVisible, updateFabState } = useUiCoordinator();
@@ -107,6 +114,10 @@ const { isPulling, ptrStyle, onTouchStart, onTouchMove, onTouchEnd } =
     onRefresh: () => emit("refresh"),
   });
 
+function setFabVisibilityFromProps() {
+  setFabVisible(Boolean(props.fabState?.visible));
+}
+
 // [SYNC] FAB SYNCHRONIZATION
 watch(
   () => props.fabState,
@@ -116,30 +127,34 @@ watch(
         label: state.label,
         actionHref: state.actionHref,
         isProcessing: state.isProcessing,
-        isBlasting: state.isBlasting,
         selectionCount: state.selectionCount,
-        blitzEnabled: state.blitzEnabled,
-        harvestEnabled: state.harvestEnabled,
-        isHarvesting: state.isHarvesting,
-        activeHarvester: state.activeHarvester,
+        actions: [...state.actions],
+        activity: state.activity ?? null,
         dismissIcon: state.dismissIcon,
-        onAction: (fabActionEvent: MouseEvent) => emit("fab-action", fabActionEvent),
-        onBlitz: () => emit("fab-blitz"),
+        dismissLabel: state.dismissLabel,
+        onCommand: (commandId: string, fabActionEvent: MouseEvent) => emit("fab-command", commandId, fabActionEvent),
         onDismiss: () => emit("fab-dismiss"),
-        onGlobalHarvest: () => emit("fab-global-harvest"),
-        onLocalHarvest: () => emit("fab-local-harvest"),
-        onAbortHarvest: () => emit("fab-abort-harvest"),
+        onCancelOperation: () => emit("fab-cancel-operation"),
       });
 
-      nextTick(() => {
-        setFabVisible(!!state.visible);
-      });
+      nextTick(setFabVisibilityFromProps);
     } else {
       setFabVisible(false);
     }
   },
   { immediate: true, deep: true },
 );
+
+// Console routes are cached by App.vue. Their FAB props do not change while
+// inactive, so the watcher above cannot re-fire when a cached route returns.
+// Reassert ownership after App.vue resets the singleton during navigation.
+onActivated(() => {
+  nextTick(setFabVisibilityFromProps);
+});
+
+onDeactivated(() => {
+  setFabVisible(false);
+});
 
 onUnmounted(() => {
   setFabVisible(false);
@@ -246,7 +261,12 @@ function handleClearSearch() {
       <div
         v-else-if="displayLoading"
         class="list-container gpu-contain skeleton-list"
+        role="status"
+        aria-live="polite"
+        aria-busy="true"
+        :aria-label="`Loading ${props.title}`"
       >
+        <span class="loading-announcement">Loading {{ props.title }}</span>
         <component
           :is="props.skeletonComponent || BaseCardSkeleton"
           v-for="i in (props.skeletonCount || 8)"
@@ -254,6 +274,7 @@ function handleClearSearch() {
           :index="i"
           :bone-group="props.skeletonBoneGroup"
           :style="{ '--i': i }"
+          aria-hidden="true"
         />
       </div>
 
@@ -279,7 +300,10 @@ function handleClearSearch() {
             />
             <span>Clear search</span>
           </button>
-          <slot name="empty-action" />
+          <slot
+            v-if="!hasActiveSearch"
+            name="empty-action"
+          />
         </template>
       </EmptyState>
 
@@ -333,6 +357,18 @@ function handleClearSearch() {
 }
 .gpu-contain {
   contain: layout;
+}
+
+.loading-announcement {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .empty-recovery-action {

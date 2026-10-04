@@ -1,0 +1,74 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 AlbiDR
+
+# The semantic half of Stage 3's baseline check, run where a database exists.
+#
+# WHY THIS EXISTS
+# Stage 3 folds migrations into the master baseline, the copy a fresh database
+# is rebuilt from. Its static checkers (fold-state, audit:migrations, the
+# release gate) read SQL text. Whether the baseline really rebuilds the same
+# database as the migrations can only be answered by building both, which needs
+# Docker. The Jules runner has none, so Stage 3 records DB-UNAVAILABLE every
+# night, and its prompt says "required CI supplies the semantic gate". Until
+# 2026-10-04 no CI did: intel-checks.yml runs this test only for pull requests
+# into Beta and Stable, and this repository commits straight to Beta.
+#
+# WHAT IT RUNS
+# test-database-baseline.sh: a throwaway local Supabase built from the baseline
+# alone (pgTAP, then a second application to prove it is idempotent), then one
+# built from the full migration chain, with the two schema dumps compared. No
+# production credentials are involved.
+#
+# HOW THE RESULT IS USED
+# Read-only, and deliberately NOT part of the merge gate: the merge coordinator
+# waits only for the regression gate, so a red result never costs Stage 3 its
+# night. The watchdog reads this workflow's run for Stage 3's merged pull
+# request and records it in the ledger (describeDatabaseVerification), and the
+# recap prints it and counts it as that night's database verification. The
+# `name:` below is how that reader finds the run (DATABASE_VERIFICATION in
+# nightly-blind-spots.mjs); a test pins the two together.
+#
+# WHY THESE PATHS AND NO SCHEDULE
+# Every Stage 3 pull request writes Stage 3's coverage log, so that path is the
+# lane's own signature, and any pull request touching a migration or the
+# database tests gets the check too. The pull request arriving is the event; a
+# schedule would encode an assumption about when Stage 3 runs.
+name: Nightly Database Verification
+
+on:
+  pull_request:
+    types: [opened, reopened, ready_for_review, synchronize]
+    branches:
+      - Nightly
+    paths:
+      - ".github/nightly-logs/03-baseline-consolidation-coverage.log"
+      - "Backend/supabase/migrations/**"
+      - "Backend/supabase/tests/database/**"
+  workflow_dispatch:
+
+# Not the shared `nightly-control-plane` group: this touches neither the ledger
+# nor any pull request, so joining it could only delay the pipeline.
+concurrency:
+  group: nightly-database-verification-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Verify database baseline
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Verify the baseline rebuilds the migrated database
+        run: bash .github/scripts/database/test-database-baseline.sh

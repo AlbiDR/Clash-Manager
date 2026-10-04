@@ -14,6 +14,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createServer as createViteServer } from "vite";
 import { hashGroupSources, readCache, writeCache } from "./lib/capture-cache";
+import { BONES_OUTPUT_PATH } from "./seed_bones";
 
 /**
  * BUILD-TIME SKELETON CAPTURE ("Boneyard-style", zero-dependency)
@@ -50,7 +51,6 @@ const __dirname = dirname(__filename);
 const ROOT = join(__dirname, "..");
 
 const INDEX_HTML_PATH = join(ROOT, "index.html");
-const BONES_OUTPUT_PATH = join(ROOT, "src/core/theme/bones.generated.json");
 const CACHE_FILE_PATH = join(ROOT, ".cache/bones-cache.json");
 
 const BREAKPOINTS = {

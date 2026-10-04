@@ -22,7 +22,7 @@ import path from "path";
 import os from "os";
 import { spawnSync } from "child_process";
 import { FAILURE_CLASSES, loadLedger, saveLedger, upsertStageEntry } from "./nightly-ledger.mjs";
-import { NIGHTLY_EVENT_SOURCES } from "./nightly-events.mjs";
+import { NIGHTLY_EVENT_SOURCES, getEvidenceDate, parseCycleId } from "./nightly-events.mjs";
 import { METADATA_PLACEHOLDERS, TAG_PLACEHOLDERS, isPlaceholderField } from "./nightly-prose.mjs";
 import { prBodySidecarPath } from "./nightly-stage.mjs";
 
@@ -271,6 +271,10 @@ export function extractMetadata(pr) {
     // The Jules checkout that executed the stage. Unlike the merge commit, it
     // identifies the code the agent inspected before it created its change.
     execution: null,
+    // The run the stage declared it belongs to, fixed by `nightly-stage.mjs
+    // start` before any work began. Null when absent or malformed, never a
+    // guess: stageTagDate falls back to the clock on null and says so.
+    cycle: null,
   };
 
   if (metaMatch) {
@@ -289,6 +293,7 @@ export function extractMetadata(pr) {
     // because a malformed value is not evidence of zero nudges.
     meta.nudges = /^\d+$/.test(String(meta.nudges ?? "")) ? String(meta.nudges) : null;
     meta.execution = /^[a-f0-9]{7,64}$/i.test(String(meta.execution || "")) ? String(meta.execution) : null;
+    meta.cycle = parseCycleId(meta.cycle) ? String(meta.cycle).trim() : null;
     return meta;
   }
 
@@ -317,6 +322,8 @@ export function parseTagContent(tagContent) {
     // No placeholder: unmeasured must stay distinguishable from a measured 0.
     nudges: null,
     execution: null,
+    // Absent on every tag written before the field existed.
+    cycle: null,
   };
 
   for (const line of String(tagContent || "").split("\n")) {
@@ -334,6 +341,10 @@ export function parseTagContent(tagContent) {
     if (line.startsWith("Execution:")) {
       const raw = line.replace("Execution:", "").trim();
       parsed.execution = /^[a-f0-9]{7,64}$/i.test(raw) ? raw : null;
+    }
+    if (line.startsWith("Cycle:")) {
+      const raw = line.replace("Cycle:", "").trim();
+      parsed.cycle = parseCycleId(raw) ? raw : null;
     }
   }
 
@@ -681,8 +692,54 @@ export function preferStatedMetadata(sidecarMeta, bodyMeta, stage = null) {
   return { meta: merged, upgraded };
 }
 
+/**
+ * The date a stage's merge tag is filed under: the evidence date of the cycle
+ * the stage declared when it started, not the clock when it happened to merge.
+ *
+ * WHY NOT THE CLOCK
+ * Every reader finds a stage's tag at getEvidenceDate(stage, cycle), which for
+ * Stage 1 is the day BEFORE its cycle, because Stage 1 starts the evening
+ * before. The clock agrees with that only while Stage 1 merges before
+ * midnight UTC. When it does not, which is exactly what a stalled-then-nudged
+ * Stage 1 does, a clock-dated tag lands under the NEXT cycle's Stage 1 slot:
+ *   - that run's recap cannot find its own Stage 1 ("no PR"),
+ *   - the watchdog reads the tag as "the next run has started", declares the
+ *     run over hours early and judges stages that have not run yet,
+ *   - and the next night's watchdog and recap credit that night's Stage 1 with
+ *     this PR, so a stalled Stage 1 that night would never be nudged.
+ * Seen with PR #1499 (2026-08-19), PR #1668 (2026-09-03) and PR #2070
+ * (2026-10-04). The 2026-09-04 ledger row still names PR #1668, the previous
+ * night's work, as that night's Stage 1 merge.
+ *
+ * The cycle comes from the stage's own metadata, written by `nightly-stage.mjs
+ * start` before any work began, so it is a fact about the run rather than an
+ * inference from timing. Falls back to the clock, and says so, only for a
+ * description that carries no cycle (one predating the field, or an agent that
+ * ad-libbed the body); never throws, because a tag lost here is worse than a
+ * tag filed by the old rule.
+ */
+export function stageTagDate(stage, cycleId, now = new Date()) {
+  const cycleDate = parseCycleId(cycleId);
+  if (cycleDate) {
+    try {
+      return { date: getEvidenceDate(stage, cycleDate), source: "cycle" };
+    } catch (_) {
+      // A stage number the event model rejects; the clock is still a tag.
+    }
+  }
+  return { date: now.toISOString().slice(0, 10), source: "clock" };
+}
+
+/**
+ * The ledger cycle a pull request belongs to: the one its description declares,
+ * else today. The same fact stageTagDate files the tag under, read as the
+ * ledger's key rather than as a tag date.
+ */
+export function stageCycleDate(pr, now = new Date()) {
+  return parseCycleId(extractMetadata(pr).cycle) || now.toISOString().slice(0, 10);
+}
+
 function createStageTag(pr, squashSha, config = CONFIG, stageOverride = null) {
-  const date = new Date().toISOString().split("T")[0];
   const stage = validateStageBranch(pr.head.ref, stageOverride).stage;
   const bodyMeta = extractMetadata(pr);
 
@@ -732,6 +789,12 @@ function createStageTag(pr, squashSha, config = CONFIG, stageOverride = null) {
     log(`Stage ${stage} committed a body sidecar with no stated Why or Result (PR #${pr.number}); the record stays generic because finalize was given nothing to record.`, "warn");
   }
 
+  // Read after the sidecar is preferred, so a cycle the published description
+  // lost in transit is still recovered from the committed one.
+  const { date, source: dateSource } = stageTagDate(stage, meta.cycle);
+  if (dateSource === "clock") {
+    log(`PR #${pr.number} declares no cycle; filing its tag under today's date ${date}, which is wrong for a Stage 1 merging after midnight UTC.`, "warn");
+  }
   const tagName = `nightly/${date}/stage-${stage}/pr-${pr.number}`;
   const diagnostics = [
     ["Run-ID", process.env.GITHUB_RUN_ID],
@@ -751,6 +814,9 @@ function createStageTag(pr, squashSha, config = CONFIG, stageOverride = null) {
     // no line at all rather than a fabricated zero.
     ...(/^\d+$/.test(String(meta.nudges ?? "")) ? [`Nudges: ${sanitizeTagValue(meta.nudges)}`] : []),
     ...(meta.execution ? [`Execution: ${sanitizeTagValue(meta.execution)}`] : []),
+    // The run this tag belongs to, carried in the tag itself so the tag's NAME
+    // is no longer the only witness to which cycle it records.
+    ...(meta.cycle ? [`Cycle: ${sanitizeTagValue(meta.cycle)}`] : []),
     ...diagnostics,
   ].join("\n");
 
@@ -1572,15 +1638,18 @@ export async function run(config = CONFIG) {
     if (failures.length > 0) {
       try {
         const ledger = loadLedger(config.ledgerPath);
-        const date = new Date().toISOString().split("T")[0];
         for (const failure of failures) {
           const stage = failure.pr.nightlyClassification?.stage;
           if (!stage) continue;
+          // Ledger rows are keyed by cycle, so the row is the cycle the PR
+          // declared, not today. Today is wrong for a Stage 1 PR failing
+          // before midnight UTC: its cycle is tomorrow, and the BLOCKED row
+          // used to land on the previous cycle's Stage 1. See stageTagDate.
+          const date = stageCycleDate(failure.pr);
           // Never let a coordinator failure contradict a merge that already
-          // happened. `date` here is today, not the pipeline date the PR
-          // belongs to, and target selection has no age bound, so a stale open
-          // PR re-selected on a later night would otherwise stamp BLOCKED onto
-          // a row holding that stage's own merge tag. upsertStageEntry refuses
+          // happened. Target selection has no age bound, so a stale open PR
+          // re-selected on a later night could otherwise stamp BLOCKED onto a
+          // row holding that stage's own merge tag. upsertStageEntry refuses
           // the demotion as well; this skip keeps it out of the log too.
           const existing = ledger.runs?.[date]?.[String(stage)];
           if (existing?.state === "MERGED" && existing?.evidence?.tag) {

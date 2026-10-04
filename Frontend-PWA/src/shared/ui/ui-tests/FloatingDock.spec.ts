@@ -23,10 +23,10 @@ vi.mock("@shared/composables/useHaptics", () => ({
 const mockDockVisible = ref(true);
 const mockFabState = ref({
   selectionCount: 0,
-  isBlasting: false,
   label: "Action",
-  blitzEnabled: false,
-  onAction: vi.fn(),
+  actions: [],
+  activity: null,
+  onCommand: vi.fn(),
   onDismiss: vi.fn(),
 });
 
@@ -43,10 +43,10 @@ describe("FloatingDock.vue", () => {
     mockDockVisible.value = true;
     mockFabState.value = {
       selectionCount: 0,
-      isBlasting: false,
       label: "Action",
-      blitzEnabled: false,
-      onAction: vi.fn(),
+      actions: [],
+      activity: null,
+      onCommand: vi.fn(),
       onDismiss: vi.fn(),
     };
     
@@ -71,6 +71,16 @@ describe("FloatingDock.vue", () => {
   it("renders navigation items when dock is visible", () => {
     const wrapper = mountDock();
     expect(wrapper.findAll(".dock-item").length).toBeGreaterThan(0);
+    expect(wrapper.get("nav").attributes("aria-label")).toBe("Main navigation");
+  });
+
+  it("does not mislabel contextual selection actions as navigation", () => {
+    mockDockVisible.value = false;
+
+    const wrapper = mountDock();
+
+    expect(wrapper.find("nav").exists()).toBe(false);
+    expect(wrapper.get("[role='group']").attributes("aria-label")).toBe("Selection actions");
   });
 
   it("shows dismiss button as compact when items are selected", async () => {
@@ -83,10 +93,9 @@ describe("FloatingDock.vue", () => {
     expect(dismissBtn.classes()).toContain("compact");
   });
 
-  it("shows dismiss button as non-compact when nothing is selected and not blasting", async () => {
+  it("shows dismiss button as non-compact when nothing is selected and no activity is running", async () => {
     mockDockVisible.value = false;
     mockFabState.value.selectionCount = 0;
-    mockFabState.value.isBlasting = false;
 
     const wrapper = mountDock();
     
@@ -97,7 +106,6 @@ describe("FloatingDock.vue", () => {
   it("does not contain the hidden class when selection mode is active with 0 selected items", () => {
     mockDockVisible.value = false;
     mockFabState.value.selectionCount = 0;
-    mockFabState.value.isBlasting = false;
 
     const wrapper = mountDock();
     expect(wrapper.classes()).not.toContain("hidden");

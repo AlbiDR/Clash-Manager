@@ -54,7 +54,7 @@ const mode = defineModel<"ge" | "le">("mode", { required: true });
 const value = defineModel<number>("value", { required: true });
 
 const emit = defineEmits<{
-  /** Emitted when a selection is finalized (value or mode changed). */
+  /** Emitted whenever a score selection changes (value or mode changed). */
   (event: "select", thresholdValue: number, thresholdMode: "ge" | "le"): void;
 }>();
 
@@ -75,6 +75,7 @@ const sliderConfig = computed(() => ({
   scale: "linear" as const,
   detents: SCORE_THRESHOLD_DETENTS,
   thumbSize: 0,
+  pointerMode: "relative" as const,
 }));
 
 const {
@@ -113,6 +114,37 @@ const valueText = computed(() =>
 const pillStyle = computed(() => ({ "--sp-ratio": String(ratio.value) }));
 
 /**
+ * The score most recently sent during the active pointer gesture.
+ *
+ * @remarks
+ * The slider reports the numerical value it just resolved, rather than relying
+ * on a `defineModel` round trip. That gives this compact surface a reliable
+ * way to suppress duplicate pointer-move events even while its parent updates
+ * the selection count in response.
+ */
+let lastPublishedDragValue: number | null = null;
+
+/**
+ * Applies a newly reached score band while a drag is still in progress.
+ *
+ * @remarks
+ * [DECISION LOG] LIVE SELECTION: Roster PeS and Headhunter PoS selection now
+ * follows the threshold as the operator drags, so card states and the selected
+ * count reveal the result instead of making the operator wait for release.
+ * Scores resolve to a five-point grid, which bounds a full sweep to 21
+ * effective selections; repeating the same value between grid boundaries does
+ * not rebuild the batch selection.
+ *
+ * @param committedValue - The threshold just resolved by the slider, if its
+ * track had measurable geometry.
+ */
+function publishLiveSelection(committedValue: number | null): void {
+  if (committedValue === null || committedValue === lastPublishedDragValue) return;
+  lastPublishedDragValue = committedValue;
+  emit("select", committedValue, mode.value);
+}
+
+/**
  * Switches the comparison direction and republishes the selection.
  *
  * @remarks
@@ -136,27 +168,29 @@ function handleModeToggle(): void {
  */
 function handleTrackPointerDown(pointerEvent: PointerEvent): void {
   if (props.disabled) return;
+  lastPublishedDragValue = value.value;
   handlePointerDown(pointerEvent);
 }
 
 /**
- * Ends a drag and republishes the selection once.
+ * Applies each distinct score threshold reached during a drag.
  *
  * @remarks
- * [THREAT:] `select` drives `handleSelectScore`, which rebuilds the batch
- * selection and can force selection mode on or off. Emitting it on every pointer
- * move would rebuild that selection continuously for the length of a drag and
- * flicker the action button each time the match count crossed zero.
- *
- * [DECISION LOG] The bound value still updates live through `v-model`, so the
- * numeral and the track follow the finger; only the selection commit waits for
- * release, which is the same cost profile the tap-driven control had.
+ * @param pointerEvent - The originating pointer event.
+ */
+function handleTrackPointerMove(pointerEvent: PointerEvent): void {
+  if (props.disabled) return;
+  publishLiveSelection(handlePointerMove(pointerEvent));
+}
+
+/**
+ * Ends a live drag without publishing its last value a second time.
  *
  * @param pointerEvent - The originating pointer event.
  */
 function handleTrackPointerUp(pointerEvent: PointerEvent): void {
-  const committedValue = handlePointerUp(pointerEvent);
-  if (committedValue !== null) emit("select", committedValue, mode.value);
+  handlePointerUp(pointerEvent);
+  lastPublishedDragValue = null;
 }
 
 /**
@@ -206,7 +240,7 @@ function handleTrackKeyDown(keyboardEvent: KeyboardEvent): void {
       :aria-valuetext="valueText"
       :aria-disabled="props.disabled ? 'true' : undefined"
       @pointerdown="handleTrackPointerDown"
-      @pointermove="handlePointerMove"
+      @pointermove="handleTrackPointerMove"
       @pointerup="handleTrackPointerUp"
       @pointercancel="handleTrackPointerUp"
       @keydown="handleTrackKeyDown"
@@ -310,7 +344,7 @@ function handleTrackKeyDown(keyboardEvent: KeyboardEvent): void {
   padding: 0 var(--sys-space-8);
   border-radius: var(--sys-shape-corner-small);
   cursor: ew-resize;
-  touch-action: none;
+  touch-action: pan-y;
   outline: none;
   -webkit-tap-highlight-color: transparent;
 }

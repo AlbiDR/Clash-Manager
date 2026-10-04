@@ -2,6 +2,7 @@
 // Copyright (C) 2026 AlbiDR
 
 import { ref, computed, reactive } from "vue";
+import type { ConsoleFabAction, ConsoleFabActivity } from "@core/types";
 
 // Global state to share across instances (Singleton pattern)
 const isFabVisible = ref(false);
@@ -21,35 +22,23 @@ const fabState = reactive({
   actionHref: undefined as string | undefined,
   /** Indicates if the primary action is currently in-flight. */
   isProcessing: false,
-  /** Indicates if the 'Blitz' (rapid processing) mode is active. */
-  isBlasting: false,
-  /** Indicates if a data harvesting operation is active. */
-  isHarvesting: false,
-  /** The scope of the current harvester ('global' API vs 'local' scraper). */
-  activeHarvester: null as "global" | "local" | null,
   /** The current number of items selected in the active view. */
   selectionCount: 0,
-  /** Indicates if the Blitz Mode feature is toggled on in settings. */
-  blitzEnabled: false,
-  /** Indicates if the Global/Local Harvest actions are wired up for the active view. */
-  harvestEnabled: false,
+  /** Ordered feature-owned commands rendered by shared UI. */
+  actions: [] as ConsoleFabAction[],
+  /** Optional feature-owned activity rendered and announced by shared UI. */
+  activity: null as ConsoleFabActivity | null,
   /** The icon name for the dismiss/close button. */
   dismissIcon: "close",
   /** The accessible name for the dismiss action. */
   dismissLabel: "Clear selection",
   // Callbacks - set by the view that owns the selection
-  /** Callback for the primary action button. */
-  onAction: null as ((event: MouseEvent) => void) | null,
-  /** Callback to trigger the Blitz Mode engine. */
-  onBlitz: null as (() => void) | null,
+  /** Callback for a feature-owned command identifier. */
+  onCommand: null as ((commandId: string, event: MouseEvent) => void) | null,
   /** Callback to dismiss the FAB and clear selections. */
   onDismiss: null as (() => void) | null,
-  /** Callback to trigger a global data harvest (API). */
-  onGlobalHarvest: null as (() => void) | null,
-  /** Callback to trigger a local data harvest (Scraper). */
-  onLocalHarvest: null as (() => void) | null,
-  /** Callback to abort an active harvest operation. */
-  onAbortHarvest: null as (() => void) | null,
+  /** Callback that cancels the active operation without reusing a dismiss action. */
+  onCancelOperation: null as (() => void) | null,
 });
 
 /**

@@ -35,6 +35,8 @@ Declared permissions: `SYSTEM_ALERT_WINDOW`, `FOREGROUND_SERVICE`, `FOREGROUND_S
 
 | Method | Returns | Purpose |
 | :--- | :--- | :--- |
+| `isPowerSaveMode()` | boolean | Reads Android Battery Saver; changes dispatch `cm-power-save-change` to the trusted page. |
+| `setHapticFeedbackEnabled(enabled)` | void | Applies the user preference to native WebView feedback, suppressed while Battery Saver is on. |
 | `isAndroidWrapper()` | boolean | True when running inside the wrapper. |
 | `isAccessibilityActive()` | boolean | Whether the accessibility service is running. |
 | `hasOverlayPermission()` | boolean | Whether `SYSTEM_ALERT_WINDOW` is granted. |
@@ -79,7 +81,7 @@ pnpm icons:android        # regenerate adaptive launcher icons
 
 Every tool version is pinned in [`toolchain.json`](toolchain.json): the JDK (25, the newest LTS; it only compiles, the phone runs ART), the Java source level, build-tools, the platform, apktool, and the jars the source compiles against. `toolchain-env.sh` finds a matching JDK and an Android SDK (`ANDROID_HOME`, `ANDROID_SDK_ROOT`, or the legacy `~/.bubblewrap/android_sdk`) and refuses any other JDK, because a different javac compiles different bytecode from the same source. `fetch-build-deps.mjs` downloads the pinned jars from their official repositories, checks each sha256, and caches them in the ignored `.deps/`. The same scripts run on a Mac, on Linux and in CI. After changing anything in `src/`, run `pnpm apk:check` and commit the rebuilt `android/classes.dex`; CI fails the push otherwise. Running `build-apk.sh` without `--no-sign` also signs, if a local keystore is present.
 
-Signed release builds run in CI (`.github/workflows/apk-release.yml`): it decodes the keystore from secrets, builds, aligns, signs, verifies the signature, runs the integrity gate, and commits the signed `release/clashmanager-v<version>+<buildNumber>.apk` back to Beta. `<buildNumber>` is CI's monotonic `github.run_number`, distinct from `versionCode` (which is derived purely from `<version>` - see `verify-apk-integrity.mjs`), so two builds of the same version can still be told apart from a downloaded file alone. `release/latest.json` points at that one tracked versioned filename and build number for scripts, older clients, DownloadManager save names, and already-current update checks.
+Signed release builds run in CI (`.github/workflows/apk-release.yml`): it resolves the JDK, Android packages, and hash-verified apktool from `toolchain.json`, then runs `build-apk.sh --check` before signing. That check compiles `src/` and refuses a stale or mismatched checked-in `classes.dex`; the release then packages the verified `android/` tree, preserving its recovered library classes. It decodes the keystore from secrets, builds, aligns, signs, verifies the signature, runs the integrity gate, and commits the signed `release/clashmanager-v<version>+<buildNumber>.apk` back to Beta. `<buildNumber>` is CI's monotonic `github.run_number`, distinct from `versionCode` (which is derived purely from `<version>` - see `verify-apk-integrity.mjs`), so two builds of the same version can still be told apart from a downloaded file alone. `release/latest.json` points at that one tracked versioned filename and build number for scripts, older clients, DownloadManager save names, and already-current update checks.
 
 ## Seeing it run
 
@@ -89,12 +91,23 @@ Signed release builds run in CI (`.github/workflows/apk-release.yml`): it decode
 
 `node APK/apk-dev.mjs emulator` creates (once) and boots the virtual phone pinned in `toolchain.json` (Android 16 at the owner's Pixel 10 screen size) and prints its serial; with a phone also attached, set `ANDROID_SERIAL` to choose. It draws with the Mac's GPU, at the Pixel 10's exact layout size but a lower pixel density, without sound or cameras; `pnpm apk:emulator:app` builds **Android Emulator.app** in `/Applications`, which starts it from Finder or the Dock with no terminal or agent (rebuild it after moving the repository). `node APK/apk-dev.mjs debloat` disables the preinstalled Google apps that sync in the background (listed in `toolchain.json`, undone with `adb shell pm enable <package>`). It needs the SDK's `emulator` package and that system image installed. Clash Royale does not run there, so real-game checks stay on a phone; rehearsals cover the rest. Accessibility is a security setting and is switched on by a person, once per install.
 
+After installing CM Dev, run `pnpm apk:device` for the opt-in
+wrapper smoke run. It starts the already-installed app safely, verifies the
+live bridge and each primary route through WebView CDP, sends an HTTPS app link
+and one Android Back event, captures screenshots and CM Dev logs, and writes a
+machine-readable `report.json` under ignored `APK/.device-acceptance/`. On the
+emulator it also proves dark-mode propagation and in-place rotation, restoring
+the prior display settings afterward; a physical device requires `--display`
+for those temporary display checks. It never force-stops CM Dev, opens Clash
+Royale, starts Blitz, or changes accessibility, overlay, or install permissions.
+The script is deliberately opt-in and is not a CI/emulator requirement.
+
 ## Guardrails
 
 | Check | Command / trigger | What it protects |
 | :--- | :--- | :--- |
 | `verify-android-source.mjs` | `pnpm apk:verify:source`; runs on every `APK/**` push | The native layer is present in the source tree. |
-| `verify-dex-source.mjs` | `pnpm apk:check:source`; runs on every `APK/**` push | The committed `classes.dex` holds exactly the app classes `src/` compiles to: nothing stale, nothing unbuilt, no leftovers. |
+| `verify-dex-source.mjs` | `pnpm apk:check:source`; native-integrity CI and every signed release | The committed `classes.dex` holds exactly the app classes `src/` compiles to: nothing stale, nothing unbuilt, no leftovers. |
 | `verify-bridge-contract.mjs` | `pnpm apk:verify:bridge`; runs on every push touching `APK/**` or the PWA contract | The Java `@JavascriptInterface` methods, the PWA's `AndroidBridge` type and the release gate's list agree on names, argument counts and types. |
 | `verify-dwell-parity.mjs` | `pnpm apk:verify:dwell`; runs on every push touching `APK/**` or the PWA config | BlitzService's dwell range, step and detents match the PWA's Blitz Speed settings. |
 | `test/` | `pnpm apk:test`; runs on every `APK/**` push | JVM unit tests for the Java (Blitz dwell mapping and formatting today). |

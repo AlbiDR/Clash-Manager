@@ -41,6 +41,7 @@ describe("ScoreThresholdSelector", () => {
 
   afterEach(() => {
     Element.prototype.getBoundingClientRect = originalGetBoundingClientRect;
+    document.documentElement.removeAttribute("data-motion-preference");
   });
 
   /**
@@ -82,10 +83,11 @@ describe("ScoreThresholdSelector", () => {
    */
   async function dragTo(wrapper: ReturnType<typeof mountSelector>, position: number) {
     const slider = wrapper.find(".sp-slider").element;
-    const clientX = TRACK_LEFT + position * TRACK_WIDTH;
-    firePointer(slider, "pointerdown", clientX);
-    firePointer(slider, "pointermove", clientX);
-    firePointer(slider, "pointerup", clientX);
+    const startX = TRACK_LEFT + 0.5 * TRACK_WIDTH;
+    const targetX = startX + (position - Number(wrapper.props("value")) / 100) * TRACK_WIDTH;
+    firePointer(slider, "pointerdown", startX);
+    firePointer(slider, "pointermove", targetX);
+    firePointer(slider, "pointerup", targetX);
     await nextTick();
   }
 
@@ -112,19 +114,52 @@ describe("ScoreThresholdSelector", () => {
     expect(wrapper.emitted("select")![0]).toEqual([75, "le"]);
   });
 
-  it("commits the dragged value and publishes once on release", async () => {
+  it.each(["standard", "reduced"])("publishes live score bands with %s motion", async (motion) => {
+    document.documentElement.setAttribute("data-motion-preference", motion);
     const wrapper = mountSelector();
+    const slider = wrapper.find(".sp-slider").element;
 
-    await dragTo(wrapper, 0.4);
+    firePointer(slider, "pointerdown", 0.4 * TRACK_WIDTH);
+    await nextTick();
 
-    // The value follows the finger, so several updates are expected.
+    expect(wrapper.emitted("select")).toBeFalsy();
+    expect(wrapper.emitted("update:value")).toBeFalsy();
+
+    firePointer(slider, "pointermove", 0.6 * TRACK_WIDTH);
+    await nextTick();
+
     const valueUpdates = wrapper.emitted("update:value")!;
-    expect(valueUpdates.at(-1)).toEqual([40]);
+    expect(valueUpdates.at(-1)).toEqual([95]);
+    expect(wrapper.emitted("select")).toEqual([[95, "ge"]]);
 
-    // [THREAT:] `select` rebuilds the batch selection downstream. Emitting it per
-    // pointer move would churn the selection for the length of a drag.
-    expect(wrapper.emitted("select")!.length).toBe(1);
-    expect(wrapper.emitted("select")![0]).toEqual([40, "ge"]);
+    firePointer(slider, "pointermove", 0.3 * TRACK_WIDTH);
+    await nextTick();
+    expect(wrapper.emitted("select")).toEqual([[95, "ge"], [65, "ge"]]);
+
+    // Pointer events can arrive repeatedly between the same five-point stops;
+    // they must not rebuild the identical batch selection each time.
+    firePointer(slider, "pointermove", 0.3 * TRACK_WIDTH);
+    await nextTick();
+    expect(wrapper.emitted("select")).toHaveLength(2);
+
+    // Releasing ends the gesture but does not reapply the threshold that was
+    // already reflected in the selected cards and count.
+    firePointer(slider, "pointerup", 0.3 * TRACK_WIDTH);
+    await nextTick();
+    expect(wrapper.emitted("select")).toHaveLength(2);
+  });
+
+  it("ignores stationary taps at either end of the pill", async () => {
+    const wrapper = mountSelector();
+    const slider = wrapper.find(".sp-slider").element;
+    for (const position of [0, TRACK_WIDTH]) {
+      firePointer(slider, "pointerdown", position);
+      firePointer(slider, "pointermove", position);
+      firePointer(slider, "pointerup", position);
+    }
+    await nextTick();
+    expect(wrapper.emitted("select")).toBeFalsy();
+    expect(wrapper.emitted("update:value")).toBeFalsy();
   });
 
   it("does not publish a selection for a release that never dragged", async () => {

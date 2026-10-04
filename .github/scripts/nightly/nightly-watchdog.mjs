@@ -3,7 +3,8 @@
 
 import fs from "node:fs";
 import { spawnSync } from "node:child_process";
-import { classifyNightlyPr, CONFIG, extractMetadata } from "./merge-nightly-core.mjs";
+import { classifyNightlyPr, CONFIG, extractMetadata, selectNewestGateRun } from "./merge-nightly-core.mjs";
+import { DATABASE_VERIFICATION } from "./nightly-blind-spots.mjs";
 import { FAILURE_CLASSES, ensureRunEntries, loadLedger, prNumberFromTag, recordCycleExecution, saveLedger, stageEntry, upsertStageEntry } from "./nightly-ledger.mjs";
 import { createRedactor, redactDeep } from "./nightly-redact.mjs";
 import { buildFallbackPlan, extractSessionPatch, publishFallback } from "./nightly-publish-fallback.mjs";
@@ -549,6 +550,56 @@ function describeStageExecution(tag, prs) {
   return revision ? { pr: number, revision, source: "pr-body" } : null;
 }
 
+/**
+ * The newest CI database check for the database lane's merged pull request, as
+ * the ledger keeps it: { pr, headSha, runId, status, conclusion, url }.
+ *
+ * Read by head sha because that is what the run is attached to, and by the
+ * workflow's name through selectNewestGateRun, the merge gate's own selector, so
+ * a re-run counts over the run it replaced. Pure: the caller fetches.
+ */
+export function describeDatabaseVerification(pr, workflowRuns) {
+  if (!pr?.head?.sha) return null;
+  const run = selectNewestGateRun(workflowRuns, DATABASE_VERIFICATION.workflow);
+  if (!run) return null;
+  return {
+    pr: Number(pr.number),
+    headSha: pr.head.sha,
+    runId: run.id ?? null,
+    status: run.status ?? null,
+    conclusion: run.conclusion ?? null,
+    url: run.html_url ?? null,
+  };
+}
+
+/**
+ * Reads the CI database check for each database-domain stage's merged pull
+ * request on this run. The lane itself can only record DB-UNAVAILABLE, since
+ * the Jules runner has no database, so this is how the semantic check reaches
+ * the ledger at all. A read that fails costs only this pass's copy: the entry
+ * keeps the last recorded result (see evaluateNightlyRun).
+ */
+async function observeDatabaseVerification(registry, date, tags, prs, config = CONFIG) {
+  const observed = new Map();
+  for (const stage of registry.stages.filter(candidate => candidate.domain === DATABASE_VERIFICATION.domain)) {
+    const evidenceDate = expectedEvidenceDate(stage.number, date);
+    const tag = [...tags].find(candidate => candidate.startsWith(`nightly/${evidenceDate}/stage-${stage.number}/pr-`));
+    const pr = (prs || []).find(candidate => Number(candidate.number) === prNumberFromTag(tag));
+    if (!pr?.head?.sha) continue;
+    try {
+      const runs = await githubApi(
+        `/repos/${config.owner}/${config.repo}/actions/runs?head_sha=${pr.head.sha}&event=pull_request&per_page=100`,
+        config,
+      );
+      const described = describeDatabaseVerification(pr, runs?.workflow_runs);
+      if (described) observed.set(stage.number, described);
+    } catch (error) {
+      errorLine(`Could not read the database verification run for PR #${pr.number}: ${error.message}`);
+    }
+  }
+  return observed;
+}
+
 async function collectObservedState(registry, date, config = CONFIG) {
   runGit(["fetch", "--tags", "origin", config.targetBranch]);
   try {
@@ -618,6 +669,7 @@ async function collectObservedState(registry, date, config = CONFIG) {
 
   const jules = await fetchJulesSessions(config);
   const promotion = measurePromotionStaleness(config.targetBranch);
+  const databaseVerification = await observeDatabaseVerification(registry, date, tags, prs, config);
 
   return {
     prs,
@@ -628,6 +680,7 @@ async function collectObservedState(registry, date, config = CONFIG) {
     runWindows,
     declaredOutcomes,
     prBodySidecars,
+    databaseVerification,
     julesSessions: jules.sessions,
     julesAvailable: jules.available,
     julesError: jules.error,
@@ -874,6 +927,12 @@ export function evaluateNightlyRun({ registry, date, observed, previousLedger, f
     const matchingTags = [...observed.tags].filter(tag => tag.startsWith(`nightly/${evidenceDate}/stage-${stage.number}/pr-`));
     if (matchingTags.length > 0 || observed.coverageStages.has(stage.number)) {
       const danglingSentinel = observed.danglingSentinelStages?.has(stage.number) ?? false;
+      // This pass's read of the CI database check, else the one already
+      // recorded: a pass that could not ask GitHub must not erase a result.
+      // Only present for the database lane, so every other entry is unchanged.
+      const databaseVerification = observed.databaseVerification?.get(stage.number)
+        || previousLedger?.runs?.[date]?.[String(stage.number)]?.evidence?.databaseVerification
+        || null;
       entries.push({
         stage: stage.number,
         state: danglingSentinel ? "DEGRADED" : "MERGED",
@@ -895,6 +954,7 @@ export function evaluateNightlyRun({ registry, date, observed, previousLedger, f
           // The revision Jules checked out after its own Nightly fast-forward,
           // not the later merge commit or the watchdog's observer checkout.
           stageExecution: describeStageExecution(matchingTags[0], observed.prs),
+          ...(databaseVerification ? { databaseVerification } : {}),
         },
       });
       continue;

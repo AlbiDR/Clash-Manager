@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
-import { SupabaseClient } from "npm:@supabase/supabase-js@2.110.8";
-import * as v from "npm:valibot@1.4.2";
+import { SupabaseClient } from "npm:@supabase/supabase-js@2.117.0";
+import * as v from "npm:valibot@1.5.0";
 import { AuditEntry } from "./types.ts";
 import { IntegrityCheckDetailsSchema, TelemetrySchema } from "./schemas.ts";
 import { getAllowedOrigins, RATE_LIMIT_BUCKET_SWEEP_THRESHOLD } from "./config.ts";
@@ -28,6 +28,20 @@ const FORWARDED_FOR_HEADER = "x-forwarded-for";
 const CF_CONNECTING_IP_HEADER = "cf-connecting-ip";
 const REAL_IP_HEADER = "x-real-ip";
 const UNKNOWN_CALLER_IP = "unknown";
+
+/**
+ * Hard admission-control ceiling for every request body handled by `clinicalServe`.
+ *
+ * @remarks
+ * The largest current declared request contract is `headhunter-scanner`: at most 50
+ * tournament strings, each at most 64 characters, plus a small JSON envelope. 16 KiB
+ * leaves substantial space above that legitimate payload while preventing an
+ * anon-reachable function from fully buffering an arbitrarily large (including
+ * chunked, lengthless) request in a 256 MiB Edge isolate. The reader below counts
+ * bytes from the stream as well as using `Content-Length` only as an early-rejection
+ * optimization; callers cannot bypass this cap by omitting or lying in that header.
+ */
+export const MAX_REQUEST_BODY_BYTES = 16 * 1024;
 
 /**
  * Extracts the caller's IP address from proxy-forwarded headers.
@@ -252,6 +266,94 @@ function protocolErrorResponse(
     });
 }
 
+type BoundedBodyReadResult =
+    | { kind: 'body'; text: string }
+    | { kind: 'too_large' }
+    | { kind: 'unreadable' };
+
+/**
+ * Returns whether a syntactically valid declared body length is already over the cap.
+ *
+ * @remarks
+ * This is deliberately a fast path, not the enforcement mechanism. A client can omit
+ * or falsify `Content-Length` (and HTTP/1.1 chunked requests commonly do), so every
+ * body stream is still counted in `readBoundedRequestBody` before its chunks are
+ * concatenated or decoded.
+ */
+function hasOverLimitDeclaredBodyLength(req: Request): boolean {
+    const rawContentLength = req.headers.get("content-length");
+    if (rawContentLength === null) return false;
+
+    const contentLength = rawContentLength.trim();
+    if (!/^\d+$/.test(contentLength)) return false;
+
+    const declaredLength = Number(contentLength);
+    return !Number.isSafeInteger(declaredLength) || declaredLength > MAX_REQUEST_BODY_BYTES;
+}
+
+/**
+ * Reads an inbound request body without allowing it to accumulate beyond the protocol cap.
+ *
+ * @remarks
+ * `Request.text()` is unsuitable at this trust boundary because it fully buffers an
+ * unbounded stream before validation gets a chance to reject it. This reader retains at
+ * most `MAX_REQUEST_BODY_BYTES` of chunks, cancels the upstream reader as soon as a
+ * later chunk crosses the boundary, and only then creates the decoded text used by the
+ * existing JSON/Valibot path. An absent body remains the empty string so the established
+ * absent-body-versus-malformed-body behavior stays intact.
+ */
+async function readBoundedRequestBody(req: Request): Promise<BoundedBodyReadResult> {
+    if (hasOverLimitDeclaredBodyLength(req)) return { kind: 'too_large' };
+    if (!req.body) return { kind: 'body', text: '' };
+
+    let reader: ReadableStreamDefaultReader<Uint8Array>;
+    try {
+        reader = req.body.getReader();
+    } catch {
+        return { kind: 'unreadable' };
+    }
+
+    const chunks: Uint8Array[] = [];
+    let totalBytes = 0;
+
+    try {
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            if (!value) continue;
+
+            totalBytes += value.byteLength;
+            if (totalBytes > MAX_REQUEST_BODY_BYTES) {
+                // Tell a real network-backed stream that no further data is useful, but
+                // never wait for cancellation before returning the client-safe 413.
+                void reader.cancel().catch(() => undefined);
+                return { kind: 'too_large' };
+            }
+
+            chunks.push(value);
+        }
+
+        const bodyBytes = new Uint8Array(totalBytes);
+        let offset = 0;
+        for (const chunk of chunks) {
+            bodyBytes.set(chunk, offset);
+            offset += chunk.byteLength;
+        }
+
+        return { kind: 'body', text: new TextDecoder().decode(bodyBytes) };
+    } catch {
+        return { kind: 'unreadable' };
+    } finally {
+        // Releasing an errored/cancelled reader is best effort housekeeping. It must not
+        // turn a client-controlled bad stream into a generic 500 response.
+        try {
+            reader.releaseLock();
+        } catch {
+            // No action needed: the result above is already safe for the caller.
+        }
+    }
+}
+
 /**
  * Reduces a secret to a fixed-width SHA-256 digest.
  *
@@ -268,7 +370,7 @@ async function digestToken(value: string): Promise<Uint8Array> {
  *
  * @remarks
  * [THREAT:] `authHeader === \`Bearer ${token}\`` short-circuits on the first differing
- * character. This single comparison is THE authorization boundary for all five Edge
+ * character. This single comparison is THE authorization boundary for all six Edge
  * Functions, so it must not be data-dependent even though it is not practically
  * exploitable over HTTPS against a JS string compare.
  * [DECISION LOG] Both sides are reduced to a fixed-width SHA-256 digest before comparison.
@@ -402,6 +504,17 @@ export interface ProtocolOptions<T> {
         targetWindowMs?: number;
     };
     /**
+     * Whether browser responses must reflect only an origin in `ALLOWED_ORIGINS`.
+     *
+     * @remarks
+     * This is deliberately independent from `rateLimit`. The three data-bearing
+     * public proxies use both protections, while the public `ping` health probe
+     * needs a volume boundary but remains intentionally readable from any origin.
+     * Omit this option to retain the established default: functions with a
+     * `rateLimit` get restricted CORS; all other functions retain `*`.
+     */
+    corsRestricted?: boolean;
+    /**
      * The core business logic handler to be executed within the clinical wrapper.
      *
      * @param payload - The validated and typed request body.
@@ -460,13 +573,13 @@ export async function clinicalServe<T>(options: ProtocolOptions<T>) {
     // consumer reading telemetry saw a job that never ended.
     let telemetryId: string | number | null = null;
 
-    // [DECISION LOG] Restricted, allow-list-checked CORS is opt-in via the presence of
-    // `rateLimit`: only the three anon-reachable functions configure it, so only they
-    // get the allow-list check. `ingest-royale-data` / `headhunter-scanner` (internal
-    // bearer only, cron-triggered, out of scope for this fix) keep the original blanket
-    // `Access-Control-Allow-Origin: *` unchanged. See `resolveCorsHeaders` for the full
-    // behavior in each mode.
-    const corsRestricted = !!rateLimit;
+    // [DECISION LOG] Restricted, allow-list-checked CORS defaults from the presence of
+    // `rateLimit`: the three data-bearing anon-reachable functions therefore get the
+    // allow-list check. A function can explicitly preserve public CORS while still
+    // applying a volume boundary (the health-only `ping` endpoint does this). Internal
+    // bearer-only functions retain the original blanket `Access-Control-Allow-Origin: *`.
+    // See `resolveCorsHeaders` for the full behavior in each mode.
+    const corsRestricted = options.corsRestricted ?? !!rateLimit;
 
     // 1. CORS Preflight
     if (req.method === "OPTIONS") {
@@ -524,7 +637,8 @@ export async function clinicalServe<T>(options: ProtocolOptions<T>) {
         // are all optional (ingest-royale-data's `{ CLAN_TAG: v.optional(v.string()) }`)
         // that empty object PASSES validation, so a corrupt request ran a full ingestion
         // cycle against the default clan instead of being rejected with a 400.
-        // [DECISION LOG] An ABSENT body and a MALFORMED body are now DISTINCT outcomes:
+        // [DECISION LOG] An ABSENT body, an OVERSIZED body, and a MALFORMED body are
+        // DISTINCT outcomes:
         //   - Absent or whitespace-only body -> treated as `{}` and left to the function's
         //     own schema to accept or reject. This stays VALID by design: the pg_cron
         //     trigger `substrate.run_royale_ingestion()` calls `net.http_post` with NO
@@ -532,18 +646,25 @@ export async function clinicalServe<T>(options: ProtocolOptions<T>) {
         //     body on every scheduled run. An absent body is not the same as a malformed
         //     one, and the schema remains the single authority on whether an empty payload
         //     is acceptable for a given function.
-        //   - Present but unparseable body -> hard 400 MALFORMED_BODY. Never coerced.
+        //   - Present but over the byte ceiling -> hard 413 PAYLOAD_TOO_LARGE before its
+        //     full contents can be buffered. The stream itself is measured, so a missing
+        //     or false Content-Length cannot bypass the ceiling.
+        //   - Present, within the byte ceiling, but unparseable -> hard 400
+        //     MALFORMED_BODY. Never coerced.
         // [THREAT:] Implicit 'any' from request JSON can lead to logic corruption or runtime crashes.
         // [DECISION LOG] Retains 'unknown' rather than 'any' so the schema gate below is the
         // only path to a typed payload.
-        let rawBodyText: string;
-        try {
-            rawBodyText = await req.text();
-        } catch {
+        const bodyRead = await readBoundedRequestBody(req);
+        if (bodyRead.kind === 'too_large') {
+            console.warn(`[Protocol] Rejected oversized request body for ${componentId}.`);
+            return protocolErrorResponse(req, 'PAYLOAD_TOO_LARGE', undefined, undefined, corsRestricted);
+        }
+        if (bodyRead.kind === 'unreadable') {
             // [GUARD] FAIL CLOSED: an unreadable request stream is not an empty body.
             console.warn(`[Protocol] Unreadable request stream for ${componentId}.`);
             return protocolErrorResponse(req, 'MALFORMED_BODY', undefined, undefined, corsRestricted);
         }
+        const rawBodyText = bodyRead.text;
 
         let rawBody: unknown;
         if (rawBodyText.trim().length === 0) {
@@ -785,7 +906,7 @@ export async function clinicalServe<T>(options: ProtocolOptions<T>) {
 
         return new Response(JSON.stringify({
             success: true,
-            version: '14.50.135',
+            version: '14.50.141',
             data: results,
             duration_ms: Temporal.Now.instant().since(startInstant).total('milliseconds'),
             timestamp: Temporal.Now.instant().toString()

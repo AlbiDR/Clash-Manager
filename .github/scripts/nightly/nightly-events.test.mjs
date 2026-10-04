@@ -21,6 +21,7 @@ import {
   getNightlyEventId,
   getProjectedStageEntry,
   getStageEvents,
+  parseCycleId,
 } from "./nightly-events.mjs";
 
 const registry = JSON.parse(readFileSync(new URL("../../nightly-config/stages.json", import.meta.url), "utf8"));
@@ -43,6 +44,16 @@ test("cycle identity is stable and Stage 1 maps its previous-day evidence into t
   assert.equal(getCycleDate(1, "2026-09-14"), DATE);
   assert.equal(getEvidenceDate(2, DATE), DATE);
   assert.equal(getCycleDate(2, DATE), DATE);
+});
+
+test("a cycle id parses back to its date, and anything else to null", () => {
+  assert.equal(parseCycleId(getCycleId(DATE)), DATE);
+  assert.equal(parseCycleId(` ${getCycleId(DATE)} `), DATE);
+  // What the stage runner writes when it could not learn its cycle.
+  assert.equal(parseCycleId("unrecorded"), null);
+  assert.equal(parseCycleId("nightly-cycle/2026-02-30"), null, "a well-formed shape is not a real date");
+  assert.equal(parseCycleId("nightly-cycle/2026-09-15/extra"), null);
+  assert.equal(parseCycleId(null), null);
 });
 
 test("stage transitions form one ordered content-addressed hash chain", () => {

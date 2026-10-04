@@ -38,6 +38,10 @@ describe("Backend Shared Errors Module", () => {
       expect(PROTOCOL_ERROR_STATUS.MALFORMED_BODY).toBe(400);
     });
 
+    it("should map PAYLOAD_TOO_LARGE to 413", () => {
+      expect(PROTOCOL_ERROR_STATUS.PAYLOAD_TOO_LARGE).toBe(413);
+    });
+
     it("should map MALFORMED_PAYLOAD to 400", () => {
       expect(PROTOCOL_ERROR_STATUS.MALFORMED_PAYLOAD).toBe(400);
     });
@@ -60,6 +64,7 @@ describe("Backend Shared Errors Module", () => {
       expect(CLIENT_SAFE_MESSAGE.UNAUTHORIZED).toBe("Unauthorized");
       expect(CLIENT_SAFE_MESSAGE.METHOD_NOT_ALLOWED).toBe("Method Not Allowed");
       expect(CLIENT_SAFE_MESSAGE.MALFORMED_BODY).toBe("Malformed Request Body");
+      expect(CLIENT_SAFE_MESSAGE.PAYLOAD_TOO_LARGE).toBe("Payload Too Large");
       expect(CLIENT_SAFE_MESSAGE.MALFORMED_PAYLOAD).toBe("Malformed Payload");
       expect(CLIENT_SAFE_MESSAGE.RATE_LIMITED).toBe("Too Many Requests");
       expect(CLIENT_SAFE_MESSAGE.TELEMETRY_UNAVAILABLE).toBe("Service Unavailable");

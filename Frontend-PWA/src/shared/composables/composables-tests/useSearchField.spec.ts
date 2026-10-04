@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
+/* eslint-disable vue/one-component-per-file -- Lifecycle integration needs several test-local host components. */
 /**
  * Covers the two claims `useSearchField` makes that its host cannot: the rule
  * that keeps a live filter visible, and the timer that must not outlive the

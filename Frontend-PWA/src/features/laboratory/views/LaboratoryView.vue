@@ -39,6 +39,7 @@ import {
   SummaryCard,
   TrajectoryList,
   LaboratorySkeleton,
+  LaboratoryDashboard,
   TargetPicker
 } from "../components";
 
@@ -97,12 +98,10 @@ const { data: globalData } = storeToRefs(clashDataStore);
     </template>
 
     <!-- Simulation Dashboard -->
-    <div
+    <LaboratoryDashboard
       v-if="observation"
-      class="dashboard-grid"
     >
-      <!-- 1. The Vault & Settings -->
-      <div class="dashboard-sidebar">
+      <template #sidebar>
         <VaultCard 
           :inventory="observation.inventory"
           :is-simulating="isSimulating"
@@ -115,7 +114,7 @@ const { data: globalData } = storeToRefs(clashDataStore);
           :operation="operation ?? undefined"
           @update="setSettings"
         />
-      </div>
+      </template>
 
       <!-- 2. Result Summary -->
       <SummaryCard 
@@ -143,26 +142,6 @@ const { data: globalData } = storeToRefs(clashDataStore);
         message="No upgrade is affordable yet"
         hint="The run finished, and nothing in the vault can be upgraded with the gold, cards and gems entered above."
       />
-    </div>
+    </LaboratoryDashboard>
   </ConsoleLayout>
 </template>
-
-<style scoped>
-.dashboard-grid {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sys-space-20);
-}
-
-.dashboard-sidebar {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: var(--sys-space-16);
-}
-
-@media (min-width: 640px) {
-  .dashboard-sidebar {
-    grid-template-columns: 1fr 1fr;
-  }
-}
-</style>

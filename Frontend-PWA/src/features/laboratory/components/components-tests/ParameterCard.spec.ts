@@ -64,7 +64,9 @@ describe("ParameterCard.vue", () => {
     const wrapper = createWrapper();
     expect(wrapper.find(".panel-header span").text()).toBe("Parameters");
     expect(wrapper.findComponent({ name: "BaseSegmentedControl" }).props("modelValue")).toBe("Level Projection");
-    expect(wrapper.findComponent({ name: "BaseSelect" }).exists()).toBe(true);
+    const targetLevelSelect = wrapper.findComponent({ name: "BaseSelect" });
+    expect(targetLevelSelect.exists()).toBe(true);
+    expect(targetLevelSelect.props("ariaLabel")).toBe("Target King Level");
   });
 
   it("emits update when a new strategy is selected", async () => {

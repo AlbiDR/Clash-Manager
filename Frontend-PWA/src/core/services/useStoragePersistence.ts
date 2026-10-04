@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
-import { ref, readonly, onMounted } from "vue";
+import { ref, readonly } from "vue";
 
 /**
  * STORAGE PERSISTENCE SERVICE (Layer 1)
@@ -32,6 +32,7 @@ const isSupported = ref(false);
  * @returns
  * - `isSupported`: Readonly reactive boolean indicating if the Storage Manager API is available.
  * - `isPersisted`: Readonly reactive boolean indicating if storage persistence is currently granted.
+ * - `init`: Function that hydrates support and persistence state at the app boundary.
  * - `requestPersistence`: Function to trigger the browser's persistence request flow.
  */
 export function useStoragePersistence() {
@@ -71,26 +72,21 @@ export function useStoragePersistence() {
     }
   }
 
-  /**
-   * INITIALIZATION: Auto-check on mount.
-   *
-   * @remarks
-   * [DECISION LOG] Immediate Hydration: Ensures the UI state reflects the
-   * current storage status as soon as a component using this service is
-   * instantiated, enabling proactive messaging to the user if data is at risk.
-   */
-  onMounted(() => {
+  /** Hydrates browser support and the origin's current persistence state. */
+  async function init(): Promise<void> {
     if (typeof navigator !== "undefined" && "storage" in navigator) {
       isSupported.value = true;
-      check();
+      await check();
     }
-  });
+  }
 
   return {
     /** Readonly reactive boolean indicating if the Storage Manager API is available. */
     isSupported: readonly(isSupported),
     /** Readonly reactive boolean indicating if storage persistence is currently granted. */
     isPersisted: readonly(isPersisted),
+    /** Explicit initializer, safe from app bootstrap and component setup alike. */
+    init,
     /** Function to trigger the browser's persistence request flow. */
     requestPersistence,
   };

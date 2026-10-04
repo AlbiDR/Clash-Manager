@@ -1,6 +1,7 @@
 <!-- SPDX-License-Identifier: GPL-3.0-only -->
 <!-- Copyright (C) 2026 AlbiDR -->
 <script setup lang="ts">
+import { usePowerSaving } from "@core/services/usePowerSaving";
 import {
   ErrorBoundary,
   ToastContainer,
@@ -20,7 +21,10 @@ import { useHaptics } from "@shared";
 import { onMounted, computed, watch } from "vue";
 import { RouterView, useRoute } from "vue-router";
 import { useIsDataLoading } from "vue-router/experimental";
-import { useHeadhunter } from "@features/headhunter";
+// The permanent notification/badge watcher belongs in the shell, but importing
+// the feature barrel here also pulled HeadhunterView into the initial bundle.
+// Keep the watcher eager while preserving the route view's lazy chunk.
+import { useHeadhunter } from "@features/headhunter/composables/useHeadhunter";
 
 const clashDataStore = useClashDataStore();
 const { refresh } = clashDataStore;
@@ -105,7 +109,12 @@ onMounted(() => {
       // The worker calls skipWaiting and the controllerchange listener below
       // reloads exactly once when a new version has taken control.
       await registration.update();
-      setInterval(() => void registration.update(), 60 * 60 * 1000);
+      const { isPowerSaving } = usePowerSaving();
+      setInterval(() => {
+        if (!isPowerSaving.value && document.visibilityState === "visible") {
+          void registration.update();
+        }
+      }, 60 * 60 * 1000);
     } catch (pwaRegistrationError) {
       console.warn("[PWA] Registration failed", pwaRegistrationError);
     }

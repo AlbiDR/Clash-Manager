@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
-import * as v from "npm:valibot@1.4.2";
+import * as v from "npm:valibot@1.5.0";
 import { clinicalServe } from "../_shared/protocol.ts";
 import { normalizeTag } from "../_shared/utils.ts";
 import { RoyaleBattleLogSchema, RoyaleTagSchema, KeyPoolSchema } from "../_shared/schemas.ts";
@@ -231,7 +231,7 @@ Deno.serve(async (battlelogRequest) => {
           battleLogCandidate !== null && battleLogCandidate.length > INITIAL_INDEX,
       );
 
-      logAudit("BATTLELOG_FAN_OUT", "completed", {
+      logAudit("BATTLELOG_FAN_OUT", "terminated", {
         playerTag: normalizedTag,
         responded: validBattleLogs.length,
         failed: keyPool.length - validBattleLogs.length,
@@ -254,7 +254,7 @@ Deno.serve(async (battlelogRequest) => {
         return candidateTime > bestTime ? candidateBattleLog : bestBattleLog;
       });
 
-      logAudit("BATTLELOG_FETCH", "completed", {
+      logAudit("BATTLELOG_FETCH", "terminated", {
         playerTag: normalizedTag,
         battleCount: freshestBattleLog.length,
         mostRecentBattle: freshestBattleLog[INITIAL_INDEX].battleTime,

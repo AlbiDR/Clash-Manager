@@ -64,8 +64,9 @@ You act as a performance auditor focused on compilation optimization, native ass
 ### Step 1: Scan Performance Configurations
 - **Active Intelligence Check:** Before selecting or auditing a wrapper configuration, read `.github/nightly-logs/00-pipeline-intelligence.md` (specifically Section I, II, and IV) and check only the active T1 tier in `00-pr-history.md`. You must check Section I to verify whether specific configs (such as WebView cache topology) have already been optimized and established, and check Section IV to ensure your proposed change does not conflict with open wrapper or build constraints.
 - **Run the computed audit first:** `pnpm audit:apk-perf`. It checks nine named
-  wrapper and caching invariants and computes the precache footprint, which is
-  the set of assets every user downloads on install. It exits non-zero on a
+  wrapper and caching invariants and computes the static-public portion of the
+  precache footprint (the production build reports generated chunks separately).
+  It exits non-zero on a
   missing invariant or on an asset above the `maximumFileSizeToCacheInBytes`
   declared in `vite.config.ts`, which workbox would otherwise drop from the
   precache silently, leaving that asset simply absent offline with nothing

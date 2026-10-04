@@ -128,6 +128,7 @@ const levelOptions = computed(() => {
         <BaseSelect
           :model-value="settings.targetLevel || KING_LEVEL_MAX"
           :options="levelOptions"
+          aria-label="Target King Level"
           @update:model-value="(levelValue) => emit('update', { targetLevel: levelValue })"
         />
         
