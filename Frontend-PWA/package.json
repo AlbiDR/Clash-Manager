@@ -20,7 +20,7 @@
     "test": "vitest run --pool=threads",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage",
-    "type-check": "vue-tsc --build --force",
+    "type-check": "tsx scripts/seed_bones.ts && vue-tsc --build --force",
     "lint": "eslint ."
   },
   "dependencies": {
