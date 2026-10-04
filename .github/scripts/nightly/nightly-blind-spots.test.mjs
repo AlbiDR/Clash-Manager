@@ -6,7 +6,9 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 
 import {
+  DATABASE_VERIFICATION,
   SUB_CHECKS,
+  databaseVerificationValue,
   evaluateBlindSpots,
   statedSubChecks,
   subCheckHistory,
@@ -482,4 +484,39 @@ test("two blind-spot phrases for one stage read as two clauses, not one run-on s
     text,
     /S03 baseline consolidation's clean result does not cover everything: its database verification was not reported tonight, after it last could not run; its fold-state check was not reported tonight, after it last could not run\./,
   );
+});
+
+// --- The CI database check (2026-10-04) --------------------------------------
+
+test("a CI database check recorded by the watchdog is that night's database verification", () => {
+  assert.equal(databaseVerificationValue({ status: "completed", conclusion: "success" }), "PASS");
+  assert.equal(databaseVerificationValue({ status: "completed", conclusion: "failure" }), "FAIL");
+  assert.equal(databaseVerificationValue({ status: "completed", conclusion: "timed_out" }), "DEGRADED");
+  assert.equal(databaseVerificationValue({ status: "in_progress", conclusion: null }), null, "unfinished is not a result");
+  assert.equal(databaseVerificationValue(null), null);
+
+  // S03's own line says DB-UNAVAILABLE, as it must on a runner with no database.
+  const coverageByStage = {
+    3: "* [2026-10-05] [Stage 3] [01:00Z-01:10Z 10m] [checks database-verification=DB-UNAVAILABLE fold-state=PENDING] CLEAN: Codebase -- x\n",
+  };
+  const ledger = { runs: { "2026-10-05": { 3: { state: "MERGED", evidence: { databaseVerification: { status: "completed", conclusion: "failure", url: "u" } } } } } };
+  const withCi = subCheckHistory({ registry, coverageByStage, date: "2026-10-05", ledger })[3].at(-1).stated;
+  assert.deepEqual(withCi["database-verification"], { value: "FAIL", answered: true, source: "structured" }, "a failing check is a check that ran");
+  assert.equal(withCi["fold-state"].value, "PENDING", "the lane's other checks are untouched");
+  const without = subCheckHistory({ registry, coverageByStage, date: "2026-10-05" })[3].at(-1).stated;
+  assert.equal(without["database-verification"].value, "DB-UNAVAILABLE");
+
+  // A night whose verdict is still running reads exactly as the lane said.
+  const running = { runs: { "2026-10-05": { 3: { evidence: { databaseVerification: { status: "in_progress" } } } } } };
+  assert.equal(subCheckHistory({ registry, coverageByStage, date: "2026-10-05", ledger: running })[3].at(-1).stated["database-verification"].value, "DB-UNAVAILABLE");
+});
+
+test("the CI database workflow is the one the watchdog reads, and the database lane's pull requests fire it", () => {
+  const yaml = readFileSync(new URL("../../workflows/nightly-database-verification.yml", import.meta.url), "utf8");
+  assert.match(yaml, new RegExp(`^name: ${DATABASE_VERIFICATION.workflow}$`, "m"), "the watchdog finds the run by this name");
+  const lane = registry.stages.find(stage => stage.domain === DATABASE_VERIFICATION.domain);
+  assert.ok(lane, "the registry still has a database lane");
+  assert.ok(yaml.includes(`"${lane.coverageLog}"`), "its coverage log is the path every one of its pull requests touches");
+  assert.match(yaml, /branches:\s*\n\s*- Nightly\b/);
+  assert.doesNotMatch(yaml, /^\s*schedule:/m, "the pull request is the event, never a clock");
 });

@@ -1636,3 +1636,18 @@ test("a missing tag or archive listing yields no names rather than throwing", ()
   assert.deepEqual(evidenceRefNames(null, null), []);
   assert.deepEqual(evidenceRefNames("", "refs/other/2026-08-20/stage-2/pr-1504"), []);
 });
+
+test("the CI database check is printed in the database lane's block, a failure most of all", () => {
+  // A FAIL is a check that ran, so the blind-spot reader counts it as answered;
+  // without this line a failing database check would leave no trace.
+  const s03 = run => renderRecap(singleStage({
+    stage: 3, slug: "baseline-consolidation", outcome: "CLEAN", merged: true, prNumber: 2071,
+    summary: "0 pending migrations", databaseVerification: run,
+  }));
+  assert.match(s03({ status: "completed", conclusion: "failure", url: "https://example.test/run/11" }),
+    /^Database check: FAILED in CI on this pull request; the run's log says at which step\. See https:\/\/example\.test\/run\/11$/m);
+  assert.match(s03({ status: "completed", conclusion: "success" }), /^Database check: passed in CI on this pull request/m);
+  assert.match(s03({ status: "completed", conclusion: "cancelled" }), /^Database check: finished in CI without a verdict \(cancelled\)\.$/m);
+  assert.match(s03({ status: "in_progress" }), /^Database check: still running in CI on this pull request\.$/m);
+  assert.doesNotMatch(s03(null), /Database check/, "no recorded run, no line");
+});
