@@ -18,8 +18,19 @@ import org.json.JSONObject;
  * @param invites   how many invite taps were dispatched (fewer than opened when
  *                  the accessibility service was not connected)
  * @param outcome   RUNNING, COMPLETED, STOPPED (the user pressed Stop) or FAILED
+ * @param inviting  false for a profiles-only run, where no invite tap is ever
+ *                  sent, so a zero {@code invites} is the plan rather than a fault
  */
-record BlitzRun(long startedAt, long endedAt, int players, int opened, int invites, String outcome, boolean rehearsal) {
+record BlitzRun(
+    long startedAt,
+    long endedAt,
+    int players,
+    int opened,
+    int invites,
+    String outcome,
+    boolean rehearsal,
+    boolean inviting
+) {
 
     static final String RUNNING = "running";
     static final String COMPLETED = "completed";
@@ -48,6 +59,7 @@ record BlitzRun(long startedAt, long endedAt, int players, int opened, int invit
                 .put("invites", invites)
                 .put("outcome", outcome)
                 .put("rehearsal", rehearsal)
+                .put("inviting", inviting)
                 .toString();
         } catch (JSONException e) {
             // JSONObject.put only throws for non-finite doubles, and every value here is an int, long, boolean or String.

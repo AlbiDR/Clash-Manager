@@ -63,9 +63,11 @@ describe("useLeaderboardScraper", () => {
     expect(scraper.isHarvesting.value).toBe(false);
   });
 
-  it("caps an oversized harvest to the native Blitz queue capacity", async () => {
+  it("queues every clanless player a harvest finds, however many there are", async () => {
     const { scoutLeaderboard } = await import("@core/api/RecruitClient");
-    const items = Array.from({ length: 51 }, (_, index) => ({
+    // Well past the 50 the queue was once capped at.
+    const harvestSize = 237;
+    const items = Array.from({ length: harvestSize }, (_, index) => ({
       tag: `#PLAYER${index}`,
       name: `Player ${index}`,
     }));
@@ -75,11 +77,11 @@ describe("useLeaderboardScraper", () => {
     await scraper.executeHarvest("global");
 
     expect(selectionStore.selectedIds.value).toEqual(
-      Array.from({ length: 50 }, (_, index) => `PLAYER${index}`),
+      Array.from({ length: harvestSize }, (_, index) => `PLAYER${index}`),
     );
     expect(mockBlitzTrigger).toHaveBeenCalledOnce();
     expect(mockInfo).toHaveBeenCalledWith(
-      "Harvested 51 recruits from Global; Blitz queued the first 50.",
+      `Successfully harvested ${harvestSize} recruits from Global leaderboard.`,
     );
   });
 

@@ -46,10 +46,11 @@ Declared permissions: `SYSTEM_ALERT_WINDOW`, `FOREGROUND_SERVICE`, `FOREGROUND_S
 | `openAccessibilitySettings()` | void | Opens the system accessibility settings. |
 | `getAppVersionName()` / `getAppVersionCode()` / `getBuildNumber()` | string / number / number | Reports installed APK identity so updater checks never hand Android a downgrade. |
 | `getCoordinates()` / `saveCoordinates(ix, iy, cx, cy)` | string / void | Read and persist Blitz calibration coordinates. |
-| `getLastBlitzRun()` | string | The last Blitz run as JSON (players, profiles opened, invite taps, outcome), so the PWA can report a run it could not watch. |
+| `getLastBlitzRun()` | string | The last Blitz run as JSON (players, profiles opened, invite taps, whether it was inviting, outcome), so the PWA can report a run it could not watch. |
 | `setThemeColors(background, dark)` | void | The PWA reports the colours it is showing, so the strips behind the status and navigation bars match the page and their icons stay readable. |
 | `getSafeAreaInsets()` | string | Where the status bar, cutout and navigation bar cover the page, in CSS pixels; the shell draws edge to edge and WebView does not report these through `env(safe-area-inset-*)`. |
-| `startBlitz(tagsJson, delayMs)` | void | Starts a Blitz sequence for the given player tags, dwelling `delayMs` on each profile. |
+| `startBlitz(tagsJson, delayMs)` | void | Starts a Blitz sequence for the given player tags, dwelling `delayMs` on each profile, then tapping Invite and Close. The queue has no size limit. |
+| `openProfiles(tagsJson, delayMs)` | void | The same run without the taps and without the tap targets: opens each profile for `delayMs`, then the next. Used by the Roster, whose players are already in the clan. |
 | `openPlayerProfile(tag)` | void | Deep-links to a Clash Royale player profile. |
 | `openExternalUrl(url)` | void | Opens a URL via an Android intent. |
 | `downloadApkFile(url, filename, sha256?)` | boolean | Downloads the latest APK through `DownloadManager`, verifies SHA-256 when metadata provides it, then opens Android's installer for user confirmation. |

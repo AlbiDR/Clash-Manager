@@ -141,6 +141,8 @@ export function useHeadhunter() {
           console.error("[Headhunter] Blacklist synchronization failed", blacklistSubscriptionError);
           toastError(blacklistSubscriptionError.message);
         },
+        // Dismissals made while the connection was down never arrive as events.
+        () => clashDataStore.refreshFromSupabase(),
       );
   if (getCurrentInstance()) {
     onUnmounted(stopBlacklistSync);

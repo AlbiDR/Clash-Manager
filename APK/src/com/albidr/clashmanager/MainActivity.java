@@ -69,6 +69,7 @@ public class MainActivity extends Activity {
     private boolean mHapticFeedbackEnabled = true;
     private String mPendingTagsJson = null;
     private long mPendingDelayMs = BlitzService.DEFAULT_PROFILE_LOAD_DELAY_MS;
+    private boolean mPendingSendInvites = true;
     private boolean mAwaitingOverlayPermission = false;
     // Set when CM Dev is launched with BlitzService.EXTRA_REHEARSAL (APK/apk-dev.mjs start --rehearsal).
     private boolean mBlitzRehearsal = false;
@@ -785,7 +786,7 @@ public class MainActivity extends Activity {
             if (Settings.canDrawOverlays(this)) {
                 String pendingTags = this.mPendingTagsJson;
                 if (pendingTags != null) {
-                    startBlitzService(pendingTags, this.mPendingDelayMs);
+                    startBlitzService(pendingTags, this.mPendingDelayMs, this.mPendingSendInvites);
                     this.mPendingTagsJson = null;
                 }
             } else {
@@ -794,10 +795,11 @@ public class MainActivity extends Activity {
         }
     }
 
-    private void startBlitzService(String tagsJson, long delayMs) {
+    private void startBlitzService(String tagsJson, long delayMs, boolean sendInvites) {
         var intent = new Intent(this, BlitzService.class);
         intent.putExtra("tags", tagsJson);
         intent.putExtra("delayMs", delayMs);
+        intent.putExtra(BlitzService.EXTRA_SEND_INVITES, sendInvites);
         if (mBlitzRehearsal) {
             intent.putExtra(BlitzService.EXTRA_REHEARSAL, true);
         }
@@ -1026,16 +1028,34 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public void startBlitz(String tagsJson, long delayMs) {
+            requestBlitz(tagsJson, delayMs, true);
+        }
+
+        /**
+         * Blitz without the Invite and Close taps: opens each profile for the
+         * dwell, then the next. The Roster uses it, because its players are
+         * already in the clan. A separate method rather than a third argument,
+         * so the PWA can tell whether the installed shell supports it.
+         */
+        @JavascriptInterface
+        public void openProfiles(String tagsJson, long delayMs) {
+            requestBlitz(tagsJson, delayMs, false);
+        }
+
+        private void requestBlitz(String tagsJson, long delayMs, boolean sendInvites) {
             runOnUiThread(() -> {
                 if (Settings.canDrawOverlays(MainActivity.this)) {
-                    if (!ClashManagerAccessibilityService.isActive()) {
+                    // A profiles-only run sends no taps, so it does not need the
+                    // accessibility service and should not ask for it.
+                    if (sendInvites && !ClashManagerAccessibilityService.isActive()) {
                         Toast.makeText(MainActivity.this, accessibilityHint(), Toast.LENGTH_LONG).show();
                     }
-                    startBlitzService(tagsJson, delayMs);
+                    startBlitzService(tagsJson, delayMs, sendInvites);
                     return;
                 }
                 mPendingTagsJson = tagsJson;
                 mPendingDelayMs = delayMs;
+                mPendingSendInvites = sendInvites;
                 mAwaitingOverlayPermission = true;
                 Toast.makeText(MainActivity.this, "Grant 'Display over other apps' for Clash Manager, then return here", Toast.LENGTH_LONG).show();
                 try {

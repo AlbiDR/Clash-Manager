@@ -27,6 +27,7 @@ type BlacklistSubscriber = {
   onInsert: (playerTag: string) => void | Promise<void>;
   onDelete: (playerTag: string) => void | Promise<void>;
   onError: (error: BlacklistSubscriptionError) => void;
+  onResync?: () => void | Promise<void>;
 };
 
 /** Typed transport failure propagated from Layer 1 to the subscribing feature. */
@@ -82,6 +83,25 @@ function notifyBlacklistSubscribers(
         `Blacklist ${eventName} handler failed`,
         subscriberError,
       ));
+    }
+  }
+}
+
+/**
+ * Tells each subscriber that events may have been missed while the connection
+ * was down, so it can reload what it shows.
+ */
+function notifyBlacklistResync(subscribers: Set<BlacklistSubscriber>): void {
+  for (const subscriber of subscribers) {
+    if (!subscriber.onResync) continue;
+    const reportResyncFailure = (resyncError: unknown) => {
+      subscriber.onError(new BlacklistSubscriptionError("Blacklist resync failed", resyncError));
+    };
+    try {
+      const resyncResult = subscriber.onResync();
+      if (resyncResult instanceof Promise) void resyncResult.catch(reportResyncFailure);
+    } catch (resyncError) {
+      reportResyncFailure(resyncError);
     }
   }
 }
@@ -283,7 +303,10 @@ export async function scoutLeaderboard(
  *
  * @param onInsert - Called with the player_tag when a blacklist row is inserted.
  * @param onDelete - Called with the player_tag when a blacklist row is deleted.
- * @param onError - Receives typed setup, validation, callback, channel, and cleanup failures.
+ * @param onError - Receives typed setup, validation, callback, refused-channel, and cleanup failures.
+ *   A dropped connection is not reported: Realtime reconnects on its own.
+ * @param onResync - Called when the channel is back after a dropped connection.
+ *   Events sent while it was down are never delivered, so reload here.
  * @returns Cleanup function; call on component unmount. Multiple callers share
  * one physical Realtime channel, while retaining independent callbacks and
  * cleanup leases.
@@ -292,8 +315,9 @@ export function subscribeToBlacklist(
   onInsert: (playerTag: string) => void | Promise<void>,
   onDelete: (playerTag: string) => void | Promise<void>,
   onError: (error: BlacklistSubscriptionError) => void,
+  onResync?: () => void | Promise<void>,
 ): () => void {
-  const subscriber: BlacklistSubscriber = { onInsert, onDelete, onError };
+  const subscriber: BlacklistSubscriber = { onInsert, onDelete, onError, onResync };
 
   if (!blacklistSubscription) {
     const client = createSupabaseClient();
@@ -353,15 +377,39 @@ export function subscribeToBlacklist(
         subscribers,
       };
 
-      channel.subscribe((_status, realtimeSubscriptionError) => {
-        // [DECISION LOG] Renamed callback parameter from 'err' to realtimeSubscriptionError
-        // to keep callback-boundary diagnostics descriptive and intact.
-        if (realtimeSubscriptionError) {
-          notifyBlacklistErrors(subscribers, new BlacklistSubscriptionError(
-            "Blacklist subscription failed",
-            realtimeSubscriptionError,
-          ));
+      // [FIX] Root cause of a "Blacklist subscription failed" toast on every
+      // return to the app: Realtime reports CHANNEL_ERROR for a dropped
+      // WebSocket too, and the shell's WebView loses its socket whenever it
+      // sits in the background (during a Blitz run in Clash Royale, or between
+      // uses). Realtime then reconnects and rejoins by itself, so the toast
+      // announced a failure that had already healed.
+      // [DECISION LOG] The two errors are told apart by the socket: a refusal
+      // arrives as a reply over a connected socket, a drop arrives with the
+      // socket closed. Only a refusal is reported, once until the channel joins
+      // again. A drop instead triggers onResync once the channel is back,
+      // because events sent while it was down are lost.
+      let wasInterrupted = false;
+      let hasReportedRefusal = false;
+      channel.subscribe((status, realtimeSubscriptionError) => {
+        if (status === "SUBSCRIBED") {
+          hasReportedRefusal = false;
+          if (wasInterrupted) {
+            wasInterrupted = false;
+            notifyBlacklistResync(subscribers);
+          }
+          return;
         }
+        if (!realtimeSubscriptionError) return;
+        if (!client.realtime.isConnected()) {
+          wasInterrupted = true;
+          return;
+        }
+        if (hasReportedRefusal) return;
+        hasReportedRefusal = true;
+        notifyBlacklistErrors(subscribers, new BlacklistSubscriptionError(
+          "Blacklist subscription failed",
+          realtimeSubscriptionError,
+        ));
       });
     } catch (realtimeSetupError) {
       blacklistSubscription = null;

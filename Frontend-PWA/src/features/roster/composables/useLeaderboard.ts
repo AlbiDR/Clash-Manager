@@ -71,7 +71,9 @@ export function useLeaderboard() {
   // are not dismissible, so dismissal simply clears the selection and the
   // dismiss affordance keeps the neutral "close" icon (not Blitz's "trash").
   const selectionStore = useSelectionStore();
-  const blitz = useBlitzMode(selectionStore);
+  // [DECISION LOG] Roster members are already in the clan, so inviting them is
+  // meaningless: Blitz here opens their profiles and sends no Invite taps.
+  const blitz = useBlitzMode(selectionStore, { sendInvites: false });
 
   // [DECISION LOG] BLITZ INTEGRATION:
   // The Roster view adopts the same batch-action infrastructure as Headhunter.

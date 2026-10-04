@@ -332,15 +332,6 @@ export const BLITZ_COMPLETION_DELAY = 1500;
 export const BLITZ_BATCH_SHIFT_DELAY = 150;
 
 /**
- * Largest native Blitz queue the Android service will accept in one run.
- *
- * The service rejects the complete payload rather than silently dropping
- * players, so harvest callers must trim results before invoking the bridge.
- * This mirrors `MAX_QUEUE_PLAYERS` in `APK/src/com/albidr/clashmanager/BlitzService.java`.
- */
-export const BLITZ_MAX_QUEUE_PLAYERS = 50;
-
-/**
  * Non-blocking timeout for blocked IndexedDB deletions.
  *
  * @remarks

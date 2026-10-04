@@ -31,8 +31,9 @@ const mockBlitz = {
   clearSelection: vi.fn(),
 };
 
+const mockUseBlitzMode = vi.fn((..._args: unknown[]) => mockBlitz);
 vi.mock("@core/services/useBlitzMode", () => ({
-  useBlitzMode: () => mockBlitz,
+  useBlitzMode: (...args: unknown[]) => mockUseBlitzMode(...args),
 }));
 
 vi.mock("@core/api/useApiState", () => ({
@@ -154,6 +155,11 @@ describe("useLeaderboard", () => {
     // Test scoreGetter with score and fallback 0
     expect(capturedControllerConfig.scoreGetter(sampleMember)).toBe(95);
     expect(capturedControllerConfig.scoreGetter({ id: "#000", n: "Zero" } as any)).toBe(0);
+  });
+
+  it("runs Blitz as profiles only, since roster members are already in the clan", () => {
+    useLeaderboard();
+    expect(mockUseBlitzMode).toHaveBeenCalledWith(expect.anything(), { sendInvites: false });
   });
 
   it("overrides fabState and binds layoutEvents to blitz handlers", () => {

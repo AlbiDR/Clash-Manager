@@ -12,7 +12,7 @@
 - Lists members ranked by Performance Score, sortable by Performance, Momentum, Trophies, Donations, Tenure, Name, or Last Seen, with search by name or tag.
 - Expands each member to show war rate, average fame, average daily donations, and last-seen, each benchmarked against the clan average.
 - Draws per-member trend charts (war and Voyage) with a best-fit line and a predicted next value.
-- Supports bulk selection (including "select by score") to open or Blitz many members at once.
+- Supports bulk selection (including "select by score") to open or Blitz many members at once. Blitz here only opens profiles: members are already in the clan, so no Invite is tapped.
 
 ## The score
 

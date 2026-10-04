@@ -52,14 +52,24 @@ public class BlitzOverlayContractTest {
             "formatBlitzSetupTitle", new Class<?>[] { boolean.class }, true));
         assertEquals("3 players \u00b7 850ms each \u00b7 about 3s", callBlitz(
             "formatBlitzSetupSubtitle",
-            new Class<?>[] { boolean.class, int.class, long.class },
+            new Class<?>[] { boolean.class, boolean.class, int.class, long.class },
             false,
+            true,
             3,
             850L));
         assertEquals("Drag targets, set profile dwell, then start", callBlitz(
             "formatBlitzSetupSubtitle",
-            new Class<?>[] { boolean.class, int.class, long.class },
+            new Class<?>[] { boolean.class, boolean.class, int.class, long.class },
             true,
+            true,
+            3,
+            850L));
+        // A profiles-only run (Roster) shows no tap targets, so there is nothing to drag.
+        assertEquals("Set profile dwell, then start", callBlitz(
+            "formatBlitzSetupSubtitle",
+            new Class<?>[] { boolean.class, boolean.class, int.class, long.class },
+            true,
+            false,
             3,
             850L));
         assertFalse((Boolean) callBlitz(
