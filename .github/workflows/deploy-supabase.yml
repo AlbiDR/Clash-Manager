@@ -118,11 +118,51 @@ jobs:
         run: |
           # 0. Context: We work from the Backend root
           cd Backend
+
+          # The eu-west-1 pooler can intermittently accept the management
+          # connection while rejecting the immediately following Postgres
+          # connection. Retrying only those transient transport failures keeps
+          # a valid migration deploy from failing after its repository gates
+          # have passed, while surfacing SQL and migration errors immediately.
+          retry_pooler_command() {
+            local label="$1"
+            local exit_status
+            shift
+
+            for attempt in 1 2 3; do
+              local output_file
+              output_file="$(mktemp)"
+
+              if "$@" >"$output_file" 2>&1; then
+                cat "$output_file"
+                rm -f "$output_file"
+                return 0
+              else
+                exit_status=$?
+              fi
+
+              cat "$output_file"
+              if ! grep -Eqi 'Connection terminated due to connection timeout|context deadline exceeded|failed to connect to postgres|failed to receive message' "$output_file"; then
+                rm -f "$output_file"
+                return "$exit_status"
+              fi
+              rm -f "$output_file"
+
+              if [ "$attempt" -lt 3 ]; then
+                local delay_seconds=$((attempt * 30))
+                echo "[RETRY] $label failed to reach the Supabase pooler; retrying in ${delay_seconds}s (attempt $((attempt + 1))/3)."
+                sleep "$delay_seconds"
+              fi
+            done
+
+            echo "[ERROR] $label could not reach the Supabase pooler after 3 attempts."
+            return 1
+          }
           
           # 1. Authoritative Linking
           if [ -n "$SUPABASE_DB_PASSWORD" ]; then
             echo "[LINK] Establishing Authoritative Link..."
-            supabase link --project-ref "$PROJECT_ID" --password "$SUPABASE_DB_PASSWORD"
+            retry_pooler_command "Supabase link" supabase link --project-ref "$PROJECT_ID" --password "$SUPABASE_DB_PASSWORD"
           fi
 
           # 2. Sync The Configuration and Key Farm
@@ -185,7 +225,7 @@ jobs:
 
             # The Binary Stack is now consolidated. 
             # We assume a clean state based on the 20260411160000 baseline.
-            supabase db push --include-all --linked --yes
+            retry_pooler_command "database migration push" supabase db push --include-all --linked --yes
 
             # 3b. Cron schedule SSOT. cron.job is data, not schema, so migrations
             # deliberately do not create it (that would make every local stack and
