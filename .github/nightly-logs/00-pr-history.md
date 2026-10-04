@@ -15,6 +15,15 @@ LAST_AGED:   2026-10-04
 ---
 
 ## T1 -- Active (last 7 days)
+
+### [2026-10-04] PR #2082 [Stage 1]: Calibration pass: Widened threat surface scan across RecruitClient, useBlitzMode, useLeaderboard, and headhunter-scanner verified zero security gaps, unvalidated boundaries, or state leaks; 7 ordinary clean runs since calibration.
+**Domain:** hardening | **Commit:** 08abfd0fd | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2082)
+**Files:** .github/nightly-logs/00-pr-history.md, .github/nightly-logs/01-hardening-coverage.log, .github/nightly-logs/01-hardening-pr-body.md
+**Why:** Clean calibration pass required; full inspection confirmed all threat vectors and boundaries are hardened.
+**Change:** Calibration pass: Widened threat surface scan across RecruitClient, useBlitzMode, useLeaderboard, and headhunter-scanner verified zero security gaps, unvalidated boundaries, or state leaks; 7 ordinary clean runs since calibration.
+**Result:** PASSED (pnpm test 214/214 files passed)
+**Nudges:** 0
+
 ### [2026-10-04] PR #2081 [Stage 13]: Updated self-healing protocol findings for 2026-10-04 run
 **Domain:** pipeline | **Commit:** 3ba0d1242 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2081)
 **Files:** .github/nightly-logs/13-self-healing-protocol-coverage.log, .github/nightly-logs/13-self-healing-protocol-pr-body.md, .github/nightly-logs/13-self-healing-protocol.md
