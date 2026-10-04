@@ -30,9 +30,11 @@ import {
   composeCommitSubject,
   formatRunWindow,
   readSubCheckStatuses,
+  resolveVerified,
   subCheckField,
 } from "./nightly-stage.mjs";
 import { parseCoverageLine } from "./coverage-log-line.mjs";
+import { parseVerified } from "./doc-debt.mjs";
 import { extractMetadata, parseStageBranch } from "./merge-nightly-core.mjs";
 import { placeholderResult } from "./nightly-prose.mjs";
 
@@ -1174,6 +1176,64 @@ function finalizeInContext(t, { stageNumber, contextDir, statusFiles = {}, state
   );
   return { outcome, log: readFileSync(logPath, "utf8") };
 }
+
+test("--verified is recorded only for a documentation lane's finished run, and only for real source files", t => {
+  const repoRoot = mkdtempSync(path.join(os.tmpdir(), "nightly-verified-test-"));
+  t.after(() => rmSync(repoRoot, { recursive: true, force: true }));
+  const real = "Frontend-PWA/src/shared/ui/ViewOptions.vue";
+  mkdirSync(path.join(repoRoot, path.dirname(real)), { recursive: true });
+  writeFileSync(path.join(repoRoot, real), "<template />\n");
+  const doc = getStage(registry, 6);
+
+  assert.deepEqual(resolveVerified(`./${real}, ${real}`, doc, "CLEAN", repoRoot), [real]);
+  assert.deepEqual(resolveVerified(real, doc, "CHANGED", repoRoot), [real]);
+  assert.deepEqual(resolveVerified(real, doc, "PARTIAL-RUN", repoRoot), [], "an unfinished run vouches for nothing");
+  assert.deepEqual(resolveVerified(real, getStage(registry, 9), "CLEAN", repoRoot), [], "only a documentation lane can vouch for prose");
+  assert.deepEqual(
+    resolveVerified(`README.md, Frontend-PWA/src/missing.ts, Frontend-PWA/../../outside.ts, ${real}`, doc, "CLEAN", repoRoot),
+    [real],
+    "not a documented source, not in this checkout, or outside it",
+  );
+  assert.deepEqual(resolveVerified(undefined, doc, "CLEAN", repoRoot), []);
+  assert.deepEqual(resolveVerified(" , ", doc, "CLEAN", repoRoot), []);
+});
+
+test("the verification the stage runner writes is the one doc-debt reads", () => {
+  const stage = getStage(registry, 6);
+  const real = "Frontend-PWA/src/shared/ui/ViewOptions.vue";
+  const body = renderPrBody(stage, "CLEAN", "Audited ViewOptions.vue", [stage.coverageLog], { why: "w", result: "r", verified: [real] });
+  assert.deepEqual(parseVerified(body), [real]);
+  assert.match(body, /\*\*Verified accurate:\*\* Frontend-PWA\/src\/shared\/ui\/ViewOptions\.vue/);
+  // The coordinator's parser is undisturbed: Files is still Files.
+  assert.equal(extractMetadata({ body, title: "t" }).files, stage.coverageLog);
+  // No verification, no line, so every other stage's body is unchanged.
+  assert.doesNotMatch(renderPrBody(stage, "CLEAN", "Audited", [stage.coverageLog], { why: "w", result: "r" }), /Verified/);
+});
+
+test("finalize --verified reaches the committed description end to end", t => {
+  const repoRoot = createTemporaryRepo();
+  t.after(() => rmSync(repoRoot, { recursive: true, force: true }));
+  const contextDir = temporaryContext(t);
+  const stage = getStage(registry, 6);
+  const real = "Frontend-PWA/src/shared/ui/ViewOptions.vue";
+  mkdirSync(path.join(repoRoot, path.dirname(real)), { recursive: true });
+  writeFileSync(path.join(repoRoot, real), "<template />\n");
+  assert.equal(run("git", ["add", real], repoRoot).status, 0);
+  assert.equal(run("git", ["commit", "-m", "test: seed a documented source"], repoRoot).status, 0);
+  const logPath = path.join(repoRoot, stage.coverageLog);
+  mkdirSync(path.dirname(logPath), { recursive: true });
+  writeFileSync(logPath, `${sentinelLine("2026-08-08", 6)}\n`);
+
+  const outcome = run(
+    process.execPath,
+    [scriptPath, "finalize", "--stage", "6", "--status", "CLEAN", "--summary", "Audited ViewOptions.vue",
+      "--result", "vue-tsc passed with 0 errors", "--verified", real],
+    repoRoot,
+    { NIGHTLY_CONTEXT_DIR: contextDir, NIGHTLY_TODAY: "2026-08-08", NIGHTLY_NOW_EPOCH: "1000" },
+  );
+  assert.equal(outcome.status, 0, outcome.stderr);
+  assert.deepEqual(parseVerified(readFileSync(path.join(repoRoot, prBodySidecarPath(stage)), "utf8")), [real]);
+});
 
 test("finalize records the sub-check statuses it finds in the context dir", t => {
   const contextDir = temporaryContext(t);

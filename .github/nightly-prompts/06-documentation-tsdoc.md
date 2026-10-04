@@ -26,7 +26,7 @@ forbidden-actions: [modify-code-logic, modify-readme, ask_question, ask_permissi
 1. Start with `node .github/scripts/nightly/nightly-stage.mjs start --stage 6`.
 2. Work on exactly one target within the write boundaries below. The lifecycle helper owns the date, timer, context refresh, and initial coverage-log sentinel.
 3. After target selection and immediately before and after required verification, run `node .github/scripts/nightly/nightly-stage.mjs budget --stage 6`. If it prints `SUBMIT`, stop source work and follow the fallback rules in `.github/nightly-prompts/00-nightly-agent-contract.md`.
-4. Finalize with `node .github/scripts/nightly/nightly-stage.mjs finalize --stage 6 --status <CHANGED|CLEAN|SKIPPED|PARTIAL-RUN> --summary "<what changed>" --why "<rationale>" --result "<verification result>"`.
+4. Finalize with `node .github/scripts/nightly/nightly-stage.mjs finalize --stage 6 --status <CHANGED|CLEAN|SKIPPED|PARTIAL-RUN> --summary "<what changed>" --why "<rationale>" --result "<verification result>" [--verified "<path>[,<path>]"]`.
 5. Read `/tmp/nightly/final-handoff.txt` for the publication data, then return the exact contents of `/tmp/nightly/pr-body.md`, verbatim and alone, as your final message, and end the task so Jules native publication can create the PR. Returning any part of the handoff publishes the instructions instead of the description.
 
 Coverage log: `.github/nightly-logs/06-documentation-tsdoc-coverage.log`
@@ -83,7 +83,11 @@ You act as a logic-annotating interface architect. Your mandate is mapping the i
     unavailable scan as an empty one.
   - Do not manufacture an edit. The semver bump rewrites a version marker
     inside a couple of source files on every push, so a listed file's prose can
-    already be accurate. Record it as accurate and move to the next entry.
+    already be accurate. Record it as accurate by passing its path to finalize
+    as `--verified "<path>"` (comma-separate several), then move to the next
+    entry. A verified file leaves `doc-debt.txt` until its code changes again;
+    without the flag the same file comes back every night. List only files you
+    actually opened and checked, never one you only saw in the list.
 - **Scan execution:** Identify the single highest-priority documentation gap using the following queue in strict order. Stop after one target. If all targets are covered, skip source edits and finalize `CLEAN`.
 - **Priority List:**
   1. **Recent-Change Priority:** Auditing files recently modified by preceding stages (Harden, Verify, Optimize) since the last merge cycle. Changes in code logic invalidate adjacent annotations.
@@ -108,5 +112,5 @@ You act as a logic-annotating interface architect. Your mandate is mapping the i
 - Use `CLEAN` when the audit completed and no source change is required.
 - Use `SKIPPED` or `PARTIAL-RUN` only after restoring every non-log change.
 - Do not append another summary line manually; finalization replaces the lifecycle sentinel.
-- Run `node .github/scripts/nightly/nightly-stage.mjs budget --stage 6`, then `node .github/scripts/nightly/nightly-stage.mjs finalize --stage 6 --status <STATUS> --summary "<what changed>" --why "<rationale>" --result "<verification result>"`.
+- Run `node .github/scripts/nightly/nightly-stage.mjs budget --stage 6`, then `node .github/scripts/nightly/nightly-stage.mjs finalize --stage 6 --status <STATUS> --summary "<what changed>" --why "<rationale>" --result "<verification result>" [--verified "<path>[,<path>]"]`.
 - Read `/tmp/nightly/final-handoff.txt` for the publication data, return the exact contents of `/tmp/nightly/pr-body.md` verbatim and alone as your final message, and end immediately. Jules native publication owns the branch, commit, push, and non-draft PR creation.
