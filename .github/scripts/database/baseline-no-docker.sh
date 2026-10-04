@@ -29,6 +29,7 @@ REPO_ROOT=$(git rev-parse --show-toplevel)
 MIGRATIONS="${REPO_ROOT}/Backend/supabase/migrations"
 BASELINE=$(find "${MIGRATIONS}" -maxdepth 1 -type f -name '*_master_migration.sql' -print -quit)
 PORT=${BASELINE_PG_PORT:-55433}
+DIFF_LINES=${BASELINE_DIFF_LINES:-20}
 
 PGBIN=""
 for candidate in "$(dirname "$(command -v pg_ctl 2>/dev/null || echo /nonexistent)")" \
@@ -49,7 +50,11 @@ fi
 DATA_DIR=$(mktemp -d "${TMPDIR:-/tmp}/clash-pg.XXXXXX")
 cleanup() {
   "${PGBIN}/pg_ctl" -D "${DATA_DIR}/pg" -w -t 20 stop -m immediate >/dev/null 2>&1 || true
-  rm -rf "${DATA_DIR}"
+  if [[ "${BASELINE_KEEP_TEMP:-false}" == "true" ]]; then
+    echo "Diagnostic baseline artifacts preserved at ${DATA_DIR}"
+  else
+    rm -rf "${DATA_DIR}"
+  fi
 }
 trap cleanup EXIT
 
@@ -118,7 +123,7 @@ echo "[2/3] baseline is idempotent"
 if apply "${BASELINE}"; then
   snapshot > "${DATA_DIR}/second.sql"
   if diff -q "${DATA_DIR}/first.sql" "${DATA_DIR}/second.sql" >/dev/null; then echo "  PASS"; else
-    echo "  FAIL: a second application changed the catalog"; diff -u "${DATA_DIR}/first.sql" "${DATA_DIR}/second.sql" | head -20; FAILED=1
+    echo "  FAIL: a second application changed the catalog"; diff -u "${DATA_DIR}/first.sql" "${DATA_DIR}/second.sql" | head -n "${DIFF_LINES}"; FAILED=1
   fi
 else echo "  FAIL: second application errored"; tail -3 "${DATA_DIR}/apply.log"; FAILED=1; fi
 
@@ -135,7 +140,7 @@ if [[ ${FAILED} -eq 0 ]]; then
   if diff -q "${DATA_DIR}/first.sql" "${DATA_DIR}/replay.sql" >/dev/null; then
     echo "  PASS: ${REPLAYED} migrations, $(wc -l < "${DATA_DIR}/first.sql" | tr -d ' ') statements identical"
   else
-    echo "  FAIL: baseline-only and full replay differ"; diff -u "${DATA_DIR}/first.sql" "${DATA_DIR}/replay.sql" | head -20; FAILED=1
+    echo "  FAIL: baseline-only and full replay differ"; diff -u "${DATA_DIR}/first.sql" "${DATA_DIR}/replay.sql" | head -n "${DIFF_LINES}"; FAILED=1
   fi
 fi
 

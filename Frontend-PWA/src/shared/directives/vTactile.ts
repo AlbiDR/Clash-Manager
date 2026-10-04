@@ -76,6 +76,8 @@ const stateMap = new WeakMap<HTMLElement, TactileState>();
 export const vTactile: Directive<HTMLElement, TactileBinding> = {
   mounted(el, binding) {
     const haptics = useHaptics();
+    const isUnavailable = () =>
+      el.matches(":disabled") || el.getAttribute("aria-disabled") === "true";
     const state: TactileState = {
       startX: 0,
       startY: 0,
@@ -84,7 +86,7 @@ export const vTactile: Directive<HTMLElement, TactileBinding> = {
       isLongPress: false,
       listeners: {
         pointerdown: (e: PointerEvent) => {
-          if (e.button !== 0) return;
+          if (e.button !== 0 || isUnavailable()) return;
 
           const target = e.target as HTMLElement;
           // ARCHITECTURAL PROTECTION: Ignore interactions on actionable children.
@@ -105,7 +107,7 @@ export const vTactile: Directive<HTMLElement, TactileBinding> = {
           if (state.timer) clearTimeout(state.timer);
 
           state.timer = window.setTimeout(() => {
-            if (state.isActive) {
+            if (state.isActive && !isUnavailable()) {
               state.isLongPress = true;
               haptics.longPress();
               if (binding.value?.onLongPress) {
@@ -131,7 +133,7 @@ export const vTactile: Directive<HTMLElement, TactileBinding> = {
         },
 
         pointerup: () => {
-          if (state.isActive && !state.isLongPress) {
+          if (state.isActive && !state.isLongPress && !isUnavailable()) {
             haptics.tap();
             if (binding.value?.onTap) {
               binding.value.onTap();

@@ -37,6 +37,7 @@
 
 const HTTP_STATUS_BAD_REQUEST = 400;
 const HTTP_STATUS_UNAUTHORIZED = 401;
+const HTTP_STATUS_PAYLOAD_TOO_LARGE = 413;
 const HTTP_STATUS_METHOD_NOT_ALLOWED = 405;
 const HTTP_STATUS_TOO_MANY_REQUESTS = 429;
 const HTTP_STATUS_INTERNAL_SERVER_ERROR = 500;
@@ -58,6 +59,8 @@ export type ProtocolErrorCode =
     | 'METHOD_NOT_ALLOWED'
     /** The request body was present but was not parseable JSON (truncated, binary, or plain text). */
     | 'MALFORMED_BODY'
+    /** The request body exceeded the shared admission-control byte ceiling. */
+    | 'PAYLOAD_TOO_LARGE'
     /** The parsed body failed the function's Valibot validation boundary. */
     | 'MALFORMED_PAYLOAD'
     /**
@@ -84,6 +87,7 @@ export const PROTOCOL_ERROR_STATUS: Record<ProtocolErrorCode, number> = {
     UNAUTHORIZED: HTTP_STATUS_UNAUTHORIZED,
     METHOD_NOT_ALLOWED: HTTP_STATUS_METHOD_NOT_ALLOWED,
     MALFORMED_BODY: HTTP_STATUS_BAD_REQUEST,
+    PAYLOAD_TOO_LARGE: HTTP_STATUS_PAYLOAD_TOO_LARGE,
     MALFORMED_PAYLOAD: HTTP_STATUS_BAD_REQUEST,
     RATE_LIMITED: HTTP_STATUS_TOO_MANY_REQUESTS,
     TELEMETRY_UNAVAILABLE: HTTP_STATUS_SERVICE_UNAVAILABLE,
@@ -105,6 +109,7 @@ export const CLIENT_SAFE_MESSAGE: Record<ProtocolErrorCode, string> = {
     UNAUTHORIZED: 'Unauthorized',
     METHOD_NOT_ALLOWED: 'Method Not Allowed',
     MALFORMED_BODY: 'Malformed Request Body',
+    PAYLOAD_TOO_LARGE: 'Payload Too Large',
     MALFORMED_PAYLOAD: 'Malformed Payload',
     RATE_LIMITED: 'Too Many Requests',
     TELEMETRY_UNAVAILABLE: 'Service Unavailable',

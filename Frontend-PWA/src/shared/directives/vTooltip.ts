@@ -111,7 +111,7 @@ if (typeof window !== "undefined") {
  * This directive is a Layer 2 (@shared) molecule. It provides a context-blind
  * information overlay that remains consistent across all business features.
  * To maintain performance and prevent DOM bloat, it utilizes a singleton
- * pattern with event delegation on document.body — actual rendering happens
+ * pattern with event delegation on document.body; actual rendering happens
  * once, in `GhostBenchmarkHost.vue`, driven by the shared `ghostBenchmarkState`.
  *
  * Architectural Constraints:

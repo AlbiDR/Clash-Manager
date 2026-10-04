@@ -2,12 +2,12 @@
 // Copyright (C) 2026 AlbiDR
 
 import { ref } from "vue";
-import { useToast } from "./useToast";
-import { useConfirm } from "./useConfirm";
-import { idb } from "./StorageService";
+import { useToast } from "@core/services/useToast";
+import { useConfirm } from "@core/services/useConfirm";
+import { idb } from "@core/services/StorageService";
 import { UI_STABILITY_DELAY } from "@core/config";
-import { yieldToInteractionFrame } from "../utils/scheduling";
-import { useApkManager, type ApkUpdateState } from "./useApkManager";
+import { yieldToInteractionFrame } from "@core/utils/scheduling";
+import { useApkManager } from "@core/services/useApkManager";
 
 type BeforeInstallPromptOutcome = "accepted" | "dismissed";
 
@@ -53,34 +53,6 @@ function bindInstallPromptListener(): void {
 
 bindInstallPromptListener();
 
-export {
-  APK_RELEASE_RAW_BASE_URL,
-  APK_LATEST_METADATA_URL,
-  APK_RELEASE_CONTENTS_API_URL,
-  APK_FETCH_TIMEOUT_MS,
-  APK_RESOLUTION_CACHE_TTL_MS,
-  APK_RELEASE_PATH,
-  type GitHubReleaseContent,
-  type ReleaseApkParts,
-  type ApkResolutionCache,
-  type ApkReleaseDownload,
-  buildFreshApkMetadataUrl,
-  buildFreshUrl,
-  isReleaseApkFilename,
-  isReleaseBuildNumber,
-  isReleaseVersion,
-  buildApkDownloadUrl,
-  buildSameOriginApkReleaseUrl,
-  buildSameOriginApkDownloadUrl,
-  selectNewestReleaseApkFilename,
-  selectNewestReleaseApk,
-  resolveLatestApkRelease,
-  resolveLatestApkFilename,
-  resetApkResolutionCacheForTests,
-} from "./apkResolver";
-
-export { useApkManager, type ApkUpdateState };
-
 export function resetPwaInstallPromptForTests(): void {
   if (import.meta.env.TEST) {
     deferredInstallPrompt.value = undefined;
@@ -90,22 +62,22 @@ export function resetPwaInstallPromptForTests(): void {
 }
 
 /**
- * PWA MANAGER SERVICE (Layer 1)
+ * PWA MANAGER COMPOSABLE (Layer 2)
  * ----------------------------------------------------------------------------
  * Rationale: Centralizes infrastructure-level PWA lifecycle and recovery logic.
  * ----------------------------------------------------------------------------
  *
  * @remarks
- * This service orchestrates Service Worker updates, cache purging, and
- * disaster recovery (factory resets). It acts as a Layer 1 core service,
- * ensuring infrastructure concerns are decoupled from feature-level logic.
+ * This composable brokers browser-owned Service Worker, CacheStorage,
+ * installation prompt, and notification APIs for higher layers. Domain-neutral
+ * APK and persistence operations remain delegated to Layer 1 services.
  *
  * **Architectural Context:**
- * - **Layer:** Layer 1 (@core)
- * - **Import Boundaries:** May import from Layer 1 (@core) and Layer 0 (@substrate).
- *   Imports from Shared (@shared) or Features (@features) are forbidden.
+ * - **Layer:** Layer 2 (@shared/composables)
+ * - **Import Boundaries:** May import Layer 1 (@core); never imports a feature
+ *   or the app composition root.
  *
- * Satisfies ADR Section II: Layer 1 Core services (Agnostic Infrastructure).
+ * Satisfies ADR Section II: Layer 2 browser and OS API brokerage.
  * Satisfies ADR Section IV: Tiered Caching Protocol (Cache API management).
  */
 
@@ -115,8 +87,8 @@ export function resetPwaInstallPromptForTests(): void {
  * @returns
  * - `notificationPermission`: Status of the browser's Notification API.
  * - `isPushSubscribed`: Indicates if the client has an active push subscription.
- * - `updateServiceWorker`: Ref containing the SW registration update function.
- * - `initPwaLifecycle`: Orchestrates SW registration and permission probing.
+ * - `updateServiceWorker`: Ref containing the authoritative SW activation function.
+ * - `initPwaLifecycle`: Probes push capability through the app shell's registration.
  * - `forceUpdate`: Triggers a manual Service Worker update check.
  * - `installPwa`: Opens the browser-managed PWA install prompt when available.
  * - `clearCache`: Purges the PWA asset cache and reloads.
@@ -131,36 +103,31 @@ export function usePwaManager() {
   const isPushSubscribed = ref(false);
 
   /**
-   * Function to trigger a Service Worker reload/update.
-   * Typically populated by 'virtual:pwa-register' in the feature layer.
-   *
-   * @param shouldForceReload - Whether to force a full page reload after the update.
+   * Activates an already-downloaded worker without registering a second one.
+   * The app shell is the only registration owner because it sets
+   * `updateViaCache: "none"`; the worker's activation and App-level
+   * `controllerchange` listener perform the eventual reload.
    */
-  const updateServiceWorker = ref((shouldForceReload?: boolean) => {
-    console.log("[PWA] SW Update check initiated (no-op stub)", shouldForceReload);
+  const updateServiceWorker = ref(async (_shouldForceReload?: boolean): Promise<void> => {
+    if (!("serviceWorker" in navigator)) return;
+
+    try {
+      const serviceWorkerRegistration = await navigator.serviceWorker.getRegistration();
+      serviceWorkerRegistration?.waiting?.postMessage({ type: "SKIP_WAITING" });
+    } catch (workerActivationError) {
+      console.warn("[PWA] Worker activation request failed", workerActivationError);
+    }
   });
 
   /**
-   * Orchestrates the PWA lifecycle initialization.
-   * Handles Service Worker registration and notification permission probing.
+   * Initializes settings-specific PWA capability state. Service worker
+   * registration belongs solely to the app shell, which preserves its explicit
+   * update cache policy across every route.
    */
   async function initPwaLifecycle() {
     if (!import.meta.env.PROD) return;
 
     setTimeout(async () => {
-      if ("serviceWorker" in navigator) {
-        try {
-          const { registerSW } = await import("virtual:pwa-register");
-          updateServiceWorker.value = registerSW({
-            onNeedRefresh() {
-              console.log("[PWA] Update available");
-            },
-          });
-        } catch (swInitError) {
-          console.warn("[PWA] SW Registration failed", swInitError);
-        }
-      }
-
       if (typeof Notification !== "undefined") {
         notificationPermission.value = Notification.permission;
 

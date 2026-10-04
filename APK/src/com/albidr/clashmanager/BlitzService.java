@@ -10,14 +10,17 @@ import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
+import android.content.res.Configuration;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.ColorFilter;
+import android.graphics.Insets;
 import android.graphics.Paint;
 import android.graphics.PixelFormat;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
+import android.os.Bundle;
 import android.net.Uri;
 import android.os.Handler;
 import android.os.IBinder;
@@ -27,7 +30,10 @@ import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewTreeObserver;
+import android.view.WindowInsets;
 import android.view.WindowManager;
+import android.view.accessibility.AccessibilityEvent;
+import android.view.accessibility.AccessibilityNodeInfo;
 import android.view.animation.DecelerateInterpolator;
 import android.widget.Button;
 import android.widget.FrameLayout;
@@ -39,7 +45,11 @@ import android.widget.TextView;
 import android.widget.Toast;
 import androidx.core.app.NotificationCompat;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
+import java.util.Set;
+import java.util.regex.Pattern;
 import org.json.JSONArray;
 import org.json.JSONException;
 
@@ -56,6 +66,20 @@ public class BlitzService extends Service {
      */
     static final String EXTRA_REHEARSAL = "blitzRehearsal";
 
+    /**
+     * Blitz deliberately operates on one reviewable set of players at a time.
+     * Both the active recruit rotation and a Clash Royale clan roster are capped
+     * at this size, so accepting more would turn a malformed bridge payload into
+     * a long, unattended tap sequence.
+     */
+    private static final int MAX_QUEUE_PLAYERS = 50;
+
+    // Mirrors the defensive 3..15-character body envelope in RoyaleTagSchema:
+    // a leading '#' is display syntax, not part of the deep-link player id.
+    private static final int MIN_PLAYER_TAG_LENGTH = 3;
+    private static final int MAX_PLAYER_TAG_LENGTH = 15;
+    private static final Pattern PLAYER_TAG_BODY_PATTERN = Pattern.compile("[0289CGJLPQRUVY]+");
+
     static boolean isRehearsal(Context context, Intent intent) {
         return intent != null
             && intent.getBooleanExtra(EXTRA_REHEARSAL, false)
@@ -70,11 +94,6 @@ public class BlitzService extends Service {
     private int mRunOpened = 0;
     private int mRunInvites = 0;
 
-    /**
-     * Fallback wait-for-profile-to-render delay, used only if the JS layer's
-     * Blitz Speed setting (see BLITZ_SPEED_DELAYS in the PWA) somehow isn't
-     * forwarded via the "delayMs" intent extra.
-     */
     /**
      * Profile dwell domain.
      *
@@ -114,16 +133,42 @@ public class BlitzService extends Service {
     private static final float TEXT_SIZE_DWELL_FOOT_SP = 9.0f;
     private static final float PADDING_DWELL_TOP_DP = 10.0f;
     private static final float MARGIN_DWELL_B_DP = 12.0f;
-    private static final String COLOR_DWELL_TRACK = "#44474f";
     private static final String CHANNEL_ID = "BlitzServiceChannel";
 
+    // Dynamic overlay ids are stable so accessibility services and device checks
+    // can address controls that do not exist in an XML resource tree.
+    private static final int VIEW_ID_BLITZ_SETUP_PANEL = 0x434D0101;
+    private static final int VIEW_ID_BLITZ_INVITE_MARKER = 0x434D0102;
+    private static final int VIEW_ID_BLITZ_CLOSE_MARKER = 0x434D0103;
+    private static final int VIEW_ID_BLITZ_EDIT_BUTTON = 0x434D0104;
+    private static final int VIEW_ID_BLITZ_CANCEL_BUTTON = 0x434D0105;
+    private static final int VIEW_ID_BLITZ_START_BUTTON = 0x434D0106;
+    private static final int VIEW_ID_BLITZ_DWELL_SLIDER = 0x434D0107;
+    private static final int VIEW_ID_BLITZ_RUNNING_PILL = 0x434D0108;
+    private static final int VIEW_ID_BLITZ_STOP_BUTTON = 0x434D0109;
+
+    private static final int ACTION_ID_BLITZ_MOVE_LEFT = 0x434D0201;
+    private static final int ACTION_ID_BLITZ_MOVE_RIGHT = 0x434D0202;
+    private static final int ACTION_ID_BLITZ_MOVE_UP = 0x434D0203;
+    private static final int ACTION_ID_BLITZ_MOVE_DOWN = 0x434D0204;
+
+    // Canonical dark-theme roles from Frontend-PWA/src/core/theme/tokens.ts.
+    // The overlay is intentionally dark over the game in either system theme.
+    private static final String COLOR_PRIMARY = "#a8c7fa";
+    private static final String COLOR_ON_PRIMARY = "#00315b";
+    private static final String COLOR_ERROR = "#ffb4ab";
+    private static final String COLOR_ON_ERROR = "#690005";
+    private static final String COLOR_SURFACE_CONTAINER_LOW = "#151920";
+    private static final String COLOR_SURFACE_CONTAINER = "#1b1f27";
+    private static final String COLOR_ON_SURFACE = "#e1e2e8";
+    private static final String COLOR_ON_SURFACE_VARIANT = "#c4c7c5";
+    private static final String COLOR_OUTLINE_VARIANT = "#44474f";
+
     // Constants for modify button styling
-    private static final float MODIFY_BUTTON_SIZE_DP = 28.0f;
-    private static final int MODIFY_BUTTON_PADDING_DP = 4;
+    private static final float MODIFY_BUTTON_SIZE_DP = 48.0f;
+    private static final int MODIFY_BUTTON_PADDING_DP = 12;
     private static final float MODIFY_BUTTON_MARGIN_H_DP = 8.0f;
     private static final float MODIFY_BUTTON_MARGIN_V_DP = 6.0f;
-    private static final String COLOR_ICON_LOCKED = "#ffb4ab";
-    private static final String COLOR_ICON_UNLOCKED = "#0061a4";
 
     // Style constants for UI clean-up
     private static final float TEXT_SIZE_TITLE_SP = 14.0f;
@@ -143,16 +188,15 @@ public class BlitzService extends Service {
     private static final float CONTAINER_CORNER_RADIUS_DP = 16.0f;
     private static final float BUTTON_CORNER_RADIUS_DP = 24.0f;
     private static final float MARKER_LABEL_CORNER_RADIUS_DP = 6.0f;
-    private static final int BG_OPACITY_CONTAINER = 230;
+    private static final float MIN_TOUCH_TARGET_DP = 48.0f;
+    private static final float OVERLAY_ELEVATION_DP = 8.0f;
+    private static final float BLITZ_SETUP_EDGE_MARGIN_DP = 16.0f;
+    private static final float ACCESSIBILITY_MOVE_STEP_DP = 16.0f;
+    private static final float LOCKED_MARKER_ALPHA = 0.4f;
+    private static final float RUNNING_MARKER_ALPHA = 0.45f;
+    private static final int BG_OPACITY_CONTAINER = 248;
     private static final int BG_OPACITY_LABEL = 200;
     private static final int STROKE_OPACITY_CONTAINER = 200;
-    
-    private static final String COLOR_BG_CONTAINER = "#12141c";
-    private static final String COLOR_STROKE_CONTAINER = "#0061a4";
-    private static final String COLOR_SUBTITLE = "#c4c6cf";
-    private static final String COLOR_BUTTON_CANCEL = "#ffb4ab";
-    private static final String COLOR_BUTTON_START = "#0061a4";
-    private static final String COLOR_BG_LABEL = "#1b1f27";
 
     // Style constants for floating pill overlay
     private static final float TEXT_SIZE_FLOATING_STATUS_SP = 14.0f;
@@ -168,6 +212,32 @@ public class BlitzService extends Service {
 
     private static final float FLOATING_CORNER_RADIUS_DP = 100.0f;
     private static final float FLOATING_INITIAL_Y_DP = 120.0f;
+    private static final float FLOATING_PILL_MIN_HEIGHT_DP = 56.0f;
+    private static final float FLOATING_SAFE_EDGE_MARGIN_DP = 8.0f;
+    private static final float TAP_INDICATOR_SIZE_DP = 56.0f;
+    private static final float PADDING_DWELL_TRACK_V_DP = 8.0f;
+    private static final float PADDING_DWELL_UNIT_START_DP = 3.0f;
+
+    private static final float MARKER_INNER_SIZE_DP = 20.0f;
+    private static final float MARKER_STROKE_WIDTH_DP = 1.0f;
+    private static final float MARKER_INNER_STROKE_WIDTH_DP = 1.5f;
+    private static final float MARKER_DOT_SIZE_DP = 6.0f;
+    private static final int MARKER_GLOW_STRONG_ALPHA = 70;
+    private static final int MARKER_GLOW_SOFT_ALPHA = 25;
+    private static final int MARKER_INNER_STROKE_ALPHA = 160;
+    private static final long MARKER_PULSE_DURATION_MS = 1200L;
+    private static final float MARKER_PULSE_MIN_ALPHA = 0.1f;
+    private static final float MARKER_PULSE_MIN_SCALE = 0.7f;
+    private static final float MARKER_PULSE_MAX_SCALE = 1.25f;
+
+    private static final float TAP_INDICATOR_WINDOW_SCALE = 2.2f;
+    private static final float TAP_INDICATOR_STROKE_WIDTH_DP = 2.0f;
+    private static final int TAP_INDICATOR_STRONG_ALPHA = 140;
+    private static final int TAP_INDICATOR_SOFT_ALPHA = 60;
+    private static final int TAP_INDICATOR_STROKE_ALPHA = 180;
+    private static final float TAP_INDICATOR_INITIAL_SCALE = 0.4f;
+    private static final float TAP_INDICATOR_FINAL_SCALE = 2.0f;
+    private static final long TAP_INDICATOR_DURATION_MS = 500L;
 
     private static final int NOTIFICATION_ID = 456;
 
@@ -183,10 +253,14 @@ public class BlitzService extends Service {
     private TextView mCountdownText;
     private LinearLayout mFloatingView;
     private View mWaitingView;
+    private WindowManager.LayoutParams mWaitingLayoutParams;
+    private WindowManager.LayoutParams mFloatingLayoutParams;
     private WindowManager mWindowManager;
 
     private int mCapturedMarkerWidth  = 0;
     private int mCapturedMarkerHeight = 0;
+    private int mOverlayDisplayWidth = 0;
+    private int mOverlayDisplayHeight = 0;
 
     private List<String> mTagsList = new ArrayList<>();
     private final List<View> mTapIndicatorViews = new ArrayList<>();
@@ -198,6 +272,7 @@ public class BlitzService extends Service {
     private View mDwellRow;
     private TextView mDwellValueText;
     private TextView mDwellFootText;
+    private SeekBar mDwellSeek;
 
     // Set the instant Stop is pressed / the service is destroyed. Guards the
     // accessibility service's tap-sequence completion callback (onSequenceComplete,
@@ -209,6 +284,9 @@ public class BlitzService extends Service {
 
     private final Handler mHandler = new Handler(Looper.getMainLooper());
     private final Runnable mCountdownRunnable = () -> {
+        if (!isBlitzRunActive()) {
+            return;
+        }
         mCurrentIndex++;
         openNextPlayerProfile();
     };
@@ -241,29 +319,30 @@ public class BlitzService extends Service {
         }
         promoteToForeground("Preparing Blitz Mode");
         String tagsExtra = intent != null ? intent.getStringExtra("tags") : null;
-        if (tagsExtra != null) {
-            try {
-                JSONArray jsonArray = new JSONArray(tagsExtra);
-                mTagsList.clear();
-                for (int i = 0; i < jsonArray.length(); i++) {
-                    mTagsList.add(jsonArray.getString(i));
-                }
-                mCurrentIndex = 0;
-                mProfileLoadDelayMs = intent.getLongExtra("delayMs", DEFAULT_PROFILE_LOAD_DELAY_MS);
-                mRehearsal = isRehearsal(this, intent);
-                Log.i(TAG, "start: " + mTagsList.size() + " player(s), dwell " + mProfileLoadDelayMs + "ms"
-                    + (mRehearsal ? ", rehearsal (Clash Royale stays closed)" : ""));
-            } catch (JSONException e) {
-                Log.e(TAG, "could not parse the player queue", e);
-                Toast.makeText(this, "Failed to parse player queue", Toast.LENGTH_SHORT).show();
-                stopSelf();
-                return START_NOT_STICKY;
-            }
-        }
-        if (mTagsList.isEmpty()) {
+        List<String> playerQueue;
+        try {
+            playerQueue = parsePlayerQueue(tagsExtra);
+        } catch (JSONException e) {
+            Log.e(TAG, "could not parse the player queue", e);
+            Toast.makeText(this, "Failed to parse player queue", Toast.LENGTH_SHORT).show();
             stopSelf();
             return START_NOT_STICKY;
         }
+        if (playerQueue == null) {
+            Log.w(TAG, "start rejected: player queue is empty, malformed, duplicated, or too large");
+            Toast.makeText(this, "Player queue is invalid", Toast.LENGTH_SHORT).show();
+            stopSelf();
+            return START_NOT_STICKY;
+        }
+
+        mTagsList.clear();
+        mTagsList.addAll(playerQueue);
+        mCurrentIndex = 0;
+        mStopped = false;
+        mProfileLoadDelayMs = getSteppedDwell(intent.getLongExtra("delayMs", DEFAULT_PROFILE_LOAD_DELAY_MS));
+        mRehearsal = isRehearsal(this, intent);
+        Log.i(TAG, "start: " + mTagsList.size() + " player(s), dwell " + mProfileLoadDelayMs + "ms"
+            + (mRehearsal ? ", rehearsal (Clash Royale stays closed)" : ""));
 
         promoteToForeground(queueText());
         mWindowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
@@ -276,6 +355,71 @@ public class BlitzService extends Service {
 
     private String queueText() {
         return "Opening " + mTagsList.size() + " player profiles automatically";
+    }
+
+    /**
+     * Validates the bridge payload before it becomes an Android intent URI.
+     *
+     * The WebView normally supplies this JSON itself, but that is not a reason
+     * to let a malformed value become a game deep link. Tags are normalized to
+     * the player-id form expected by Clash Royale, duplicates are rejected so a
+     * bad payload cannot invite the same player repeatedly, and the queue stays
+     * bounded before the service opens its calibration overlay.
+     *
+     * @return a canonical, non-empty player queue, or {@code null} when the
+     *     payload violates the native boundary
+     */
+    private static List<String> parsePlayerQueue(String tagsJson) throws JSONException {
+        if (tagsJson == null) {
+            return null;
+        }
+        JSONArray jsonArray = new JSONArray(tagsJson);
+        if (!isSupportedQueueSize(jsonArray.length())) {
+            return null;
+        }
+
+        List<String> rawTags = new ArrayList<>(jsonArray.length());
+        for (int i = 0; i < jsonArray.length(); i++) {
+            rawTags.add(jsonArray.getString(i));
+        }
+        return normalizePlayerQueue(rawTags);
+    }
+
+    /** Returns a canonical queue only when every bridge-supplied tag is safe. */
+    private static List<String> normalizePlayerQueue(List<String> rawTags) {
+        if (rawTags == null || !isSupportedQueueSize(rawTags.size())) {
+            return null;
+        }
+        List<String> normalizedTags = new ArrayList<>(rawTags.size());
+        Set<String> seenTags = new HashSet<>();
+        for (String rawTag : rawTags) {
+            String tag = normalizePlayerTag(rawTag);
+            if (tag == null || !seenTags.add(tag)) {
+                return null;
+            }
+            normalizedTags.add(tag);
+        }
+        return normalizedTags;
+    }
+
+    private static boolean isSupportedQueueSize(int queueSize) {
+        return queueSize > 0 && queueSize <= MAX_QUEUE_PLAYERS;
+    }
+
+    /** Returns the canonical no-hash player id, or {@code null} for bad input. */
+    private static String normalizePlayerTag(String rawTag) {
+        if (rawTag == null) {
+            return null;
+        }
+        String tag = rawTag.trim().toUpperCase(Locale.ROOT);
+        if (tag.startsWith("#")) {
+            tag = tag.substring(1);
+        }
+        if (tag.length() < MIN_PLAYER_TAG_LENGTH || tag.length() > MAX_PLAYER_TAG_LENGTH
+            || !PLAYER_TAG_BODY_PATTERN.matcher(tag).matches()) {
+            return null;
+        }
+        return tag;
     }
 
     private void promoteToForeground(String text) {
@@ -299,13 +443,15 @@ public class BlitzService extends Service {
 
     @Override
     public void onDestroy() {
+        // Mark the run stopped before persisting or clearing local callbacks:
+        // the accessibility service owns a separate Handler and can otherwise
+        // report a late gesture while this service is tearing down.
+        haltBlitzRun();
         super.onDestroy();
         if (BlitzRun.RUNNING.equals(mRunOutcome)) {
             Log.i(TAG, "stopped after " + mRunOpened + " of " + mTagsList.size() + " player(s)");
             recordRun(BlitzRun.STOPPED);
         }
-        mStopped = true;
-        mHandler.removeCallbacksAndMessages(null);
         removeWaitingOverlay();
         if (mWindowManager != null && mFloatingView != null) {
             try {
@@ -314,6 +460,9 @@ public class BlitzService extends Service {
                 e.printStackTrace();
             }
             mFloatingView = null;
+            mFloatingLayoutParams = null;
+            mStatusText = null;
+            mCountdownText = null;
         }
         for (View view : mTapIndicatorViews) {
             try {
@@ -324,6 +473,17 @@ public class BlitzService extends Service {
             }
         }
         mTapIndicatorViews.clear();
+    }
+
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        // The app can begin Blitz in landscape while Clash Royale then locks
+        // itself to portrait. Reflow on the next main-loop turn, after Android
+        // has published the new display metrics, so normalized tap targets stay
+        // on-screen and aligned with the coordinates the accessibility service
+        // will use.
+        mHandler.post(this::reflowBlitzOverlays);
     }
 
     // -------------------------------------------------------------------------
@@ -359,22 +519,45 @@ public class BlitzService extends Service {
     // Waiting overlay (calibration popup)
     // -------------------------------------------------------------------------
 
-    private void updateWaitingOverlayTexts(TextView titleView, TextView subtitleView) {
-        if (mIsCalibrationUnlocked) {
-            titleView.setText("Blitz Calibration");
-            subtitleView.setText("Drag markers, set speed, then Start");
-        } else {
-            titleView.setText("Blitz in Progress");
-            // The count alone says nothing about what pressing Start costs. This is
-            // the one figure worth having before committing to an automated run,
-            // and it hints that the gear is worth a tap.
-            subtitleView.setText(mTagsList.size() + " players \u00b7 "
-                + formatDwell(mProfileLoadDelayMs) + " each \u00b7 about " + formatRunEstimate());
+    private static String formatBlitzSetupTitle(boolean calibrationUnlocked) {
+        return calibrationUnlocked ? "Blitz setup" : "Ready for Blitz";
+    }
+
+    private static String formatBlitzSetupSubtitle(
+        boolean calibrationUnlocked,
+        int playerCount,
+        long dwellMs
+    ) {
+        if (calibrationUnlocked) {
+            return "Drag targets, set profile dwell, then start";
         }
+        return playerCount + " players \u00b7 " + formatDwell(dwellMs)
+            + " each \u00b7 about " + formatBlitzRunEstimate(dwellMs, playerCount);
+    }
+
+    private static boolean shouldShowBlitzSetupDetails(boolean calibrationUnlocked) {
+        return calibrationUnlocked;
+    }
+
+    private static String formatBlitzMarkerDescription(String label, boolean calibrationUnlocked) {
+        return calibrationUnlocked
+            ? label + " target. Drag or use the move actions to reposition."
+            : label + " target. Locked. Use Edit Blitz setup to reposition.";
+    }
+
+    private void updateWaitingOverlayTexts(TextView titleView, TextView subtitleView) {
+        titleView.setText(formatBlitzSetupTitle(mIsCalibrationUnlocked));
+        // The count alone says nothing about what pressing Start costs. This is
+        // the one figure worth having before committing to an automated run,
+        // and it hints that the gear is worth a tap.
+        subtitleView.setText(formatBlitzSetupSubtitle(
+            mIsCalibrationUnlocked,
+            mTagsList.size(),
+            mProfileLoadDelayMs));
     }
 
     private void updateMarkerDraggability() {
-        float alpha = mIsCalibrationUnlocked ? 1.0f : 0.4f;
+        float alpha = mIsCalibrationUnlocked ? 1.0f : LOCKED_MARKER_ALPHA;
         if (mInviteMarker instanceof LinearLayout) {
             mInviteMarker.setAlpha(alpha);
             updateMarkerLabelState((LinearLayout) mInviteMarker);
@@ -394,8 +577,18 @@ public class BlitzService extends Service {
             return;
         }
 
+        String label = labelView instanceof TextView
+            ? ((TextView) labelView).getText().toString()
+            : "Blitz";
+        marker.setContentDescription(formatBlitzMarkerDescription(label, mIsCalibrationUnlocked));
+        if (marker.isAttachedToWindow()) {
+            marker.sendAccessibilityEvent(AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED);
+        }
+
         int oldVisibility = labelView.getVisibility();
-        int newVisibility = mIsCalibrationUnlocked ? View.VISIBLE : View.GONE;
+        int newVisibility = shouldShowBlitzSetupDetails(mIsCalibrationUnlocked)
+            ? View.VISIBLE
+            : View.GONE;
         if (oldVisibility == newVisibility) {
             return;
         }
@@ -444,14 +637,22 @@ public class BlitzService extends Service {
         float closeYNorm  = saved.closeY();
 
         DisplayMetrics dm = getResources().getDisplayMetrics();
-        float screenW = dm.widthPixels;
-        float screenH = dm.heightPixels;
         float dp = dm.density;
+        mOverlayDisplayWidth = dm.widthPixels;
+        mOverlayDisplayHeight = dm.heightPixels;
 
-        mInviteMarker = createDraggableMarker("Invite", Color.parseColor("#0061a4"),
-            (int) (inviteXNorm * screenW), (int) (inviteYNorm * screenH));
-        mCloseMarker  = createDraggableMarker("Close", Color.parseColor("#ba1a1a"),
-            (int) (closeXNorm * screenW),  (int) (closeYNorm * screenH));
+        mInviteMarker = createDraggableMarker(
+            VIEW_ID_BLITZ_INVITE_MARKER,
+            "Invite",
+            Color.parseColor(COLOR_PRIMARY),
+            Math.round(calculateBlitzMarkerCenter(inviteXNorm, dm.widthPixels)),
+            Math.round(calculateBlitzMarkerCenter(inviteYNorm, dm.heightPixels)));
+        mCloseMarker = createDraggableMarker(
+            VIEW_ID_BLITZ_CLOSE_MARKER,
+            "Close",
+            Color.parseColor(COLOR_ERROR),
+            Math.round(calculateBlitzMarkerCenter(closeXNorm, dm.widthPixels)),
+            Math.round(calculateBlitzMarkerCenter(closeYNorm, dm.heightPixels)));
         updateMarkerDraggability();
 
         // -- Container --
@@ -464,8 +665,11 @@ public class BlitzService extends Service {
 
         GradientDrawable containerBg = new GradientDrawable();
         containerBg.setCornerRadius(CONTAINER_CORNER_RADIUS_DP * dp);
-        containerBg.setColor(Color.argb(BG_OPACITY_CONTAINER, 18, 20, 28)); // #12141c theme
-        containerBg.setStroke((int) dp, Color.argb(STROKE_OPACITY_CONTAINER, 0, 97, 164));
+        containerBg.setColor(applyColorAlpha(
+            Color.parseColor(COLOR_SURFACE_CONTAINER_LOW),
+            BG_OPACITY_CONTAINER));
+        containerBg.setStroke((int) dp,
+            applyColorAlpha(Color.parseColor(COLOR_PRIMARY), STROKE_OPACITY_CONTAINER));
         container.setBackground(containerBg);
 
         // Header Row (horizontal layout)
@@ -478,6 +682,10 @@ public class BlitzService extends Service {
         );
         headerParams.bottomMargin = (int) (MARGIN_HEADER_B_DP * dp);
         headerRow.setLayoutParams(headerParams);
+        // The setup control is overlaid on this corner. Reserve its full touch
+        // target so longer subtitles never sit underneath the icon.
+        headerRow.setPadding(0, 0,
+            (int) ((MODIFY_BUTTON_SIZE_DP + MODIFY_BUTTON_MARGIN_H_DP) * dp), 0);
 
         // Title & Subtitle container (vertical)
         LinearLayout textContainer = new LinearLayout(this);
@@ -491,14 +699,14 @@ public class BlitzService extends Service {
 
         // Title
         final TextView titleView = new TextView(this);
-        titleView.setTextColor(Color.WHITE);
+        titleView.setTextColor(Color.parseColor(COLOR_ON_SURFACE));
         titleView.setTextSize(TEXT_SIZE_TITLE_SP);
         titleView.setTypeface(null, android.graphics.Typeface.BOLD);
         textContainer.addView(titleView);
 
         // Subtitle
         final TextView subtitleView = new TextView(this);
-        subtitleView.setTextColor(Color.parseColor(COLOR_SUBTITLE));
+        subtitleView.setTextColor(Color.parseColor(COLOR_ON_SURFACE_VARIANT));
         subtitleView.setTextSize(TEXT_SIZE_SUBTITLE_SP);
         textContainer.addView(subtitleView);
 
@@ -522,12 +730,15 @@ public class BlitzService extends Service {
 
         // Cancel button
         Button cancelBtn = new Button(this);
+        cancelBtn.setId(VIEW_ID_BLITZ_CANCEL_BUTTON);
         cancelBtn.setText("Cancel");
-        cancelBtn.setTextColor(Color.parseColor(COLOR_BUTTON_CANCEL));
+        cancelBtn.setTextColor(Color.parseColor(COLOR_ERROR));
         cancelBtn.setBackgroundColor(Color.TRANSPARENT);
         cancelBtn.setTextSize(TEXT_SIZE_BUTTON_SP);
         cancelBtn.setPadding(btnPadH, btnPadV, btnPadH, btnPadV);
-        cancelBtn.setOnClickListener(v -> stopSelf());
+        cancelBtn.setMinHeight((int) (MIN_TOUCH_TARGET_DP * dp));
+        cancelBtn.setContentDescription("Cancel Blitz");
+        cancelBtn.setOnClickListener(v -> requestBlitzStop());
         btnRow.addView(cancelBtn);
 
         // Spacer
@@ -537,18 +748,20 @@ public class BlitzService extends Service {
 
         // Start button
         Button startBtn = new Button(this);
-        startBtn.setText("Start");
-        startBtn.setTextColor(Color.WHITE);
+        startBtn.setId(VIEW_ID_BLITZ_START_BUTTON);
+        startBtn.setText("Start Blitz");
+        startBtn.setTextColor(Color.parseColor(COLOR_ON_PRIMARY));
         startBtn.setTextSize(TEXT_SIZE_BUTTON_SP);
         startBtn.setTypeface(null, android.graphics.Typeface.BOLD);
         startBtn.setPadding(btnPadH, btnPadV, btnPadH, btnPadV);
+        startBtn.setMinHeight((int) (MIN_TOUCH_TARGET_DP * dp));
+        startBtn.setContentDescription("Start Blitz for " + mTagsList.size() + " players");
         GradientDrawable startBg = new GradientDrawable();
         startBg.setCornerRadius(BUTTON_CORNER_RADIUS_DP * dp);
-        startBg.setColor(Color.parseColor(COLOR_BUTTON_START));
+        startBg.setColor(Color.parseColor(COLOR_PRIMARY));
         startBtn.setBackground(startBg);
         startBtn.setOnClickListener(v -> {
             saveCoordinates(true);
-            Toast.makeText(this, "Coordinates saved", Toast.LENGTH_SHORT).show();
             if (mWindowManager != null && mWaitingView != null) {
                 try {
                     mWindowManager.removeView(mWaitingView);
@@ -556,7 +769,14 @@ public class BlitzService extends Service {
                     e.printStackTrace();
                 }
                 mWaitingView = null;
+                mWaitingLayoutParams = null;
             }
+            // Setup labels are editing affordances, not run status. Collapse
+            // setup before the markers become read-only so they do not linger
+            // over the game for the duration of the run.
+            mIsCalibrationUnlocked = false;
+            updateMarkerDraggability();
+            updateDwellRowVisibility();
             transitionMarkersToRunningState();
             setupFloatingView();
             mRunStartedAt = System.currentTimeMillis();
@@ -571,6 +791,7 @@ public class BlitzService extends Service {
 
         // -- Gear (modify/lock) icon overlaid in the top-end corner of the container --
         final ImageButton modifyBtn = new ImageButton(this);
+        modifyBtn.setId(VIEW_ID_BLITZ_EDIT_BUTTON);
         int gearResId = getResources().getIdentifier("ic_settings", "drawable", getPackageName());
         if (gearResId != 0) {
             modifyBtn.setImageResource(gearResId);
@@ -582,14 +803,17 @@ public class BlitzService extends Service {
         int gearPad  = (int) (MODIFY_BUTTON_PADDING_DP * dp);
         modifyBtn.setPadding(gearPad, gearPad, gearPad, gearPad);
         modifyBtn.setScaleType(ImageView.ScaleType.FIT_CENTER);
-        modifyBtn.setColorFilter(Color.parseColor(COLOR_ICON_LOCKED));
+        modifyBtn.setColorFilter(Color.parseColor(COLOR_ON_SURFACE_VARIANT));
+        modifyBtn.setContentDescription("Edit Blitz setup");
 
         modifyBtn.setOnClickListener(v -> {
             mIsCalibrationUnlocked = !mIsCalibrationUnlocked;
             if (mIsCalibrationUnlocked) {
-                modifyBtn.setColorFilter(Color.parseColor(COLOR_ICON_UNLOCKED));
+                modifyBtn.setColorFilter(Color.parseColor(COLOR_PRIMARY));
+                modifyBtn.setContentDescription("Finish editing Blitz setup");
             } else {
-                modifyBtn.setColorFilter(Color.parseColor(COLOR_ICON_LOCKED));
+                modifyBtn.setColorFilter(Color.parseColor(COLOR_ON_SURFACE_VARIANT));
+                modifyBtn.setContentDescription("Edit Blitz setup");
                 saveCoordinates(true);
             }
             updateWaitingOverlayTexts(titleView, subtitleView);
@@ -599,7 +823,9 @@ public class BlitzService extends Service {
 
         // Wrap container + gear in a FrameLayout so the gear floats over the top-end corner
         FrameLayout wrapper = new FrameLayout(this);
+        wrapper.setId(VIEW_ID_BLITZ_SETUP_PANEL);
         wrapper.addView(container);
+        wrapper.setElevation(OVERLAY_ELEVATION_DP * dp);
         FrameLayout.LayoutParams gearParams = new FrameLayout.LayoutParams(gearSize, gearSize);
         gearParams.gravity = android.view.Gravity.TOP | android.view.Gravity.END;
         gearParams.topMargin  = (int) (MODIFY_BUTTON_MARGIN_V_DP * dp);
@@ -610,7 +836,7 @@ public class BlitzService extends Service {
         // FLAG_LAYOUT_IN_SCREEN | FLAG_LAYOUT_NO_LIMITS: same reasoning as the marker and
         // tap-ripple windows above. Without these, this BOTTOM-gravity popup is positioned
         // relative to whatever content area Clash Royale's immersive/system-bar state
-        // currently exposes, which can shift once the game takes over the screen — pushing
+        // currently exposes, which can shift once the game takes over the screen, pushing
         // the Start/Cancel calibration popup somewhere the user can't see or tap, so Blitz
         // silently never advances past the calibration step.
         WindowManager.LayoutParams lp = new WindowManager.LayoutParams(
@@ -621,11 +847,10 @@ public class BlitzService extends Service {
                 | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN
                 | WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
             android.graphics.PixelFormat.TRANSLUCENT);
-        lp.gravity = android.view.Gravity.BOTTOM | android.view.Gravity.CENTER_HORIZONTAL;
-        lp.x = 0;
-        lp.y = (int) (dp * 40.0f);
+        positionBlitzSetupPanel(lp, dm);
 
         mWaitingView = wrapper;
+        mWaitingLayoutParams = lp;
         try {
             mWindowManager.addView(mInviteMarker, mInviteMarker.getLayoutParams());
             mWindowManager.addView(mCloseMarker, mCloseMarker.getLayoutParams());
@@ -644,13 +869,17 @@ public class BlitzService extends Service {
             if (mInviteMarker != null) {
                 WindowManager.LayoutParams lp = (WindowManager.LayoutParams) mInviteMarker.getLayoutParams();
                 lp.flags |= WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE;
-                mInviteMarker.setAlpha(0.45f);
+                mInviteMarker.setAlpha(RUNNING_MARKER_ALPHA);
+                mInviteMarker.setImportantForAccessibility(
+                    View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS);
                 mWindowManager.updateViewLayout(mInviteMarker, lp);
             }
             if (mCloseMarker != null) {
                 WindowManager.LayoutParams lp = (WindowManager.LayoutParams) mCloseMarker.getLayoutParams();
                 lp.flags |= WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE;
-                mCloseMarker.setAlpha(0.45f);
+                mCloseMarker.setAlpha(RUNNING_MARKER_ALPHA);
+                mCloseMarker.setImportantForAccessibility(
+                    View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS);
                 mWindowManager.updateViewLayout(mCloseMarker, lp);
             }
         } catch (Exception e) {
@@ -658,10 +887,20 @@ public class BlitzService extends Service {
         }
     }
 
-    private View createDraggableMarker(String label, int color, final int centerX, final int centerY) {
+    private View createDraggableMarker(
+        int viewId,
+        String label,
+        int color,
+        final int centerX,
+        final int centerY
+    ) {
         final LinearLayout markerLayout = new LinearLayout(this);
+        markerLayout.setId(viewId);
         markerLayout.setOrientation(LinearLayout.VERTICAL);
         markerLayout.setGravity(android.view.Gravity.CENTER);
+        markerLayout.setFocusable(true);
+        markerLayout.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_YES);
+        markerLayout.setContentDescription(formatBlitzMarkerDescription(label, mIsCalibrationUnlocked));
 
         DisplayMetrics dm = getResources().getDisplayMetrics();
         float dp = dm.density;
@@ -671,7 +910,7 @@ public class BlitzService extends Service {
         // Label text
         TextView labelView = new TextView(this);
         labelView.setText(label);
-        labelView.setTextColor(Color.WHITE);
+        labelView.setTextColor(Color.parseColor(COLOR_ON_SURFACE));
         labelView.setTextSize(TEXT_SIZE_MARKER_LABEL_SP);
         labelView.setSingleLine(true);
         labelView.setMaxLines(1);
@@ -692,8 +931,10 @@ public class BlitzService extends Service {
         GradientDrawable labelBg = new GradientDrawable();
         float labelRadius = MARKER_LABEL_CORNER_RADIUS_DP * dp;
         labelBg.setCornerRadius(labelRadius);
-        labelBg.setColor(Color.argb(BG_OPACITY_LABEL, 27, 31, 39));
-        int strokeW = (int) dp;
+        labelBg.setColor(applyColorAlpha(
+            Color.parseColor(COLOR_SURFACE_CONTAINER),
+            BG_OPACITY_LABEL));
+        int strokeW = (int) (MARKER_STROKE_WIDTH_DP * dp);
         labelBg.setStroke(strokeW, color);
         labelView.setBackground(labelBg);
         
@@ -720,8 +961,8 @@ public class BlitzService extends Service {
         ringBg.setGradientType(GradientDrawable.RADIAL_GRADIENT);
         ringBg.setGradientRadius(ringSize / 2.0f);
         ringBg.setColors(new int[]{
-            Color.argb(70, Color.red(color), Color.green(color), Color.blue(color)),
-            Color.argb(25, Color.red(color), Color.green(color), Color.blue(color)),
+            Color.argb(MARKER_GLOW_STRONG_ALPHA, Color.red(color), Color.green(color), Color.blue(color)),
+            Color.argb(MARKER_GLOW_SOFT_ALPHA, Color.red(color), Color.green(color), Color.blue(color)),
             Color.TRANSPARENT
         });
         outerRing.setBackground(ringBg);
@@ -729,8 +970,8 @@ public class BlitzService extends Service {
 
         // Inner circle - filled radial gradient (light center fading to the base hue) for a
         // "glossy bead" look instead of a flat stroke-only ring.
-        int innerSize = (int) (20.0f * dp);
-        int strokeHalf = (int) (1.5f * dp);
+        int innerSize = (int) (MARKER_INNER_SIZE_DP * dp);
+        int strokeHalf = (int) (MARKER_INNER_STROKE_WIDTH_DP * dp);
         View innerCircle = new View(this);
         FrameLayout.LayoutParams innerLp = new FrameLayout.LayoutParams(innerSize, innerSize);
         innerLp.gravity = android.view.Gravity.CENTER;
@@ -743,7 +984,11 @@ public class BlitzService extends Service {
             lighten(color, 0.55f),
             color
         });
-        innerBg.setStroke(strokeHalf, Color.argb(160, Color.red(color), Color.green(color), Color.blue(color)));
+        innerBg.setStroke(strokeHalf, Color.argb(
+            MARKER_INNER_STROKE_ALPHA,
+            Color.red(color),
+            Color.green(color),
+            Color.blue(color)));
         innerCircle.setBackground(innerBg);
         crosshair.addView(innerCircle);
 
@@ -764,7 +1009,7 @@ public class BlitzService extends Service {
         crosshair.addView(vBar);
 
         // Center dot with a small specular highlight for a glossy, less-flat finish
-        int dotSize = (int) (6.0f * dp);
+        int dotSize = (int) (MARKER_DOT_SIZE_DP * dp);
         View dot = new View(this);
         FrameLayout.LayoutParams dotLp = new FrameLayout.LayoutParams(dotSize, dotSize);
         dotLp.gravity = android.view.Gravity.CENTER;
@@ -780,22 +1025,30 @@ public class BlitzService extends Service {
         markerLayout.addView(crosshair);
 
         // Pulsing animations on outer ring
-        ObjectAnimator alphaAnim = ObjectAnimator.ofFloat(outerRing, "alpha", 1.0f, 0.1f);
-        alphaAnim.setDuration(1200L);
+        ObjectAnimator alphaAnim = ObjectAnimator.ofFloat(outerRing, "alpha", 1.0f, MARKER_PULSE_MIN_ALPHA);
+        alphaAnim.setDuration(MARKER_PULSE_DURATION_MS);
         alphaAnim.setRepeatCount(ObjectAnimator.INFINITE);
         alphaAnim.setRepeatMode(ObjectAnimator.REVERSE);
         alphaAnim.setInterpolator(new DecelerateInterpolator());
         alphaAnim.start();
 
-        ObjectAnimator scaleXAnim = ObjectAnimator.ofFloat(outerRing, "scaleX", 0.7f, 1.25f);
-        scaleXAnim.setDuration(1200L);
+        ObjectAnimator scaleXAnim = ObjectAnimator.ofFloat(
+            outerRing,
+            "scaleX",
+            MARKER_PULSE_MIN_SCALE,
+            MARKER_PULSE_MAX_SCALE);
+        scaleXAnim.setDuration(MARKER_PULSE_DURATION_MS);
         scaleXAnim.setRepeatCount(ObjectAnimator.INFINITE);
         scaleXAnim.setRepeatMode(ObjectAnimator.REVERSE);
         scaleXAnim.setInterpolator(new DecelerateInterpolator());
         scaleXAnim.start();
 
-        ObjectAnimator scaleYAnim = ObjectAnimator.ofFloat(outerRing, "scaleY", 0.7f, 1.25f);
-        scaleYAnim.setDuration(1200L);
+        ObjectAnimator scaleYAnim = ObjectAnimator.ofFloat(
+            outerRing,
+            "scaleY",
+            MARKER_PULSE_MIN_SCALE,
+            MARKER_PULSE_MAX_SCALE);
+        scaleYAnim.setDuration(MARKER_PULSE_DURATION_MS);
         scaleYAnim.setRepeatCount(ObjectAnimator.INFINITE);
         scaleYAnim.setRepeatMode(ObjectAnimator.REVERSE);
         scaleYAnim.setInterpolator(new DecelerateInterpolator());
@@ -878,6 +1131,8 @@ public class BlitzService extends Service {
             }
         });
 
+        installBlitzMovementActions(markerLayout, true);
+
         return markerLayout;
     }
 
@@ -890,11 +1145,11 @@ public class BlitzService extends Service {
             return;
         }
         float dp = getResources().getDisplayMetrics().density;
-        int size = (int) (56.0f * dp);
+        int size = (int) (TAP_INDICATOR_SIZE_DP * dp);
         // The ripple scales up to 2.0x its rest size, so the window it lives in must be at
         // least that big (plus a small margin for the stroke) or the OS surface hard-clips
         // the animation right where it should be fading out.
-        int windowSize = (int) (size * 2.2f);
+        int windowSize = (int) (size * TAP_INDICATOR_WINDOW_SCALE);
         int overlayType = WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY;
 
         FrameLayout indicatorContainer = new FrameLayout(this);
@@ -907,16 +1162,22 @@ public class BlitzService extends Service {
         bg.setGradientType(GradientDrawable.RADIAL_GRADIENT);
         bg.setGradientRadius(size / 2.0f);
         bg.setColors(new int[]{
-            Color.argb(140, Color.red(color), Color.green(color), Color.blue(color)),
-            Color.argb(60, Color.red(color), Color.green(color), Color.blue(color)),
+            Color.argb(TAP_INDICATOR_STRONG_ALPHA, Color.red(color), Color.green(color), Color.blue(color)),
+            Color.argb(TAP_INDICATOR_SOFT_ALPHA, Color.red(color), Color.green(color), Color.blue(color)),
             Color.TRANSPARENT
         });
-        bg.setStroke((int) (dp * 2.0f), Color.argb(180, Color.red(color), Color.green(color), Color.blue(color)));
+        bg.setStroke(
+            (int) (dp * TAP_INDICATOR_STROKE_WIDTH_DP),
+            Color.argb(
+                TAP_INDICATOR_STROKE_ALPHA,
+                Color.red(color),
+                Color.green(color),
+                Color.blue(color)));
         indicator.setBackground(bg);
         indicatorContainer.addView(indicator);
 
         // Same FLAG_LAYOUT_IN_SCREEN | FLAG_LAYOUT_NO_LIMITS reasoning as the marker window
-        // in createDraggableMarker() — the ripple must line up with the true full-screen
+        // in createDraggableMarker(); the ripple must line up with the true full-screen
         // coordinates the accessibility service just tapped, not the below-status-bar
         // content area a plain TOP|LEFT window would otherwise be positioned against.
         WindowManager.LayoutParams lp = new WindowManager.LayoutParams(
@@ -935,13 +1196,13 @@ public class BlitzService extends Service {
             mWindowManager.addView(indicatorContainer, lp);
             mTapIndicatorViews.add(indicatorContainer);
             indicator.setAlpha(1.0f);
-            indicator.setScaleX(0.4f);
-            indicator.setScaleY(0.4f);
+            indicator.setScaleX(TAP_INDICATOR_INITIAL_SCALE);
+            indicator.setScaleY(TAP_INDICATOR_INITIAL_SCALE);
             indicator.animate()
                 .alpha(0.0f)
-                .scaleX(2.0f)
-                .scaleY(2.0f)
-                .setDuration(500L)
+                .scaleX(TAP_INDICATOR_FINAL_SCALE)
+                .scaleY(TAP_INDICATOR_FINAL_SCALE)
+                .setDuration(TAP_INDICATOR_DURATION_MS)
                 .setInterpolator(new DecelerateInterpolator())
                 .withEndAction(() -> {
                     try {
@@ -966,8 +1227,15 @@ public class BlitzService extends Service {
             return;
         }
         DisplayMetrics dm = getResources().getDisplayMetrics();
-        int screenW = dm.widthPixels;
-        int screenH = dm.heightPixels;
+        deriveMarkerCalibration(dm.widthPixels, dm.heightPixels).save(this, commit);
+    }
+
+    /** Returns the marker centres as normalized full-screen coordinates. */
+    private Calibration deriveMarkerCalibration(int screenW, int screenH) {
+        if (mInviteMarker == null || mCloseMarker == null || screenW <= 0 || screenH <= 0) {
+            return Calibration.load(this);
+        }
+        DisplayMetrics dm = getResources().getDisplayMetrics();
         int markerRadius = (int) (dm.density * MARKER_ANCHOR_SIZE_DP);
 
         WindowManager.LayoutParams inviteLp = (WindowManager.LayoutParams) mInviteMarker.getLayoutParams();
@@ -989,18 +1257,286 @@ public class BlitzService extends Service {
         float closeCX  = closeLp.x  + (closeW  / 2.0f);
         float closeCY  = closeLp.y  + (closeH  - halfRadius);
 
-        var fallback = Calibration.DEFAULT;
-        new Calibration(
-            clamp(inviteCX / screenW, 0f, 1f, fallback.inviteX()),
-            clamp(inviteCY / screenH, 0f, 1f, fallback.inviteY()),
-            clamp(closeCX  / screenW, 0f, 1f, fallback.closeX()),
-            clamp(closeCY  / screenH, 0f, 1f, fallback.closeY())
-        ).save(this, commit);
+        // Calibration owns the normalized-coordinate boundary for both this
+        // overlay and MainActivity's JS bridge. Keeping the fallback there
+        // prevents the two save paths from drifting into different tap points.
+        return new Calibration(
+            inviteCX / screenW,
+            inviteCY / screenH,
+            closeCX  / screenW,
+            closeCY  / screenH
+        );
     }
 
-    private static float clamp(float value, float min, float max, float fallback) {
-        if (value < min || value > max) return fallback;
-        return value;
+    /** Keeps every active overlay aligned when the host app or game rotates. */
+    private void reflowBlitzOverlays() {
+        if (mWindowManager == null) {
+            return;
+        }
+        DisplayMetrics dm = getResources().getDisplayMetrics();
+        int newWidth = dm.widthPixels;
+        int newHeight = dm.heightPixels;
+        if (newWidth <= 0 || newHeight <= 0) {
+            return;
+        }
+
+        int previousWidth = mOverlayDisplayWidth;
+        int previousHeight = mOverlayDisplayHeight;
+        boolean displayChanged = previousWidth > 0 && previousHeight > 0
+            && (newWidth != previousWidth || newHeight != previousHeight);
+
+        if (displayChanged && mInviteMarker != null && mCloseMarker != null) {
+            Calibration current = deriveMarkerCalibration(previousWidth, previousHeight);
+            positionBlitzMarker(
+                mInviteMarker,
+                calculateBlitzMarkerCenter(current.inviteX(), newWidth),
+                calculateBlitzMarkerCenter(current.inviteY(), newHeight),
+                dm.density);
+            positionBlitzMarker(
+                mCloseMarker,
+                calculateBlitzMarkerCenter(current.closeX(), newWidth),
+                calculateBlitzMarkerCenter(current.closeY(), newHeight),
+                dm.density);
+        }
+
+        // Insets can change without a width/height change (immersive mode,
+        // cutout visibility), so panel placement and pill clamping always run.
+        if (mWaitingView != null && mWaitingLayoutParams != null) {
+            positionBlitzSetupPanel(mWaitingLayoutParams, dm);
+            try {
+                mWindowManager.updateViewLayout(mWaitingView, mWaitingLayoutParams);
+            } catch (Exception e) {
+                Log.w(TAG, "could not reposition Blitz setup panel after rotation", e);
+            }
+        }
+        if (mFloatingView != null && mFloatingLayoutParams != null) {
+            reflowBlitzRunningPill(
+                previousWidth,
+                previousHeight,
+                newWidth,
+                newHeight,
+                displayChanged);
+        }
+        mOverlayDisplayWidth = newWidth;
+        mOverlayDisplayHeight = newHeight;
+    }
+
+    private static float calculateBlitzMarkerCenter(float normalizedCoordinate, int displaySize) {
+        return normalizedCoordinate * displaySize;
+    }
+
+    private static int calculateBlitzSetupHorizontalOffset(
+        boolean landscape,
+        int startInset,
+        int leftInset,
+        int rightInset,
+        int edgeMargin
+    ) {
+        return landscape ? Math.max(0, startInset) + edgeMargin : (leftInset - rightInset) / 2;
+    }
+
+    private static int calculateBlitzSetupBottomOffset(int bottomInset, int edgeMargin) {
+        return Math.max(0, bottomInset) + edgeMargin;
+    }
+
+    private void positionBlitzSetupPanel(WindowManager.LayoutParams lp, DisplayMetrics dm) {
+        boolean landscape = dm.widthPixels > dm.heightPixels;
+        Insets insets = getBlitzOverlayInsets();
+        boolean rightToLeft = getResources().getConfiguration().getLayoutDirection()
+            == View.LAYOUT_DIRECTION_RTL;
+        int startInset = rightToLeft ? insets.right : insets.left;
+        int edgeMargin = Math.round(dm.density * BLITZ_SETUP_EDGE_MARGIN_DP);
+        lp.gravity = android.view.Gravity.BOTTOM
+            | (landscape
+                ? android.view.Gravity.START
+                : android.view.Gravity.CENTER_HORIZONTAL);
+        lp.x = calculateBlitzSetupHorizontalOffset(
+            landscape,
+            startInset,
+            insets.left,
+            insets.right,
+            edgeMargin);
+        lp.y = calculateBlitzSetupBottomOffset(insets.bottom, edgeMargin);
+    }
+
+    private Insets getBlitzOverlayInsets() {
+        if (mWindowManager == null) {
+            return Insets.NONE;
+        }
+        try {
+            WindowInsets windowInsets = mWindowManager.getCurrentWindowMetrics().getWindowInsets();
+            return windowInsets.getInsetsIgnoringVisibility(
+                WindowInsets.Type.systemBars() | WindowInsets.Type.displayCutout());
+        } catch (RuntimeException e) {
+            Log.w(TAG, "could not read Blitz overlay insets", e);
+            return Insets.NONE;
+        }
+    }
+
+    private void installBlitzMovementActions(View overlayView, boolean requiresCalibration) {
+        overlayView.setFocusable(true);
+        overlayView.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_YES);
+        overlayView.setAccessibilityDelegate(new View.AccessibilityDelegate() {
+            @Override
+            public void onInitializeAccessibilityNodeInfo(View host, AccessibilityNodeInfo info) {
+                super.onInitializeAccessibilityNodeInfo(host, info);
+                if (requiresCalibration && !mIsCalibrationUnlocked) {
+                    return;
+                }
+                info.addAction(new AccessibilityNodeInfo.AccessibilityAction(
+                    ACTION_ID_BLITZ_MOVE_LEFT, "Move left"));
+                info.addAction(new AccessibilityNodeInfo.AccessibilityAction(
+                    ACTION_ID_BLITZ_MOVE_RIGHT, "Move right"));
+                info.addAction(new AccessibilityNodeInfo.AccessibilityAction(
+                    ACTION_ID_BLITZ_MOVE_UP, "Move up"));
+                info.addAction(new AccessibilityNodeInfo.AccessibilityAction(
+                    ACTION_ID_BLITZ_MOVE_DOWN, "Move down"));
+            }
+
+            @Override
+            public boolean performAccessibilityAction(View host, int action, Bundle arguments) {
+                if (requiresCalibration && !mIsCalibrationUnlocked) {
+                    return super.performAccessibilityAction(host, action, arguments);
+                }
+                int step = Math.round(getResources().getDisplayMetrics().density
+                    * ACCESSIBILITY_MOVE_STEP_DP);
+                return switch (action) {
+                    case ACTION_ID_BLITZ_MOVE_LEFT -> moveBlitzOverlay(host, -step, 0);
+                    case ACTION_ID_BLITZ_MOVE_RIGHT -> moveBlitzOverlay(host, step, 0);
+                    case ACTION_ID_BLITZ_MOVE_UP -> moveBlitzOverlay(host, 0, -step);
+                    case ACTION_ID_BLITZ_MOVE_DOWN -> moveBlitzOverlay(host, 0, step);
+                    default -> super.performAccessibilityAction(host, action, arguments);
+                };
+            }
+        });
+    }
+
+    private boolean moveBlitzOverlay(View overlayView, int deltaX, int deltaY) {
+        if (mWindowManager == null
+            || !(overlayView.getLayoutParams() instanceof WindowManager.LayoutParams)) {
+            return false;
+        }
+        WindowManager.LayoutParams lp = (WindowManager.LayoutParams) overlayView.getLayoutParams();
+        lp.x += deltaX;
+        lp.y += deltaY;
+        if (overlayView == mFloatingView) {
+            constrainBlitzRunningPill(lp);
+        }
+        try {
+            mWindowManager.updateViewLayout(overlayView, lp);
+            overlayView.sendAccessibilityEvent(AccessibilityEvent.TYPE_VIEW_SCROLLED);
+            return true;
+        } catch (RuntimeException e) {
+            Log.w(TAG, "could not move Blitz overlay", e);
+            return false;
+        }
+    }
+
+    private static int clampBlitzOverlayOffset(int value, int minimum, int maximum) {
+        if (maximum < minimum) {
+            return minimum;
+        }
+        return Math.max(minimum, Math.min(maximum, value));
+    }
+
+    private static int calculateBlitzPillHorizontalOffset(
+        int currentOffset,
+        int previousWidth,
+        int newWidth
+    ) {
+        if (previousWidth <= 0 || newWidth <= 0) {
+            return currentOffset;
+        }
+        float normalizedCenter = (previousWidth / 2.0f + currentOffset) / previousWidth;
+        return Math.round(normalizedCenter * newWidth - newWidth / 2.0f);
+    }
+
+    private static int calculateBlitzPillVerticalOffset(
+        int currentTop,
+        int pillHeight,
+        int previousHeight,
+        int newHeight
+    ) {
+        if (previousHeight <= 0 || newHeight <= 0) {
+            return currentTop;
+        }
+        float normalizedCenter = (currentTop + pillHeight / 2.0f) / previousHeight;
+        return Math.round(normalizedCenter * newHeight - pillHeight / 2.0f);
+    }
+
+    private void reflowBlitzRunningPill(
+        int previousWidth,
+        int previousHeight,
+        int newWidth,
+        int newHeight,
+        boolean displayChanged
+    ) {
+        if (mFloatingView == null || mFloatingLayoutParams == null || mWindowManager == null) {
+            return;
+        }
+        if (displayChanged) {
+            int pillHeight = Math.max(0, mFloatingView.getMeasuredHeight());
+            mFloatingLayoutParams.x = calculateBlitzPillHorizontalOffset(
+                mFloatingLayoutParams.x,
+                previousWidth,
+                newWidth);
+            mFloatingLayoutParams.y = calculateBlitzPillVerticalOffset(
+                mFloatingLayoutParams.y,
+                pillHeight,
+                previousHeight,
+                newHeight);
+        }
+        constrainBlitzRunningPill(mFloatingLayoutParams);
+        try {
+            mWindowManager.updateViewLayout(mFloatingView, mFloatingLayoutParams);
+        } catch (RuntimeException e) {
+            Log.w(TAG, "could not reposition Blitz controls after rotation", e);
+        }
+    }
+
+    private void constrainBlitzRunningPill(WindowManager.LayoutParams lp) {
+        if (mWindowManager == null || mFloatingView == null) {
+            return;
+        }
+        Rect bounds = mWindowManager.getCurrentWindowMetrics().getBounds();
+        Insets insets = getBlitzOverlayInsets();
+        int edgeMargin = Math.round(getResources().getDisplayMetrics().density
+            * FLOATING_SAFE_EDGE_MARGIN_DP);
+        int pillWidth = Math.max(0, mFloatingView.getMeasuredWidth());
+        int pillHeight = Math.max(0, mFloatingView.getMeasuredHeight());
+
+        if (pillWidth > 0) {
+            int minimumCenterX = insets.left + edgeMargin + pillWidth / 2;
+            int maximumCenterX = bounds.width() - insets.right - edgeMargin - pillWidth / 2;
+            int currentCenterX = bounds.width() / 2 + lp.x;
+            int safeCenterX = clampBlitzOverlayOffset(
+                currentCenterX,
+                minimumCenterX,
+                maximumCenterX);
+            lp.x = safeCenterX - bounds.width() / 2;
+        }
+        if (pillHeight > 0) {
+            int minimumTop = insets.top + edgeMargin;
+            int maximumTop = bounds.height() - insets.bottom - edgeMargin - pillHeight;
+            lp.y = clampBlitzOverlayOffset(lp.y, minimumTop, maximumTop);
+        }
+    }
+
+    private void positionBlitzMarker(View marker, float centerX, float centerY, float density) {
+        WindowManager.LayoutParams lp = (WindowManager.LayoutParams) marker.getLayoutParams();
+        int markerRadius = (int) (density * MARKER_ANCHOR_SIZE_DP);
+        int width = marker.getMeasuredWidth() > 0 ? marker.getMeasuredWidth() : mCapturedMarkerWidth;
+        int height = marker.getMeasuredHeight() > 0 ? marker.getMeasuredHeight() : mCapturedMarkerHeight;
+        if (width <= 0) width = markerRadius;
+        if (height <= 0) height = markerRadius;
+
+        lp.x = Math.round(centerX - (width / 2.0f));
+        lp.y = Math.round(centerY - (height - markerRadius / 2.0f));
+        try {
+            mWindowManager.updateViewLayout(marker, lp);
+        } catch (Exception e) {
+            Log.w(TAG, "could not reposition Blitz marker after rotation", e);
+        }
     }
 
     /** Blends a color toward white by the given fraction (0..1), for gradient highlights. */
@@ -1009,6 +1545,11 @@ public class BlitzService extends Service {
         int g = (int) (Color.green(color) + (255 - Color.green(color)) * fraction);
         int b = (int) (Color.blue(color)  + (255 - Color.blue(color))  * fraction);
         return Color.rgb(r, g, b);
+    }
+
+    /** Applies a shared overlay opacity without duplicating a theme color's RGB channels. */
+    private static int applyColorAlpha(int color, int alpha) {
+        return Color.argb(alpha, Color.red(color), Color.green(color), Color.blue(color));
     }
 
     private void removeWaitingOverlay() {
@@ -1031,6 +1572,9 @@ public class BlitzService extends Service {
         mInviteMarker = null;
         mCloseMarker  = null;
         mWaitingView  = null;
+        mWaitingLayoutParams = null;
+        mOverlayDisplayWidth = 0;
+        mOverlayDisplayHeight = 0;
     }
 
     // -------------------------------------------------------------------------
@@ -1038,7 +1582,7 @@ public class BlitzService extends Service {
     // -------------------------------------------------------------------------
 
     private void openNextPlayerProfile() {
-        if (mStopped) {
+        if (!isBlitzRunActive()) {
             return;
         }
         mHandler.removeCallbacks(mCountdownRunnable);
@@ -1090,27 +1634,60 @@ public class BlitzService extends Service {
             mHandler.postDelayed(() -> ClashManagerAccessibilityService.runInviteCloseSequence(
                 new ClashManagerAccessibilityService.TapSequenceCallback() {
                     @Override
+                    public boolean isSequenceActive() {
+                        return isBlitzRunActive();
+                    }
+
+                    @Override
                     public void onInviteTapped(float xPercent, float yPercent) {
+                        if (!isBlitzRunActive()) {
+                            return;
+                        }
                         mRunInvites++;
+                        recordRun(BlitzRun.RUNNING);
                         Log.i(TAG, "invite tap at " + xPercent + ", " + yPercent);
-                        showTapIndicator(xPercent * dm.widthPixels, yPercent * dm.heightPixels, Color.parseColor("#0061a4"));
+                        showTapIndicator(
+                            xPercent * dm.widthPixels,
+                            yPercent * dm.heightPixels,
+                            Color.parseColor(COLOR_PRIMARY));
                     }
 
                     @Override
                     public void onCloseTapped(float xPercent, float yPercent) {
+                        if (!isBlitzRunActive()) {
+                            return;
+                        }
                         Log.i(TAG, "close tap at " + xPercent + ", " + yPercent);
-                        showTapIndicator(xPercent * dm.widthPixels, yPercent * dm.heightPixels, Color.parseColor("#ba1a1a"));
+                        showTapIndicator(
+                            xPercent * dm.widthPixels,
+                            yPercent * dm.heightPixels,
+                            Color.parseColor(COLOR_ERROR));
                     }
 
                     @Override
                     public void onSequenceComplete() {
                         // The tap sequence runs on ClashManagerAccessibilityService's own
-                        // Handler, independent of this service's, so it can still fire
-                        // after Stop was pressed and this service was destroyed.
-                        if (mStopped) {
+                        // Handler, independent of this service's. Do not let a late
+                        // callback advance a stopped or superseded run.
+                        if (!isBlitzRunActive()) {
                             return;
                         }
                         scheduleAdvance(0L);
+                    }
+
+                    @Override
+                    public void onSequenceFailed() {
+                        if (!isBlitzRunActive()) {
+                            return;
+                        }
+                        // A rejected or interrupted gesture leaves the game in an
+                        // unknown state. Stopping is safer than opening another
+                        // profile and tapping blind.
+                        Log.w(TAG, "tap sequence did not complete; Blitz stopped");
+                        haltBlitzRun();
+                        recordRun(BlitzRun.STOPPED);
+                        Toast.makeText(BlitzService.this, "Blitz tap was blocked - Blitz stopped", Toast.LENGTH_LONG).show();
+                        stopSelf();
                     }
                 }), mProfileLoadDelayMs);
         } else {
@@ -1119,13 +1696,49 @@ public class BlitzService extends Service {
         }
     }
 
+    /**
+     * Latches the stop state synchronously, before Android later destroys the
+     * service. Gesture callbacks run from the accessibility service's separate
+     * Handler, so waiting for onDestroy() would leave a window for one final
+     * close tap or queue advance after the user pressed Stop.
+     */
+    private void haltBlitzRun() {
+        mStopped = true;
+        mHandler.removeCallbacksAndMessages(null);
+    }
+
+    /** Stops the service only after its tap/advance callbacks have been made inert. */
+    private void requestBlitzStop() {
+        haltBlitzRun();
+        stopSelf();
+    }
+
+    /**
+     * Pure form of the callback gate, kept separate so the stop race stays
+     * regression-testable without an Android Service instance.
+     */
+    static boolean isBlitzRunStateActive(boolean stopped, String runOutcome) {
+        return !stopped && BlitzRun.RUNNING.equals(runOutcome);
+    }
+
+    /** True only while this service still owns the currently running Blitz. */
+    private boolean isBlitzRunActive() {
+        return isBlitzRunStateActive(mStopped, mRunOutcome);
+    }
+
     /** Advances to the next queued profile (or finishes the queue) after `delay`. */
     private void scheduleAdvance(long delay) {
+        if (!isBlitzRunActive()) {
+            return;
+        }
         int remaining = mTagsList.size() - 1;
         if (mCurrentIndex < remaining) {
             mHandler.postDelayed(mCountdownRunnable, delay);
         } else {
             mHandler.postDelayed(() -> {
+                if (!isBlitzRunActive()) {
+                    return;
+                }
                 Log.i(TAG, "complete: " + mTagsList.size() + " player(s)");
                 recordRun(BlitzRun.COMPLETED);
                 Toast.makeText(this, "Blitz complete", Toast.LENGTH_SHORT).show();
@@ -1134,15 +1747,32 @@ public class BlitzService extends Service {
         }
     }
 
+    private static String formatBlitzRunStatus(int displayed, int total) {
+        return "Blitz \u00b7 " + displayed + " of " + total;
+    }
+
+    private static String formatBlitzRunPhase(int displayed, int total) {
+        return displayed < total ? "Running" : "Finishing";
+    }
+
+    private static String formatBlitzPillDescription(int displayed, int total) {
+        return "Blitz is running. Player " + displayed + " of " + total
+            + ". Drag or use the move actions to reposition.";
+    }
+
     private void updateOverlayUi() {
         if (mStatusText == null) {
             return;
         }
         int displayed = mCurrentIndex + 1;
         int total = mTagsList.size();
-        mStatusText.setText(displayed + " / " + total);
+        mStatusText.setText(formatBlitzRunStatus(displayed, total));
+        mStatusText.setContentDescription("Blitz player " + displayed + " of " + total);
         if (mCountdownText != null) {
-            mCountdownText.setText(mCurrentIndex < total - 1 ? "Auto-advancing" : "Last player");
+            mCountdownText.setText(formatBlitzRunPhase(displayed, total));
+        }
+        if (mFloatingView != null) {
+            mFloatingView.setContentDescription(formatBlitzPillDescription(displayed, total));
         }
     }
 
@@ -1156,6 +1786,7 @@ public class BlitzService extends Service {
 
         LinearLayout pill = new LinearLayout(this);
         mFloatingView = pill;
+        pill.setId(VIEW_ID_BLITZ_RUNNING_PILL);
         pill.setOrientation(LinearLayout.HORIZONTAL);
         pill.setGravity(android.view.Gravity.CENTER_VERTICAL);
         pill.setPadding(
@@ -1164,36 +1795,44 @@ public class BlitzService extends Service {
             (int) (PADDING_FLOATING_H_DP * dp),
             (int) (PADDING_FLOATING_V_DP * dp)
         );
+        pill.setMinimumHeight((int) (FLOATING_PILL_MIN_HEIGHT_DP * dp));
+        pill.setElevation(OVERLAY_ELEVATION_DP * dp);
 
         GradientDrawable pillBg = new GradientDrawable();
         pillBg.setCornerRadius(FLOATING_CORNER_RADIUS_DP * dp);
-        pillBg.setColor(Color.argb(BG_OPACITY_CONTAINER, 18, 20, 28)); // #12141c theme
-        pillBg.setStroke((int) dp, Color.argb(STROKE_OPACITY_CONTAINER, 0, 97, 164));
+        pillBg.setColor(applyColorAlpha(
+            Color.parseColor(COLOR_SURFACE_CONTAINER_LOW),
+            BG_OPACITY_CONTAINER));
+        pillBg.setStroke((int) dp,
+            applyColorAlpha(Color.parseColor(COLOR_PRIMARY), STROKE_OPACITY_CONTAINER));
         pill.setBackground(pillBg);
 
         // Status "X / Y"
         TextView statusTv = new TextView(this);
         mStatusText = statusTv;
-        statusTv.setTextColor(Color.WHITE);
+        statusTv.setTextColor(Color.parseColor(COLOR_ON_SURFACE));
         statusTv.setTextSize(TEXT_SIZE_FLOATING_STATUS_SP);
         statusTv.setTypeface(null, android.graphics.Typeface.BOLD);
         statusTv.setPadding(0, 0, (int) (PADDING_FLOATING_STATUS_R_DP * dp), 0);
-        statusTv.setText("1 / " + mTagsList.size());
+        statusTv.setText(formatBlitzRunStatus(1, mTagsList.size()));
+        statusTv.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
         pill.addView(statusTv);
 
         // Countdown label
         TextView countdownTv = new TextView(this);
         mCountdownText = countdownTv;
-        countdownTv.setTextColor(Color.parseColor("#aac7ff"));
+        countdownTv.setTextColor(Color.parseColor(COLOR_PRIMARY));
         countdownTv.setTextSize(TEXT_SIZE_FLOATING_COUNTDOWN_SP);
         countdownTv.setPadding(0, 0, (int) (PADDING_FLOATING_COUNTDOWN_R_DP * dp), 0);
-        countdownTv.setText("Auto-advancing");
+        countdownTv.setText("Running");
+        countdownTv.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
         pill.addView(countdownTv);
 
         // Stop / close button
         Button closeBtn = new Button(this);
+        closeBtn.setId(VIEW_ID_BLITZ_STOP_BUTTON);
         closeBtn.setText("Stop");
-        closeBtn.setTextColor(Color.parseColor(COLOR_BG_CONTAINER));
+        closeBtn.setTextColor(Color.parseColor(COLOR_ON_ERROR));
         closeBtn.setTypeface(null, android.graphics.Typeface.BOLD);
         closeBtn.setTextSize(TEXT_SIZE_FLOATING_CLOSE_SP);
         closeBtn.setPadding(
@@ -1202,16 +1841,18 @@ public class BlitzService extends Service {
             (int) (PADDING_FLOATING_CLOSE_H_DP * dp),
             (int) (PADDING_FLOATING_CLOSE_V_DP * dp)
         );
+        closeBtn.setMinHeight((int) (MIN_TOUCH_TARGET_DP * dp));
+        closeBtn.setContentDescription("Stop Blitz");
         GradientDrawable closeBg = new GradientDrawable();
         closeBg.setCornerRadius(BUTTON_CORNER_RADIUS_DP * dp);
-        closeBg.setColor(Color.parseColor(COLOR_BUTTON_CANCEL));
+        closeBg.setColor(Color.parseColor(COLOR_ERROR));
         closeBtn.setBackground(closeBg);
-        closeBtn.setOnClickListener(v -> stopSelf());
+        closeBtn.setOnClickListener(v -> requestBlitzStop());
         pill.addView(closeBtn);
 
         // Draggable pill
         // Same FLAG_LAYOUT_IN_SCREEN | FLAG_LAYOUT_NO_LIMITS reasoning as setupWaitingOverlay()
-        // and createDraggableMarker() — this pill (with its "Stop" button) is visible while
+        // and createDraggableMarker(); this pill (with its "Stop" button) is visible while
         // Blitz is actively running over Clash Royale, so it must stay positioned relative to
         // the true screen, not whatever content area the game's immersive mode exposes.
         final WindowManager.LayoutParams pillLp = new WindowManager.LayoutParams(
@@ -1224,7 +1865,8 @@ public class BlitzService extends Service {
             android.graphics.PixelFormat.TRANSLUCENT);
         pillLp.gravity = android.view.Gravity.TOP | android.view.Gravity.CENTER_HORIZONTAL;
         pillLp.x = 0;
-        pillLp.y = (int) (FLOATING_INITIAL_Y_DP * dp);
+        pillLp.y = getBlitzOverlayInsets().top + (int) (FLOATING_INITIAL_Y_DP * dp);
+        mFloatingLayoutParams = pillLp;
 
         pill.setOnTouchListener(new View.OnTouchListener() {
             private float initTouchX;
@@ -1245,21 +1887,38 @@ public class BlitzService extends Service {
                     case MotionEvent.ACTION_MOVE -> {
                         pillLp.x = initX + (int) (event.getRawX() - initTouchX);
                         pillLp.y = initY + (int) (event.getRawY() - initTouchY);
+                        constrainBlitzRunningPill(pillLp);
                         if (mWindowManager != null && mFloatingView != null) {
                             mWindowManager.updateViewLayout(mFloatingView, pillLp);
                         }
                         yield true;
                     }
+                    case MotionEvent.ACTION_UP -> true;
                     default -> false;
                 };
             }
         });
+
+        installBlitzMovementActions(pill, false);
+        pill.setContentDescription(formatBlitzPillDescription(1, mTagsList.size()));
+        pill.getViewTreeObserver().addOnGlobalLayoutListener(
+            new ViewTreeObserver.OnGlobalLayoutListener() {
+                @Override
+                public void onGlobalLayout() {
+                    pill.getViewTreeObserver().removeOnGlobalLayoutListener(this);
+                    constrainBlitzRunningPill(pillLp);
+                    if (mWindowManager != null && mFloatingView != null) {
+                        mWindowManager.updateViewLayout(mFloatingView, pillLp);
+                    }
+                }
+            });
 
         try {
             mWindowManager.addView(mFloatingView, pillLp);
         } catch (Exception e) {
             e.printStackTrace();
             mFloatingView  = null;
+            mFloatingLayoutParams = null;
             mStatusText    = null;
             mCountdownText = null;
         }
@@ -1296,7 +1955,7 @@ public class BlitzService extends Service {
         TextView label = new TextView(this);
         label.setText("Profile dwell");
         label.setTextSize(TEXT_SIZE_SUBTITLE_SP);
-        label.setTextColor(Color.parseColor(COLOR_SUBTITLE));
+        label.setTextColor(Color.parseColor(COLOR_ON_SURFACE_VARIANT));
         label.setLayoutParams(new LinearLayout.LayoutParams(
             0, LinearLayout.LayoutParams.WRAP_CONTENT, 1.0f));
         head.addView(label);
@@ -1306,7 +1965,7 @@ public class BlitzService extends Service {
         TextView value = new TextView(this);
         mDwellValueText = value;
         value.setTextSize(TEXT_SIZE_DWELL_VALUE_SP);
-        value.setTextColor(Color.WHITE);
+        value.setTextColor(Color.parseColor(COLOR_ON_SURFACE));
         value.setTypeface(android.graphics.Typeface.MONOSPACE, android.graphics.Typeface.BOLD);
         value.setMinEms(4);
         value.setGravity(android.view.Gravity.END);
@@ -1315,8 +1974,8 @@ public class BlitzService extends Service {
         TextView unit = new TextView(this);
         unit.setText("MS");
         unit.setTextSize(TEXT_SIZE_DWELL_FOOT_SP);
-        unit.setTextColor(Color.parseColor(COLOR_SUBTITLE));
-        unit.setPadding((int) (3.0f * dp), 0, 0, 0);
+        unit.setTextColor(Color.parseColor(COLOR_ON_SURFACE_VARIANT));
+        unit.setPadding((int) (PADDING_DWELL_UNIT_START_DP * dp), 0, 0, 0);
         head.addView(unit);
 
         row.addView(head);
@@ -1335,12 +1994,14 @@ public class BlitzService extends Service {
         }
 
         final SeekBar seek = new SeekBar(this);
+        mDwellSeek = seek;
+        seek.setId(VIEW_ID_BLITZ_DWELL_SLIDER);
         seek.setMax(DWELL_SEEK_RESOLUTION);
         seek.setProgressDrawable(new DwellTrackDrawable(tickRatios, dp));
 
         GradientDrawable thumb = new GradientDrawable();
         thumb.setShape(GradientDrawable.OVAL);
-        thumb.setColor(Color.parseColor(COLOR_BUTTON_START));
+        thumb.setColor(Color.parseColor(COLOR_PRIMARY));
         int thumbPx = (int) (DWELL_THUMB_SIZE_DP * dp);
         thumb.setSize(thumbPx, thumbPx);
         seek.setThumb(thumb);
@@ -1350,7 +2011,8 @@ public class BlitzService extends Service {
         seek.setSplitTrack(false);
         // Half a thumb at each end, so the handle centre travels the width the
         // ratio maths assumes and never overhangs the track.
-        seek.setPadding(thumbPx / 2, (int) (8.0f * dp), thumbPx / 2, (int) (8.0f * dp));
+        int dwellTrackVerticalPadding = (int) (PADDING_DWELL_TRACK_V_DP * dp);
+        seek.setPadding(thumbPx / 2, dwellTrackVerticalPadding, thumbPx / 2, dwellTrackVerticalPadding);
 
         seek.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
@@ -1396,14 +2058,14 @@ public class BlitzService extends Service {
         TextView minText = new TextView(this);
         minText.setText(String.valueOf(DWELL_MIN_MS));
         minText.setTextSize(TEXT_SIZE_DWELL_FOOT_SP);
-        minText.setTextColor(Color.parseColor(COLOR_SUBTITLE));
+        minText.setTextColor(Color.parseColor(COLOR_ON_SURFACE_VARIANT));
         minText.setTypeface(android.graphics.Typeface.MONOSPACE);
         foot.addView(minText);
 
         TextView note = new TextView(this);
         mDwellFootText = note;
         note.setTextSize(TEXT_SIZE_DWELL_FOOT_SP);
-        note.setTextColor(Color.parseColor(COLOR_SUBTITLE));
+        note.setTextColor(Color.parseColor(COLOR_ON_SURFACE_VARIANT));
         note.setGravity(android.view.Gravity.CENTER);
         note.setLayoutParams(new LinearLayout.LayoutParams(
             0, LinearLayout.LayoutParams.WRAP_CONTENT, 1.0f));
@@ -1412,7 +2074,7 @@ public class BlitzService extends Service {
         TextView maxText = new TextView(this);
         maxText.setText(String.valueOf(DWELL_MAX_MS));
         maxText.setTextSize(TEXT_SIZE_DWELL_FOOT_SP);
-        maxText.setTextColor(Color.parseColor(COLOR_SUBTITLE));
+        maxText.setTextColor(Color.parseColor(COLOR_ON_SURFACE_VARIANT));
         maxText.setTypeface(android.graphics.Typeface.MONOSPACE);
         foot.addView(maxText);
 
@@ -1424,7 +2086,9 @@ public class BlitzService extends Service {
 
     private void updateDwellRowVisibility() {
         if (mDwellRow != null) {
-            mDwellRow.setVisibility(mIsCalibrationUnlocked ? View.VISIBLE : View.GONE);
+            mDwellRow.setVisibility(shouldShowBlitzSetupDetails(mIsCalibrationUnlocked)
+                ? View.VISIBLE
+                : View.GONE);
         }
     }
 
@@ -1456,6 +2120,15 @@ public class BlitzService extends Service {
 
     /** Rounds onto the step grid, anchored to the minimum rather than to zero. */
     private static long getSteppedDwell(long dwellMs) {
+        // Check the bounds before subtracting the minimum. A bridge value such
+        // as Long.MIN_VALUE would otherwise overflow the subtraction and could
+        // wrap into a valid-looking, unsafe delay.
+        if (dwellMs <= DWELL_MIN_MS) {
+            return DWELL_MIN_MS;
+        }
+        if (dwellMs >= DWELL_MAX_MS) {
+            return DWELL_MAX_MS;
+        }
         long stepped = DWELL_MIN_MS
             + Math.round((dwellMs - DWELL_MIN_MS) / (double) DWELL_STEP_MS) * DWELL_STEP_MS;
         return Math.max(DWELL_MIN_MS, Math.min(DWELL_MAX_MS, stepped));
@@ -1508,10 +2181,10 @@ public class BlitzService extends Service {
         return fraction == 0L ? whole + "s" : whole + "." + fraction + "s";
     }
 
-    /** How long the whole selection will take at the current dwell. */
-    private String formatRunEstimate() {
-        long perPlayer = mProfileLoadDelayMs + DWELL_ESTIMATE_OVERHEAD_MS;
-        return formatCompactDuration(perPlayer * (long) mTagsList.size());
+    /** How long the whole selection will take at the supplied dwell. */
+    private static String formatBlitzRunEstimate(long dwellMs, int playerCount) {
+        long perPlayer = dwellMs + DWELL_ESTIMATE_OVERHEAD_MS;
+        return formatCompactDuration(perPlayer * (long) playerCount);
     }
 
     private void updateDwellTexts() {
@@ -1519,7 +2192,13 @@ public class BlitzService extends Service {
             mDwellValueText.setText(String.valueOf(mProfileLoadDelayMs));
         }
         if (mDwellFootText != null) {
-            mDwellFootText.setText("this run only \u00b7 about " + formatRunEstimate());
+            mDwellFootText.setText("this run only \u00b7 about " + formatBlitzRunEstimate(
+                mProfileLoadDelayMs,
+                mTagsList.size()));
+        }
+        if (mDwellSeek != null) {
+            mDwellSeek.setContentDescription(
+                "Profile dwell, " + mProfileLoadDelayMs + " milliseconds per player");
         }
     }
 
@@ -1546,11 +2225,11 @@ public class BlitzService extends Service {
             mTrackHeightPx = DWELL_TRACK_HEIGHT_DP * density;
             mRadiusPx = mTrackHeightPx / 2.0f;
             mTickHalfWidthPx = Math.max(1.0f, DWELL_TICK_WIDTH_DP * density) / 2.0f;
-            mTrackPaint.setColor(Color.parseColor(COLOR_DWELL_TRACK));
-            mFillPaint.setColor(Color.parseColor(COLOR_BUTTON_START));
+            mTrackPaint.setColor(Color.parseColor(COLOR_OUTLINE_VARIANT));
+            mFillPaint.setColor(Color.parseColor(COLOR_PRIMARY));
             // The ticks are cut in the container's own colour, so they read as
             // notches through the fill rather than as marks tinted over it.
-            mTickPaint.setColor(Color.parseColor(COLOR_BG_CONTAINER));
+            mTickPaint.setColor(Color.parseColor(COLOR_SURFACE_CONTAINER_LOW));
         }
 
         @Override
@@ -1600,6 +2279,7 @@ public class BlitzService extends Service {
         }
 
         @Override
+        @SuppressWarnings("deprecation") // Drawable still declares this abstract API through Android 16.
         public int getOpacity() {
             return PixelFormat.TRANSLUCENT;
         }

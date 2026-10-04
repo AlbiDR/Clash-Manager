@@ -5,7 +5,7 @@ import { supabase } from "../client.ts";
 import { fetchWithRotation, processBatch } from "../../_shared/muscle.ts";
 import { normalizeTag } from "../../_shared/utils.ts";
 import { IngestionResult, AuditEntry } from "../../_shared/types.ts";
-import * as v from "npm:valibot@1.4.2";
+import * as v from "npm:valibot@1.5.0";
 import { RoyaleBattleLogSchema, IngestionTargetsSchema, LatestBattleTimesSchema } from "../../_shared/schemas.ts";
 
 /** The exact `battleTime` shape the Royale API emits and get_latest_battle_times() renders. */

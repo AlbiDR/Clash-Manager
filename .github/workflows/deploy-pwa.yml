@@ -99,7 +99,8 @@ jobs:
       - name: Resolve Skeleton Capture Surface
         id: bones-key
         run: |
-          echo "hash=$(pnpm exec tsx scripts/capture_skeletons.ts --print-hash)" >> "$GITHUB_OUTPUT"
+          skeleton_hash="$(pnpm exec tsx scripts/capture_skeletons.ts --print-hash)"
+          echo "hash=$skeleton_hash" >> "$GITHUB_OUTPUT"
 
       - name: Cache Skeleton Capture
         id: bones-cache

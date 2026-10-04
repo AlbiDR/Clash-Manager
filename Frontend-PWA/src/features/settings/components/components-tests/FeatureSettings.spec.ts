@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
+/* eslint-disable vue/one-component-per-file -- Test-local component doubles belong with the spec that owns them. */
 
 import { mount } from "@vue/test-utils";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
@@ -16,13 +17,25 @@ vi.mock("../../composables/useSettings", () => ({
 // Functional stubs to allow prop inspection
 const SettingsCardStub = defineComponent({
   name: "SettingsCard",
-  props: ["title", "icon", "loading", "initiallyExpanded"],
+  props: {
+    title: { type: String, required: true },
+    icon: { type: String, required: true },
+    loading: Boolean,
+    initiallyExpanded: Boolean,
+  },
   template: '<div class="settings-card-stub"><slot /></div>'
 });
 
 const SettingRowStub = defineComponent({
   name: "SettingRow",
-  props: ["label", "description", "active", "loading", "mini"],
+  props: {
+    label: { type: String, required: true },
+    description: { type: String, required: true },
+    active: Boolean,
+    loading: Boolean,
+    mini: Boolean,
+  },
+  emits: ["click"],
   template: '<div class="setting-row-stub" @click="$emit(\'click\')">{{ label }} {{ description }}</div>'
 });
 

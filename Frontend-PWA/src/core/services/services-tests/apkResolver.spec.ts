@@ -322,6 +322,40 @@ describe("apkResolver", () => {
       });
     });
 
+    it("should reject metadata whose external field types do not match the release schema", async () => {
+      vi.stubGlobal("fetch", vi.fn().mockImplementation((url: string) => {
+        if (url.includes("contents/APK/release")) {
+          return Promise.resolve({ ok: false });
+        }
+        if (url.includes("latest.json")) {
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve({
+              filename: "clashmanager-v14.43.1+173.apk",
+              sizeBytes: "3900000",
+            }),
+          });
+        }
+        return Promise.resolve({ ok: false });
+      }));
+
+      await expect(resolveLatestApkRelease()).resolves.toBeUndefined();
+    });
+
+    it("should reject malformed GitHub contents entries at the schema boundary", async () => {
+      vi.stubGlobal("fetch", vi.fn().mockImplementation((url: string) => {
+        if (url.includes("contents/APK/release")) {
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve([{ name: 42, type: "file" }]),
+          });
+        }
+        return Promise.resolve({ ok: false });
+      }));
+
+      await expect(resolveLatestApkRelease()).resolves.toBeUndefined();
+    });
+
     it("should resolve same-origin latest.json when configured", async () => {
       mockLocation.href = "http://localhost:3000/Clash-Manager/";
 
@@ -338,6 +372,51 @@ describe("apkResolver", () => {
       const release = await resolveLatestApkRelease();
       expect(release?.url).toContain("/Clash-Manager/apk/release/clashmanager-v14.43.2%2B176.apk");
       expect(release?.filename).toBe("clashmanager-v14.43.2+176.apk");
+    });
+
+    it.each([
+      {
+        body: "<!doctype html><html><body>Vite SPA shell</body></html>",
+        contentType: "text/html; charset=utf-8",
+        name: "an HTML SPA fallback",
+      },
+      {
+        body: "{not valid JSON",
+        contentType: "application/json",
+        name: "malformed JSON",
+      },
+    ])("should silently skip $name from same-origin metadata and use a fallback", async ({ body, contentType }) => {
+      mockLocation.href = "http://localhost:5174/Clash-Manager/";
+      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+
+      vi.stubGlobal("fetch", vi.fn().mockImplementation((url: string) => {
+        if (url.includes("localhost:5174") && url.includes("latest.json")) {
+          return Promise.resolve(new Response(body, {
+            headers: { "content-type": contentType },
+            status: 200,
+          }));
+        }
+        if (url.includes("contents/APK/release")) {
+          return Promise.resolve({ ok: false });
+        }
+        if (url.includes("raw.githubusercontent.com") && url.includes("latest.json")) {
+          return Promise.resolve(new Response(JSON.stringify({
+            filename: "clashmanager-v14.43.3+177.apk",
+          }), {
+            headers: { "content-type": "application/json" },
+            status: 200,
+          }));
+        }
+        return Promise.resolve({ ok: false });
+      }));
+
+      const release = await resolveLatestApkRelease();
+
+      expect(release).toMatchObject({
+        filename: "clashmanager-v14.43.3+177.apk",
+        sourceName: "Remote latest.json",
+      });
+      expect(warnSpy).not.toHaveBeenCalled();
     });
 
     it("should reuse cached response instead of refetching within TTL", async () => {

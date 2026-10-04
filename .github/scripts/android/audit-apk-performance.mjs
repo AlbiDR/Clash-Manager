@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
@@ -15,7 +14,7 @@
  * Stage 11 was the only lane in the pipeline with no computed check at all. Its
  * mandate was prose, so its output was prose: seven consecutive nights of
  * "audited native WebView settings, Service Worker caching, and Vite
- * manualChunks; zero source changes required", in two to six minutes, with
+ * chunking; zero source changes required", in two to six minutes, with
  * nothing that could have contradicted it. An audit whose verdict cannot be
  * wrong is not evidence, and a lane with no queue produces paragraphs.
  *
@@ -109,9 +108,12 @@ export const PERFORMANCE_INVARIANTS = [
     consequence: 'Navigation requests wait for the service worker to boot before starting, adding latency to every cold navigation.',
   },
   {
-    id: 'vite-manual-chunks',
+    id: 'vite-code-splitting',
     file: 'viteConfig',
-    pattern: /manualChunks\s*\(/,
+    // Vite 8 replaced Rollup's manualChunks callback with Rolldown's named
+    // code-splitting groups. Accept the legacy spelling while old branches
+    // pass through the same audit, but require one real chunking policy.
+    pattern: /manualChunks\s*\(|codeSplitting\s*:\s*{\s*groups\s*:/s,
     consequence: 'Vendor code is not split, so a single large bundle blocks first paint.',
   },
 ];
@@ -249,7 +251,7 @@ function render(report) {
     if (check.status !== 'PRESENT') lines.push(`       ${check.consequence}`);
   }
 
-  lines.push('', `Precache footprint: ${report.precache.fileCount} files, ${kb(report.precache.totalBytes)} shipped to every user on install.`);
+  lines.push('', `Static public precache footprint: ${report.precache.fileCount} files, ${kb(report.precache.totalBytes)} shipped to every user on install (generated app chunks are reported by the production build).`);
   if (report.precache.maximumFileSizeToCacheInBytes) {
     lines.push(`Declared per-file cache limit: ${kb(report.precache.maximumFileSizeToCacheInBytes)} (read from vite.config.ts).`);
   }

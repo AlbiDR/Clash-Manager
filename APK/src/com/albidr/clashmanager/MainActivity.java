@@ -21,6 +21,7 @@ import android.provider.Settings;
 import android.webkit.JavascriptInterface;
 import android.webkit.RenderProcessGoneDetail;
 import android.webkit.WebChromeClient;
+import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
@@ -33,18 +34,32 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 import java.io.FileInputStream;
+import java.net.URI;
 import java.security.MessageDigest;
+import java.util.Locale;
 
 public class MainActivity extends Activity {
     private static final int MAX_APK_FILENAME_LENGTH = 96;
+    private static final int MAX_APK_DOWNLOAD_URL_LENGTH = 2048;
+    private static final int HTTPS_PORT = 443;
+    // These are the two URLs the PWA resolver can hand to the native updater:
+    // its deployed, same-origin release directory and GitHub's direct raw
+    // release directory. Keep the paths exact: accepting an arbitrary HTTPS
+    // URL here would turn a compromised page into an APK installer launcher.
+    private static final String APK_RELEASE_RAW_HOST = "raw.githubusercontent.com";
+    private static final String APK_RELEASE_RAW_PATH = "/AlbiDR/Clash-Manager/Beta/APK/release/";
+    private static final String APK_RELEASE_SAME_ORIGIN_PATH = "/Clash-Manager/apk/release/";
     // Longest route a launch may ask for; a real one is a page name plus a short query.
     private static final int MAX_LAUNCH_ROUTE_LENGTH = 2048;
 
-    // Origin the bridge is allowed to talk to. Matches strings.xml/hostName - the
-    // PWA's real host. Any other origin loaded into this WebView (an external
-    // link the user tapped) gets the JS interface detached so that page cannot
-    // call into native code, even though it shares the same WebView instance.
+    // Exact origin the bridge is allowed to talk to. It is parsed from launchUrl
+    // rather than treating a matching host as enough: http://, a non-default
+    // port, and a similarly named host are all different web security origins.
+    // CM Dev may use an exact http localhost origin only because its manifest is
+    // explicitly debuggable; a production build always requires HTTPS.
+    private String mTrustedScheme;
     private String mTrustedHost;
+    private int mTrustedPort = -1;
     private WebView mWebView;
     private AndroidBridge mBridge;
     private boolean mBridgeAttached = false;
@@ -111,12 +126,23 @@ public class MainActivity extends Activity {
         byte[] hash = digest.digest();
         var hex = new StringBuilder(hash.length * 2);
         for (byte value : hash) {
-            hex.append(String.format("%02x", value));
+            // Formatter follows the device locale. Hex digests must not: their
+            // serialized representation is part of the release contract.
+            hex.append(String.format(Locale.ROOT, "%02x", value & 0xff));
         }
         return hex.toString();
     }
 
     private void openDownloadedApkInstaller(long downloadId, String filename, String expectedSha256) {
+        // The receiver is deliberately defensive even though downloadApkFile()
+        // already rejects these values before enqueueing. A stale receiver or a
+        // future caller must never turn an unchecked file into an installer UI.
+        if (!isValidApkFilename(filename) || !isValidSha256(expectedSha256)) {
+            android.util.Log.w("ClashManagerMain", "APK installer blocked: missing or invalid release metadata");
+            Toast.makeText(this, "APK verification failed -- download blocked", Toast.LENGTH_LONG).show();
+            return;
+        }
+
         var dm = (DownloadManager) getSystemService(Context.DOWNLOAD_SERVICE);
         if (dm == null) {
             Toast.makeText(this, "Download finished, but installer could not open", Toast.LENGTH_LONG).show();
@@ -148,19 +174,24 @@ public class MainActivity extends Activity {
             return;
         }
 
-        if (expectedSha256 != null && expectedSha256.matches("(?i)^[a-f0-9]{64}$")) {
-            try {
-                String actualSha256 = sha256ForDownload(dm, downloadId);
-                if (!expectedSha256.equalsIgnoreCase(actualSha256)) {
-                    android.util.Log.w("ClashManagerMain", "APK SHA-256 mismatch for " + filename);
-                    Toast.makeText(this, "APK verification failed -- download blocked", Toast.LENGTH_LONG).show();
-                    return;
-                }
-            } catch (Exception e) {
-                android.util.Log.w("ClashManagerMain", "Could not verify APK checksum for " + filename, e);
+        try {
+            String actualSha256 = sha256ForDownload(dm, downloadId);
+            if (!expectedSha256.equalsIgnoreCase(actualSha256)) {
+                android.util.Log.w("ClashManagerMain", "APK SHA-256 mismatch for " + filename);
                 Toast.makeText(this, "APK verification failed -- download blocked", Toast.LENGTH_LONG).show();
                 return;
             }
+        } catch (Exception e) {
+            android.util.Log.w("ClashManagerMain", "Could not verify APK checksum for " + filename, e);
+            Toast.makeText(this, "APK verification failed -- download blocked", Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        // The user can revoke this per-app approval while the download is in
+        // progress. Do not surface the installer if it no longer exists.
+        if (!getPackageManager().canRequestPackageInstalls()) {
+            Toast.makeText(this, "Allow APK updates in Android, then open the verified file in Downloads", Toast.LENGTH_LONG).show();
+            return;
         }
 
         try {
@@ -182,7 +213,7 @@ public class MainActivity extends Activity {
         // Logged so a restart can be told apart from a handled change: the manifest
         // declares rotation and dark mode as handled here, without recreating.
         android.util.Log.i("ClashManagerMain", "activity created" + (bundle != null ? " (recreated by the system)" : ""));
-        mTrustedHost = getString(getResources().getIdentifier("hostName", "string", getPackageName()));
+        configureTrustedOrigin();
         mBlitzRehearsal = BlitzService.isRehearsal(this, getIntent());
 
         // Only ever true for a manifest explicitly marked android:debuggable="true"
@@ -245,6 +276,10 @@ public class MainActivity extends Activity {
     private void initWebView() {
         var webView = new WebView(this);
         this.mWebView = webView;
+        // A renderer recovery creates a new WebView, so any attachment state
+        // belonged to the destroyed one. The bridge is reattached only by
+        // loadTrustedPage() before a known-good page starts loading.
+        this.mBridgeAttached = false;
         this.mWebView.setHapticFeedbackEnabled(true);
         // Transparent until the PWA paints, so the window background shows rather
         // than WebView's default white flash in dark mode.
@@ -254,8 +289,9 @@ public class MainActivity extends Activity {
         WebSettings settings = this.mWebView.getSettings();
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
-        settings.setDatabaseEnabled(false);
-        settings.setSaveFormData(false);
+        // Web SQL defaults off, and form-data persistence has been a no-op
+        // since API 26. CM's minSdk is 34, so their deprecated setters only
+        // created false assurance and compiler debt.
         settings.setSupportZoom(false);
         settings.setBuiltInZoomControls(false);
         settings.setDisplayZoomControls(false);
@@ -274,20 +310,18 @@ public class MainActivity extends Activity {
         settings.setJavaScriptCanOpenWindowsAutomatically(true);
         settings.setUserAgentString(settings.getUserAgentString() + " ClashManagerAndroidWrapper");
 
-        if (this.mBridge == null) {
-            this.mBridge = new AndroidBridge();
-        }
-        this.mWebView.addJavascriptInterface(this.mBridge, "AndroidBridge");
-        this.mBridgeAttached = true;
-
         this.mWebView.setWebViewClient(new WebViewClient() {
             @Override
-            public boolean shouldOverrideUrlLoading(WebView view, String url) {
-                if (url.startsWith("clashroyale://") || url.startsWith("intent://") || !isTrustedOrigin(url)) {
-                    launchExternalIntent(url);
-                    return true;
+            public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
+                if (request == null || request.getUrl() == null) return true;
+                String url = request.getUrl().toString();
+                if (!request.isForMainFrame()) {
+                    // Android exposes a JS interface to every frame of a
+                    // WebView. Never let an arbitrary third-party iframe gain
+                    // that capability just because its parent is trusted.
+                    return !isTrustedOrigin(url);
                 }
-                return false;
+                return shouldOverrideMainFrameNavigation(view, url);
             }
 
             @Override
@@ -298,12 +332,17 @@ public class MainActivity extends Activity {
                 // re-attached only once navigation returns to the trusted origin, so a
                 // third-party page loaded in this WebView can never reach AndroidBridge.
                 boolean trusted = isTrustedOrigin(url);
-                if (trusted && !mBridgeAttached) {
-                    view.addJavascriptInterface(mBridge, "AndroidBridge");
-                    mBridgeAttached = true;
-                } else if (!trusted && mBridgeAttached) {
-                    view.removeJavascriptInterface("AndroidBridge");
-                    mBridgeAttached = false;
+                if (!trusted) {
+                    detachBridge(view);
+                } else if (!mBridgeAttached && view == mWebView) {
+                    // addJavascriptInterface is guaranteed for the *next*
+                    // navigation. If an unexpected redirect returned to our
+                    // origin after we detached it, restart the trusted page
+                    // after attaching instead of rendering a page with a
+                    // half-established bridge.
+                    attachBridge(view);
+                    view.stopLoading();
+                    view.loadUrl(url);
                 }
             }
 
@@ -328,9 +367,15 @@ public class MainActivity extends Activity {
             }
 
             @Override
-            public void onReceivedError(WebView view, int errorCode, String description, String failingUrl) {
-                super.onReceivedError(view, errorCode, description, failingUrl);
-                Toast.makeText(MainActivity.this, "Load failed: " + description + "\nURL: " + failingUrl, Toast.LENGTH_LONG).show();
+            public void onReceivedError(WebView view, WebResourceRequest request, android.webkit.WebResourceError error) {
+                super.onReceivedError(view, request, error);
+                // Subresource failures belong in the page/network diagnostics;
+                // only a failed top-level navigation makes this screen unusable.
+                if (request != null && request.isForMainFrame()) {
+                    String failingUrl = request.getUrl() == null ? "unknown" : request.getUrl().toString();
+                    String description = error == null ? "unknown error" : String.valueOf(error.getDescription());
+                    Toast.makeText(MainActivity.this, "Load failed: " + description + "\nURL: " + failingUrl, Toast.LENGTH_LONG).show();
+                }
             }
 
             @Override
@@ -369,8 +414,10 @@ public class MainActivity extends Activity {
                 var popup = new WebView(MainActivity.this);
                 popup.setWebViewClient(new WebViewClient() {
                     @Override
-                    public boolean shouldOverrideUrlLoading(WebView popupView, String url) {
-                        launchExternalIntent(url);
+                    public boolean shouldOverrideUrlLoading(WebView popupView, WebResourceRequest request) {
+                        if (request != null && request.getUrl() != null) {
+                            launchExternalIntent(request.getUrl().toString());
+                        }
                         return true;
                     }
                 });
@@ -381,7 +428,7 @@ public class MainActivity extends Activity {
         });
 
         String requested = launchTarget(getIntent());
-        this.mWebView.loadUrl(requested != null ? requested : launchUrl());
+        loadTrustedPage(requested != null ? requested : launchUrl());
     }
 
     @Override
@@ -416,7 +463,7 @@ public class MainActivity extends Activity {
         // here. A plain launcher tap names no page and leaves the user where they were.
         String requested = launchTarget(intent);
         if (requested != null && mWebView != null) {
-            mWebView.loadUrl(requested);
+            loadTrustedPage(requested);
         }
     }
 
@@ -451,6 +498,117 @@ public class MainActivity extends Activity {
 
     private String launchUrl() {
         return getString(getResources().getIdentifier("launchUrl", "string", getPackageName()));
+    }
+
+    /**
+     * Reads the one configured PWA origin once at startup. The production
+     * manifest forbids cleartext, but enforce that invariant here too: a future
+     * resource edit must not silently make the privileged bridge available to
+     * http. The debuggable CM Dev build is the deliberate exception so it can
+     * inspect a local development server through adb reverse.
+     */
+    private void configureTrustedOrigin() {
+        mTrustedScheme = null;
+        mTrustedHost = null;
+        mTrustedPort = -1;
+        try {
+            String configuredHost = getString(getResources().getIdentifier("hostName", "string", getPackageName()));
+            URI launch = new URI(launchUrl());
+            String scheme = launch.getScheme();
+            String host = launch.getHost();
+            boolean debuggable = (getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0;
+            boolean secure = "https".equalsIgnoreCase(scheme);
+            boolean allowedDevHttp = debuggable && "http".equalsIgnoreCase(scheme);
+            if (host == null || launch.getRawUserInfo() != null || (!secure && !allowedDevHttp)
+                || !configuredHost.equalsIgnoreCase(host)) {
+                throw new IllegalArgumentException("launchUrl is not a configured trusted origin");
+            }
+            mTrustedScheme = scheme.toLowerCase(Locale.ROOT);
+            mTrustedHost = host;
+            mTrustedPort = canonicalPort(mTrustedScheme, launch.getPort());
+            if (mTrustedPort < 0) {
+                throw new IllegalArgumentException("launchUrl has no usable web port");
+            }
+        } catch (Exception e) {
+            android.util.Log.e("ClashManagerMain", "Invalid trusted PWA origin; native bridge disabled", e);
+        }
+    }
+
+    /** Normalizes omitted web ports so e.g. https://host and https://host:443 agree. */
+    private static int canonicalPort(String scheme, int port) {
+        if (port >= 0) return port;
+        if ("https".equalsIgnoreCase(scheme)) return HTTPS_PORT;
+        if ("http".equalsIgnoreCase(scheme)) return 80;
+        return -1;
+    }
+
+    /**
+     * Exact origin comparison used for the bridge boundary. Deliberately pure
+     * Java so the URL policy can be unit-tested without an Android device.
+     */
+    private static boolean isTrustedWebOrigin(String url, String expectedScheme, String expectedHost, int expectedPort) {
+        if (url == null || expectedScheme == null || expectedHost == null || expectedPort < 0) return false;
+        try {
+            URI uri = new URI(url);
+            String scheme = uri.getScheme();
+            String host = uri.getHost();
+            return scheme != null && host != null && uri.getRawUserInfo() == null
+                && expectedScheme.equalsIgnoreCase(scheme)
+                && expectedHost.equalsIgnoreCase(host)
+                && expectedPort == canonicalPort(scheme, uri.getPort());
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /**
+     * Attaches the bridge only while the active WebView is about to load this
+     * app's configured PWA. addJavascriptInterface is page-load scoped, so
+     * attaching at WebView construction would also expose it to about:blank.
+     */
+    private void attachBridge(WebView view) {
+        if (view == null || view != mWebView || mBridgeAttached) return;
+        if (mBridge == null) {
+            mBridge = new AndroidBridge();
+        }
+        view.addJavascriptInterface(mBridge, "AndroidBridge");
+        mBridgeAttached = true;
+    }
+
+    /** Removes the bridge from the active WebView before an untrusted page can use it. */
+    private void detachBridge(WebView view) {
+        if (view == null || view != mWebView || !mBridgeAttached) return;
+        view.removeJavascriptInterface("AndroidBridge");
+        mBridgeAttached = false;
+    }
+
+    /** Routes only top-level untrusted navigations out to Android; frames are blocked instead. */
+    private boolean shouldOverrideMainFrameNavigation(WebView view, String url) {
+        // There is no safe native action for a blank navigation. In particular,
+        // never leave AndroidBridge on about:blank while a popup or an
+        // untrusted redirect is being resolved.
+        if (url == null || "about:blank".equalsIgnoreCase(url)) {
+            detachBridge(view);
+            return true;
+        }
+        if (!isTrustedOrigin(url)) {
+            launchExternalIntent(url);
+            return true;
+        }
+        return false;
+    }
+
+    /** Starts a trusted navigation with the bridge already in place, or fails closed. */
+    private void loadTrustedPage(String url) {
+        if (mWebView == null) return;
+        if (!isTrustedOrigin(url)) {
+            android.util.Log.e("ClashManagerMain", "Refusing to load untrusted URL in the bridge WebView: " + url);
+            detachBridge(mWebView);
+            Toast.makeText(this, "Could not load Clash Manager securely", Toast.LENGTH_LONG).show();
+            return;
+        }
+        attachBridge(mWebView);
+        mWebView.loadUrl(url);
     }
 
     /**
@@ -520,16 +678,47 @@ public class MainActivity extends Activity {
             : "Turn on \"" + label + "\" in Accessibility settings so Blitz can tap Invite.";
     }
 
-    /** True when the URL's host is the PWA's own origin (safe to keep the bridge attached for). */
+    /** True only for the configured scheme, host, and port (safe to keep the bridge attached for). */
     private boolean isTrustedOrigin(String url) {
+        return isTrustedWebOrigin(url, mTrustedScheme, mTrustedHost, mTrustedPort);
+    }
+
+    /** The versioned release filename is also the path segment the URL must name. */
+    private static boolean isValidApkFilename(String filename) {
+        return filename != null && filename.length() <= MAX_APK_FILENAME_LENGTH
+            && filename.matches("clashmanager-v\\d+\\.\\d+\\.\\d+\\+\\d+\\.apk");
+    }
+
+    /** Native installation is allowed only after an exact, complete SHA-256 check. */
+    private static boolean isValidSha256(String expectedSha256) {
+        return expectedSha256 != null && expectedSha256.matches("(?i)^[a-f0-9]{64}$");
+    }
+
+    /**
+     * Restricts native APK installation to the two release locations the PWA
+     * resolver uses. A browser can still open ordinary HTTPS links, but an
+     * arbitrary page must not be able to enqueue an APK and open Android's
+     * installer through this privileged bridge.
+     */
+    private static boolean isAllowedApkDownloadUrl(String url, String filename, String trustedHost) {
+        if (!isValidApkFilename(filename) || trustedHost == null || url == null
+            || url.length() > MAX_APK_DOWNLOAD_URL_LENGTH) {
+            return false;
+        }
         try {
-            Uri uri = Uri.parse(url);
-            String scheme = uri.getScheme();
-            if (!"https".equals(scheme) && !"http".equals(scheme)) {
-                // Non-web schemes (about:, data:, blob:) never carry the bridge origin.
-                return "about:blank".equals(url);
+            URI uri = new URI(url);
+            String host = uri.getHost();
+            String path = uri.getPath();
+            if (!"https".equalsIgnoreCase(uri.getScheme()) || host == null || path == null
+                || uri.getRawUserInfo() != null || uri.getRawQuery() != null || uri.getRawFragment() != null
+                || canonicalPort(uri.getScheme(), uri.getPort()) != HTTPS_PORT) {
+                return false;
             }
-            return mTrustedHost.equalsIgnoreCase(uri.getHost());
+            boolean canonicalRawRelease = APK_RELEASE_RAW_HOST.equalsIgnoreCase(host)
+                && (APK_RELEASE_RAW_PATH + filename).equals(path);
+            boolean sameOriginRelease = trustedHost.equalsIgnoreCase(host)
+                && (APK_RELEASE_SAME_ORIGIN_PATH + filename).equals(path);
+            return canonicalRawRelease || sameOriginRelease;
         } catch (Exception e) {
             return false;
         }
@@ -633,13 +822,17 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public void openExternalUrl(String url) {
             runOnUiThread(() -> {
-                Uri parsed = Uri.parse(url);
-                String scheme = parsed.getScheme();
-                if (!"https".equalsIgnoreCase(scheme) && !"http".equalsIgnoreCase(scheme)) {
-                    android.util.Log.w("ClashManagerMain", "openExternalUrl rejected non-http(s) scheme: " + scheme);
-                    return;
-                }
                 try {
+                    if (url == null) {
+                        android.util.Log.w("ClashManagerMain", "openExternalUrl rejected null URL");
+                        return;
+                    }
+                    Uri parsed = Uri.parse(url);
+                    String scheme = parsed.getScheme();
+                    if (!"https".equalsIgnoreCase(scheme) && !"http".equalsIgnoreCase(scheme)) {
+                        android.util.Log.w("ClashManagerMain", "openExternalUrl rejected non-http(s) scheme: " + scheme);
+                        return;
+                    }
                     var intent = new Intent(Intent.ACTION_VIEW, parsed);
                     intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                     startActivity(intent);
@@ -670,14 +863,33 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public boolean downloadApkFile(String url, String filename, String expectedSha256) {
-            Uri parsed = Uri.parse(url);
-            String scheme = parsed.getScheme();
-            if (!"https".equalsIgnoreCase(scheme)) {
-                android.util.Log.w("ClashManagerMain", "downloadApkFile rejected non-https scheme: " + scheme);
+            if (!isValidApkFilename(filename)) {
+                android.util.Log.w("ClashManagerMain", "downloadApkFile rejected invalid filename");
                 return false;
             }
-            if (filename == null || filename.length() > MAX_APK_FILENAME_LENGTH || !filename.matches("clashmanager-v\\d+\\.\\d+\\.\\d+\\+\\d+\\.apk")) {
-                android.util.Log.w("ClashManagerMain", "downloadApkFile rejected invalid filename");
+            if (!isValidSha256(expectedSha256)) {
+                // Older PWA metadata did not publish a digest. Return false so
+                // the PWA uses its existing browser fallback instead of opening
+                // Android's installer for a file native code cannot verify.
+                android.util.Log.w("ClashManagerMain", "downloadApkFile rejected missing or invalid SHA-256 metadata");
+                return false;
+            }
+            if (!isAllowedApkDownloadUrl(url, filename, mTrustedHost)) {
+                android.util.Log.w("ClashManagerMain", "downloadApkFile rejected URL outside the APK release allowlist");
+                return false;
+            }
+
+            final Uri parsed;
+            try {
+                parsed = Uri.parse(url);
+            } catch (Exception e) {
+                android.util.Log.w("ClashManagerMain", "downloadApkFile rejected unparseable URL", e);
+                return false;
+            }
+            final String checksum = expectedSha256.toLowerCase(Locale.ROOT);
+            final DownloadManager dm = (DownloadManager) getSystemService(Context.DOWNLOAD_SERVICE);
+            if (dm == null) {
+                android.util.Log.w("ClashManagerMain", "downloadApkFile rejected: DownloadManager unavailable");
                 return false;
             }
             runOnUiThread(() -> {
@@ -689,9 +901,20 @@ public class MainActivity extends Activity {
                     request.setDestinationInExternalPublicDir(android.os.Environment.DIRECTORY_DOWNLOADS, filename);
                     request.setMimeType("application/vnd.android.package-archive");
                     request.addRequestHeader("User-Agent", "ClashManager-Android");
-                    var dm = (DownloadManager) getSystemService(Context.DOWNLOAD_SERVICE);
                     long downloadId = dm.enqueue(request);
-                    registerApkDownloadReceiver(downloadId, filename, expectedSha256);
+                    try {
+                        registerApkDownloadReceiver(downloadId, filename, checksum);
+                    } catch (Exception receiverError) {
+                        // Without a receiver the user never reaches the verified
+                        // installer. Remove this just-enqueued request rather
+                        // than leaving an unchecked APK in Downloads.
+                        try {
+                            dm.remove(downloadId);
+                        } catch (Exception removeError) {
+                            android.util.Log.w("ClashManagerMain", "Could not remove untracked APK download", removeError);
+                        }
+                        throw receiverError;
+                    }
                     Toast.makeText(MainActivity.this, "Download started -- installer opens when ready", Toast.LENGTH_LONG).show();
                 } catch (Exception e) {
                     android.util.Log.e("ClashManagerMain", "downloadApkFile failed: " + url, e);

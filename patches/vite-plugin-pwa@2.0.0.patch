@@ -1,0 +1,190 @@
+diff --git a/dist/index.cjs b/dist/index.cjs
+index 61d52cbb39503c92fafb84e9207ba52d317aed97..51eb3a5b6332fe5e802473d663d2523404ae4c68 100644
+--- a/dist/index.cjs
++++ b/dist/index.cjs
+@@ -454,8 +454,8 @@ function prepareViteBuild(options2, viteOptions) {
+   const {
+     format,
+     plugins,
+-    rollupOptions
+-  } = options2.injectManifestRollupOptions;
++    rolldownOptions
++  } = options2.injectManifestRolldownOptions;
+   const inlineConfig = {
+     root: viteOptions.root,
+     base: viteOptions.base,
+@@ -490,13 +490,15 @@ function prepareViteBuild(options2, viteOptions) {
+     Object.assign(inlineConfig.build, {
+       ...inlineConfig.build,
+       modulePreload: false,
+-      rollupOptions: {
+-        ...rollupOptions,
++      rolldownOptions: {
++        ...rolldownOptions,
+         plugins: buildPlugins?.rollup ?? plugins,
+         input: options2.swSrc,
+         output: {
+           entryFileNames: swMjsName,
+-          inlineDynamicImports: true
++          // The service worker must remain a single file: it cannot reuse the
++          // application's code-splitting policy.
++          codeSplitting: false
+         }
+       }
+     });
+@@ -508,11 +510,12 @@ function prepareViteBuild(options2, viteOptions) {
+         name: "app",
+         formats: [format]
+       },
+-      rollupOptions: {
+-        ...rollupOptions,
++      rolldownOptions: {
++        ...rolldownOptions,
+         plugins: buildPlugins?.rollup ?? plugins,
+         output: {
+-          entryFileNames: swName
++          entryFileNames: swName,
++          codeSplitting: false
+         }
+       }
+     });
+@@ -1747,7 +1750,8 @@ async function resolveOptions(ctx) {
+   const {
+     vitePlugins = defaultInjectManifestVitePlugins,
+     plugins,
+-    rollupOptions = {},
++    rollupOptions,
++    rolldownOptions = rollupOptions ?? {},
+     rollupFormat = "es",
+     target = viteConfig.build.target,
+     minify: minifySW = viteConfig.build.minify,
+@@ -1833,9 +1837,9 @@ async function resolveOptions(ctx) {
+     buildPlugins,
+     selfDestroying,
+     buildBase: buildBase ?? basePath,
+-    injectManifestRollupOptions: {
++    injectManifestRolldownOptions: {
+       plugins,
+-      rollupOptions,
++      rolldownOptions,
+       format: rollupFormat
+     },
+     injectManifestBuildOptions: {
+diff --git a/dist/index.d.ts b/dist/index.d.ts
+index aed43813fdeae312cccfd7383e1012d2665fdb7f..192bba54d81e2dc2647290a602e07b3080767a96 100644
+--- a/dist/index.d.ts
++++ b/dist/index.d.ts
+@@ -122,9 +122,17 @@ type CustomInjectManifestOptions = InjectManifestOptions & {
+         vite?: UserConfig['plugins'];
+     };
+     /**
+-     * Since `v0.15.0` you can add custom Rollup options to build your service worker: we expose the same configuration to build a worker using Vite.
++     * Since Vite 8, you can add custom Rolldown options to build your service worker.
++     *
++     * The service worker is built separately from the application. Its plugins,
++     * entry, output, and single-file code-splitting policy are controlled by the
++     * PWA plugin, so application `build.rolldownOptions` are never reused here.
++     */
++    rolldownOptions?: Omit<NonNullable<BuildOptions['rolldownOptions']>, 'plugins' | 'output'>;
++    /**
++     * @deprecated Vite 8 uses `rolldownOptions`; use that option instead.
+      */
+-    rollupOptions?: Omit<RollupOptions, 'plugins' | 'output'>;
++    rollupOptions?: Omit<NonNullable<BuildOptions['rollupOptions']>, 'plugins' | 'output'>;
+     /**
+      * Environment options.
+      *
+@@ -438,7 +446,7 @@ interface VitePWAOptions {
+ interface ResolvedServiceWorkerOptions {
+     format: 'es' | 'iife';
+     plugins?: Plugin[];
+-    rollupOptions: RollupOptions;
++    rolldownOptions: NonNullable<CustomInjectManifestOptions['rolldownOptions']>;
+ }
+ interface ResolvedVitePWAOptions extends Required<Omit<VitePWAOptions, 'pwaAssets' | 'showMaximumFileSizeToCacheInBytesWarning'>> {
+     swSrc: string;
+@@ -448,7 +456,7 @@ interface ResolvedVitePWAOptions extends Required<Omit<VitePWAOptions, 'pwaAsset
+     rollupFormat: 'es' | 'iife';
+     vitePlugins: InjectManifestVitePlugins;
+     buildPlugins?: CustomInjectManifestOptions['buildPlugins'];
+-    injectManifestRollupOptions: ResolvedServiceWorkerOptions;
++    injectManifestRolldownOptions: ResolvedServiceWorkerOptions;
+     injectManifestBuildOptions: {
+         target?: BuildOptions['target'];
+         minify?: BuildOptions['minify'];
+diff --git a/dist/index.js b/dist/index.js
+index 84bf280f220d12313d0523b2160f7f6eb64fd81a..e219b40c10cc7f1fc207f19e7fb1189437d4b01b 100644
+--- a/dist/index.js
++++ b/dist/index.js
+@@ -860,7 +860,8 @@ async function resolveOptions(ctx) {
+   const {
+     vitePlugins = defaultInjectManifestVitePlugins,
+     plugins,
+-    rollupOptions = {},
++    rollupOptions,
++    rolldownOptions = rollupOptions ?? {},
+     rollupFormat = "es",
+     target = viteConfig.build.target,
+     minify: minifySW = viteConfig.build.minify,
+@@ -946,9 +947,9 @@ async function resolveOptions(ctx) {
+     buildPlugins,
+     selfDestroying,
+     buildBase: buildBase ?? basePath,
+-    injectManifestRollupOptions: {
++    injectManifestRolldownOptions: {
+       plugins,
+-      rollupOptions,
++      rolldownOptions,
+       format: rollupFormat
+     },
+     injectManifestBuildOptions: {
+diff --git a/dist/vite-build-BGK4YAIU.js b/dist/vite-build-BGK4YAIU.js
+index 9370ed65ab49d2f09ed95af10e792168249c8208..4df4a9268865aaf6f4ef87f0992900a50d74f17d 100644
+--- a/dist/vite-build-BGK4YAIU.js
++++ b/dist/vite-build-BGK4YAIU.js
+@@ -64,8 +64,8 @@ function prepareViteBuild(options, viteOptions) {
+   const {
+     format,
+     plugins,
+-    rollupOptions
+-  } = options.injectManifestRollupOptions;
++    rolldownOptions
++  } = options.injectManifestRolldownOptions;
+   const inlineConfig = {
+     root: viteOptions.root,
+     base: viteOptions.base,
+@@ -100,13 +100,15 @@ function prepareViteBuild(options, viteOptions) {
+     Object.assign(inlineConfig.build, {
+       ...inlineConfig.build,
+       modulePreload: false,
+-      rollupOptions: {
+-        ...rollupOptions,
++      rolldownOptions: {
++        ...rolldownOptions,
+         plugins: buildPlugins?.rollup ?? plugins,
+         input: options.swSrc,
+         output: {
+           entryFileNames: swMjsName,
+-          inlineDynamicImports: true
++          // The service worker must remain a single file: it cannot reuse the
++          // application's code-splitting policy.
++          codeSplitting: false
+         }
+       }
+     });
+@@ -118,11 +120,12 @@ function prepareViteBuild(options, viteOptions) {
+         name: "app",
+         formats: [format]
+       },
+-      rollupOptions: {
+-        ...rollupOptions,
++      rolldownOptions: {
++        ...rolldownOptions,
+         plugins: buildPlugins?.rollup ?? plugins,
+         output: {
+-          entryFileNames: swName
++          entryFileNames: swName,
++          codeSplitting: false
+         }
+       }
+     });

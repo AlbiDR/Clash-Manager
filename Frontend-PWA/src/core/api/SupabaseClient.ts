@@ -14,6 +14,8 @@ import { SbHeadhunterRowSchema } from "./RecruitSchemas";
 import { mapSbRosterRow, mapSbHeadhunterRow } from "./DataMappers";
 import * as v from "valibot";
 
+export { NetworkError } from "./ApiErrors";
+
 /**
  * SUPABASE CLIENT (Layer 1)
  * ----------------------------------------------------------------------------
@@ -62,17 +64,6 @@ export interface PipelineHealth {
   lastTriggeredAt: number | null;
   /** Unix timestamp (ms) of the last failed ingestion pass */
   lastFailureAt: number | null;
-}
-
-/**
- * Specialized error class for network-level failures.
- */
-export class NetworkError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = "NetworkError";
-    Object.setPrototypeOf(this, NetworkError.prototype);
-  }
 }
 
 /**

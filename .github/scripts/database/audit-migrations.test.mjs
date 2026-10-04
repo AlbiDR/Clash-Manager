@@ -10,7 +10,13 @@ import test from 'node:test';
 
 import { auditMigrations } from './audit-migrations.mjs';
 
-async function fixture({ migrationComment = '-- concise', expiry = '2099-01-01', baselineExtra = '' } = {}) {
+async function fixture({
+  migrationComment = '-- concise',
+  migrationBody = "COMMENT ON TABLE app.items IS 'items';",
+  expiry = '2099-01-01',
+  baselineExtra = '',
+  serviceRoleOnlyFunctions = [],
+} = {}) {
   const root = await mkdtemp(path.join(os.tmpdir(), 'migration-audit-'));
   await mkdir(path.join(root, '.github/nightly-config'), { recursive: true });
   await mkdir(path.join(root, 'Backend/supabase/migrations'), { recursive: true });
@@ -24,7 +30,7 @@ LANGUAGE sql SET search_path TO app AS $$ SELECT true $$;
 ${baselineExtra}
 `);
   const migrationPath = 'Backend/supabase/migrations/20260102000000_change.sql';
-  const migrationSource = `${migrationComment}\nCOMMENT ON TABLE app.items IS 'items';\n`;
+  const migrationSource = `${migrationComment}\n${migrationBody}\n`;
   await writeFile(path.join(root, migrationPath), migrationSource);
   await writeFile(path.join(root, '.github/nightly-config/migration-quality.json'), `${JSON.stringify({
     version: 1,
@@ -37,6 +43,7 @@ ${baselineExtra}
       maximumCommentRatio: 0.4,
     },
     allowedSeedTargets: [],
+    serviceRoleOnlyFunctions,
     immutableFileHashes: {
       [migrationPath]: createHash('sha256').update(migrationSource).digest('hex'),
     },
@@ -139,4 +146,42 @@ test('passes the same baseline once the trigger is re-runnable', async t => {
   t.after(() => rm(root, { recursive: true, force: true }));
   const report = await auditMigrations({ repoRoot: root });
   assert.equal(report.status, 'PASS');
+});
+
+test('enforces service-role-only execution for privileged RPCs', async t => {
+  const root = await fixture({
+    serviceRoleOnlyFunctions: ['app.ping()'],
+    migrationBody: `
+REVOKE ALL ON FUNCTION app.ping() FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION app.ping() TO service_role;`,
+  });
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const report = await auditMigrations({ repoRoot: root });
+  assert.equal(report.status, 'PASS');
+  assert.deepEqual(report.securityViolations, []);
+});
+
+test('enforces multiline service-role-only privilege statements', async t => {
+  const root = await fixture({
+    serviceRoleOnlyFunctions: ['app.ping()'],
+    baselineExtra: 'GRANT EXECUTE ON FUNCTION app.ping() TO anon, authenticated;',
+    migrationBody: `
+REVOKE ALL ON FUNCTION app.ping()
+  FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION app.ping()
+  TO service_role;`,
+  });
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const report = await auditMigrations({ repoRoot: root });
+  assert.equal(report.status, 'PASS');
+  assert.deepEqual(report.securityViolations, []);
+});
+
+test('rejects a privileged RPC left executable by PUBLIC', async t => {
+  const root = await fixture({ serviceRoleOnlyFunctions: ['app.ping()'] });
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const report = await auditMigrations({ repoRoot: root });
+  assert.equal(report.status, 'FAIL');
+  assert.match(report.securityViolations.join(' '), /PUBLIC can execute/);
+  assert.match(report.securityViolations.join(' '), /service_role cannot execute/);
 });

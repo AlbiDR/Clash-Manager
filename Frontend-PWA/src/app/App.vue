@@ -20,7 +20,10 @@ import { useHaptics } from "@shared";
 import { onMounted, computed, watch } from "vue";
 import { RouterView, useRoute } from "vue-router";
 import { useIsDataLoading } from "vue-router/experimental";
-import { useHeadhunter } from "@features/headhunter";
+// The permanent notification/badge watcher belongs in the shell, but importing
+// the feature barrel here also pulled HeadhunterView into the initial bundle.
+// Keep the watcher eager while preserving the route view's lazy chunk.
+import { useHeadhunter } from "@features/headhunter/composables/useHeadhunter";
 
 const clashDataStore = useClashDataStore();
 const { refresh } = clashDataStore;

@@ -10,7 +10,7 @@ import {
     CONCURRENCY_DISCOVERY_KEYWORDS,
     CONCURRENCY_DISCOVERY_TOURNAMENTS
 } from "../../_shared/config.ts";
-import * as v from "npm:valibot@1.4.2";
+import * as v from "npm:valibot@1.5.0";
 import { RoyaleTournamentListSchema, RoyaleTournamentSchema } from "../../_shared/schemas.ts";
 
 /**

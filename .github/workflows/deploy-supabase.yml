@@ -57,26 +57,16 @@ jobs:
         with:
           deno-version: v2.x
 
-      # `--node-modules-dir=auto` is load-bearing: without it `deno check` aborts
-      # at dependency resolution ("Could not find a matching package for
-      # npm:@supabase/supabase-js") and never type-checks anything at all. The
-      # gate below was therefore reporting a dependency error rather than the 6
-      # errors it is counting down, so the count could never reach zero and the
-      # step could never be promoted to blocking. Passed as a flag rather than
-      # added to a Backend/deno.json, so nothing about `supabase functions
-      # deploy` bundling changes.
-      #
-      # Reporting, not blocking, and deliberately so: `deno check` finds 6 real
-      # errors today (4 valibot generic-inference failures in _shared/protocol.ts
-      # that collapse `parsed.output` to `unknown`, and 2 audit-action contract
-      # violations in fetch-player-battlelog). Making it blocking now would red
-      # every Backend deploy before anyone has had a chance to fix them, which
-      # is how a gate gets deleted rather than satisfied. Flip continue-on-error
-      # to false the moment that count reaches zero.
-      - name: Deno type-check edge functions (reporting)
-        continue-on-error: true
+      # Check only the Edge Function import graph. Without `--no-config`, Deno
+      # walks up to the monorepo package.json and attempts to resolve every PWA
+      # build dependency too; a newly released Vite plugin then blocked this
+      # unrelated backend gate under Deno's minimum-dependency-age policy.
+      # The dedicated lock records every exact transitive Edge dependency while
+      # leaving Supabase's deploy-time bundling configuration unchanged.
+      # `--node-modules-dir=auto` remains load-bearing for npm: imports.
+      - name: Deno type-check edge functions
         working-directory: Backend
-        run: deno check --node-modules-dir=auto supabase/functions/*/index.ts
+        run: deno check --no-config --lock=deno.edge.lock --frozen-lockfile --node-modules-dir=auto supabase/functions/*/index.ts
 
   deploy:
     needs: verify

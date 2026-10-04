@@ -194,6 +194,7 @@ async function bootstrap() {
       const apiState = useApiState();
       const wakeLock = useWakeLock();
       const storagePersistence = useStoragePersistence();
+      void storagePersistence.init();
 
       // [VR5] Data hydration (loadLocal + startBackgroundSync) is now owned
       // by the route-level DataLoaderPlugin. The loader fires on the very

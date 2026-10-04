@@ -74,11 +74,36 @@ beforeEach(() => {
 });
 
 describe("ping Edge Function", () => {
-  it("should handle a CORS OPTIONS preflight request with the blanket wildcard (no rate limiting configured)", async () => {
+  it("should preserve the public CORS contract while rate limiting the health probe", async () => {
     const req = new Request("https://test.co/ping", { method: "OPTIONS" });
     const response = await requestHandler(req);
     expect(response.status).toBe(200);
     expect(response.headers.get("Access-Control-Allow-Origin")).toBe("*");
+  });
+
+  it("rate limits repeated anon-key probes before they can create unbounded telemetry writes", async () => {
+    const makeRequest = () => new Request("https://test.co/ping", {
+      method: "POST",
+      headers: {
+        "Authorization": "Bearer anon-key",
+        "Content-Type": "application/json",
+        "x-forwarded-for": "198.51.100.77",
+      },
+      body: "{}",
+    });
+
+    for (let attempt = 0; attempt < 60; attempt++) {
+      const response = await requestHandler(makeRequest());
+      expect(response.status).toBe(200);
+    }
+
+    const limitedResponse = await requestHandler(makeRequest());
+    expect(limitedResponse.status).toBe(429);
+    expect(limitedResponse.headers.get("Retry-After")).toMatch(/^\d+$/);
+    await expect(limitedResponse.json()).resolves.toMatchObject({
+      error: "Too Many Requests",
+      code: "RATE_LIMITED",
+    });
   });
 
   it("should block unauthorized requests (401 Unauthorized)", async () => {

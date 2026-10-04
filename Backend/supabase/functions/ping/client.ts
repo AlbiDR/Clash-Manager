@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
-import { createClient } from "npm:@supabase/supabase-js@2.110.8";
+import { createClient } from "npm:@supabase/supabase-js@2.117.0";
 
 /**
  * L1 Core: Client & Environment Broker for ping.

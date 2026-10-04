@@ -18,6 +18,7 @@
 | `useTheme.ts` | Applies light/dark tokens, toggles the `dark` class, and rewrites the `theme-color` meta. |
 | `useMotionPreference.ts` | Layer 2 motion preference broker; persists user overrides to LocalStorage and updates root `data-motion-preference` DOM attributes. |
 | `useClipboard.ts` | Layer 2 browser-API broker for explicit copy affordances with `ClipboardState` reactivity, feedback duration settings, and automated scope disposal. |
+| `usePwaManager.ts` | Service Worker updates, install prompts, push-capability probes, CacheStorage cleanup, and browser-state recovery. |
 
 ## Interaction and gestures
 

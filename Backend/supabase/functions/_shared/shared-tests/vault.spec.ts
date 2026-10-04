@@ -3,7 +3,7 @@
 
 import { describe, it, expect, vi, beforeEach, beforeAll } from "vitest";
 import { loadConfig } from "../vault.ts";
-import type { SupabaseClient } from "npm:@supabase/supabase-js@2.110.8";
+import type { SupabaseClient } from "npm:@supabase/supabase-js@2.117.0";
 
 /**
  * L1 Core: Vault Secret Broker Spec

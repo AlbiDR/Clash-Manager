@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
@@ -16,7 +15,7 @@ const REPO_ROOT = path.resolve(SCRIPT_DIR, "..", "..", "..");
 const POLICY_PATH = path.join(REPO_ROOT, '.github', 'nightly-config', 'migration-quality.json');
 
 function normalizedName(value) {
-  return value.replaceAll('"', '').toLowerCase();
+  return value.trim().replaceAll('"', '').toLowerCase();
 }
 
 function statementHead(statement) {
@@ -70,6 +69,66 @@ function functionDefinition(sql) {
   }).join(',');
   const name = normalizedName(head[1]);
   return { kind: 'FUNCTION', key: `FUNCTION:${name}(${signature})`, name, sql };
+}
+
+function normalizedRoutineSignature(value) {
+  return value.replaceAll('"', '').replace(/\s+/g, '').toLowerCase();
+}
+
+export function serviceRoleOnlyFunctionViolations(sources, signatures = []) {
+  const targets = new Map(signatures.map(signature => {
+    const normalized = normalizedRoutineSignature(signature);
+    return [`FUNCTION:${normalized}`, { signature: normalized, defined: false, public: false, anon: false, authenticated: false, service_role: false }];
+  }));
+
+  for (const source of sources) {
+    const parsed = lexSql(source);
+    if (parsed.error) continue;
+    for (const statement of parsed.statements) {
+      const sql = statementHead(statement);
+      const definition = functionDefinition(sql);
+      if (definition && targets.has(definition.key)) {
+        const state = targets.get(definition.key);
+        if (!state.defined) state.public = true;
+        state.defined = true;
+        continue;
+      }
+
+      const dropped = sql.match(/^DROP FUNCTION(?: IF EXISTS)?\s+([\w".]+\s*\([^;]*\))/i);
+      if (dropped) {
+        const key = `FUNCTION:${normalizedRoutineSignature(dropped[1])}`;
+        if (targets.has(key)) {
+          const signature = targets.get(key).signature;
+          targets.set(key, { signature, defined: false, public: false, anon: false, authenticated: false, service_role: false });
+        }
+        continue;
+      }
+
+      const privilegeSql = sql.replace(/\s+/g, ' ').trim();
+      const privilege = privilegeSql.match(/^(GRANT|REVOKE)\s+(?:ALL(?:\s+PRIVILEGES)?|EXECUTE)\s+ON\s+FUNCTION\s+(.+?)\s+(?:TO|FROM)\s+(.+?);?$/i);
+      if (!privilege) continue;
+      const key = `FUNCTION:${normalizedRoutineSignature(privilege[2])}`;
+      const state = targets.get(key);
+      if (!state) continue;
+      const granted = privilege[1].toUpperCase() === 'GRANT';
+      for (const role of privilege[3].split(',').map(normalizedName)) {
+        if (Object.hasOwn(state, role)) state[role] = granted;
+      }
+    }
+  }
+
+  const violations = [];
+  for (const state of targets.values()) {
+    if (!state.defined) {
+      violations.push(`service-role-only function is not defined: ${state.signature}`);
+      continue;
+    }
+    if (state.public) violations.push(`PUBLIC can execute service-role-only function: ${state.signature}`);
+    if (state.anon || state.public) violations.push(`anon can execute service-role-only function: ${state.signature}`);
+    if (state.authenticated || state.public) violations.push(`authenticated can execute service-role-only function: ${state.signature}`);
+    if (!state.service_role) violations.push(`service_role cannot execute protected function: ${state.signature}`);
+  }
+  return violations;
 }
 
 export function identifyDefinition(statement) {
@@ -227,10 +286,12 @@ export async function auditMigrations({ repoRoot = REPO_ROOT } = {}) {
   const policyErrors = validatePolicy(policy, new Set(paths));
   const exemptionByPath = new Map((policy.exemptions ?? []).map(item => [item.path, item]));
   const migrations = [];
+  const migrationSources = [];
 
   for (const [index, filename] of filenames.entries()) {
     const relativePath = paths[index];
     const source = await readFile(path.join(migrationsDir, filename), 'utf8');
+    migrationSources.push(source);
     const parsed = lexSql(source);
     const lines = source.split('\n');
     const commentLines = topLevelCommentLines(source, parsed.comments);
@@ -267,7 +328,11 @@ export async function auditMigrations({ repoRoot = REPO_ROOT } = {}) {
 
   const baselineSource = await readFile(path.join(repoRoot, policy.baseline), 'utf8');
   const baseline = inspectBaseline(baselineSource, policy);
-  const violationCount = policyErrors.length + baseline.violations.length
+  const securityViolations = serviceRoleOnlyFunctionViolations(
+    migrationSources,
+    policy.serviceRoleOnlyFunctions,
+  );
+  const violationCount = policyErrors.length + baseline.violations.length + securityViolations.length
     + migrations.reduce((count, migration) => count + migration.violations.length, 0);
   const degraded = baseline.unsupportedStatements.length > 0;
   return {
@@ -282,6 +347,7 @@ export async function auditMigrations({ repoRoot = REPO_ROOT } = {}) {
       unsupportedStatements: baseline.unsupportedStatements.length,
     },
     policyErrors,
+    securityViolations,
     migrations,
     baseline: { path: policy.baseline, violations: baseline.violations },
     unsupportedStatements: baseline.unsupportedStatements,
@@ -296,6 +362,7 @@ function printHuman(report) {
   console.log(`Violations: ${report.summary.violations}`);
   console.log(`Unsupported statements: ${report.summary.unsupportedStatements}`);
   for (const error of report.policyErrors) console.log(`POLICY: ${error}`);
+  for (const error of report.securityViolations) console.log(`SECURITY: ${error}`);
   for (const error of report.baseline.violations) console.log(`BASELINE: ${error}`);
   for (const migration of report.migrations) {
     for (const error of migration.violations) console.log(`${migration.path}: ${error}`);

@@ -23,7 +23,6 @@ const mocks = vi.hoisted(() => {
       medium: vi.fn(),
       heavy: vi.fn(),
     },
-    mockUpdateServiceWorker: vi.fn(),
     mockToast: {
       info: vi.fn().mockReturnValue("toast-id"),
       success: vi.fn(),
@@ -185,10 +184,6 @@ vi.mock("@shared/composables/useWakeLock", () => ({
     isSupported: true,
     toggle: vi.fn(),
   })),
-}));
-
-vi.mock("virtual:pwa-register", () => ({
-  registerSW: vi.fn(() => mocks.mockUpdateServiceWorker),
 }));
 
 // Helper to run composable within a component context
@@ -358,12 +353,8 @@ describe("useSettings", () => {
     });
 
     it("updates and reloads if a waiting worker exists", async () => {
-      vi.useFakeTimers();
-      const originalProd = import.meta.env.PROD;
-      // @ts-expect-error -- test mock/state does not satisfy the full type
-      import.meta.env.PROD = true;
-
-      const mockReg = { waiting: {} };
+      const postMessage = vi.fn();
+      const mockReg = { waiting: { postMessage } };
       vi.stubGlobal("navigator", {
         serviceWorker: {
           getRegistration: vi.fn().mockResolvedValue(mockReg),
@@ -371,15 +362,9 @@ describe("useSettings", () => {
       });
       const { result } = withSetup(useSettings);
 
-      await vi.advanceTimersByTimeAsync(1500);
-
       await result.forceUpdate();
       expect(mocks.mockToast.success).toHaveBeenCalledWith("Update ready! Reloading...");
-      expect(mocks.mockUpdateServiceWorker).toHaveBeenCalledWith(true);
-
-      // @ts-expect-error -- test mock/state does not satisfy the full type
-      import.meta.env.PROD = originalProd;
-      vi.useRealTimers();
+      expect(postMessage).toHaveBeenCalledWith({ type: "SKIP_WAITING" });
     });
 
     it("triggers update if no waiting worker", async () => {

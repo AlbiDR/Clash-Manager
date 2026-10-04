@@ -1,7 +1,11 @@
-# Reproducible APK release build. The native Java source lives in APK/src/;
-# build-apk.sh compiles it into APK/android/classes.dex locally before pushing.
-# This workflow picks up committed changes to APK/android/ or APK/src/, builds,
-# signs, and publishes the versioned release APK.
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 AlbiDR
+
+# Reproducible APK release build. The native Java source lives in APK/src/ and
+# is compiled into the checked-in APK/android/classes.dex before release. This
+# workflow intentionally packages that committed dex, but first proves it still
+# matches the source with the same pinned toolchain and apktool used locally.
+# It then builds, signs, and publishes the versioned release APK.
 #
 # Ordering: triggered by Auto Tag's completion, not by `push` directly. Root cause:
 # a plain `push` trigger here races Auto Tag's own `push` trigger on the same
@@ -14,21 +18,23 @@
 #
 # Path filter rules (now applied by the "Check for relevant changes" step, since
 # `workflow_run` cannot filter by path the way `push` can):
-#   Included : APK/src/** (Java source), APK/android/** (manifest, resources, dex)
+#   Included : APK/src/**, APK/android/** (including a rebuilt classes.dex), and
+#              the pinned-toolchain/source-verification inputs below.
 #   Included : APK/verify-apk-integrity.mjs (integrity gate used by this workflow)
-#   Excluded : APK/android/classes.dex  - committed by this workflow itself; excluding
-#              prevents the self-triggering loop after the build commits it back.
 #   Excluded : APK/release/**            - build output, never an input.
 #   Excluded : APK/**/*.md               - documentation only, no effect on the binary.
+#
+# The release commit only changes APK/release/**. It cannot re-enter through
+# workflow_run: Auto Tag itself is limited to package.json changes, while a
+# developer-rebuilt classes.dex must remain a release input.
 #
 # The release commit deliberately does NOT carry `[skip ci]`: that keyword skips every
 # push-triggered workflow on the commit, not just this one, and previously suppressed
 # Deploy PWA's `APK/release/**` path trigger too - so the PWA's same-origin latest.json
 # and companion binary silently kept serving the PREVIOUS release indefinitely, causing
 # in-app "release metadata mismatch" / stale checksum reports right after users updated.
-# The self-trigger loop this used to guard against is already closed by the path filter
-# above (APK/android/classes.dex and APK/release/** are excluded inputs), so it's safe
-# to let Deploy PWA and APK Integrity run normally on this commit.
+# The release commit cannot re-enter APK Release Build (see the workflow_run
+# note above), so it is safe to let Deploy PWA and APK Integrity run normally.
 #
 # Signing material comes from repo Secrets (the keystore itself is NOT in the
 # repo): ANDROID_KEYSTORE_BASE64 / ANDROID_KEYSTORE_PASSWORD /
@@ -81,23 +87,20 @@ jobs:
           RELEVANT=false
           for f in ${CHANGED}; do
             case "$f" in
-              APK/android/classes.dex|APK/release/*|*.md) continue ;;
-              APK/src/*|APK/android/*|APK/verify-apk-integrity.mjs|.github/workflows/apk-release.yml)
+              APK/release/*|*.md) continue ;;
+              APK/src/*|APK/android/*|APK/toolchain.json|APK/toolchain-env.sh|APK/fetch-build-deps.mjs|APK/build-apk.sh|APK/verify-dex-source.mjs|APK/verify-apk-integrity.mjs|.github/workflows/apk-release.yml)
                 RELEVANT=true ;;
             esac
           done
           echo "relevant=${RELEVANT}" >> "$GITHUB_OUTPUT"
           if [ "${RELEVANT}" != "true" ]; then
-            echo "Auto Tag completed but no APK/src, APK/android, or integrity-gate changes were in its commit. Skipping build."
+            echo "Auto Tag completed but no native source, checked-in APK, toolchain, or release-gate changes were in its commit. Skipping build."
           fi
 
   build-sign-verify:
     needs: check
     if: ${{ needs.check.outputs.relevant == 'true' }}
     runs-on: ubuntu-latest
-    env:
-      BT_VERSION: "35.0.0"
-      APKTOOL_VERSION: "3.0.2"
     steps:
       - uses: actions/checkout@v4
         with:
@@ -108,22 +111,44 @@ jobs:
         with:
           node-version: "24"
 
+      - name: Read the pinned native toolchain
+        id: toolchain
+        run: |
+          jdk="$(node APK/fetch-build-deps.mjs get jdkMajor)"
+          build_tools="$(node APK/fetch-build-deps.mjs get buildTools)"
+          platform="$(node APK/fetch-build-deps.mjs get androidPlatform)"
+          echo "jdk=$jdk" >> "$GITHUB_OUTPUT"
+          echo "build_tools=$build_tools" >> "$GITHUB_OUTPUT"
+          echo "platform=$platform" >> "$GITHUB_OUTPUT"
+
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: "17"
+          java-version: ${{ steps.toolchain.outputs.jdk }}
 
       # v3 installs Android's retired `tools` package, which makes sdkmanager
       # exit before the APK can be built. v4 uses the supported SDK packages.
       - uses: android-actions/setup-android@v4
 
-      - name: Install Android build-tools ${{ env.BT_VERSION }}
-        run: sdkmanager "build-tools;${{ env.BT_VERSION }}"
+      - name: Install pinned Android packages
+        run: sdkmanager "build-tools;${{ steps.toolchain.outputs.build_tools }}" "platforms;${{ steps.toolchain.outputs.platform }}"
 
-      - name: Download apktool ${{ env.APKTOOL_VERSION }}
+      - name: Cache pinned build inputs
+        uses: actions/cache@v4
+        with:
+          path: APK/.deps
+          key: apk-deps-${{ hashFiles('APK/toolchain.json') }}
+
+      - name: Resolve hash-verified apktool
+        id: apktool
         run: |
-          curl -fsSL -o "$RUNNER_TEMP/apktool.jar" \
-            "https://github.com/iBotPeaches/Apktool/releases/download/v${APKTOOL_VERSION}/apktool_${APKTOOL_VERSION}.jar"
+          jar="$(node APK/fetch-build-deps.mjs apktool)"
+          echo "jar=$jar" >> "$GITHUB_OUTPUT"
+
+      - name: Verify committed dex matches the current Java source
+        env:
+          APKTOOL_JAR: ${{ steps.apktool.outputs.jar }}
+        run: ./APK/build-apk.sh --check
 
       - name: Extract APK version from config
         id: version
@@ -146,8 +171,10 @@ jobs:
             APK/android/res/values/strings.xml
           echo "val=$BUILD_NUMBER" >> $GITHUB_OUTPUT
 
-      - name: Build APK from APK/android (apktool)
-        run: java -jar "$RUNNER_TEMP/apktool.jar" b APK/android -o "$RUNNER_TEMP/fresh-unsigned.apk"
+      - name: Build APK from verified APK/android
+        env:
+          APKTOOL_JAR: ${{ steps.apktool.outputs.jar }}
+        run: java -jar "$APKTOOL_JAR" b APK/android -o "$RUNNER_TEMP/fresh-unsigned.apk"
 
       - name: Decode signing keystore from secret
         run: |
@@ -160,6 +187,7 @@ jobs:
           KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           VERSION: ${{ steps.version.outputs.val }}
           BUILD_NUMBER: ${{ steps.buildnum.outputs.val }}
+          BT_VERSION: ${{ steps.toolchain.outputs.build_tools }}
         run: |
           BT="$ANDROID_SDK_ROOT/build-tools/${BT_VERSION}"
           "$BT/zipalign" -f -p 4 "$RUNNER_TEMP/fresh-unsigned.apk" "$RUNNER_TEMP/fresh-aligned.apk"
@@ -172,9 +200,9 @@ jobs:
 
       - name: Native-layer integrity gate
         env:
-          AAPT2: ${{ env.ANDROID_SDK_ROOT }}/build-tools/35.0.0/aapt2
           VERSION: ${{ steps.version.outputs.val }}
           BUILD_NUMBER: ${{ steps.buildnum.outputs.val }}
+          BT_VERSION: ${{ steps.toolchain.outputs.build_tools }}
         run: |
           export AAPT2="$ANDROID_SDK_ROOT/build-tools/${BT_VERSION}/aapt2"
           node APK/verify-apk-integrity.mjs "$RUNNER_TEMP/clashmanager-v${VERSION}+${BUILD_NUMBER}.apk"
