@@ -58,6 +58,28 @@ test("a structured status beats prose, and an unknown one is kept as unrecognise
   assert.equal(stated["new-check"].answered, null, "a check this file does not know is never a silent pass");
 });
 
+test("the S02 and S09 checks are read from the structured field and never from prose", () => {
+  // S13's own instructions say it receives SKIPPED for baseline tests and
+  // dependency-cruiser. Read as prose, a summary repeating that would become
+  // S13's own check failing to run.
+  for (const prose of [
+    "Toolchain: baseline-tests: SKIPPED, dependency-cruiser: SKIPPED, as expected for Stage 13.",
+    "baseline tests and dependency-cruiser SKIPPED; knip: DEGRADED",
+  ]) {
+    assert.deepEqual(statedSubChecks({ prose }), {}, prose);
+  }
+
+  const stated = statedSubChecks({ structured: { "baseline-tests": "DEGRADED", "dependency-cruiser": "PASS", knip: "OK" } });
+  assert.deepEqual(stated["baseline-tests"], { value: "DEGRADED", answered: false, source: "structured" });
+  assert.equal(stated["dependency-cruiser"].answered, true);
+  assert.equal(stated.knip.answered, true);
+
+  // A baseline run that timed out is a check that could not run, and on a
+  // stage's first reported night that is a standing NEVER, not tonight's news.
+  const spots = evaluateBlindSpots([{ date: "2026-10-05", stated }], "2026-10-05", { stage: 2 });
+  assert.deepEqual(spots.map(s => [s.check, s.kind]), [["baseline-tests", "NEVER"]]);
+});
+
 test("FAIL is a check that ran, so the self-report guard and this reader never both fire on it", () => {
   const prose = "fold-state CLEAN, migration-quality FAIL, database DB-UNAVAILABLE";
   assert.equal(statedSubChecks({ prose })["migration-quality"].answered, true);
