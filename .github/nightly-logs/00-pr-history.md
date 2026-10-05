@@ -16,6 +16,15 @@ LAST_AGED:   2026-10-04
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-05] PR #2086 [Stage 5]: Audited documentation debt targets and confirmed README accuracy
+**Domain:** documentation | **Commit:** 5081b19a5 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2086)
+**Files:** .github/nightly-logs/05-documentation-readme-coverage.log, .github/nightly-logs/05-documentation-readme-pr-body.md
+**Why:** All listed files in doc-debt.txt carry accurate README prose matching current implementations
+**Change:** Audited documentation debt targets and confirmed README accuracy
+**Result:** Audit completed with no source change required.
+**Nudges:** 1
+
+
 ### [2026-10-05] PR #2085 [Stage 4]: Inspected 60 changed files and Edge Functions for SQL view substrate hygiene; zero structural rot or unreferenced views found.
 **Domain:** optimization | **Commit:** e01cbb76e | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2085)
 **Files:** .github/nightly-logs/04-optimization-coverage.log, .github/nightly-logs/04-optimization-pr-body.md
