@@ -16,6 +16,15 @@ LAST_AGED:   2026-10-04
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-05] PR #2085 [Stage 4]: Inspected 60 changed files and Edge Functions for SQL view substrate hygiene; zero structural rot or unreferenced views found.
+**Domain:** optimization | **Commit:** e01cbb76e | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2085)
+**Files:** .github/nightly-logs/04-optimization-coverage.log, .github/nightly-logs/04-optimization-pr-body.md
+**Why:** System is optimal; no substrate or logic bottleneck required source edits in this run.
+**Change:** Inspected 60 changed files and Edge Functions for SQL view substrate hygiene; zero structural rot or unreferenced views found.
+**Result:** All 214 test files passed (2195 tests) in pnpm test suite; substrate view references verified clean via source grep.
+**Nudges:** 0
+
+
 ### [2026-10-05] PR #2084 [Stage 3]: Completed read-only baseline consolidation audit. Pending migrations count: 22 (fold-state status: PENDING). Migration quality: PASS. Database verification: DB-UNAVAILABLE. Clean calibration streak: 10.
 **Domain:** database | **Commit:** f9ccf7792 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2084)
 **Files:** .github/nightly-logs/03-baseline-consolidation-coverage.log, .github/nightly-logs/03-baseline-consolidation-pr-body.md
