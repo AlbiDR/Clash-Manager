@@ -13,10 +13,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { nextTick, ref, type Ref } from "vue";
 import { useClashSync } from "../useClashSync";
-import { SYNC_REQUEST_TIMEOUT_MS, SYNC_RETRY_DELAYS_MS } from "../useClashSyncUtils";
+import { SYNC_REQUEST_TIMEOUT_MS } from "../useClashSyncUtils";
 
-/** Enough fake-timer advancement to exhaust every backoff delay in the bounded retry sequence. */
-const FULL_RETRY_BACKOFF_MS = SYNC_RETRY_DELAYS_MS.reduce((total, delay) => total + delay, 0) + 100;
 import { fetchRemote, lastSyncStatus } from "../../api/SupabaseClient";
 import { loadCache, saveCache } from "../StorageService";
 import { generateMockData } from "../../utils/mockData";
@@ -296,7 +294,7 @@ describe("useClashSync", () => {
       const sync = useClashSync(data);
 
       const refreshPromise = sync.refreshFromSupabase();
-      await vi.advanceTimersByTimeAsync(FULL_RETRY_BACKOFF_MS);
+      await vi.advanceTimersByTimeAsync(0);
       await refreshPromise;
 
       expect(sync.syncError.value).toBe("Could not reach the server");
@@ -327,7 +325,7 @@ describe("useClashSync", () => {
         const sync = useClashSync(data);
 
         const refreshPromise = sync.refreshFromSupabase();
-        await vi.advanceTimersByTimeAsync(FULL_RETRY_BACKOFF_MS);
+        await vi.advanceTimersByTimeAsync(0);
         await refreshPromise;
 
         expect(sync.syncError.value).toBe(expected);
@@ -339,7 +337,7 @@ describe("useClashSync", () => {
         const sync = useClashSync(data);
 
         const refreshPromise = sync.refreshFromSupabase();
-        await vi.advanceTimersByTimeAsync(FULL_RETRY_BACKOFF_MS);
+        await vi.advanceTimersByTimeAsync(0);
         await refreshPromise;
 
         expect(sync.syncError.value).not.toContain("TypeError");
@@ -347,21 +345,21 @@ describe("useClashSync", () => {
       });
     });
 
-    it("bounds a persistent transient failure to the backoff sequence, then gives up", async () => {
+    it("does not replay the entire payload after transport retries have failed", async () => {
       vi.useFakeTimers();
       vi.mocked(fetchRemote).mockRejectedValue(new Error("Network Error"));
 
       const sync = useClashSync(data);
       const refreshPromise = sync.refreshFromSupabase();
-      await vi.advanceTimersByTimeAsync(FULL_RETRY_BACKOFF_MS);
+      await vi.advanceTimersByTimeAsync(0);
       await refreshPromise;
 
-      // One original attempt plus one retry per configured backoff delay.
-      expect(fetchRemote).toHaveBeenCalledTimes(SYNC_RETRY_DELAYS_MS.length + 1);
+      // Per-view retries belong to the HTTP transport; never repeat healthy views here.
+      expect(fetchRemote).toHaveBeenCalledTimes(1);
       expect(sync.syncError.value).toBe("Could not reach the server");
     });
 
-    it("recovers from a transient transport failure on the bounded retry", async () => {
+    it("recovers on the next refresh after a transport failure", async () => {
       const remotePayload: WebAppData = {
         lb: [], hh: [], timestamp: 4600, dataSource: "SUPABASE", blacklist: [],
       };
@@ -371,15 +369,16 @@ describe("useClashSync", () => {
       const sync = useClashSync(data);
 
       await sync.refreshFromSupabase();
+      await sync.refreshFromSupabase();
 
       expect(fetchRemote).toHaveBeenCalledTimes(2);
       expect(data.value).toEqual(remotePayload);
       expect(sync.syncError.value).toBeNull();
     });
 
-    it("recovers from a backend statement-timeout on the bounded retry", async () => {
-      // A cold client (no cached data to fall back on) has zero tolerance for
-      // even one such blip, so this must resolve without a visible error.
+    it("clears a backend timeout after a subsequent successful refresh", async () => {
+      // A cold client reports exhausted HTTP retries and clears that diagnosis
+      // only after a subsequent remote read succeeds.
       const remotePayload: WebAppData = {
         lb: [], hh: [], timestamp: 4600, dataSource: "SUPABASE", blacklist: [],
       };
@@ -388,6 +387,8 @@ describe("useClashSync", () => {
         .mockResolvedValueOnce(remotePayload);
       const sync = useClashSync(data);
 
+      await sync.refreshFromSupabase();
+      expect(sync.syncError.value).toBe("The server took too long to answer");
       await sync.refreshFromSupabase();
 
       expect(fetchRemote).toHaveBeenCalledTimes(2);
@@ -522,7 +523,7 @@ describe("useClashSync", () => {
 
       await sync.loadLocal();
       const backgroundSyncPromise = sync.startBackgroundSync();
-      await vi.advanceTimersByTimeAsync(FULL_RETRY_BACKOFF_MS);
+      await vi.advanceTimersByTimeAsync(0);
       await backgroundSyncPromise;
 
       expect(data.value).toEqual({ lb: [], hh: [], timestamp: 0, blacklist: [] });
@@ -654,7 +655,7 @@ describe("useClashSync", () => {
       // A manual refresh exposes the error, after exhausting the bounded
       // retry backoff, and sets the count to 1.
       const refreshPromise = sync.refreshFromSupabase();
-      await vi.advanceTimersByTimeAsync(FULL_RETRY_BACKOFF_MS);
+      await vi.advanceTimersByTimeAsync(0);
       await refreshPromise;
       expect(sync.syncError.value).toBe("Could not reach the server");
 
@@ -677,7 +678,7 @@ describe("useClashSync", () => {
       vi.mocked(fetchRemote).mockRejectedValue(new Error("Network Error"));
       const sync = useClashSync(data);
       const firstRefreshPromise = sync.refreshFromSupabase();
-      await vi.advanceTimersByTimeAsync(FULL_RETRY_BACKOFF_MS);
+      await vi.advanceTimersByTimeAsync(0);
       await firstRefreshPromise;
       expect(sync.syncError.value).toBe("Could not reach the server");
 

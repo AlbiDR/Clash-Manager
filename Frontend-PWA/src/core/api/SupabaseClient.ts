@@ -3,6 +3,7 @@
 
 import { createClient } from "@supabase/supabase-js";
 import { ref } from "vue";
+import { fetchSupabaseFresh } from "./SupabaseTransport";
 import type {
   WebAppData,
   PingResponse,
@@ -98,38 +99,14 @@ export const getSupabaseUrl = (): string => {
  */
 export const getSupabaseKey = (): string => import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || "";
 
-/**
- * Fetch wrapper overriding default browser cache headers for fresh PostgREST queries.
- *
- * @remarks
- * [DECISION LOG] SPEC-CORRECT HEADER MERGE
- * Builds merged headers via `new Request(input, init).headers` rather than manually
- * copying headers, ensuring Fetch API spec header merging logic executes natively.
- *
- * @param input - Fetch URL or RequestInfo object.
- * @param init - Optional RequestInit configuration options.
- * @returns Promise resolving to the network Response.
- */
-async function fetchSupabaseFresh(
-  input: RequestInfo | URL,
-  init: RequestInit = {},
-): Promise<Response> {
-  // [THREAT: STALE_HTTP_CACHE]
-  // Bypasses HTTP browser cache layer to prevent stale PostgREST/Supabase queries.
-  const headers = new Headers(new Request(input, init).headers);
-  headers.set("Cache-Control", "no-cache");
-  headers.set("Pragma", "no-cache");
-
-  return fetch(input, {
-    ...init,
-    cache: "no-store",
-    headers,
-  });
-}
-
 function buildSupabaseClient() {
     return createClient(getSupabaseUrl(), getSupabaseKey(), {
         db: { schema: 'features' },
+        // This application has no user sessions. Skip GoTrue initialization
+        // entirely so every REST/RPC read cannot wait behind a browser auth
+        // storage lock held by a suspended tab. The SDK still sends the public
+        // API key and the database still enforces the anon role's grants.
+        accessToken: async () => null,
         global: {
           fetch: fetchSupabaseFresh,
         },

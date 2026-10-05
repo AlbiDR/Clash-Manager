@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 AlbiDR
+
+# Operational Management API overrides, separate from local config.toml.
+# Apply with the CLI command documented in Backend/README.md. A change to
+# shared_buffers restarts the database. Reassess if the compute size changes.
+shared_buffers = "96MB"
+maintenance_work_mem = "16MB"

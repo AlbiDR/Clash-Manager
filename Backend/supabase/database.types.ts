@@ -1039,6 +1039,13 @@ export type Database = {
       }
       cancel_voyage: { Args: { voyage_id: number }; Returns: Json }
       dismiss_recruits: { Args: { items: Json }; Returns: Json }
+      get_active_roster_win_rates: {
+        Args: never
+        Returns: {
+          player_tag: string
+          win_rate: number
+        }[]
+      }
       get_pwa_data: { Args: { threshold?: number }; Returns: Json }
       initialize_voyage: {
         Args: { end_at: string; start_at: string; target_crowns: number }
