@@ -16,6 +16,15 @@ LAST_AGED:   2026-10-04
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-05] PR #2089 [Stage 8]: Bumped supabase devDependency from ^2.118.0 to ^2.119.0 in monorepo catalogs and updated pnpm-lock.yaml
+**Domain:** dependencies | **Commit:** a8170b484 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2089)
+**Files:** .github/nightly-logs/08-dependency-audit-coverage.log, .github/nightly-logs/08-dependency-audit-pr-body.md, package.json, pnpm-lock.yaml, pnpm-workspace.yaml
+**Why:** Maintenance patch update for Supabase CLI devDependency
+**Change:** Bumped supabase devDependency from ^2.118.0 to ^2.119.0 in monorepo catalogs and updated pnpm-lock.yaml
+**Result:** All workspace unit tests passed
+**Nudges:** 0
+
+
 ### [2026-10-05] PR #2088 [Stage 7]: Audit catalog protocol in Frontend-PWA/package.json and Backend/package.json and package versions across 3 manifests against ground truth 14.50.143; verified 0 drift lines across 10 derived locations via pnpm audit:version.
 **Domain:** versioning | **Commit:** 4c3a1ee46 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2088)
 **Files:** .github/nightly-logs/07-version-integrity-coverage.log, .github/nightly-logs/07-version-integrity-pr-body.md
