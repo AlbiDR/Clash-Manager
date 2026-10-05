@@ -16,6 +16,15 @@ LAST_AGED:   2026-10-04
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-05] PR #2090 [Stage 9]: (1) scan: 60 files, 0 dep-viols, knip: 2 devDeps, 7 binaries, 3 unused, 1 dup; (2) clean-calib: 4; (3) inspected: core/config, useProgressiveList, useHeadhunter; (4) closest: BLITZ_DWELL_DEFAULT; hunt: useProgressiveList (24/24 pass)
+**Domain:** architecture | **Commit:** 90139ed55 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2090)
+**Files:** .github/nightly-logs/09-refactor-proposals-coverage.log, .github/nightly-logs/09-refactor-proposals-pr-body.md
+**Why:** Structural scan confirmed zero ADR layer or decoupling violations across all 60 candidate files. Candidate knip exports represent framework entry points or intentional safety abstractions, and target C defect hunt confirmed green.
+**Change:** (1) scan: 60 files, 0 dep-viols, knip: 2 devDeps, 7 binaries, 3 unused, 1 dup; (2) clean-calib: 4; (3) inspected: core/config, useProgressiveList, useHeadhunter; (4) closest: BLITZ_DWELL_DEFAULT; hunt: useProgressiveList (24/24 pass)
+**Result:** PASSED (depcruise 0 violations, 2195/2195 Frontend-PWA tests green, 302/302 Backend tests green)
+**Nudges:** 0
+
+
 ### [2026-10-05] PR #2089 [Stage 8]: Bumped supabase devDependency from ^2.118.0 to ^2.119.0 in monorepo catalogs and updated pnpm-lock.yaml
 **Domain:** dependencies | **Commit:** a8170b484 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2089)
 **Files:** .github/nightly-logs/08-dependency-audit-coverage.log, .github/nightly-logs/08-dependency-audit-pr-body.md, package.json, pnpm-lock.yaml, pnpm-workspace.yaml
