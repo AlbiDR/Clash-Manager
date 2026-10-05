@@ -2,7 +2,7 @@
 // Copyright (C) 2026 AlbiDR
 
 import { describe, it, expect } from "vitest";
-import { normalizeTag, normalizeRarity, calculateRpos, calculateWeightedWinRate } from "../utils";
+import { normalizeTag, normalizeRarity, calculateRpos, getRposComposition, calculateWeightedWinRate } from "../utils";
 
 describe("Backend Shared Utilities", () => {
   describe("normalizeTag", () => {
@@ -111,6 +111,22 @@ describe("Backend Shared Utilities", () => {
           challenge_max_wins: 5,
         }),
       ).toBe(6634.375);
+    });
+
+    it("attributes a capped challenge and its threshold bonus to distinct contributions", () => {
+      const composition = getRposComposition({
+        ...zeroParams, trophies: 10000,
+        challenge_cards_won: 200000, challenge_max_wins: 12,
+      });
+      expect(composition.contributions).toEqual([
+        { key: "trophies", points: 10000 },
+        { key: "donations", points: 0 },
+        { key: "weighted_win_rate", points: 0 },
+        { key: "legacy_war_wins", points: 0 },
+        { key: "challenge_cards", points: 1000 },
+        { key: "grand_challenge", points: 1400 },
+      ]);
+      expect(composition.rawScore).toBe(12400);
     });
 
     it("should return exactly 0 for all-zero inputs", () => {

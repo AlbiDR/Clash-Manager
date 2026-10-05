@@ -2,6 +2,7 @@
 // Copyright (C) 2026 AlbiDR
 
 import * as v from "valibot";
+import { OptionalScoreCompositionSchema } from "./ScoreSchemas";
 import { SafeStringPipe, SafeNumberPipe } from "./BaseSchemas";
 
 /**
@@ -16,6 +17,7 @@ import { SafeStringPipe, SafeNumberPipe } from "./BaseSchemas";
  * [DECISION LOG] Implements strict Valibot piping for string/number safety.
  */
 export const RecruitSchema = v.object({
+  scoreComposition: OptionalScoreCompositionSchema,
   id: SafeStringPipe,
   n: SafeStringPipe,
   t: SafeNumberPipe,
@@ -48,6 +50,7 @@ export const RecruitSchema = v.object({
  * due to view join failures. This schema enforces defaults and safe pipes.
  */
 export const SbHeadhunterRowSchema = v.object({
+  score_composition: OptionalScoreCompositionSchema,
   player_name: v.optional(SafeStringPipe, "Unknown"),
   player_tag: v.optional(SafeStringPipe, ""),
   trophies: v.optional(SafeNumberPipe, 0),

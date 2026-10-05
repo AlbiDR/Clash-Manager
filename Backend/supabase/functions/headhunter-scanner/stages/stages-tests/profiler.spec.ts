@@ -154,6 +154,7 @@ describe("runProfiler recruit persistence wiring", () => {
             donations: eligibleProfile.totalDonations,
             war_wins: eligibleProfile.warDayWins,
             raw_potential_score: expectedRawScore,
+            score_composition: { rawScore: expectedRawScore, contributions: expect.any(Array) },
             win_rate: expectedWinRate,
         });
         expect(stats.highest_rpos).toBe(Math.round(expectedRawScore));

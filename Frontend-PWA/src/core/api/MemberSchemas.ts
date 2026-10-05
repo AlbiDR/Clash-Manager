@@ -2,6 +2,7 @@
 // Copyright (C) 2026 AlbiDR
 
 import * as v from "valibot";
+import { OptionalScoreCompositionSchema } from "./ScoreSchemas";
 import { SafeStringPipe, SafeNumberPipe } from "./BaseSchemas";
 
 /**
@@ -30,6 +31,7 @@ import { SafeStringPipe, SafeNumberPipe } from "./BaseSchemas";
  * UI components that rely on specific property paths.
  */
 export const MemberSchema = v.object({
+  scoreComposition: OptionalScoreCompositionSchema,
   id: SafeStringPipe,
   n: SafeStringPipe,
   t: SafeNumberPipe,
@@ -65,6 +67,7 @@ export const MemberSchema = v.object({
  * runtime crashes if specific columns are temporarily missing or null.
  */
 export const SbRosterRowSchema = v.object({
+  score_composition: OptionalScoreCompositionSchema,
   player_tag: v.optional(SafeStringPipe, ""),
   player_name: v.optional(SafeStringPipe, "Unknown"),
   role: v.optional(SafeStringPipe, ""),

@@ -587,6 +587,7 @@ export type Database = {
           player_name: string
           player_tag: string
           raw_potential_score: number | null
+          score_composition: Json | null
           source: string
           status: Database["drivers"]["Enums"]["recruit_status"] | null
           target_clan_tag: string | null
@@ -603,6 +604,7 @@ export type Database = {
           player_name: string
           player_tag: string
           raw_potential_score?: number | null
+          score_composition?: Json | null
           source: string
           status?: Database["drivers"]["Enums"]["recruit_status"] | null
           target_clan_tag?: string | null
@@ -619,6 +621,7 @@ export type Database = {
           player_name?: string
           player_tag?: string
           raw_potential_score?: number | null
+          score_composition?: Json | null
           source?: string
           status?: Database["drivers"]["Enums"]["recruit_status"] | null
           target_clan_tag?: string | null
@@ -876,6 +879,7 @@ export type Database = {
     Views: {
       headhunter_view: {
         Row: {
+          score_composition: Json | null
           cards: number | null
           donations: number | null
           found_date: string | null
@@ -944,6 +948,7 @@ export type Database = {
       }
       roster_view: {
         Row: {
+          score_composition: Json | null
           avg_daily_donations: number | null
           avg_fame: number | null
           clan_rank: number | null
@@ -979,6 +984,7 @@ export type Database = {
       }
       scoring_view: {
         Row: {
+          score_composition: Json | null
           avg_daily_donations: number | null
           avg_fame: number | null
           baseline_raw_score: number | null
@@ -1529,6 +1535,17 @@ export type Database = {
       }
     }
     Functions: {
+      performance_contributions: {
+        Args: {
+          avg_fame: number
+          current_fame: number
+          daily_donations: number
+          stability: number
+          trophies: number
+          war_rate: number
+        }
+        Returns: Json
+      }
       check_resource_pressure: { Args: never; Returns: undefined }
       config_int: { Args: { p_key: string }; Returns: number }
       dispatch_royale_ingestion: { Args: never; Returns: string }
