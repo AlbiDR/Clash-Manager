@@ -32,6 +32,7 @@ const scoreExplanation = computed<ScoreExplanationData | null>(() => {
     kind: "score", name: props.scoreName || "", context: props.benchmarkType,
     score: props.scoreComposition.normalizedScore,
     composition: props.scoreComposition, comparison: scoreComparison.value,
+    rawComparison: benchmarkTooltipContent.value,
   };
 });
 </script>

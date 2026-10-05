@@ -17,7 +17,7 @@
 import { describe, it, expect } from "vitest";
 import { mount } from "@vue/test-utils";
 import BenchmarkContent from "../BenchmarkContent.vue";
-import type { BenchmarkData } from "../../../core";
+import type { BenchmarkData, ScoreExplanationData } from "../../../core";
 
 // ---------------------------------------------------------------------------
 // Shared fixtures
@@ -33,6 +33,51 @@ const makeData = (overrides: Partial<BenchmarkData> = {}): BenchmarkData => ({
   percent: 33,
   isBetter: true,
   ...overrides,
+});
+
+describe("BenchmarkContent.vue -- score benchmark disclosure", () => {
+  const score: ScoreExplanationData = {
+    kind: "score", name: "Player", context: "lb", score: 50, comparison: null,
+    rawComparison: makeData({ label: "Raw Performance" }),
+    composition: {
+      contributions: [{ key: "trophies", points: 8000 }], adjustments: [],
+      rawScore: 8000, normalizedScore: 50, scoreBonus: 0,
+      referenceScore: 16000, referenceScope: "clan",
+    },
+  };
+
+  it.each(["lb", "hh"] as const)("opens with the complete %s raw benchmark and a collapsed breakdown", (context) => {
+    const label = context === "lb" ? "Raw Performance" : "Raw Potential";
+    const wrapper = mount(BenchmarkContent, { props: { data: {
+      ...score, context, rawComparison: makeData({ label }),
+    } } });
+    expect(wrapper.find(".bc-label").text()).toBe(label);
+    expect(wrapper.find(".bc-tier").text()).toBe("ELITE");
+    expect(wrapper.find(".bc-footer").text()).toContain("AVG 6,000");
+    expect(wrapper.find(".bc-bounds").text()).toContain("10,000");
+    expect(wrapper.find(".bc-score-breakdown").attributes("open")).toBeUndefined();
+    expect(wrapper.find(".score-composition").isVisible()).toBe(false);
+  });
+
+  it("expands and collapses the breakdown without losing the raw comparison", async () => {
+    const wrapper = mount(BenchmarkContent, { props: { data: score } });
+    const disclosure = wrapper.find<HTMLDetailsElement>(".bc-score-breakdown");
+    disclosure.element.open = true;
+    await disclosure.trigger("toggle");
+    expect(wrapper.find(".score-composition").isVisible()).toBe(true);
+    expect(wrapper.find(".bc-footer").text()).toContain("AVG 6,000");
+    expect(wrapper.emitted("expanded")?.at(-1)).toEqual([true]);
+    disclosure.element.open = false;
+    await disclosure.trigger("toggle");
+    expect(wrapper.find(".score-composition").isVisible()).toBe(false);
+    expect(wrapper.emitted("expanded")?.at(-1)).toEqual([false]);
+  });
+
+  it("keeps the explanation accessible when ghost benchmarking has no comparison", () => {
+    const wrapper = mount(BenchmarkContent, { props: { data: { ...score, rawComparison: null } } });
+    expect(wrapper.find(".bc-score-breakdown").exists()).toBe(false);
+    expect(wrapper.find(".score-composition").isVisible()).toBe(true);
+  });
 });
 
 // ---------------------------------------------------------------------------

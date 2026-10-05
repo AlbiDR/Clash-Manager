@@ -193,4 +193,22 @@ describe('StatisticItem.vue', () => {
     const callArgs = tooltipDirective.mounted.mock.calls[0];
     expect(callArgs[1].value).toBeNull();
   });
+
+  it.each(['lb', 'hh'] as const)('retains the raw benchmark separately from the normalized %s score', (context) => {
+    mount(StatisticItem, {
+      props: {
+        label: context === 'lb' ? 'RPeS' : 'RPoS', value: 1000,
+        benchmarkType: context, benchmarkMetric: 'rawScore', benchmarkRawValue: 1000,
+        scoreComposition: {
+          contributions: [{ key: 'trophies', points: 1000 }], adjustments: [],
+          rawScore: 1000, normalizedScore: 50, scoreBonus: 0,
+          referenceScore: 2000, referenceScope: context === 'lb' ? 'clan' : 'recruitment',
+        },
+      },
+      global: { directives: { tooltip: tooltipDirective } },
+    });
+    const content = tooltipDirective.mounted.mock.calls[0][1].value;
+    expect(content.rawComparison.value).toBe(1000);
+    expect(content.comparison.value).toBe(50);
+  });
 });
