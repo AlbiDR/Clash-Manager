@@ -16,6 +16,15 @@ LAST_AGED:   2026-10-04
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-05] PR #2083 [Stage 2]: Expanded useBlitzMode spec for handleFabCommand actions
+**Domain:** verification | **Commit:** d171d27aa | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2083)
+**Files:** .github/nightly-logs/02-verification-coverage.log, .github/nightly-logs/02-verification-pr-body.md, Frontend-PWA/src/core/services/services-tests/useBlitzMode.spec.ts
+**Why:** Close coverage gap in handleFabCommand command dispatch logic
+**Change:** Expanded useBlitzMode spec for handleFabCommand actions
+**Result:** Added unit tests for handleFabCommand in useBlitzMode.spec.ts. Tested mutation by inverting handleBlitz() call in handleFabCommand which failed assertions in useBlitzMode.spec.ts, proving assertion effectiveness.
+**Nudges:** 0
+
+
 ### [2026-10-04] PR #2082 [Stage 1]: Calibration pass: Widened threat surface scan across RecruitClient, useBlitzMode, useLeaderboard, and headhunter-scanner verified zero security gaps, unvalidated boundaries, or state leaks; 7 ordinary clean runs since calibration.
 **Domain:** hardening | **Commit:** 08abfd0fd | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2082)
 **Files:** .github/nightly-logs/00-pr-history.md, .github/nightly-logs/01-hardening-coverage.log, .github/nightly-logs/01-hardening-pr-body.md
