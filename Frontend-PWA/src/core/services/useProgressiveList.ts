@@ -15,7 +15,7 @@ import { watch, type Ref, shallowRef, onScopeDispose } from "vue";
  *
  * Satisfies CleanStack Architecture ADR Section IV: Performance & SWR Boundaries.
  *
- * [PERF] Optimized for v14.50.143:
+ * [PERF] Optimized for v14.50.148:
  * - Uses shallowRef to reduce reactive overhead of the visible list.
  * - Utilizes IdleDeadline to process multiple chunks per idle frame.
  * - Implements automated cleanup via onScopeDispose.

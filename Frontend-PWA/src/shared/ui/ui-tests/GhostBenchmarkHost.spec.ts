@@ -447,3 +447,130 @@ describe("GhostBenchmarkHost.vue -- lifecycle cleanup", () => {
     expect(document.body.style.overflow).toBe("");
   });
 });
+
+// ---------------------------------------------------------------------------
+// Series stepper tests
+// ---------------------------------------------------------------------------
+
+describe("GhostBenchmarkHost.vue -- series stepper", () => {
+  function mountSheet() {
+    stubPointerCapability(true);
+    return mount(GhostBenchmarkHost, {
+      global: { stubs: { Teleport: true } },
+    });
+  }
+
+  it("shows arrows and the position when the entry belongs to a series", async () => {
+    const wrapper = mountSheet();
+    const { show } = useGhostBenchmarkState();
+
+    show(makeAnchorEl(), "Week 12\n1,200 Fame", { position: 12, total: 35, go: vi.fn() });
+    await nextTick();
+
+    expect(wrapper.find('[aria-label="Show earlier entry"]').exists()).toBe(true);
+    expect(wrapper.find('[aria-label="Show later entry"]').exists()).toBe(true);
+    expect(wrapper.find(".bc-stepper-position").text()).toBe("12 / 35");
+  });
+
+  it("shows no arrows for a plain entry", async () => {
+    const wrapper = mountSheet();
+    const { show } = useGhostBenchmarkState();
+
+    show(makeAnchorEl(), BENCHMARK);
+    await nextTick();
+
+    expect(wrapper.find(".bc-stepper").exists()).toBe(false);
+  });
+
+  it("asks the owner to step one entry in the direction of the arrow", async () => {
+    const wrapper = mountSheet();
+    const { show } = useGhostBenchmarkState();
+    const go = vi.fn();
+
+    show(makeAnchorEl(), "Week 12\n1,200 Fame", { position: 12, total: 35, go });
+    await nextTick();
+
+    await wrapper.find('[aria-label="Show earlier entry"]').trigger("click");
+    await wrapper.find('[aria-label="Show later entry"]').trigger("click");
+
+    expect(go).toHaveBeenNthCalledWith(1, -1);
+    expect(go).toHaveBeenNthCalledWith(2, 1);
+  });
+
+  it("disables the earlier arrow on the first entry and the later arrow on the last", async () => {
+    const wrapper = mountSheet();
+    const { show } = useGhostBenchmarkState();
+
+    show(makeAnchorEl(), "Week 1\n0 Fame", { position: 1, total: 35, go: vi.fn() });
+    await nextTick();
+    expect(wrapper.find('[aria-label="Show earlier entry"]').attributes("disabled")).toBeDefined();
+    expect(wrapper.find('[aria-label="Show later entry"]').attributes("disabled")).toBeUndefined();
+
+    show(makeAnchorEl(), "Week 35\n0 Fame", { position: 35, total: 35, go: vi.fn() });
+    await nextTick();
+    expect(wrapper.find('[aria-label="Show earlier entry"]').attributes("disabled")).toBeUndefined();
+    expect(wrapper.find('[aria-label="Show later entry"]').attributes("disabled")).toBeDefined();
+  });
+
+  it("stays open when the shown entry changes", async () => {
+    const wrapper = mountSheet();
+    const { show } = useGhostBenchmarkState();
+
+    show(makeAnchorEl(), "Week 12\n1,200 Fame", { position: 12, total: 35, go: vi.fn() });
+    await nextTick();
+    const sheetBefore = wrapper.find(".bc-sheet").element;
+
+    show(makeAnchorEl(), "Week 11\n900 Fame", { position: 11, total: 35, go: vi.fn() });
+    await nextTick();
+
+    expect(wrapper.find(".bc-sheet").element).toBe(sheetBefore);
+    expect(wrapper.find(".bc-stepper-position").text()).toBe("11 / 35");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Leftover click of the opening touch
+// ---------------------------------------------------------------------------
+
+describe("GhostBenchmarkHost.vue -- click that finishes the opening touch", () => {
+  function mountSheet() {
+    stubPointerCapability(true);
+    return mount(GhostBenchmarkHost, {
+      attachTo: document.body,
+      global: { stubs: { Teleport: true } },
+    });
+  }
+
+  it("ignores exactly one backdrop click while the opening touch is still finishing", async () => {
+    const wrapper = mountSheet();
+    const { show, active, ignoreBackdropClick } = useGhostBenchmarkState();
+
+    show(makeAnchorEl(), "Week 12\n1,200 Fame");
+    ignoreBackdropClick.value = true;
+    await nextTick();
+
+    await wrapper.find(".bc-sheet-backdrop").trigger("click");
+    expect(active.value).not.toBeNull();
+    expect(ignoreBackdropClick.value).toBe(false);
+
+    await wrapper.find(".bc-sheet-backdrop").trigger("click");
+    expect(active.value).toBeNull();
+    wrapper.unmount();
+  });
+
+  it("lets a genuine dismiss tap through once a new touch has started", async () => {
+    const wrapper = mountSheet();
+    const { show, active, ignoreBackdropClick } = useGhostBenchmarkState();
+
+    show(makeAnchorEl(), "Week 12\n1,200 Fame");
+    ignoreBackdropClick.value = true;
+    await nextTick();
+
+    // A drag past the browser's tap slop sends no leftover click; the next touch is a real one.
+    window.dispatchEvent(new Event("pointerdown"));
+    await wrapper.find(".bc-sheet-backdrop").trigger("click");
+
+    expect(active.value).toBeNull();
+    wrapper.unmount();
+  });
+});
