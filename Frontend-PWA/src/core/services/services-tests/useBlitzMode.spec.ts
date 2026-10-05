@@ -295,5 +295,34 @@ describe("useBlitzMode", () => {
       vi.advanceTimersByTime(2000);
       expect(fabState.value.activity).toBeUndefined();
     });
+
+    it("dispatches fab commands correctly via handleFabCommand", () => {
+      vi.useFakeTimers();
+      const { handleFabCommand, fabState } = useBlitzMode(selectionStore, { throttleMs: 1000 });
+      selectionStore.selectAll(["R1", "R2"]);
+
+      const mockEvent = { preventDefault: vi.fn() } as unknown as MouseEvent;
+
+      // START_BATCH_COMMAND triggers Blitz
+      handleFabCommand("start-batch", mockEvent);
+      expect(fabState.value.activity?.label).toBe("Blitz");
+      expect(mockOpenInGame).toHaveBeenCalledWith("R1");
+      expect(fabState.value.label).toBe("1 / 2");
+
+      // Unrecognized command ID is ignored without throwing
+      expect(() => handleFabCommand("unknown-command", mockEvent)).not.toThrow();
+    });
+
+    it("dispatches OPEN_PROFILE_COMMAND via handleFabCommand when not in blitz active mode", () => {
+      vi.useFakeTimers();
+      const { handleFabCommand, isProcessing } = useBlitzMode(selectionStore, { throttleMs: 0 });
+      selectionStore.selectAll(["P1", "P2"]);
+
+      const mockEvent = { preventDefault: vi.fn() } as unknown as MouseEvent;
+
+      handleFabCommand("open-profile", mockEvent);
+      expect(isProcessing.value).toBe(true);
+      expect(mockOpenInGame).toHaveBeenCalledWith("P1");
+    });
   });
 });
