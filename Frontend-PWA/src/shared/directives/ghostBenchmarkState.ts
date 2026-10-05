@@ -11,6 +11,25 @@ import type { BenchmarkData } from "../../core";
 interface GhostBenchmarkEntry {
   content: BenchmarkData | string;
   anchorRect: DOMRect;
+  stepper: GhostBenchmarkStepper | null;
+}
+
+/**
+ * Lets the mobile sheet step through a series (for example the bars of a
+ * history chart) without being dismissed, so a mistapped entry costs one tap.
+ *
+ * @remarks
+ * The owner of the series keeps the selection: `go` moves it by one entry and
+ * the owner calls `show` again for the new entry, so the sheet never closes
+ * and re-opens between steps.
+ */
+export interface GhostBenchmarkStepper {
+  /** 1-based position of the shown entry. */
+  position: number;
+  /** Number of entries in the series. */
+  total: number;
+  /** Moves the selection one entry towards the older (-1) or newer (1) end. */
+  go: (direction: -1 | 1) => void;
 }
 
 /**
@@ -25,6 +44,19 @@ interface GhostBenchmarkEntry {
 const active = ref<GhostBenchmarkEntry | null>(null);
 
 /**
+ * True while the sheet should ignore a backdrop click that belongs to the touch
+ * which opened it.
+ *
+ * @remarks
+ * A chart opens the sheet when the finger lifts, and the browser then sends the
+ * click that completes that same tap to whatever is under the finger: the new
+ * backdrop, which would dismiss the sheet the instant it appeared. The host
+ * ignores that one click and clears this flag as soon as any new touch begins,
+ * so no timer is involved and a genuine dismiss tap is never swallowed.
+ */
+const ignoreBackdropClick = ref(false);
+
+/**
  * COMPOSABLE: useGhostBenchmarkState
  *
  * @remarks
@@ -35,17 +67,23 @@ const active = ref<GhostBenchmarkEntry | null>(null);
  *
  * @returns
  * - `active`: Reactive ref of the current popup entry (null when idle).
- * - `show`: Activates the popup for the given anchor element and content.
+ * - `show`: Activates the popup for the given anchor element and content, with
+ *   an optional stepper for series the sheet can walk through.
  * - `hide`: Deactivates the popup.
+ * - `ignoreBackdropClick`: See above; armed by owners that open on pointer release.
  */
 export function useGhostBenchmarkState() {
-  function show(el: HTMLElement, content: BenchmarkData | string) {
-    active.value = { content, anchorRect: el.getBoundingClientRect() };
+  function show(
+    el: HTMLElement,
+    content: BenchmarkData | string,
+    stepper: GhostBenchmarkStepper | null = null,
+  ) {
+    active.value = { content, anchorRect: el.getBoundingClientRect(), stepper };
   }
 
   function hide() {
     active.value = null;
   }
 
-  return { active, show, hide };
+  return { active, show, hide, ignoreBackdropClick };
 }

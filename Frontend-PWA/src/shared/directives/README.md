@@ -19,6 +19,7 @@
 
 - Both directives guard for a missing `window` so they are safe in non-browser environments.
 - `ghostBenchmarkState.ts` acts as a pure reactive bridge between Layer 2 directives (`v-tooltip`) and Layer 2 presentation hosts (`GhostBenchmarkHost`), using a module-level reactive singleton rather than an external store.
+- A series owner (such as a history chart) can pass a stepper to `show` so the mobile sheet offers earlier/later arrows without closing. An owner that opens the sheet on pointer release must also set `ignoreBackdropClick`, otherwise the click that completes the tap dismisses the sheet it just opened.
 - Keep directives restricted to DOM interactions and sensory feedback only; complex business logic belongs in [composables](../composables/README.md) or [services](../../core/services/README.md).
 
 ## See also

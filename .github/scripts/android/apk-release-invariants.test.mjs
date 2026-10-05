@@ -2,7 +2,10 @@
 // Copyright (C) 2026 AlbiDR
 
 import assert from 'node:assert/strict';
-import { readFileSync, readdirSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
+import { chmodSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
 import test from 'node:test';
 
 const WORKFLOW = readFileSync('.github/workflows/apk-release.yml', 'utf8');
@@ -202,4 +205,195 @@ test('a successful APK publication deploys its PWA release assets', () => {
     /permissions:\n  actions: write\n  contents: write/,
     'the APK workflow token needs actions: write to dispatch Deploy PWA',
   );
+});
+
+// ---------------------------------------------------------------------------
+// The commit-back step, RUN rather than read.
+//
+// Every test above asserts over the step's text, and that is how its race
+// recovery shipped broken: `git reset --soft` + `git commit --amend` rewrote
+// the remote tip, so the push could never fast-forward, and the stale index
+// would have reverted the other push's files. v14.50.142's APK was lost to it
+// twice on 2026-10-05. These tests execute the step's own shell against a
+// throwaway remote, so they fail on behaviour and survive any rewording.
+// ---------------------------------------------------------------------------
+
+/** The commit-back step's `run: |` body, dedented to the script bash receives. */
+function commitBackScript() {
+  const runBlock = commitBackStep().split('        run: |\n')[1];
+  assert.ok(runBlock, 'the commit-back step must still have a run block');
+  return runBlock
+    .split('\n')
+    .map(line => line.replace(/^ {10}/, ''))
+    .join('\n');
+}
+
+const REAL_GIT = spawnSync('sh', ['-c', 'command -v git'], { encoding: 'utf8' }).stdout.trim();
+
+/** Git for the test's own setup steps, isolated from the developer's config and hooks. */
+function gitEnv(extra = {}) {
+  return {
+    ...process.env,
+    GIT_CONFIG_GLOBAL: '/dev/null',
+    GIT_CONFIG_NOSYSTEM: '1',
+    GIT_AUTHOR_NAME: 'Test',
+    GIT_AUTHOR_EMAIL: 'test@example.invalid',
+    GIT_COMMITTER_NAME: 'Test',
+    GIT_COMMITTER_EMAIL: 'test@example.invalid',
+    ...extra,
+  };
+}
+
+function git(cwd, ...args) {
+  const result = spawnSync(REAL_GIT, args, { cwd, env: gitEnv(), encoding: 'utf8' });
+  assert.equal(result.status, 0, `git ${args.join(' ')} failed: ${result.stderr}`);
+  return result.stdout.trim();
+}
+
+function writeSlot(dir, version, build) {
+  const release = path.join(dir, 'APK/release');
+  for (const name of readdirSync(release, { withFileTypes: false })) {
+    if (/^clashmanager-v.*\.apk$/.test(name)) rmSync(path.join(release, name));
+  }
+  writeFileSync(path.join(release, `clashmanager-v${version}+${build}.apk`), `apk ${version}`);
+  writeFileSync(path.join(release, 'latest.json'), JSON.stringify({ version, buildNumber: build }, null, 2));
+}
+
+/**
+ * A remote whose Beta already holds `publishedVersion`, a CI checkout of that
+ * commit (the run's head_sha), and a signed APK for VERSION in RUNNER_TEMP.
+ */
+function releaseFixture(publishedVersion = '1.0.0') {
+  const root = mkdtempSync(path.join(tmpdir(), 'apk-release-'));
+  const remote = path.join(root, 'remote.git');
+  const seed = path.join(root, 'seed');
+  git(root, 'init', '--bare', '--initial-branch=Beta', remote);
+  git(root, 'clone', remote, seed);
+  mkdirSync(path.join(seed, 'APK/release'), { recursive: true });
+  writeSlot(seed, publishedVersion, 1);
+  writeFileSync(path.join(seed, 'other.txt'), 'base\n');
+  git(seed, 'add', '-A');
+  git(seed, 'commit', '-m', 'base');
+  git(seed, 'push', 'origin', 'HEAD:Beta');
+
+  const checkout = path.join(root, 'checkout');
+  git(root, 'clone', remote, checkout);
+  git(checkout, 'checkout', '--detach');
+
+  const runnerTemp = path.join(root, 'runner-temp');
+  mkdirSync(runnerTemp);
+  writeFileSync(path.join(runnerTemp, 'clashmanager-v1.0.1+2.apk'), 'signed apk 1.0.1');
+  return { root, remote, seed, checkout, runnerTemp };
+}
+
+/** Lands a commit from another contributor on Beta, as a concurrent push would. */
+function peerPush(fixture, file, content) {
+  git(fixture.seed, 'pull', '--ff-only', 'origin', 'Beta');
+  writeFileSync(path.join(fixture.seed, file), content);
+  git(fixture.seed, 'add', '-A');
+  git(fixture.seed, 'commit', '-m', `peer change to ${file}`);
+  git(fixture.seed, 'push', 'origin', 'HEAD:Beta');
+  return git(fixture.seed, 'rev-parse', 'HEAD');
+}
+
+function runCommitBack(fixture, { pathPrefix } = {}) {
+  const scriptPath = path.join(fixture.root, 'commit-back.sh');
+  writeFileSync(scriptPath, commitBackScript());
+  const env = gitEnv({
+    VERSION: '1.0.1',
+    BUILD_NUMBER: '2',
+    TARGET_BRANCH: 'Beta',
+    RUNNER_TEMP: fixture.runnerTemp,
+  });
+  if (pathPrefix) env.PATH = `${pathPrefix}${path.delimiter}${env.PATH}`;
+  // GitHub runs `run:` blocks as `bash -e {0}`.
+  return spawnSync('bash', ['-e', scriptPath], { cwd: fixture.checkout, env, encoding: 'utf8' });
+}
+
+function remoteTree(fixture) {
+  return git(fixture.remote, 'ls-tree', '-r', '--name-only', 'Beta').split('\n');
+}
+
+test('commit-back publishes on top of a branch that moved while the APK built', () => {
+  const fixture = releaseFixture();
+  try {
+    const peerTip = peerPush(fixture, 'other.txt', 'peer work\n');
+    const result = runCommitBack(fixture);
+    assert.equal(result.status, 0, result.stdout + result.stderr);
+
+    assert.equal(git(fixture.remote, 'rev-parse', 'Beta~1'), peerTip, 'the peer commit must stay, not be rewritten');
+    assert.equal(git(fixture.remote, 'show', 'Beta:other.txt'), 'peer work', 'the peer change must not be reverted');
+    assert.deepEqual(
+      remoteTree(fixture).filter(name => name.endsWith('.apk')),
+      ['APK/release/clashmanager-v1.0.1+2.apk'],
+      'exactly the new APK must occupy the release slot',
+    );
+    assert.match(git(fixture.remote, 'show', 'Beta:APK/release/latest.json'), /"version": "1\.0\.1"/);
+  } finally {
+    rmSync(fixture.root, { recursive: true, force: true });
+  }
+});
+
+test('commit-back retries when another push lands between its fetch and its push', () => {
+  const fixture = releaseFixture();
+  try {
+    // A git wrapper that lands a peer push just before the step's first push,
+    // the exact two-second window that cost v14.50.142 its APK.
+    const bin = path.join(fixture.root, 'bin');
+    mkdirSync(bin);
+    const mark = path.join(fixture.root, 'raced');
+    writeFileSync(path.join(bin, 'git'), [
+      '#!/bin/bash',
+      `if [ "$1" = "push" ] && [ ! -e "${mark}" ]; then`,
+      `  touch "${mark}"`,
+      `  cd "${fixture.seed}" && "${REAL_GIT}" pull -q --ff-only origin Beta \\`,
+      `    && echo raced > race.txt && "${REAL_GIT}" add race.txt \\`,
+      `    && "${REAL_GIT}" commit -q -m "peer push during the race" && "${REAL_GIT}" push -q origin HEAD:Beta`,
+      '  cd - > /dev/null',
+      'fi',
+      `exec "${REAL_GIT}" "$@"`,
+      '',
+    ].join('\n'));
+    chmodSync(path.join(bin, 'git'), 0o755);
+
+    const result = runCommitBack(fixture, { pathPrefix: bin });
+    assert.equal(result.status, 0, result.stdout + result.stderr);
+    assert.match(result.stdout, /moved during the push/);
+    assert.equal(git(fixture.remote, 'log', '-1', '--format=%s', 'Beta~1'), 'peer push during the race');
+    assert.ok(remoteTree(fixture).includes('race.txt'), 'the racing push must survive the retry');
+    assert.ok(remoteTree(fixture).includes('APK/release/clashmanager-v1.0.1+2.apk'));
+  } finally {
+    rmSync(fixture.root, { recursive: true, force: true });
+  }
+});
+
+test('commit-back fails, rather than looping, when a push is rejected and the branch did not move', () => {
+  const fixture = releaseFixture();
+  try {
+    const hook = path.join(fixture.remote, 'hooks', 'pre-receive');
+    writeFileSync(hook, '#!/bin/sh\necho "rejected by policy" >&2\nexit 1\n');
+    chmodSync(hook, 0o755);
+    const before = git(fixture.remote, 'rev-parse', 'Beta');
+
+    const result = runCommitBack(fixture);
+    assert.notEqual(result.status, 0, 'a real rejection must fail the step');
+    assert.match(result.stdout, /did not move, so this was not a race/);
+    assert.equal(git(fixture.remote, 'rev-parse', 'Beta'), before);
+  } finally {
+    rmSync(fixture.root, { recursive: true, force: true });
+  }
+});
+
+test('commit-back never replaces a newer published APK, and skips one already published', () => {
+  for (const published of ['1.0.2', '1.0.1']) {
+    const fixture = releaseFixture(published);
+    try {
+      const before = git(fixture.remote, 'rev-parse', 'Beta');
+      const result = runCommitBack(fixture);
+      assert.equal(result.status, 0, result.stdout + result.stderr);
+      assert.equal(git(fixture.remote, 'rev-parse', 'Beta'), before, `v${published} on the branch must be left alone`);
+    } finally {
+      rmSync(fixture.root, { recursive: true, force: true });
+    }
+  }
 });
