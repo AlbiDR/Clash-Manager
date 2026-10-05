@@ -15,6 +15,15 @@ LAST_AGED:   2026-10-05
 ---
 
 ## T1 -- Active (last 7 days)
+
+### [2026-10-05] PR #2095 [Stage 1]: Audited Edge Function endpoints, in-memory state variables, Valibot boundary schemas, and cross-layer architectural isolations across 42 files; zero threat vectors found
+**Domain:** hardening | **Commit:** 51d70030a | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2095)
+**Files:** .github/nightly-logs/00-pr-history.md, .github/nightly-logs/01-hardening-coverage.log, .github/nightly-logs/01-hardening-pr-body.md
+**Why:** System threat scan across non-public Edge Functions, data schema contracts, Pinia stores, and architectural boundaries verified full alignment with CleanStack security standards.
+**Change:** Audited Edge Function endpoints, in-memory state variables, Valibot boundary schemas, and cross-layer architectural isolations across 42 files; zero threat vectors found
+**Result:** PASS (pnpm test passed all 217 test files and 2224 tests cleanly with zero regressions)
+**Nudges:** 0
+
 ### [2026-10-05] PR #2094 [Stage 13]: Updated self-healing protocol audit metrics and findings for 2026-10-05 run
 **Domain:** pipeline | **Commit:** 3cc4ce16d | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2094)
 **Files:** .github/nightly-logs/13-self-healing-protocol-coverage.log, .github/nightly-logs/13-self-healing-protocol-pr-body.md, .github/nightly-logs/13-self-healing-protocol.md
