@@ -244,6 +244,8 @@ const memberAccessibilityLabel = computed(() => {
       >
         <StatisticItem
           label="RPeS"
+          :score-name="props.member.n"
+          :score-composition="props.member.scoreComposition"
           :value="formatNumber(props.member.performanceRawScore, { maximumFractionDigits: 0 })"
           :loading="props.appIsRefreshing"
           benchmark-type="lb"

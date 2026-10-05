@@ -18,6 +18,7 @@
 | File | Role |
 | :--- | :--- |
 | `SupabaseClient.ts` | The singleton client and `fetchRemote`, which reads the feature views in parallel and validates them. |
+| `SupabaseTransport.ts` | Fresh REST reads with an 8-second deadline including the body, per-view transient retries, and caller cancellation. Writes are sent once. |
 | `useApiState.ts` | Reactive backend availability and handshake state. |
 | `VoyageClient.ts` | Clan Voyage activation, scheduling, and completion RPCs, plus summary and contribution reads. |
 | `RecruitClient.ts` | Recruit dismiss/undismiss RPCs, realtime blacklist subscriptions, and direct leaderboard scouting. |
@@ -40,7 +41,8 @@ Realtime event consumption is a critical boundary where malformed payloads could
 - **Client Fetch Clock Distinction:** The returned `WebAppData` payload distinguishes between remote source timestamps (`timestamp`, `remoteTimestamp`, `lastCompiled`) and the client's local fetch clock (`lastFetched: Date.now()`). This allows upstream ingestor latency to be diagnosed independently from client network synchronizations.
 - **Optional Query Decoupling:** Optional enrichment reads (such as pipeline heartbeat and recruit blacklist queries) are wrapped in `resolveOptionalQuery` with an independent `OPTIONAL_METADATA_TIMEOUT_MS` (3000ms) cancellation scope. If an enrichment query times out or fails, `fetchRemote` degrades gracefully and returns the essential roster and recruiting payloads without failing the sync.
 - **Diagnostic Isolation Boundaries:** Specialized methods `fetchPipelineHealth` and `fetchResourcePressure` query diagnostic views (`pipeline_heartbeat_view`, `resource_health_view`) under independent timeout budgets to power Settings diagnostic status indicators without blocking application data hydration.
-- **Singleton Client Instantiation:** `createSupabaseClient()` memoizes a single GoTrue-compatible module instance, avoiding redundant client creations and storage key contention warnings.
+- **Independent Read Recovery:** `SupabaseTransport.ts` retries transient GET failures after 400, 2000, and 5000 ms. Each attempt has an 8-second deadline, including body consumption. The caller's signal limits the whole sync to 25 seconds. A failing roster request does not replay successful recruit reads; mutations and authorization failures are never retried.
+- **Singleton Client Instantiation:** `createSupabaseClient()` memoizes one public-key client. Its `accessToken` callback returns null because this app has no Supabase user sessions, bypassing unused GoTrue initialization and browser session locks. REST requests continue using the configured publishable key.
 
 ## Gotchas
 

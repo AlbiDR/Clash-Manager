@@ -15,6 +15,8 @@
 - Blitzes selected recruits: opens each profile in Clash Royale in sequence, and on [Android](../../../../APK/README.md) taps invite automatically.
 - Raises a notification and app badge when new recruits cross the score threshold.
 
+The existing RPoS metric opens the scoring-kernel composition, captured at profiling or rescan time. Contributions remain separate from the returning-veteran adjustment and the full recruitment-pool normalization reference. Profiles without a captured composition keep their existing benchmark until the next scan.
+
 ## Contents
 
 | Path | Role |

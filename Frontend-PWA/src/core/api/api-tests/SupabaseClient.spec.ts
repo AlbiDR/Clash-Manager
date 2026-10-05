@@ -103,22 +103,21 @@ describe("SupabaseClient", () => {
       SupabaseClient.createSupabaseClient();
 
       const clientOptions = vi.mocked(createClient).mock.calls.at(-1)?.[2] as {
+        accessToken?: () => Promise<string | null>;
         global?: { fetch?: typeof fetch };
       };
+      expect(clientOptions.accessToken).toEqual(expect.any(Function));
+      expect(await clientOptions.accessToken!()).toBeNull();
       expect(clientOptions?.global?.fetch).toEqual(expect.any(Function));
 
       await clientOptions.global!.fetch!("https://xyz.supabase.co/rest/v1/roster_view", {
         headers: { apikey: "mock-key" },
       });
 
-      expect(fetchMock).toHaveBeenCalledWith(
-        "https://xyz.supabase.co/rest/v1/roster_view",
-        expect.objectContaining({
-          cache: "no-store",
-          headers: expect.any(Headers),
-        }),
-      );
-      const headers = fetchMock.mock.calls[0][1].headers as Headers;
+      const request = fetchMock.mock.calls[0][0] as Request;
+      expect(request.url).toBe("https://xyz.supabase.co/rest/v1/roster_view");
+      expect(request.cache).toBe("no-store");
+      const headers = request.headers;
       expect(headers.get("Cache-Control")).toBe("no-cache");
       expect(headers.get("Pragma")).toBe("no-cache");
       expect(headers.get("apikey")).toBe("mock-key");

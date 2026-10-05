@@ -83,7 +83,10 @@
     "Backend/supabase/migrations/20261004020000_restrict_internal_function_execution.sql": "cc8fc8fb5c0f31e3bae12734e1cd318d669132ff7890f43c4214638b89d9ac03",
     "Backend/supabase/migrations/20261005120000_unify_recency_weight_floor.sql": "a09885533973cb7db565d2f202bba1a6fa57f1374759a99fc591d9c72a27919e",
     "Backend/supabase/migrations/20261005130000_stability_credits_played_weeks.sql": "0b3cac4cf806be7c06817b9c21d1dd63c292f2d0ebc13855d2cbbc3a408d768a",
-    "Backend/supabase/migrations/20261005140000_stability_judges_weeks_since_joining.sql": "0083709a63c5b7a50154e748fddea8310dad4703813a7e78904ce9a73ccb21e3"
+    "Backend/supabase/migrations/20261005140000_stability_judges_weeks_since_joining.sql": "0083709a63c5b7a50154e748fddea8310dad4703813a7e78904ce9a73ccb21e3",
+    "Backend/supabase/migrations/20261005204235_score_composition.sql": "84967fe73f5a13b97d5460fe20c8fc4ff22699e394cfec6089df979ebb9c617d",
+    "Backend/supabase/migrations/20261005211604_reduce_sync_battle_read_cost.sql": "efe0e23eb4e6a1435dae71e3f4ca1c39838905df900a66da2996145ad004e35b",
+    "Backend/supabase/migrations/20261005213231_align_public_read_timeout.sql": "46ab2b9ec8bd61126aee7f5fde9169096d9dd55ebfffdb41a5dff56c01169f91"
   },
   "exemptions": []
 }

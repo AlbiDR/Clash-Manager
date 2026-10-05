@@ -574,3 +574,44 @@ describe("GhostBenchmarkHost.vue -- click that finishes the opening touch", () =
     wrapper.unmount();
   });
 });
+
+
+describe("GhostBenchmarkHost score explanations", () => {
+  const score = {
+    kind: "score" as const, name: "Player", context: "lb" as const, score: 50, comparison: null,
+    composition: {
+      contributions: [{ key: "trophies" as const, points: 1000 }], adjustments: [],
+      rawScore: 1000, normalizedScore: 50, scoreBonus: 0, referenceScore: 2000,
+      referenceScope: "clan" as const,
+    },
+  };
+
+  it("keeps an explicit explanation open on scroll and closes it with Escape", async () => {
+    stubPointerCapability(false);
+    const { show, active } = useGhostBenchmarkState();
+    const wrapper = mount(GhostBenchmarkHost, { global: { stubs: { Teleport: true } } });
+    show(makeAnchorEl(), score);
+    await nextTick();
+    window.dispatchEvent(new Event("scroll"));
+    expect(active.value).not.toBeNull();
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+    expect(active.value).toBeNull();
+    wrapper.unmount();
+  });
+
+  it("does not turn scrolling the mobile calculation into a dismiss gesture", async () => {
+    stubPointerCapability(true);
+    const { show, active } = useGhostBenchmarkState();
+    const wrapper = mount(GhostBenchmarkHost, { global: { stubs: { Teleport: true } } });
+    show(makeAnchorEl(), score);
+    await nextTick();
+    const panel = wrapper.find(".score-composition");
+    await panel.trigger("touchstart", { touches: [{ clientY: 100 }] });
+    await panel.trigger("touchmove", { touches: [{ clientY: 300 }] });
+    await panel.trigger("touchend");
+    expect(active.value).not.toBeNull();
+    await wrapper.find(".bc-close").trigger("click");
+    expect(active.value).toBeNull();
+    wrapper.unmount();
+  });
+});

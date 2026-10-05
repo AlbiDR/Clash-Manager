@@ -16,7 +16,11 @@ import {
   BLITZ_BATCH_SHIFT_DELAY
 } from "@core/config";
 
+/**
+ * Configuration options for the Blitz Mode execution engine.
+ */
 interface BlitzOptions {
+  /** Optional custom throttle delay in milliseconds override for deep-link triggers. */
   throttleMs?: number;
   /**
    * Whether the native run taps Invite and Close on each profile. Defaults to
@@ -26,8 +30,11 @@ interface BlitzOptions {
   sendInvites?: boolean;
 }
 
+/** Command identifier for opening a single profile or advancing batch execution. */
 const OPEN_PROFILE_COMMAND = "open-profile";
+/** Command identifier for starting automated batch Blitz operations. */
 const START_BATCH_COMMAND = "start-batch";
+/** Command identifier for manually advancing batch Blitz progression. */
 const ADVANCE_BATCH_COMMAND = "advance-batch";
 
 /**
@@ -117,11 +124,18 @@ export function useBlitzMode(
   });
 
   /**
+   * Format human-readable notification prose upon completing a batch sequence.
+   *
+   * @remarks
    * Describes a completed sequence without claiming that the external app
    * accepted every invite. The web layer can truthfully report the number of
    * profiles it handed off, but the game owns the outcome beyond that boundary.
+   *
+   * @param sequenceName - Label for the completed sequence ("Blitz" | "Batch").
+   * @param profileCount - Total number of member profiles dispatched.
+   * @returns Formatted completion status string.
    */
-  function formatSequenceCompletion(sequenceName: "Blitz" | "Batch", profileCount: number) {
+  function formatSequenceCompletion(sequenceName: "Blitz" | "Batch", profileCount: number): string {
     const profileLabel = profileCount === 1 ? "profile" : "profiles";
     return `${sequenceName} sequence complete · ${profileCount} ${profileLabel}`;
   }
@@ -374,13 +388,24 @@ export function useBlitzMode(
     }, BLITZ_BATCH_SHIFT_DELAY);
   }
 
-  /** Dispatches only command identifiers produced by this composable. */
+  /**
+   * Command router for floating action button (FAB) event emissions.
+   *
+   * @remarks
+   * Maps incoming command identifiers to their respective execution routines.
+   * Enforces command contract boundaries for batch execution controls.
+   *
+   * @param commandId - Target command string emitted by the console FAB.
+   * @param event - MouseEvent associated with the user interaction.
+   */
   function handleFabCommand(commandId: string, event: MouseEvent) {
     if (commandId === START_BATCH_COMMAND) {
+      // [DECISION LOG] Start automated batch sequence on explicit Blitz trigger.
       handleBlitz();
       return;
     }
     if (commandId === OPEN_PROFILE_COMMAND || commandId === ADVANCE_BATCH_COMMAND) {
+      // [DECISION LOG] Advance or trigger single item profile link opening.
       handleAction(event);
     }
   }

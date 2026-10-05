@@ -3,13 +3,19 @@
 
 # Clash Manager Backend
 
-[![Backend](https://img.shields.io/badge/Backend-v14.50.148-3ECF8E?style=flat-square&logo=supabase&logoColor=white)](README.md)
+[![Backend](https://img.shields.io/badge/Backend-v14.51.0-3ECF8E?style=flat-square&logo=supabase&logoColor=white)](README.md)
 [![Deno](https://img.shields.io/badge/Edge-Deno-000000?style=flat-square&logo=deno&logoColor=white)](supabase/functions)
 [![Postgres 17](https://img.shields.io/badge/Postgres-17-4169E1?style=flat-square&logo=postgresql&logoColor=white)](supabase/migrations)
 
 The Supabase project behind Clash Manager. It pulls clan, war, and battle data from the Clash Royale API, stores a permanent history, and computes the performance and potential scores the app reads.
 
 > New here? The [root README](../README.md) explains what the product does and how the scores work. This document is the backend's technical map.
+
+For a plain-language database map and repeatable live inspection, start with
+[Understanding and auditing the database](database-architecture.md). Run
+`pnpm db:audit --output /path/report` to generate an interactive atlas. The
+[October 5 architecture audit](database-audit-2026-10-05.md) records measured
+findings and the ordered work list.
 
 ---
 
@@ -72,7 +78,7 @@ The scoring formulas (RPeS/PeS for members, RPoS/PoS for recruits) are summarize
 
 ## Security
 
-- **Row-level security is on for every table**, deny-by-default. The `anon` role can only `SELECT` from `features` views.
+- **Row-level security is on for every application table**, deny-by-default. The app reads `features` views and uses dedicated public RPCs for supported actions. Effective access depends on schema exposure, grants, RLS policies and routine privileges; the architecture audit tracks that boundary for review.
 - **Zero-trust ingress.** Every inbound payload passes a Valibot schema before it touches the database.
 - **Secrets** are loaded from Supabase Vault at function start. Service-to-service calls require the internal bearer token; tag columns are `CHECK`-constrained to valid Clash Royale tag characters.
 
@@ -90,6 +96,57 @@ supabase test db                                           # run pgTAP tests
 ```
 
 Migrations are the single source of truth: change the schema in a migration file, never in the dashboard. After any schema or RPC change, regenerate the TypeScript types.
+
+### Diagnosing sync outages
+
+Run `pnpm db:health` from the repository root, or `pnpm db:health --json` to
+capture structured evidence. It requires `SUPABASE_ACCESS_TOKEN`, a linked
+backend project, and the frontend's `.env` public URL/key. It makes read-only
+requests against the actual anonymous roster and recruit endpoints as well as
+database diagnostics and host metrics. It exits with code 1 when a probe fails.
+The report keeps the last 24 hours of cron failures visible after recovery;
+successful SQL access alone does not prove the app can populate. Resource
+counters describe host lifetime, and high swap usage alone does not prove
+current memory pressure.
+
+The October 5, 2026 investigation is recorded in
+[`sync-outage-2026-10-05.md`](sync-outage-2026-10-05.md). The project stays on
+Supabase Free. The roster battle read uses only wins/battles for active members,
+and the battle unique index also serves newest-battle lookups, avoiding two
+duplicate indexes.
+Anonymous SQL reads have a six-second statement limit, below the PWA's
+eight-second per-attempt deadline and 25-second overall sync budget. This gives
+full reads room to complete during short ingestion bursts while retaining a
+bounded server limit.
+
+The free host's operational overrides are recorded in
+[`free-plan-postgres-config.toml`](supabase/free-plan-postgres-config.toml).
+Shared buffers use 96 MiB instead of the observed 224 MiB, leaving more room for
+connections and background processes on the approximately 407 MiB host.
+Maintenance work memory is 16 MiB instead of 32 MiB per maintenance worker.
+Apply those values with:
+
+```bash
+pnpm exec supabase postgres-config update --workdir Backend --experimental \
+  --config shared_buffers=96MB --config maintenance_work_mem=16MB
+```
+
+Changing shared buffers restarts the database. Verify both settings and
+`pending_restart` in `pg_settings`, then run `pnpm db:health`. To restore the
+provider defaults, remove just these overrides with `supabase postgres-config
+delete --config shared_buffers,maintenance_work_mem --workdir Backend --experimental`; that
+also restarts the database. Reassess the overrides if compute changes.
+
+If the battle primary-key index grows disproportionately to its live row count,
+inspect `pg_relation_size('drivers.player_battles_pkey')` and long transactions
+in `pg_stat_activity`. The standalone maintenance command below rebuilds its
+physical storage while retaining the constraint and all rows. Run it outside a
+transaction, then verify the size, row count, and `pg_index.indisvalid`:
+
+```bash
+pnpm exec supabase db query --linked --workdir Backend \
+  --file supabase/maintenance/compact_battle_primary_key.sql
+```
 
 ### Deployment
 

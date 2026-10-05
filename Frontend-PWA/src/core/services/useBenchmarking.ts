@@ -5,7 +5,7 @@ import { useAppSettings } from "./useAppSettings";
 import { useClashDataStore } from "./useClashDataStore";
 
 import { unref } from "vue";
-import type { LeaderboardMember, Recruit } from "../types";
+import type { LeaderboardMember, Recruit, ScoreComposition } from "../types";
 import { parseTimeAgoValue } from "../utils/time";
 
 /**
@@ -35,6 +35,17 @@ export interface BenchmarkData {
   /** Optional display format for values in the benchmark panel. */
   format?: "number" | "percent" | "durationMinutes";
 }
+
+/** Score payload shares the existing popup host without depending on a feature. */
+export interface ScoreExplanationData {
+  kind: "score";
+  name: string;
+  context: "lb" | "hh";
+  score: number;
+  composition: ScoreComposition;
+  comparison: BenchmarkData | null;
+}
+export type BenchmarkContentData = BenchmarkData | ScoreExplanationData | string;
 
 type StatsMap = Record<string, { avg: number; max: number; min: number }>;
 type MetricMetadata = {

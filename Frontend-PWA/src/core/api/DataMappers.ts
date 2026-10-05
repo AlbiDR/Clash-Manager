@@ -40,6 +40,9 @@ export function mapSbRosterRow(rosterRow: v.InferOutput<typeof SbRosterRowSchema
     t: Number(rosterRow.trophies) || 0,
     performanceScore: Number(rosterRow.performance_score) || 0,
     performanceRawScore: Number(rosterRow.raw_performance_score) || 0,
+    scoreComposition: rosterRow.score_composition?.rawScore === Number(rosterRow.raw_performance_score)
+      && rosterRow.score_composition?.normalizedScore === Number(rosterRow.performance_score)
+      ? rosterRow.score_composition : undefined,
     dt: 0, // roster_view currently does not provide a score delta
     d: {
       role: rosterRow.role || '',
@@ -83,6 +86,9 @@ export function mapSbHeadhunterRow(headhunterRow: v.InferOutput<typeof SbHeadhun
     t: Number(headhunterRow.trophies) || 0,
     potentialScore: finalPotentialScore,
     potentialRawScore: rawPotentialScore,
+    scoreComposition: headhunterRow.score_composition?.rawScore === rawPotentialScore
+      && headhunterRow.score_composition?.normalizedScore === finalPotentialScore
+      ? headhunterRow.score_composition : undefined,
     longevity: Number(headhunterRow.longevity) || 0,
     longevityLabel: headhunterRow.longevity_label || '-',
     tenureDays: headhunterRow.tenure_days != null ? Number(headhunterRow.tenure_days) : undefined,

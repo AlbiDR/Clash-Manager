@@ -5,7 +5,7 @@ import * as v from "npm:valibot@1.5.0";
 import { supabase } from "../client.ts";
 import { fetchWithRotation, processBatch } from "../../_shared/muscle.ts";
 import { ScannerStats, AuditEntry, RecruitSyncRow } from "../../_shared/types.ts";
-import { calculateRpos, calculateWeightedWinRate } from "../../_shared/utils.ts";
+import { getRposComposition, calculateWeightedWinRate } from "../../_shared/utils.ts";
 import { RESCAN_BATCH_LIMIT, CONCURRENCY_RESCAN } from "../../_shared/config.ts";
 import { RoyalePlayerSchema, StaleRecruitSchema } from "../../_shared/schemas.ts";
 
@@ -145,7 +145,7 @@ export async function runRescan(
 
                 // [DECISION LOG] RPoS (Raw Potential Score) CALCULATION:
                 // Refactored to use centralized L1 Core utility to ensure formula consistency.
-                const rawScore = calculateRpos({
+                const scoreComposition = getRposComposition({
                     trophies: playerProfileSnapshot.trophies,
                     lifetime_donations: playerProfileSnapshot.totalDonations,
                     legacy_war_wins: playerProfileSnapshot.warDayWins,
@@ -155,6 +155,7 @@ export async function runRescan(
                     challenge_cards_won: playerProfileSnapshot.challengeCardsWon,
                     challenge_max_wins: playerProfileSnapshot.challengeMaxWins,
                 });
+                const rawScore = scoreComposition.rawScore;
                 const winRate = calculateWeightedWinRate(playerProfileSnapshot.wins, playerProfileSnapshot.battleCount, playerProfileSnapshot.threeCrownWins);
 
                 // Otherwise prepare their profile data for batch refresh
@@ -166,6 +167,7 @@ export async function runRescan(
                     cards: playerProfileSnapshot.challengeCardsWon,
                     war_wins: playerProfileSnapshot.warDayWins,
                     raw_potential_score: rawScore,
+                    score_composition: scoreComposition,
                     win_rate: winRate,
                     // [THREAT: PROVENANCE_ERASURE] This sent 'TOURNAMENT' on every
                     // refresh, and sync_recruits assigned it unconditionally, so a
