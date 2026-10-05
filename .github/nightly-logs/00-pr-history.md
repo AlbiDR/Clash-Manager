@@ -16,6 +16,15 @@ LAST_AGED:   2026-10-04
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-05] PR #2091 [Stage 10]: Verified APK and PWA wrapper integrity: asset links, manifest parity, version sync, release metadata, and cleartext traffic policy
+**Domain:** apk | **Commit:** 4bf4a2c90 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2091)
+**Files:** .github/nightly-logs/10-apk-integrity-coverage.log, .github/nightly-logs/10-apk-integrity-pr-body.md
+**Why:** Bounded scan of changed files found no wrapper mismatches; full wrapper invariant audit passed
+**Change:** Verified APK and PWA wrapper integrity: asset links, manifest parity, version sync, release metadata, and cleartext traffic policy
+**Result:** Executed pnpm audit:apk; all checks passed (AssetLinks fingerprint E5:6A:CA..., Manifest parity, TWA/resource dark colors #0b0e14, package com.albidr.clashmanager, version 14.50.143 / 14050143, cleartext traffic forbidden)
+**Nudges:** 0
+
+
 ### [2026-10-05] PR #2090 [Stage 9]: (1) scan: 60 files, 0 dep-viols, knip: 2 devDeps, 7 binaries, 3 unused, 1 dup; (2) clean-calib: 4; (3) inspected: core/config, useProgressiveList, useHeadhunter; (4) closest: BLITZ_DWELL_DEFAULT; hunt: useProgressiveList (24/24 pass)
 **Domain:** architecture | **Commit:** 90139ed55 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2090)
 **Files:** .github/nightly-logs/09-refactor-proposals-coverage.log, .github/nightly-logs/09-refactor-proposals-pr-body.md
