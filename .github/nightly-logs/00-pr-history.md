@@ -16,6 +16,15 @@ LAST_AGED:   2026-10-04
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-05] PR #2087 [Stage 6]: docs(tsdoc): harden useBlitzMode interface contracts and inline logic annotations
+**Domain:** documentation | **Commit:** 617a36afe | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2087)
+**Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, .github/nightly-logs/06-documentation-tsdoc-pr-body.md, Frontend-PWA/src/core/services/useBlitzMode.ts
+**Why:** Documented handleFabCommand dispatch and batch sequence formatting for useBlitzMode
+**Change:** docs(tsdoc): harden useBlitzMode interface contracts and inline logic annotations
+**Result:** PASSED (vue-tsc type-check and Vitest unit tests passed)
+**Nudges:** 0
+
+
 ### [2026-10-05] PR #2086 [Stage 5]: Audited documentation debt targets and confirmed README accuracy
 **Domain:** documentation | **Commit:** 5081b19a5 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2086)
 **Files:** .github/nightly-logs/05-documentation-readme-coverage.log, .github/nightly-logs/05-documentation-readme-pr-body.md
