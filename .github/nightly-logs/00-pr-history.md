@@ -16,6 +16,15 @@ LAST_AGED:   2026-10-04
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-05] PR #2088 [Stage 7]: Audit catalog protocol in Frontend-PWA/package.json and Backend/package.json and package versions across 3 manifests against ground truth 14.50.143; verified 0 drift lines across 10 derived locations via pnpm audit:version.
+**Domain:** versioning | **Commit:** 4c3a1ee46 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2088)
+**Files:** .github/nightly-logs/07-version-integrity-coverage.log, .github/nightly-logs/07-version-integrity-pr-body.md
+**Why:** All version declarations and catalog usages are fully synchronized with ground truth 14.50.143.
+**Change:** Audit catalog protocol in Frontend-PWA/package.json and Backend/package.json and package versions across 3 manifests against ground truth 14.50.143; verified 0 drift lines across 10 derived locations via pnpm audit:version.
+**Result:** pnpm audit:version reported 0 drift lines and 0 catalog violations across all manifests and derived locations.
+**Nudges:** 0
+
+
 ### [2026-10-05] PR #2087 [Stage 6]: docs(tsdoc): harden useBlitzMode interface contracts and inline logic annotations
 **Domain:** documentation | **Commit:** 617a36afe | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2087)
 **Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, .github/nightly-logs/06-documentation-tsdoc-pr-body.md, Frontend-PWA/src/core/services/useBlitzMode.ts
