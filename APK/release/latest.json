@@ -1,9 +1,9 @@
 {
-  "version": "14.51.0",
-  "buildNumber": 460,
-  "filename": "clashmanager-v14.51.0+460.apk",
+  "version": "14.50.148",
+  "buildNumber": 457,
+  "filename": "clashmanager-v14.50.148+457.apk",
   "sizeBytes": 3982503,
-  "sha256": "3b80a35faaf1a7e02b3cd3f4b14550792ce910e4dd5fb1abf1fa3b21cd0d8779",
+  "sha256": "15c172ab2bb3ecfb7dae7b073ee331d68387f11c56ef94a4d6e5e1dbd53cbde9",
   "changelog": [
     "Signed Android shell rebuilt from the latest native source."
   ]
