@@ -16,6 +16,15 @@ LAST_AGED:   2026-10-04
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-05] PR #2093 [Stage 12]: Global APK UX audit passed with 0 violations across 76 files examined
+**Domain:** ux | **Commit:** 6bb5c904d | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2093)
+**Files:** .github/nightly-logs/12-apk-ux-coverage.log, .github/nightly-logs/12-apk-ux-pr-body.md
+**Why:** Structured audit confirmed PWA UI meets native hybrid shell interaction and viewport standards
+**Change:** Global APK UX audit passed with 0 violations across 76 files examined
+**Result:** apk-ux-audit-status.txt: PASS; apk-ux-audit.json: 0 candidate files reviewed; UX categories 1-10 checked
+**Nudges:** 0
+
+
 ### [2026-10-05] PR #2092 [Stage 11]: Inspected APK wrapper performance settings, WebView caching mode LOAD_CACHE_ELSE_NETWORK, service worker precache route, Vite manual chunks, and precache footprint (15 files, 67.6 KB). All 9 performance invariants verified optimal.
 **Domain:** apk | **Commit:** feada12f3 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2092)
 **Files:** .github/nightly-logs/11-apk-optimization-coverage.log, .github/nightly-logs/11-apk-optimization-pr-body.md
