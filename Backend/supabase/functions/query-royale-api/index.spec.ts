@@ -225,6 +225,34 @@ describe("query-royale-api Edge Function", () => {
     expect(body.data.items[0]).toEqual({ tag: "#P0", name: "Player 0", clan: null });
   });
 
+  it.each(["global", "country", "international"])("recovers an empty %s live board using verified completed-season recruits", async (scope) => {
+    mockRoutes["/locations"] = { body: { items: [{ id: 57000120, name: "United States", isCountry: true }] } };
+    mockRoutes["/locations/"] = { body: { items: [] } };
+    mockRoutes["/clans/"] = { body: {
+      tag: "#CLANTAG", name: "Test Clan",
+      location: { id: scope === "international" ? 57000101 : 57000120, name: scope === "international" ? "International" : "United States", isCountry: scope !== "international" },
+    } };
+    mockRoutes["/locations/global/seasons"] = { body: { items: [{ id: "2026-09" }] } };
+    mockRoutes["/locations/global/pathoflegend/2026-09/rankings/players"] = { body: { items: [
+      { tag: "#FREE", name: "Old name", rank: 1 },
+      { tag: "#JOINED", name: "Joined later", rank: 2 },
+    ] } };
+    mockRoutes["/players/%23FREE"] = { body: { tag: "#FREE", name: "Current name" } };
+    mockRoutes["/players/%23JOINED"] = { body: { tag: "#JOINED", name: "Joined later", clan: { tag: "#CLAN" } } };
+
+    const response = await requestHandler(new Request("https://test.co/query-royale-api", {
+      method: "POST",
+      headers: { Authorization: "Bearer internal-bearer", "Content-Type": "application/json" },
+      body: JSON.stringify({ endpoint: scope === "global" ? "global" : "local" }),
+    }));
+    expect(response.status).toBe(200);
+    expect((await response.json()).data).toEqual({
+      items: [{ tag: "#FREE", name: "Current name", clan: null }],
+      region: "Global (completed season 2026-09)",
+    });
+    expect(mockFetch.mock.calls.filter(([url]) => url.endsWith("/locations/global/seasons"))).toHaveLength(1);
+  });
+
   it("should fallback to top country rankings if global PoL yields insufficient results", async () => {
     // Global PoL yields only 5 players (floor is 80)
     const globalPlayers = Array.from({ length: 5 }, (_, index) => ({

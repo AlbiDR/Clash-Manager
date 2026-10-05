@@ -16,7 +16,8 @@ import {
 } from "../_shared/config.ts";
 import {
   harvestClanlessPlayers,
-  harvestInternationalPlayers
+  harvestInternationalPlayers,
+  harvestSeasonPlayers
 } from "./harvester.ts";
 
 /**
@@ -75,6 +76,7 @@ Deno.serve(async (request) => {
         // [DECISION LOG] "global" is a first-class location on the Path of Legends
         // rankings endpoint, returning the live worldwide top 1000 in one request.
         const harvestResults = await harvestClanlessPlayers(GLOBAL_LOCATION, logAudit);
+        if (harvestResults.length === 0) return await harvestSeasonPlayers(logAudit);
         return {
           items: harvestResults,
           region: "Global",
@@ -116,11 +118,13 @@ Deno.serve(async (request) => {
                               !location.isCountry;
 
       if (isInternational) {
-        return await harvestInternationalPlayers(logAudit);
+        const harvestResults = await harvestInternationalPlayers(logAudit);
+        return harvestResults.items.length === 0 ? await harvestSeasonPlayers(logAudit) : harvestResults;
       }
 
       logAudit("LOCAL_HARVEST_CLANLESS_DISCOVERY", "called", { country: targetLocationName });
       const harvestResults = await harvestClanlessPlayers(String(targetLocationId), logAudit);
+      if (harvestResults.length === 0) return await harvestSeasonPlayers(logAudit);
 
       return {
         items: harvestResults,

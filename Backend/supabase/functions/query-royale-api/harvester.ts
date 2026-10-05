@@ -6,6 +6,8 @@ import { fetchWithRotation, processBatch } from "../_shared/muscle.ts";
 import {
   RoyaleLocationListSchema,
   RoyaleRankingListSchema,
+  RoyaleSeasonListSchema,
+  RoyalePlayerSchema,
   HarvestedPlayerSchema
 } from "../_shared/schemas.ts";
 import { AuditEntry } from "../_shared/types.ts";
@@ -15,6 +17,7 @@ import {
   MIN_LOCAL_POL_FLOOR,
   TOP_COUNTRY_IDS,
   MAX_HARVEST_EPOCHS,
+  MAX_SEASON_RANKING_PAGES,
   GLOBAL_LOCATION,
   DEFAULT_FALLBACK_ID,
   DEFAULT_FALLBACK_COUNTRY,
@@ -55,38 +58,86 @@ let cachedCountries: { id: number; name: string }[] | null = null;
  */
 async function fetchRankings(
   endpointPath: string,
-  logAudit: (stage: string, action: AuditEntry['action'], details?: unknown) => void
+  logAudit: (stage: string, action: AuditEntry['action'], details?: unknown) => void,
+  paginate = false
 ): Promise<v.InferOutput<typeof HarvestedPlayerSchema>[]> {
-  logAudit("HARVEST_PLAYERS_FETCH", "called", { path: endpointPath });
+  const players = new Map<string, v.InferOutput<typeof HarvestedPlayerSchema>>();
+  const visitedCursors = new Set<string>();
+  let pagePath = endpointPath;
+  const pageLimit = paginate ? MAX_SEASON_RANKING_PAGES : 1;
+  for (let pageIndex = INITIAL_INDEX; pageIndex < pageLimit; pageIndex++) {
+    logAudit("HARVEST_PLAYERS_FETCH", "called", { path: pagePath });
 
-  const playerRankingsResponse = await fetchWithRotation(endpointPath);
-  if (!playerRankingsResponse.ok) {
-    throw new Error(`Failed to fetch player rankings: ${playerRankingsResponse.status}`);
+    const playerRankingsResponse = await fetchWithRotation(pagePath);
+    if (!playerRankingsResponse.ok) {
+      throw new Error(`Failed to fetch player rankings: ${playerRankingsResponse.status}`);
+    }
+
+    const rankingApiRaw: unknown = await playerRankingsResponse.json();
+    const rankingIntegrity = v.safeParse(RoyaleRankingListSchema, rankingApiRaw);
+
+    if (!rankingIntegrity.success) {
+      // [THREAT ANNOTATION] Threat Vector: Structural Payload Drift.
+      // If the remote proxy shifts its response structure, failing fast here prevents downstream state pollution
+      // or parsing crashes in the core app.
+      throw new Error("Player rankings payload failed structural validation.");
+    }
+
+    const observedRankingItems = rankingIntegrity.output.items;
+
+    // Filter for clanless players
+    const clanlessPlayers = observedRankingItems.filter((rankingItem) => {
+      const rankingClan = rankingItem.clan;
+      return !rankingClan || !rankingClan.tag;
+    });
+
+    logAudit("HARVEST_PLAYERS_RESULT", "run", {
+      path: pagePath, ranked: observedRankingItems.length, clanless: clanlessPlayers.length,
+    });
+    for (const rankingItem of clanlessPlayers) {
+      players.set(rankingItem.tag, { tag: rankingItem.tag, name: rankingItem.name, clan: null });
+    }
+    const after = rankingIntegrity.output.paging?.cursors?.after;
+    if (!paginate || !after || observedRankingItems.length === INITIAL_INDEX) break;
+    if (visitedCursors.has(after)) throw new Error("Player rankings returned a repeated pagination cursor.");
+    visitedCursors.add(after);
+    pagePath = `${endpointPath}&after=${encodeURIComponent(after)}`;
   }
+  return Array.from(players.values());
+}
 
-  const rankingApiRaw: unknown = await playerRankingsResponse.json();
-  const rankingIntegrity = v.safeParse(RoyaleRankingListSchema, rankingApiRaw);
+/**
+ * Live boards can be empty after the monthly reset. A completed worldwide
+ * board supplies candidates, whose current profiles must still be clanless.
+ * This runs once per request, after all requested live regions are exhausted.
+ */
+export async function harvestSeasonPlayers(
+  logAudit: (stage: string, action: AuditEntry['action'], details?: unknown) => void
+): Promise<{ items: v.InferOutput<typeof HarvestedPlayerSchema>[], region: string }> {
+  logAudit("HARVEST_SEASON_FALLBACK", "called");
+  const response = await fetchWithRotation("/locations/global/seasons");
+  if (!response.ok) throw new Error(`Failed to fetch completed seasons: ${response.status}`);
+  const seasons = v.parse(RoyaleSeasonListSchema, await response.json());
+  const latestSeason = seasons.items.map(season => season.id).sort().at(-1);
+  if (!latestSeason) throw new Error("No completed season is available for leaderboard harvesting.");
 
-  if (!rankingIntegrity.success) {
-    // [THREAT ANNOTATION] Threat Vector: Structural Payload Drift.
-    // If the remote proxy shifts its response structure, failing fast here prevents downstream state pollution
-    // or parsing crashes in the core app.
-    throw new Error("Player rankings payload failed structural validation.");
-  }
-
-  const observedRankingItems = rankingIntegrity.output.items;
-
-  // Filter for clanless players
-  const clanlessPlayers = observedRankingItems.filter((rankingItem) => {
-    const rankingClan = rankingItem.clan;
-    return !rankingClan || !rankingClan.tag;
-  });
-
-  return clanlessPlayers.map((rankingItem) => ({
-    tag: rankingItem.tag,
-    name: rankingItem.name,
-    clan: null
+  const candidates = await fetchRankings(
+    `/locations/global/pathoflegend/${latestSeason}/rankings/players?limit=${PLAYER_LEADERBOARD_LIMIT}`,
+    logAudit,
+    true,
+  );
+  const profiles = await processBatch(candidates.map(candidate => async () => {
+    const profileResponse = await fetchWithRotation(`/players/${encodeURIComponent(candidate.tag)}`);
+    // Deleted accounts are no longer recruitment candidates.
+    if (profileResponse.status === 404) return null;
+    if (!profileResponse.ok) throw new Error(`Failed to verify recruit profile: ${profileResponse.status}`);
+    const profile = v.parse(RoyalePlayerSchema, await profileResponse.json());
+    if (profile.tag !== candidate.tag) throw new Error("Recruit profile tag does not match the season candidate.");
+    return profile.clan?.tag ? null : { tag: profile.tag, name: profile.name, clan: null };
   }));
+  const items = profiles.filter(profile => profile !== null);
+  logAudit("HARVEST_SEASON_VERIFIED", "run", { season: latestSeason, candidates: candidates.length, clanless: items.length });
+  return { items, region: `Global (completed season ${latestSeason})` };
 }
 
 /**

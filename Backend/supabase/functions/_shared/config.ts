@@ -55,6 +55,8 @@ export const PLAYER_LEADERBOARD_LIMIT = 1000;
 export const TARGET_HARVEST_FLOOR = 80;
 export const MIN_LOCAL_POL_FLOOR = 10;
 export const MAX_HARVEST_EPOCHS = 15;
+// Completed PoL boards contain up to 9,999 players; bound cursor traversal.
+export const MAX_SEASON_RANKING_PAGES = 10;
 export const GLOBAL_LOCATION = "global";
 export const LOCATION_ID_INTERNATIONAL = 57000101;
 export const DEFAULT_FALLBACK_COUNTRY = "United States";
