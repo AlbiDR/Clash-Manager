@@ -183,9 +183,9 @@ export function calculateWeightedWinRate(wins: number, battle_count: number, thr
  * stats; only the full profile fetch used during recruit scanning does.
  *
  * @param params - See CalculateRposParams.
- * @returns The calculated RPoS score.
+ * @returns The calculated RPoS score and the terms used to produce it.
  */
-export function calculateRpos(params: CalculateRposParams): number {
+export function getRposComposition(params: CalculateRposParams) {
   const {
     trophies,
     lifetime_donations,
@@ -203,12 +203,21 @@ export function calculateRpos(params: CalculateRposParams): number {
   const grandChallengeBonus =
     challenge_max_wins >= GRAND_CHALLENGE_WIN_THRESHOLD ? winRateWeight * RPOS_GC_BONUS_RATIO : 0;
 
-  return (
-    trophies * RPOS_TROPHY_WEIGHT +
-    lifetime_donations * RPOS_DONATION_WEIGHT +
-    weightedWinRate * winRateWeight +
-    legacy_war_wins * RPOS_LEGACY_WAR_WEIGHT +
-    cappedChallengeCards * RPOS_CHALLENGE_CARD_WEIGHT +
-    grandChallengeBonus
-  );
+  const contributions = [
+    { key: "trophies", points: trophies * RPOS_TROPHY_WEIGHT },
+    { key: "donations", points: lifetime_donations * RPOS_DONATION_WEIGHT },
+    { key: "weighted_win_rate", points: weightedWinRate * winRateWeight },
+    { key: "legacy_war_wins", points: legacy_war_wins * RPOS_LEGACY_WAR_WEIGHT },
+    { key: "challenge_cards", points: cappedChallengeCards * RPOS_CHALLENGE_CARD_WEIGHT },
+    { key: "grand_challenge", points: grandChallengeBonus },
+  ];
+  return {
+    contributions,
+    rawScore: contributions.reduce((total, contribution) => total + contribution.points, 0),
+  };
+}
+
+/** Returns the authoritative raw total from the same calculation as its composition. */
+export function calculateRpos(params: CalculateRposParams): number {
+  return getRposComposition(params).rawScore;
 }

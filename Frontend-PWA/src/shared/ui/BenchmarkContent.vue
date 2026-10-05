@@ -1,9 +1,10 @@
 <!-- SPDX-License-Identifier: GPL-3.0-only -->
 <!-- Copyright (C) 2026 AlbiDR -->
 <script setup lang="ts">
+import ScoreCompositionPanel from "./ScoreCompositionPanel.vue";
 import { computed } from "vue";
 import { formatNumber, formatTimeAgo } from "../../core";
-import type { BenchmarkData } from "../../core";
+import type { BenchmarkContentData } from "../../core";
 
 /**
  * [UI] BENCHMARK CONTENT
@@ -18,14 +19,14 @@ const props = defineProps<{
   /**
    * Authoritative data payload representing a BenchmarkData object or a simple informational string.
    */
-  data: BenchmarkData | string;
+  data: BenchmarkContentData;
 }>();
 
 /**
  * Extracts and returns the structured BenchmarkData if the prop payload is not a simple string.
  */
 const benchmark = computed(() =>
-  typeof props.data === "string" ? null : props.data,
+  typeof props.data === "string" || "kind" in props.data ? null : props.data,
 );
 
 // [DECISION LOG] Plain-string tooltips (e.g. chart bar labels) use a "label\nvalue"
@@ -110,8 +111,12 @@ const delta = computed(() =>
 </script>
 
 <template>
+  <ScoreCompositionPanel
+    v-if="typeof data !== 'string' && 'kind' in data"
+    :data="data"
+  />
   <div
-    v-if="!benchmark && simpleLines.length > 1"
+    v-else-if="!benchmark && simpleLines.length > 1"
     class="bc-simple-rich"
   >
     <span class="bc-simple-label label-section">{{ simpleLines[0] }}</span>

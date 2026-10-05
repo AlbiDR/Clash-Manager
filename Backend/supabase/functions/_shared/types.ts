@@ -134,6 +134,8 @@ export interface RecruitSyncRow {
   war_wins: number;
   /** Calculated recruitment priority score (RPoS). */
   raw_potential_score: number;
+  /** Composition captured atomically with the scoring kernel result. */
+  score_composition?: { contributions: { key: string; points: number }[]; rawScore: number };
   /** Precomputed weighted win rate persisted for display. */
   win_rate: number;
   /**

@@ -1,10 +1,15 @@
 <!-- SPDX-License-Identifier: GPL-3.0-only -->
 <!-- Copyright (C) 2026 AlbiDR -->
 <script setup lang="ts">
+import { computed, useId } from "vue";
+import type { ScoreComposition, ScoreExplanationData } from "@core";
 import { useBenchmarkedStat } from "../composables/useBenchmarkedStat";
 
+const explanationId = useId();
 const props = defineProps<{
   label: string;
+  scoreName?: string;
+  scoreComposition?: ScoreComposition;
   value: string | number;
   loading?: boolean;
   benchmarkType?: "lb" | "hh";
@@ -18,6 +23,17 @@ const { benchmarkTooltipContent } = useBenchmarkedStat(
   () => props.benchmarkRawValue,
   () => props.loading
 );
+const { benchmarkTooltipContent: scoreComparison } = useBenchmarkedStat(
+  () => props.benchmarkType, "score", () => props.scoreComposition?.normalizedScore, () => props.loading,
+);
+const scoreExplanation = computed<ScoreExplanationData | null>(() => {
+  if (!props.scoreComposition || !props.benchmarkType || props.loading) return null;
+  return {
+    kind: "score", name: props.scoreName || "", context: props.benchmarkType,
+    score: props.scoreComposition.normalizedScore,
+    composition: props.scoreComposition, comparison: scoreComparison.value,
+  };
+});
 </script>
 
 <template>
@@ -32,11 +48,15 @@ const { benchmarkTooltipContent } = useBenchmarkedStat(
       <div class="sk-value-box" />
     </div>
   </div>
-  <div
+  <component
+    :is="scoreExplanation ? 'button' : 'div'"
     v-else
-    v-tooltip="benchmarkTooltipContent"
+    :id="scoreExplanation ? `score-details-${explanationId}` : undefined"
+    v-tooltip="scoreExplanation || benchmarkTooltipContent"
+    :data-score-explanation="scoreExplanation ? '' : undefined"
+    :type="scoreExplanation ? 'button' : undefined"
     class="stat-item hit-target"
-    :aria-label="benchmarkTooltipContent ? `${props.label}: ${props.value}. ${benchmarkTooltipContent}` : `${props.label}: ${props.value}`"
+    :aria-label="scoreExplanation ? `Explain ${props.label} for ${props.scoreName}` : `${props.label}: ${props.value}`"
   >
     <span
       class="label label-caption"
@@ -46,11 +66,14 @@ const { benchmarkTooltipContent } = useBenchmarkedStat(
       class="value"
       :aria-hidden="'true'"
     >{{ props.value }}</span>
-  </div>
+  </component>
 </template>
 
 <style scoped>
 .stat-item {
+  color: inherit;
+  font: inherit;
+  width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -65,6 +88,9 @@ const { benchmarkTooltipContent } = useBenchmarkedStat(
     box-shadow var(--sys-motion-duration-200) ease;
   box-shadow: 0 1px 2px var(--sys-overlay-dark-subtle);
 }
+button.stat-item { cursor: pointer; min-height: var(--sys-space-48); }
+button.stat-item:focus-visible { outline: var(--sys-space-2) solid var(--sys-color-primary); outline-offset: var(--sys-space-2); }
+
 .stat-item:hover {
   /* Keep edge tiles inside the expanded card's outline. Scaling makes their
      border extend into the card edge and visibly clip when a card is selected. */

@@ -4,7 +4,7 @@
 import { supabase } from "../client.ts";
 import { fetchWithRotation, processBatch } from "../../_shared/muscle.ts";
 import { ScannerStats, AuditEntry, RecruitSyncRow, RecruitSource } from "../../_shared/types.ts";
-import { calculateRpos, calculateWeightedWinRate } from "../../_shared/utils.ts";
+import { getRposComposition, calculateWeightedWinRate } from "../../_shared/utils.ts";
 import {
     PROFILER_BATCH_CEILING,
     RECENT_SCAN_THRESHOLD_MS,
@@ -155,7 +155,7 @@ export async function runProfiler(
 
                             // [DECISION LOG] RPoS (Raw Potential Score) CALCULATION:
                             // Refactored to use centralized L1 Core utility to ensure formula consistency.
-                            const potentialRawScore = calculateRpos({
+                            const scoreComposition = getRposComposition({
                                 trophies,
                                 lifetime_donations: donations,
                                 legacy_war_wins: warWins,
@@ -165,6 +165,7 @@ export async function runProfiler(
                                 challenge_cards_won: cards,
                                 challenge_max_wins,
                             });
+                            const potentialRawScore = scoreComposition.rawScore;
                             const winRate = calculateWeightedWinRate(wins, battleCount, three_crown_wins);
 
                             // [THREAT:] drivers.recruits.source is NOT NULL and CHECK-constrained
@@ -187,6 +188,7 @@ export async function runProfiler(
                                     cards,
                                     war_wins: warWins,
                                     raw_potential_score: potentialRawScore,
+                                    score_composition: scoreComposition,
                                     win_rate: winRate,
                                     source: discoverySource,
                                     status: 'ACTIVE'

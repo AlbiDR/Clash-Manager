@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: GPL-3.0-only -->
 <!-- Copyright (C) 2026 AlbiDR -->
 <script setup lang="ts">
-import { ref, useTemplateRef, watch, nextTick, onMounted, onUnmounted } from "vue";
+import { computed, ref, useTemplateRef, watch, nextTick, onMounted, onUnmounted } from "vue";
 import { useGhostBenchmarkState } from "../directives/ghostBenchmarkState";
 import { usePointerCapability } from "../composables/usePointerCapability";
 import BenchmarkContent from "./BenchmarkContent.vue";
@@ -20,6 +20,32 @@ import Icon from "./Icon.vue";
  */
 const { active, hide, ignoreBackdropClick } = useGhostBenchmarkState();
 const { isCoarsePointer } = usePointerCapability();
+const isScore = computed(() => typeof active.value?.content === "object" && "kind" in active.value.content);
+const scoreKey = computed(() => {
+  const content = active.value?.content;
+  return typeof content === "object" && "kind" in content ? `${content.context}:${content.name}` : undefined;
+});
+const sheetEl = useTemplateRef<HTMLElement>("sheetEl");
+let returnFocus: HTMLElement | null = null;
+
+function handleKeydown(event: KeyboardEvent) {
+  if (!active.value || !isScore.value) return;
+  if (event.key === "Escape") { event.preventDefault(); hide(); return; }
+  if (event.key !== "Tab") return;
+  const panel = isCoarsePointer.value ? sheetEl.value : popoverEl.value;
+  const controls = panel?.querySelectorAll<HTMLElement>("button:not(:disabled), summary");
+  if (!controls?.length) return;
+  const first = controls[0];
+  const last = controls[controls.length - 1];
+  if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+  else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+}
+
+function handleOutsidePointer(event: PointerEvent) {
+  if (!isScore.value || isCoarsePointer.value) return;
+  const target = event.target as HTMLElement;
+  if (!popoverEl.value?.contains(target) && !target.closest("[data-score-explanation]")) hide();
+}
 
 // --- Desktop popover positioning ---
 
@@ -58,6 +84,7 @@ function positionPopover() {
     translateY = "0%";
   }
 
+  if (translateY === "0%") top = Math.min(top, Math.max(padding, window.innerHeight - tipRect.height - padding));
   popoverStyle.value = {
     left: `${left}px`,
     top: `${top}px`,
@@ -66,7 +93,13 @@ function positionPopover() {
 }
 
 // Watch active state to reposition popover on fine pointers
-watch(active, async (value) => {
+watch(active, async (value, previous) => {
+  if (value && isScore.value && !(typeof previous?.content === "object" && "kind" in previous.content)) returnFocus = document.activeElement as HTMLElement;
+  if (!value && returnFocus) { returnFocus.focus(); returnFocus = null; }
+  if (value && isScore.value) {
+    await nextTick();
+    (isCoarsePointer.value ? sheetEl.value : popoverEl.value)?.querySelector<HTMLElement>("button")?.focus();
+  }
   if (value && !isCoarsePointer.value) {
     await nextTick();
     positionPopover();
@@ -79,7 +112,7 @@ watch(active, async (value) => {
 function handleScroll() {
   // Matches the pre-existing behavior: the desktop popover is anchor-relative
   // and does not track scroll, so it dismisses on any scroll instead.
-  if (active.value && !isCoarsePointer.value) hide();
+  if (active.value && !isCoarsePointer.value && !isScore.value) hide();
 }
 
 // --- Mobile sheet: scroll lock + swipe-to-dismiss ---
@@ -105,6 +138,7 @@ watch(active, (value) => {
  * @param e - The native TouchEvent payload.
  */
 function onSheetTouchStart(e: TouchEvent) {
+  if (isScore.value && !(e.target as HTMLElement).closest(".bc-sheet-handle")) return;
   touchStartY = e.touches[0].clientY;
   isDragging.value = true;
 }
@@ -149,11 +183,17 @@ function onGestureStart() {
 }
 
 onMounted(() => {
+  window.addEventListener("keydown", handleKeydown);
+  window.addEventListener("pointerdown", handleOutsidePointer);
+  window.addEventListener("resize", positionPopover);
   window.addEventListener("scroll", handleScroll, { passive: true });
   window.addEventListener("pointerdown", onGestureStart, { capture: true, passive: true });
 });
 
 onUnmounted(() => {
+  window.removeEventListener("keydown", handleKeydown);
+  window.removeEventListener("pointerdown", handleOutsidePointer);
+  window.removeEventListener("resize", positionPopover);
   window.removeEventListener("scroll", handleScroll);
   window.removeEventListener("pointerdown", onGestureStart, { capture: true });
   document.body.style.overflow = "";
@@ -167,9 +207,29 @@ onUnmounted(() => {
         v-if="active && !isCoarsePointer"
         ref="popoverEl"
         class="bc-popover"
+        :class="{ 'bc-popover--score': isScore }"
+        :role="isScore ? 'dialog' : undefined"
+        :aria-modal="isScore ? 'true' : undefined"
+        :aria-label="isScore ? 'Score explanation' : undefined"
         :style="popoverStyle"
       >
-        <BenchmarkContent :data="active.content" />
+        <button
+          v-if="isScore"
+          type="button"
+          class="bc-close"
+          aria-label="Close score explanation"
+          @click="hide"
+        >
+          <Icon
+            name="close"
+            size="20"
+          />
+        </button>
+        <BenchmarkContent
+          :key="scoreKey"
+          :data="active.content"
+          @toggle.capture="positionPopover"
+        />
       </div>
     </Transition>
 
@@ -177,17 +237,34 @@ onUnmounted(() => {
       <div
         v-if="active && isCoarsePointer"
         class="bc-sheet-backdrop"
+        :class="{ 'bc-sheet-backdrop--score': isScore }"
         @click.self="onBackdropClick"
       >
         <div
+          ref="sheetEl"
           class="bc-sheet"
-          :class="{ dragging: isDragging }"
+          :class="{ 'bc-sheet--score': isScore, dragging: isDragging }"
+          :role="isScore ? 'dialog' : undefined"
+          :aria-modal="isScore ? 'true' : undefined"
+          :aria-label="isScore ? 'Score explanation' : undefined"
           :style="{ transform: dragOffset ? `translateY(${dragOffset}px)` : undefined }"
           @touchstart="onSheetTouchStart"
           @touchmove="onSheetTouchMove"
           @touchend="onSheetTouchEnd"
         >
           <div class="bc-sheet-handle" />
+          <button
+            v-if="isScore"
+            type="button"
+            class="bc-close"
+            aria-label="Close score explanation"
+            @click="hide"
+          >
+            <Icon
+              name="close"
+              size="20"
+            />
+          </button>
           <div
             v-if="active.stepper"
             class="bc-stepper"
@@ -223,6 +300,7 @@ onUnmounted(() => {
           </div>
           <BenchmarkContent
             v-else
+            :key="scoreKey"
             :data="active.content"
           />
         </div>
@@ -232,6 +310,51 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
+/* Score explanations are explicit, persistent interactions within the same host. */
+.bc-popover.bc-popover--score {
+  --score-content-max-height: calc(100dvh - var(--sys-space-24) - var(--sys-space-48) - var(--sys-space-24));
+  background: var(--sys-color-surface-container);
+  width: min(var(--sys-layout-score-popup-width), calc(100vw - var(--sys-space-24)));
+  max-height: calc(100dvh - var(--sys-space-24));
+  overflow: hidden;
+  overscroll-behavior: contain;
+  pointer-events: auto;
+  padding: var(--sys-space-24);
+  padding-top: var(--sys-space-48);
+}
+.bc-sheet.bc-sheet--score {
+  --score-content-max-height: calc(100dvh - var(--sys-safe-top) - var(--sys-space-24) - var(--sys-space-48) - var(--sys-space-24) - var(--sys-safe-bottom));
+  background: var(--sys-color-surface-container);
+  position: relative;
+  padding-top: var(--sys-space-48);
+  max-height: calc(100dvh - var(--sys-safe-top) - var(--sys-space-24));
+  overflow: hidden;
+  overscroll-behavior: contain;
+}
+.bc-sheet--score .bc-sheet-handle { position: absolute; top: var(--sys-space-12); left: 50%; transform: translateX(-50%); margin: 0; }
+.bc-sheet-backdrop--score { touch-action: pan-y; }
+.bc-close {
+  position: absolute;
+  top: var(--sys-space-4);
+  right: var(--sys-space-4);
+  display: grid;
+  place-items: center;
+  width: var(--sys-space-48);
+  height: var(--sys-space-48);
+  padding: 0;
+  border: 0;
+  border-radius: var(--sys-shape-corner-full);
+  background: transparent;
+  color: var(--sys-color-on-surface-variant);
+  cursor: pointer;
+}
+.bc-close:focus-visible { outline: var(--sys-space-2) solid var(--sys-color-primary); outline-offset: calc(-1 * var(--sys-space-4)); }
+@media (prefers-reduced-motion: reduce) {
+  .bc-popover-enter-active, .bc-popover-leave-active,
+  .bc-sheet-enter-active, .bc-sheet-leave-active,
+  .bc-sheet-enter-active .bc-sheet, .bc-sheet-leave-active .bc-sheet { transition: none; }
+}
+
 /* Desktop hover popover */
 .bc-popover {
   position: fixed;

@@ -202,6 +202,8 @@ const recruitAccessibilityLabel = computed(() => {
       >
         <StatisticItem
           label="RPoS"
+          :score-name="props.recruit.n"
+          :score-composition="props.recruit.scoreComposition"
           :value="formatNumber(props.recruit.potentialRawScore, { maximumFractionDigits: 0 })"
           :loading="props.appIsRefreshing"
           benchmark-type="hh"

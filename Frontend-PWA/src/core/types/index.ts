@@ -145,6 +145,8 @@ export interface ApiResponse<T> {
 
 
 // Member in Leaderboard
+export type { ScoreComposition } from "../api/ScoreSchemas";
+
 export interface LeaderboardMember {
   id: string; // Player tag without #
   n: string; // Name
@@ -152,6 +154,7 @@ export interface LeaderboardMember {
   
   // STRICT NOMENCLATURE
   performanceScore: number; // Normalized % (0-100)
+  scoreComposition?: import("../api/ScoreSchemas").ScoreComposition;
   performanceRawScore: number;  // Unbounded Calculation (e.g. 52102)
 
   dt?: number; // Score Trend (Raw Score Delta)
@@ -176,6 +179,7 @@ export interface Recruit {
   
   // STRICT NOMENCLATURE
   potentialScore: number; // Normalized % (0-100)
+  scoreComposition?: import("../api/ScoreSchemas").ScoreComposition;
   potentialRawScore: number; // Unbounded Calculation (e.g. 52102)
   longevity: number; // Minutes since discovery
   longevityLabel: string; // Human-readable duration (e.g. "2h 15m")

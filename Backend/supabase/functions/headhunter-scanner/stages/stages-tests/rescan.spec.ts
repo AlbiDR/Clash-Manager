@@ -123,6 +123,7 @@ describe("runRescan recruit persistence wiring", () => {
             donations: staleProfile.totalDonations,
             war_wins: staleProfile.warDayWins,
             raw_potential_score: expectedRawScore,
+            score_composition: { rawScore: expectedRawScore, contributions: expect.any(Array) },
             win_rate: expectedWinRate,
             status: "ACTIVE", // trophies (7000) >= requiredTrophies (6000)
         });

@@ -2,14 +2,14 @@
 // Copyright (C) 2026 AlbiDR
 
 import { ref } from "vue";
-import type { BenchmarkData } from "../../core";
+import type { BenchmarkContentData } from "../../core";
 
 /**
  * Snapshot of an active ghost-benchmark popup: the content to render, and the
  * anchor rect (captured at show-time) used to position the desktop popover.
  */
 interface GhostBenchmarkEntry {
-  content: BenchmarkData | string;
+  content: BenchmarkContentData;
   anchorRect: DOMRect;
   stepper: GhostBenchmarkStepper | null;
 }
@@ -75,7 +75,7 @@ const ignoreBackdropClick = ref(false);
 export function useGhostBenchmarkState() {
   function show(
     el: HTMLElement,
-    content: BenchmarkData | string,
+    content: BenchmarkContentData,
     stepper: GhostBenchmarkStepper | null = null,
   ) {
     active.value = { content, anchorRect: el.getBoundingClientRect(), stepper };

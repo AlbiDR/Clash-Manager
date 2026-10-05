@@ -9,6 +9,7 @@ import { generatePropertyRegistrations } from './tokens';
 export const staticTokens = `
 :root {
   /* ── LAYOUT ── */
+  --sys-layout-score-popup-width: 360px;
   --sys-layout-max-width: 720px;
   /* Two control panels fit exactly inside the content width with one spacing
      gutter between them. Responsive grids consume this intrinsic panel width

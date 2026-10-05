@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 import type { Directive } from "vue";
-import type { BenchmarkData } from "../../core";
+import type { BenchmarkContentData } from "../../core";
 import { useHaptics } from "../composables/useHaptics";
 import { useGhostBenchmarkState } from "./ghostBenchmarkState";
 
@@ -12,7 +12,7 @@ import { useGhostBenchmarkState } from "./ghostBenchmarkState";
  * [DECISION LOG] EPHEMERAL: singleton state intentionally resets on full page reload.
  */
 // EPHEMERAL: intentionally resets on cold start
-let activeTarget: HTMLElement | null = null;
+let activeTarget: TooltipHTMLElement | null = null;
 
 // EPHEMERAL: intentionally resets on cold start
 /**
@@ -48,7 +48,7 @@ if (typeof window !== "undefined" && window.matchMedia) {
  */
 interface TooltipHTMLElement extends HTMLElement {
   /** Ephemeral storage representing the reactive tooltip value bound to the DOM node. */
-  _tooltipValue?: BenchmarkData | string;
+  _tooltipValue?: BenchmarkContentData;
 }
 
 if (typeof window !== "undefined") {
@@ -68,6 +68,7 @@ if (typeof window !== "undefined") {
 
   const handleHide = () => {
     hideTimer = window.setTimeout(() => {
+      if (typeof activeTarget?._tooltipValue === "object" && "kind" in activeTarget._tooltipValue) return;
       hide();
       activeTarget = null;
     }, 100);
@@ -75,11 +76,12 @@ if (typeof window !== "undefined") {
 
   // Mouse Delegation (fine pointer only)
   document.body.addEventListener("mouseover", (mouseOverEvent) => {
-    if (isCoarsePointer) return;
+    const currentContent = useGhostBenchmarkState().active.value?.content;
+    if (isCoarsePointer || (typeof currentContent === "object" && "kind" in currentContent)) return;
     const tooltipTarget = (mouseOverEvent.target as HTMLElement).closest(
       "[data-v-tooltip]",
     ) as TooltipHTMLElement | null;
-    if (tooltipTarget) handleShow(tooltipTarget);
+    if (tooltipTarget && !(typeof tooltipTarget._tooltipValue === "object" && "kind" in tooltipTarget._tooltipValue)) handleShow(tooltipTarget);
   });
 
   document.body.addEventListener("mouseout", (mouseOutEvent) => {
@@ -87,19 +89,25 @@ if (typeof window !== "undefined") {
     const tooltipTarget = (mouseOutEvent.target as HTMLElement).closest(
       "[data-v-tooltip]",
     ) as TooltipHTMLElement | null;
-    if (tooltipTarget) handleHide();
+    if (tooltipTarget && !(typeof tooltipTarget._tooltipValue === "object" && "kind" in tooltipTarget._tooltipValue)) handleHide();
   });
 
-  // Tap Delegation (coarse pointer only)
+  // Tap delegation: ordinary tooltips use coarse pointers; score explanations use explicit clicks on every pointer.
   // [DECISION LOG] Replaces the previous 400ms long-press timer: a plain tap
   // opens the mobile sheet immediately, no ambiguous hold duration. Dismissal
   // is owned by GhostBenchmarkHost's sheet (backdrop tap / swipe-down).
   document.body.addEventListener("click", (clickEvent) => {
-    if (!isCoarsePointer) return;
     const tooltipTarget = (clickEvent.target as HTMLElement).closest(
       "[data-v-tooltip]",
     ) as TooltipHTMLElement | null;
-    if (tooltipTarget) handleShow(tooltipTarget, true);
+    if (!tooltipTarget) return;
+    const isScore = typeof tooltipTarget._tooltipValue === "object" && "kind" in tooltipTarget._tooltipValue;
+    if (isScore && activeTarget === tooltipTarget && useGhostBenchmarkState().active.value) {
+      useGhostBenchmarkState().hide();
+      activeTarget = null;
+    } else if (isCoarsePointer || isScore) {
+      handleShow(tooltipTarget, isCoarsePointer);
+    }
   });
 }
 
@@ -124,10 +132,10 @@ if (typeof window !== "undefined") {
  *   backdrop tap or swipe-down gesture.
  *
  * Reactive State:
- * - The directive's value (BenchmarkData | string) is stored as an expando
+ * - The directive's value (BenchmarkContentData) is stored as an expando
  *   '_tooltipValue' on the DOM element for retrieval by the delegated handler.
  */
-export const vTooltip: Directive<TooltipHTMLElement, BenchmarkData | string> = {
+export const vTooltip: Directive<TooltipHTMLElement, BenchmarkContentData> = {
   mounted(el, binding) {
     el._tooltipValue = binding.value;
     if (binding.value) {
