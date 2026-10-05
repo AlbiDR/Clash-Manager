@@ -5,6 +5,7 @@ import { ref, useTemplateRef, watch, nextTick, onMounted, onUnmounted } from "vu
 import { useGhostBenchmarkState } from "../directives/ghostBenchmarkState";
 import { usePointerCapability } from "../composables/usePointerCapability";
 import BenchmarkContent from "./BenchmarkContent.vue";
+import Icon from "./Icon.vue";
 
 /**
  * [UI] GHOST BENCHMARK HOST
@@ -17,7 +18,7 @@ import BenchmarkContent from "./BenchmarkContent.vue";
  * Layer: @shared/ui
  * ----------------------------------------------------------------------------
  */
-const { active, hide } = useGhostBenchmarkState();
+const { active, hide, ignoreBackdropClick } = useGhostBenchmarkState();
 const { isCoarsePointer } = usePointerCapability();
 
 // --- Desktop popover positioning ---
@@ -130,12 +131,31 @@ function onSheetTouchEnd() {
   dragOffset.value = 0;
 }
 
+/**
+ * Dismisses the sheet on a backdrop tap, except for the leftover click of the
+ * touch that opened it (see `ignoreBackdropClick`).
+ */
+function onBackdropClick() {
+  if (ignoreBackdropClick.value) {
+    ignoreBackdropClick.value = false;
+    return;
+  }
+  hide();
+}
+
+/** Any new touch ends the opening gesture, so its leftover click can no longer arrive. */
+function onGestureStart() {
+  ignoreBackdropClick.value = false;
+}
+
 onMounted(() => {
   window.addEventListener("scroll", handleScroll, { passive: true });
+  window.addEventListener("pointerdown", onGestureStart, { capture: true, passive: true });
 });
 
 onUnmounted(() => {
   window.removeEventListener("scroll", handleScroll);
+  window.removeEventListener("pointerdown", onGestureStart, { capture: true });
   document.body.style.overflow = "";
 });
 </script>
@@ -157,7 +177,7 @@ onUnmounted(() => {
       <div
         v-if="active && isCoarsePointer"
         class="bc-sheet-backdrop"
-        @click.self="hide"
+        @click.self="onBackdropClick"
       >
         <div
           class="bc-sheet"
@@ -168,7 +188,43 @@ onUnmounted(() => {
           @touchend="onSheetTouchEnd"
         >
           <div class="bc-sheet-handle" />
-          <BenchmarkContent :data="active.content" />
+          <div
+            v-if="active.stepper"
+            class="bc-stepper"
+          >
+            <button
+              type="button"
+              class="bc-step"
+              aria-label="Show earlier entry"
+              :disabled="active.stepper.position <= 1"
+              @click="active.stepper.go(-1)"
+            >
+              <Icon
+                name="chevron_left"
+                size="24"
+              />
+            </button>
+            <div class="bc-stepper-body">
+              <BenchmarkContent :data="active.content" />
+              <span class="bc-stepper-position">{{ active.stepper.position }} / {{ active.stepper.total }}</span>
+            </div>
+            <button
+              type="button"
+              class="bc-step"
+              aria-label="Show later entry"
+              :disabled="active.stepper.position >= active.stepper.total"
+              @click="active.stepper.go(1)"
+            >
+              <Icon
+                name="chevron_right"
+                size="24"
+              />
+            </button>
+          </div>
+          <BenchmarkContent
+            v-else
+            :data="active.content"
+          />
         </div>
       </div>
     </Transition>
@@ -233,6 +289,62 @@ onUnmounted(() => {
   border-radius: var(--sys-shape-corner-full);
   background: var(--sys-color-outline-variant);
   margin: 0 auto var(--sys-space-16);
+}
+
+/* Series stepper: arrows flank the content so a mistapped entry is one tap away. */
+.bc-stepper {
+  display: grid;
+  grid-template-columns: var(--sys-space-44) 1fr var(--sys-space-44);
+  align-items: center;
+  gap: var(--sys-space-8);
+}
+
+.bc-stepper-body {
+  display: grid;
+  gap: var(--sys-space-6);
+  justify-items: center;
+  text-align: center;
+  min-width: 0;
+}
+
+.bc-stepper-position {
+  color: var(--sys-color-outline);
+  font-family: var(--sys-font-family-mono);
+  font-size: var(--sys-typescale-label-sm);
+  font-weight: 800;
+  letter-spacing: var(--sys-tracking-wide);
+  line-height: var(--sys-leading-none);
+}
+
+.bc-step {
+  display: grid;
+  place-items: center;
+  width: var(--sys-space-44);
+  height: var(--sys-space-44);
+  padding: 0;
+  color: var(--sys-color-primary);
+  background: var(--sys-color-surface-container-highest);
+  border: 0;
+  border-radius: var(--sys-shape-corner-full);
+  cursor: pointer;
+  touch-action: manipulation;
+  transition:
+    opacity var(--sys-motion-duration-200) var(--sys-motion-easing-standard),
+    background-color var(--sys-motion-duration-200) var(--sys-motion-easing-standard);
+}
+
+.bc-step:active:not(:disabled) {
+  background: var(--sys-color-secondary-container);
+}
+
+.bc-step:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.bc-step:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--sys-color-primary);
 }
 
 .bc-sheet-enter-active,

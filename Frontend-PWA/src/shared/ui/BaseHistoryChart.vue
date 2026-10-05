@@ -2,7 +2,11 @@
 <!-- Copyright (C) 2026 AlbiDR -->
 <script setup lang="ts">
 
+import { ref, useTemplateRef, watch } from "vue";
 import { useBaseHistoryChart } from "../composables/useBaseHistoryChart";
+import { useHaptics } from "../composables/useHaptics";
+import { usePointerCapability } from "../composables/usePointerCapability";
+import { useGhostBenchmarkState } from "../directives/ghostBenchmarkState";
 
 /**
  * Bar heights, as a percentage of the plot area, for the loading placeholder.
@@ -40,15 +44,111 @@ const { chartData } = useBaseHistoryChart({
   loading: () => props.loading,
   maxScale: () => props.maxScale,
 });
+
+// --- Touch selection ---------------------------------------------------------
+//
+// [DECISION LOG] SELECT BY FINGER POSITION, NOT BY ELEMENT:
+// A full-history chart packs up to 53 bars into a phone-width card, so each bar
+// is only a few pixels wide and a fingertip cannot reliably land on one. On
+// touch the chart therefore reads the finger's horizontal position and picks
+// the nearest bar, which also lets a drag glide along the chart. The pick is
+// shown highlighted and committed on release by opening the sheet, whose arrows
+// then step one entry at a time. Fine pointers keep the hover popover, which is
+// precise enough on its own.
+
+const { isCoarsePointer } = usePointerCapability();
+const { active: activeSheet, show, ignoreBackdropClick } = useGhostBenchmarkState();
+const haptics = useHaptics();
+
+const chartEl = useTemplateRef<HTMLElement>("chartEl");
+
+/** Index of the bar being picked or shown in the sheet; null when nothing is. */
+const activeIndex = ref<number | null>(null);
+
+let isScrubbing = false;
+
+/** Returns the bar whose centre is nearest to a horizontal screen position. */
+function nearestBarIndex(clientX: number): number | null {
+  const barEls = chartEl.value?.querySelectorAll<HTMLElement>(".bar");
+  if (!barEls || barEls.length === 0) return null;
+  let nearestIndex = 0;
+  let nearestDistance = Infinity;
+  barEls.forEach((barEl, barIndex) => {
+    const barRect = barEl.getBoundingClientRect();
+    const distance = Math.abs(clientX - (barRect.left + barRect.width / 2));
+    if (distance < nearestDistance) {
+      nearestDistance = distance;
+      nearestIndex = barIndex;
+    }
+  });
+  return nearestIndex;
+}
+
+/** Opens the shared sheet on a bar, wired so its arrows move the selection. */
+function showSheetFor(barIndex: number) {
+  const barEl = chartEl.value?.querySelectorAll<HTMLElement>(".bar")[barIndex];
+  const chartBar = chartData.value.bars[barIndex];
+  if (!barEl || !chartBar) return;
+  activeIndex.value = barIndex;
+  show(barEl, chartBar.tooltip, {
+    position: barIndex + 1,
+    total: chartData.value.bars.length,
+    go: stepSelection,
+  });
+}
+
+function stepSelection(direction: -1 | 1) {
+  if (activeIndex.value === null) return;
+  const nextIndex = activeIndex.value + direction;
+  if (nextIndex < 0 || nextIndex >= chartData.value.bars.length) return;
+  haptics.tap();
+  showSheetFor(nextIndex);
+}
+
+function onPointerDown(pointerEvent: PointerEvent) {
+  if (!isCoarsePointer.value) return;
+  isScrubbing = true;
+  chartEl.value?.setPointerCapture?.(pointerEvent.pointerId);
+  activeIndex.value = nearestBarIndex(pointerEvent.clientX);
+}
+
+function onPointerMove(pointerEvent: PointerEvent) {
+  if (!isScrubbing) return;
+  activeIndex.value = nearestBarIndex(pointerEvent.clientX);
+}
+
+function onPointerUp() {
+  if (!isScrubbing) return;
+  isScrubbing = false;
+  if (activeIndex.value === null) return;
+  showSheetFor(activeIndex.value);
+  // The click that finishes this tap lands on the new backdrop; the sheet must not read it as a dismiss.
+  ignoreBackdropClick.value = true;
+}
+
+// A vertical scroll takes the gesture over; drop the pick instead of opening.
+function onPointerCancel() {
+  isScrubbing = false;
+  activeIndex.value = null;
+}
+
+// Whatever closes the sheet (backdrop, swipe-down) also clears the highlight.
+watch(activeSheet, (sheet) => {
+  if (!sheet && !isScrubbing) activeIndex.value = null;
+});
 </script>
 
 <template>
   <div class="chart-container">
     <div
       v-if="chartData.bars.length > 0 && !chartData.isEmpty"
+      ref="chartEl"
       class="base-chart"
-      :class="`theme-${theme}`"
-      :style="{ '--bar-count': chartData.bars.length }"
+      :class="[`theme-${theme}`, { 'has-active': activeIndex !== null }]"
+      @pointerdown="onPointerDown"
+      @pointermove="onPointerMove"
+      @pointerup="onPointerUp"
+      @pointercancel="onPointerCancel"
     >
       <!-- SVG Overlay for Trend Line ONLY -->
       <svg
@@ -78,11 +178,12 @@ const { chartData } = useBaseHistoryChart({
 
       <!-- Bars -->
       <div
-        v-for="chartBar in chartData.bars"
+        v-for="(chartBar, barIndex) in chartData.bars"
         :key="chartBar.id"
-        v-tooltip="chartBar.tooltip"
+        v-tooltip="isCoarsePointer ? '' : chartBar.tooltip"
         class="bar hit-target"
         :class="{
+          'is-active': barIndex === activeIndex,
           'bar-win':
             !chartBar.isProjection && props.winThreshold != null && chartBar.value >= props.winThreshold,
           'bar-hit':
@@ -119,40 +220,32 @@ const { chartData } = useBaseHistoryChart({
 
 <style scoped>
 .chart-container {
+  --chart-height: calc(var(--sys-space-48) + var(--sys-space-16));
   width: 100%;
-  height: 48px;
-  overflow-x: auto;
-  overflow-y: hidden;
+  height: var(--chart-height);
+  overflow: hidden;
   margin: var(--sys-space-12) 0;
   display: flex;
   align-items: flex-end;
-  scroll-behavior: smooth;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(var(--sys-color-primary-rgb), 0.3) transparent;
   padding-top: var(--sys-space-10);
+  padding-inline: var(--sys-space-2);
   position: relative; /* Ensure stacking context */
 }
 
-/* Custom Scrollbar for Desktop */
-.chart-container::-webkit-scrollbar {
-  height: 3px;
-}
-.chart-container::-webkit-scrollbar-track {
-  background: transparent;
-}
-.chart-container::-webkit-scrollbar-thumb {
-  background: rgba(var(--sys-color-primary-rgb), 0.3);
-  border-radius: var(--sys-shape-corner-hairline);
-}
-
+/* [DECISION LOG] THE WHOLE HISTORY ALWAYS FITS: bars share the width equally,
+   so no entry is ever scrolled out of sight and the shape of the full history
+   reads at a glance. Precision comes from picking by finger position (see the
+   script) and from the sheet's arrows, not from widening the bars. */
 .base-chart {
   display: flex;
   align-items: flex-end;
   height: 100%;
-  min-width: 100%;
+  width: 100%;
   gap: var(--sys-space-2);
   position: relative;
   z-index: 1;
+  /* Horizontal drags select bars; vertical drags still scroll the page. */
+  touch-action: pan-y;
 }
 
 .trend-overlay {
@@ -252,11 +345,8 @@ const { chartData } = useBaseHistoryChart({
 /* === BARS === */
 
 .bar {
-  min-width: 6px;
-  width: max(
-    6px,
-    calc((100% - var(--bar-count, 52) * 2px) / var(--bar-count, 52))
-  );
+  flex: 1 1 0;
+  min-width: 0;
   min-height: 4px;
   border-radius: var(--sys-shape-corner-hairline);
   opacity: 0.9;
@@ -265,14 +355,15 @@ const { chartData } = useBaseHistoryChart({
   position: relative;
 }
 
-/* Expand touch bounds vertically so even 4px bars are easy to hit on mobile */
+/* Hover zones tile the full chart height with no overlap, so a desktop pointer
+   never falls between two bars. */
 .bar::after {
   content: '';
   position: absolute;
-  bottom: -12px;
-  height: 60px; /* Covers the full visual height of the 48px chart */
-  left: -2px;
-  right: -2px;
+  bottom: calc(-1 * var(--sys-space-12));
+  height: var(--chart-height);
+  left: calc(var(--sys-space-2) / -2);
+  right: calc(var(--sys-space-2) / -2);
   z-index: 10;
 }
 
@@ -280,6 +371,25 @@ const { chartData } = useBaseHistoryChart({
   transform: scaleY(1.1);
   opacity: 1;
   z-index: 30;
+}
+
+/* Selected bar: the rest recede a little and the pick gets a thin ring in the
+   theme colour. Opacity and an outline only, nothing that moves or glows. */
+.base-chart.has-active .bar:not(.is-active) {
+  opacity: 0.5;
+}
+
+.base-chart .bar.is-active {
+  opacity: 1;
+  z-index: 30;
+}
+
+.theme-war .bar.is-active {
+  box-shadow: 0 0 0 1.5px var(--sys-color-primary);
+}
+
+.theme-voyage .bar.is-active {
+  box-shadow: 0 0 0 1.5px var(--sys-color-chart-accent);
 }
 .hit-target {
   cursor: pointer;
