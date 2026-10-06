@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
-/* eslint-disable vue/one-component-per-file -- Test-local component doubles belong with the spec that owns them. */
 
 import { mount } from "@vue/test-utils";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
