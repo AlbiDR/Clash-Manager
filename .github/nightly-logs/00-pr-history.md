@@ -16,6 +16,15 @@ LAST_AGED:   2026-10-05
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-06] PR #2104 [Stage 11]: Inspected APK wrapper performance settings, WebView caching mode LOAD_CACHE_ELSE_NETWORK, service worker precache route, Vite code splitting, and precache footprint (15 files, 67.6 KB). All 9 performance invariants verified optimal.
+**Domain:** apk | **Commit:** f07ef1668 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2104)
+**Files:** .github/nightly-logs/11-apk-optimization-coverage.log, .github/nightly-logs/11-apk-optimization-pr-body.md
+**Why:** No wrapper or bundle performance optimizations required; all invariants pass.
+**Change:** Inspected APK wrapper performance settings, WebView caching mode LOAD_CACHE_ELSE_NETWORK, service worker precache route, Vite code splitting, and precache footprint (15 files, 67.6 KB). All 9 performance invariants verified optimal.
+**Result:** pnpm audit:apk-perf passed 9/9 invariants cleanly.
+**Nudges:** 0
+
+
 ### [2026-10-06] PR #2103 [Stage 10]: Audited PWA and APK wrapper invariants: asset links, manifest parity, version code/name sync, release metadata, and security policy with zero mismatches found.
 **Domain:** apk | **Commit:** c4ca2293e | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2103)
 **Files:** .github/nightly-logs/10-apk-integrity-coverage.log, .github/nightly-logs/10-apk-integrity-pr-body.md
