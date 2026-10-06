@@ -254,7 +254,7 @@ describe("useConsoleController", () => {
     it("returns 'error' when apiStatus is unconfigured", () => {
       sharedState.mockApiStatus.value = "unconfigured";
       const { status } = useConsoleController(createOptions());
-      expect(status.value).toMatchObject({ type: "error", text: "Invalid API URL" });
+      expect(status.value).toMatchObject({ type: "error", text: "Config Error" });
     });
 
 
@@ -293,7 +293,7 @@ describe("useConsoleController", () => {
       sharedState.mockApiStatus.value = "unconfigured";
       sharedState.mockConnectionStatus.value = "offline";
       const { status } = useConsoleController(createOptions());
-      expect(status.value.text).toBe("Invalid API URL");
+      expect(status.value.text).toBe("Config Error");
     });
 
     it("prioritizes offline over sync error", () => {

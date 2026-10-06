@@ -139,7 +139,7 @@ export function useConnectivityManager() {
     if (unref(apiStatus) === "unconfigured") {
       return {
         type: "error",
-        label: "Invalid API URL",
+        label: "Config Error",
         confidence: 0,
         diagnosis: "Backend Configuration Error"
       };

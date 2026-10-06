@@ -128,15 +128,15 @@ export function useSettings() {
 
   const apiStatusObject = computed(() => {
     if (unifiedStatus.value === "online")
-      return { type: "success", text: "Systems Online" } as const;
+      return { type: "success", text: "Online" } as const;
     if (unifiedStatus.value === "offline")
       return { type: "error", text: "Disconnected" } as const;
     if (unifiedStatus.value === "syncing")
-      return { type: "loading", text: "Syncing..." } as const;
+      return { type: "loading", text: "Syncing" } as const;
     if (unifiedStatus.value === "success-resolve")
       return { type: "success", text: "Verified" } as const;
 
-    return { type: "loading", text: "Connecting..." } as const;
+    return { type: "loading", text: "Connecting" } as const;
   });
 
   /**

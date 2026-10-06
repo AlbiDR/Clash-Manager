@@ -294,7 +294,7 @@ describe("useSettings", () => {
     it("returns 'success' for online status", () => {
       mocks.mockStatus.value = "online";
       const { result } = withSetup(useSettings);
-      expect(result.apiStatusObject.value).toEqual({ type: "success", text: "Systems Online" });
+      expect(result.apiStatusObject.value).toEqual({ type: "success", text: "Online" });
     });
 
     it("returns 'error' for offline status", () => {
@@ -306,7 +306,7 @@ describe("useSettings", () => {
     it("returns 'loading' for syncing status", () => {
       mocks.mockStatus.value = "syncing";
       const { result } = withSetup(useSettings);
-      expect(result.apiStatusObject.value).toEqual({ type: "loading", text: "Syncing..." });
+      expect(result.apiStatusObject.value).toEqual({ type: "loading", text: "Syncing" });
     });
 
     it("returns 'success' for success-resolve status", () => {
@@ -319,7 +319,7 @@ describe("useSettings", () => {
       // @ts-expect-error -- test mock/state does not satisfy the full type
       mocks.mockStatus.value = "something-else";
       const { result } = withSetup(useSettings);
-      expect(result.apiStatusObject.value).toEqual({ type: "loading", text: "Connecting..." });
+      expect(result.apiStatusObject.value).toEqual({ type: "loading", text: "Connecting" });
     });
   });
 

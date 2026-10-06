@@ -201,9 +201,9 @@ export function useLaboratory() {
    * SYSTEM STATUS RESOLVER
    */
   const status = computed(() => {
-    if (isFetching.value) return { type: "loading", text: "Scanning Vault..." } as const;
-    if (isSimulating.value) return { type: "loading", text: "Computing Trajectory..." } as const;
-    if (fetchError.value) return { type: "error", text: "Extraction Failed" } as const;
+    if (isFetching.value) return { type: "loading", text: "Scanning" } as const;
+    if (isSimulating.value) return { type: "loading", text: "Simulating" } as const;
+    if (fetchError.value) return { type: "error", text: "Fetch Failed" } as const;
     const tag = trackedPlayerTag.value || clashData.value?.playerTag;
     // The status pill shares a 360dp title row with "Laboratory". Keep this
     // concise there; the empty state below carries the full explanation.
