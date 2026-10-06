@@ -16,6 +16,15 @@ LAST_AGED:   2026-10-05
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-06] PR #2098 [Stage 5]: docs(readme): Reconcile core/api and shared/ui READMEs with ScoreSchemas and ScoreCompositionPanel
+**Domain:** documentation | **Commit:** 7c88eaef1 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2098)
+**Files:** .github/nightly-logs/05-documentation-readme-coverage.log, .github/nightly-logs/05-documentation-readme-pr-body.md, Frontend-PWA/src/core/api/README.md, Frontend-PWA/src/shared/ui/README.md
+**Why:** Reconciled shared/ui README with ScoreCompositionPanel, GhostBenchmarkHost, BenchmarkContent, ConfirmDialog, and LinkRow, and core/api README with ScoreSchemas domain
+**Change:** docs(readme): Reconcile core/api and shared/ui READMEs with ScoreSchemas and ScoreCompositionPanel
+**Result:** PASSED: git diff --check verified zero whitespace or syntax errors
+**Nudges:** 0
+
+
 ### [2026-10-06] PR #2097 [Stage 4]: Inspected 111 changed files and Edge Functions for SQL view substrate hygiene; zero structural rot or unreferenced views found.
 **Domain:** optimization | **Commit:** ff7f595bf | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2097)
 **Files:** .github/nightly-logs/04-optimization-coverage.log, .github/nightly-logs/04-optimization-pr-body.md
