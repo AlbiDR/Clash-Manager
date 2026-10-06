@@ -16,6 +16,15 @@ LAST_AGED:   2026-10-05
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-06] PR #2100 [Stage 7]: Scanned root, Frontend-PWA, and Backend package.json manifests and catalog declarations. All 3 package.json manifests agree on 14.51.0 and catalog protocol usage is intact. pnpm audit:version passed zero-drift.
+**Domain:** versioning | **Commit:** 4d93c28a7 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2100)
+**Files:** .github/nightly-logs/07-version-integrity-coverage.log, .github/nightly-logs/07-version-integrity-pr-body.md
+**Why:** No version drift or catalog protocol violations detected across root, package manifests, or derived locations.
+**Change:** Scanned root, Frontend-PWA, and Backend package.json manifests and catalog declarations. All 3 package.json manifests agree on 14.51.0 and catalog protocol usage is intact. pnpm audit:version passed zero-drift.
+**Result:** pnpm audit:version PASSED
+**Nudges:** 0
+
+
 ### [2026-10-06] PR #2099 [Stage 6]: docs(tsdoc): harden useGhostBenchmarkState interface contracts and inline logic annotations
 **Domain:** documentation | **Commit:** 848926fd7 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2099)
 **Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, .github/nightly-logs/06-documentation-tsdoc-pr-body.md, Frontend-PWA/src/shared/directives/ghostBenchmarkState.ts
