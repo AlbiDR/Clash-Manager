@@ -417,7 +417,7 @@ button, a, [role="button"], [role="link"], input, select, textarea {
   touch-action: manipulation;
 }
 
-.view-container, .scrollable-area, .list-container {
+.view-container, .list-container {
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-y: auto;
 }

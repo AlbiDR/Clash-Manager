@@ -60,7 +60,6 @@ The signature reusable capability. `ConsoleLayout` + `ConsoleHeader` + `ConsoleL
 | `SelectionBar.vue` / `ScoreThresholdSelector.vue` | Bulk-operation bar and its score-threshold picker. The picker is a compact slider whose whole 48px footprint is the drag surface, sharing `usePrecisionSlider` with `PrecisionSlider.vue`. |
 | `FloatingDock.vue` / `NavigationDock.vue` / `SelectionFab.vue` | The bottom dock that morphs into contextual selection actions. Configured with a declarative `v-tactile` haptic feedback brokering model and 48px touch targets for WebView mobile ergonomics. |
 | `ViewOptions.vue` | A domain-blind bottom sheet component providing secondary view-shaping capabilities (search and sorting). Modernized with 48px touch targets, declarative `v-tactile` haptic feedback, keyboard accessibility (Escape dismissal and focus restoration), and drag-to-dismiss gesture handling. |
-| `HeaderInfoOverlay.vue` | Explains a view's metrics. |
 
 ## Voyage and feedback
 
