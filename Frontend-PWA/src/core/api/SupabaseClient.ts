@@ -46,6 +46,12 @@ export const lastSyncStatus = ref<"TIMEOUT" | "AUTH" | "VALIDATION" | "OFFLINE" 
 export const OPTIONAL_METADATA_TIMEOUT_MS = 3_000;
 
 /**
+ * Pipeline components whose COMPLETED heartbeat refreshes the roster snapshot
+ * (substrate.on_pipeline_completed), so whose last_success_at dates the rows on screen.
+ */
+const ROSTER_SNAPSHOT_SOURCES = ["ROYALE_DATA_INGESTOR", "NIGHTLY_MAINTENANCE"];
+
+/**
  * Status indicator for backend ingestion pipeline execution.
  */
 export type PipelineHealthStatus = "COMPLETED" | "RUNNING" | "FAILED";
@@ -457,7 +463,8 @@ export async function ping(options?: { signal?: AbortSignal; force?: boolean }):
  * Valibot schema validation on all inbound data.
  *
  * [DECISION LOG] FRESHNESS EVIDENCE RESOLUTION
- * The ingestor heartbeat's last_success_at is the freshness of the payload.
+ * The newest last_success_at among the roster snapshot's sources (the ingestor
+ * and nightly maintenance) is the freshness of the payload.
  * Roster row timestamps are only a lower bound, used when the heartbeat
  * cannot be read.
  *
@@ -480,23 +487,16 @@ export async function fetchRemote(options?: {
   const supabase = createSupabaseClient();
   const signal = options?.signal || new AbortController().signal;
 
-  // [TYPES] postgrest-js's `.single()` narrows its return type to `PostgrestBuilder`,
-  // which doesn't expose `.abortSignal()` -- but `.single()` returns `this` under the
-  // hood (see PostgrestTransformBuilder.single), so the real object still has the
-  // method at runtime. `.abortSignal()` must stay last (it resolves to a terminal,
-  // non-chainable value once awaited, same as every other query below), so this is
-  // a narrow type-only cast rather than a chain reorder.
   // [FIX] SCHEMA REACHABILITY: this previously addressed `substrate.pipeline_heartbeat`
   // directly. The remote Data API exposes only public/storage/graphql_public/features,
   // so PostgREST rejected every call with PGRST106 and the error was discarded below,
   // leaving the freshness stamp permanently null. Reads now go through the granted
   // `features.pipeline_heartbeat_view` projection.
-  const heartbeatQueryWithSingle = supabase
-    .schema('features')
-    .from('pipeline_heartbeat_view')
-    .select('last_success_at')
-    .eq('component_id', 'ROYALE_DATA_INGESTOR')
-    .single() as unknown as { abortSignal: (s: AbortSignal) => PromiseLike<{ data: { last_success_at: string | null } | null; error: { message: string } | null }> };
+  const fetchHeartbeats = (heartbeatSignal: AbortSignal) =>
+    supabase.schema('features').from('pipeline_heartbeat_view')
+      .select('component_id,last_success_at')
+      .in('component_id', ROSTER_SNAPSHOT_SOURCES)
+      .abortSignal(heartbeatSignal);
 
   // [ADR] Direct View Access: Bypassing the minimal SW-oriented get_pwa_data RPC
   // to fetch high-fidelity datasets directly from the feature schema.
@@ -530,9 +530,7 @@ export async function fetchRemote(options?: {
     supabase.schema('features').from('headhunter_materialized').select('*')
       .order('raw_potential_score', { ascending: false })
       .limit(250).abortSignal(signal),
-  heartbeatRequest = resolveOptionalQuery("Pipeline heartbeat", signal, (optionalSignal) =>
-    heartbeatQueryWithSingle.abortSignal(optionalSignal),
-  ),
+  heartbeatRequest = resolveOptionalQuery("Pipeline heartbeat", signal, fetchHeartbeats),
   blacklistRequest = options?.knownBlacklist
     ? resolveOptionalQuery("Recruit blacklist", signal, fetchBlacklist)
     : fetchBlacklist(signal);
@@ -586,25 +584,30 @@ export async function fetchRemote(options?: {
   
   // [DECISION LOG] THE HEARTBEAT IS THE FRESHNESS SIGNAL
   // The roster is a snapshot refreshed by the same COMPLETED heartbeat write that
-  // stamps `last_success_at`, so that stamp is how fresh the rows on screen are.
+  // stamps `last_success_at` (for each ROSTER_SNAPSHOT_SOURCES component), so the
+  // newest such stamp is how fresh the rows on screen are.
   // Row timestamps were combined with it (newest wins) because a run could commit
   // rows and then report FAILED; such rows now never reach the snapshot, which
   // refreshes only on COMPLETED. Row timestamps also stop meaning "last ingested"
   // once unchanged rows are no longer rewritten: a quiet clan would read as stale
   // and an old member edit would vouch for a stalled pipeline. They remain only a
   // lower bound for a sync whose heartbeat read failed.
-  const HeartbeatRowSchema = v.object({
+  // Either snapshot source completing refreshes the rows, so the newer stamp wins.
+  const HeartbeatRowsSchema = v.array(v.object({
     last_success_at: v.nullable(v.string()),
-  });
+  }));
   const heartbeatValidation = heartbeatResponse?.error || !heartbeatResponse?.data
     ? null
-    : v.safeParse(HeartbeatRowSchema, heartbeatResponse.data);
+    : v.safeParse(HeartbeatRowsSchema, heartbeatResponse.data);
   if (!heartbeatResponse || heartbeatResponse.error || (heartbeatValidation && !heartbeatValidation.success)) {
     console.warn("[Sync] Pipeline heartbeat unavailable; using roster timestamps as a lower bound on freshness.");
   }
-  const heartbeatTimestamp = heartbeatValidation?.success
-    ? parseTimestamp(heartbeatValidation.output.last_success_at)
-    : null;
+  const heartbeatTimestamps = heartbeatValidation?.success
+    ? heartbeatValidation.output
+      .map((heartbeatRow) => parseTimestamp(heartbeatRow.last_success_at))
+      .filter((heartbeatStamp): heartbeatStamp is number => heartbeatStamp !== null)
+    : [];
+  const heartbeatTimestamp = heartbeatTimestamps.length > 0 ? Math.max(...heartbeatTimestamps) : null;
   const rosterTimestamps = rosterData
     .map((rosterRow) => parseTimestamp(rosterRow.last_ingested_at))
     .filter((rosterTimestamp): rosterTimestamp is number => rosterTimestamp !== null);

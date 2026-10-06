@@ -62,8 +62,9 @@ const HANDSHAKE_FAILURE_LIMIT = 5;
  * @remarks
  * [DECISION LOG] AN OVERLOADED BACKEND IS NOT RETRIED
  * Retrying these feeds the overload that produced them. The handshake reports
- * offline at once and is re-armed by the next foreground poll or focus, the same
- * path that recovers from an exhausted retry chain.
+ * offline at once and is re-armed by the browser's online event, by the app
+ * returning to the foreground, or by the foreground poll, the same paths that
+ * recover from an exhausted retry chain.
  */
 const EDGE_OVERLOAD_STATUS = new Set([503, 546]);
 
@@ -85,11 +86,29 @@ function handleBrowserOnline() {
   void checkApiStatus();
 }
 
+/**
+ * Re-arms an offline handshake when the app returns to the foreground.
+ *
+ * @remarks
+ * [DECISION LOG] RECOVERY DOES NOT WAIT FOR THE POLL
+ * An overloaded backend and an exhausted retry chain both leave the handshake
+ * offline with no timer. The foreground poll that re-arms it is suspended under
+ * power saving, and the app's visibility refresh waits for half an hour hidden,
+ * so a power-saving device could stay offline long after the backend recovered.
+ * Coming back to the foreground is the user asking to see current data.
+ */
+function handleVisibilityRecovery() {
+  if (document.visibilityState === "visible" && apiStatus.value === "offline" && navigator.onLine) {
+    void checkApiStatus();
+  }
+}
+
 function registerConnectivityRecovery() {
   if (connectivityListenersRegistered || typeof window === "undefined") return;
 
   window.addEventListener("offline", handleBrowserOffline);
   window.addEventListener("online", handleBrowserOnline);
+  if (typeof document !== "undefined") document.addEventListener("visibilitychange", handleVisibilityRecovery);
   connectivityListenersRegistered = true;
 }
 
@@ -285,6 +304,7 @@ export function resetApiState() {
     if (connectivityListenersRegistered && typeof window !== "undefined") {
       window.removeEventListener("offline", handleBrowserOffline);
       window.removeEventListener("online", handleBrowserOnline);
+      if (typeof document !== "undefined") document.removeEventListener("visibilitychange", handleVisibilityRecovery);
     }
     connectivityListenersRegistered = false;
     isInitialized = false;

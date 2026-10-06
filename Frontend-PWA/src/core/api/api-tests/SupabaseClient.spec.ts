@@ -27,10 +27,11 @@ const mockFrom = {
   single: vi.fn(),
   abortSignal: vi.fn(),
   insert: vi.fn(),
+  in: vi.fn(),
 };
 
 // Make them fluent and thenable
-[mockFrom.select, mockFrom.order, mockFrom.limit, mockFrom.eq, mockFrom.single, mockFrom.abortSignal, mockFrom.insert].forEach(m => {
+[mockFrom.select, mockFrom.order, mockFrom.limit, mockFrom.eq, mockFrom.single, mockFrom.abortSignal, mockFrom.insert, mockFrom.in].forEach(m => {
   m.mockImplementation(() => {
     return Object.assign(Promise.resolve({ data: null, error: null }), mockFrom);
   });
@@ -263,7 +264,7 @@ describe("SupabaseClient", () => {
       vi.mocked(mockFrom.abortSignal)
         .mockResolvedValueOnce({ data: [{ player_tag: '#ABC', player_name: 'Hero', trophies: 5000 }], error: null }) // Roster
         .mockResolvedValueOnce({ data: [{ player_tag: '#XYZ', player_name: 'Recruit', trophies: 4000 }], error: null }) // Headhunter
-        .mockResolvedValueOnce({ data: { last_success_at: '2026-01-01T00:00:00Z' }, error: null }) // Heartbeat
+        .mockResolvedValueOnce({ data: [{ component_id: 'ROYALE_DATA_INGESTOR', last_success_at: '2026-01-01T00:00:00Z' }], error: null }) // Heartbeat
         .mockResolvedValueOnce({ data: [], error: null }); // Blacklist
 
       const result = await SupabaseClient.fetchRemote();
@@ -465,7 +466,7 @@ describe("SupabaseClient", () => {
       vi.mocked(mockFrom.abortSignal)
         .mockResolvedValueOnce({ data: [], error: null })
         .mockResolvedValueOnce({ data: [], error: null })
-        .mockResolvedValueOnce({ data: { last_success_at: 'not-a-date' }, error: null })
+        .mockResolvedValueOnce({ data: [{ component_id: 'ROYALE_DATA_INGESTOR', last_success_at: 'not-a-date' }], error: null })
         .mockResolvedValueOnce({ data: [], error: null });
 
       const result = await SupabaseClient.fetchRemote();
@@ -489,11 +490,17 @@ describe("SupabaseClient", () => {
       const LONG_AGO = new Date(NOW - 2 * SOURCE_STALENESS_THRESHOLD).toISOString();
 
       /** Answers one sync with the given roster row and heartbeat timestamps. */
-      const setFreshnessReads = (lastIngestedAt: string, lastSuccessAt: string) => {
+      const setFreshnessReads = (lastIngestedAt: string, lastSuccessAt: string, maintenanceSuccessAt: string | null = null) => {
         vi.mocked(mockFrom.abortSignal)
           .mockResolvedValueOnce({ data: [{ player_tag: '#ABC', last_ingested_at: lastIngestedAt }], error: null })
           .mockResolvedValueOnce({ data: [], error: null })
-          .mockResolvedValueOnce({ data: { last_success_at: lastSuccessAt }, error: null })
+          .mockResolvedValueOnce({
+            data: [
+              { component_id: 'ROYALE_DATA_INGESTOR', last_success_at: lastSuccessAt },
+              { component_id: 'NIGHTLY_MAINTENANCE', last_success_at: maintenanceSuccessAt },
+            ],
+            error: null,
+          })
           .mockResolvedValueOnce({ data: [], error: null });
       };
 
@@ -520,13 +527,22 @@ describe("SupabaseClient", () => {
         expect(result.timestamp).toBe(Date.parse(LONG_AGO));
         expect(getIsStale(result.timestamp)).toBe(true);
       });
+
+      it("counts a nightly maintenance run, which also refreshes the snapshot, as freshness", async () => {
+        setFreshnessReads(LONG_AGO, LONG_AGO, new Date(NOW).toISOString());
+
+        const result = await SupabaseClient.fetchRemote();
+
+        expect(result.timestamp).toBe(NOW);
+        expect(mockFrom.in).toHaveBeenCalledWith('component_id', ['ROYALE_DATA_INGESTOR', 'NIGHTLY_MAINTENANCE']);
+      });
     });
 
     it("drops one malformed roster row without discarding valid rows", async () => {
       vi.mocked(mockFrom.abortSignal)
         .mockResolvedValueOnce({ data: [{ player_tag: '#ABC' }, { player_tag: { invalid: true } }], error: null })
         .mockResolvedValueOnce({ data: [], error: null })
-        .mockResolvedValueOnce({ data: { last_success_at: '2026-01-01T00:00:00Z' }, error: null })
+        .mockResolvedValueOnce({ data: [{ component_id: 'ROYALE_DATA_INGESTOR', last_success_at: '2026-01-01T00:00:00Z' }], error: null })
         .mockResolvedValueOnce({ data: [], error: null });
 
       const result = await SupabaseClient.fetchRemote();
@@ -549,7 +565,7 @@ describe("SupabaseClient", () => {
       vi.mocked(mockFrom.abortSignal)
         .mockResolvedValueOnce({ data: [], error: null }) // Roster
         .mockResolvedValueOnce({ data: [], error: null }) // Headhunter
-        .mockResolvedValueOnce({ data: { last_success_at: MOCK_INVALID_HEARTBEAT_NUM }, error: null }) // Heartbeat with number instead of string
+        .mockResolvedValueOnce({ data: [{ component_id: 'ROYALE_DATA_INGESTOR', last_success_at: MOCK_INVALID_HEARTBEAT_NUM }], error: null }) // Heartbeat with number instead of string
         .mockResolvedValueOnce({ data: [], error: null }); // Blacklist
 
       const result = await SupabaseClient.fetchRemote();

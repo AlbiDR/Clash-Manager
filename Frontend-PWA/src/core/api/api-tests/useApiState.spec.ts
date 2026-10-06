@@ -248,6 +248,44 @@ describe("useApiState", () => {
     expect(ping).toHaveBeenCalledTimes(2);
   });
 
+  describe("re-arming an offline handshake on returning to the foreground", () => {
+    /** Sets the page visibility the recovery listener reads, then announces the change. */
+    const setVisibility = (visibilityState: DocumentVisibilityState) => {
+      Object.defineProperty(document, "visibilityState", { configurable: true, get: () => visibilityState });
+      document.dispatchEvent(new Event("visibilitychange"));
+    };
+
+    afterEach(() => {
+      Reflect.deleteProperty(document, "visibilityState");
+    });
+
+    it("recovers an overloaded backend without the foreground poll", async () => {
+      const SERVICE_UNAVAILABLE = 503;
+      vi.mocked(ping)
+        .mockResolvedValueOnce({ status: "error", message: "Edge Function overloaded", httpStatus: SERVICE_UNAVAILABLE })
+        .mockResolvedValueOnce({ status: "success", version: "1.0" });
+      const { apiStatus, init } = useApiState();
+      init();
+      await vi.waitFor(() => expect(apiStatus.value).toBe("offline"));
+
+      setVisibility("visible");
+
+      await vi.waitFor(() => expect(apiStatus.value).toBe("online"));
+      expect(ping).toHaveBeenCalledTimes(2);
+    });
+
+    it("does not re-arm while hidden or while the handshake is not offline", async () => {
+      const { apiStatus, init } = useApiState();
+      init();
+      await vi.waitFor(() => expect(apiStatus.value).toBe("online"));
+
+      setVisibility("visible");
+      setVisibility("hidden");
+
+      expect(ping).toHaveBeenCalledTimes(1);
+    });
+  });
+
   it("cancels and replaces pending handshake when checkApiStatus is called twice", async () => {
     // Reset call count and state for this test
     resetApiState();

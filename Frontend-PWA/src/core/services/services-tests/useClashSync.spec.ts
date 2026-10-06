@@ -52,6 +52,13 @@ vi.mock("../../api/SupabaseClient", () => ({
   lastSyncStatus: ref(null)
 }));
 
+const mockApiState = {
+  apiStatus: ref("online")
+};
+vi.mock("../../api/useApiState", () => ({
+  useApiState: vi.fn(() => mockApiState)
+}));
+
 vi.mock("../StorageService", () => ({
   loadCache: vi.fn(),
   saveCache: vi.fn().mockResolvedValue(undefined)
@@ -77,6 +84,7 @@ describe("useClashSync", () => {
     vi.useRealTimers();
     data = ref<WebAppData | null>(null) as Ref<WebAppData | null>;
     mockConnectionStatus.isOnline.value = true;
+    mockApiState.apiStatus.value = "online";
     mockSyntheticMode.isSyntheticMode.value = false;
     lastSyncStatus.value = null;
   });
@@ -745,15 +753,29 @@ describe("useClashSync", () => {
     /** Background requests one attempt may stand for at most, from the existing config. */
     const SPAN_LIMIT = Math.floor(SOURCE_STALENESS_THRESHOLD / FOREGROUND_POLL_INTERVAL);
 
-    /** Fires `polls` background syncs and returns the 1-based polls that reached the server. */
-    async function getAttemptedPolls(sync: ReturnType<typeof useClashSync>, polls: number, firstPoll = 1) {
-      const attemptedPolls: number[] = [];
-      for (let poll = firstPoll; poll < firstPoll + polls; poll++) {
+    /** 1-based polls that reached the server, recorded by handlePolls. */
+    let attemptedPolls: number[] = [];
+    /** Polls fired so far in the current test. */
+    let firedPolls = 0;
+
+    beforeEach(() => {
+      attemptedPolls = [];
+      firedPolls = 0;
+    });
+
+    /** Fires `count` background syncs, recording which of them reached the server. */
+    async function handlePolls(sync: ReturnType<typeof useClashSync>, count: number): Promise<void> {
+      for (let fired = 0; fired < count; fired++) {
+        firedPolls++;
         const requestsBefore = vi.mocked(fetchRemote).mock.calls.length;
         await sync.startBackgroundSync();
-        if (vi.mocked(fetchRemote).mock.calls.length > requestsBefore) attemptedPolls.push(poll);
+        if (vi.mocked(fetchRemote).mock.calls.length > requestsBefore) attemptedPolls.push(firedPolls);
       }
-      return attemptedPolls;
+    }
+
+    /** Gets the 1-based polls that have reached the server so far. */
+    function getAttemptedPolls(): number[] {
+      return [...attemptedPolls];
     }
 
     it("doubles the polls between attempts after each consecutive failure, up to the staleness window", async () => {
@@ -761,9 +783,9 @@ describe("useClashSync", () => {
       const sync = useClashSync(data);
       const lastDoublingPoll = 15;
 
-      const attemptedPolls = await getAttemptedPolls(sync, lastDoublingPoll + 2 * SPAN_LIMIT);
+      await handlePolls(sync, lastDoublingPoll + 2 * SPAN_LIMIT);
 
-      expect(attemptedPolls).toEqual([1, 3, 7, lastDoublingPoll, lastDoublingPoll + SPAN_LIMIT, lastDoublingPoll + 2 * SPAN_LIMIT]);
+      expect(getAttemptedPolls()).toEqual([1, 3, 7, lastDoublingPoll, lastDoublingPoll + SPAN_LIMIT, lastDoublingPoll + 2 * SPAN_LIMIT]);
       // Requests issued over those polls, against one per poll before the backoff.
       expect(fetchRemote).toHaveBeenCalledTimes(6);
     });
@@ -771,13 +793,45 @@ describe("useClashSync", () => {
     it("returns to every poll on the first success", async () => {
       vi.mocked(fetchRemote).mockRejectedValue(new Error("Sync timed out"));
       const sync = useClashSync(data);
-      expect(await getAttemptedPolls(sync, 3)).toEqual([1, 3]);
+      await handlePolls(sync, 3);
+      expect(getAttemptedPolls()).toEqual([1, 3]);
 
       vi.mocked(fetchRemote).mockResolvedValue({ lb: [], hh: [], timestamp: 5000, blacklist: [] });
-      const nextPolls = await getAttemptedPolls(sync, 7, 4);
+      await handlePolls(sync, 7);
 
       // Two failures span four polls: poll 7 succeeds, then every poll syncs again.
-      expect(nextPolls).toEqual([7, 8, 9, 10]);
+      expect(getAttemptedPolls()).toEqual([1, 3, 7, 8, 9, 10]);
+    });
+
+    it("lets the recovery sync through the backoff when the backend comes back online", async () => {
+      vi.mocked(fetchRemote).mockRejectedValue(new Error("Sync timed out"));
+      const sync = useClashSync(data);
+      await handlePolls(sync, 3);
+      expect(getAttemptedPolls()).toEqual([1, 3]);
+
+      // Two failures span four polls, so poll 4 would be declined without the online event.
+      mockApiState.apiStatus.value = "offline";
+      mockApiState.apiStatus.value = "online";
+      vi.mocked(fetchRemote).mockResolvedValue({ lb: [], hh: [], timestamp: 5000, blacklist: [] });
+      await handlePolls(sync, 2);
+
+      // The recovery sync succeeds, which also ends the backoff for poll 5.
+      expect(getAttemptedPolls()).toEqual([1, 3, 4, 5]);
+    });
+
+    it("does not carry an online event from before the failures into the backoff", async () => {
+      const sync = useClashSync(data);
+      mockApiState.apiStatus.value = "offline";
+      mockApiState.apiStatus.value = "online";
+      vi.mocked(fetchRemote).mockRejectedValue(new Error("Sync timed out"));
+      // Two manual refreshes fail after the event; they never pass through the poll's backoff.
+      await sync.refreshFromSupabase();
+      await sync.refreshFromSupabase();
+
+      await handlePolls(sync, 4);
+
+      // Two failures span four polls, the first of them included.
+      expect(getAttemptedPolls()).toEqual([4]);
     });
 
     it("never defers a manual refresh", async () => {

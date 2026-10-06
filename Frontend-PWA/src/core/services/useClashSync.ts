@@ -4,6 +4,7 @@
 import { ref, watch, type Ref } from "vue";
 import * as v from "valibot";
 import { useConnectionStatus } from "./useConnectionStatus";
+import { useApiState } from "../api/useApiState";
 import { lastSyncStatus } from "../api/SupabaseClient";
 import { loadCache, saveCache } from "./StorageService";
 import { useSyntheticMode } from "./useSyntheticMode";
@@ -149,6 +150,9 @@ export function useClashSync(data: Ref<WebAppData | null>) {
   /** Background sync requests declined since the last attempt, while backing off. */
   let declinedBackgroundSyncs = 0;
 
+  /** Set when the backend comes back online during a backoff; lets the next background request through. */
+  let backoffWaived = false;
+
   /** The single authoritative in-flight remote synchronization attempt. */
   let activeSyncPromise: Promise<SyncAttemptResult> | null = null;
 
@@ -173,6 +177,18 @@ export function useClashSync(data: Ref<WebAppData | null>) {
   // --- DEPENDENCIES ---
   const { isSyntheticMode } = useSyntheticMode();
   const { isOnline } = useConnectionStatus();
+  const { apiStatus } = useApiState();
+
+  // [DECISION LOG] RECOVERY IS AN EVENT, NOT A POLL: the handshake reaching
+  // "online" after it was not is evidence the backend answers again, so the
+  // recovery sync fired on that transition must not wait out the backoff span.
+  // flush: "sync" sets the waiver before any pre-flush watcher, the recovery
+  // trigger among them, can request that sync.
+  watch(apiStatus, (status, previousStatus) => {
+    if (status === "online" && previousStatus !== "online" && consecutiveSyncFailures.value > 0) {
+      backoffWaived = true;
+    }
+  }, { flush: "sync" });
 
   // A physical disconnect invalidates the active transport immediately. This
   // releases the single-flight lock promptly and lets the first reconnect
@@ -438,7 +454,8 @@ export function useClashSync(data: Ref<WebAppData | null>) {
 
     if (syncIntent === "background" && !force) {
       declinedBackgroundSyncs++;
-      if (declinedBackgroundSyncs < getBackgroundBackoffSpan(consecutiveSyncFailures.value)) return;
+      if (!backoffWaived && declinedBackgroundSyncs < getBackgroundBackoffSpan(consecutiveSyncFailures.value)) return;
+      backoffWaived = false;
       declinedBackgroundSyncs = 0;
     }
 
