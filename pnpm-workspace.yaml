@@ -30,7 +30,7 @@ catalogs:
     pinia: "^3.0.4"
     playwright: "^1.55.0"
     rollup-plugin-visualizer: "^7.0.1"
-    simple-git-hooks: "^2.13.1"
+    simple-git-hooks: "^2.14.0"
     supabase: "^2.119.0"
     tsx: "^4.23.15"
     typescript: "~5.9.3"
