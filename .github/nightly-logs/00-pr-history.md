@@ -16,6 +16,15 @@ LAST_AGED:   2026-10-05
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-06] PR #2106 [Stage 13]: audit(self-healing): Document Stage 3 session failure and Stage 8 watchdog recovery for 2026-10-06
+**Domain:** pipeline | **Commit:** 76c6d7c8c | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2106)
+**Files:** .github/nightly-logs/13-self-healing-protocol-coverage.log, .github/nightly-logs/13-self-healing-protocol-pr-body.md, .github/nightly-logs/13-self-healing-protocol.md
+**Why:** Record 2026-10-06 pipeline intervention events and Section 3 metrics
+**Change:** audit(self-healing): Document Stage 3 session failure and Stage 8 watchdog recovery for 2026-10-06
+**Result:** git diff --check passed with 0 errors
+**Nudges:** 0
+
+
 ### [2026-10-06] PR #2105 [Stage 12]: Calibration pass: 7 consecutive CLEAN runs verified; 1 candidate file reviewed (GhostBenchmarkHost.vue) across 77 files examined in 10 UX categories.
 **Domain:** ux | **Commit:** 93e1ead15 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2105)
 **Files:** .github/nightly-logs/12-apk-ux-coverage.log, .github/nightly-logs/12-apk-ux-pr-body.md
