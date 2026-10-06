@@ -166,7 +166,7 @@ describe("useDismissOnBack", () => {
     vi.unstubAllGlobals();
   });
 
-  function createOverlay(initiallyOpen = false, open: Ref<boolean> = ref(initiallyOpen)) {
+  function initOverlay(initiallyOpen = false, open: Ref<boolean> = ref(initiallyOpen)) {
     const close = vi.fn(() => { open.value = false; });
     const scope = effectScope();
     scope.run(() => useDismissOnBack(open, close));
@@ -179,7 +179,7 @@ describe("useDismissOnBack", () => {
   }
 
   it("gives Back an entry to pop that keeps the router's own state", async () => {
-    const sheet = createOverlay();
+    const sheet = initOverlay();
     const pushState = vi.spyOn(history, "pushState");
     await setOpen(sheet, true);
     expect(pushState).toHaveBeenCalledTimes(1);
@@ -190,7 +190,7 @@ describe("useDismissOnBack", () => {
   it("pushes one entry however often the open state fires", async () => {
     const pushState = vi.spyOn(history, "pushState");
     // A shallow ref makes the watcher fire again on the same value.
-    const sheet = createOverlay(false, shallowRef(false));
+    const sheet = initOverlay(false, shallowRef(false));
     await setOpen(sheet, true);
     triggerRef(sheet.open);
     await nextTick();
@@ -198,7 +198,7 @@ describe("useDismissOnBack", () => {
   });
 
   it("closes the overlay on Back; the router sees one same-address pop", async () => {
-    const sheet = createOverlay();
+    const sheet = initOverlay();
     await setOpen(sheet, true);
     setLateListener();
     await updateHistoryByBack();
@@ -211,7 +211,7 @@ describe("useDismissOnBack", () => {
   });
 
   it("removes its entry when closed some other way, so the next Back is not wasted", async () => {
-    const sheet = createOverlay();
+    const sheet = initOverlay();
     await setOpen(sheet, true);
     const popped = fetchPopLandings(1);
     await setOpen(sheet, false);
@@ -222,8 +222,8 @@ describe("useDismissOnBack", () => {
   });
 
   it("closes only the top-most overlay per Back", async () => {
-    const sheet = createOverlay();
-    const dropdown = createOverlay();
+    const sheet = initOverlay();
+    const dropdown = initOverlay();
     await setOpen(sheet, true);
     await setOpen(dropdown, true);
 
@@ -245,7 +245,7 @@ describe("useDismissOnBack", () => {
   });
 
   it("releases its entry when the component goes away while open", async () => {
-    const sheet = createOverlay(true);
+    const sheet = initOverlay(true);
     await nextTick();
     expect(history.state[OVERLAY_ENTRY_KEY]).toEqual(expect.any(Number));
     const popped = fetchPopLandings(1);
@@ -264,7 +264,7 @@ describe("useDismissOnBack", () => {
       ["the module's listener runs first, as a capture listener did on WebKit and Gecko", true],
     ])("gives the same routes, with no bounce, when %s", async (_order, moduleFirst) => {
       setBaseEntry("/a");
-      const popover = createOverlay();
+      const popover = initOverlay();
       await setOpen(popover, true);
       if (moduleFirst) setRouterAfterModule();
       updateRouteByPush("/b");
@@ -293,7 +293,7 @@ describe("useDismissOnBack", () => {
   describe("an entry left behind when its overlay closes under a newer one", () => {
     it("is stepped over in the same Back press after a push navigation", async () => {
       // The status popover stays open while a tap pushes another route, then closes.
-      const popover = createOverlay();
+      const popover = initOverlay();
       await setOpen(popover, true);
       updateRouteByPush("/headhunter");
       await setOpen(popover, false);
@@ -315,8 +315,8 @@ describe("useDismissOnBack", () => {
     });
 
     it("is stepped over under a live overlay without a route change", async () => {
-      const sheet = createOverlay();
-      const dropdown = createOverlay();
+      const sheet = initOverlay();
+      const dropdown = initOverlay();
       await setOpen(sheet, true);
       await setOpen(dropdown, true);
       // The sheet closes by tap while the dropdown sits above it.
@@ -331,8 +331,8 @@ describe("useDismissOnBack", () => {
     });
 
     it("is stepped over when the overlay above it closes by tap", async () => {
-      const sheet = createOverlay();
-      const dropdown = createOverlay();
+      const sheet = initOverlay();
+      const dropdown = initOverlay();
       await setOpen(sheet, true);
       await setOpen(dropdown, true);
       await setOpen(sheet, false);
@@ -346,8 +346,8 @@ describe("useDismissOnBack", () => {
     });
 
     it("crosses a run of them one step per landing", async () => {
-      const sheet = createOverlay();
-      const dropdown = createOverlay();
+      const sheet = initOverlay();
+      const dropdown = initOverlay();
       await setOpen(sheet, true);
       await setOpen(dropdown, true);
       updateRouteByPush("/headhunter");
@@ -365,7 +365,7 @@ describe("useDismissOnBack", () => {
     });
 
     it("is stepped over by Forward too, and again by the next Back", async () => {
-      const popover = createOverlay();
+      const popover = initOverlay();
       await setOpen(popover, true);
       updateRouteByPush("/headhunter");
       await setOpen(popover, false);
@@ -388,7 +388,7 @@ describe("useDismissOnBack", () => {
 
     it("is kept when a replace rewrote it to an address of its own", async () => {
       // A replace while the overlay is open rewrites its entry; the id survives the merge.
-      const popover = createOverlay();
+      const popover = initOverlay();
       await setOpen(popover, true);
       const id = history.state[OVERLAY_ENTRY_KEY];
       updateRouteByReplace("/settings");
@@ -412,7 +412,7 @@ describe("useDismissOnBack", () => {
 
   describe("closing by tap", () => {
     it("pops its entry when the address is the one it opened on", async () => {
-      const popover = createOverlay();
+      const popover = initOverlay();
       await setOpen(popover, true);
       // A replace that comes back to the opening address counts as the same page.
       updateRouteByReplace("/settings");
@@ -429,7 +429,7 @@ describe("useDismissOnBack", () => {
 
     it("drops its id instead of stepping back after a replace moved the page", async () => {
       // The status popover stays open while the dock replaces the route, then a tap closes it.
-      const popover = createOverlay();
+      const popover = initOverlay();
       await setOpen(popover, true);
       updateRouteByReplace("/laboratory");
       const back = vi.spyOn(history, "back");
@@ -445,7 +445,7 @@ describe("useDismissOnBack", () => {
     });
 
     it("is not stepped over later when the router's push writes the dropped id back", async () => {
-      const popover = createOverlay();
+      const popover = initOverlay();
       await setOpen(popover, true);
       const id = history.state[OVERLAY_ENTRY_KEY];
       updateRouteByReplace("/laboratory");
@@ -463,7 +463,7 @@ describe("useDismissOnBack", () => {
 
   it("does not step over an entry carrying an id this page load never left behind", async () => {
     // Start listening, as any open overlay does.
-    const sheet = createOverlay();
+    const sheet = initOverlay();
     await setOpen(sheet, true);
     const popped = fetchPopLandings(1);
     await setOpen(sheet, false);
@@ -481,14 +481,14 @@ describe("useDismissOnBack", () => {
 
   it("does not let a pop that never landed stand in for a later Back", async () => {
     // The module's own pop fires no popstate, as a step at the start of history does.
-    const sheet = createOverlay();
+    const sheet = initOverlay();
     await setOpen(sheet, true);
     vi.spyOn(history, "back").mockImplementationOnce(() => undefined);
     await setOpen(sheet, false);
     expect(await fetchSettledPopCount()).toBe(0);
 
     // The next open settles it, so this Back is read as the user's and closes the dropdown.
-    const dropdown = createOverlay();
+    const dropdown = initOverlay();
     await setOpen(dropdown, true);
     await updateHistoryByBack();
     expect(dropdown.close).toHaveBeenCalledTimes(1);
@@ -496,7 +496,7 @@ describe("useDismissOnBack", () => {
   });
 
   it("lets Forward into a closed overlay's entry through and reopens nothing", async () => {
-    const sheet = createOverlay();
+    const sheet = initOverlay();
     await setOpen(sheet, true);
     await updateHistoryByBack();
     expect(sheet.close).toHaveBeenCalledTimes(1);

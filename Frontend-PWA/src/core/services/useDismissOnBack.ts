@@ -85,11 +85,12 @@ function entryId(state: unknown): number {
  * press moves the user past it. Back goes on to the entry below, which has
  * the same address. Forward goes on to the entry that sat above it when it
  * died, which still exists: the user never rests on a dead entry, and a push
- * from anywhere below one removes it along with what was above it. Each landing starts at most one step and the next landing is judged
- * afresh, so a run of dead entries is crossed one per pop. An id this page
- * load never left behind (a malformed state, an entry from an earlier load)
- * is never stepped over, and neither is a dead entry the router has since
- * rewritten to another address with a replace: that is a page of its own.
+ * from anywhere below one removes it along with what was above it. Each
+ * landing starts at most one step and the next landing is judged afresh, so
+ * a run of dead entries is crossed one per pop. An id this page load never
+ * left behind (a malformed state, an entry from an earlier load) is never
+ * stepped over, and neither is a dead entry the router has since rewritten
+ * to another address with a replace: that is a page of its own.
  */
 function handleDeadEntry(landed: number): void {
   const dead = deadEntries.get(landed);
