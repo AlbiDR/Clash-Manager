@@ -2,8 +2,8 @@
 // Copyright (C) 2026 AlbiDR
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { harvestSeasonPlayers } from "./harvester.ts";
-import { PLAYER_LEADERBOARD_LIMIT } from "../_shared/config.ts";
+import { harvestGlobalPlayers, harvestSeasonPlayers } from "./harvester.ts";
+import { PLAYER_LEADERBOARD_LIMIT, TARGET_HARVEST_FLOOR } from "../_shared/config.ts";
 
 const { fetchRankings } = vi.hoisted(() => ({ fetchRankings: vi.fn() }));
 vi.mock("../_shared/muscle.ts", () => ({
@@ -63,5 +63,41 @@ describe("completed-season recruitment fallback", () => {
     fetchRankings.mockResolvedValueOnce(respond({ items: [{ id: "2026-09" }] }))
       .mockResolvedValue(respond({ items: [ranking("#FREE")], paging: { cursors: { after: "same" } } }));
     await expect(harvestSeasonPlayers(vi.fn())).rejects.toThrow("repeated pagination cursor");
+  });
+});
+
+describe("worldwide-only global harvest", () => {
+  const livePath = `/locations/global/pathoflegend/players?limit=${PLAYER_LEADERBOARD_LIMIT}`;
+  const seasonPath = `/locations/global/pathoflegend/2026-09/rankings/players?limit=${PLAYER_LEADERBOARD_LIMIT}`;
+  const livePlayers = (count: number) => Array.from({ length: count }, (_, index) => ({ ...ranking(`#LIVE${index}`), clan: null }));
+
+  it("returns the live board alone when it meets the floor", async () => {
+    fetchRankings.mockImplementation(async (path: string) => {
+      if (path === livePath) return respond({ items: livePlayers(TARGET_HARVEST_FLOOR) });
+      throw new Error(`Unexpected path: ${path}`);
+    });
+    const result = await harvestGlobalPlayers(vi.fn());
+    expect(result.region).toBe("Global");
+    expect(result.items).toHaveLength(TARGET_HARVEST_FLOOR);
+    expect(fetchRankings).toHaveBeenCalledTimes(1);
+  });
+
+  it("adds verified completed-season recruits after the live players when the live board is thin, without touching any country", async () => {
+    fetchRankings.mockImplementation(async (path: string) => {
+      if (path === livePath) return respond({ items: livePlayers(2) });
+      if (path === "/locations/global/seasons") return respond({ items: [{ id: "2026-09" }] });
+      if (path === seasonPath) return respond({ items: [ranking("#LIVE0"), ranking("#OLD"), ranking("#JOINED")] });
+      if (path === "/players/%23LIVE0") return respond({ tag: "#LIVE0", name: "Live zero" });
+      if (path === "/players/%23OLD") return respond({ tag: "#OLD", name: "Old guard" });
+      if (path === "/players/%23JOINED") return respond({ tag: "#JOINED", name: "Joined", clan: { tag: "#CLAN" } });
+      throw new Error(`Unexpected path: ${path}`);
+    });
+    const audit = vi.fn();
+    const result = await harvestGlobalPlayers(audit);
+    expect(result.region).toBe("Global (completed season 2026-09)");
+    expect(result.items.map(item => item.tag)).toEqual(["#LIVE0", "#LIVE1", "#OLD"]);
+    expect(result.items[0].name).toBe("#LIVE0");
+    expect(audit).toHaveBeenCalledWith("GLOBAL_LIVE_BOARD_THIN", "run", { live: 2, floor: TARGET_HARVEST_FLOOR });
+    expect(fetchRankings.mock.calls.some(([path]) => /\/locations\/\d+\//.test(String(path)))).toBe(false);
   });
 });

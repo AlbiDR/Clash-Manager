@@ -9,10 +9,10 @@
 
 ## What it does
 
-- **Global harvest** reads the live worldwide Path of Legends board. If it is empty early in a season, it merges rankings across major countries until it has enough candidates.
+- **Global harvest** reads the live worldwide Path of Legends board. If it holds fewer clanless players than the harvest floor early in a season, it adds the verified recruits of the newest completed worldwide season. It never reads a country board.
 - **Local harvest** resolves the clan's registered location from `CLAN_TAG` and reads that country's board. If the clan is registered as International, it shuffles the country catalog and queries up to 15 countries in parallel for geographic variety.
 - Both paths filter out players who are already in a clan and validate every API response before returning.
-- If the requested live search finds nobody, both modes fall back once to the newest completed worldwide season from the API's season catalog. The harvester follows ranking cursors through that board and checks each candidate's current profile before queueing them, excluding players who have since joined a clan or deleted their account. The returned region explicitly reads `Global (completed season YYYY-MM)`, including when a local search needed the worldwide fallback.
+- Scope is strict in both directions. A local harvest returns only the clan's own region and reports an empty board as empty; it is never backfilled from the worldwide season. A global harvest returns only worldwide boards. When the completed season contributes, the harvester follows ranking cursors through that board and checks each candidate's current profile before queueing them, excluding players who have since joined a clan or deleted their account, and the returned region reads `Global (completed season YYYY-MM)`.
 
 ## Contents
 
@@ -24,7 +24,7 @@
 
 ## Why Path of Legends, not the trophy ladder?
 
-The legacy `/rankings/players` leaderboard was retired with the 2025 Trophy Road rework and now returns an empty list for most locations. The season-scoped form (`/pathoflegend/{season}/rankings/players`) is global-only and exposes completed seasons. The season-less `/pathoflegend/players` form serves the live, in-progress board and accepts both `global` and individual country IDs, but can be empty after the monthly reset. Country queries and the old trophy ladder cannot recover from that worldwide gap, so completed-season candidates with fresh clan checks supply the final fallback.
+The legacy `/rankings/players` leaderboard was retired with the 2025 Trophy Road rework and now returns an empty list for most locations. The season-scoped form (`/pathoflegend/{season}/rankings/players`) is global-only and exposes completed seasons. The season-less `/pathoflegend/players` form serves the live, in-progress board and accepts both `global` and individual country IDs, but can be empty after the monthly reset. Because the season-scoped board is global-only, it can back the global harvest but not a local one: a local harvest after the reset legitimately returns nobody until the regional board repopulates.
 
 ## See also
 

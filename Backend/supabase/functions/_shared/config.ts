@@ -62,15 +62,6 @@ export const LOCATION_ID_INTERNATIONAL = 57000101;
 export const DEFAULT_FALLBACK_COUNTRY = "United States";
 export const DEFAULT_FALLBACK_ID = 57000120;
 
-export const TOP_COUNTRY_IDS = [
-  "57000120", // United States
-  "57000095", // Spain
-  "57000038", // Brazil
-  "57000117", // Japan
-  "57000085", // France
-  "57000091", // Germany
-];
-
 /**
  * ARRAY UTILS: Standardized indexing.
  */

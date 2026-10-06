@@ -225,73 +225,77 @@ describe("query-royale-api Edge Function", () => {
     expect(body.data.items[0]).toEqual({ tag: "#P0", name: "Player 0", clan: null });
   });
 
-  it.each(["global", "country", "international"])("recovers an empty %s live board using verified completed-season recruits", async (scope) => {
-    mockRoutes["/locations"] = { body: { items: [{ id: 57000120, name: "United States", isCountry: true }] } };
-    mockRoutes["/locations/"] = { body: { items: [] } };
-    mockRoutes["/clans/"] = { body: {
-      tag: "#CLANTAG", name: "Test Clan",
-      location: { id: scope === "international" ? 57000101 : 57000120, name: scope === "international" ? "International" : "United States", isCountry: scope !== "international" },
-    } };
+  it("recovers a thin global live board from the completed worldwide season, live players first, never from country boards", async () => {
+    // Live worldwide board holds 5 clanless players (floor is 80) the day after a reset.
+    const globalPlayers = Array.from({ length: 5 }, (_, index) => ({
+      tag: `#PG${index}`, name: `Global Player ${index}`, rank: index + 1, clan: null,
+    }));
+    mockRoutes["/locations/global/pathoflegend/players"] = { body: { items: globalPlayers } };
+    // A country board full of players must NOT be consulted by the global harvest.
+    mockRoutes["/locations/57000120/pathoflegend/players"] = { body: { items: Array.from({ length: 80 }, (_, index) => ({
+      tag: `#PC${index}`, name: `Country Player ${index}`, rank: index + 1, clan: null,
+    })) } };
     mockRoutes["/locations/global/seasons"] = { body: { items: [{ id: "2026-09" }] } };
     mockRoutes["/locations/global/pathoflegend/2026-09/rankings/players"] = { body: { items: [
-      { tag: "#FREE", name: "Old name", rank: 1 },
-      { tag: "#JOINED", name: "Joined later", rank: 2 },
+      { tag: "#PG0", name: "Global Player 0 last season", rank: 1 },
+      { tag: "#FREE", name: "Old name", rank: 2 },
+      { tag: "#JOINED", name: "Joined later", rank: 3 },
     ] } };
+    mockRoutes["/players/%23PG0"] = { body: { tag: "#PG0", name: "Global Player 0" } };
     mockRoutes["/players/%23FREE"] = { body: { tag: "#FREE", name: "Current name" } };
     mockRoutes["/players/%23JOINED"] = { body: { tag: "#JOINED", name: "Joined later", clan: { tag: "#CLAN" } } };
 
     const response = await requestHandler(new Request("https://test.co/query-royale-api", {
       method: "POST",
       headers: { Authorization: "Bearer internal-bearer", "Content-Type": "application/json" },
-      body: JSON.stringify({ endpoint: scope === "global" ? "global" : "local" }),
+      body: JSON.stringify({ endpoint: "global" }),
     }));
     expect(response.status).toBe(200);
-    expect((await response.json()).data).toEqual({
-      items: [{ tag: "#FREE", name: "Current name", clan: null }],
-      region: "Global (completed season 2026-09)",
-    });
+    const data = (await response.json()).data;
+    expect(data.region).toBe("Global (completed season 2026-09)");
+    expect(data.items.map((item: { tag: string }) => item.tag)).toEqual(["#PG0", "#PG1", "#PG2", "#PG3", "#PG4", "#FREE"]);
+    expect(data.items[0].name).toBe("Global Player 0");
+    expect(mockFetch.mock.calls.filter(([url]) => url.includes("/locations/57000120/"))).toHaveLength(0);
     expect(mockFetch.mock.calls.filter(([url]) => url.endsWith("/locations/global/seasons"))).toHaveLength(1);
   });
 
-  it("should fallback to top country rankings if global PoL yields insufficient results", async () => {
-    // Global PoL yields only 5 players (floor is 80)
-    const globalPlayers = Array.from({ length: 5 }, (_, index) => ({
-      tag: `#PG${index}`,
-      name: `Global Player ${index}`,
-      rank: index + 1,
-      clan: null,
-    }));
-
-    // Country fallback yields 80 players
-    const countryPlayers = Array.from({ length: 80 }, (_, index) => ({
-      tag: `#PC${index}`,
-      name: `Country Player ${index}`,
-      rank: index + 1,
-      clan: null,
-    }));
-
-    mockRoutes["/locations/global/pathoflegend/players"] = {
-      body: { items: globalPlayers },
-    };
-    mockRoutes["/locations/57000120/pathoflegend/players"] = {
-      body: { items: countryPlayers },
-    };
-
-    const req = new Request("https://test.co/query-royale-api", {
+  it("keeps a full global live board live and does not read the completed season", async () => {
+    mockRoutes["/locations/global/pathoflegend/players"] = { body: { items: Array.from({ length: 80 }, (_, index) => ({
+      tag: `#PG${index}`, name: `Global Player ${index}`, rank: index + 1, clan: null,
+    })) } };
+    const response = await requestHandler(new Request("https://test.co/query-royale-api", {
       method: "POST",
-      headers: {
-        "Authorization": "Bearer internal-bearer",
-        "Content-Type": "application/json",
-      },
+      headers: { Authorization: "Bearer internal-bearer", "Content-Type": "application/json" },
       body: JSON.stringify({ endpoint: "global" }),
-    });
+    }));
+    const data = (await response.json()).data;
+    expect(data.region).toBe("Global");
+    expect(data.items).toHaveLength(80);
+    expect(mockFetch.mock.calls.filter(([url]) => url.includes("/seasons"))).toHaveLength(0);
+  });
 
-    const response = await requestHandler(req);
+  it.each(["country", "international"])("reports an empty %s live board as empty and never backfills it from the worldwide season", async (scope) => {
+    mockRoutes["/locations"] = { body: { items: [{ id: 57000120, name: "United States", isCountry: true }] } };
+    mockRoutes["/locations/"] = { body: { items: [] } };
+    mockRoutes["/clans/"] = { body: {
+      tag: "#CLANTAG", name: "Test Clan",
+      location: { id: scope === "international" ? 57000101 : 57000120, name: scope === "international" ? "International" : "United States", isCountry: scope !== "international" },
+    } };
+    // The worldwide season is available and populated; the local harvest must not touch it.
+    mockRoutes["/locations/global/seasons"] = { body: { items: [{ id: "2026-09" }] } };
+    mockRoutes["/locations/global/pathoflegend/2026-09/rankings/players"] = { body: { items: [{ tag: "#FREE", name: "World number one", rank: 1 }] } };
+    mockRoutes["/players/%23FREE"] = { body: { tag: "#FREE", name: "World number one" } };
+
+    const response = await requestHandler(new Request("https://test.co/query-royale-api", {
+      method: "POST",
+      headers: { Authorization: "Bearer internal-bearer", "Content-Type": "application/json" },
+      body: JSON.stringify({ endpoint: "local" }),
+    }));
     expect(response.status).toBe(200);
-    const body = await response.json();
-    expect(body.success).toBe(true);
-    // Merged player tags unique list length (5 global + 80 country = 85 total)
-    expect(body.data.items.length).toBe(85);
+    const data = (await response.json()).data;
+    expect(data.items).toEqual([]);
+    expect(data.region).toBe(scope === "international" ? "International" : "United States");
+    expect(mockFetch.mock.calls.filter(([url]) => url.includes("/seasons") || url.includes("/global/"))).toHaveLength(0);
   });
 
   it("should fail local harvest when CLAN_TAG config is missing", async () => {

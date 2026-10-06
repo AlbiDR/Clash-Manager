@@ -373,8 +373,8 @@ describe("Harvester Utility Logic Spec", () => {
         expect(mockFetchWithRotation).toHaveBeenCalledTimes(1);
       });
 
-      it("queries and merges results from top countries if global PoL yields fewer than the target floor", async () => {
-        // Global PoL yields only 5 players (less than 80)
+      it("returns a thin global board as is and never queries a country board", async () => {
+        // Global PoL yields only 5 players (less than 80); the day after a monthly reset.
         const mockGlobalPlayers = Array.from({ length: 5 }, (_, i) => ({
           tag: `#GLOBAL${i}`,
           name: `Global Player ${i}`,
@@ -382,40 +382,19 @@ describe("Harvester Utility Logic Spec", () => {
           clan: null,
         }));
 
-        // Spanish PoL yields 80 players
-        const mockSpainPlayers = Array.from({ length: 80 }, (_, i) => ({
-          tag: `#SPAIN${i}`,
-          name: `Spain Player ${i}`,
-          rank: i + 1,
-          clan: null,
-        }));
-
-        // Mock global first
         mockFetchWithRotation.mockResolvedValueOnce({
           ok: true,
           status: 200,
           json: async () => ({ items: mockGlobalPlayers }),
         });
 
-        // Mock US query (country id 57000120) returning empty
-        mockFetchWithRotation.mockResolvedValueOnce({
-          ok: true,
-          status: 200,
-          json: async () => ({ items: [] }),
-        });
-
-        // Mock Spain query (country id 57000095) returning 80
-        mockFetchWithRotation.mockResolvedValueOnce({
-          ok: true,
-          status: 200,
-          json: async () => ({ items: mockSpainPlayers }),
-        });
-
         const { logAudit } = makeAuditCollector();
         const results = await harvestClanlessPlayers("global", logAudit);
 
-        // Spain's 80 players + Global's 5 players = 85 players total
-        expect(results).toHaveLength(85);
+        expect(results).toHaveLength(5);
+        // A worldwide request is never answered with regional players.
+        expect(mockFetchWithRotation).toHaveBeenCalledTimes(1);
+        expect(String(mockFetchWithRotation.mock.calls[0][0])).toContain("/locations/global/");
       });
 
       it("propagates the error if the global Path of Legends query fails completely", async () => {

@@ -16,8 +16,8 @@ import {
 } from "../_shared/config.ts";
 import {
   harvestClanlessPlayers,
-  harvestInternationalPlayers,
-  harvestSeasonPlayers
+  harvestGlobalPlayers,
+  harvestInternationalPlayers
 } from "./harvester.ts";
 
 /**
@@ -54,9 +54,10 @@ Deno.serve(async (request) => {
     schema: PayloadSchema,
     // [SECURITY] This function accepts the publicly known Supabase anon key as a valid
     // bearer credential (browser PWA path), so the anon key is not the access-control
-    // boundary here -- rate limiting is. The "global" harvest can fan out to a full
-    // international discovery pass (see harvester.ts's MAX_HARVEST_EPOCHS-capped country
-    // loop), so it is the more expensive of the two endpoint modes; the per-target bucket
+    // boundary here -- rate limiting is. The "global" harvest can fall back to the
+    // completed worldwide season (see harvester.ts's MAX_SEASON_RANKING_PAGES-capped
+    // cursor walk plus one profile check per candidate), so it is the more expensive of
+    // the two endpoint modes; the per-target bucket
     // is keyed on the requested endpoint (and the configured clan tag for "local", since
     // that resolves to a fixed region per deployment) so one caller IP cannot bypass the
     // per-target ceiling by alternating endpoint values.
@@ -75,12 +76,9 @@ Deno.serve(async (request) => {
         logAudit("GLOBAL_HARVEST", "called", { location: GLOBAL_LOCATION });
         // [DECISION LOG] "global" is a first-class location on the Path of Legends
         // rankings endpoint, returning the live worldwide top 1000 in one request.
-        const harvestResults = await harvestClanlessPlayers(GLOBAL_LOCATION, logAudit);
-        if (harvestResults.length === 0) return await harvestSeasonPlayers(logAudit);
-        return {
-          items: harvestResults,
-          region: "Global",
-        };
+        // SCOPE IS STRICT: a worldwide request is answered only with worldwide boards
+        // (live, then the completed season), never with country boards.
+        return await harvestGlobalPlayers(logAudit);
       }
 
       // Local Harvest Resolution
@@ -117,14 +115,16 @@ Deno.serve(async (request) => {
                               targetLocationName === "International" ||
                               !location.isCountry;
 
+      // [DECISION LOG] SCOPE IS STRICT: a local request is answered only with the
+      // clan's own region. An empty regional board is reported as empty; it is never
+      // backfilled from the worldwide season, which would hand a local recruiter the
+      // world's top players under a "local" button.
       if (isInternational) {
-        const harvestResults = await harvestInternationalPlayers(logAudit);
-        return harvestResults.items.length === 0 ? await harvestSeasonPlayers(logAudit) : harvestResults;
+        return await harvestInternationalPlayers(logAudit);
       }
 
       logAudit("LOCAL_HARVEST_CLANLESS_DISCOVERY", "called", { country: targetLocationName });
       const harvestResults = await harvestClanlessPlayers(String(targetLocationId), logAudit);
-      if (harvestResults.length === 0) return await harvestSeasonPlayers(logAudit);
 
       return {
         items: harvestResults,
