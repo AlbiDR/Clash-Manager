@@ -241,7 +241,7 @@ const SETTLING_SELECTOR =
   '[aria-busy="true"], .skeleton-anim, [class*="-enter-active"], [class*="-leave-active"]';
 
 /** Origin plus path, so cache-busting query strings collapse into one entry. */
-function blockedResourceKey(url: URL): string {
+function getBlockedResourceKey(url: URL): string {
   return `${url.protocol}//${url.host}${url.pathname}`;
 }
 
@@ -266,7 +266,7 @@ function blockedResourceKey(url: URL): string {
  * the user can see, so the capture lays every element out as if it were on
  * screen. Only this capture page is affected; the shipped CSS is unchanged.
  */
-export async function openCapturePage(
+export async function initCapturePage(
   browser: Browser,
   blocked: Set<string>,
 ): Promise<{ context: BrowserContext; page: Page }> {
@@ -284,13 +284,13 @@ export async function openCapturePage(
   await context.route("**/*", (route) => {
     const url = new URL(route.request().url());
     if (url.hostname === CAPTURE_HOST) return route.continue();
-    blocked.add(blockedResourceKey(url));
+    blocked.add(getBlockedResourceKey(url));
     return route.abort("blockedbyclient");
   });
   await context.routeWebSocket(
     (url) => url.hostname !== CAPTURE_HOST,
     (socket) => {
-      blocked.add(blockedResourceKey(new URL(socket.url())));
+      blocked.add(getBlockedResourceKey(new URL(socket.url())));
       return socket.close();
     },
   );
@@ -317,17 +317,19 @@ export async function openCapturePage(
  * The old wait swallowed its timeout, so a page that never rendered produced
  * an empty capture reported as "Capture complete".
  */
-export async function waitForCaptureReady(page: Page): Promise<void> {
-  await page.waitForFunction(
-    () =>
-      Boolean((document.querySelector("#app") as unknown as { __vue_app__?: unknown } | null)?.__vue_app__),
-  );
-  await page.evaluate(async () => {
+export async function validateCaptureReady(page: Page): Promise<void> {
+  // One waitForFunction, not an evaluate: Playwright awaits an async
+  // predicate and still enforces the page's default timeout on it, so a
+  // router or font promise that never settles fails the capture loudly
+  // instead of holding the CI job until the job's own timeout.
+  await page.waitForFunction(async () => {
     const app = (document.querySelector("#app") as unknown as {
-      __vue_app__: { config: { globalProperties: { $router?: { isReady(): Promise<void> } } } };
-    }).__vue_app__;
+      __vue_app__?: { config: { globalProperties: { $router?: { isReady(): Promise<void> } } } };
+    } | null)?.__vue_app__;
+    if (!app) return false;
     await app.config.globalProperties.$router?.isReady();
     await document.fonts.ready;
+    return true;
   });
   await page.waitForFunction(
     (settlingSelector) => {
@@ -351,6 +353,45 @@ export async function waitForCaptureReady(page: Page): Promise<void> {
     SETTLING_SELECTOR,
     { polling: "raf" },
   );
+}
+
+/**
+ * Checks one capture run's measurements against the groups it set out to
+ * measure.
+ *
+ * @remarks
+ * A run that measured nothing while no earlier capture exists would publish a
+ * bones file with no geometry at all: the app never mounted, or no route
+ * rendered. That used to be written out as "Capture complete". It is a
+ * failure, so this throws and the caller's handler fails the build under
+ * BONES_REQUIRE_CAPTURE.
+ *
+ * A group that rendered nothing is reported, not thrown, and that includes a
+ * run whose only stale groups all rendered nothing. All five laboratory groups
+ * are in that state today: once the other groups are cached, a run visits
+ * /laboratory alone and measures nothing there. Failing on that would stop
+ * every deploy until /laboratory renders its components, so the caller keeps
+ * those groups stale and names them instead (see {@link ensureBonesFresh}).
+ *
+ * @param captured - Measurements keyed by group name, as returned by the capture.
+ * @param expectedGroups - Names of the groups this run was asked to measure.
+ * @param routes - The routes visited, for the error message.
+ * @param earlierGroups - Names of the groups that already have stored geometry.
+ * @returns The expected groups that rendered no bones.
+ * @throws Error when nothing was measured and nothing earlier exists to publish.
+ */
+export function validateCapturedGroups(
+  captured: Record<string, GroupBones>,
+  expectedGroups: string[],
+  routes: string[],
+  earlierGroups: string[],
+): string[] {
+  if (Object.keys(captured).length === 0 && earlierGroups.length === 0) {
+    throw new Error(
+      `[bones] Capture measured no bones on any route (${routes.join(", ")}) and no earlier capture exists; the build would publish no skeleton geometry at all.`,
+    );
+  }
+  return expectedGroups.filter((name) => !captured[name]);
 }
 
 const TEMP_INDEX_HTML = `<!doctype html>
@@ -408,26 +449,29 @@ export async function ensureBonesFresh(): Promise<void> {
     const routes = [...new Set(staleGroups.map((g) => g.route))];
     try {
       const captured = await captureRoutes(routes);
-      // An empty capture means the app never rendered a bone anywhere (it did
-      // not mount, or every route stalled). It used to be written out as a
-      // successful capture with no geometry; it is a failure, so it goes to the
-      // handler below, which fails the build under BONES_REQUIRE_CAPTURE.
-      if (Object.keys(captured).length === 0) {
-        throw new Error(
-          `[bones] Capture measured no bones on any route (${routes.join(", ")}); the app rendered no capture group.`,
-        );
-      }
-      const unrendered = staleGroups.filter((group) => !captured[group.name]).map((group) => group.name);
+      const unrendered = validateCapturedGroups(
+        captured,
+        staleGroups.map((group) => group.name),
+        routes,
+        Object.keys(result),
+      );
+      // [DECISION LOG] AN UNRENDERED GROUP IS NOT CACHED AS FRESH:
+      // Caching its hash would mark it captured, and nothing would mention it
+      // again until one of its sources changed. Left stale, it is measured
+      // again on the next run and this warning repeats every time, so the gap
+      // stays in every build log until the route renders it, at which point it
+      // is captured with no further change here. The cost is a short Chromium
+      // pass over that one route on each run.
       if (unrendered.length > 0) {
         console.warn(
-          `[bones] ${unrendered.length} capture group(s) rendered no bones on their route and keep their last or fallback geometry: ${unrendered.join(", ")}`,
+          `[bones] ${unrendered.length} capture group(s) rendered no bones on their route; they keep their last or fallback geometry and stay stale so the next run measures them again: ${unrendered.join(", ")}`,
         );
       }
       for (const [groupName, bones] of Object.entries(captured)) {
         result[groupName] = bones;
       }
       for (const group of measurableGroups) {
-        if (routes.includes(group.route)) {
+        if (routes.includes(group.route) && captured[group.name]) {
           nextCache[group.name] = groupHashes.get(group.name)!;
         }
       }
@@ -576,7 +620,7 @@ async function captureRoutes(routes: string[]): Promise<Record<string, GroupBone
         // A real navigation (from about:blank, a distinct origin state) for
         // each route guarantees main.ts and its singletons re-initialize
         // against that route's own query string.
-        const { context, page } = await openCapturePage(browser, blocked);
+        const { context, page } = await initCapturePage(browser, blocked);
         try {
           // Force Blueprint mode off regardless of route/query combination.
           // A route requesting Showcase (below) would otherwise also force
@@ -594,7 +638,7 @@ async function captureRoutes(routes: string[]): Promise<Record<string, GroupBone
             await page.goto(`http://${CAPTURE_HOST}:${port}/#${route}?${DEFAULT_QUERY}`, {
               waitUntil: "domcontentloaded",
             });
-            await waitForCaptureReady(page);
+            await validateCaptureReady(page);
 
             const measurements = await page.$$eval("[data-bone]", (elements) =>
               elements.map((el) => {
