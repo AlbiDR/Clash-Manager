@@ -16,6 +16,15 @@ LAST_AGED:   2026-10-05
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-06] PR #2096 [Stage 2]: Added unit tests for useGhostBenchmarkState stepper parameter and ignoreBackdropClick flag in ghostBenchmarkState.spec.ts
+**Domain:** verification | **Commit:** 27438bc19 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2096)
+**Files:** .github/nightly-logs/02-verification-coverage.log, .github/nightly-logs/02-verification-pr-body.md, Frontend-PWA/src/shared/directives/directives-tests/ghostBenchmarkState.spec.ts
+**Why:** Coverage gap in shared directive state utility for popup stepper navigation and touch backdrop ignore semantics
+**Change:** Added unit tests for useGhostBenchmarkState stepper parameter and ignoreBackdropClick flag in ghostBenchmarkState.spec.ts
+**Result:** 217 test files and 2226 tests passed. Proven mutation failure: hardcoding stepper to null in show() caught by 8 failing tests across ghostBenchmarkState, BaseHistoryChart, and GhostBenchmarkHost specs, restored with git checkout.
+**Nudges:** 0
+
+
 ### [2026-10-05] PR #2095 [Stage 1]: Audited Edge Function endpoints, in-memory state variables, Valibot boundary schemas, and cross-layer architectural isolations across 42 files; zero threat vectors found
 **Domain:** hardening | **Commit:** 51d70030a | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2095)
 **Files:** .github/nightly-logs/00-pr-history.md, .github/nightly-logs/01-hardening-coverage.log, .github/nightly-logs/01-hardening-pr-body.md
