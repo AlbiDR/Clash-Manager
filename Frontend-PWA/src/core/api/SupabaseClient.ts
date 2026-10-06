@@ -457,10 +457,9 @@ export async function ping(options?: { signal?: AbortSignal; force?: boolean }):
  * Valibot schema validation on all inbound data.
  *
  * [DECISION LOG] FRESHNESS EVIDENCE RESOLUTION
- * Combines independent source-freshness evidence from the pipeline heartbeat
- * and individual roster row ingestion timestamps using the newest valid observation.
- * A terminal pipeline failure or delayed heartbeat write must not obscure the
- * freshness of committed roster rows.
+ * The ingestor heartbeat's last_success_at is the freshness of the payload.
+ * Roster row timestamps are only a lower bound, used when the heartbeat
+ * cannot be read.
  *
  * @param options - Fetch configuration including AbortSignal.
  * @param options.knownBlacklist - Blacklist committed by the last successful sync;
@@ -585,12 +584,15 @@ export async function fetchRemote(options?: {
   // SSOT: vars.PLAYER_TAG is injected by deploy-pwa.yml as VITE_PLAYER_TAG at build time.
   const playerTag: string = import.meta.env.VITE_PLAYER_TAG || "";
   
-  // [DECISION LOG] INDEPENDENT SOURCE-FRESHNESS EVIDENCE COMBINATION
-  // A terminal pipeline failure can be written after the roster transaction has
-  // already committed. In that case `last_success_at` remains behind even
-  // though the rows the user is actually viewing carry a newer `last_ingested_at`.
-  // Treating the heartbeat as unconditionally dominant made a freshly populated
-  // console read as an hour old.
+  // [DECISION LOG] THE HEARTBEAT IS THE FRESHNESS SIGNAL
+  // The roster is a snapshot refreshed by the same COMPLETED heartbeat write that
+  // stamps `last_success_at`, so that stamp is how fresh the rows on screen are.
+  // Row timestamps were combined with it (newest wins) because a run could commit
+  // rows and then report FAILED; such rows now never reach the snapshot, which
+  // refreshes only on COMPLETED. Row timestamps also stop meaning "last ingested"
+  // once unchanged rows are no longer rewritten: a quiet clan would read as stale
+  // and an old member edit would vouch for a stalled pipeline. They remain only a
+  // lower bound for a sync whose heartbeat read failed.
   const HeartbeatRowSchema = v.object({
     last_success_at: v.nullable(v.string()),
   });
@@ -598,7 +600,7 @@ export async function fetchRemote(options?: {
     ? null
     : v.safeParse(HeartbeatRowSchema, heartbeatResponse.data);
   if (!heartbeatResponse || heartbeatResponse.error || (heartbeatValidation && !heartbeatValidation.success)) {
-    console.warn("[Sync] Pipeline heartbeat unavailable; deriving freshness from roster data.");
+    console.warn("[Sync] Pipeline heartbeat unavailable; using roster timestamps as a lower bound on freshness.");
   }
   const heartbeatTimestamp = heartbeatValidation?.success
     ? parseTimestamp(heartbeatValidation.output.last_success_at)
@@ -608,13 +610,10 @@ export async function fetchRemote(options?: {
     .filter((rosterTimestamp): rosterTimestamp is number => rosterTimestamp !== null);
   const rosterTimestamp = rosterTimestamps.length > 0 ? Math.max(...rosterTimestamps) : null;
 
-  // [DECISION LOG] NEWEST OBSERVATION SELECTION
+  // [DECISION LOG] NO FORGED FRESHNESS
   // Never replace unknown freshness with the client's current clock, as doing so
   // makes arbitrarily old source data appear freshly ingested.
-  // Both timestamps describe remote data, so use the newest valid observation via Math.max.
-  // Pipeline health remains independently visible in Settings; a lagging or failed heartbeat
-  // must not falsify the age of the successfully fetched roster payload.
-  const timestamp = Math.max(heartbeatTimestamp ?? 0, rosterTimestamp ?? 0);
+  const timestamp = heartbeatTimestamp ?? rosterTimestamp ?? 0;
   
   const webAppData: WebAppData = {
     lb: leaderboardMembers,

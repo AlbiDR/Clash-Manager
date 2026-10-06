@@ -13,6 +13,10 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { createClient } from "@supabase/supabase-js";
 import * as SupabaseClient from "../SupabaseClient";
+import { SOURCE_STALENESS_THRESHOLD } from "../../config";
+
+/** The store's staleness rule: data older than the source staleness window reads as STALE. */
+const getIsStale = (timestamp: number) => Date.now() - timestamp > SOURCE_STALENESS_THRESHOLD;
 
 // Mock Supabase JS Client
 const mockFrom = {
@@ -468,7 +472,7 @@ describe("SupabaseClient", () => {
       expect(result.timestamp).toBe(0);
     });
 
-    it("derives freshness from valid roster ingestion timestamps when heartbeat is unavailable", async () => {
+    it("falls back to roster timestamps as a lower bound when the heartbeat is unavailable", async () => {
       vi.mocked(mockFrom.abortSignal)
         .mockResolvedValueOnce({ data: [{ player_tag: '#ABC', last_ingested_at: '2026-02-03T04:05:06Z' }], error: null })
         .mockResolvedValueOnce({ data: [], error: null })
@@ -479,16 +483,43 @@ describe("SupabaseClient", () => {
       expect(result.timestamp).toBe(new Date('2026-02-03T04:05:06Z').getTime());
     });
 
-    it("uses newer roster ingestion evidence when a failed pipeline heartbeat lags behind it", async () => {
-      vi.mocked(mockFrom.abortSignal)
-        .mockResolvedValueOnce({ data: [{ player_tag: '#ABC', last_ingested_at: '2026-02-03T04:05:06Z' }], error: null })
-        .mockResolvedValueOnce({ data: [], error: null })
-        .mockResolvedValueOnce({ data: { last_success_at: '2026-02-03T03:31:19Z' }, error: null })
-        .mockResolvedValueOnce({ data: [], error: null });
+    describe("freshness comes from the pipeline heartbeat", () => {
+      const NOW = Date.parse('2026-02-03T12:00:00Z');
+      /** Old enough to read as stale on its own. */
+      const LONG_AGO = new Date(NOW - 2 * SOURCE_STALENESS_THRESHOLD).toISOString();
 
-      const result = await SupabaseClient.fetchRemote();
+      /** Answers one sync with the given roster row and heartbeat timestamps. */
+      const setFreshnessReads = (lastIngestedAt: string, lastSuccessAt: string) => {
+        vi.mocked(mockFrom.abortSignal)
+          .mockResolvedValueOnce({ data: [{ player_tag: '#ABC', last_ingested_at: lastIngestedAt }], error: null })
+          .mockResolvedValueOnce({ data: [], error: null })
+          .mockResolvedValueOnce({ data: { last_success_at: lastSuccessAt }, error: null })
+          .mockResolvedValueOnce({ data: [], error: null });
+      };
 
-      expect(result.timestamp).toBe(new Date('2026-02-03T04:05:06Z').getTime());
+      beforeEach(() => {
+        vi.useFakeTimers();
+        vi.setSystemTime(NOW);
+      });
+
+      it("reports an unchanged roster as fresh when the heartbeat is fresh", async () => {
+        // Rows nobody rewrote since long ago; the ingest itself just completed.
+        setFreshnessReads(LONG_AGO, new Date(NOW).toISOString());
+
+        const result = await SupabaseClient.fetchRemote();
+
+        expect(result.timestamp).toBe(NOW);
+        expect(getIsStale(result.timestamp)).toBe(false);
+      });
+
+      it("reports a stale heartbeat as stale even when roster rows are recent", async () => {
+        setFreshnessReads(new Date(NOW).toISOString(), LONG_AGO);
+
+        const result = await SupabaseClient.fetchRemote();
+
+        expect(result.timestamp).toBe(Date.parse(LONG_AGO));
+        expect(getIsStale(result.timestamp)).toBe(true);
+      });
     });
 
     it("drops one malformed roster row without discarding valid rows", async () => {
