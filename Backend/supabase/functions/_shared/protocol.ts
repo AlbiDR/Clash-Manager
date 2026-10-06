@@ -455,9 +455,22 @@ async function reportHeartbeat(
  * @param entry - An audit entry whose action is `integrity_checked`.
  * @returns `true` only for a check that validates against IntegrityCheckDetailsSchema and passed.
  */
-function isPassedIntegrityCheck(entry: AuditEntry): boolean {
+function getIntegrityCheckPassed(entry: AuditEntry): boolean {
     const validation = v.safeParse(IntegrityCheckDetailsSchema, entry.details);
     return validation.success && validation.output.passed === true;
+}
+
+/**
+ * Whether a `resulted_data` audit entry declares `is_100_percent_match: false`, the one
+ * resulted_data shape substrate.verify_run_integrity() fails a run on.
+ *
+ * @param entry - An audit entry whose action is `resulted_data`.
+ * @returns `true` only when the details carry `is_100_percent_match` set to `false`.
+ */
+function getResultedDataMismatch(entry: AuditEntry): boolean {
+    const details = entry.details;
+    return typeof details === 'object' && details !== null
+        && (details as Record<string, unknown>).is_100_percent_match === false;
 }
 
 /**
@@ -473,22 +486,25 @@ function isPassedIntegrityCheck(entry: AuditEntry): boolean {
  * ("called", "run", a passed check) says nothing a count does not.
  * [GUARD] Failures stay an array of AuditEntry under `audit_log`: trigger
  * tr_telemetry_integrity_sync calls substrate.verify_run_integrity(), which reads
- * metadata->'audit_log', answers false for a missing or empty array, and false for any
- * entry whose action is 'error'. Every 'error' entry is kept, and callers append the
- * run's closing entry so a clean run is never empty, so it reaches the same verdict it
- * reached on the full trail.
+ * metadata->'audit_log', answers false for a missing or empty array, for any entry
+ * whose action is 'error', and for any 'resulted_data' entry whose
+ * details.is_100_percent_match is false. Every entry it would fail on is kept, and
+ * callers append the run's closing entry so a clean run is never empty, so it reaches
+ * the same verdict it reached on the full trail.
  *
  * @param entries - The run's complete in-memory audit trail.
  * @returns `audit_counts` (stage to action to count) and `audit_log` (failures only, in order).
  */
-function summarizeAuditLog(entries: AuditEntry[]) {
+function getAuditSummary(entries: AuditEntry[]) {
     const audit_counts: Record<string, Partial<Record<AuditEntry['action'], number>>> = {};
     for (const entry of entries) {
         const stageCounts = audit_counts[entry.stage] ??= {};
         stageCounts[entry.action] = (stageCounts[entry.action] ?? 0) + 1;
     }
     const audit_log = entries.filter((entry) =>
-        entry.action === 'error' || (entry.action === 'integrity_checked' && !isPassedIntegrityCheck(entry))
+        entry.action === 'error'
+        || (entry.action === 'integrity_checked' && !getIntegrityCheckPassed(entry))
+        || (entry.action === 'resulted_data' && getResultedDataMismatch(entry))
     );
     return { audit_counts, audit_log };
 }
@@ -570,18 +586,6 @@ export interface ProtocolOptions<T> {
      */
     corsRestricted?: boolean;
     /**
-     * Whether the handler's return value is copied into the run's telemetry row.
-     *
-     * @remarks
-     * [DECISION LOG] For the cron pipelines the return value is the run's statistics, a
-     * few hundred bytes worth keeping. For the public proxies it is the response body
-     * itself (a leaderboard, a battle log, a card collection) that nothing ever read back
-     * out of governance_telemetry. Omit this option to retain the established pattern of
-     * `corsRestricted`: functions with a `rateLimit` (the public proxies) record no
-     * results; all other functions record them.
-     */
-    recordResults?: boolean;
-    /**
      * The core business logic handler to be executed within the clinical wrapper.
      *
      * @param payload - The validated and typed request body.
@@ -593,7 +597,7 @@ export interface ProtocolOptions<T> {
     handler: (
         payload: T, 
         logAudit: (stage: string, action: AuditEntry['action'], details?: unknown) => void,
-        heartbeat: (stage: string, currentResults: unknown) => Promise<void>
+        heartbeat: (stage: string) => Promise<void>
     ) => Promise<unknown>;
 }
 
@@ -623,7 +627,8 @@ export interface ProtocolOptions<T> {
  * @sideeffects
  * - CALLS `report_telemetry` RPC to initialize tracking.
  * - CALLS `report_heartbeat` RPC to signal component health.
- * - CALLS `update_telemetry` RPC to persist audit logs and results.
+ * - CALLS `update_telemetry` RPC once, at the end, to persist the audit summary and,
+ *   except for the public proxies, the results.
  * - None of the three when `options.supabase` is `null`.
  */
 export async function clinicalServe<T>(options: ProtocolOptions<T>) {
@@ -649,7 +654,12 @@ export async function clinicalServe<T>(options: ProtocolOptions<T>) {
     // bearer-only functions retain the original blanket `Access-Control-Allow-Origin: *`.
     // See `resolveCorsHeaders` for the full behavior in each mode.
     const corsRestricted = options.corsRestricted ?? !!rateLimit;
-    const recordResults = options.recordResults ?? !rateLimit;
+    // [DECISION LOG] For the cron pipelines the handler's return value is the run's
+    // statistics, a few hundred bytes worth keeping. For the public proxies (the functions
+    // with a `rateLimit`) it is the response body itself (a leaderboard, a battle log, a
+    // card collection) that nothing ever read back out of governance_telemetry, so it is
+    // returned to the caller and not copied into the row.
+    const recordResults = !rateLimit;
 
     // 1. CORS Preflight
     if (req.method === "OPTIONS") {
@@ -908,8 +918,8 @@ export async function clinicalServe<T>(options: ProtocolOptions<T>) {
         const results = await handler(parsed.output, logAudit, heartbeat);
 
         // 6. Governance: Completion & Telemetry Closure
-        // [DECISION LOG] Final telemetry update aggregates all audit entries and
-        // calculates total execution duration for performance monitoring.
+        // [DECISION LOG] The single telemetry update condenses the audit trail into counts
+        // plus failures and records total execution duration for performance monitoring.
         const completeEntry: AuditEntry = {
             timestamp: Temporal.Now.instant().toString(),
             stage: 'COMPLETE',
@@ -926,14 +936,14 @@ export async function clinicalServe<T>(options: ProtocolOptions<T>) {
         // strict v.safeParse() validation boundary using IntegrityCheckDetailsSchema.
         // This ensures that 'isDataPerfect' accurately reflects that ALL integrity checks passed
         // based on a validated structural contract.
-        const isDataPerfect = integrityChecks.length > 0 && integrityChecks.every(isPassedIntegrityCheck);
+        const isDataPerfect = integrityChecks.length > 0 && integrityChecks.every(getIntegrityCheckPassed);
 
         // [DECISION LOG] One entry per stage, not per check: a stage passes only when every
         // one of its checks passed. Listing every check repeated the stage name once per
         // profiled tag, and the failing checks themselves are kept in `audit_log` below.
         const integrityByStage = new Map<string, boolean>();
         for (const check of integrityChecks) {
-            integrityByStage.set(check.stage, (integrityByStage.get(check.stage) ?? true) && isPassedIntegrityCheck(check));
+            integrityByStage.set(check.stage, (integrityByStage.get(check.stage) ?? true) && getIntegrityCheckPassed(check));
         }
         const validationReport = {
             stages_called: [...new Set(audit_log_final.filter(entry => entry.action === 'called').map(entry => entry.stage))],
@@ -943,8 +953,8 @@ export async function clinicalServe<T>(options: ProtocolOptions<T>) {
         };
 
         if (supabase !== null && telemetryId !== null) {
-            const { audit_counts, audit_log: auditFailures } = summarizeAuditLog(audit_log_final);
-            await supabase.rpc('update_telemetry', {
+            const { audit_counts, audit_log: auditFailures } = getAuditSummary(audit_log_final);
+            const { error: telemetryCloseError } = await supabase.rpc('update_telemetry', {
                 p_id: telemetryId,
                 p_status: 'SUCCESS',
                 p_metadata: {
@@ -957,6 +967,11 @@ export async function clinicalServe<T>(options: ProtocolOptions<T>) {
                     validation_report: validationReport
                 }
             });
+            // supabase.rpc() resolves with { error } rather than throwing; an unlogged failure
+            // here would leave the row IN_PROGRESS with nothing saying why.
+            if (telemetryCloseError) {
+                console.error(`[Protocol] Final telemetry write FAILED for ${componentId}: ${telemetryCloseError.message}`);
+            }
         }
 
         if (supabase !== null) {
@@ -999,16 +1014,16 @@ export async function clinicalServe<T>(options: ProtocolOptions<T>) {
         // failed (the `TELEMETRY_UNAVAILABLE` throw above, before `telemetryId` is assigned),
         // there is no row to update -- attempting one would either no-op against a bogus id
         // or throw a second, more confusing error out of the error handler itself. The
-        // `report_heartbeat` FAILED call below is unconditional because it is a component
-        // health signal, not a per-run audit row, and does not depend on telemetry having
-        // registered successfully.
+        // `report_heartbeat` FAILED call below runs whenever the function has a database
+        // client, registered or not, because it is a component health signal, not a per-run
+        // audit row, and does not depend on telemetry having registered successfully.
         // [GUARD] Wrapped in its own try/catch so a DB outage that caused (or accompanies)
         // the original failure cannot throw a SECOND, unhandled exception out of the error
         // handler and crash the function with no response at all.
-        const { audit_counts, audit_log: auditFailures } = summarizeAuditLog(audit_log);
+        const { audit_counts, audit_log: auditFailures } = getAuditSummary(audit_log);
         if (supabase !== null && telemetryId !== null) {
             try {
-                await supabase.rpc('update_telemetry', {
+                const { error: failedTelemetryError } = await supabase.rpc('update_telemetry', {
                     p_id: telemetryId,
                     p_status: 'FAILED',
                     p_metadata: {
@@ -1020,6 +1035,11 @@ export async function clinicalServe<T>(options: ProtocolOptions<T>) {
                         audit_log: auditFailures
                     }
                 });
+                if (failedTelemetryError) {
+                    console.error(
+                        `[Protocol] Failed to persist terminal FAILED telemetry state for ${componentId}: ${failedTelemetryError.message}`
+                    );
+                }
             } catch (telemetryCloseError: unknown) {
                 console.error(
                     `[Protocol] Failed to persist terminal FAILED telemetry state for ${componentId}: ` +

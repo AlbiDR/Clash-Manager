@@ -116,6 +116,7 @@ describe("runShadowScout", () => {
             (entry) => entry.action === "integrity_checked" && JSON.stringify(entry.details).includes("Unexpected RPC data shape"),
         );
         expect(failureEntry).toBeDefined();
+        expect(stats.top50_unknown_reasons).toContain("ShadowScout: shadow targets failed validation");
     });
 
     it("does not throw when the RPC implementation itself rejects", async () => {
@@ -127,5 +128,6 @@ describe("runShadowScout", () => {
 
         await expect(runShadowScout(candidates, new Set(), stats, logAudit)).resolves.toBeUndefined();
         expect(stats.errors.some((e) => e.includes("network down"))).toBe(true);
+        expect(stats.top50_unknown_reasons.some((reason) => reason.includes("network down"))).toBe(true);
     });
 });

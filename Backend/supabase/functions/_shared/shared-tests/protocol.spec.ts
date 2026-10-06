@@ -1038,9 +1038,9 @@ describe("clinicalServe", () => {
         schema: EMPTY_SCHEMA,
         handler: async (_payload, logAudit, heartbeat) => {
           logAudit("STAGE_1", "run", { details: "processing" });
-          await heartbeat("STAGE_1", { processed: 5 });
+          await heartbeat("STAGE_1");
           logAudit("STAGE_2", "run", { details: "processing" });
-          await heartbeat("STAGE_2", { processed: 9 });
+          await heartbeat("STAGE_2");
           return { done: true };
         },
       });
@@ -1192,14 +1192,14 @@ describe("clinicalServe", () => {
     // tr_telemetry_integrity_sync runs on every SUCCESS update: false for a missing or
     // empty audit_log, for any 'error' entry, or for resulted_data with
     // is_100_percent_match = false; true otherwise.
-    function verifyRunIntegrity(auditLog: unknown): boolean {
+    function getRunIntegrityVerdict(auditLog: unknown): boolean {
       if (!Array.isArray(auditLog) || auditLog.length === 0) return false;
       return !auditLog.some((entry: any) =>
         entry?.action === "error" ||
         (entry?.action === "resulted_data" && entry?.details?.is_100_percent_match === false));
     }
 
-    async function runAndCapture(handler: Parameters<typeof clinicalServe>[0]["handler"], extra: Record<string, unknown> = {}) {
+    async function fetchTelemetryCapture(handler: Parameters<typeof clinicalServe>[0]["handler"], extra: Record<string, unknown> = {}) {
       const { supabase, calls } = makeSupabaseMock(async (fn) => {
         if (fn === "report_telemetry") return { data: { id: "tid-shape" }, error: null };
         return { data: null, error: null };
@@ -1220,7 +1220,7 @@ describe("clinicalServe", () => {
     }
 
     it("persists per-stage counts and only the failing entries, not the full trail", async () => {
-      const { metadata } = await runAndCapture(async (_payload, logAudit) => {
+      const { metadata } = await fetchTelemetryCapture(async (_payload, logAudit) => {
         for (let tag = 0; tag < 50; tag++) {
           logAudit("PROFILING", "called", { tag });
           logAudit("PROFILING", "integrity_checked", { passed: true, details: "ok" });
@@ -1239,24 +1239,32 @@ describe("clinicalServe", () => {
     });
 
     it("gives verify_run_integrity the same verdict it gave the full trail", async () => {
-      const clean = await runAndCapture(async (_payload, logAudit) => {
+      const clean = await fetchTelemetryCapture(async (_payload, logAudit) => {
         logAudit("STAGE", "run", {});
         logAudit("STAGE", "integrity_checked", { passed: true });
         return {};
       });
-      expect(verifyRunIntegrity(clean.metadata.audit_log)).toBe(true);
+      expect(getRunIntegrityVerdict(clean.metadata.audit_log)).toBe(true);
 
-      const failing = await runAndCapture(async (_payload, logAudit) => {
+      const failing = await fetchTelemetryCapture(async (_payload, logAudit) => {
         logAudit("STAGE", "run", {});
         logAudit("STAGE", "error", { message: "write failed" });
         return {};
       });
-      expect(verifyRunIntegrity(failing.metadata.audit_log)).toBe(false);
+      expect(getRunIntegrityVerdict(failing.metadata.audit_log)).toBe(false);
+
+      const mismatched = await fetchTelemetryCapture(async (_payload, logAudit) => {
+        logAudit("STAGE", "resulted_data", { is_100_percent_match: false });
+        logAudit("STAGE", "resulted_data", { count: 3 });
+        return {};
+      });
+      expect(getRunIntegrityVerdict(mismatched.metadata.audit_log)).toBe(false);
+      expect(mismatched.metadata.audit_log.filter((entry: any) => entry.action === "resulted_data")).toHaveLength(1);
     });
 
     it("does not copy a public proxy's response body into telemetry, but still returns it", async () => {
       const harvest = { items: Array.from({ length: 200 }, (_, index) => ({ tag: `#P${index}` })), region: "Global" };
-      const { response, metadata } = await runAndCapture(async () => harvest, {
+      const { response, metadata } = await fetchTelemetryCapture(async () => harvest, {
         rateLimit: { maxRequests: 1000, windowMs: 60_000 },
       });
 
@@ -1268,7 +1276,7 @@ describe("clinicalServe", () => {
     });
 
     it("keeps a cron pipeline's statistics in telemetry", async () => {
-      const { metadata } = await runAndCapture(async () => ({ recruits_ingested: 7, errors: [] }));
+      const { metadata } = await fetchTelemetryCapture(async () => ({ recruits_ingested: 7, errors: [] }));
 
       expect(metadata.recruits_ingested).toBe(7);
     });
@@ -1276,7 +1284,7 @@ describe("clinicalServe", () => {
     it("persists counts plus failures on the FAILED path too", async () => {
       const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
       try {
-        const { metadata, status, heartbeat } = await runAndCapture(async (_payload, logAudit) => {
+        const { metadata, status, heartbeat } = await fetchTelemetryCapture(async (_payload, logAudit) => {
           logAudit("STAGE", "called", {});
           logAudit("STAGE", "run", {});
           throw new Error("stage exploded");

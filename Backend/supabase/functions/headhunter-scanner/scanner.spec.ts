@@ -189,11 +189,16 @@ describe("executeScanner orchestration", () => {
         expect(JSON.stringify(notFed?.details)).toContain("epoch guard not fed");
         expect(JSON.stringify(notFed?.details)).toContain("fate check unanswered");
         expect(result.top50_unknown_reasons).toHaveLength(1);
+        expect(result.new_recruits_top50).toBeNull();
     });
 
-    it("does not feed the epoch guard when a discovery stage throws", async () => {
-        mockRunTournamentDiscovery.mockImplementationOnce(async () => {
-            throw new Error("tournament discovery blew up");
+    it.each([
+        ["S1_SHADOW_SCOUT", () => mockRunShadowScout],
+        ["S2_TOURNAMENT_DISCOVERY", () => mockRunTournamentDiscovery],
+        ["S3_PROFILING", () => mockRunProfiler],
+    ] as const)("does not feed the epoch guard, and reports the count as null, when %s throws", async (stage, getStageMock) => {
+        getStageMock().mockImplementationOnce(async () => {
+            throw new Error(`${stage} blew up`);
         });
         const { logAudit } = makeAuditCollector();
         const heartbeat = vi.fn(async () => undefined);
@@ -201,7 +206,25 @@ describe("executeScanner orchestration", () => {
         const result = await executeScanner(["AUTO"], logAudit, heartbeat);
 
         expect(mockSupabase.rpc.mock.calls.some(([name]: [string]) => name === "update_epoch_state")).toBe(false);
-        expect(result.top50_unknown_reasons.some((reason) => reason.includes("tournament discovery blew up"))).toBe(true);
+        expect(result.top50_unknown_reasons).toContain(`${stage}: ${stage} blew up`);
+        expect(result.new_recruits_top50).toBeNull();
+    });
+
+    it("still feeds a positive count when another read failed: those recruits were found", async () => {
+        mockRunShadowScout.mockImplementationOnce(async (...args: unknown[]) => {
+            (args[2] as { top50_unknown_reasons: string[] }).top50_unknown_reasons.push("ShadowScout: timeout");
+        });
+        mockRunProfiler.mockImplementationOnce(async (...args: unknown[]) => {
+            (args[3] as { new_recruits_top50: number }).new_recruits_top50 = 1;
+        });
+        const { logAudit } = makeAuditCollector();
+        const heartbeat = vi.fn(async () => undefined);
+
+        const result = await executeScanner(["AUTO"], logAudit, heartbeat);
+
+        const epochCall = mockSupabase.rpc.mock.calls.find(([name]: [string]) => name === "update_epoch_state");
+        expect(epochCall?.[1]).toEqual({ p_top50: 1 });
+        expect(result.new_recruits_top50).toBe(1);
     });
 
     it("feeds the epoch guard the counted Top 50 when every read answered", async () => {

@@ -162,6 +162,12 @@ export async function runDeepDepth(
             // [DECISION LOG] DEFER, DO NOT FLOOD: when the skip check could not be answered,
             // this cycle ingests members only. Members never consult the check, so their
             // polling is unchanged; the deferred recruits are retried on the next cycle.
+            // If the read can never answer (the RPC dropped by a bad deploy), recruits stay
+            // deferred, and that is accepted on purpose: every such cycle reports the stage
+            // failed with the count deferred, so the cause is visible in each run's telemetry
+            // instead of hidden behind a full re-ingest. Recruit battle logs are enrichment: the
+            // next answered read ingests each recruit's last 25 battles, losing only battles
+            // that scrolled out of that window while the read was failing.
             const deferredRecruits = new Set(latestBattleTimes === null ? skippableRecruits : []);
             recruitsDeferred = deferredRecruits.size;
             if (recruitsDeferred > 0) {

@@ -55,7 +55,7 @@ export async function runTournamentDiscovery(
         // the load a starved database cannot take. A failed read now skips discovery for this
         // cycle and says why; a read that succeeds and returns nothing is still a real answer
         // and keeps its designed behaviour (fallback keywords, empty blacklist).
-        const skipCycle = (reason: string) => {
+        const handleGatingReadFailure = (reason: string) => {
             const skipMessage = `TournamentDiscovery skipped this cycle: ${reason}`;
             stats.errors.push(skipMessage);
             stats.top50_unknown_reasons.push(skipMessage);
@@ -76,7 +76,7 @@ export async function runTournamentDiscovery(
             details: anchorFailure ?? 'Anchors validated'
         });
         if (anchorFailure !== null || !discoveryAnchorsIntegrity.success) {
-            skipCycle(anchorFailure ?? 'anchor validation failed');
+            handleGatingReadFailure(anchorFailure ?? 'anchor validation failed');
             return;
         }
 
@@ -102,7 +102,7 @@ export async function runTournamentDiscovery(
             details: cacheFailure ?? 'Cache validated'
         });
         if (cacheFailure !== null || !discoveryCacheIntegrity.success) {
-            skipCycle(cacheFailure ?? 'cache validation failed');
+            handleGatingReadFailure(cacheFailure ?? 'cache validation failed');
             return;
         }
 
@@ -110,6 +110,9 @@ export async function runTournamentDiscovery(
         const blacklist = new Set(discoveryCacheSnapshot.map((cacheItemCandidate) => cacheItemCandidate.player_tag));
         console.log(`[TOURNAMENT_DISCOVERY] Loaded ${blacklist.size} cached tournaments to blacklist`);
         let discoveryCount = 0;
+        // Royale API calls that did not answer: a non-OK status, a malformed body, or a thrown
+        // fetch. Any of them could have hidden a Top 50 recruit, so the run's zero is not a fact.
+        let upstreamFailures = 0;
 
         const discoveryTasks = keywords.map(keyword => async () => {
             logAudit('TOURNAMENT_DISCOVERY', 'called', { keyword });
@@ -121,6 +124,7 @@ export async function runTournamentDiscovery(
                 logAudit('TOURNAMENT_DISCOVERY', 'run', { keyword, status: tournamentListApiResponse.status });
                 console.log(`[TOURNAMENT_DISCOVERY] Keyword '${keyword}' returned HTTP ${tournamentListApiResponse.status}`);
                 if (!tournamentListApiResponse.ok) {
+                    upstreamFailures++;
                     logAudit('TOURNAMENT_DISCOVERY', 'integrity_checked', { passed: false, details: `HTTP_${tournamentListApiResponse.status}` });
                     console.error(`[TOURNAMENT_DISCOVERY] Keyword '${keyword}' failed due to HTTP ${tournamentListApiResponse.status}`);
                     return;
@@ -140,6 +144,7 @@ export async function runTournamentDiscovery(
                 });
                 
                 if (!tournamentListIntegrity.success) {
+                    upstreamFailures++;
                     console.error(`[TOURNAMENT_DISCOVERY] Keyword '${keyword}' received invalid data shape`);
                     return;
                 }
@@ -234,6 +239,7 @@ export async function runTournamentDiscovery(
                                     skipped: skippedClanned
                                 });
                             } else {
+                                upstreamFailures++;
                                 console.log(`[TOURNAMENT_DISCOVERY] Tournament ${tournamentTargetCandidate.tag} validation failed`);
                                 logAudit('TOURNAMENT_DISCOVERY', 'integrity_checked', {
                                     tournament: tournamentTargetCandidate.tag,
@@ -256,10 +262,12 @@ export async function runTournamentDiscovery(
                                 console.error(`[TOURNAMENT_DISCOVERY] Discovery cache upsert failed for ${tournamentTargetCandidate.tag}: ${discoveryCacheUpsertError.message}`);
                             }
                         } else {
+                            upstreamFailures++;
                             console.error(`[TOURNAMENT_DISCOVERY] Fetching details for tournament ${tournamentTargetCandidate.tag} failed with HTTP ${tournamentDetailApiResponse.status}`);
                         }
                     } catch (discoveryExecutionError: unknown) {
                         const errorMessage = discoveryExecutionError instanceof Error ? discoveryExecutionError.message : String(discoveryExecutionError);
+                        upstreamFailures++;
                         console.error(`[TOURNAMENT_DISCOVERY] Exception while fetching tournament ${tournamentTargetCandidate.tag}: ${errorMessage}`);
                     }
                 });
@@ -284,6 +292,7 @@ export async function runTournamentDiscovery(
             } catch (discoveryExecutionError: unknown) {
                 const errorMessage = discoveryExecutionError instanceof Error ? discoveryExecutionError.message : String(discoveryExecutionError);
                 stats.errors.push(`Discovery(${keyword}): ${errorMessage}`);
+                upstreamFailures++;
                 logAudit('TOURNAMENT_DISCOVERY', 'integrity_checked', { passed: false, details: errorMessage });
                 logAudit('TOURNAMENT_DISCOVERY', 'error', { keyword, message: errorMessage });
                 console.error(`[TOURNAMENT_DISCOVERY] Keyword '${keyword}' encountered exception: ${errorMessage}`);
@@ -292,6 +301,9 @@ export async function runTournamentDiscovery(
         
         await processBatch(discoveryTasks, BATCH_KEYWORDS);
         console.log(`[TOURNAMENT_DISCOVERY] All keywords processed. Total new candidates discovered: ${discoveryCount}`);
+        if (upstreamFailures > 0) {
+            stats.top50_unknown_reasons.push(`TournamentDiscovery: ${upstreamFailures} Royale API request(s) unanswered`);
+        }
         stats.discovery_targets += discoveryCount;
         if (stats.discovery_tournament !== undefined) stats.discovery_tournament += discoveryCount;
         logAudit('TOURNAMENT_DISCOVERY', 'terminated', { candidates: discoveryCount });
