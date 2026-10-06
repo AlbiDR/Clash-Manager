@@ -64,7 +64,7 @@ const UNRESOLVABLE_COMPONENTS = [
   'features/laboratory/components/VaultCard.vue',
   'features/settings/components/NetworkSettings.vue',
   'shared/ui/BaseSelect.vue',
-  'shared/ui/BenchmarkContent.vue',
+  'shared/ui/BenchmarkPanel.vue',
   'shared/ui/EventManagement.vue',
   'shared/ui/MomentumPill.vue',
   'shared/ui/RoleBadge.vue',

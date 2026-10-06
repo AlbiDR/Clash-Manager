@@ -56,7 +56,7 @@ This is the single registry for these services; higher-layer READMEs link here r
 | `apkResolverUtils.ts` | Pure utilities, constants, types, and helpers for companion APK version parsing and release resolution. |
 | `useApkManager.ts` | Native APK shell update management (installed vs published release comparison, download dispatching, and bridge state). |
 | `useUiCoordinator.ts` | Global layout spacing and floating-action-button state. |
-| `useBackHandler.ts` | Hardware back-button behavior in the wrapper. |
+| `useDismissOnBack.ts` | Back (Android button or gesture, browser Back) closes the top-most open overlay instead of leaving the screen. |
 | `useBenchmarking.ts` | Compares a member's stats against clan averages in a single pass. |
 | `useDeepLinkHandler.ts` | Expands and scrolls to an item from URL parameters. |
 | `useSystemInfo.ts` | Source of truth for app version and the global display modes. |

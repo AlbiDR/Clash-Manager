@@ -157,13 +157,13 @@ describe("StatusPill", () => {
   });
 
   it("speaks the caller's loading label rather than a hardcoded one", () => {
-    // Laboratory authors "Scanning Vault..." and "Computing Trajectory...", and
-    // Settings distinguishes "Connecting..." from "Syncing...". All four were
-    // discarded while this branch rendered a literal.
+    // Laboratory authors "Scanning" and "Simulating", and Settings
+    // distinguishes "Connecting" from "Syncing". All four were discarded while
+    // this branch rendered a literal.
     const wrapper = mount(StatusPill, {
-      props: { type: "loading", text: "Scanning Vault...", nominal: false },
+      props: { type: "loading", text: "Scanning", nominal: false },
     });
-    expect(wrapper.find(".status-label").text()).toBe("Scanning Vault...");
+    expect(wrapper.find(".status-label").text()).toBe("Scanning");
   });
 
   it("displays SUPABASE source when remoteInfo.source is SUPABASE", async () => {

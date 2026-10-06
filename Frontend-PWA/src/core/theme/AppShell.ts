@@ -159,8 +159,8 @@ export function getAppShellStyles(): string {
       left: var(--sys-safe-center-x);
       transform: translate3d(-50%, 0, 0);
       background: var(--sys-surface-glass);
-      backdrop-filter: var(--sys-surface-glass-blur);
       -webkit-backdrop-filter: var(--sys-surface-glass-blur);
+      backdrop-filter: var(--sys-surface-glass-blur);
       border: var(--sys-border-width-glass) solid var(--sys-surface-glass-border);
       padding: var(--sys-space-6);
       border-radius: var(--sys-shape-corner-full);

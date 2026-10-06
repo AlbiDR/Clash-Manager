@@ -154,3 +154,115 @@ test("a named or labelled control is not reported", () => {
   const report = auditApkUx({ root });
   assert.deepEqual(report.violations.filter(v => v.code === "icon-only-control-without-accessible-name"), []);
 });
+
+test("a '>' inside a quoted attribute does not end the tag", () => {
+  // Every scan read a tag as <name[^>]*>, which ends at the first ">" anywhere.
+  // GhostBenchmarkHost.vue's stepper had a "<=" button that was reported and a
+  // ">=" twin directly below it that no rule saw. These two buttons differ only
+  // by that comparison; both must be reported by both rules.
+  const root = fixtureRoot();
+  writeFileSync(
+    path.join(root, "components", "Stepper.vue"),
+    `<template>
+  <div>
+    <button type="button" :disabled="position <= 1" @click="go(-1)"><Icon name="chevron_left" /></button>
+    <button type="button" :disabled="position >= total" @click="go(1)"><Icon name="chevron_right" /></button>
+  </div>
+</template>
+`,
+  );
+
+  const report = auditApkUx({ root });
+  const lines = code => report[code === "click-without-local-haptic-evidence" ? "observations" : "violations"]
+    .filter(item => item.code === code)
+    .map(item => item.line);
+  assert.deepEqual(lines("icon-only-control-without-accessible-name"), [3, 4]);
+  assert.deepEqual(lines("click-without-local-haptic-evidence"), [3, 4]);
+});
+
+test("attributes after a quoted '>' still count", () => {
+  // The other half of the same hole: the label and the haptics sit after the
+  // comparison, where the old scan stopped reading. The second button has a
+  // label but no haptics, so its observation proves the tag was read at all;
+  // without it, "nothing reported" would also be what a blind scan prints.
+  const root = fixtureRoot();
+  writeFileSync(
+    path.join(root, "components", "Labelled.vue"),
+    `<template>
+  <div>
+    <button type="button" :disabled="position >= total" aria-label="Show later entry" v-tactile @click="go(1)"><Icon name="chevron_right" /></button>
+    <button type="button" :disabled="position >= total" aria-label="Show last entry" @click="go(total)"><Icon name="last_page" /></button>
+  </div>
+</template>
+`,
+  );
+
+  const report = auditApkUx({ root });
+  assert.deepEqual(report.violations, []);
+  assert.deepEqual(report.observations.map(item => item.line), [4]);
+});
+
+test("haptic evidence belongs to the element, not to the file", () => {
+  // A file that mentions useHaptics used to exempt every click in it. Each
+  // exempt control here is wired to haptics itself; the last one is not, and
+  // sits in the same file.
+  const root = fixtureRoot();
+  const source = `<script setup lang="ts">
+import { useHaptics } from "../composables/useHaptics";
+const haptics = useHaptics();
+const { tap: buzz } = useHaptics();
+function selectOption(value: string) {
+  haptics.tap();
+  emit("select", value);
+}
+const open = () => {
+  buzz();
+};
+function onPress() {
+  haptics.tap();
+}
+// close() says "haptics.tap()" in this comment, which is not a call.
+function close() {
+  emit("close");
+}
+</script>
+
+<template>
+  <div>
+    <button v-tactile @click="save">Save</button>
+    <button @click="haptics.tap(); go()">Inline</button>
+    <button @click.stop="selectOption('a')">Select</button>
+    <button @click="open">Open</button>
+    <button @click="go" @pointerdown="onPress">Press</button>
+    <button @click="close">Close</button>
+  </div>
+</template>
+`;
+  writeFileSync(path.join(root, "components", "Mixed.vue"), source);
+
+  const report = auditApkUx({ root });
+  const flagged = report.observations.filter(item => item.code === "click-without-local-haptic-evidence").map(item => item.line);
+  const closeLine = source.split("\n").findIndex(line => line.includes(">Close<")) + 1;
+  assert.deepEqual(flagged, [closeLine], "only the Close button has no haptics of its own");
+});
+
+test("a handler from a composable is not evidence", () => {
+  // A destructured function is not declared in this script, so there is no
+  // body to read; the control is reported rather than assumed to vibrate.
+  const root = fixtureRoot();
+  writeFileSync(
+    path.join(root, "components", "Composed.vue"),
+    `<script setup lang="ts">
+const haptics = useHaptics();
+const { hide } = usePanel();
+</script>
+
+<template>
+  <button @click="hide">Close</button>
+</template>
+`,
+  );
+
+  const report = auditApkUx({ root });
+  assert.equal(report.observations.length, 1);
+});

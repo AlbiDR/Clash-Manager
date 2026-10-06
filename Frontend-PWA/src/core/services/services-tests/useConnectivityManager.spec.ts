@@ -90,13 +90,13 @@ describe("useConnectivityManager", () => {
       });
     });
 
-    it("returns Invalid API URL error state when apiStatus is unconfigured (Priority 1.7)", () => {
+    it("returns Config Error state when apiStatus is unconfigured (Priority 1.7)", () => {
       mockApiStatus.value = "unconfigured";
       const { hubHealth } = useConnectivityManager();
 
       expect(hubHealth.value).toEqual({
         type: "error",
-        label: "Invalid API URL",
+        label: "Config Error",
         confidence: 0,
         diagnosis: "Backend Configuration Error"
       });
@@ -127,7 +127,7 @@ describe("useConnectivityManager", () => {
 
       expect(hubHealth.value).toEqual({
         type: "error",
-        label: "Invalid API URL",
+        label: "Config Error",
         confidence: 0,
         diagnosis: "Backend Configuration Error"
       });

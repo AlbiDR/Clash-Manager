@@ -2,28 +2,26 @@
   "$schema": "https://unpkg.com/knip@6/schema.json",
   "workspaces": {
     "Frontend-PWA": {
-      "entry": [
-        "src/app/main.ts",
-        "src/app/sw.ts"
-      ],
       "project": "src/**/*.{ts,vue}",
-      "ignore": [
-        "src/env.d.ts"
-      ],
+      "ignoreExportsUsedInFile": true,
       "ignoreUnresolved": [
         "virtual:pwa-register/vue"
       ]
     },
     "Backend": {
       "entry": "supabase/functions/*/index.ts",
-      "project": "supabase/functions/**/*.ts"
+      "project": "supabase/functions/**/*.ts",
+      "ignoreDependencies": ["p-limit"]
     },
     ".": {
       "entry": ".github/scripts/**/*.ts",
       "project": ".github/scripts/**/*.ts",
-      "ignoreDependencies": ["npm"],
-      "ignoreBinaries": []
+      "ignoreDependencies": ["npm", "p-limit"],
+      "ignoreBinaries": ["playwright", "adb", "strings", "type-check", "lint"]
     }
+  },
+  "ignoreIssues": {
+    "Frontend-PWA/src/core/config/index.ts": ["duplicates"]
   },
   "compilers": {
     "vue": "npx @vue/compiler-sfc"

@@ -4,8 +4,8 @@
 /**
  * MODULE: TEXT UTILITIES (Layer 1)
  * ----------------------------------------------------------------------------
- * DESCRIPTION: Centralized text and HTML formatting utilities.
- * Handles tag normalization and Markdown-like description parsing.
+ * DESCRIPTION: Centralized text formatting utilities.
+ * Handles tag normalization and byte-size display formatting.
  *
  * ARCHITECTURE:
  *    - Stateless: All functions are pure and rely only on inputs.
@@ -14,26 +14,6 @@
 
 /** Regex for identifying leading player/clan tag hashes. */
 const RE_TAG_HASH = /^#/;
-/** Regex for identifying section titles in Markdown-like descriptions. */
-const RE_DESC_SECTION = /^(\*\*.*?\*\*|.*?:)\s*$/gm;
-/** Regex for bold text markdown. */
-const RE_DESC_BOLD = /\*\*(.*?)\*\*/g;
-/** Regex for bullet point markdown. */
-const RE_DESC_BULLET = /^• (.+)$/gm;
-/** Regex for grouping list items into semantic <ul> structures. */
-const RE_DESC_LIST = /(<li class="bullet-item">.*?<\/li>[^\S\r\n]*(\r?\n(?=<li class="bullet-item">))?)+/g;
-/** Global newline regex. */
-const RE_NEWLINE = /\n/g;
-/** Characters that must be escaped before inserting formatted text with v-html. */
-const RE_HTML_ESCAPE = /[&<>"']/g;
-/** Entity lookup for HTML escaping. */
-const HTML_ESCAPE_MAP: Record<string, string> = {
-  "&": "&amp;",
-  "<": "&lt;",
-  ">": "&gt;",
-  '"': "&quot;",
-  "'": "&#39;",
-};
 
 /**
  * CLEAN TAG
@@ -107,50 +87,4 @@ export function formatBytes(sizeBytes: number | undefined): string {
   if (sizeBytes >= 1024 * 1024) return `${(sizeBytes / 1024 / 1024).toFixed(1)} MB`;
   // Format smaller payloads as rounded Kilobytes
   return `${Math.round(sizeBytes / 1024)} KB`;
-}
-
-/**
- * DESCRIPTION FORMATTER
- * Converts markdown-ish strings from remote data sources into semantic HTML.
- *
- * @remarks
- * Satisfies ADR Section III: Validation & Data Ingress Boundaries.
- * Implements a custom parsing pipeline for section titles, bold text, and
- * bulleted lists. Specifically handles consecutive list items to wrap them
- * in valid <ul> tags for accessibility.
- *
- * @param text - The raw Markdown-like text from a remote data cell.
- * @returns Sanitized and formatted HTML string.
- */
-export function formatHeaderDescription(text: string): string {
-  if (!text) return "";
-
-  return (
-    // Escape HTML special characters first to neutralize XSS payload injection
-    escapeHtml(text)
-      // Transform markdown section headers (Key: Value or Title:) to styled containers
-      .replace(RE_DESC_SECTION, '<div class="desc-section-title">$1</div>')
-      // Convert bold markdown delimiters (**text**) to HTML strong elements
-      .replace(RE_DESC_BOLD, "<strong>$1</strong>")
-      // Convert bullet character prefixes to HTML list item elements
-      .replace(RE_DESC_BULLET, '<li class="bullet-item">$1</li>')
-      // Group consecutive li items into semantic ul wrappers prior to newline conversion
-      .replace(RE_DESC_LIST, (match) => {
-        return `<ul class="desc-list">${match.trim().replace(RE_NEWLINE, "")}</ul>`;
-      })
-      // Convert remaining raw line breaks to HTML break elements
-      .replace(RE_NEWLINE, "<br>")
-  );
-}
-
-/**
- * ESCAPE HTML
- * Replaces unsafe HTML entities with safely escaped character codes.
- *
- * @param text - Unsanitized raw string.
- * @returns Escaped string safe for HTML rendering.
- */
-function escapeHtml(text: string): string {
-  // Replace XSS sensitive characters using entity lookup table
-  return text.replace(RE_HTML_ESCAPE, (character) => HTML_ESCAPE_MAP[character]);
 }

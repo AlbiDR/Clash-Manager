@@ -2,6 +2,7 @@
 <!-- Copyright (C) 2026 AlbiDR -->
 <script setup lang="ts" generic="T extends string | number">
 import { computed, ref, useId, useTemplateRef, onMounted, onUnmounted } from "vue";
+import { useDismissOnBack } from "@core";
 import { vTactile } from "../directives/vTactile";
 import Icon from "./Icon.vue";
 
@@ -116,6 +117,8 @@ function closeDropdown(): void {
   activeIndex.value = -1;
   triggerRef.value?.focus();
 }
+
+useDismissOnBack(isOpen, closeDropdown);
 
 const toggleDropdown = () => {
   if (isOpen.value) closeDropdown();
@@ -326,8 +329,8 @@ const getSelectedLabel = () => {
   left: 0;
   right: 0;
   background: var(--sys-surface-glass, var(--sys-color-surface-container-high));
-  backdrop-filter: var(--sys-surface-glass-blur);
   -webkit-backdrop-filter: var(--sys-surface-glass-blur);
+  backdrop-filter: var(--sys-surface-glass-blur);
   border: 1px solid var(--sys-surface-glass-border, var(--sys-color-outline-variant));
   border-radius: var(--sys-shape-corner-input);
   box-shadow: var(--sys-elevation-3);

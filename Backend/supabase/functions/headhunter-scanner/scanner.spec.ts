@@ -172,6 +172,74 @@ describe("executeScanner orchestration", () => {
         expect(epochSuccessEntry).toBeDefined();
     });
 
+    // [THREAT:] update_epoch_state(0) re-arms the guard into up to three more full scans.
+    // A run whose reads failed also ends at zero, so it must not feed the guard at all.
+    it("does not feed the epoch guard, and says why, when a stage marked the Top 50 count unknown", async () => {
+        mockRunProfiler.mockImplementationOnce(async (...args: unknown[]) => {
+            const stats = args[3] as { top50_unknown_reasons: string[] };
+            stats.top50_unknown_reasons.push("Profiler: fate check unanswered for 1 new recruit(s)");
+        });
+        const { entries, logAudit } = makeAuditCollector();
+        const heartbeat = vi.fn(async () => undefined);
+
+        const result = await executeScanner(["AUTO"], logAudit, heartbeat);
+
+        expect(mockSupabase.rpc.mock.calls.some(([name]: [string]) => name === "update_epoch_state")).toBe(false);
+        const notFed = entries.find((entry) => entry.stage === "EPOCH_GUARD" && entry.action === "error");
+        expect(JSON.stringify(notFed?.details)).toContain("epoch guard not fed");
+        expect(JSON.stringify(notFed?.details)).toContain("fate check unanswered");
+        expect(result.top50_unknown_reasons).toHaveLength(1);
+        expect(result.new_recruits_top50).toBeNull();
+    });
+
+    it.each([
+        ["S1_SHADOW_SCOUT", () => mockRunShadowScout],
+        ["S2_TOURNAMENT_DISCOVERY", () => mockRunTournamentDiscovery],
+        ["S3_PROFILING", () => mockRunProfiler],
+    ] as const)("does not feed the epoch guard, and reports the count as null, when %s throws", async (stage, getStageMock) => {
+        getStageMock().mockImplementationOnce(async () => {
+            throw new Error(`${stage} blew up`);
+        });
+        const { logAudit } = makeAuditCollector();
+        const heartbeat = vi.fn(async () => undefined);
+
+        const result = await executeScanner(["AUTO"], logAudit, heartbeat);
+
+        expect(mockSupabase.rpc.mock.calls.some(([name]: [string]) => name === "update_epoch_state")).toBe(false);
+        expect(result.top50_unknown_reasons).toContain(`${stage}: ${stage} blew up`);
+        expect(result.new_recruits_top50).toBeNull();
+    });
+
+    it("still feeds a positive count when another read failed: those recruits were found", async () => {
+        mockRunShadowScout.mockImplementationOnce(async (...args: unknown[]) => {
+            (args[2] as { top50_unknown_reasons: string[] }).top50_unknown_reasons.push("ShadowScout: timeout");
+        });
+        mockRunProfiler.mockImplementationOnce(async (...args: unknown[]) => {
+            (args[3] as { new_recruits_top50: number }).new_recruits_top50 = 1;
+        });
+        const { logAudit } = makeAuditCollector();
+        const heartbeat = vi.fn(async () => undefined);
+
+        const result = await executeScanner(["AUTO"], logAudit, heartbeat);
+
+        const epochCall = mockSupabase.rpc.mock.calls.find(([name]: [string]) => name === "update_epoch_state");
+        expect(epochCall?.[1]).toEqual({ p_top50: 1 });
+        expect(result.new_recruits_top50).toBe(1);
+    });
+
+    it("feeds the epoch guard the counted Top 50 when every read answered", async () => {
+        mockRunProfiler.mockImplementationOnce(async (...args: unknown[]) => {
+            (args[3] as { new_recruits_top50: number }).new_recruits_top50 = 2;
+        });
+        const { logAudit } = makeAuditCollector();
+        const heartbeat = vi.fn(async () => undefined);
+
+        await executeScanner(["AUTO"], logAudit, heartbeat);
+
+        const epochCall = mockSupabase.rpc.mock.calls.find(([name]: [string]) => name === "update_epoch_state");
+        expect(epochCall?.[1]).toEqual({ p_top50: 2 });
+    });
+
     it("continues the run and records the error when an individual stage throws, instead of aborting the whole scan", async () => {
         mockRunShadowScout.mockImplementation(async () => {
             throw new Error("shadow scout blew up");

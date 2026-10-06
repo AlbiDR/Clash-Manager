@@ -169,7 +169,12 @@ export async function cancelScheduledVoyageEvent(
  * not include per-player contributions; those are fetched separately via
  * {@link fetchVoyageContributions} and merged by the store.
  *
+ * [DECISION LOG] A FAILED READ IS NOT AN IDLE VOYAGE: returning null on a read
+ * error made a slow database look like "no voyage" and the banner vanished
+ * mid-event. A read error now throws, so the store keeps the summary it has.
+ *
  * @returns A Promise resolving to a validated VoyageViewSummary or null if no active/pending event exists.
+ * @throws {NetworkError} If the read fails.
  */
 export async function fetchVoyageSummary(): Promise<VoyageViewSummary | null> {
   const supabase = createSupabaseClient();
@@ -182,10 +187,7 @@ export async function fetchVoyageSummary(): Promise<VoyageViewSummary | null> {
     .limit(1)
     .maybeSingle();
 
-  if (voyageSummaryFetchError) {
-    console.error('[Voyage] Summary fetch error:', voyageSummaryFetchError);
-    return null;
-  }
+  if (voyageSummaryFetchError) throw new NetworkError(voyageSummaryFetchError.message);
 
   if (!voyageSummaryRaw) return null;
 
@@ -207,6 +209,7 @@ export async function fetchVoyageSummary(): Promise<VoyageViewSummary | null> {
  * to ensure participant tallies are domain-compliant.
  *
  * @returns A Promise resolving to an array of validated VoyageContribution objects.
+ * @throws {NetworkError} If the read fails, rather than reporting no contributions.
  */
 export async function fetchVoyageContributions(): Promise<VoyageContribution[]> {
   const supabase = createSupabaseClient();
@@ -217,10 +220,7 @@ export async function fetchVoyageContributions(): Promise<VoyageContribution[]> 
     .from('voyage_contributions')
     .select('*');
 
-  if (voyageContributionsFetchError) {
-    console.error('[Voyage] Contributions fetch error:', voyageContributionsFetchError);
-    return [];
-  }
+  if (voyageContributionsFetchError) throw new NetworkError(voyageContributionsFetchError.message);
 
   return v.parse(v.array(VoyageContributionSchema), voyageContributionsRaw || []);
 }

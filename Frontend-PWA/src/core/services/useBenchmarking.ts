@@ -44,6 +44,8 @@ export interface ScoreExplanationData {
   score: number;
   composition: ScoreComposition;
   comparison: BenchmarkData | null;
+  /** Raw RPeS/RPoS comparison shown before the score breakdown is expanded. */
+  rawComparison?: BenchmarkData | null;
 }
 export type BenchmarkContentData = BenchmarkData | ScoreExplanationData | string;
 

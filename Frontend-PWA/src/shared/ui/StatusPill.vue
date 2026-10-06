@@ -6,6 +6,7 @@ import { useStatusPill } from "../composables/useStatusPill";
 import { vTactile } from "../directives/vTactile";
 import Icon from "./Icon.vue";
 import type { ConsoleRemoteInfo } from "@core/types";
+import { useDismissOnBack } from "@core";
 
 const props = defineProps<{
   type: "success" | "warning" | "error" | "loading";
@@ -23,6 +24,8 @@ const emit = defineEmits<{
 
 const { isExpanded, isDB, displayText, displaySource, statusSummary, handleToggle } = useStatusPill(props);
 const detailsId = useId();
+
+useDismissOnBack(isExpanded, () => { isExpanded.value = false; });
 const statusControl = useTemplateRef<HTMLElement>("statusControl");
 
 const detailsAvailable = computed(() =>
@@ -337,8 +340,8 @@ onUnmounted(() => document.removeEventListener("click", handleClickOutside));
   border: 1px solid var(--sys-surface-glass-border);
   border-radius: var(--sys-shape-corner-medium);
   background: var(--sys-surface-glass);
-  backdrop-filter: var(--sys-surface-glass-blur);
   -webkit-backdrop-filter: var(--sys-surface-glass-blur);
+  backdrop-filter: var(--sys-surface-glass-blur);
   box-shadow: var(--sys-elevation-3);
   color: var(--sys-color-on-surface);
 }

@@ -25,7 +25,7 @@ import { runGhostPurge } from "./stages/ghost-purge.ts";
 export async function executeScanner(
     tournaments: string[], 
     logAudit: (stage: string, action: AuditEntry['action'], details?: unknown) => void,
-    heartbeat: (stage: string, currentResults: unknown) => Promise<void>
+    heartbeat: (stage: string) => Promise<void>
 ) {
     const startInstant = Temporal.Now.instant();
     const stats: ScannerStats = {
@@ -42,7 +42,8 @@ export async function executeScanner(
         new_recruits_benched: 0,
         new_recruits_top50: 0,
         ingested_by_source: {},
-        errors: []
+        errors: [],
+        top50_unknown_reasons: []
     };
 
     // --- CONTEXT BOOT: FETCH EXCLUSIONS AND THRESHOLDS ---
@@ -91,7 +92,7 @@ export async function executeScanner(
         stats.errors.push(`S0_GHOST_PURGE: ${message}`);
         logAudit('GHOST_PURGE', 'error', { message });
     }
-    await heartbeat('S0_GHOST_PURGE', stats);
+    await heartbeat('S0_GHOST_PURGE');
 
     // --- DISCOVERY PHASE (S1-S3) ---
 
@@ -101,9 +102,10 @@ export async function executeScanner(
     } catch (shadowScoutExecutionError: unknown) {
         const message = shadowScoutExecutionError instanceof Error ? shadowScoutExecutionError.message : String(shadowScoutExecutionError);
         stats.errors.push(`S1_SHADOW_SCOUT: ${message}`);
+        stats.top50_unknown_reasons.push(`S1_SHADOW_SCOUT: ${message}`);
         logAudit('SHADOW_SCOUT', 'error', { message });
     }
-    await heartbeat('S1_SHADOW_SCOUT', stats);
+    await heartbeat('S1_SHADOW_SCOUT');
 
     // S2: Tournament Discovery
     try {
@@ -113,9 +115,10 @@ export async function executeScanner(
     } catch (tournamentDiscoveryExecutionError: unknown) {
         const message = tournamentDiscoveryExecutionError instanceof Error ? tournamentDiscoveryExecutionError.message : String(tournamentDiscoveryExecutionError);
         stats.errors.push(`S2_TOURNAMENT_DISCOVERY: ${message}`);
+        stats.top50_unknown_reasons.push(`S2_TOURNAMENT_DISCOVERY: ${message}`);
         logAudit('TOURNAMENT_DISCOVERY', 'error', { message });
     }
-    await heartbeat('S2_TOURNAMENT_DISCOVERY', stats);
+    await heartbeat('S2_TOURNAMENT_DISCOVERY');
 
     // Discovery cap check: the profiler hard-caps at 1000 candidates. If we hit
     // that ceiling, lower-priority sources (tournament) lose candidates silently.
@@ -136,9 +139,10 @@ export async function executeScanner(
     } catch (profilingExecutionError: unknown) {
         const message = profilingExecutionError instanceof Error ? profilingExecutionError.message : String(profilingExecutionError);
         stats.errors.push(`S3_PROFILING: ${message}`);
+        stats.top50_unknown_reasons.push(`S3_PROFILING: ${message}`);
         logAudit('PROFILING', 'error', { message });
     }
-    await heartbeat('S3_PROFILING', stats);
+    await heartbeat('S3_PROFILING');
 
     // --- MAINTENANCE PHASE (S4) ---
 
@@ -150,31 +154,49 @@ export async function executeScanner(
         stats.errors.push(`S4_RESCAN: ${message}`);
         logAudit('RESCAN', 'error', { message });
     }
-    await heartbeat('S4_RESCAN', stats);
+    await heartbeat('S4_RESCAN');
 
     // --- EPOCH GUARD FEEDBACK ---
     // Report the top-50 outcome to the epoch guard state machine so it can
     // decide whether to arm (top50 = 0) or disarm (top50 >= 1) for this cycle.
     // Non-fatal: a telemetry write failure must never abort the scanner result.
-    // [THREAT:] supabase.rpc() RESOLVES with { error }, it does not throw, so the try/catch
-    // below is dead code for database failures. Without destructuring the error the epoch-guard
-    // feedback write could fail completely silently, leaving the guard on its stale state.
-    // [DECISION LOG] The error is destructured and recorded, and the 'terminated' audit entry
-    // is gated on success so the epoch guard is never reported as updated when it was not.
-    // The catch is retained for genuine transport-level rejections (network/abort).
-    try {
-        const { error: epochStateError } = await supabase.rpc('update_epoch_state', { p_top50: stats.new_recruits_top50 ?? 0 });
-        if (epochStateError) {
-            stats.errors.push(`EPOCH_GUARD: ${epochStateError.message}`);
-            logAudit('EPOCH_GUARD', 'error', { message: epochStateError.message, details: epochStateError });
-            console.error(`[SCANNER] Epoch guard feedback write failed: ${epochStateError.message}`);
-        } else {
-            logAudit('EPOCH_GUARD', 'terminated', { new_recruits_top50: stats.new_recruits_top50 ?? 0 });
+    // [DECISION LOG] Only a run that could answer the question feeds the guard. When a
+    // discovery, Royale API or fate read failed, zero means "could not tell", not "found
+    // none", and reporting it re-armed the guard into up to three more full scans against
+    // the same starved database or outage. Such a zero becomes `null` in the response and
+    // the telemetry, and the guard is left exactly as it was found. A positive count stands
+    // even then: those recruits were found, and disarming the guard is the truthful answer.
+    const top50Count = stats.new_recruits_top50;
+    const top50Known = typeof top50Count === 'number'
+        && (top50Count >= 1 || stats.top50_unknown_reasons.length === 0);
+    if (!top50Known) {
+        stats.new_recruits_top50 = null;
+        logAudit('EPOCH_GUARD', 'error', {
+            message: 'Top 50 count unknown: epoch guard not fed this cycle',
+            reasons: stats.top50_unknown_reasons
+        });
+        console.warn(`[SCANNER] Epoch guard not fed: Top 50 count unknown (${stats.top50_unknown_reasons.join('; ')})`);
+    } else {
+        // [THREAT:] supabase.rpc() RESOLVES with { error }, it does not throw, so the try/catch
+        // below is dead code for database failures. Without destructuring the error the epoch-guard
+        // feedback write could fail completely silently, leaving the guard on its stale state.
+        // [DECISION LOG] The error is destructured and recorded, and the 'terminated' audit entry
+        // is gated on success so the epoch guard is never reported as updated when it was not.
+        // The catch is retained for genuine transport-level rejections (network/abort).
+        try {
+            const { error: epochStateError } = await supabase.rpc('update_epoch_state', { p_top50: top50Count });
+            if (epochStateError) {
+                stats.errors.push(`EPOCH_GUARD: ${epochStateError.message}`);
+                logAudit('EPOCH_GUARD', 'error', { message: epochStateError.message, details: epochStateError });
+                console.error(`[SCANNER] Epoch guard feedback write failed: ${epochStateError.message}`);
+            } else {
+                logAudit('EPOCH_GUARD', 'terminated', { new_recruits_top50: top50Count });
+            }
+        } catch (epochStateExecutionError: unknown) {
+            const message = epochStateExecutionError instanceof Error ? epochStateExecutionError.message : String(epochStateExecutionError);
+            stats.errors.push(`EPOCH_GUARD: ${message}`);
+            logAudit('EPOCH_GUARD', 'error', { message });
         }
-    } catch (epochStateExecutionError: unknown) {
-        const message = epochStateExecutionError instanceof Error ? epochStateExecutionError.message : String(epochStateExecutionError);
-        stats.errors.push(`EPOCH_GUARD: ${message}`);
-        logAudit('EPOCH_GUARD', 'error', { message });
     }
 
     return {

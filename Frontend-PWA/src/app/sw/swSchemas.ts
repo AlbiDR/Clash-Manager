@@ -13,6 +13,7 @@ import * as v from "valibot";
  * Schema for raw recruit data returned from Supabase REST API during background sync.
  */
 export const SwSupabaseRowSchema = v.object({
+  player_tag: v.string(),
   s: v.pipe(v.number(), v.minValue(0), v.maxValue(100)),
 });
 
@@ -20,6 +21,13 @@ export const SwSupabaseRowSchema = v.object({
  * Schema for the full background sync response payload.
  */
 export const SwSupabaseResponseSchema = v.array(SwSupabaseRowSchema);
+
+/**
+ * Schema for the recruit blacklist read alongside the headhunter snapshot.
+ */
+export const SwBlacklistResponseSchema = v.array(v.object({
+  player_tag: v.string(),
+}));
 
 /**
  * Schema for IndexedDB configuration values.

@@ -114,6 +114,25 @@ describe("useVoyageStore", () => {
       expect(consoleSpy).toHaveBeenCalledWith("[Voyage] Refresh failed:", "API Error");
     });
 
+    it("keeps the last summary when a later read fails instead of showing no voyage", async () => {
+      vi.spyOn(console, "error").mockImplementation(() => {});
+      const activeSummary = {
+        event: { id: 1, clan_tag: "#CLAN1", status: "ACTIVE", target_crowns: 1000, start_at: "2026-01-01T00:00:00Z", end_at: null },
+        total_voyage_crowns: 500,
+        progress_ratio: 0.5,
+      };
+      vi.mocked(VoyageClient.fetchVoyageSummary).mockResolvedValueOnce(activeSummary as any);
+      vi.mocked(VoyageClient.fetchVoyageContributions).mockResolvedValue([]);
+      const store = useVoyageStore();
+      await store.refresh();
+
+      vi.mocked(VoyageClient.fetchVoyageSummary).mockRejectedValueOnce(new Error("Fetch Error"));
+      await store.refresh();
+
+      expect(store.status).toBe("ACTIVE");
+      expect(store.summary?.total_voyage_crowns).toBe(500);
+    });
+
     it("should cap progress ratio at 1.0", async () => {
        const mockSummary = {
         event: { status: "COMPLETED", target_crowns: 1000 },

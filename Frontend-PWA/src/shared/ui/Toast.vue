@@ -311,8 +311,8 @@ onUnmounted(() => {
   transition:
     transform var(--sys-motion-duration-200) var(--sys-motion-spring),
     box-shadow var(--sys-motion-duration-200);
-  user-select: text;
   -webkit-user-select: text;
+  user-select: text;
 }
 
 .toast.is-actionable {
@@ -381,8 +381,8 @@ onUnmounted(() => {
   line-height: 1.4;
   word-break: break-word;
   white-space: pre-wrap;
-  user-select: text;
   -webkit-user-select: text;
+  user-select: text;
 }
 
 .copy-btn {

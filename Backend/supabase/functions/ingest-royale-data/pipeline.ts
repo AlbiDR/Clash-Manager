@@ -14,7 +14,7 @@ import { runDeepDepth } from "./stages/deep-depth.ts";
  *
  * @param targetTag - The authoritative Clash Royale tag for the target clan.
  * @param logAudit - Telemetry sink for clinical audit logs.
- * @param heartbeat - Persistence hook for intermediate pipeline state.
+ * @param heartbeat - Marks a stage boundary in the audit trail (in memory; persisted once at the end).
  * @returns Consolidated ingestion metrics and diagnostic metadata.
  *
  * @remarks
@@ -25,7 +25,7 @@ import { runDeepDepth } from "./stages/deep-depth.ts";
 export async function executePipeline(
     targetTag: string, 
     logAudit: (stage: string, action: AuditEntry['action'], details?: unknown) => void,
-    heartbeat: (stage: string, currentResults: unknown) => Promise<void>
+    heartbeat: (stage: string) => Promise<void>
 ): Promise<IngestionResult> {
     const startInstant = Temporal.Now.instant();
     
@@ -72,7 +72,7 @@ export async function executePipeline(
         const errorMessage = stageIngestionError instanceof Error ? stageIngestionError.message : String(stageIngestionError);
         logAudit('S1_DISCOVERY', 'error', { message: errorMessage });
     }
-    await heartbeat('S1_DISCOVERY', results);
+    await heartbeat('S1_DISCOVERY');
 
     // Stages 2-5: Clan Synchronization (Profile, Members, Race, WarLog)
     // [DECISION LOG] Unified stage for clan-specific domain synchronization.
@@ -84,7 +84,7 @@ export async function executePipeline(
         const errorMessage = stageIngestionError instanceof Error ? stageIngestionError.message : String(stageIngestionError);
         logAudit('CLAN_SYNC', 'error', { message: errorMessage });
     }
-    await heartbeat('S2_S5_CLAN', results);
+    await heartbeat('S2_S5_CLAN');
 
     // Stage 6: Deep Depth (Battle Logs)
     // [DECISION LOG] Final enrichment stage for competitive battle history.
@@ -96,7 +96,7 @@ export async function executePipeline(
         const errorMessage = stageIngestionError instanceof Error ? stageIngestionError.message : String(stageIngestionError);
         logAudit('DEEP_DEPTH', 'error', { message: errorMessage });
     }
-    await heartbeat('S6_BATTLES', results);
+    await heartbeat('S6_BATTLES');
 
     results.diagnostics.duration_ms = Temporal.Now.instant().since(startInstant).total('milliseconds');
     return results;

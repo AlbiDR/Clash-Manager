@@ -411,7 +411,17 @@ const RoyaleRankingItemSchema = v.object({
  * Satisfies ADR Section III: Validation Boundaries.
  */
 export const RoyaleRankingListSchema = v.object({
-    items: v.array(RoyaleRankingItemSchema)
+    items: v.array(RoyaleRankingItemSchema),
+    paging: v.optional(v.object({
+        cursors: v.optional(v.object({ after: v.optional(v.string()) }))
+    }))
+});
+
+/** Completed league seasons, identified by the API's YYYY-MM IDs. */
+export const RoyaleSeasonListSchema = v.object({
+    items: v.array(v.object({
+        id: v.pipe(v.string(), v.regex(/^\d{4}-(0[1-9]|1[0-2])$/))
+    }))
 });
 
 /**

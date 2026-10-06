@@ -75,7 +75,6 @@ describe("ConsoleLayout", () => {
       EmptyState: true,
       ErrorState: true,
       SelectionBar: true,
-      HeaderInfoOverlay: true,
       FloatingDock: true,
     },
     directives: {

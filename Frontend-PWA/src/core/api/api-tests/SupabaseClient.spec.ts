@@ -13,10 +13,15 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { createClient } from "@supabase/supabase-js";
 import * as SupabaseClient from "../SupabaseClient";
+import { SOURCE_STALENESS_THRESHOLD } from "../../config";
+
+/** The store's staleness rule: data older than the source staleness window reads as STALE. */
+const getIsStale = (timestamp: number) => Date.now() - timestamp > SOURCE_STALENESS_THRESHOLD;
 
 // Mock Supabase JS Client
 const mockFrom = {
   select: vi.fn(),
+  order: vi.fn(),
   limit: vi.fn(),
   eq: vi.fn(),
   single: vi.fn(),
@@ -25,7 +30,7 @@ const mockFrom = {
 };
 
 // Make them fluent and thenable
-[mockFrom.select, mockFrom.limit, mockFrom.eq, mockFrom.single, mockFrom.abortSignal, mockFrom.insert].forEach(m => {
+[mockFrom.select, mockFrom.order, mockFrom.limit, mockFrom.eq, mockFrom.single, mockFrom.abortSignal, mockFrom.insert].forEach(m => {
   m.mockImplementation(() => {
     return Object.assign(Promise.resolve({ data: null, error: null }), mockFrom);
   });
@@ -218,6 +223,32 @@ describe("SupabaseClient", () => {
       expect(result).toEqual({ status: 'error', message: 'Function Error' });
     });
 
+    it("ping reports the HTTP status of an edge function error", async () => {
+      const WORKER_LIMIT = 546;
+      vi.mocked(mockClient.functions.invoke).mockResolvedValue({
+        data: null,
+        error: Object.assign(new Error("Edge Function returned a non-2xx status code"), {
+          context: new Response(null, { status: WORKER_LIMIT }),
+        }),
+      });
+
+      const result = await SupabaseClient.ping();
+
+      expect(result).toEqual(expect.objectContaining({ status: "error", httpStatus: WORKER_LIMIT }));
+    });
+
+    it("ping reports no HTTP status when the edge function never answered", async () => {
+      vi.mocked(mockClient.functions.invoke).mockResolvedValue({
+        data: null,
+        error: Object.assign(new Error("Failed to send a request to the Edge Function"), { context: new TypeError("Failed to fetch") }),
+      });
+
+      const result = await SupabaseClient.ping();
+
+      expect(result.status).toBe("error");
+      expect(result.httpStatus).toBeUndefined();
+    });
+
     it("ping catches and returns exceptions", async () => {
       vi.mocked(mockClient.functions.invoke).mockRejectedValue(new Error("Unexpected Crash"));
 
@@ -232,7 +263,7 @@ describe("SupabaseClient", () => {
       vi.mocked(mockFrom.abortSignal)
         .mockResolvedValueOnce({ data: [{ player_tag: '#ABC', player_name: 'Hero', trophies: 5000 }], error: null }) // Roster
         .mockResolvedValueOnce({ data: [{ player_tag: '#XYZ', player_name: 'Recruit', trophies: 4000 }], error: null }) // Headhunter
-        .mockResolvedValueOnce({ data: { last_success_at: '2026-01-01T00:00:00Z' }, error: null }) // Heartbeat
+        .mockResolvedValueOnce({ data: [{ component_id: 'ROYALE_DATA_INGESTOR', last_success_at: '2026-01-01T00:00:00Z' }], error: null }) // Heartbeat
         .mockResolvedValueOnce({ data: [], error: null }); // Blacklist
 
       const result = await SupabaseClient.fetchRemote();
@@ -275,16 +306,109 @@ describe("SupabaseClient", () => {
       await expect(SupabaseClient.fetchRemote()).rejects.toThrow('Roster Fetch Error: Roster Fail');
     });
 
-    it("fetchRemote continues with an empty blacklist if blacklist fetch fails", async () => {
-      vi.mocked(mockFrom.abortSignal)
-        .mockResolvedValueOnce({ data: [], error: null })
-        .mockResolvedValueOnce({ data: [], error: null })
-        .mockResolvedValueOnce({ data: null, error: null })
-        .mockResolvedValueOnce({ data: null, error: { message: 'Invalid schema: drivers' } } as any);
+    describe("withholding recruits dismissed since the snapshot was taken", () => {
+      const SNAPSHOT_RECRUITS = [
+        { player_tag: '#KEPT', player_name: 'Kept', trophies: 4000 },
+        { player_tag: '#DISMISSED', player_name: 'Dismissed', trophies: 4100 },
+        { player_tag: '#UNPREFIXED', player_name: 'Unprefixed', trophies: 4200 },
+      ];
 
-      const result = await SupabaseClient.fetchRemote();
-      expect(result.blacklist).toEqual([]);
-      expect(SupabaseClient.lastSyncStatus.value).toBe('SUCCESS');
+      const setSnapshotReads = (blacklistResponse: unknown) => {
+        vi.mocked(mockFrom.abortSignal)
+          .mockResolvedValueOnce({ data: [], error: null }) // Roster
+          .mockResolvedValueOnce({ data: SNAPSHOT_RECRUITS, error: null }) // Headhunter snapshot
+          .mockResolvedValueOnce({ data: null, error: null }) // Heartbeat
+          .mockResolvedValueOnce(blacklistResponse as any); // Blacklist
+      };
+
+      it("drops a dismissed recruit that is still in the snapshot", async () => {
+        // The blacklist view may return a tag without its '#'.
+        setSnapshotReads({ data: [{ player_tag: '#DISMISSED' }, { player_tag: 'unprefixed' }], error: null });
+
+        const result = await SupabaseClient.fetchRemote();
+
+        expect(result.hh.map((recruit) => recruit.id)).toEqual(['KEPT']);
+        expect(result.blacklist).toEqual(['#DISMISSED', '#unprefixed']);
+      });
+
+      it("leaves the snapshot untouched when nothing is dismissed", async () => {
+        setSnapshotReads({ data: [], error: null });
+
+        const result = await SupabaseClient.fetchRemote();
+
+        expect(result.hh.map((recruit) => recruit.id)).toEqual(['KEPT', 'DISMISSED', 'UNPREFIXED']);
+        expect(result.blacklist).toEqual([]);
+      });
+
+      it("filters with the last known blacklist when the blacklist read fails", async () => {
+        setSnapshotReads({ data: null, error: { message: 'Invalid schema: drivers' } });
+
+        const result = await SupabaseClient.fetchRemote({ knownBlacklist: ['#DISMISSED'] });
+
+        expect(result.hh.map((recruit) => recruit.id)).toEqual(['KEPT', 'UNPREFIXED']);
+        expect(result.blacklist).toEqual(['#DISMISSED']);
+        expect(SupabaseClient.lastSyncStatus.value).toBe('SUCCESS');
+      });
+
+      it("filters with the last known blacklist when the blacklist has a malformed row", async () => {
+        const MOCK_INVALID_TAG_NUM = 12345;
+        setSnapshotReads({ data: [{ player_tag: '#UNPREFIXED' }, { player_tag: MOCK_INVALID_TAG_NUM }], error: null });
+
+        const result = await SupabaseClient.fetchRemote({ knownBlacklist: ['#DISMISSED'] });
+
+        expect(result.hh.map((recruit) => recruit.id)).toEqual(['KEPT', 'UNPREFIXED']);
+        expect(result.blacklist).toEqual(['#DISMISSED']);
+      });
+
+      it("fails the sync rather than treat an unreadable blacklist as empty when none is known", async () => {
+        setSnapshotReads({ data: null, error: { message: 'Invalid schema: drivers' } });
+
+        await expect(SupabaseClient.fetchRemote()).rejects.toThrow('Recruit blacklist unavailable');
+      });
+
+      it("fails the sync on a malformed blacklist when none is known", async () => {
+        setSnapshotReads({ data: { not: 'an array' }, error: null });
+
+        await expect(SupabaseClient.fetchRemote()).rejects.toThrow('Recruit blacklist unavailable');
+      });
+
+      it("falls back to the last known blacklist when the blacklist read stalls", async () => {
+        vi.useFakeTimers();
+        const stalledBlacklist = new Promise<never>(() => {});
+        vi.mocked(mockFrom.abortSignal)
+          .mockResolvedValueOnce({ data: [], error: null })
+          .mockResolvedValueOnce({ data: SNAPSHOT_RECRUITS, error: null })
+          .mockResolvedValueOnce({ data: null, error: null })
+          .mockImplementationOnce(() => stalledBlacklist as any);
+
+        const refresh = SupabaseClient.fetchRemote({ knownBlacklist: ['#DISMISSED'] });
+        await vi.advanceTimersByTimeAsync(SupabaseClient.OPTIONAL_METADATA_TIMEOUT_MS);
+
+        const result = await refresh;
+        expect(result.hh.map((recruit) => recruit.id)).toEqual(['KEPT', 'UNPREFIXED']);
+      });
+
+      it("does not cap the blacklist read at the optional timeout when none is known", async () => {
+        vi.useFakeTimers();
+        const requestSignals: AbortSignal[] = [];
+        let setBlacklistResponse: (response: unknown) => void = () => {};
+        vi.mocked(mockFrom.abortSignal)
+          .mockResolvedValueOnce({ data: [], error: null })
+          .mockResolvedValueOnce({ data: SNAPSHOT_RECRUITS, error: null })
+          .mockResolvedValueOnce({ data: null, error: null })
+          .mockImplementationOnce((signal: AbortSignal) => {
+            requestSignals.push(signal);
+            return new Promise((resolve) => { setBlacklistResponse = resolve; }) as any;
+          });
+
+        const refresh = SupabaseClient.fetchRemote();
+        await vi.advanceTimersByTimeAsync(SupabaseClient.OPTIONAL_METADATA_TIMEOUT_MS);
+        expect(requestSignals[0]?.aborted).toBe(false);
+
+        setBlacklistResponse({ data: [{ player_tag: '#DISMISSED' }], error: null });
+        const result = await refresh;
+        expect(result.hh.map((recruit) => recruit.id)).toEqual(['KEPT', 'UNPREFIXED']);
+      });
     });
 
     it("does not let a stalled optional heartbeat block a complete payload", async () => {
@@ -341,14 +465,14 @@ describe("SupabaseClient", () => {
       vi.mocked(mockFrom.abortSignal)
         .mockResolvedValueOnce({ data: [], error: null })
         .mockResolvedValueOnce({ data: [], error: null })
-        .mockResolvedValueOnce({ data: { last_success_at: 'not-a-date' }, error: null })
+        .mockResolvedValueOnce({ data: [{ component_id: 'ROYALE_DATA_INGESTOR', last_success_at: 'not-a-date' }], error: null })
         .mockResolvedValueOnce({ data: [], error: null });
 
       const result = await SupabaseClient.fetchRemote();
       expect(result.timestamp).toBe(0);
     });
 
-    it("derives freshness from valid roster ingestion timestamps when heartbeat is unavailable", async () => {
+    it("falls back to roster timestamps as a lower bound when the heartbeat is unavailable", async () => {
       vi.mocked(mockFrom.abortSignal)
         .mockResolvedValueOnce({ data: [{ player_tag: '#ABC', last_ingested_at: '2026-02-03T04:05:06Z' }], error: null })
         .mockResolvedValueOnce({ data: [], error: null })
@@ -359,23 +483,50 @@ describe("SupabaseClient", () => {
       expect(result.timestamp).toBe(new Date('2026-02-03T04:05:06Z').getTime());
     });
 
-    it("uses newer roster ingestion evidence when a failed pipeline heartbeat lags behind it", async () => {
-      vi.mocked(mockFrom.abortSignal)
-        .mockResolvedValueOnce({ data: [{ player_tag: '#ABC', last_ingested_at: '2026-02-03T04:05:06Z' }], error: null })
-        .mockResolvedValueOnce({ data: [], error: null })
-        .mockResolvedValueOnce({ data: { last_success_at: '2026-02-03T03:31:19Z' }, error: null })
-        .mockResolvedValueOnce({ data: [], error: null });
+    describe("freshness comes from the pipeline heartbeat", () => {
+      const NOW = Date.parse('2026-02-03T12:00:00Z');
+      /** Old enough to read as stale on its own. */
+      const LONG_AGO = new Date(NOW - 2 * SOURCE_STALENESS_THRESHOLD).toISOString();
 
-      const result = await SupabaseClient.fetchRemote();
+      /** Answers one sync with the given roster row and heartbeat timestamps. */
+      const setFreshnessReads = (lastIngestedAt: string, lastSuccessAt: string) => {
+        vi.mocked(mockFrom.abortSignal)
+          .mockResolvedValueOnce({ data: [{ player_tag: '#ABC', last_ingested_at: lastIngestedAt }], error: null })
+          .mockResolvedValueOnce({ data: [], error: null })
+          .mockResolvedValueOnce({ data: [{ component_id: 'ROYALE_DATA_INGESTOR', last_success_at: lastSuccessAt }], error: null })
+          .mockResolvedValueOnce({ data: [], error: null });
+      };
 
-      expect(result.timestamp).toBe(new Date('2026-02-03T04:05:06Z').getTime());
+      beforeEach(() => {
+        vi.useFakeTimers();
+        vi.setSystemTime(NOW);
+      });
+
+      it("reports an unchanged roster as fresh when the heartbeat is fresh", async () => {
+        // Rows nobody rewrote since long ago; the ingest itself just completed.
+        setFreshnessReads(LONG_AGO, new Date(NOW).toISOString());
+
+        const result = await SupabaseClient.fetchRemote();
+
+        expect(result.timestamp).toBe(NOW);
+        expect(getIsStale(result.timestamp)).toBe(false);
+      });
+
+      it("reports a stale heartbeat as stale even when roster rows are recent", async () => {
+        setFreshnessReads(new Date(NOW).toISOString(), LONG_AGO);
+
+        const result = await SupabaseClient.fetchRemote();
+
+        expect(result.timestamp).toBe(Date.parse(LONG_AGO));
+        expect(getIsStale(result.timestamp)).toBe(true);
+      });
     });
 
     it("drops one malformed roster row without discarding valid rows", async () => {
       vi.mocked(mockFrom.abortSignal)
         .mockResolvedValueOnce({ data: [{ player_tag: '#ABC' }, { player_tag: { invalid: true } }], error: null })
         .mockResolvedValueOnce({ data: [], error: null })
-        .mockResolvedValueOnce({ data: { last_success_at: '2026-01-01T00:00:00Z' }, error: null })
+        .mockResolvedValueOnce({ data: [{ component_id: 'ROYALE_DATA_INGESTOR', last_success_at: '2026-01-01T00:00:00Z' }], error: null })
         .mockResolvedValueOnce({ data: [], error: null });
 
       const result = await SupabaseClient.fetchRemote();
@@ -393,24 +544,12 @@ describe("SupabaseClient", () => {
       await expect(SupabaseClient.fetchRemote()).rejects.toThrow('Roster validation failed for every row');
     });
 
-    it("fetchRemote isolates invalid optional blacklist rows", async () => {
-      const MOCK_INVALID_TAG_NUM = 12345;
-      vi.mocked(mockFrom.abortSignal)
-        .mockResolvedValueOnce({ data: [], error: null }) // Roster
-        .mockResolvedValueOnce({ data: [], error: null }) // Headhunter
-        .mockResolvedValueOnce({ data: null, error: null }) // Heartbeat
-        .mockResolvedValueOnce({ data: [{ player_tag: MOCK_INVALID_TAG_NUM }], error: null }); // Blacklist with number instead of string
-
-      const result = await SupabaseClient.fetchRemote();
-      expect(result.blacklist).toEqual([]);
-    });
-
     it("fetchRemote degrades invalid heartbeat metadata without discarding datasets", async () => {
       const MOCK_INVALID_HEARTBEAT_NUM = 99999;
       vi.mocked(mockFrom.abortSignal)
         .mockResolvedValueOnce({ data: [], error: null }) // Roster
         .mockResolvedValueOnce({ data: [], error: null }) // Headhunter
-        .mockResolvedValueOnce({ data: { last_success_at: MOCK_INVALID_HEARTBEAT_NUM }, error: null }) // Heartbeat with number instead of string
+        .mockResolvedValueOnce({ data: [{ component_id: 'ROYALE_DATA_INGESTOR', last_success_at: MOCK_INVALID_HEARTBEAT_NUM }], error: null }) // Heartbeat with number instead of string
         .mockResolvedValueOnce({ data: [], error: null }); // Blacklist
 
       const result = await SupabaseClient.fetchRemote();

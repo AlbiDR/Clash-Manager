@@ -6,6 +6,8 @@ import { fetchWithRotation, processBatch } from "../_shared/muscle.ts";
 import {
   RoyaleLocationListSchema,
   RoyaleRankingListSchema,
+  RoyaleSeasonListSchema,
+  RoyalePlayerSchema,
   HarvestedPlayerSchema
 } from "../_shared/schemas.ts";
 import { AuditEntry } from "../_shared/types.ts";
@@ -13,9 +15,10 @@ import {
   PLAYER_LEADERBOARD_LIMIT,
   TARGET_HARVEST_FLOOR,
   MIN_LOCAL_POL_FLOOR,
-  TOP_COUNTRY_IDS,
   MAX_HARVEST_EPOCHS,
+  MAX_SEASON_RANKING_PAGES,
   GLOBAL_LOCATION,
+  GLOBAL_REGION_LABEL,
   DEFAULT_FALLBACK_ID,
   DEFAULT_FALLBACK_COUNTRY,
   INITIAL_INDEX
@@ -55,38 +58,127 @@ let cachedCountries: { id: number; name: string }[] | null = null;
  */
 async function fetchRankings(
   endpointPath: string,
-  logAudit: (stage: string, action: AuditEntry['action'], details?: unknown) => void
+  logAudit: (stage: string, action: AuditEntry['action'], details?: unknown) => void,
+  paginate = false
 ): Promise<v.InferOutput<typeof HarvestedPlayerSchema>[]> {
-  logAudit("HARVEST_PLAYERS_FETCH", "called", { path: endpointPath });
+  const players = new Map<string, v.InferOutput<typeof HarvestedPlayerSchema>>();
+  const visitedCursors = new Set<string>();
+  let pagePath = endpointPath;
+  const pageLimit = paginate ? MAX_SEASON_RANKING_PAGES : 1;
+  for (let pageIndex = INITIAL_INDEX; pageIndex < pageLimit; pageIndex++) {
+    logAudit("HARVEST_PLAYERS_FETCH", "called", { path: pagePath });
 
-  const playerRankingsResponse = await fetchWithRotation(endpointPath);
-  if (!playerRankingsResponse.ok) {
-    throw new Error(`Failed to fetch player rankings: ${playerRankingsResponse.status}`);
+    const playerRankingsResponse = await fetchWithRotation(pagePath);
+    if (!playerRankingsResponse.ok) {
+      throw new Error(`Failed to fetch player rankings: ${playerRankingsResponse.status}`);
+    }
+
+    const rankingApiRaw: unknown = await playerRankingsResponse.json();
+    const rankingIntegrity = v.safeParse(RoyaleRankingListSchema, rankingApiRaw);
+
+    if (!rankingIntegrity.success) {
+      // [THREAT ANNOTATION] Threat Vector: Structural Payload Drift.
+      // If the remote proxy shifts its response structure, failing fast here prevents downstream state pollution
+      // or parsing crashes in the core app.
+      throw new Error("Player rankings payload failed structural validation.");
+    }
+
+    const observedRankingItems = rankingIntegrity.output.items;
+
+    // Filter for clanless players
+    const clanlessPlayers = observedRankingItems.filter((rankingItem) => {
+      const rankingClan = rankingItem.clan;
+      return !rankingClan || !rankingClan.tag;
+    });
+
+    logAudit("HARVEST_PLAYERS_RESULT", "run", {
+      path: pagePath, ranked: observedRankingItems.length, clanless: clanlessPlayers.length,
+    });
+    for (const rankingItem of clanlessPlayers) {
+      players.set(rankingItem.tag, { tag: rankingItem.tag, name: rankingItem.name, clan: null });
+    }
+    const after = rankingIntegrity.output.paging?.cursors?.after;
+    if (!paginate || !after || observedRankingItems.length === INITIAL_INDEX) break;
+    if (visitedCursors.has(after)) throw new Error("Player rankings returned a repeated pagination cursor.");
+    visitedCursors.add(after);
+    pagePath = `${endpointPath}&after=${encodeURIComponent(after)}`;
   }
+  return Array.from(players.values());
+}
 
-  const rankingApiRaw: unknown = await playerRankingsResponse.json();
-  const rankingIntegrity = v.safeParse(RoyaleRankingListSchema, rankingApiRaw);
+/**
+ * Live boards can be empty after the monthly reset. A completed worldwide
+ * board supplies candidates, whose current profiles must still be clanless.
+ * This runs once per request, after all requested live regions are exhausted.
+ */
+export async function harvestSeasonPlayers(
+  logAudit: (stage: string, action: AuditEntry['action'], details?: unknown) => void
+): Promise<{ items: v.InferOutput<typeof HarvestedPlayerSchema>[], region: string, season: string }> {
+  logAudit("HARVEST_SEASON_FALLBACK", "called");
+  const response = await fetchWithRotation(`/locations/${GLOBAL_LOCATION}/seasons`);
+  if (!response.ok) throw new Error(`Failed to fetch completed seasons: ${response.status}`);
+  const seasons = v.parse(RoyaleSeasonListSchema, await response.json());
+  const latestSeason = seasons.items.map(season => season.id).sort().at(-1);
+  if (!latestSeason) throw new Error("No completed season is available for leaderboard harvesting.");
 
-  if (!rankingIntegrity.success) {
-    // [THREAT ANNOTATION] Threat Vector: Structural Payload Drift.
-    // If the remote proxy shifts its response structure, failing fast here prevents downstream state pollution
-    // or parsing crashes in the core app.
-    throw new Error("Player rankings payload failed structural validation.");
-  }
-
-  const observedRankingItems = rankingIntegrity.output.items;
-
-  // Filter for clanless players
-  const clanlessPlayers = observedRankingItems.filter((rankingItem) => {
-    const rankingClan = rankingItem.clan;
-    return !rankingClan || !rankingClan.tag;
-  });
-
-  return clanlessPlayers.map((rankingItem) => ({
-    tag: rankingItem.tag,
-    name: rankingItem.name,
-    clan: null
+  const candidates = await fetchRankings(
+    `/locations/${GLOBAL_LOCATION}/pathoflegend/${latestSeason}/rankings/players?limit=${PLAYER_LEADERBOARD_LIMIT}`,
+    logAudit,
+    true,
+  );
+  let deletedProfiles = INITIAL_INDEX;
+  const profiles = await processBatch(candidates.map(candidate => async () => {
+    const profileResponse = await fetchWithRotation(`/players/${encodeURIComponent(candidate.tag)}`);
+    // Deleted accounts are no longer recruitment candidates.
+    if (profileResponse.status === 404) { deletedProfiles += 1; return null; }
+    if (!profileResponse.ok) throw new Error(`Failed to verify recruit profile: ${profileResponse.status}`);
+    const profile = v.parse(RoyalePlayerSchema, await profileResponse.json());
+    if (profile.tag !== candidate.tag) throw new Error("Recruit profile tag does not match the season candidate.");
+    return profile.clan?.tag ? null : { tag: profile.tag, name: profile.name, clan: null };
   }));
+  // [GUARD] A board whose every candidate "was deleted" is a proxy answering 404 to
+  // everything, not a season of vanished players. Reporting it as an empty success
+  // would make a blind harvest indistinguishable from "nobody is clanless".
+  if (candidates.length > INITIAL_INDEX && deletedProfiles === candidates.length) {
+    throw new Error(`Every completed-season candidate profile returned 404 (${candidates.length} of ${candidates.length}); profile verification is unavailable.`);
+  }
+  const items = profiles.filter(profile => profile !== null);
+  logAudit("HARVEST_SEASON_VERIFIED", "run", { season: latestSeason, candidates: candidates.length, clanless: items.length, deleted: deletedProfiles });
+  return { items, region: `${GLOBAL_REGION_LABEL} (completed season ${latestSeason})`, season: latestSeason };
+}
+
+/**
+ * GLOBAL HARVESTER: Worldwide scope only.
+ *
+ * Reads the live worldwide board and, when it holds fewer clanless players than
+ * TARGET_HARVEST_FLOOR (the first days after a monthly reset), adds the verified
+ * recruits of the newest completed worldwide season. Live players come first so
+ * the recruitment queue starts with the current board. No country board is ever
+ * consulted: a worldwide request must not return regional players.
+ */
+export async function harvestGlobalPlayers(
+  logAudit: (stage: string, action: AuditEntry['action'], details?: unknown) => void
+): Promise<{ items: v.InferOutput<typeof HarvestedPlayerSchema>[], region: string }> {
+  const liveItems = await harvestClanlessPlayers(GLOBAL_LOCATION, logAudit);
+  if (liveItems.length >= TARGET_HARVEST_FLOOR) return { items: liveItems, region: GLOBAL_REGION_LABEL };
+
+  logAudit("GLOBAL_LIVE_BOARD_THIN", "run", { live: liveItems.length, floor: TARGET_HARVEST_FLOOR });
+  const season = await harvestSeasonPlayers(logAudit);
+  const merged = new Map<string, v.InferOutput<typeof HarvestedPlayerSchema>>();
+  for (const item of liveItems) merged.set(item.tag, item);
+  let seasonAdded = INITIAL_INDEX;
+  for (const item of season.items) {
+    if (merged.has(item.tag)) continue;
+    merged.set(item.tag, item);
+    seasonAdded += 1;
+  }
+  // The label names every source that contributed players, and only those.
+  const region = seasonAdded === INITIAL_INDEX
+    ? GLOBAL_REGION_LABEL
+    : liveItems.length === INITIAL_INDEX
+      ? season.region
+      : `${GLOBAL_REGION_LABEL} (live and completed season ${season.season})`;
+  return { items: Array.from(merged.values()), region };
 }
 
 /**
@@ -236,23 +328,23 @@ export async function harvestInternationalPlayers(
 /**
  * PRIMARY HARVESTER: Discovery Engine
  *
- * Queries worldwide Path of Legends endpoints or country-specific indices to locate unaffiliated players.
+ * Queries the worldwide Path of Legends board, or one country's boards, to locate unaffiliated players.
  *
  * @remarks
  * Satisfies ADR Section I: Foundation of "Clinical" Logic (Adaptive Formulas) and Section IV: Deep Delegation Strategy.
- * Ensures optimal player retrieval across both global and highly specific geographic pools.
+ * Scope is strict: the worldwide board never borrows from countries and a country never borrows from the world.
  *
  * Security Controls:
  * - Inherits JWT verification and bearer authorization validated by public RPC gateway.
  *
  * Failure Modes & Recovery:
- * - Subsystem Downstream Failure: Cascading try/catch blocks guard regional queries and fall back gracefully to empty arrays.
- * - Global Timeout Spikes: If global Path of Legends query fails entirely, throws to allow higher-level control surfaces to recover.
+ * - Global Timeout Spikes: If the global Path of Legends query fails entirely, throws to allow higher-level control surfaces to recover.
+ * - Local Board Outage: A failed country query throws; an empty country board returns an empty array and is reported as such.
  *
  * @param location - "global" or a numeric location identifier as a string.
  * @param logAudit - Telemetry callback for clinical auditing.
- * @returns Consolidated array of discovered clanless player objects.
- * @throws {Error} If the global Path of Legends fetch or the local fallback query fails.
+ * @returns Array of discovered clanless player objects, empty when the requested board has none.
+ * @throws {Error} If the global Path of Legends fetch or the local queries fail.
  */
 export async function harvestClanlessPlayers(
   location: string,
@@ -260,36 +352,12 @@ export async function harvestClanlessPlayers(
 ): Promise<v.InferOutput<typeof HarvestedPlayerSchema>[]> {
   if (location === GLOBAL_LOCATION) {
     try {
-      const polPath = `/locations/global/pathoflegend/players?limit=${PLAYER_LEADERBOARD_LIMIT}`;
-      const polResults = await fetchRankings(polPath, logAudit);
-
-      if (polResults.length >= TARGET_HARVEST_FLOOR) {
-        return polResults;
-      }
-
-      const aggregatedResults = new Map<string, v.InferOutput<typeof HarvestedPlayerSchema>>();
-      for (const harvestedItem of polResults) {
-        aggregatedResults.set(harvestedItem.tag, harvestedItem);
-      }
-
-      // [DECISION LOG] Fall back to top country indices if global pool yields fewer than the target floor.
-      // Resolves the sparsity of high-ranking clanless players globally by fetching from densely populated local regions.
-      for (const countryId of TOP_COUNTRY_IDS) {
-        if (aggregatedResults.size >= TARGET_HARVEST_FLOOR) break;
-        try {
-          const countryPolPath = `/locations/${countryId}/pathoflegend/players?limit=${PLAYER_LEADERBOARD_LIMIT}`;
-          const countryResults = await fetchRankings(countryPolPath, logAudit);
-          for (const harvestedItem of countryResults) {
-            aggregatedResults.set(harvestedItem.tag, harvestedItem);
-          }
-        } catch (countryError: unknown) {
-          // [THREAT ANNOTATION] Threat Vector: Downstream Regional API denial of service.
-          // Guarding individual country fetches ensures local API offline states do not abort the active discovery loop.
-          console.warn(`[HARVEST] Failed country PoL ${countryId}:`, countryError instanceof Error ? countryError.message : String(countryError));
-        }
-      }
-
-      return Array.from(aggregatedResults.values());
+      // [DECISION LOG] WORLDWIDE ONLY. The global harvest never reads a country
+      // board: a worldwide request answered with regional players is as wrong as a
+      // local request answered with worldwide ones. A thin live board is recovered
+      // by harvestGlobalPlayers from the completed worldwide season, not from countries.
+      const polPath = `/locations/${GLOBAL_LOCATION}/pathoflegend/players?limit=${PLAYER_LEADERBOARD_LIMIT}`;
+      return await fetchRankings(polPath, logAudit);
     } catch (globalPolError: unknown) {
       console.error("[HARVEST] Global Path of Legends query failed:", globalPolError instanceof Error ? globalPolError.message : String(globalPolError));
       throw globalPolError;
