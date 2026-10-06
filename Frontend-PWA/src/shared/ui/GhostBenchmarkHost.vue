@@ -6,6 +6,7 @@ import { useGhostBenchmarkState } from "../directives/ghostBenchmarkState";
 import { usePointerCapability } from "../composables/usePointerCapability";
 import BenchmarkContent from "./BenchmarkContent.vue";
 import Icon from "./Icon.vue";
+import { vTactile } from "../directives/vTactile";
 import { useDismissOnBack } from "@core";
 
 /**
@@ -232,6 +233,7 @@ onUnmounted(() => {
       >
         <button
           v-if="isScore"
+          v-tactile
           type="button"
           class="bc-close"
           aria-label="Close score explanation"
@@ -273,6 +275,7 @@ onUnmounted(() => {
           <div class="bc-sheet-handle" />
           <button
             v-if="isScore"
+            v-tactile
             type="button"
             class="bc-close"
             aria-label="Close score explanation"
@@ -288,6 +291,7 @@ onUnmounted(() => {
             class="bc-stepper"
           >
             <button
+              v-tactile
               type="button"
               class="bc-step"
               aria-label="Show earlier entry"
@@ -304,6 +308,7 @@ onUnmounted(() => {
               <span class="bc-stepper-position">{{ active.stepper.position }} / {{ active.stepper.total }}</span>
             </div>
             <button
+              v-tactile
               type="button"
               class="bc-step"
               aria-label="Show later entry"
