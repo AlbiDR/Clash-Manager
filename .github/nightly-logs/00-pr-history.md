@@ -16,6 +16,15 @@ LAST_AGED:   2026-10-05
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-06] PR #2101 [Stage 8]: Bumped simple-git-hooks to ^2.14.0 in monorepo catalogs and updated lockfile
+**Domain:** dependencies | **Commit:** f507148f9 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2101)
+**Files:** .github/nightly-logs/08-dependency-audit-coverage.log, .github/nightly-logs/08-dependency-audit-pr-body.md, package.json, pnpm-lock.yaml, pnpm-workspace.yaml
+**Why:** Apply safe Tier 1 minor bump to simple-git-hooks and keep persistent watchlist up to date
+**Change:** Bumped simple-git-hooks to ^2.14.0 in monorepo catalogs and updated lockfile
+**Result:** simple-git-hooks ^2.14.0 installed, pnpm test:commit-trailers passed
+**Nudges:** 0
+
+
 ### [2026-10-06] PR #2100 [Stage 7]: Scanned root, Frontend-PWA, and Backend package.json manifests and catalog declarations. All 3 package.json manifests agree on 14.51.0 and catalog protocol usage is intact. pnpm audit:version passed zero-drift.
 **Domain:** versioning | **Commit:** 4d93c28a7 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2100)
 **Files:** .github/nightly-logs/07-version-integrity-coverage.log, .github/nightly-logs/07-version-integrity-pr-body.md
