@@ -46,10 +46,14 @@ export const lastSyncStatus = ref<"TIMEOUT" | "AUTH" | "VALIDATION" | "OFFLINE" 
 export const OPTIONAL_METADATA_TIMEOUT_MS = 3_000;
 
 /**
- * Pipeline components whose COMPLETED heartbeat refreshes the roster snapshot
- * (substrate.on_pipeline_completed), so whose last_success_at dates the rows on screen.
+ * The pipeline component whose last_success_at dates the game data on screen.
+ *
+ * @remarks
+ * Nightly maintenance also refreshes the roster snapshot when it completes, but
+ * it fetches no game data (it purges, folds and rotates), so counting its stamp
+ * would make a stalled ingestor read as fresh after every nightly run.
  */
-const ROSTER_SNAPSHOT_SOURCES = ["ROYALE_DATA_INGESTOR", "NIGHTLY_MAINTENANCE"];
+const FRESHNESS_SOURCE = "ROYALE_DATA_INGESTOR";
 
 /**
  * Status indicator for backend ingestion pipeline execution.
@@ -463,8 +467,7 @@ export async function ping(options?: { signal?: AbortSignal; force?: boolean }):
  * Valibot schema validation on all inbound data.
  *
  * [DECISION LOG] FRESHNESS EVIDENCE RESOLUTION
- * The newest last_success_at among the roster snapshot's sources (the ingestor
- * and nightly maintenance) is the freshness of the payload.
+ * The ingestor heartbeat's last_success_at is the freshness of the payload.
  * Roster row timestamps are only a lower bound, used when the heartbeat
  * cannot be read.
  *
@@ -495,7 +498,7 @@ export async function fetchRemote(options?: {
   const fetchHeartbeats = (heartbeatSignal: AbortSignal) =>
     supabase.schema('features').from('pipeline_heartbeat_view')
       .select('component_id,last_success_at')
-      .in('component_id', ROSTER_SNAPSHOT_SOURCES)
+      .eq('component_id', FRESHNESS_SOURCE)
       .abortSignal(heartbeatSignal);
 
   // [ADR] Direct View Access: Bypassing the minimal SW-oriented get_pwa_data RPC
@@ -584,15 +587,15 @@ export async function fetchRemote(options?: {
   
   // [DECISION LOG] THE HEARTBEAT IS THE FRESHNESS SIGNAL
   // The roster is a snapshot refreshed by the same COMPLETED heartbeat write that
-  // stamps `last_success_at` (for each ROSTER_SNAPSHOT_SOURCES component), so the
-  // newest such stamp is how fresh the rows on screen are.
+  // stamps the ingestor's `last_success_at`, so that stamp is how fresh the game
+  // data on screen is. Nightly maintenance also refreshes the snapshot, but only
+  // the ingestor's last_success_at dates the game data (see FRESHNESS_SOURCE).
   // Row timestamps were combined with it (newest wins) because a run could commit
   // rows and then report FAILED; such rows now never reach the snapshot, which
   // refreshes only on COMPLETED. Row timestamps also stop meaning "last ingested"
   // once unchanged rows are no longer rewritten: a quiet clan would read as stale
   // and an old member edit would vouch for a stalled pipeline. They remain only a
   // lower bound for a sync whose heartbeat read failed.
-  // Either snapshot source completing refreshes the rows, so the newer stamp wins.
   const HeartbeatRowsSchema = v.array(v.object({
     last_success_at: v.nullable(v.string()),
   }));
