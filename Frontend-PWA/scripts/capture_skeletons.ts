@@ -366,19 +366,24 @@ export async function validateCaptureReady(page: Page): Promise<void> {
  * failure, so this throws and the caller's handler fails the build under
  * BONES_REQUIRE_CAPTURE.
  *
- * A group that rendered nothing is reported, not thrown, and that includes a
- * run whose only stale groups all rendered nothing. All five laboratory groups
- * are in that state today: once the other groups are cached, a run visits
- * /laboratory alone and measures nothing there. Failing on that would stop
- * every deploy until /laboratory renders its components, so the caller keeps
- * those groups stale and names them instead (see {@link ensureBonesFresh}).
+ * A group that rendered nothing is judged on its own history. If it has
+ * stored geometry of its own, an earlier capture measured it, so rendering
+ * nothing now is a regression: this throws rather than let the build
+ * republish the old geometry under a fresh deploy. If it has none, it has
+ * never rendered on its route, which is a known gap rather than a change: it
+ * is returned so the caller keeps it stale and names it (see
+ * {@link ensureBonesFresh}). All five laboratory groups are in that second
+ * state today; failing on them would stop every deploy until /laboratory
+ * renders its components. The seed writes an empty `components` object, so
+ * stored geometry only ever comes from a real capture.
  *
  * @param captured - Measurements keyed by group name, as returned by the capture.
  * @param expectedGroups - Names of the groups this run was asked to measure.
- * @param routes - The routes visited, for the error message.
+ * @param routes - The routes visited, for the error messages.
  * @param earlierGroups - Names of the groups that already have stored geometry.
- * @returns The expected groups that rendered no bones.
- * @throws Error when nothing was measured and nothing earlier exists to publish.
+ * @returns The expected groups that rendered no bones and never have.
+ * @throws Error when nothing was measured and nothing earlier exists to
+ * publish, or when a group that an earlier capture measured rendered nothing.
  */
 export function validateCapturedGroups(
   captured: Record<string, GroupBones>,
@@ -391,7 +396,14 @@ export function validateCapturedGroups(
       `[bones] Capture measured no bones on any route (${routes.join(", ")}) and no earlier capture exists; the build would publish no skeleton geometry at all.`,
     );
   }
-  return expectedGroups.filter((name) => !captured[name]);
+  const unrendered = expectedGroups.filter((name) => !captured[name]);
+  const regressed = unrendered.filter((name) => earlierGroups.includes(name));
+  if (regressed.length > 0) {
+    throw new Error(
+      `[bones] ${regressed.join(", ")} rendered no bones on ${routes.join(", ")} although an earlier capture measured them; refusing to republish their old geometry.`,
+    );
+  }
+  return unrendered;
 }
 
 const TEMP_INDEX_HTML = `<!doctype html>

@@ -65,13 +65,24 @@ describe("validateCapturedGroups", () => {
     ).toEqual(["VaultCard", "SummaryCard"]);
   });
 
-  it("reports rather than throws when the only stale groups rendered nothing but earlier geometry exists", () => {
+  it("reports, not throws, groups that have never rendered, even when other groups have stored geometry", () => {
     // The laboratory case: the other groups are cached, so a run visits
-    // /laboratory alone and measures nothing there.
+    // /laboratory alone and measures nothing there, and no laboratory group
+    // has ever been captured.
     expect(validateCapturedGroups({}, ["VaultCard", "SummaryCard"], ["/laboratory"], ["MemberCard"])).toEqual([
       "VaultCard",
       "SummaryCard",
     ]);
+  });
+
+  it("throws when a group an earlier capture measured now renders nothing", () => {
+    const recruitCard = { RecruitCard: { mobile: { card: { width: 336, height: 96 } } } };
+    expect(() =>
+      validateCapturedGroups(recruitCard, ["MemberCard", "RecruitCard", "VaultCard"], ["/roster", "/headhunter"], [
+        "MemberCard",
+        "RecruitCard",
+      ]),
+    ).toThrow(/MemberCard rendered no bones on \/roster, \/headhunter although an earlier capture measured them/);
   });
 });
 
