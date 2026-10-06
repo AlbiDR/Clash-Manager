@@ -24,15 +24,16 @@
  * entry with one history.back(), unless a replace navigation has moved that
  * entry to another page; then it only drops its id from it (see release).
  *
- * The router sees every one of these pops. Window listeners run in the order
- * they were added, whatever their capture flag, and the router adds its
- * listener at startup, before the first overlay opens. A pop that keeps the
- * address is a duplicate navigation for the router: same route, nothing on
- * screen changes. Stopping such a pop only spares listeners added after this
- * module's. Never register this listener ahead of the router: the router must
- * see where every pop lands, because its next push copies the state it last
- * saw into the entry it leaves, and a dead entry's id copied that way would
- * make a real entry look dead.
+ * The router handles every one of these pops first, on every engine. Its
+ * popstate listener is added at startup and this module's on the first open,
+ * both without capture, and listeners on one target without capture run in
+ * the order they were added. A pop that keeps the address is a duplicate
+ * navigation for the router: same route, nothing on screen changes. The
+ * module never stops a pop. It used to, from a capture listener, which WebKit
+ * and Gecko run ahead of the router's: the router then kept a dead entry's
+ * state, its next push copied the id into a real entry, and Back from the next
+ * page bounced forward and then skipped the page below. Never add capture or
+ * a stop here: the router must see where every pop lands.
  *
  * [FIX] An overlay that closes while a newer entry sits on its own cannot
  * remove that entry. This happens after a push navigation from under a
@@ -52,7 +53,7 @@ export const OVERLAY_ENTRY_KEY = "cmOverlay";
 
 interface OpenOverlay {
   id: number;
-  /** Address the overlay opened on; a Back that changes it is a real navigation. */
+  /** Address the overlay opened on, compared with the live address when it closes. */
   href: string;
   close: () => void;
 }
@@ -70,8 +71,8 @@ const deadEntries = new Map<number, DeadEntry>();
 // Ids grow across page loads too, so an entry left by an earlier load always
 // compares as older than anything opened since.
 let nextId = Date.now();
-// Pops this module started itself, oldest first, each with the address it left.
-const pendingPops: string[] = [];
+// Set while a pop this module started has yet to land; see handlePopState.
+let ownPopPending = false;
 let listening = false;
 
 function entryId(state: unknown): number {
@@ -95,48 +96,45 @@ function handleDeadEntry(landed: number): void {
   if (!dead || dead.href !== location.href) return;
   const forward = dead.below;
   dead.below = !forward;
-  pendingPops.push(location.href);
+  ownPopPending = true;
   if (forward) history.forward();
   else history.back();
 }
 
 function handlePopState(event: PopStateEvent): void {
-  const left = pendingPops.shift();
+  // A pop this module started lands as the next popstate. One that never lands
+  // (a step at the start of history fires none) is settled by the next
+  // popstate of any kind, here, or by the next open(), so it can never be
+  // taken for the landing of a later Back.
+  const ownPop = ownPopPending;
+  ownPopPending = false;
   const landed = entryId(event.state);
-  let addressKept = false;
 
-  if (left !== undefined) {
-    // A pop this module started: it kept the address if it landed where it left.
-    addressKept = location.href === left;
-  } else {
+  if (!ownPop) {
     // Back returned to `landed`: every overlay opened after it has lost its entry.
     const closing = openOverlays.filter((overlay) => overlay.id > landed);
-    if (closing.length > 0) {
-      // Ids only grow, so the overlays being closed are the newest ones: the end of the list.
-      openOverlays.splice(openOverlays.length - closing.length, closing.length);
-      for (let index = closing.length - 1; index >= 0; index--) closing[index].close();
-      // The oldest one closed opened on the address Back returned to, unless
-      // the route changed underneath; then this pop is a real navigation.
-      addressKept = location.href === closing[0].href;
-    }
+    // Ids only grow, so the overlays being closed are the newest ones: the end of the list.
+    openOverlays.splice(openOverlays.length - closing.length, closing.length);
+    for (let index = closing.length - 1; index >= 0; index--) closing[index].close();
   }
 
   handleDeadEntry(landed);
-  // Best effort: only listeners added after this one miss it (see the module notes).
-  if (addressKept) event.stopImmediatePropagation();
 }
 
 function ensureListening(): void {
   if (listening || typeof window === "undefined") return;
-  window.addEventListener("popstate", handlePopState, { capture: true });
+  // No capture: the router, added first, must handle every pop before this.
+  window.addEventListener("popstate", handlePopState);
   listening = true;
 }
 
 function open(close: () => void): number {
   ensureListening();
   // The push below drops every entry ahead of this one, among them any dead
-  // entry the user was stepped back over.
+  // entry the user was stepped back over. A pop of this module's still
+  // awaited can no longer land where it was aimed, so it is settled too.
   for (const [id, dead] of deadEntries) if (dead.below) deadEntries.delete(id);
+  ownPopPending = false;
   const id = ++nextId;
   history.pushState({ ...(history.state as object | null), [OVERLAY_ENTRY_KEY]: id }, "");
   openOverlays.push({ id, href: location.href, close });
@@ -151,7 +149,7 @@ function release(id: number): void {
   openOverlays.splice(index, 1);
   if (entryId(history.state) === id) {
     if (location.href === overlay.href) {
-      pendingPops.push(location.href);
+      ownPopPending = true;
       history.back();
       return;
     }
@@ -205,7 +203,7 @@ export function useDismissOnBack(isOpen: WatchSource<boolean>, close: () => void
 export function resetDismissOnBackForTests(): void {
   openOverlays.length = 0;
   deadEntries.clear();
-  pendingPops.length = 0;
-  if (listening) window.removeEventListener("popstate", handlePopState, { capture: true });
+  ownPopPending = false;
+  if (listening) window.removeEventListener("popstate", handlePopState);
   listening = false;
 }
