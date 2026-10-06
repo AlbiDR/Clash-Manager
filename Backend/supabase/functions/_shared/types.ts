@@ -92,6 +92,17 @@ export interface ScannerStats {
   ghosts_purged?: number;
   /** Collection of non-fatal error messages encountered during scanning. */
   errors: string[];
+  /**
+   * Why this run cannot say how many new recruits reached the Top 50, one entry per
+   * read that could not be answered. Empty means `new_recruits_top50` is a real count.
+   *
+   * @remarks
+   * [DECISION LOG] The epoch guard re-fires a full scan whenever the last run reported
+   * zero Top 50 recruits. A run whose discovery or fate reads failed also ends with zero,
+   * so before this field existed a starved database turned every failed scan into up to
+   * three more full scans. A non-empty list withholds the count from the guard instead.
+   */
+  top50_unknown_reasons: string[];
 }
 
 /**

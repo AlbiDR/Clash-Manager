@@ -48,22 +48,40 @@ export async function runTournamentDiscovery(
         // substrate implementation - same pattern as get_shadow_discovery_targets / get_discovery_cache.
         const { data: discoveryAnchorsRaw, error: discoveryAnchorsError } = await supabase.rpc('get_active_discovery_anchors', { p_limit: ANCHOR_LIMIT });
 
-        if (discoveryAnchorsError) {
-            logAudit('TOURNAMENT_DISCOVERY', 'error', { message: `Anchor fetch failed: ${discoveryAnchorsError.message}` });
-            console.error(`[TOURNAMENT_DISCOVERY] Anchor fetch error: ${discoveryAnchorsError.message}. Falling back to hardcoded keywords.`);
-        }
+        // [DECISION LOG] SKIP WHEN A GATING READ FAILS: the anchors choose which keywords to
+        // search and the cache says which tournaments were already read. When either read
+        // cannot be answered the stage used to do the most work it can (the full fallback
+        // keyword set, no blacklist, one cache upsert per tournament found), which is exactly
+        // the load a starved database cannot take. A failed read now skips discovery for this
+        // cycle and says why; a read that succeeds and returns nothing is still a real answer
+        // and keeps its designed behaviour (fallback keywords, empty blacklist).
+        const skipCycle = (reason: string) => {
+            const skipMessage = `TournamentDiscovery skipped this cycle: ${reason}`;
+            stats.errors.push(skipMessage);
+            stats.top50_unknown_reasons.push(skipMessage);
+            logAudit('TOURNAMENT_DISCOVERY', 'error', { message: skipMessage });
+            logAudit('TOURNAMENT_DISCOVERY', 'terminated', { skipped: true, reason });
+            console.warn(`[TOURNAMENT_DISCOVERY] ${skipMessage}`);
+        };
 
         // [GUARD] VALIDATION BOUNDARY: Supabase RPC results must be validated.
         // [THREAT:] Malformed RPC return or database view corruption could cause runtime errors.
         const discoveryAnchorsIntegrity = v.safeParse(v.array(DiscoveryAnchorSchema), discoveryAnchorsRaw ?? []);
+        const anchorFailure = discoveryAnchorsError
+            ? `anchor fetch failed: ${discoveryAnchorsError.message}`
+            : discoveryAnchorsIntegrity.success ? null : 'anchor validation failed';
         logAudit('TOURNAMENT_DISCOVERY', 'integrity_checked', {
             stage: 'ANCHOR_FETCH',
-            passed: discoveryAnchorsIntegrity.success,
-            details: discoveryAnchorsIntegrity.success ? 'Anchors validated' : 'Anchor validation failed'
+            passed: anchorFailure === null,
+            details: anchorFailure ?? 'Anchors validated'
         });
+        if (anchorFailure !== null || !discoveryAnchorsIntegrity.success) {
+            skipCycle(anchorFailure ?? 'anchor validation failed');
+            return;
+        }
 
         const FALLBACK_KEYWORDS = "abcdefghijklmnopqrstuvwxyz0123456789".split("");
-        const anchors = discoveryAnchorsIntegrity.success ? discoveryAnchorsIntegrity.output : [];
+        const anchors = discoveryAnchorsIntegrity.output;
         const keywords = anchors.length > 0 ? anchors.map((anchor) => anchor.keyword) : FALLBACK_KEYWORDS;
         const isUsingFallback = keywords === FALLBACK_KEYWORDS;
 
@@ -71,20 +89,24 @@ export async function runTournamentDiscovery(
 
 
         const { data: discoveryCacheRaw, error: discoveryCacheError } = await supabase.rpc('get_discovery_cache', { p_hours: CACHE_HOURS });
-        if (discoveryCacheError) {
-            logAudit('TOURNAMENT_DISCOVERY', 'error', { message: `Cache fetch failed: ${discoveryCacheError.message}` });
-        }
 
         // [GUARD] VALIDATION BOUNDARY: Discovery cache validation.
         // [THREAT:] Prevents runtime errors if the discovery cache view structure changes.
         const discoveryCacheIntegrity = v.safeParse(v.array(DiscoveryCacheItemSchema), discoveryCacheRaw ?? []);
+        const cacheFailure = discoveryCacheError
+            ? `cache fetch failed: ${discoveryCacheError.message}`
+            : discoveryCacheIntegrity.success ? null : 'cache validation failed';
         logAudit('TOURNAMENT_DISCOVERY', 'integrity_checked', {
             stage: 'CACHE_FETCH',
-            passed: discoveryCacheIntegrity.success,
-            details: discoveryCacheIntegrity.success ? 'Cache validated' : 'Cache validation failed'
+            passed: cacheFailure === null,
+            details: cacheFailure ?? 'Cache validated'
         });
+        if (cacheFailure !== null || !discoveryCacheIntegrity.success) {
+            skipCycle(cacheFailure ?? 'cache validation failed');
+            return;
+        }
 
-        const discoveryCacheSnapshot = discoveryCacheIntegrity.success ? discoveryCacheIntegrity.output : [];
+        const discoveryCacheSnapshot = discoveryCacheIntegrity.output;
         const blacklist = new Set(discoveryCacheSnapshot.map((cacheItemCandidate) => cacheItemCandidate.player_tag));
         console.log(`[TOURNAMENT_DISCOVERY] Loaded ${blacklist.size} cached tournaments to blacklist`);
         let discoveryCount = 0;

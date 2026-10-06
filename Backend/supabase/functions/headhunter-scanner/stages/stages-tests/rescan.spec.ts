@@ -74,6 +74,7 @@ function freshStats(): ScannerStats {
         profiles_scanned: 0,
         recruits_ingested: 0,
         errors: [],
+        top50_unknown_reasons: [],
     };
 }
 

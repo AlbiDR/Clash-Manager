@@ -57,6 +57,7 @@ function freshStats(): ScannerStats {
         profiles_scanned: 0,
         recruits_ingested: 0,
         errors: [],
+        top50_unknown_reasons: [],
     };
 }
 
@@ -71,7 +72,7 @@ function makeAuditCollector() {
 // Route every keyword search to the same single tournament with one
 // clanless member, so exactly one candidate surfaces per run regardless of
 // how many keywords fan out (anchors default to a 36-keyword DB fetch, or a
-// 36-letter fallback if that RPC fails/returns empty).
+// 36-letter fallback if that RPC answers with no anchors; a failed read skips).
 function mockRoyaleRoutes() {
     mockFetchWithRotation.mockImplementation(async (endpoint: string) => {
         if (endpoint.startsWith("/tournaments?name=")) {
@@ -219,5 +220,80 @@ describe("integrity_checked entries satisfy the schema protocol.ts validates aga
                 `integrity_checked entry failed the schema: ${JSON.stringify(check.details)}`,
             ).toBe(true);
         }
+    });
+});
+
+// [THREAT:] When the anchor or cache read failed, this stage used to do the most work
+// it can: all 36 fallback keywords with no blacklist, then one cache upsert per
+// tournament found, against the same database that had just failed to answer. A read
+// that cannot be answered now skips the stage for the cycle and says why; a read that
+// answers "nothing" keeps the designed fallback.
+describe("runTournamentDiscovery skips the cycle when a gating read fails", () => {
+    const rpcCalled = (name: string) => mockSupabase.rpc.mock.calls.some(([called]: [string]) => called === name);
+
+    async function runAndCollect() {
+        const candidates = new Map<string, string>();
+        const stats = freshStats();
+        const { entries, logAudit } = makeAuditCollector();
+        await runTournamentDiscovery(candidates, new Set(), 5000, stats, logAudit);
+        return { candidates, stats, entries };
+    }
+
+    function expectSkipped(result: Awaited<ReturnType<typeof runAndCollect>>, reasonFragment: string) {
+        expect(mockFetchWithRotation).not.toHaveBeenCalled();
+        expect(rpcCalled("upsert_discovery_cache")).toBe(false);
+        expect(rpcCalled("report_anchor_yield")).toBe(false);
+        expect(result.candidates.size).toBe(0);
+        expect(result.stats.errors.some((error) => error.includes(reasonFragment))).toBe(true);
+        expect(result.stats.top50_unknown_reasons.some((reason) => reason.includes(reasonFragment))).toBe(true);
+        const skipEntry = result.entries.find(
+            (entry) => entry.action === "error" && JSON.stringify(entry.details).includes("skipped this cycle"),
+        );
+        expect(skipEntry).toBeDefined();
+        const terminated = result.entries.find((entry) => entry.action === "terminated");
+        expect((terminated?.details as { skipped: boolean }).skipped).toBe(true);
+    }
+
+    it("skips without searching when the anchor read fails", async () => {
+        rpcResponses.get_active_discovery_anchors = { data: null, error: { message: "canceling statement due to statement timeout" } };
+        mockRoyaleRoutes();
+
+        const result = await runAndCollect();
+
+        expectSkipped(result, "anchor fetch failed");
+        expect(rpcCalled("get_discovery_cache")).toBe(false);
+        const anchorCheck = result.entries.find((entry) => (entry.details as { stage?: string })?.stage === "ANCHOR_FETCH");
+        expect((anchorCheck?.details as { passed: boolean }).passed).toBe(false);
+    });
+
+    it("skips without searching when the anchor payload is malformed", async () => {
+        rpcResponses.get_active_discovery_anchors = { data: [{ wrong: "shape" }], error: null };
+        mockRoyaleRoutes();
+
+        expectSkipped(await runAndCollect(), "anchor validation failed");
+    });
+
+    it("skips without searching when the discovery cache read fails", async () => {
+        rpcResponses.get_discovery_cache = { data: null, error: { message: "canceling statement due to statement timeout" } };
+        mockRoyaleRoutes();
+
+        const result = await runAndCollect();
+
+        expectSkipped(result, "cache fetch failed");
+        const cacheCheck = result.entries.find((entry) => (entry.details as { stage?: string })?.stage === "CACHE_FETCH");
+        expect((cacheCheck?.details as { passed: boolean }).passed).toBe(false);
+    });
+
+    it("still searches the fallback keywords when the anchor read answers with no anchors", async () => {
+        rpcResponses.get_active_discovery_anchors = { data: [], error: null };
+        rpcResponses.upsert_discovery_cache = { data: null, error: null };
+        mockRoyaleRoutes();
+
+        const result = await runAndCollect();
+
+        const searches = mockFetchWithRotation.mock.calls.filter(([path]: [string]) => path.startsWith("/tournaments?name="));
+        expect(searches.length).toBeGreaterThan(1);
+        expect(result.candidates.get("#RECRUIT1")).toBe("TOURNAMENT");
+        expect(result.stats.top50_unknown_reasons).toEqual([]);
     });
 });

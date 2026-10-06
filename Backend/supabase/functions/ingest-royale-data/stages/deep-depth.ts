@@ -48,19 +48,22 @@ export function isAlreadyIngested(
  * Queries database procedures for recruit battle times and validates against LatestBattleTimesSchema.
  * Satisfies ADR Section III: Validation Boundaries and ADR Section IV: Resilience.
  *
- * [THREAT: INGESTION_BLOCKADE] This lookup is an optimisation, so it must never be able to stop ingestion.
- * [DECISION LOG] Any RPC error or malformed payload returns an empty map, which makes
- * {@link isAlreadyIngested} answer false for every player: the stage then behaves
- * exactly as it did before the lookup existed.
+ * [THREAT: INGESTION_BLOCKADE] This lookup gates only recruits, so it can never stop member ingestion.
+ * [DECISION LOG] An RPC error or malformed payload returns `null`, meaning "could not tell",
+ * never an empty map. An empty map made {@link isAlreadyIngested} answer false for every
+ * recruit, so the one cycle in which the database was too slow to answer this read was
+ * also the cycle that re-sent every recruit's battle log to it. The caller defers those
+ * recruits to the next cycle instead.
  *
  * @param recruitTags - Array of player tags to look up in the database.
  * @param logAudit - Telemetry logging callback function.
- * @returns Map pairing player tags to their latest stored battleTime string.
+ * @returns Map pairing player tags to their latest stored battleTime string, or `null`
+ *          when the read could not be answered.
  */
 async function fetchLatestBattleTimes(
     recruitTags: string[],
     logAudit: (stage: string, action: AuditEntry['action'], details?: unknown) => void
-): Promise<Map<string, string>> {
+): Promise<Map<string, string> | null> {
     if (recruitTags.length === 0) return new Map();
 
     const { data: rawLatest, error: latestError } = await supabase.rpc('get_latest_battle_times', {
@@ -76,7 +79,7 @@ async function fetchLatestBattleTimes(
         details: latestError ? latestError.message : (latestValidation.success ? 'Latest battle times validated' : 'Malformed latest battle times payload')
     });
 
-    if (latestError || !latestValidation.success) return new Map();
+    if (latestError || !latestValidation.success) return null;
     return new Map(latestValidation.output.map(row => [row.player_tag, row.latest_battle_time]));
 }
 
@@ -143,6 +146,9 @@ export async function runDeepDepth(
         // Counts recruits whose battle log held nothing new, so the saving stays visible.
         let skippedUnchanged = 0;
 
+        // Recruits left for the next cycle because their skip check could not be answered.
+        let recruitsDeferred = 0;
+
         if (ingestionTargets.length > 0) {
             logAudit('S6_BATTLES', 'called', { tags_count: ingestionTargets.length });
 
@@ -153,12 +159,26 @@ export async function runDeepDepth(
             const skippableRecruits = targetsSnapshot.recruits.filter(tag => !memberTags.has(tag));
             const latestBattleTimes = await fetchLatestBattleTimes(skippableRecruits, logAudit);
 
+            // [DECISION LOG] DEFER, DO NOT FLOOD: when the skip check could not be answered,
+            // this cycle ingests members only. Members never consult the check, so their
+            // polling is unchanged; the deferred recruits are retried on the next cycle.
+            const deferredRecruits = new Set(latestBattleTimes === null ? skippableRecruits : []);
+            recruitsDeferred = deferredRecruits.size;
+            if (recruitsDeferred > 0) {
+                logAudit('S6_BATTLES', 'error', {
+                    message: 'Latest battle times unavailable: recruit battle logs deferred to the next cycle',
+                    recruits_deferred: recruitsDeferred
+                });
+                console.warn(`[S6_BATTLES] Latest battle times unavailable: ${recruitsDeferred} recruit(s) deferred to the next cycle.`);
+            }
+            const cycleTargets = ingestionTargets.filter(targetTag => !deferredRecruits.has(targetTag));
+
             // Shared map to collect shadow leads across all concurrent tasks
             // EPHEMERAL: intentionally resets on cold start
             // [DECISION LOG] Using Map<string, { name: string }> to fix type mismatch pathogen.
             const globalShadowLeads = new Map<string, { name: string }>();
 
-            const battleTasks = ingestionTargets.map(targetTag => async () => {
+            const battleTasks = cycleTargets.map(targetTag => async () => {
                 try {
                     const battleLogApiResponse = await fetchWithRotation(`/players/${encodeURIComponent(targetTag)}/battlelog`);
                     if (battleLogApiResponse.ok) {
@@ -181,7 +201,7 @@ export async function runDeepDepth(
                             // yet each still cost a full PostgREST round trip.
                             // [DECISION LOG] Skip the RPC only when the log is provably already stored;
                             // shadow-lead harvesting below still runs on every fetched log.
-                            if (!memberTags.has(targetTag) && isAlreadyIngested(battleLog, latestBattleTimes.get(targetTag))) {
+                            if (!memberTags.has(targetTag) && isAlreadyIngested(battleLog, latestBattleTimes?.get(targetTag))) {
                                 skippedUnchanged++;
                             } else {
                                 const { error: rpcIngestionError } = await supabase.rpc('ingest_player_battles', {
@@ -264,11 +284,15 @@ export async function runDeepDepth(
                 }
             }
         }
-        results.battles.success = shadowLeadWriteFailure === null;
-        if (shadowLeadWriteFailure !== null) {
-            results.battles.error = shadowLeadWriteFailure;
+        const deferralFailure = recruitsDeferred > 0
+            ? `${recruitsDeferred} recruit(s) deferred: latest battle times unavailable`
+            : null;
+        const battleFailures = [shadowLeadWriteFailure, deferralFailure].filter((failure): failure is string => failure !== null);
+        results.battles.success = battleFailures.length === 0;
+        if (battleFailures.length > 0) {
+            results.battles.error = battleFailures.join('; ');
         }
-        logAudit('S6_BATTLES', 'terminated', { tags: ingestionTargets.length, skipped_unchanged: skippedUnchanged, success: results.battles.success });
+        logAudit('S6_BATTLES', 'terminated', { tags: ingestionTargets.length, skipped_unchanged: skippedUnchanged, recruits_deferred: recruitsDeferred, success: results.battles.success });
     } catch (battleLogError: unknown) {
         const errorMessage = battleLogError instanceof Error ? battleLogError.message : String(battleLogError);
         results.battles.error = errorMessage;

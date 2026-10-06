@@ -327,8 +327,9 @@ export async function runProfiler(
             // The stage deliberately does NOT abort here: the profiles below are already paid for
             // in Royale API quota and their ingestion does not depend on this read. Instead the
             // derived telemetry (the new/refresh split and the post-ingestion fate check that
-            // produces new_recruits_top50) is suppressed, which leaves the epoch guard armed -
-            // the fail-safe direction - rather than publishing a fabricated baseline as truth.
+            // produces new_recruits_top50) is suppressed and the Top 50 count is marked unknown,
+            // so the epoch guard is neither disarmed by a fabricated count nor re-armed by a
+            // zero that only means the read failed.
             if (existingRecruitsError) {
                 stats.errors.push(`ExistingRecruits: ${existingRecruitsError.message}`);
                 console.error(`[PROFILING] Existing recruits fetch failed: ${existingRecruitsError.message}`);
@@ -359,6 +360,7 @@ export async function runProfiler(
                     else newCount++;
                 });
             } else {
+                stats.top50_unknown_reasons.push('Profiler: existing-recruit baseline unavailable');
                 logAudit('PROFILING', 'integrity_checked', {
                     stage: 'NEW_RECRUIT_CLASSIFICATION',
                     passed: false,
@@ -374,6 +376,7 @@ export async function runProfiler(
                 });
                 if (ingestionError) {
                     stats.errors.push(`Ingest(${recruitSource}): ${ingestionError.message}`);
+                    stats.top50_unknown_reasons.push(`Profiler: sync_recruits failed for ${recruitSource}`);
                     logAudit('PROFILING', 'error', { message: `DB Ingestion Failure (${recruitSource})`, details: ingestionError });
                     console.error(`[PROFILING] DB Ingestion Failure (${recruitSource}): ${ingestionError.message}`);
                 } else {
@@ -428,7 +431,11 @@ export async function runProfiler(
                                 console.error(`[PROFILING] Fate validation failed on attempt ${attempts}: ${JSON.stringify(recruitsFateIntegrity.issues)}`);
                             }
                         } else if (recruitsFateError) {
+                            // [DECISION LOG] The backoff waits for triggers to promote rows, not for
+                            // a failing database to recover; repeating a read that just failed only
+                            // adds load, so a read error ends the check and the count stays unknown.
                             console.error(`[PROFILING] Fate check attempt ${attempts} error: ${JSON.stringify(recruitsFateError)}`);
+                            break;
                         }
                     } catch (fateCheckExecutionError: unknown) {
                         const errorMessage = fateCheckExecutionError instanceof Error ? fateCheckExecutionError.message : String(fateCheckExecutionError);
@@ -454,15 +461,22 @@ export async function runProfiler(
                         details: top50ThresholdError ? top50ThresholdError.message : (top50ThresholdIntegrity.success ? 'Threshold validated' : 'Malformed threshold payload')
                     });
 
-                    const top50ScoreThreshold = top50ThresholdIntegrity.success ? top50ThresholdIntegrity.output : 0;
-
                     stats.new_recruits_active = fateResults.filter(fateEntryCandidate => fateEntryCandidate.status === 'ACTIVE').length;
                     stats.new_recruits_benched = fateResults.filter(fateEntryCandidate => fateEntryCandidate.status === 'BENCHED').length;
-                    stats.new_recruits_top50 = fateResults.filter(fateEntryCandidate => fateEntryCandidate.status === 'ACTIVE' && Number(fateEntryCandidate.raw_potential_score) >= top50ScoreThreshold).length;
+                    // [DECISION LOG] A missing threshold used to default to 0, which counted every
+                    // new ACTIVE recruit as Top 50 and disarmed the epoch guard on a guess. Without
+                    // the threshold the count is unknown, not computed.
+                    if (top50ThresholdIntegrity.success && !top50ThresholdError) {
+                        const top50ScoreThreshold = top50ThresholdIntegrity.output;
+                        stats.new_recruits_top50 = fateResults.filter(fateEntryCandidate => fateEntryCandidate.status === 'ACTIVE' && Number(fateEntryCandidate.raw_potential_score) >= top50ScoreThreshold).length;
+                    } else {
+                        stats.top50_unknown_reasons.push('Profiler: Top 50 threshold unavailable');
+                    }
                     
                     console.log(`[PROFILING] Fate Finalized: Active=${stats.new_recruits_active}, Benched=${stats.new_recruits_benched}, Top50=${stats.new_recruits_top50}`);
                 } else {
-                    console.warn(`[PROFILING] Fate check FAILED after ${maxAttempts} attempts for ${newTags.length} tags.`);
+                    stats.top50_unknown_reasons.push(`Profiler: fate check unanswered for ${newTags.length} new recruit(s)`);
+                    console.warn(`[PROFILING] Fate check FAILED after ${attempts} attempt(s) for ${newTags.length} tags.`);
                 }
             }
             
