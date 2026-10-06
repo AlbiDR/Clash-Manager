@@ -505,6 +505,21 @@
   - Root Cause: Stalled completion reserve prior to PR publication.
   - Resolution Details: Watchdog nudges successfully recovered both sessions (`ok: true`). Stage 1 merged cleanly (no PR required for CLEAN pass) and Stage 4 published PR #2073 (CLEAN). Pipeline intervention rate for 2026-10-04: 2/12 merged stages (16.7%).
 
+* Stage 3 (Baseline Consolidation) Session Failure on 2026-10-06:
+  - Session: sessions/17685247323826051852
+  - State: [FAILED - monitor] (2026-10-06)
+  - Symptom: Stage 3 failed to produce published output and was recorded as ledger state `ESCALATED` with `failureClass: JULES_SESSION_FAILED` after a 42-minute session.
+  - Root Cause: Jules session terminated in a failed state during baseline consolidation checks without writing terminal coverage log results or opening a PR.
+  - Recommended Fix: Audit Stage 3 session logs for potential context limit exhaustion or database connection timeouts during baseline consolidation checks.
+
+* Watchdog Recovery Nudge Intervention on 2026-10-06:
+  - Stage: Stage 8 (Dependency Audit)
+  - State: [RESCUED - monitor] (2026-10-06)
+  - Session: sessions/612241089722396266
+  - Symptom: Stage 8 session completed work but stalled before PR finalization, requiring a watchdog nudge (`nudgedAt: 2026-10-06T06:50:07.219Z`).
+  - Root Cause: Stalled completion reserve prior to PR publication.
+  - Resolution Details: Watchdog nudge successfully recovered the session (`ok: true`). Stage 8 completed and published PR #2101 for 2026-10-06. Pipeline intervention rate for 2026-10-06: 1/11 merged stages (9.1%).
+
 
 ## Section 2: Cross-Stage Coherence Bugs (Priority 2)
 
@@ -556,53 +571,53 @@
 ## Section 3: No-Diff and Low-Value Audit (Priority 3)
 
 * Stage 1 (Harden):
-  - Consecutive No-Diff Days: 8 (CLEAN logged on 2026-10-05; audit duration: 7m)
-  - Analysis: Calibration pass: Widened threat surface scan across RecruitClient, useBlitzMode, useLeaderboard, and headhunter-scanner verified zero security gaps, unvalidated boundaries, or state leaks; 7 ordinary clean runs since calibration.
+  - Consecutive No-Diff Days: 9 (CLEAN logged on 2026-10-05; audit duration: 6m)
+  - Analysis: Audited Edge Function endpoints, in-memory state variables, Valibot boundary schemas, and cross-layer architectural isolations across 42 files; zero threat vectors found.
 
 * Stage 2 (Verify):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-10-05 in useBlitzMode.spec.ts; audit duration: 26m)
-  - Analysis: Expanded useBlitzMode unit test suite for handleFabCommand actions in Frontend-PWA/src/core/services/services-tests/useBlitzMode.spec.ts.
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-10-06 in ghostBenchmarkState.spec.ts; audit duration: 20m)
+  - Analysis: Added unit tests for useGhostBenchmarkState stepper parameter and ignoreBackdropClick flag in Frontend-PWA/src/shared/directives/directives-tests/ghostBenchmarkState.spec.ts.
 
 * Stage 3 (Baseline Consolidation):
-  - Consecutive No-Diff Days: 25 (CLEAN logged on 2026-10-05; audit duration: 22m)
-  - Analysis: Baseline SQL current with 22 pending migrations (fold-state status: PENDING); migration quality: PASS; database verification: DB-UNAVAILABLE. Clean calibration streak: 10.
+  - Consecutive No-Diff Days: 25 (FAILED on 2026-10-06; audit duration: 22m)
+  - Analysis: Session failed (JULES_SESSION_FAILED) during baseline consolidation audit; fold-state: PENDING.
 
 * Stage 4 (Optimization):
-  - Consecutive No-Diff Days: 21 (CLEAN logged on 2026-10-05; audit duration: 4m)
-  - Analysis: Inspected 60 changed files and Edge Functions for SQL view substrate hygiene; zero structural rot or unreferenced views found.
+  - Consecutive No-Diff Days: 22 (CLEAN logged on 2026-10-06; audit duration: 4m)
+  - Analysis: Inspected 111 changed files and Edge Functions for SQL view substrate hygiene; zero structural rot or unreferenced views found.
 
 * Stage 5 (README):
-  - Consecutive No-Diff Days: 2 (CLEAN logged on 2026-10-05; audit duration: 5m)
-  - Analysis: Audited documentation debt targets and confirmed README accuracy.
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-10-06 in README.md; audit duration: 5m)
+  - Analysis: Reconciled core/api and shared/ui READMEs with ScoreSchemas and ScoreCompositionPanel.
 
 * Stage 6 (TSDoc):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-10-05 in useBlitzMode.ts; audit duration: 4m)
-  - Analysis: Hardened useBlitzMode interface contracts and inline logic annotations in Frontend-PWA/src/core/services/useBlitzMode.ts.
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-10-06 in ghostBenchmarkState.ts; audit duration: 4m)
+  - Analysis: Hardened useGhostBenchmarkState interface contracts and inline logic annotations in Frontend-PWA/src/shared/directives/ghostBenchmarkState.ts.
 
 * Stage 7 (Version Integrity):
-  - Consecutive No-Diff Days: 155 (CLEAN logged on 2026-10-05; audit duration: 2m)
-  - Analysis: Scanned catalog protocol in Frontend-PWA and Backend package.json and package versions across 3 manifests against ground truth 14.50.143; verified 0 drift lines across 10 derived locations.
+  - Consecutive No-Diff Days: 156 (CLEAN logged on 2026-10-06; audit duration: 2m)
+  - Analysis: Scanned root, Frontend-PWA, and Backend package.json manifests and catalog declarations; verified zero drift lines via pnpm audit:version across all 3 manifests at version 14.51.0.
 
 * Stage 8 (Dependency Audit):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-10-05 in package.json; audit duration: 8m)
-  - Analysis: Bumped supabase devDependency from ^2.118.0 to ^2.119.0 in monorepo catalogs and updated pnpm-lock.yaml.
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-10-06 in package.json; audit duration: 7m)
+  - Analysis: Bumped simple-git-hooks to ^2.14.0 in monorepo catalogs and updated pnpm-lock.yaml.
 
 * Stage 9 (Refactor):
-  - Consecutive No-Diff Days: 5 (CLEAN logged on 2026-10-05; audit duration: 5m)
-  - Analysis: Scanned 60 files, 0 dep-violations, knip OK; clean calibration streak: 4; inspected core/config, useProgressiveList, useHeadhunter.
+  - Consecutive No-Diff Days: 6 (CLEAN logged on 2026-10-06; audit duration: 8m)
+  - Analysis: Scanned 111 changed files, 0 dep-violations, knip OK; clean calibration streak: 5; inspected core/config, ghostBenchmarkState, GhostBenchmarkHost.
 
 * Stage 10 (APK-Integrity):
-  - Consecutive No-Diff Days: 88 (CLEAN logged on 2026-10-05; audit duration: 2m)
-  - Analysis: Verified APK and PWA wrapper integrity: asset links, manifest parity, version sync, release metadata, and cleartext traffic policy.
+  - Consecutive No-Diff Days: 89 (CLEAN logged on 2026-10-06; audit duration: 3m)
+  - Analysis: Audited PWA and APK wrapper invariants: asset links, manifest parity, version code/name sync, release metadata, and security policy with zero mismatches found.
 
 * Stage 11 (APK-Optimization):
-  - Consecutive No-Diff Days: 22 (CLEAN logged on 2026-10-05; audit duration: 3m)
-  - Analysis: Inspected APK wrapper performance settings, WebView caching mode LOAD_CACHE_ELSE_NETWORK, service worker precache route, Vite manual chunks, and precache footprint (15 files, 67.6 KB). All 9 performance invariants verified optimal.
+  - Consecutive No-Diff Days: 23 (CLEAN logged on 2026-10-06; audit duration: 2m)
+  - Analysis: Inspected APK wrapper performance settings, WebView caching mode LOAD_CACHE_ELSE_NETWORK, service worker precache route, Vite code splitting, and precache footprint (15 files, 67.6 KB). All 9 performance invariants verified optimal.
 
 * Stage 12 (APK-UX):
-  - Consecutive No-Diff Days: 7 (CLEAN logged on 2026-10-05; audit duration: 2m)
-  - Analysis: Global APK UX audit passed with 0 violations across 76 files examined.
+  - Consecutive No-Diff Days: 8 (CLEAN logged on 2026-10-06; audit duration: 4m)
+  - Analysis: Calibration pass: 7 consecutive CLEAN runs verified; 1 candidate file reviewed (GhostBenchmarkHost.vue) across 77 files examined in 10 UX categories.
 
 * Stage 13 (Self-Healing):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-10-05; audit duration: 6m)
-  - Analysis: Completed daily self-healing audit pass for 2026-10-05: verified preceding stages executed 100% autonomously with 0 watchdog nudges required (0% intervention rate), recorded 0 unfinalized sentinels, and updated Section 3 metrics.
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-10-06; audit duration: 6m)
+  - Analysis: Completed daily self-healing audit pass for 2026-10-06: documented Stage 3 session failure (JULES_SESSION_FAILED), Stage 8 watchdog nudge recovery (1/11 intervention rate = 9.1%), recorded 0 unfinalized sentinels, and updated Section 3 metrics.

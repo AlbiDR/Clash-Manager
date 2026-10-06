@@ -32,6 +32,8 @@ The signature reusable capability. `ConsoleLayout` + `ConsoleHeader` + `ConsoleL
 | `StatusPill.vue` / `MomentumPill.vue` | System-health pill and trend indicator. |
 | `StatsGrid.vue` / `StatisticItem.vue` | Responsive stat grid and a labeled data point. |
 | `SettingRow.vue` | A standardized settings/preference row. Modernized with a 48px high tap target for WebView mobile compliance, integrated with the declarative `v-tactile` haptic feedback model, and standardizes click emits callback parameters to eliminate anemic variable pathogens (`emitEvent` typed argument). |
+| `LinkRow.vue` | A standardized link or action row primitive with chevron and external navigation support. |
+| `ScoreCompositionPanel.vue` | Explains raw score composition (RPeS / RPoS) with itemized contributions, multipliers, stability attendance credit, new member/veteran bonuses, rounding adjustments, and comparison reference benchmarks. |
 
 ## Identity badges
 
@@ -60,6 +62,7 @@ The signature reusable capability. `ConsoleLayout` + `ConsoleHeader` + `ConsoleL
 | `SelectionBar.vue` / `ScoreThresholdSelector.vue` | Bulk-operation bar and its score-threshold picker. The picker is a compact slider whose whole 48px footprint is the drag surface, sharing `usePrecisionSlider` with `PrecisionSlider.vue`. |
 | `FloatingDock.vue` / `NavigationDock.vue` / `SelectionFab.vue` | The bottom dock that morphs into contextual selection actions. Configured with a declarative `v-tactile` haptic feedback brokering model and 48px touch targets for WebView mobile ergonomics. |
 | `ViewOptions.vue` | A domain-blind bottom sheet component providing secondary view-shaping capabilities (search and sorting). Modernized with 48px touch targets, declarative `v-tactile` haptic feedback, keyboard accessibility (Escape dismissal and focus restoration), and drag-to-dismiss gesture handling. |
+| `ConfirmDialog.vue` | MD3-styled global modal confirmation dialog replacing native browser `confirm()` alerts for non-blocking UI flow. |
 
 ## Voyage and feedback
 
@@ -69,6 +72,7 @@ The signature reusable capability. `ConsoleLayout` + `ConsoleHeader` + `ConsoleL
 | `ErrorBoundary.vue` / `ErrorState.vue` | Runtime error capture and recovery UI. |
 | `ToastContainer.vue` / `Toast.vue` | Global transient notifications. Modernized with declarative `v-tactile` directive integration on interactive action, close, and copy buttons for mobile touch feedback. |
 | `EmptyState.vue` | Empty-data feedback. |
+| `GhostBenchmarkHost.vue` / `BenchmarkContent.vue` | Host overlay manager and content view for desktop popovers and mobile bottom sheets rendering benchmark tooltips and detailed score composition breakdowns driven by `useGhostBenchmarkState`. |
 
 ## Standardized Interactive APIs
 

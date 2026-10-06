@@ -4,23 +4,23 @@
 
 In plain terms: this updates dependencies only. No project code was written or changed, though the app should be re-tested before release.
 
-**What changed:** Bumped supabase devDependency from ^2.118.0 to ^2.119.0 in monorepo catalogs and updated pnpm-lock.yaml
+**What changed:** Bumped simple-git-hooks to ^2.14.0 in monorepo catalogs and updated lockfile
 
-**Why:** Maintenance patch update for Supabase CLI devDependency
+**Why:** Apply safe Tier 1 minor bump to simple-git-hooks and keep persistent watchlist up to date
 
-**Result:** All workspace unit tests passed
+**Result:** simple-git-hooks ^2.14.0 installed, pnpm test:commit-trailers passed
 
 **Files changed:** .github/nightly-logs/08-dependency-audit-coverage.log, package.json, pnpm-lock.yaml, pnpm-workspace.yaml
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: dependencies
-  Cycle: nightly-cycle/2026-10-05
+  Cycle: nightly-cycle/2026-10-06
   Contract: b865578f1a0b5d4e90f264b4dbb792c4d309c9bbea08fd314cf47cef940ff9b8
-  Why: Maintenance patch update for Supabase CLI devDependency
-  Change: Bumped supabase devDependency from ^2.118.0 to ^2.119.0 in monorepo catalogs and updated pnpm-lock.yaml
-  Result: All workspace unit tests passed
+  Why: Apply safe Tier 1 minor bump to simple-git-hooks and keep persistent watchlist up to date
+  Change: Bumped simple-git-hooks to ^2.14.0 in monorepo catalogs and updated lockfile
+  Result: simple-git-hooks ^2.14.0 installed, pnpm test:commit-trailers passed
   Files: .github/nightly-logs/08-dependency-audit-coverage.log, package.json, pnpm-lock.yaml, pnpm-workspace.yaml
   Nudges: 0
-  Execution: 71c9e6f1f527974ff83b417b5e1b2793737b8168
+  Execution: 4e1a9752f9601a272ceed6f190d53e15ee32df12
 -->
