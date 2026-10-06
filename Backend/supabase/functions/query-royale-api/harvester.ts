@@ -18,6 +18,7 @@ import {
   MAX_HARVEST_EPOCHS,
   MAX_SEASON_RANKING_PAGES,
   GLOBAL_LOCATION,
+  GLOBAL_REGION_LABEL,
   DEFAULT_FALLBACK_ID,
   DEFAULT_FALLBACK_COUNTRY,
   INITIAL_INDEX
@@ -112,31 +113,38 @@ async function fetchRankings(
  */
 export async function harvestSeasonPlayers(
   logAudit: (stage: string, action: AuditEntry['action'], details?: unknown) => void
-): Promise<{ items: v.InferOutput<typeof HarvestedPlayerSchema>[], region: string }> {
+): Promise<{ items: v.InferOutput<typeof HarvestedPlayerSchema>[], region: string, season: string }> {
   logAudit("HARVEST_SEASON_FALLBACK", "called");
-  const response = await fetchWithRotation("/locations/global/seasons");
+  const response = await fetchWithRotation(`/locations/${GLOBAL_LOCATION}/seasons`);
   if (!response.ok) throw new Error(`Failed to fetch completed seasons: ${response.status}`);
   const seasons = v.parse(RoyaleSeasonListSchema, await response.json());
   const latestSeason = seasons.items.map(season => season.id).sort().at(-1);
   if (!latestSeason) throw new Error("No completed season is available for leaderboard harvesting.");
 
   const candidates = await fetchRankings(
-    `/locations/global/pathoflegend/${latestSeason}/rankings/players?limit=${PLAYER_LEADERBOARD_LIMIT}`,
+    `/locations/${GLOBAL_LOCATION}/pathoflegend/${latestSeason}/rankings/players?limit=${PLAYER_LEADERBOARD_LIMIT}`,
     logAudit,
     true,
   );
+  let deletedProfiles = INITIAL_INDEX;
   const profiles = await processBatch(candidates.map(candidate => async () => {
     const profileResponse = await fetchWithRotation(`/players/${encodeURIComponent(candidate.tag)}`);
     // Deleted accounts are no longer recruitment candidates.
-    if (profileResponse.status === 404) return null;
+    if (profileResponse.status === 404) { deletedProfiles += 1; return null; }
     if (!profileResponse.ok) throw new Error(`Failed to verify recruit profile: ${profileResponse.status}`);
     const profile = v.parse(RoyalePlayerSchema, await profileResponse.json());
     if (profile.tag !== candidate.tag) throw new Error("Recruit profile tag does not match the season candidate.");
     return profile.clan?.tag ? null : { tag: profile.tag, name: profile.name, clan: null };
   }));
+  // [GUARD] A board whose every candidate "was deleted" is a proxy answering 404 to
+  // everything, not a season of vanished players. Reporting it as an empty success
+  // would make a blind harvest indistinguishable from "nobody is clanless".
+  if (candidates.length > INITIAL_INDEX && deletedProfiles === candidates.length) {
+    throw new Error(`Every completed-season candidate profile returned 404 (${candidates.length} of ${candidates.length}); profile verification is unavailable.`);
+  }
   const items = profiles.filter(profile => profile !== null);
-  logAudit("HARVEST_SEASON_VERIFIED", "run", { season: latestSeason, candidates: candidates.length, clanless: items.length });
-  return { items, region: `Global (completed season ${latestSeason})` };
+  logAudit("HARVEST_SEASON_VERIFIED", "run", { season: latestSeason, candidates: candidates.length, clanless: items.length, deleted: deletedProfiles });
+  return { items, region: `${GLOBAL_REGION_LABEL} (completed season ${latestSeason})`, season: latestSeason };
 }
 
 /**
@@ -152,14 +160,25 @@ export async function harvestGlobalPlayers(
   logAudit: (stage: string, action: AuditEntry['action'], details?: unknown) => void
 ): Promise<{ items: v.InferOutput<typeof HarvestedPlayerSchema>[], region: string }> {
   const liveItems = await harvestClanlessPlayers(GLOBAL_LOCATION, logAudit);
-  if (liveItems.length >= TARGET_HARVEST_FLOOR) return { items: liveItems, region: "Global" };
+  if (liveItems.length >= TARGET_HARVEST_FLOOR) return { items: liveItems, region: GLOBAL_REGION_LABEL };
 
   logAudit("GLOBAL_LIVE_BOARD_THIN", "run", { live: liveItems.length, floor: TARGET_HARVEST_FLOOR });
   const season = await harvestSeasonPlayers(logAudit);
   const merged = new Map<string, v.InferOutput<typeof HarvestedPlayerSchema>>();
   for (const item of liveItems) merged.set(item.tag, item);
-  for (const item of season.items) if (!merged.has(item.tag)) merged.set(item.tag, item);
-  return { items: Array.from(merged.values()), region: season.region };
+  let seasonAdded = INITIAL_INDEX;
+  for (const item of season.items) {
+    if (merged.has(item.tag)) continue;
+    merged.set(item.tag, item);
+    seasonAdded += 1;
+  }
+  // The label names every source that contributed players, and only those.
+  const region = seasonAdded === INITIAL_INDEX
+    ? GLOBAL_REGION_LABEL
+    : liveItems.length === INITIAL_INDEX
+      ? season.region
+      : `${GLOBAL_REGION_LABEL} (live and completed season ${season.season})`;
+  return { items: Array.from(merged.values()), region };
 }
 
 /**
@@ -337,7 +356,7 @@ export async function harvestClanlessPlayers(
       // board: a worldwide request answered with regional players is as wrong as a
       // local request answered with worldwide ones. A thin live board is recovered
       // by harvestGlobalPlayers from the completed worldwide season, not from countries.
-      const polPath = `/locations/global/pathoflegend/players?limit=${PLAYER_LEADERBOARD_LIMIT}`;
+      const polPath = `/locations/${GLOBAL_LOCATION}/pathoflegend/players?limit=${PLAYER_LEADERBOARD_LIMIT}`;
       return await fetchRankings(polPath, logAudit);
     } catch (globalPolError: unknown) {
       console.error("[HARVEST] Global Path of Legends query failed:", globalPolError instanceof Error ? globalPolError.message : String(globalPolError));

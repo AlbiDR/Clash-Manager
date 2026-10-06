@@ -252,7 +252,7 @@ describe("query-royale-api Edge Function", () => {
     }));
     expect(response.status).toBe(200);
     const data = (await response.json()).data;
-    expect(data.region).toBe("Global (completed season 2026-09)");
+    expect(data.region).toBe("Global (live and completed season 2026-09)");
     expect(data.items.map((item: { tag: string }) => item.tag)).toEqual(["#PG0", "#PG1", "#PG2", "#PG3", "#PG4", "#FREE"]);
     expect(data.items[0].name).toBe("Global Player 0");
     expect(mockFetch.mock.calls.filter(([url]) => url.includes("/locations/57000120/"))).toHaveLength(0);

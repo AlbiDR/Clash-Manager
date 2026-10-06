@@ -58,6 +58,7 @@ export const MAX_HARVEST_EPOCHS = 15;
 // Completed PoL boards contain up to 9,999 players; bound cursor traversal.
 export const MAX_SEASON_RANKING_PAGES = 10;
 export const GLOBAL_LOCATION = "global";
+export const GLOBAL_REGION_LABEL = "Global";
 export const LOCATION_ID_INTERNATIONAL = 57000101;
 export const DEFAULT_FALLBACK_COUNTRY = "United States";
 export const DEFAULT_FALLBACK_ID = 57000120;

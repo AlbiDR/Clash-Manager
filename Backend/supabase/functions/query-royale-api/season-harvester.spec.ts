@@ -38,6 +38,7 @@ describe("completed-season recruitment fallback", () => {
     expect(await harvestSeasonPlayers(vi.fn())).toEqual({
       items: [{ tag: "#FREE", name: "Current name", clan: null }, { tag: "#LATER", name: "Later page", clan: null }],
       region: "Global (completed season 2026-09)",
+      season: "2026-09",
     });
     expect(fetchRankings.mock.calls.filter(([path]) => path === "/players/%23FREE")).toHaveLength(1);
     expect(fetchRankings).not.toHaveBeenCalledWith("/players/%23CLANNED");
@@ -57,6 +58,21 @@ describe("completed-season recruitment fallback", () => {
       .mockResolvedValueOnce(respond({ items: [ranking("#FREE")] }))
       .mockResolvedValueOnce(respond({}, 503));
     await expect(harvestSeasonPlayers(vi.fn())).rejects.toThrow("Failed to verify recruit profile: 503");
+  });
+
+  it("reports a verification pass in which every candidate profile returns 404 as an outage, not as an empty board", async () => {
+    fetchRankings.mockResolvedValueOnce(respond({ items: [{ id: "2026-09" }] }))
+      .mockResolvedValueOnce(respond({ items: [ranking("#A"), ranking("#B")] }))
+      .mockResolvedValue(respond({}, 404));
+    await expect(harvestSeasonPlayers(vi.fn())).rejects.toThrow(/returned 404 \(2 of 2\)/);
+  });
+
+  it("still treats a single 404 among verified profiles as a deleted account", async () => {
+    fetchRankings.mockResolvedValueOnce(respond({ items: [{ id: "2026-09" }] }))
+      .mockResolvedValueOnce(respond({ items: [ranking("#A"), ranking("#B")] }))
+      .mockResolvedValueOnce(respond({}, 404))
+      .mockResolvedValueOnce(respond({ tag: "#B", name: "B" }));
+    expect((await harvestSeasonPlayers(vi.fn())).items).toEqual([{ tag: "#B", name: "B", clan: null }]);
   });
 
   it("rejects repeated pagination cursors", async () => {
@@ -94,10 +110,45 @@ describe("worldwide-only global harvest", () => {
     });
     const audit = vi.fn();
     const result = await harvestGlobalPlayers(audit);
-    expect(result.region).toBe("Global (completed season 2026-09)");
+    expect(result.region).toBe("Global (live and completed season 2026-09)");
     expect(result.items.map(item => item.tag)).toEqual(["#LIVE0", "#LIVE1", "#OLD"]);
     expect(result.items[0].name).toBe("#LIVE0");
     expect(audit).toHaveBeenCalledWith("GLOBAL_LIVE_BOARD_THIN", "run", { live: 2, floor: TARGET_HARVEST_FLOOR });
     expect(fetchRankings.mock.calls.some(([path]) => /\/locations\/\d+\//.test(String(path)))).toBe(false);
+  });
+
+  it("labels an empty live board recovered from the season as the season alone", async () => {
+    fetchRankings.mockImplementation(async (path: string) => {
+      if (path === livePath) return respond({ items: [] });
+      if (path === "/locations/global/seasons") return respond({ items: [{ id: "2026-09" }] });
+      if (path === seasonPath) return respond({ items: [ranking("#OLD")] });
+      if (path === "/players/%23OLD") return respond({ tag: "#OLD", name: "Old guard" });
+      throw new Error(`Unexpected path: ${path}`);
+    });
+    const result = await harvestGlobalPlayers(vi.fn());
+    expect(result).toEqual({ items: [{ tag: "#OLD", name: "Old guard", clan: null }], region: "Global (completed season 2026-09)" });
+  });
+
+  it("keeps the live label when the completed season adds nobody", async () => {
+    fetchRankings.mockImplementation(async (path: string) => {
+      if (path === livePath) return respond({ items: livePlayers(2) });
+      if (path === "/locations/global/seasons") return respond({ items: [{ id: "2026-09" }] });
+      if (path === seasonPath) return respond({ items: [ranking("#LIVE0"), ranking("#JOINED")] });
+      if (path === "/players/%23LIVE0") return respond({ tag: "#LIVE0", name: "Live zero" });
+      if (path === "/players/%23JOINED") return respond({ tag: "#JOINED", name: "Joined", clan: { tag: "#CLAN" } });
+      throw new Error(`Unexpected path: ${path}`);
+    });
+    const result = await harvestGlobalPlayers(vi.fn());
+    expect(result.region).toBe("Global");
+    expect(result.items.map(item => item.tag)).toEqual(["#LIVE0", "#LIVE1"]);
+  });
+
+  it("propagates a season catalog failure when the live board is thin instead of returning the thin board as success", async () => {
+    fetchRankings.mockImplementation(async (path: string) => {
+      if (path === livePath) return respond({ items: livePlayers(2) });
+      if (path === "/locations/global/seasons") return respond({}, 503);
+      throw new Error(`Unexpected path: ${path}`);
+    });
+    await expect(harvestGlobalPlayers(vi.fn())).rejects.toThrow(/Failed to fetch completed seasons/);
   });
 });
