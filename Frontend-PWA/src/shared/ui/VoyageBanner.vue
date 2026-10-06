@@ -176,8 +176,8 @@ const shouldShowBanner = computed(() => {
   border-radius: var(--sys-shape-corner-m);
   background: rgba(var(--sys-color-primary-rgb), 0.08);
   border: 1px solid rgba(var(--sys-color-primary-rgb), 0.2);
-  backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
   box-shadow:
     0 4px 24px rgba(var(--sys-color-primary-rgb), 0.12),
     inset 0 1px 0 var(--sys-overlay-light-soft);

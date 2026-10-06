@@ -488,8 +488,8 @@ onUnmounted(() => {
   overflow: auto;
   color: var(--sys-color-on-surface);
   background: var(--sys-surface-glass);
-  backdrop-filter: var(--sys-surface-glass-blur);
   -webkit-backdrop-filter: var(--sys-surface-glass-blur);
+  backdrop-filter: var(--sys-surface-glass-blur);
   border: 1px solid var(--sys-surface-glass-border);
   border-radius: var(--sys-shape-corner-large);
   box-shadow: var(--sys-elevation-3);

@@ -265,8 +265,8 @@ onUnmounted(() => {
   top: var(--sys-safe-top);
   z-index: var(--sys-z-header);
   background: var(--sys-surface-glass);
-  backdrop-filter: var(--sys-surface-glass-blur);
   -webkit-backdrop-filter: var(--sys-surface-glass-blur);
+  backdrop-filter: var(--sys-surface-glass-blur);
   border: 1px solid var(--sys-surface-glass-border);
   border-radius: var(--sys-shape-corner-extra-large);
   padding: var(--sys-space-16) var(--sys-space-18) var(--sys-space-18);

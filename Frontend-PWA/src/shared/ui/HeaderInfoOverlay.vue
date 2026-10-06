@@ -162,13 +162,13 @@ watch(
   padding-right: var(--sys-space-12);
   -webkit-overflow-scrolling: touch;
   flex: 1;
-  user-select: text !important;
   -webkit-user-select: text !important;
+  user-select: text !important;
 }
 
 .expansion-content :deep(*) {
-  user-select: text !important;
   -webkit-user-select: text !important;
+  user-select: text !important;
 }
 
 .expansion-content::-webkit-scrollbar {
