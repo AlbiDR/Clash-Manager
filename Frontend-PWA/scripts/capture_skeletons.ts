@@ -12,9 +12,10 @@ import {
 } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import type { Browser, BrowserContext, Page } from "playwright";
 import { createServer as createViteServer } from "vite";
 import { hashGroupSources, readCache, writeCache } from "./lib/capture-cache";
-import { BONES_OUTPUT_PATH } from "./seed_bones";
+import { BONES_OUTPUT_PATH, ensureBonesSeed } from "./seed_bones";
 
 /**
  * BUILD-TIME SKELETON CAPTURE ("Boneyard-style", zero-dependency)
@@ -98,6 +99,11 @@ const SHARED_SOURCES = [
   // Synthetic mode renders real components against this mock data (via
   // `useClashSync`), so the text it supplies drives the measured geometry.
   join(ROOT, "src/core/utils/mockData.ts"),
+  // This script itself. How it navigates, waits and measures is part of the
+  // geometry it produces, so changing the method must re-measure every group
+  // and give CI a new cache key, rather than keep serving bones that were
+  // taken the old way until some unrelated component happens to change.
+  __filename,
 ];
 
 interface CaptureGroup {
@@ -199,6 +205,154 @@ const CAPTURE_GROUPS: CaptureGroup[] = [
 // its own skeleton and makes a route uncapturable.
 const DEFAULT_QUERY = "synthetic=true";
 
+/**
+ * The only host a capture page may reach: the capture's own Vite server.
+ *
+ * @remarks
+ * [DECISION LOG] HERMETIC CAPTURE (2026-10-06):
+ * The capture used to wait for Playwright's "networkidle" on a page that was
+ * not network-free. Synthetic mode still pings the Supabase edge function,
+ * reads four Supabase REST views and asks the GitHub contents API and
+ * raw.githubusercontent.com for the latest APK. Deploy PWA builds with the
+ * real VITE_SUPABASE_URL, so those requests left the runner, and the build
+ * failed whenever one of them stalled for longer than Playwright's navigation
+ * timeout (Deploy PWA 2026-09-13 on /headhunter, 2026-10-06 on /settings).
+ * Every request to any other host is now aborted inside the browser and
+ * logged, so the page settles on local work alone and the log names what
+ * synthetic mode still reaches for. Fonts are self-hosted (public/fonts), so
+ * blocking external hosts cannot change measured text.
+ */
+export const CAPTURE_HOST = "127.0.0.1";
+
+/**
+ * Markers of a page that is still settling: the app's own loading markers
+ * (ConsoleLayout's `aria-busy` list and the shared `.skeleton-anim` class from
+ * core/theme/skeletons.ts) and any Vue transition still in flight
+ * (`*-enter-active` / `*-leave-active`, which Vue removes when it ends).
+ *
+ * @remarks
+ * The transition classes are here because of a measured failure: the roster
+ * list enters with a staggered transition whose start state scales each card
+ * down, and during the stagger delay that state holds still across frames.
+ * Without them one parity run measured every MemberCard at 61px instead of its
+ * settled 74px.
+ */
+const SETTLING_SELECTOR =
+  '[aria-busy="true"], .skeleton-anim, [class*="-enter-active"], [class*="-leave-active"]';
+
+/** Origin plus path, so cache-busting query strings collapse into one entry. */
+function blockedResourceKey(url: URL): string {
+  return `${url.protocol}//${url.host}${url.pathname}`;
+}
+
+/**
+ * Opens a page that can only reach {@link CAPTURE_HOST} and lays out every
+ * element, on screen or not.
+ *
+ * @remarks
+ * Hermetic: service workers are blocked (App.vue registers one and calls
+ * `update()` shortly after mount), and every other HTTP request or WebSocket
+ * is aborted and added to `blocked`. Local WebSockets stay open: that is
+ * Vite's own HMR channel.
+ *
+ * [DECISION LOG] FULL LAYOUT, NOT WHATEVER CHROME HAS SKIPPED SO FAR:
+ * `.card` declares `content-visibility: auto`, so once Chrome decides an
+ * off-screen card is not relevant it stops laying out the card's content and
+ * the card collapses to its padding. When that happens relative to the
+ * measurement is timing, not layout: in one of six parity runs 14 of the 50
+ * MemberCards were already skipped at 26px, which averaged the captured card
+ * to 61px instead of its rendered 74px. The previous networkidle wait had the
+ * same race and simply lost it less often. A skeleton stands in for a card
+ * the user can see, so the capture lays every element out as if it were on
+ * screen. Only this capture page is affected; the shipped CSS is unchanged.
+ */
+export async function openCapturePage(
+  browser: Browser,
+  blocked: Set<string>,
+): Promise<{ context: BrowserContext; page: Page }> {
+  const context = await browser.newContext({ serviceWorkers: "block" });
+  // Installed on DOMContentLoaded because an init script can run before the
+  // document has an <html> element to append to; an !important rule wins
+  // whenever it arrives, and Chrome re-lays out anything it had skipped.
+  await context.addInitScript(() => {
+    document.addEventListener("DOMContentLoaded", () => {
+      const style = document.createElement("style");
+      style.textContent = "* { content-visibility: visible !important; }";
+      document.head.appendChild(style);
+    });
+  });
+  await context.route("**/*", (route) => {
+    const url = new URL(route.request().url());
+    if (url.hostname === CAPTURE_HOST) return route.continue();
+    blocked.add(blockedResourceKey(url));
+    return route.abort("blockedbyclient");
+  });
+  await context.routeWebSocket(
+    (url) => url.hostname !== CAPTURE_HOST,
+    (socket) => {
+      blocked.add(blockedResourceKey(new URL(socket.url())));
+      return socket.close();
+    },
+  );
+  return { context, page: await context.newPage() };
+}
+
+/**
+ * Resolves once the page shows the real components a capture measures.
+ *
+ * @remarks
+ * [DECISION LOG] A READY SIGNAL, NOT A TIME BUDGET:
+ * The app mounts before the router has resolved the route, so "something is
+ * on screen" is not enough. The signal, in order: Vue has mounted the app,
+ * its router reports the initial navigation done, the self-hosted fonts are
+ * ready, nothing is still settling ({@link SETTLING_SELECTOR}), no finite CSS
+ * animation or transition is still running (infinite ones, such as a pulse,
+ * never end and are ignored), and the size of every `[data-bone]` element is
+ * unchanged across consecutive animation frames.
+ *
+ * Every wait uses Playwright's default timeout, the single budget for the
+ * whole capture; there is no capture-specific number. A page that never
+ * becomes ready throws, and `ensureBonesFresh` decides whether that fails the
+ * build (BONES_REQUIRE_CAPTURE) or degrades to the last captured geometry.
+ * The old wait swallowed its timeout, so a page that never rendered produced
+ * an empty capture reported as "Capture complete".
+ */
+export async function waitForCaptureReady(page: Page): Promise<void> {
+  await page.waitForFunction(
+    () =>
+      Boolean((document.querySelector("#app") as unknown as { __vue_app__?: unknown } | null)?.__vue_app__),
+  );
+  await page.evaluate(async () => {
+    const app = (document.querySelector("#app") as unknown as {
+      __vue_app__: { config: { globalProperties: { $router?: { isReady(): Promise<void> } } } };
+    }).__vue_app__;
+    await app.config.globalProperties.$router?.isReady();
+    await document.fonts.ready;
+  });
+  await page.waitForFunction(
+    (settlingSelector) => {
+      const scope = window as unknown as { __bonesSignature?: string };
+      const settling = document.querySelectorAll(settlingSelector).length;
+      const animating = document
+        .getAnimations()
+        .filter(
+          (animation) =>
+            animation.playState === "running" &&
+            animation.effect?.getComputedTiming().endTime !== Infinity,
+        ).length;
+      const signature = Array.from(document.querySelectorAll("[data-bone]"), (element) => {
+        const rect = element.getBoundingClientRect();
+        return `${element.getAttribute("data-bone")}:${rect.width}x${rect.height}`;
+      }).join("|");
+      const previous = scope.__bonesSignature;
+      scope.__bonesSignature = signature;
+      return settling === 0 && animating === 0 && previous === signature;
+    },
+    SETTLING_SELECTOR,
+    { polling: "raf" },
+  );
+}
+
 const TEMP_INDEX_HTML = `<!doctype html>
 <html lang="en">
   <head><meta charset="UTF-8" /></head>
@@ -254,6 +408,21 @@ export async function ensureBonesFresh(): Promise<void> {
     const routes = [...new Set(staleGroups.map((g) => g.route))];
     try {
       const captured = await captureRoutes(routes);
+      // An empty capture means the app never rendered a bone anywhere (it did
+      // not mount, or every route stalled). It used to be written out as a
+      // successful capture with no geometry; it is a failure, so it goes to the
+      // handler below, which fails the build under BONES_REQUIRE_CAPTURE.
+      if (Object.keys(captured).length === 0) {
+        throw new Error(
+          `[bones] Capture measured no bones on any route (${routes.join(", ")}); the app rendered no capture group.`,
+        );
+      }
+      const unrendered = staleGroups.filter((group) => !captured[group.name]).map((group) => group.name);
+      if (unrendered.length > 0) {
+        console.warn(
+          `[bones] ${unrendered.length} capture group(s) rendered no bones on their route and keep their last or fallback geometry: ${unrendered.join(", ")}`,
+        );
+      }
       for (const [groupName, bones] of Object.entries(captured)) {
         result[groupName] = bones;
       }
@@ -358,6 +527,11 @@ async function captureRoutes(routes: string[]): Promise<Record<string, GroupBone
   process.env.VITE_SUPABASE_URL ||= "https://placeholder.supabase.co";
   process.env.VITE_SUPABASE_PUBLISHABLE_KEY ||= "placeholder";
 
+  // The app imports bones.generated.json, so without it main.ts never mounts
+  // and every route measures nothing. CI only had the file because Run Tests
+  // happens to seed it first; the capture should not depend on step order.
+  ensureBonesSeed();
+
   const previousIndexHtml = existsSync(INDEX_HTML_PATH)
     ? readFileSync(INDEX_HTML_PATH, "utf-8")
     : null;
@@ -377,12 +551,13 @@ async function captureRoutes(routes: string[]): Promise<Record<string, GroupBone
 
   const httpServer = createHttpServer(vite.middlewares);
   const port = await new Promise<number>((resolve) => {
-    httpServer.listen(0, "127.0.0.1", () => {
+    httpServer.listen(0, CAPTURE_HOST, () => {
       resolve((httpServer.address() as AddressInfo).port);
     });
   });
 
   const results: Record<string, GroupBones> = {};
+  const blocked = new Set<string>();
 
   try {
     const browser = await chromium.launch();
@@ -401,7 +576,7 @@ async function captureRoutes(routes: string[]): Promise<Record<string, GroupBone
         // A real navigation (from about:blank, a distinct origin state) for
         // each route guarantees main.ts and its singletons re-initialize
         // against that route's own query string.
-        const page = await browser.newPage();
+        const { context, page } = await openCapturePage(browser, blocked);
         try {
           // Force Blueprint mode off regardless of route/query combination.
           // A route requesting Showcase (below) would otherwise also force
@@ -416,14 +591,10 @@ async function captureRoutes(routes: string[]): Promise<Record<string, GroupBone
 
           for (const [bp, width] of Object.entries(BREAKPOINTS) as [Breakpoint, number][]) {
             await page.setViewportSize({ width, height: 900 });
-            await page.goto(`http://127.0.0.1:${port}/#${route}?${DEFAULT_QUERY}`, {
-              waitUntil: "networkidle",
+            await page.goto(`http://${CAPTURE_HOST}:${port}/#${route}?${DEFAULT_QUERY}`, {
+              waitUntil: "domcontentloaded",
             });
-            await page.waitForSelector("[data-bone]", { timeout: 10_000 }).catch(() => {
-              // No bones rendered for this route/breakpoint (e.g. empty
-              // synthetic dataset) - leave this pass's measurements empty
-              // rather than fail the whole build.
-            });
+            await waitForCaptureReady(page);
 
             const measurements = await page.$$eval("[data-bone]", (elements) =>
               elements.map((el) => {
@@ -468,11 +639,16 @@ async function captureRoutes(routes: string[]): Promise<Record<string, GroupBone
             }
           }
         } finally {
-          await page.close();
+          await context.close();
         }
       }
     } finally {
       await browser.close();
+      if (blocked.size > 0) {
+        console.log(
+          `[bones] Blocked ${blocked.size} external resource(s) during capture; synthetic mode still requests: ${[...blocked].sort().join(", ")}`,
+        );
+      }
     }
   } finally {
     await new Promise<void>((resolve) => httpServer.close(() => resolve()));
