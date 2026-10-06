@@ -16,6 +16,15 @@ LAST_AGED:   2026-10-05
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-06] PR #2103 [Stage 10]: Audited PWA and APK wrapper invariants: asset links, manifest parity, version code/name sync, release metadata, and security policy with zero mismatches found.
+**Domain:** apk | **Commit:** c4ca2293e | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2103)
+**Files:** .github/nightly-logs/10-apk-integrity-coverage.log, .github/nightly-logs/10-apk-integrity-pr-body.md
+**Why:** No recent PWA or APK wrapper modifications required wrapper changes; all packaging configurations remain strictly synchronized.
+**Change:** Audited PWA and APK wrapper invariants: asset links, manifest parity, version code/name sync, release metadata, and security policy with zero mismatches found.
+**Result:** pnpm audit:apk and pnpm apk:verify:source passed cleanly across all manifest, assetlinks, versioning, release metadata, and security policy checks.
+**Nudges:** 0
+
+
 ### [2026-10-06] PR #2102 [Stage 9]: Compliant -- (1) changed-files: 111, dep-viols: 0, knip: 3 view loaders, 1 type, 1 dup; (2) clean-streak: 5; (3) inspected: core/config, ghostBenchmarkState, GhostBenchmarkHost; (4) substrate compliant, hunt clean
 **Domain:** architecture | **Commit:** af643085a | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2102)
 **Files:** .github/nightly-logs/09-refactor-proposals-coverage.log, .github/nightly-logs/09-refactor-proposals-pr-body.md
