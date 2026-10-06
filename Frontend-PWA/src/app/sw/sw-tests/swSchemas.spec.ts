@@ -15,30 +15,39 @@ import * as v from "valibot";
 import {
   SwSupabaseRowSchema,
   SwSupabaseResponseSchema,
+  SwBlacklistResponseSchema,
   SwConfigSchema
 } from "../swSchemas";
 
 describe("swSchemas", () => {
   describe("SwSupabaseRowSchema", () => {
     it("should validate a correct row", () => {
-      const mockRowCandidate = { s: 80 };
+      const mockRowCandidate = { player_tag: "#ABC", s: 80 };
       expect(v.safeParse(SwSupabaseRowSchema, mockRowCandidate).success).toBe(true);
     });
 
     it("should fail for out of bounds score", () => {
-      expect(v.safeParse(SwSupabaseRowSchema, { s: -1 }).success).toBe(false);
-      expect(v.safeParse(SwSupabaseRowSchema, { s: 101 }).success).toBe(false);
+      expect(v.safeParse(SwSupabaseRowSchema, { player_tag: "#ABC", s: -1 }).success).toBe(false);
+      expect(v.safeParse(SwSupabaseRowSchema, { player_tag: "#ABC", s: 101 }).success).toBe(false);
     });
 
     it("should fail for invalid types", () => {
-      expect(v.safeParse(SwSupabaseRowSchema, { s: "80" }).success).toBe(false);
+      expect(v.safeParse(SwSupabaseRowSchema, { player_tag: "#ABC", s: "80" }).success).toBe(false);
       expect(v.safeParse(SwSupabaseRowSchema, {}).success).toBe(false);
+    });
+
+    it("should fail without the player tag the blacklist is matched on", () => {
+      expect(v.safeParse(SwSupabaseRowSchema, { s: 80 }).success).toBe(false);
     });
   });
 
   describe("SwSupabaseResponseSchema", () => {
     it("should validate a correct array of rows", () => {
-      const mockResponsePayload = [{ s: 0 }, { s: 100 }, { s: 50 }];
+      const mockResponsePayload = [
+        { player_tag: "#A", s: 0 },
+        { player_tag: "#B", s: 100 },
+        { player_tag: "#C", s: 50 },
+      ];
       expect(v.safeParse(SwSupabaseResponseSchema, mockResponsePayload).success).toBe(true);
     });
 
@@ -47,8 +56,20 @@ describe("swSchemas", () => {
     });
 
     it("should fail if any item is invalid", () => {
-      const invalidResponseCandidate = [{ s: 80 }, { s: 150 }];
+      const invalidResponseCandidate = [{ player_tag: "#A", s: 80 }, { player_tag: "#B", s: 150 }];
       expect(v.safeParse(SwSupabaseResponseSchema, invalidResponseCandidate).success).toBe(false);
+    });
+  });
+
+  describe("SwBlacklistResponseSchema", () => {
+    it("should validate blacklist rows and an empty blacklist", () => {
+      expect(v.safeParse(SwBlacklistResponseSchema, [{ player_tag: "#A" }]).success).toBe(true);
+      expect(v.safeParse(SwBlacklistResponseSchema, []).success).toBe(true);
+    });
+
+    it("should fail if any row is malformed", () => {
+      expect(v.safeParse(SwBlacklistResponseSchema, [{ player_tag: "#A" }, { player_tag: 7 }]).success).toBe(false);
+      expect(v.safeParse(SwBlacklistResponseSchema, null).success).toBe(false);
     });
   });
 

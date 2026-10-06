@@ -287,6 +287,25 @@ describe("useClashSync", () => {
       expect(data.value?.timestamp).toBe(4500);
     });
 
+    it("passes the last remote dataset's blacklist as the known blacklist", async () => {
+      data.value = { lb: [], hh: [], timestamp: 1000, dataSource: "SUPABASE", blacklist: ["#DISMISSED"] };
+      const sync = useClashSync(data);
+
+      await sync.refreshFromSupabase();
+
+      expect(vi.mocked(fetchRemote).mock.calls[0]?.[0]?.knownBlacklist).toEqual(["#DISMISSED"]);
+    });
+
+    it("treats the empty placeholder's blacklist as unknown, not as nothing dismissed", async () => {
+      data.value = { lb: [], hh: [], timestamp: 0, blacklist: [] };
+      const sync = useClashSync(data);
+
+      await sync.refreshFromSupabase();
+
+      expect(fetchRemote).toHaveBeenCalledTimes(1);
+      expect(vi.mocked(fetchRemote).mock.calls[0]?.[0]?.knownBlacklist).toBeUndefined();
+    });
+
     it("should surface foreground refresh failure even when cached data exists", async () => {
       vi.useFakeTimers();
       vi.mocked(fetchRemote).mockRejectedValue(new Error("Network Error"));

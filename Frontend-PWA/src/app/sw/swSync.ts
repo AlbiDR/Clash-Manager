@@ -3,8 +3,9 @@
 
 import { openDB, getValue } from "./swKernel";
 import { NOTIFICATION_TAG_RECRUIT, NOTIFICATION_SHORTCUT_ID } from "../../core/config";
+import { cleanTag } from "../../core/utils/text";
 import * as v from "valibot";
-import { SwSupabaseResponseSchema } from "./swSchemas";
+import { SwBlacklistResponseSchema, SwSupabaseResponseSchema } from "./swSchemas";
 
 /**
  * SW SYNC (Layer 4 Sub-module)
@@ -199,16 +200,29 @@ export async function handleBackgroundSync(): Promise<void> {
     // column naming. The snapshot, not the live view: this runs unattended in the
     // background and must not spend a second of server time per badge update.
     // [OPTIMIZATION] Set Cache-Control to no-cache to bypass local/WebView caches and guarantee fresh scores.
-    const apiResponse = await fetch(`${supabaseUrl}/rest/v1/headhunter_materialized?select=s:potential_score`, {
-      method: "GET",
-      headers: {
-        "apikey": supabaseKey,
-        "Accept-Profile": "features",
-        "Cache-Control": "no-cache"
-      },
-    });
+    // [DECISION LOG] THE SNAPSHOT FREEZES THE BLACKLIST FILTER: a recruit dismissed
+    // since the last pipeline refresh is still in the snapshot, so the live
+    // blacklist is read alongside it and those recruits are not counted. If the
+    // blacklist cannot be read, the badge is left as it was: counting dismissed
+    // recruits would announce players the operator already turned down.
+    const restHeaders = {
+      "apikey": supabaseKey,
+      "Accept-Profile": "features",
+      "Cache-Control": "no-cache"
+    };
+    const [apiResponse, blacklistResponse] = await Promise.all([
+      fetch(`${supabaseUrl}/rest/v1/headhunter_materialized?select=player_tag,s:potential_score`, {
+        method: "GET",
+        headers: restHeaders,
+      }),
+      fetch(`${supabaseUrl}/rest/v1/recruit_blacklist_view?select=player_tag`, {
+        method: "GET",
+        headers: restHeaders,
+      }),
+    ]);
 
     if (!apiResponse.ok) throw new Error(`HTTP ${apiResponse.status}`);
+    if (!blacklistResponse.ok) throw new Error(`Blacklist HTTP ${blacklistResponse.status}`);
 
     // [GUARD] VALIDATION BOUNDARY (Target C [1]).
     // [THREAT:] External API data is un-trusted. Replacing unsafe 'as' with strict validation.
@@ -220,8 +234,21 @@ export async function handleBackgroundSync(): Promise<void> {
       return;
     }
 
+    const rawBlacklistPayload: unknown = await blacklistResponse.json();
+    const blacklistValidation = v.safeParse(SwBlacklistResponseSchema, rawBlacklistPayload);
+
+    if (!blacklistValidation.success) {
+      console.error("[SW] Background sync: Malformed blacklist response", blacklistValidation.issues);
+      return;
+    }
+
+    const dismissedRecruitIds = new Set(
+      blacklistValidation.output.map((blacklistRow) => cleanTag(blacklistRow.player_tag)),
+    );
     const recruitSnapshots = recruitValidation.output;
-    const highPotentialCount = recruitSnapshots.filter((recruitSnapshot) => recruitSnapshot.s >= scoreThreshold).length;
+    const highPotentialCount = recruitSnapshots.filter((recruitSnapshot) =>
+      recruitSnapshot.s >= scoreThreshold && !dismissedRecruitIds.has(cleanTag(recruitSnapshot.player_tag)),
+    ).length;
 
     if (highPotentialCount > 0) {
       if (self.navigator.setAppBadge) {

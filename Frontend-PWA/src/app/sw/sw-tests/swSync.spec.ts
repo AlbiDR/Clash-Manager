@@ -120,6 +120,26 @@ describe("swSync", () => {
   describe("handleBackgroundSync", () => {
     const mockSupabaseUrl = "https://test.supabase.co";
     const mockSupabaseKey = "test-key";
+    const HEADHUNTER_SNAPSHOT_URL = `${mockSupabaseUrl}/rest/v1/headhunter_materialized?select=player_tag,s:potential_score`;
+    const BLACKLIST_URL = `${mockSupabaseUrl}/rest/v1/recruit_blacklist_view?select=player_tag`;
+
+    /** Answers the snapshot and blacklist reads by URL; both run in parallel. */
+    const mockSnapshotReads = (recruits: unknown, blacklist: unknown = []) => {
+      vi.mocked(fetch).mockImplementation(async (input) => ({
+        ok: true,
+        json: async () => (String(input) === HEADHUNTER_SNAPSHOT_URL ? recruits : blacklist),
+      }) as any);
+    };
+
+    const mockConfiguredSettings = () => {
+      vi.mocked(openDB).mockResolvedValue({} as any);
+      vi.mocked(getValue).mockImplementation(async (db, key) => {
+        if (key === "cm_notifications_enabled") return true;
+        if (key === "cm_supabase_url") return mockSupabaseUrl;
+        if (key === "cm_supabase_key") return mockSupabaseKey;
+        return null;
+      });
+    };
 
     it("should abort if notifications are disabled", async () => {
       vi.mocked(openDB).mockResolvedValue({} as any);
@@ -156,22 +176,26 @@ describe("swSync", () => {
         return null;
       });
 
-      vi.mocked(fetch).mockResolvedValue({
-        ok: true,
-        json: async () => [{ s: 85 }, { s: 70 }, { s: 90 }],
-      } as any);
+      mockSnapshotReads([
+        { player_tag: "#A", s: 85 },
+        { player_tag: "#B", s: 70 },
+        { player_tag: "#C", s: 90 },
+      ]);
 
       await handleBackgroundSync();
 
-      expect(fetch).toHaveBeenCalledWith(`${mockSupabaseUrl}/rest/v1/headhunter_materialized?select=s:potential_score`, expect.objectContaining({
+      const restHeaders = {
         headers: {
           "apikey": mockSupabaseKey,
           "Accept-Profile": "features",
           "Cache-Control": "no-cache",
         },
-      }));
+      };
+      expect(fetch).toHaveBeenCalledWith(HEADHUNTER_SNAPSHOT_URL, expect.objectContaining(restHeaders));
+      expect(fetch).toHaveBeenCalledWith(BLACKLIST_URL, expect.objectContaining(restHeaders));
 
-      expect(mockSetAppBadge).toHaveBeenCalledWith(2); // 85 and 90 >= 80
+      // An empty blacklist leaves the snapshot untouched: 85 and 90 >= 80.
+      expect(mockSetAppBadge).toHaveBeenCalledWith(2);
       expect(mockShowNotification).toHaveBeenCalledWith("New Recruits Available", expect.objectContaining({
         body: "You have 2 recruits above your threshold.",
       }));
@@ -186,10 +210,7 @@ describe("swSync", () => {
         return null; // No threshold
       });
 
-      vi.mocked(fetch).mockResolvedValue({
-        ok: true,
-        json: async () => [{ s: 76 }, { s: 74 }],
-      } as any);
+      mockSnapshotReads([{ player_tag: "#A", s: 76 }, { player_tag: "#B", s: 74 }]);
 
       await handleBackgroundSync();
 
@@ -205,10 +226,7 @@ describe("swSync", () => {
         return null;
       });
 
-      vi.mocked(fetch).mockResolvedValue({
-        ok: true,
-        json: async () => [{ s: 50 }],
-      } as any);
+      mockSnapshotReads([{ player_tag: "#A", s: 50 }]);
 
       const mockNotification = { close: vi.fn() };
       mockGetNotifications.mockResolvedValue([mockNotification]);
@@ -248,14 +266,58 @@ describe("swSync", () => {
         return null;
       });
 
-      vi.mocked(fetch).mockResolvedValue({
-        ok: true,
-        json: async () => [{ invalid: "data" }], // Fails SwSupabaseResponseSchema
-      } as any);
+      mockSnapshotReads([{ invalid: "data" }]); // Fails SwSupabaseResponseSchema
 
       await handleBackgroundSync();
 
       expect(console.error).toHaveBeenCalledWith("[SW] Background sync: Malformed API response", expect.any(Array));
+      expect(mockShowNotification).not.toHaveBeenCalled();
+    });
+
+    it("does not count recruits dismissed since the snapshot was taken", async () => {
+      mockConfiguredSettings();
+      mockSnapshotReads(
+        [
+          { player_tag: "#KEPT", s: 90 },
+          { player_tag: "#DISMISSED", s: 95 },
+          { player_tag: "#UNPREFIXED", s: 85 },
+        ],
+        // The blacklist view may return a tag without its '#'.
+        [{ player_tag: "#DISMISSED" }, { player_tag: "unprefixed" }],
+      );
+
+      await handleBackgroundSync();
+
+      expect(mockSetAppBadge).toHaveBeenCalledWith(1);
+      expect(mockShowNotification).toHaveBeenCalledWith("New Recruits Available", expect.objectContaining({
+        body: "You have 1 recruit above your threshold.",
+      }));
+    });
+
+    it("leaves the badge as it was when the blacklist cannot be read", async () => {
+      mockConfiguredSettings();
+      vi.mocked(fetch).mockImplementation(async (input) => (String(input) === HEADHUNTER_SNAPSHOT_URL
+        ? { ok: true, json: async () => [{ player_tag: "#A", s: 90 }] }
+        : { ok: false, status: 503 }) as any);
+
+      await handleBackgroundSync();
+
+      expect(console.error).toHaveBeenCalledWith("[SW] Background sync failed", expect.any(Error));
+      expect(mockSetAppBadge).not.toHaveBeenCalled();
+      expect(mockClearAppBadge).not.toHaveBeenCalled();
+      expect(mockShowNotification).not.toHaveBeenCalled();
+      expect(mockGetNotifications).not.toHaveBeenCalled();
+    });
+
+    it("leaves the badge as it was when the blacklist is malformed", async () => {
+      mockConfiguredSettings();
+      mockSnapshotReads([{ player_tag: "#A", s: 90 }], [{ player_tag: "#A" }, { tag: "#B" }]);
+
+      await handleBackgroundSync();
+
+      expect(console.error).toHaveBeenCalledWith("[SW] Background sync: Malformed blacklist response", expect.any(Array));
+      expect(mockSetAppBadge).not.toHaveBeenCalled();
+      expect(mockClearAppBadge).not.toHaveBeenCalled();
       expect(mockShowNotification).not.toHaveBeenCalled();
     });
   });

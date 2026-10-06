@@ -48,12 +48,15 @@ export function createEmptyWebAppData(): WebAppData {
  *
  * @param options - Transport parameters including force refresh flag.
  * @param options.force - If true, requests cache bypass at the Supabase transport layer.
+ * @param options.knownBlacklist - Blacklist of the last successful sync, used if this
+ *   sync's blacklist read fails.
  * @returns Unvalidated raw payload resolved from Supabase fetch.
  * @throws Error if network request fails or exceeds SYNC_REQUEST_TIMEOUT_MS.
  */
 export async function fetchRemoteWithTimeout(options: {
   force: boolean;
   signal?: AbortSignal;
+  knownBlacklist?: readonly string[];
 }): Promise<unknown> {
   const requestController = new AbortController();
   let timeoutId: ReturnType<typeof setTimeout> | undefined;
@@ -71,7 +74,11 @@ export async function fetchRemoteWithTimeout(options: {
     // [DECISION LOG] Race network fetch against a SYNC_REQUEST_TIMEOUT_MS timeout timer
     // and explicitly signal cancellation via AbortController on timeout trigger.
     return await Promise.race([
-      fetchRemote({ force: options.force, signal: requestController.signal }),
+      fetchRemote({
+        force: options.force,
+        signal: requestController.signal,
+        knownBlacklist: options.knownBlacklist,
+      }),
       new Promise<never>((_, reject) => {
         timeoutId = setTimeout(() => {
           const timeoutError = new Error("Sync timed out");

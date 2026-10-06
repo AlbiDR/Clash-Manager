@@ -335,9 +335,13 @@ export function useClashSync(data: Ref<WebAppData | null>) {
     const syncPromise = (async (): Promise<SyncAttemptResult> => {
       loading.value = true;
       try {
+        // Only a dataset that came from Supabase carries a blacklist the server
+        // reported; the empty placeholder's [] means unknown, not "none dismissed".
+        const knownBlacklist = data.value?.dataSource === "SUPABASE" ? data.value.blacklist : undefined;
         const remoteData = await fetchRemoteWithTimeout({
           force,
           signal: requestController.signal,
+          knownBlacklist,
         });
         const remoteDataValidation = v.safeParse(WebAppDataSchema, remoteData);
 

@@ -13,6 +13,7 @@ import type {
 import { SbRosterRowSchema } from "./MemberSchemas";
 import { SbHeadhunterRowSchema } from "./RecruitSchemas";
 import { mapSbRosterRow, mapSbHeadhunterRow } from "./DataMappers";
+import { cleanTag } from "../utils/text";
 import * as v from "valibot";
 
 export { NetworkError } from "./ApiErrors";
@@ -223,6 +224,51 @@ async function resolveOptionalQuery<T extends OptionalQueryResponse>(
   }
 }
 
+const BlacklistRowsSchema = v.array(v.object({
+  player_tag: v.string(),
+}));
+
+/**
+ * Resolves the tags of the recruits that must be withheld from the headhunter snapshot.
+ *
+ * @remarks
+ * [DECISION LOG] AN UNKNOWN BLACKLIST IS NOT AN EMPTY ONE
+ * Reading a failed or malformed blacklist as "nothing dismissed" re-lists every
+ * recruit dismissed since the snapshot was last refreshed. A partial list is no
+ * better, so one malformed row voids the whole read. The last known blacklist
+ * stands in when there is one; otherwise the sync fails and the cached dataset
+ * stays on screen.
+ *
+ * @param blacklistResponse - The blacklist read, or null if it timed out or failed.
+ * @param knownBlacklist - Blacklist committed by the last successful sync, if any.
+ * @returns Dismissed player tags, each prefixed with '#'.
+ * @throws Error if the read is unusable and no blacklist is known.
+ */
+function getDismissedTags(
+  blacklistResponse: OptionalQueryResponse | null,
+  knownBlacklist?: readonly string[],
+): string[] {
+  const blacklistValidation = blacklistResponse && !blacklistResponse.error
+    ? v.safeParse(BlacklistRowsSchema, blacklistResponse.data)
+    : null;
+
+  if (blacklistValidation?.success) {
+    return blacklistValidation.output
+      .map(({ player_tag: observedPlayerTag }) =>
+        observedPlayerTag ? (observedPlayerTag.startsWith("#") ? observedPlayerTag : `#${observedPlayerTag}`) : "",
+      )
+      .filter(Boolean);
+  }
+
+  const failureReason = blacklistResponse?.error?.message
+    ?? (blacklistResponse ? "malformed rows" : "no response");
+  if (knownBlacklist) {
+    console.warn(`[Sync] Recruit blacklist unavailable (${failureReason}); filtering with the last known blacklist.`);
+    return [...knownBlacklist];
+  }
+  throw new Error(`Recruit blacklist unavailable (${failureReason}); dismissed recruits cannot be withheld`);
+}
+
 /**
  * Retrieves an independently bounded health snapshot for Settings.
  *
@@ -402,6 +448,8 @@ export async function ping(options?: { signal?: AbortSignal; force?: boolean }):
  * freshness of committed roster rows.
  *
  * @param options - Fetch configuration including AbortSignal.
+ * @param options.knownBlacklist - Blacklist committed by the last successful sync;
+ *   stands in if this sync's blacklist read fails. Omit when no sync has succeeded.
  * @returns A Promise resolving to a fully populated WebAppData object.
  * @throws Error if any fetch fails or data validation fails.
  *
@@ -411,6 +459,7 @@ export async function ping(options?: { signal?: AbortSignal; force?: boolean }):
 export async function fetchRemote(options?: {
   signal?: AbortSignal;
   force?: boolean;
+  knownBlacklist?: readonly string[];
 }): Promise<WebAppData> {
   if (!isConfigured()) throw new Error("Supabase is not configured");
   
@@ -438,8 +487,9 @@ export async function fetchRemote(options?: {
   // [ADR] Direct View Access: Bypassing the minimal SW-oriented get_pwa_data RPC
   // to fetch high-fidelity datasets directly from the feature schema.
   // Roster and headhunter are the product payload and stay fail-closed. The
-  // heartbeat and blacklist are enrichment: a single slow optional projection
-  // must not make an otherwise complete refresh look offline.
+  // heartbeat is enrichment: a single slow optional projection must not make an
+  // otherwise complete refresh look offline. The blacklist is optional only
+  // while a last known copy exists (see below).
   // [DECISION LOG] SNAPSHOTS, NOT LIVE VIEWS: roster_view and headhunter_view
   // are computed on demand and cost about a second of server time per read,
   // which under load outran the server's 6 s read timeout and left a cold
@@ -447,6 +497,16 @@ export async function fetchRemote(options?: {
   // refreshed server-side when a pipeline run completes, so a read is an
   // indexed scan of a few hundred rows however busy the instance is. Order is
   // stated here because a snapshot has no storage order of its own.
+  // [DECISION LOG] THE SNAPSHOT FREEZES THE BLACKLIST FILTER: headhunter_view
+  // withholds blacklisted recruits, but its snapshot keeps whatever the view
+  // returned at the last pipeline refresh, so a recruit dismissed since then is
+  // still in it. The client withholds them using the live blacklist. That read
+  // is optional only while a last known blacklist can stand in for it; without
+  // one it gets the same transport budget as the snapshots.
+  // [FIX] SCHEMA REACHABILITY: was `drivers.recruit_blacklist`, which the Data API
+  // does not expose. `features.recruit_blacklist_view` also drops lapsed entries.
+  const fetchBlacklist = (blacklistSignal: AbortSignal) =>
+    supabase.schema('features').from('recruit_blacklist_view').select('player_tag').abortSignal(blacklistSignal);
   const rosterRequest =
     supabase.schema('features').from('roster_materialized').select('*')
       .order('raw_performance_score', { ascending: false, nullsFirst: false })
@@ -459,12 +519,9 @@ export async function fetchRemote(options?: {
   heartbeatRequest = resolveOptionalQuery("Pipeline heartbeat", signal, (optionalSignal) =>
     heartbeatQueryWithSingle.abortSignal(optionalSignal),
   ),
-  blacklistRequest = resolveOptionalQuery("Recruit blacklist", signal, (optionalSignal) =>
-    // [FIX] SCHEMA REACHABILITY: was `drivers.recruit_blacklist`, which the Data API
-    // does not expose; the warn-and-continue below meant the client-side blacklist was
-    // permanently empty. `features.recruit_blacklist_view` also drops lapsed entries.
-    supabase.schema('features').from('recruit_blacklist_view').select('player_tag').abortSignal(optionalSignal),
-  );
+  blacklistRequest = options?.knownBlacklist
+    ? resolveOptionalQuery("Recruit blacklist", signal, fetchBlacklist)
+    : fetchBlacklist(signal);
 
   const [rosterResponse, headhunterResponse, heartbeatResponse, blacklistResponse] = await Promise.all([
     rosterRequest,
@@ -475,10 +532,7 @@ export async function fetchRemote(options?: {
 
   if (rosterResponse.error) throw new Error(`Roster Fetch Error: ${rosterResponse.error.message}`);
   if (headhunterResponse.error) throw new Error(`Headhunter Fetch Error: ${headhunterResponse.error.message}`);
-  if (blacklistResponse?.error) {
-    console.warn("[Sync] Blacklist fetch failed; continuing with server-filtered recruits.", blacklistResponse.error.message);
-  }
-  
+
   // [GUARD] VALIDATION BOUNDARY: Harden external view data before domain mapping.
   // One malformed row must not discard every valid member or recruit, but a
   // wholly malformed payload is still rejected rather than certified as empty.
@@ -506,28 +560,13 @@ export async function fetchRemote(options?: {
     throw new Error("Headhunter validation failed for every row");
   }
 
-  const BlacklistRowSchema = v.object({
-    player_tag: v.string(),
-  });
-  const rawBlacklistData: unknown = blacklistResponse?.error ? [] : blacklistResponse?.data ?? [];
-  const blacklistData = Array.isArray(rawBlacklistData)
-    ? rawBlacklistData.flatMap((blacklistRow) => {
-      const validation = v.safeParse(BlacklistRowSchema, blacklistRow);
-      return validation.success ? [validation.output] : [];
-    })
-    : [];
-  if (blacklistResponse && !blacklistResponse.error && (!Array.isArray(rawBlacklistData) || blacklistData.length !== rawBlacklistData.length)) {
-    console.warn("[Sync] Ignored malformed optional blacklist data.");
-  }
-  const blacklistTags = blacklistData
-    .map((blacklistRow) => {
-      const observedPlayerTag = blacklistRow.player_tag;
-      return observedPlayerTag ? (observedPlayerTag.startsWith("#") ? observedPlayerTag : `#${observedPlayerTag}`) : "";
-    })
-    .filter(Boolean);
+  const blacklistTags = getDismissedTags(blacklistResponse, options?.knownBlacklist);
+  const dismissedRecruitIds = new Set(blacklistTags.map(cleanTag));
 
   const leaderboardMembers: LeaderboardMember[] = rosterData.map(mapSbRosterRow);
-  const headhunterRecruits: Recruit[] = headhunterData.map(mapSbHeadhunterRow);
+  const headhunterRecruits: Recruit[] = headhunterData
+    .map(mapSbHeadhunterRow)
+    .filter((recruit) => !dismissedRecruitIds.has(recruit.id));
   // SSOT: vars.PLAYER_TAG is injected by deploy-pwa.yml as VITE_PLAYER_TAG at build time.
   const playerTag: string = import.meta.env.VITE_PLAYER_TAG || "";
   
