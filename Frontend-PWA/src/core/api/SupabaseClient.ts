@@ -436,14 +436,26 @@ export async function fetchRemote(options?: {
     .single() as unknown as { abortSignal: (s: AbortSignal) => PromiseLike<{ data: { last_success_at: string | null } | null; error: { message: string } | null }> };
 
   // [ADR] Direct View Access: Bypassing the minimal SW-oriented get_pwa_data RPC
-  // to fetch high-fidelity datasets directly from the authoritative feature views.
+  // to fetch high-fidelity datasets directly from the feature schema.
   // Roster and headhunter are the product payload and stay fail-closed. The
   // heartbeat and blacklist are enrichment: a single slow optional projection
   // must not make an otherwise complete refresh look offline.
+  // [DECISION LOG] SNAPSHOTS, NOT LIVE VIEWS: roster_view and headhunter_view
+  // are computed on demand and cost about a second of server time per read,
+  // which under load outran the server's 6 s read timeout and left a cold
+  // start with nothing to show. The sync reads their materialized snapshots,
+  // refreshed server-side when a pipeline run completes, so a read is an
+  // indexed scan of a few hundred rows however busy the instance is. Order is
+  // stated here because a snapshot has no storage order of its own.
   const rosterRequest =
-    supabase.schema('features').from('roster_view').select('*').abortSignal(signal),
+    supabase.schema('features').from('roster_materialized').select('*')
+      .order('raw_performance_score', { ascending: false, nullsFirst: false })
+      .order('performance_score', { ascending: false, nullsFirst: false })
+      .abortSignal(signal),
   headhunterRequest =
-    supabase.schema('features').from('headhunter_view').select('*').limit(250).abortSignal(signal),
+    supabase.schema('features').from('headhunter_materialized').select('*')
+      .order('raw_potential_score', { ascending: false })
+      .limit(250).abortSignal(signal),
   heartbeatRequest = resolveOptionalQuery("Pipeline heartbeat", signal, (optionalSignal) =>
     heartbeatQueryWithSingle.abortSignal(optionalSignal),
   ),

@@ -163,7 +163,7 @@ describe("swSync", () => {
 
       await handleBackgroundSync();
 
-      expect(fetch).toHaveBeenCalledWith(`${mockSupabaseUrl}/rest/v1/headhunter_view?select=s:potential_score`, expect.objectContaining({
+      expect(fetch).toHaveBeenCalledWith(`${mockSupabaseUrl}/rest/v1/headhunter_materialized?select=s:potential_score`, expect.objectContaining({
         headers: {
           "apikey": mockSupabaseKey,
           "Accept-Profile": "features",

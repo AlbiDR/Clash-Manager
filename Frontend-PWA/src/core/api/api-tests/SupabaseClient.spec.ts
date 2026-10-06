@@ -17,6 +17,7 @@ import * as SupabaseClient from "../SupabaseClient";
 // Mock Supabase JS Client
 const mockFrom = {
   select: vi.fn(),
+  order: vi.fn(),
   limit: vi.fn(),
   eq: vi.fn(),
   single: vi.fn(),
@@ -25,7 +26,7 @@ const mockFrom = {
 };
 
 // Make them fluent and thenable
-[mockFrom.select, mockFrom.limit, mockFrom.eq, mockFrom.single, mockFrom.abortSignal, mockFrom.insert].forEach(m => {
+[mockFrom.select, mockFrom.order, mockFrom.limit, mockFrom.eq, mockFrom.single, mockFrom.abortSignal, mockFrom.insert].forEach(m => {
   m.mockImplementation(() => {
     return Object.assign(Promise.resolve({ data: null, error: null }), mockFrom);
   });

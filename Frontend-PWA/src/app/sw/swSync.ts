@@ -194,10 +194,12 @@ export async function handleBackgroundSync(): Promise<void> {
     if (!supabaseKeyValidation.success) return;
     const supabaseKey = supabaseKeyValidation.output;
 
-    // [DECISION LOG] Direct View Access: We query the view with aliasing (s:potential_score)
-    // to reduce payload size and decouple from internal database column naming.
+    // [DECISION LOG] Direct View Access: We query the headhunter snapshot with aliasing
+    // (s:potential_score) to reduce payload size and decouple from internal database
+    // column naming. The snapshot, not the live view: this runs unattended in the
+    // background and must not spend a second of server time per badge update.
     // [OPTIMIZATION] Set Cache-Control to no-cache to bypass local/WebView caches and guarantee fresh scores.
-    const apiResponse = await fetch(`${supabaseUrl}/rest/v1/headhunter_view?select=s:potential_score`, {
+    const apiResponse = await fetch(`${supabaseUrl}/rest/v1/headhunter_materialized?select=s:potential_score`, {
       method: "GET",
       headers: {
         "apikey": supabaseKey,
