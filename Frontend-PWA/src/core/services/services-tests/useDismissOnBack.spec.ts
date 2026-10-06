@@ -327,18 +327,55 @@ describe("useDismissOnBack", () => {
     });
   });
 
-  it("never stops its own pop when that pop changes the address", async () => {
-    // After a replace, removing the overlay's entry steps back to another address.
-    const popover = overlay();
-    await setOpen(popover, true);
-    updateRouteByReplace("/settings");
-    setLateListener();
-    const popped = waitForPops(1);
-    await setOpen(popover, false);
-    await popped;
-    expect(location.pathname).toBe("/roster");
-    expect(getRouteChanges()).toEqual([{ from: "/settings", to: "/roster" }]);
-    expect(lateSaw).toHaveBeenCalledTimes(1);
+  describe("closing by tap", () => {
+    it("pops its entry when the address is the one it opened on", async () => {
+      const popover = overlay();
+      await setOpen(popover, true);
+      // A replace that comes back to the opening address counts as the same page.
+      updateRouteByReplace("/settings");
+      updateRouteByReplace("/roster");
+      const back = vi.spyOn(history, "back");
+      const popped = waitForPops(1);
+      await setOpen(popover, false);
+      await popped;
+      expect(back).toHaveBeenCalledTimes(1);
+      expect(location.pathname).toBe("/roster");
+      expect(history.state[OVERLAY_ENTRY_KEY]).toBeUndefined();
+      expect(getRouteChanges()).toEqual([]);
+    });
+
+    it("drops its id instead of stepping back after a replace moved the page", async () => {
+      // The status popover stays open while the dock replaces the route, then a tap closes it.
+      const popover = overlay();
+      await setOpen(popover, true);
+      updateRouteByReplace("/laboratory");
+      const back = vi.spyOn(history, "back");
+      await setOpen(popover, false);
+
+      expect(await getPopsAfterSettling()).toBe(0);
+      expect(back).not.toHaveBeenCalled();
+      expect(location.pathname).toBe("/laboratory");
+      expect(history.state[OVERLAY_ENTRY_KEY]).toBeUndefined();
+      // The router's keys on the page's entry are kept.
+      expect(history.state).toMatchObject({ position: 0, current: "/laboratory" });
+      expect(routerPops).toEqual([]);
+    });
+
+    it("is not stepped over later if the router writes the dropped id back", async () => {
+      const popover = overlay();
+      await setOpen(popover, true);
+      const id = history.state[OVERLAY_ENTRY_KEY];
+      updateRouteByReplace("/laboratory");
+      await setOpen(popover, false);
+      // vue-router's push merges the state it remembers, which still holds the id.
+      history.replaceState({ ...(history.state as object), [OVERLAY_ENTRY_KEY]: id }, "");
+      updateRouteByPush("/settings");
+
+      await pressBack();
+      expect(location.pathname).toBe("/laboratory");
+      expect(getRouteChanges()).toEqual([{ from: "/settings", to: "/laboratory" }]);
+      expect(await getPopsAfterSettling()).toBe(1);
+    });
   });
 
   it("does not step over an entry carrying an id this page load never left behind", async () => {

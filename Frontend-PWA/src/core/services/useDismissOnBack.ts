@@ -21,7 +21,8 @@
  * Android shell steps the WebView back as soon as it can go back, which this
  * entry makes true. On popstate the module closes every overlay opened after
  * the entry Back returned to. An overlay closed any other way removes its own
- * entry with one history.back().
+ * entry with one history.back(), unless a replace navigation has moved that
+ * entry to another page; then it only drops its id from it (see release).
  *
  * The router sees every one of these pops. Window listeners run in the order
  * they were added, whatever their capture flag, and the router adds its
@@ -149,8 +150,20 @@ function release(id: number): void {
   const overlay = openOverlays[index];
   openOverlays.splice(index, 1);
   if (entryId(history.state) === id) {
-    pendingPops.push(location.href);
-    history.back();
+    if (location.href === overlay.href) {
+      pendingPops.push(location.href);
+      history.back();
+      return;
+    }
+    // A replace navigation rewrote this entry to another page while the
+    // overlay was open, keeping the id: it is that page's entry now. Stepping
+    // back would leave the page for the one the overlay opened on, so only
+    // the id is dropped. The router's own copy of the state still holds it
+    // and its next push writes it back; that is harmless, because only ids
+    // recorded in deadEntries are ever stepped over.
+    const state = { ...(history.state as Record<string, unknown>) };
+    delete state[OVERLAY_ENTRY_KEY];
+    history.replaceState(state, "");
     return;
   }
   // Only the newest entry can be removed. One left lower down (the overlay was
