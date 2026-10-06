@@ -11,10 +11,12 @@
  *  - show(el, content) correctly populates the state using the element's client rect.
  *  - hide() resets the active state back to null.
  *  - Multiple calls to useGhostBenchmarkState refer to the exact same shared reactive ref (module-level singleton).
+ *  - show(el, content, stepper) correctly populates the stepper and invokes the go handler.
+ *  - ignoreBackdropClick reactive ref defaults to false and can be toggled/shared across composable instances.
  */
 
-import { describe, it, expect, beforeEach } from "vitest";
-import { useGhostBenchmarkState } from "../ghostBenchmarkState";
+import { describe, it, expect, beforeEach, vi } from "vitest";
+import { useGhostBenchmarkState, type GhostBenchmarkStepper } from "../ghostBenchmarkState";
 import type { BenchmarkData } from "../../../core";
 
 const BENCHMARK: BenchmarkData = {
@@ -48,8 +50,9 @@ function makeAnchorEl(rect: DOMRect = FAKE_RECT): HTMLElement {
 
 describe("ghostBenchmarkState directive state module", () => {
   beforeEach(() => {
-    const { hide } = useGhostBenchmarkState();
+    const { hide, ignoreBackdropClick } = useGhostBenchmarkState();
     hide();
+    ignoreBackdropClick.value = false;
   });
 
   it("should initialize active.value as null", () => {
@@ -66,6 +69,7 @@ describe("ghostBenchmarkState directive state module", () => {
     expect(active.value).not.toBeNull();
     expect(active.value?.content).toEqual(BENCHMARK);
     expect(active.value?.anchorRect).toEqual(FAKE_RECT);
+    expect(active.value?.stepper).toBeNull();
   });
 
   it("should support string content on show", () => {
@@ -78,6 +82,44 @@ describe("ghostBenchmarkState directive state module", () => {
     expect(active.value).not.toBeNull();
     expect(active.value?.content).toBe(stringContent);
     expect(active.value?.anchorRect).toEqual(FAKE_RECT);
+  });
+
+  it("should store stepper parameter and permit series navigation on show", () => {
+    const { active, show } = useGhostBenchmarkState();
+    const el = makeAnchorEl();
+    const goSpy = vi.fn();
+    const stepper: GhostBenchmarkStepper = {
+      position: 2,
+      total: 5,
+      go: goSpy,
+    };
+
+    show(el, BENCHMARK, stepper);
+
+    expect(active.value).not.toBeNull();
+    expect(active.value?.stepper).toBeDefined();
+    expect(active.value?.stepper?.position).toBe(2);
+    expect(active.value?.stepper?.total).toBe(5);
+
+    active.value?.stepper?.go(1);
+    expect(goSpy).toHaveBeenCalledWith(1);
+
+    active.value?.stepper?.go(-1);
+    expect(goSpy).toHaveBeenCalledWith(-1);
+  });
+
+  it("should manage ignoreBackdropClick flag reactively across composable instances", () => {
+    const instanceA = useGhostBenchmarkState();
+    const instanceB = useGhostBenchmarkState();
+
+    expect(instanceA.ignoreBackdropClick.value).toBe(false);
+    expect(instanceB.ignoreBackdropClick.value).toBe(false);
+
+    instanceA.ignoreBackdropClick.value = true;
+    expect(instanceB.ignoreBackdropClick.value).toBe(true);
+
+    instanceB.ignoreBackdropClick.value = false;
+    expect(instanceA.ignoreBackdropClick.value).toBe(false);
   });
 
   it("should set active.value back to null on hide", () => {
