@@ -2,6 +2,7 @@
 <!-- Copyright (C) 2026 AlbiDR -->
 <script setup lang="ts" generic="T extends string | number">
 import { computed, ref, useId, useTemplateRef, onMounted, onUnmounted } from "vue";
+import { useDismissOnBack } from "@core";
 import { vTactile } from "../directives/vTactile";
 import Icon from "./Icon.vue";
 
@@ -116,6 +117,8 @@ function closeDropdown(): void {
   activeIndex.value = -1;
   triggerRef.value?.focus();
 }
+
+useDismissOnBack(isOpen, closeDropdown);
 
 const toggleDropdown = () => {
   if (isOpen.value) closeDropdown();

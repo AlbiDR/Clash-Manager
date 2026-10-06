@@ -4,7 +4,7 @@
 <script setup lang="ts">
 /* eslint-disable vue/no-v-html -- formatHeaderDescription escapes raw input before emitting a fixed markup vocabulary. */
 import { watch } from "vue";
-import { formatHeaderDescription } from "@core";
+import { formatHeaderDescription, useDismissOnBack } from "@core";
 import { vTactile } from "../directives/vTactile";
 import Icon from "./Icon.vue";
 
@@ -39,6 +39,8 @@ const emit = defineEmits<{
   /** Dispatched when the user clicks the close icon or outside the modal bounds. */
   close: [];
 }>();
+
+useDismissOnBack(() => props.show, () => emit("close"));
 
 // Lock scroll when overlay is open to enforce focus containment
 watch(

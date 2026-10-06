@@ -6,6 +6,7 @@ import { useGhostBenchmarkState } from "../directives/ghostBenchmarkState";
 import { usePointerCapability } from "../composables/usePointerCapability";
 import BenchmarkContent from "./BenchmarkContent.vue";
 import Icon from "./Icon.vue";
+import { useDismissOnBack } from "@core";
 
 /**
  * [UI] GHOST BENCHMARK HOST
@@ -21,6 +22,8 @@ import Icon from "./Icon.vue";
 const { active, hide, ignoreBackdropClick } = useGhostBenchmarkState();
 const { isCoarsePointer } = usePointerCapability();
 const isScore = computed(() => typeof active.value?.content === "object" && "kind" in active.value.content);
+// Only the score explanation is a modal surface; a plain benchmark tooltip is not.
+useDismissOnBack(isScore, hide);
 const scoreExpanded = ref(false);
 const scoreKey = computed(() => {
   const content = active.value?.content;

@@ -3,7 +3,7 @@
 
 <script setup lang="ts">
 import { nextTick, ref, useId, watch } from "vue";
-import { useConfirm } from "@core";
+import { useConfirm, useDismissOnBack } from "@core";
 import { vTactile } from "../directives/vTactile";
 
 /**
@@ -20,6 +20,8 @@ import { vTactile } from "../directives/vTactile";
  * - Satisfaction: Satisfies ADR Section III: Visual Purity.
  */
 const { active, resolve } = useConfirm();
+
+useDismissOnBack(() => active.value !== null, () => resolve(false));
 
 const titleId = useId();
 const messageId = useId();
