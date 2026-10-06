@@ -3,6 +3,10 @@
 import { resetApiState, useApiState } from "../useApiState";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { isConfigured, ping, getApiUrl } from "../SupabaseClient";
+import { SUPABASE_READ_BACKOFF_BASE_MS } from "../SupabaseTransport";
+
+/** Upper bound of a handshake retry's jittered wait. */
+const getRetryWindowMs = (retryIndex: number) => SUPABASE_READ_BACKOFF_BASE_MS * 2 ** retryIndex;
 
 // Mock SupabaseClient directly using deep import path to avoid singleton/barrel issues
 vi.mock("../SupabaseClient", () => ({
@@ -24,11 +28,14 @@ describe("useApiState", () => {
     vi.mocked(ping).mockResolvedValue({ status: "success", version: "1.0", modules: {} });
     vi.mocked(getApiUrl).mockReturnValue("https://mock-supabase-url.com");
     vi.stubGlobal("navigator", { onLine: true });
+    // Pin every jittered wait just under the top of its window.
+    vi.spyOn(Math, "random").mockReturnValue(1 - Number.EPSILON);
   });
 
   afterEach(() => {
     vi.useRealTimers();
     vi.unstubAllGlobals();
+    vi.restoreAllMocks();
   });
 
   it("sets status to online when ping succeeds with status 'success'", async () => {
@@ -97,27 +104,44 @@ describe("useApiState", () => {
     await checkApiStatus();
     expect(apiStatus.value).toBe("stale");
 
-    // Advance for retry #1 (2s delay)
-    // Fail 2
-    await vi.advanceTimersByTimeAsync(2100);
-    expect(apiStatus.value).toBe("stale");
+    // Retries 1-3 wait doubling jittered windows and fail again (Fails 2-4).
+    for (const retryIndex of [0, 1, 2]) {
+      await vi.advanceTimersByTimeAsync(getRetryWindowMs(retryIndex));
+      expect(apiStatus.value).toBe("stale");
+      expect(ping).toHaveBeenCalledTimes(retryIndex + 2);
+    }
 
-    // Advance for retry #2 (4s delay)
-    // Fail 3
-    await vi.advanceTimersByTimeAsync(4100);
-    expect(apiStatus.value).toBe("stale");
-
-    // Advance for retry #3 (6s delay)
-    // Fail 4
-    await vi.advanceTimersByTimeAsync(6100);
-    expect(apiStatus.value).toBe("stale");
-
-    // Advance for retry #4 (8s delay)
-    // Fail 5 -> Should hit threshold (>=5 failures)
-    await vi.advanceTimersByTimeAsync(8100);
-    
-    // After Fail 5, it finally gives up and goes 'offline'
+    // Fail 5 hits the threshold: it gives up and goes 'offline'.
+    await vi.advanceTimersByTimeAsync(getRetryWindowMs(3));
     expect(apiStatus.value).toBe("offline");
+    expect(ping).toHaveBeenCalledTimes(5);
+  });
+
+  it.each([503, 546])("reports offline without retrying when the edge function answers %i", async (httpStatus) => {
+    vi.mocked(ping).mockResolvedValue({ status: "error", message: "Edge Function overloaded", httpStatus });
+    const { apiStatus, checkApiStatus } = useApiState();
+
+    await checkApiStatus();
+    expect(apiStatus.value).toBe("offline");
+
+    await vi.advanceTimersByTimeAsync(getRetryWindowMs(3));
+    expect(ping).toHaveBeenCalledTimes(1);
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it("still retries an edge function error that is not an overload", async () => {
+    const INTERNAL_ERROR = 500;
+    vi.mocked(ping)
+      .mockResolvedValueOnce({ status: "error", message: "Internal error", httpStatus: INTERNAL_ERROR })
+      .mockResolvedValueOnce({ status: "success", version: "1.0" });
+    const { apiStatus, checkApiStatus } = useApiState();
+
+    await checkApiStatus();
+    expect(apiStatus.value).toBe("stale");
+
+    await vi.advanceTimersByTimeAsync(getRetryWindowMs(0));
+    expect(ping).toHaveBeenCalledTimes(2);
+    expect(apiStatus.value).toBe("online");
   });
 
   it("sets status to unconfigured when isConfigured returns false", async () => {

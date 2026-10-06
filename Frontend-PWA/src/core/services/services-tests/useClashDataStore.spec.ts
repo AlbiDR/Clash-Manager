@@ -229,16 +229,19 @@ describe("useClashDataStore", () => {
       store.data = { lb: [], hh: [], timestamp: Date.now(), blacklist: [] }; // Mock existing data
       vi.mocked(fetchRemote).mockRejectedValue(new Error("Transient Error"));
 
+      // The poll backs off between failures, so they land on polls 1, 3 and 7.
       // 1st failure
       await store.startBackgroundSync();
       expect(store.syncError).toBeNull(); // Tolerated
 
-      // 2nd failure
-      await store.startBackgroundSync();
+      // 2nd failure, after one deferred poll
+      for (let poll = 2; poll <= 3; poll++) await store.startBackgroundSync();
+      expect(fetchRemote).toHaveBeenCalledTimes(2);
       expect(store.syncError).toBeNull(); // Tolerated
 
-      // 3rd failure
-      await store.startBackgroundSync();
+      // 3rd failure, after three deferred polls
+      for (let poll = 4; poll <= 7; poll++) await store.startBackgroundSync();
+      expect(fetchRemote).toHaveBeenCalledTimes(3);
       expect(store.syncError).toBe("The clan data could not be refreshed"); // Surfaced
     });
 
@@ -250,13 +253,16 @@ describe("useClashDataStore", () => {
       // 1st failure
       await store.startBackgroundSync();
       
-      // Success
+      // Success, on the poll after the one the backoff defers
       vi.mocked(fetchRemote).mockResolvedValue({ lb: [], hh: [], timestamp: Date.now(), blacklist: [] });
       await store.startBackgroundSync();
-      
-      // Another failure (should be considered the new 1st failure)
+      await store.startBackgroundSync();
+      expect(fetchRemote).toHaveBeenCalledTimes(2);
+
+      // Another failure (should be considered the new 1st failure), on the very next poll
       vi.mocked(fetchRemote).mockRejectedValue(new Error("Error 2"));
       await store.startBackgroundSync();
+      expect(fetchRemote).toHaveBeenCalledTimes(3);
       
       expect(store.syncError).toBeNull(); // Still tolerated because counter was reset
     });

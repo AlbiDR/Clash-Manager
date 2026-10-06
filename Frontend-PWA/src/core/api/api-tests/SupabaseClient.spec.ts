@@ -219,6 +219,32 @@ describe("SupabaseClient", () => {
       expect(result).toEqual({ status: 'error', message: 'Function Error' });
     });
 
+    it("ping reports the HTTP status of an edge function error", async () => {
+      const WORKER_LIMIT = 546;
+      vi.mocked(mockClient.functions.invoke).mockResolvedValue({
+        data: null,
+        error: Object.assign(new Error("Edge Function returned a non-2xx status code"), {
+          context: new Response(null, { status: WORKER_LIMIT }),
+        }),
+      });
+
+      const result = await SupabaseClient.ping();
+
+      expect(result).toEqual(expect.objectContaining({ status: "error", httpStatus: WORKER_LIMIT }));
+    });
+
+    it("ping reports no HTTP status when the edge function never answered", async () => {
+      vi.mocked(mockClient.functions.invoke).mockResolvedValue({
+        data: null,
+        error: Object.assign(new Error("Failed to send a request to the Edge Function"), { context: new TypeError("Failed to fetch") }),
+      });
+
+      const result = await SupabaseClient.ping();
+
+      expect(result.status).toBe("error");
+      expect(result.httpStatus).toBeUndefined();
+    });
+
     it("ping catches and returns exceptions", async () => {
       vi.mocked(mockClient.functions.invoke).mockRejectedValue(new Error("Unexpected Crash"));
 

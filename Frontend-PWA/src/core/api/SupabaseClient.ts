@@ -398,13 +398,27 @@ export async function fetchResourcePressure(): Promise<ResourcePressureWarning |
   }
 }
 
+/** A handshake result, carrying the edge function's HTTP status when it answered with an error. */
+export type PingResult = PingResponse & { httpStatus?: number };
+
+/**
+ * Reads the HTTP status of an edge function's error answer.
+ *
+ * @param functionError - The error returned by `functions.invoke`.
+ * @returns The status, or undefined when the function never answered (network or relay failure).
+ */
+function getEdgeFunctionStatus(functionError: unknown): number | undefined {
+  const errorContext: unknown = (functionError as { context?: unknown } | null)?.context;
+  return errorContext instanceof Response ? errorContext.status : undefined;
+}
+
 /**
  * Performs a connectivity handshake with the Supabase backend.
  *
  * @param options - Optional configuration including AbortSignal.
- * @returns A PingResponse indicating success or error.
+ * @returns A PingResult indicating success or error.
  */
-export async function ping(options?: { signal?: AbortSignal; force?: boolean }): Promise<PingResponse> {
+export async function ping(options?: { signal?: AbortSignal; force?: boolean }): Promise<PingResult> {
   try {
     const supabase = createSupabaseClient();
     // [DECISION LOG] Invokes the `ping` Edge Function rather than the `features.ping()`
@@ -426,7 +440,7 @@ export async function ping(options?: { signal?: AbortSignal; force?: boolean }):
       headers: { Authorization: `Bearer ${getSupabaseKey()}` },
       ...(options?.signal ? { signal: options.signal } : {}),
     });
-    if (pingError) return { status: 'error', message: pingError.message };
+    if (pingError) return { status: 'error', message: pingError.message, httpStatus: getEdgeFunctionStatus(pingError) };
     return { status: 'success', message: 'Pong', version: data?.version };
   } catch (pingHandshakeError) {
     return { status: 'error', message: String(pingHandshakeError) };

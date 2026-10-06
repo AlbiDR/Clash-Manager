@@ -19,6 +19,10 @@ import { fetchRemote, lastSyncStatus } from "../../api/SupabaseClient";
 import { loadCache, saveCache } from "../StorageService";
 import { generateMockData } from "../../utils/mockData";
 import type { WebAppData } from "../../types";
+import { FOREGROUND_POLL_INTERVAL, SOURCE_STALENESS_THRESHOLD } from "../../config";
+
+/** A roster member that passes WebAppDataSchema. */
+const CACHED_MEMBER = { id: "TAG1", n: "Old Name", t: 0, performanceScore: 0, performanceRawScore: 0, d: { role: "member", days: 0, avg: 0, hist: "", winRate: 0 } };
 
 // Mock dependencies
 const mockConnectionStatus = {
@@ -296,6 +300,30 @@ describe("useClashSync", () => {
       expect(vi.mocked(fetchRemote).mock.calls[0]?.[0]?.knownBlacklist).toEqual(["#DISMISSED"]);
     });
 
+    it("treats an empty roster over a populated cache as a failed sync", async () => {
+      const cachedDataset: WebAppData = { lb: [CACHED_MEMBER] as any, hh: [], timestamp: 1000, dataSource: "SUPABASE", blacklist: [] };
+      data.value = cachedDataset;
+      vi.mocked(fetchRemote).mockResolvedValue({ lb: [], hh: [], timestamp: 2000, dataSource: "SUPABASE", blacklist: [] });
+      const sync = useClashSync(data);
+
+      await sync.refreshFromSupabase();
+
+      expect(data.value).toEqual(cachedDataset);
+      expect(saveCache).not.toHaveBeenCalled();
+      expect(lastSyncStatus.value).toBe("VALIDATION");
+      expect(sync.syncError.value).not.toBeNull();
+    });
+
+    it("commits an empty roster when there is no cached roster to lose", async () => {
+      vi.mocked(fetchRemote).mockResolvedValue({ lb: [], hh: [], timestamp: 2000, dataSource: "SUPABASE", blacklist: [] });
+      const sync = useClashSync(data);
+
+      await sync.refreshFromSupabase();
+
+      expect(data.value?.timestamp).toBe(2000);
+      expect(lastSyncStatus.value).toBe("SUCCESS");
+    });
+
     it("treats the empty placeholder's blacklist as unknown, not as nothing dismissed", async () => {
       data.value = { lb: [], hh: [], timestamp: 0, blacklist: [] };
       const sync = useClashSync(data);
@@ -513,16 +541,22 @@ describe("useClashSync", () => {
       const sync = useClashSync(data);
       data.value = { lb: [], hh: [], timestamp: 100, blacklist: [] };
 
+      // The poll backs off between strikes, so they land on polls 1, 3 and 7.
       // Strike 1
       await sync.startBackgroundSync();
       expect(sync.syncError.value).toBeNull();
 
-      // Strike 2
+      // Poll 2 is deferred; strike 2
       await sync.startBackgroundSync();
+      await sync.startBackgroundSync();
+      expect(fetchRemote).toHaveBeenCalledTimes(2);
       expect(sync.syncError.value).toBeNull();
 
-      // Strike 3
+      // Polls 4-6 are deferred; strike 3
+      for (let deferredPoll = 4; deferredPoll <= 6; deferredPoll++) await sync.startBackgroundSync();
+      expect(sync.syncError.value).toBeNull();
       await sync.startBackgroundSync();
+      expect(fetchRemote).toHaveBeenCalledTimes(3);
       expect(sync.syncError.value).toBe("The clan data could not be refreshed");
     });
 
@@ -704,6 +738,56 @@ describe("useClashSync", () => {
       vi.mocked(fetchRemote).mockResolvedValue({ lb: [], hh: [], timestamp: 3000, blacklist: [] });
       await sync.refreshFromSupabase();
       expect(sync.syncError.value).toBe(null);
+    });
+  });
+
+  describe("foreground poll backoff", () => {
+    /** Background requests one attempt may stand for at most, from the existing config. */
+    const SPAN_LIMIT = Math.floor(SOURCE_STALENESS_THRESHOLD / FOREGROUND_POLL_INTERVAL);
+
+    /** Fires `polls` background syncs and returns the 1-based polls that reached the server. */
+    async function getAttemptedPolls(sync: ReturnType<typeof useClashSync>, polls: number, firstPoll = 1) {
+      const attemptedPolls: number[] = [];
+      for (let poll = firstPoll; poll < firstPoll + polls; poll++) {
+        const requestsBefore = vi.mocked(fetchRemote).mock.calls.length;
+        await sync.startBackgroundSync();
+        if (vi.mocked(fetchRemote).mock.calls.length > requestsBefore) attemptedPolls.push(poll);
+      }
+      return attemptedPolls;
+    }
+
+    it("doubles the polls between attempts after each consecutive failure, up to the staleness window", async () => {
+      vi.mocked(fetchRemote).mockRejectedValue(new Error("Sync timed out"));
+      const sync = useClashSync(data);
+      const lastDoublingPoll = 15;
+
+      const attemptedPolls = await getAttemptedPolls(sync, lastDoublingPoll + 2 * SPAN_LIMIT);
+
+      expect(attemptedPolls).toEqual([1, 3, 7, lastDoublingPoll, lastDoublingPoll + SPAN_LIMIT, lastDoublingPoll + 2 * SPAN_LIMIT]);
+      // Requests issued over those polls, against one per poll before the backoff.
+      expect(fetchRemote).toHaveBeenCalledTimes(6);
+    });
+
+    it("returns to every poll on the first success", async () => {
+      vi.mocked(fetchRemote).mockRejectedValue(new Error("Sync timed out"));
+      const sync = useClashSync(data);
+      expect(await getAttemptedPolls(sync, 3)).toEqual([1, 3]);
+
+      vi.mocked(fetchRemote).mockResolvedValue({ lb: [], hh: [], timestamp: 5000, blacklist: [] });
+      const nextPolls = await getAttemptedPolls(sync, 7, 4);
+
+      // Two failures span four polls: poll 7 succeeds, then every poll syncs again.
+      expect(nextPolls).toEqual([7, 8, 9, 10]);
+    });
+
+    it("never defers a manual refresh", async () => {
+      vi.mocked(fetchRemote).mockRejectedValue(new Error("Sync timed out"));
+      const sync = useClashSync(data);
+      await sync.startBackgroundSync();
+
+      await sync.refreshFromSupabase();
+
+      expect(fetchRemote).toHaveBeenCalledTimes(2);
     });
   });
 });

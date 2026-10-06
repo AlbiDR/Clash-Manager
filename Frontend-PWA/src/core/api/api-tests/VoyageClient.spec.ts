@@ -164,10 +164,9 @@ describe("VoyageClient", () => {
       expect(result).toBeNull();
     });
 
-    it("fetchVoyageSummary returns null on Supabase error", async () => {
+    it("fetchVoyageSummary throws on Supabase error rather than report no voyage", async () => {
       vi.mocked(mockFrom.maybeSingle).mockResolvedValue({ data: null, error: { message: "Fetch Error" } as any });
-      const result = await VoyageClient.fetchVoyageSummary();
-      expect(result).toBeNull();
+      await expect(VoyageClient.fetchVoyageSummary()).rejects.toThrow("Fetch Error");
     });
 
     it("fetchVoyageSummary throws on malformed data", async () => {
@@ -190,10 +189,9 @@ describe("VoyageClient", () => {
       expect(result).toEqual([]);
     });
 
-    it("fetchVoyageContributions returns empty array on Supabase error", async () => {
+    it("fetchVoyageContributions throws on Supabase error rather than report no contributions", async () => {
       vi.mocked(mockFrom.select).mockResolvedValue({ data: null, error: { message: "Fetch Error" } as any });
-      const result = await VoyageClient.fetchVoyageContributions();
-      expect(result).toEqual([]);
+      await expect(VoyageClient.fetchVoyageContributions()).rejects.toThrow("Fetch Error");
     });
 
     it("fetchVoyageContributions throws on malformed data array", async () => {
