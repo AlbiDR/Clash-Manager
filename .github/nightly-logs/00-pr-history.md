@@ -16,6 +16,15 @@ LAST_AGED:   2026-10-05
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-06] PR #2099 [Stage 6]: docs(tsdoc): harden useGhostBenchmarkState interface contracts and inline logic annotations
+**Domain:** documentation | **Commit:** 848926fd7 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2099)
+**Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, .github/nightly-logs/06-documentation-tsdoc-pr-body.md, Frontend-PWA/src/shared/directives/ghostBenchmarkState.ts
+**Why:** Documented interface contracts, stepper mechanics, backdrop click suppression threat vector, and reactive state behavior in ghostBenchmarkState.ts
+**Change:** docs(tsdoc): harden useGhostBenchmarkState interface contracts and inline logic annotations
+**Result:** PASSED (vue-tsc type-check and Vitest unit tests passed)
+**Nudges:** 0
+
+
 ### [2026-10-06] PR #2098 [Stage 5]: docs(readme): Reconcile core/api and shared/ui READMEs with ScoreSchemas and ScoreCompositionPanel
 **Domain:** documentation | **Commit:** 7c88eaef1 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2098)
 **Files:** .github/nightly-logs/05-documentation-readme-coverage.log, .github/nightly-logs/05-documentation-readme-pr-body.md, Frontend-PWA/src/core/api/README.md, Frontend-PWA/src/shared/ui/README.md
