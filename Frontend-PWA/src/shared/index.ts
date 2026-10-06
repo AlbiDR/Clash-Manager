@@ -38,7 +38,6 @@ export { default as ConsoleLayout } from "./ui/ConsoleLayout.vue";
 export { default as ConsoleList } from "./ui/ConsoleList.vue";
 export { default as FloatingDock } from "./ui/FloatingDock.vue";
 export { default as AppFooter } from "./ui/AppFooter.vue";
-export { default as HeaderInfoOverlay } from "./ui/HeaderInfoOverlay.vue";
 export { default as DurationInput } from "./ui/DurationInput.vue";
 export { default as AnimatedDigits } from "./ui/AnimatedDigits.vue";
 export { default as BaseSegmentedControl } from "./ui/BaseSegmentedControl.vue";

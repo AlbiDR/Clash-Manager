@@ -1,6 +1,6 @@
 {
   "name": "clash-manager-monorepo",
-  "version": "14.51.0",
+  "version": "14.51.5",
   "license": "GPL-3.0-only",
   "private": true,
   "scripts": {
@@ -36,8 +36,10 @@
     "test:apk-performance": "node --test .github/scripts/android/audit-apk-performance.test.mjs",
     "test:apk-release": "node --test .github/scripts/android/apk-release-invariants.test.mjs",
     "audit:apk-ux": "node .github/scripts/android/audit-apk-ux.mjs",
+    "audit:dead-components": "node .github/scripts/project/audit-dead-components.mjs",
     "test:migration-audit": "node --test .github/scripts/database/sql-lexer.test.mjs .github/scripts/database/audit-db-drift.test.mjs .github/scripts/database/baseline-rules.test.mjs .github/scripts/database/audit-migrations.test.mjs .github/scripts/database/fold-state.test.mjs",
     "test:apk-ux-audit": "node --test .github/scripts/android/audit-apk-ux.test.mjs",
+    "test:dead-components": "node --test .github/scripts/project/audit-dead-components.test.mjs",
     "test:database-baseline": "bash .github/scripts/database/test-database-baseline.sh",
     "test:database-baseline:nodocker": "bash .github/scripts/database/baseline-no-docker.sh",
     "test:sync-branches": "node --test .github/scripts/nightly/sync-branches-invariants.test.mjs",
@@ -135,7 +137,7 @@
       "dependency-cruiser": "^18.5.0",
       "jsdom": "^30.1.1",
       "knip": "^6.39.0",
-      "simple-git-hooks": "^2.13.1",
+      "simple-git-hooks": "^2.14.0",
       "supabase": "^2.119.0",
       "pinia": "^3.0.4",
       "rollup-plugin-visualizer": "^7.0.1",

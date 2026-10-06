@@ -7,7 +7,7 @@ import {
   RATE_LIMIT_IP_MAX_REQUESTS,
   RATE_LIMIT_IP_WINDOW_MS,
 } from "../_shared/config.ts";
-import { supabase, CONFIG } from "./client.ts";
+import { CONFIG } from "./client.ts";
 
 /**
  * Edge Function: ping
@@ -25,16 +25,22 @@ import { supabase, CONFIG } from "./client.ts";
  * [SECURITY] Accepts only the anon key as bearer credential: unlike the other
  * anon-reachable functions, there is no privileged `INTERNAL_BEARER_TOKEN` path here,
  * since a version probe carries no sensitive data and needs no cron-triggered caller.
- * The probe still creates telemetry and heartbeat writes, so its public credential is
- * volume-bounded just like the data-bearing public functions. Its CORS contract remains
- * deliberately permissive because the response is public health metadata only.
+ * Its public credential is still volume-bounded, because every probe costs an edge
+ * invocation. Its CORS contract remains deliberately permissive because the response
+ * is public health metadata only.
+ * [DECISION LOG] NO DATABASE: `supabase: null` makes the probe write nothing. It used to
+ * insert a telemetry row and two heartbeats on every app start, which nothing reads (the
+ * app reads only `version`; every heartbeat reader filters on another component). Worse,
+ * a slow database turned the failed telemetry insert into a 503, so the app reported the
+ * backend down and retried, adding writes to the database that was already struggling.
+ * Database health is answered by the sync itself, not by this probe.
  */
 const PayloadSchema = v.object({});
 
 Deno.serve((request) =>
   clinicalServe({
     req: request,
-    supabase,
+    supabase: null,
     bearerToken: CONFIG.SUPABASE_ANON_KEY,
     eventType: "HEALTH_CHECK",
     componentId: "PING",

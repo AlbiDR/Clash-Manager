@@ -29,7 +29,7 @@ export * from "./services/useConsoleSelection";
 export * from "./services/useConsoleMetadata";
 export * from "./services/useBroadcastChannel";
 export * from "./services/useDeepLinkHandler";
-export * from "./services/useBackHandler";
+export * from "./services/useDismissOnBack";
 export * from "./services/useShareTarget";
 export * from "./services/useShowcaseMode";
 export * from "./services/useSyntheticMode";

@@ -450,6 +450,66 @@ async function reportHeartbeat(
 }
 
 /**
+ * Whether an `integrity_checked` audit entry carries a structurally valid `passed: true`.
+ *
+ * @param entry - An audit entry whose action is `integrity_checked`.
+ * @returns `true` only for a check that validates against IntegrityCheckDetailsSchema and passed.
+ */
+function getIntegrityCheckPassed(entry: AuditEntry): boolean {
+    const validation = v.safeParse(IntegrityCheckDetailsSchema, entry.details);
+    return validation.success && validation.output.passed === true;
+}
+
+/**
+ * Whether a `resulted_data` audit entry declares `is_100_percent_match: false`, the one
+ * resulted_data shape substrate.verify_run_integrity() fails a run on.
+ *
+ * @param entry - An audit entry whose action is `resulted_data`.
+ * @returns `true` only when the details carry `is_100_percent_match` set to `false`.
+ */
+function getResultedDataMismatch(entry: AuditEntry): boolean {
+    const details = entry.details;
+    return typeof details === 'object' && details !== null
+        && (details as Record<string, unknown>).is_100_percent_match === false;
+}
+
+/**
+ * Condenses a run's audit trail into what is persisted: per-stage action counts plus
+ * every entry that records a failure.
+ *
+ * @remarks
+ * [DECISION LOG] The in-memory trail grows with every tag a run touches (about six
+ * entries per profiled recruit), and it used to be written to governance_telemetry in
+ * full after every stage and again at the end: four to six rewrites of a JSONB value
+ * that reached hundreds of kilobytes on a database short of disk I/O. The counts keep
+ * the shape of the run; the failures keep the detail a diagnosis needs. A clean entry
+ * ("called", "run", a passed check) says nothing a count does not.
+ * [GUARD] Failures stay an array of AuditEntry under `audit_log`: trigger
+ * tr_telemetry_integrity_sync calls substrate.verify_run_integrity(), which reads
+ * metadata->'audit_log', answers false for a missing or empty array, for any entry
+ * whose action is 'error', and for any 'resulted_data' entry whose
+ * details.is_100_percent_match is false. Every entry it would fail on is kept, and
+ * callers append the run's closing entry so a clean run is never empty, so it reaches
+ * the same verdict it reached on the full trail.
+ *
+ * @param entries - The run's complete in-memory audit trail.
+ * @returns `audit_counts` (stage to action to count) and `audit_log` (failures only, in order).
+ */
+function getAuditSummary(entries: AuditEntry[]) {
+    const audit_counts: Record<string, Partial<Record<AuditEntry['action'], number>>> = {};
+    for (const entry of entries) {
+        const stageCounts = audit_counts[entry.stage] ??= {};
+        stageCounts[entry.action] = (stageCounts[entry.action] ?? 0) + 1;
+    }
+    const audit_log = entries.filter((entry) =>
+        entry.action === 'error'
+        || (entry.action === 'integrity_checked' && !getIntegrityCheckPassed(entry))
+        || (entry.action === 'resulted_data' && getResultedDataMismatch(entry))
+    );
+    return { audit_counts, audit_log };
+}
+
+/**
  * CONFIGURATION: ProtocolOptions
  *
  * @remarks
@@ -462,8 +522,19 @@ async function reportHeartbeat(
 export interface ProtocolOptions<T> {
     /** The raw inbound Request object from the Edge Function entry point. */
     req: Request;
-    /** An authenticated Supabase client for performing telemetry and DB operations. */
-    supabase: SupabaseClient;
+    /**
+     * An authenticated Supabase client for performing telemetry and DB operations, or
+     * `null` for a function that must never touch the database.
+     *
+     * @remarks
+     * [DECISION LOG] `null` is for `ping`, whose only job is to prove the edge runtime
+     * answers. Its telemetry row and two heartbeats were the probe's entire database
+     * cost, read by nothing, and they made the probe fail with a 503 whenever the
+     * database was slow, which the app then retried. With `null` there is no telemetry
+     * row and no heartbeat: auth, validation, rate limiting and the response envelope
+     * are unchanged.
+     */
+    supabase: SupabaseClient | null;
     /** The expected shared internal bearer token(s) for service-to-service auth. */
     bearerToken: string | string[];
     /** The classification key for the telemetry event (e.g., 'INGESTION', 'SCAN'). */
@@ -519,13 +590,14 @@ export interface ProtocolOptions<T> {
      *
      * @param payload - The validated and typed request body.
      * @param logAudit - A telemetry sink for recording clinical audit entries.
-     * @param heartbeat - A persistence hook for updating intermediate pipeline state.
+     * @param heartbeat - Marks a stage boundary in the audit trail. It writes nothing to the
+     *                    database; the trail is persisted once, when the run ends.
      * @returns A promise resolving to the final execution results.
      */
     handler: (
         payload: T, 
         logAudit: (stage: string, action: AuditEntry['action'], details?: unknown) => void,
-        heartbeat: (stage: string, currentResults: unknown) => Promise<void>
+        heartbeat: (stage: string) => Promise<void>
     ) => Promise<unknown>;
 }
 
@@ -555,7 +627,9 @@ export interface ProtocolOptions<T> {
  * @sideeffects
  * - CALLS `report_telemetry` RPC to initialize tracking.
  * - CALLS `report_heartbeat` RPC to signal component health.
- * - CALLS `update_telemetry` RPC to persist audit logs and results.
+ * - CALLS `update_telemetry` RPC once, at the end, to persist the audit summary and,
+ *   except for the public proxies, the results.
+ * - None of the three when `options.supabase` is `null`.
  */
 export async function clinicalServe<T>(options: ProtocolOptions<T>) {
     const { req, supabase, bearerToken, eventType, componentId, schema, handler, rateLimit } = options;
@@ -580,6 +654,12 @@ export async function clinicalServe<T>(options: ProtocolOptions<T>) {
     // bearer-only functions retain the original blanket `Access-Control-Allow-Origin: *`.
     // See `resolveCorsHeaders` for the full behavior in each mode.
     const corsRestricted = options.corsRestricted ?? !!rateLimit;
+    // [DECISION LOG] For the cron pipelines the handler's return value is the run's
+    // statistics, a few hundred bytes worth keeping. For the public proxies (the functions
+    // with a `rateLimit`) it is the response body itself (a leaderboard, a battle log, a
+    // card collection) that nothing ever read back out of governance_telemetry, so it is
+    // returned to the caller and not copied into the row.
+    const recordResults = !rateLimit;
 
     // 1. CORS Preflight
     if (req.method === "OPTIONS") {
@@ -747,95 +827,90 @@ export async function clinicalServe<T>(options: ProtocolOptions<T>) {
         // lifecycle of the request, including duration and audit logs.
         // [THREAT:] Unvalidated RPC responses can mask database connectivity issues or schema drift.
         // [DECISION LOG] Explicitly validating the telemetry registration result to ensure persistence availability.
-        const { data: rawTelemetryData, error: telemetryError } = await supabase.rpc('report_telemetry', {
-            p_event_type: eventType,
-            p_status: 'IN_PROGRESS',
-            p_metadata: { stage: 'BOOT', payload: parsed.output }
-        });
+        if (supabase !== null) {
+            const { data: rawTelemetryData, error: telemetryError } = await supabase.rpc('report_telemetry', {
+                p_event_type: eventType,
+                p_status: 'IN_PROGRESS',
+                p_metadata: { stage: 'BOOT', payload: parsed.output }
+            });
 
-        // [DECISION LOG: telemetry-registration-failure] ABORT ON AN EXPLICIT RPC ERROR;
-        // STAY LENIENT ON A STRUCTURALLY ABSENT ROW. Argued out per the ADR's "Defensive
-        // Programming (Fail Fast)" and "Atomicity: partial state leaks are a critical
-        // failure" clauses, but deliberately scoped to the signal that actually means
-        // "telemetry is unavailable":
-        //   - `telemetryError` truthy is an unambiguous, explicit failure signal from
-        //     PostgREST/Supabase (auth rejected, connection refused, function missing). The
-        //     old behaviour only `console.error`-logged this and let the handler run anyway,
-        //     returning 200 with NO audit record anywhere -- a partial-state leak by
-        //     definition, and exactly the failure mode this finding reports. That is
-        //     unacceptable per the ADR's atomicity clause, so this now THROWS
-        //     `ProtocolError('TELEMETRY_UNAVAILABLE', ...)` and aborts before the handler
-        //     runs. A 503 here is retryable and visible; the pg_cron triggers that invoke
-        //     these functions on a schedule treat a 5xx as transient and simply retry on the
-        //     next tick, so this trades an immediate UNAUDITED success for a delayed,
-        //     AUDITED one -- never permanent data loss.
-        //   - `rawTelemetryData` being `null`/mis-shaped with NO accompanying RPC error is a
-        //     materially weaker signal: PostgREST legitimately returns `null` data for some
-        //     void-returning or no-op RPC paths, and it is the default response shape of
-        //     nearly every Supabase test double in this repo that is not specifically
-        //     exercising telemetry. Treating that as a hard abort would fail closed for
-        //     every one of those callers on every request, which is a far larger blast
-        //     radius than the bug being fixed. This branch therefore keeps the ORIGINAL
-        //     lenient behaviour: log a warning, leave `telemetry` (and `telemetryId`) null,
-        //     and let every downstream telemetry write become a no-op guarded by
-        //     `telemetryId !== null`. The run still completes and returns a real result; it
-        //     is simply unaudited for that one request, which is a strictly smaller and
-        //     pre-existing risk than the one this finding targets.
-        // FINAL CALL: only an explicit `telemetryError` aborts the run. A null/malformed
-        // registration response degrades to "unaudited but functional," matching prior
-        // behaviour and every existing caller's test double.
-        if (telemetryError) {
-            throw new ProtocolError(
-                'TELEMETRY_UNAVAILABLE',
-                `report_telemetry RPC failed for ${componentId}: ${telemetryError.message}`,
-                { cause: telemetryError }
-            );
+            // [DECISION LOG: telemetry-registration-failure] ABORT ON AN EXPLICIT RPC ERROR;
+            // STAY LENIENT ON A STRUCTURALLY ABSENT ROW. Argued out per the ADR's "Defensive
+            // Programming (Fail Fast)" and "Atomicity: partial state leaks are a critical
+            // failure" clauses, but deliberately scoped to the signal that actually means
+            // "telemetry is unavailable":
+            //   - `telemetryError` truthy is an unambiguous, explicit failure signal from
+            //     PostgREST/Supabase (auth rejected, connection refused, function missing). The
+            //     old behaviour only `console.error`-logged this and let the handler run anyway,
+            //     returning 200 with NO audit record anywhere -- a partial-state leak by
+            //     definition, and exactly the failure mode this finding reports. That is
+            //     unacceptable per the ADR's atomicity clause, so this now THROWS
+            //     `ProtocolError('TELEMETRY_UNAVAILABLE', ...)` and aborts before the handler
+            //     runs. A 503 here is retryable and visible; the pg_cron triggers that invoke
+            //     these functions on a schedule treat a 5xx as transient and simply retry on the
+            //     next tick, so this trades an immediate UNAUDITED success for a delayed,
+            //     AUDITED one -- never permanent data loss.
+            //   - `rawTelemetryData` being `null`/mis-shaped with NO accompanying RPC error is a
+            //     materially weaker signal: PostgREST legitimately returns `null` data for some
+            //     void-returning or no-op RPC paths, and it is the default response shape of
+            //     nearly every Supabase test double in this repo that is not specifically
+            //     exercising telemetry. Treating that as a hard abort would fail closed for
+            //     every one of those callers on every request, which is a far larger blast
+            //     radius than the bug being fixed. This branch therefore keeps the ORIGINAL
+            //     lenient behaviour: log a warning, leave `telemetry` (and `telemetryId`) null,
+            //     and let every downstream telemetry write become a no-op guarded by
+            //     `telemetryId !== null`. The run still completes and returns a real result; it
+            //     is simply unaudited for that one request, which is a strictly smaller and
+            //     pre-existing risk than the one this finding targets.
+            // FINAL CALL: only an explicit `telemetryError` aborts the run. A null/malformed
+            // registration response degrades to "unaudited but functional," matching prior
+            // behaviour and every existing caller's test double.
+            if (telemetryError) {
+                throw new ProtocolError(
+                    'TELEMETRY_UNAVAILABLE',
+                    `report_telemetry RPC failed for ${componentId}: ${telemetryError.message}`,
+                    { cause: telemetryError }
+                );
+            }
+
+            const telemetryValidation = v.safeParse(TelemetrySchema, rawTelemetryData);
+            const telemetry = telemetryValidation.success
+                ? (Array.isArray(telemetryValidation.output) ? telemetryValidation.output[0] : telemetryValidation.output)
+                : null;
+
+            if (!telemetryValidation.success && rawTelemetryData !== null) {
+                console.warn(`[Protocol] Telemetry response failed structural validation for ${componentId}.`);
+            }
+
+            // [DECISION LOG] Hoisted `telemetryId` (declared above the try block) is assigned
+            // whenever registration produced a usable id, so the catch block can tell "never
+            // registered" (null, nothing to update) apart from "registered, then the handler
+            // threw" (set, drive the row to FAILED).
+            telemetryId = telemetry?.id ?? null;
         }
-
-        const telemetryValidation = v.safeParse(TelemetrySchema, rawTelemetryData);
-        const telemetry = telemetryValidation.success
-            ? (Array.isArray(telemetryValidation.output) ? telemetryValidation.output[0] : telemetryValidation.output)
-            : null;
-
-        if (!telemetryValidation.success && rawTelemetryData !== null) {
-            console.warn(`[Protocol] Telemetry response failed structural validation for ${componentId}.`);
-        }
-
-        // [DECISION LOG] Hoisted `telemetryId` (declared above the try block) is assigned
-        // whenever registration produced a usable id, so the catch block can tell "never
-        // registered" (null, nothing to update) apart from "registered, then the handler
-        // threw" (set, drive the row to FAILED).
-        telemetryId = telemetry?.id ?? null;
 
         logAudit('BOOT', 'triggered', { payload: parsed.output });
 
         // [DECISION LOG] Initial heartbeat signals to the global supervisor that
         // the Edge Function has started and is nominally healthy.
-        await reportHeartbeat(supabase, {
-            p_component_id: componentId,
-            p_status: 'RUNNING',
-            p_message: `Protocol execution initiated for ${componentId}.`
-        });
+        if (supabase !== null) {
+            await reportHeartbeat(supabase, {
+                p_component_id: componentId,
+                p_status: 'RUNNING',
+                p_message: `Protocol execution initiated for ${componentId}.`
+            });
+        }
 
         /**
          * Heartbeat closure for the handler.
-         * [DECISION LOG] Provides a mechanism for long-running handlers to persist
-         * intermediate results, ensuring partial progress is not lost on timeout.
+         * [DECISION LOG] Records the stage boundary in memory only. It used to rewrite the
+         * whole telemetry row (results plus the full audit trail so far) after every stage,
+         * so that a run killed mid-way still showed how far it got. Nothing read that
+         * progress back, every stage also logs to the function's console, and each rewrite
+         * cost the database a large JSONB update. The trail is now written once, at the end.
          */
-        const heartbeat = async (stage: string, currentResults: unknown) => {
+        const heartbeat = async (stage: string) => {
             logAudit(stage, 'terminated', { status: 'IN_PROGRESS' });
-            if (telemetryId !== null) {
-                await supabase.rpc('update_telemetry', {
-                    p_id: telemetryId,
-                    p_status: 'IN_PROGRESS',
-                    p_metadata: { 
-                        ...(typeof currentResults === 'object' && currentResults !== null ? currentResults : { results: currentResults }),
-                        stage, 
-                        current_duration: Temporal.Now.instant().since(startInstant).total('milliseconds'),
-                        audit_log
-                    }
-                });
-            }
         };
 
         // 5. Logic Execution
@@ -843,14 +918,15 @@ export async function clinicalServe<T>(options: ProtocolOptions<T>) {
         const results = await handler(parsed.output, logAudit, heartbeat);
 
         // 6. Governance: Completion & Telemetry Closure
-        // [DECISION LOG] Final telemetry update aggregates all audit entries and
-        // calculates total execution duration for performance monitoring.
-        const audit_log_final = [...audit_log, { 
-            timestamp: Temporal.Now.instant().toString(), 
-            stage: 'COMPLETE', 
-            action: 'terminated' as const, 
-            details: { status: 'SUCCESS' } 
-        }];
+        // [DECISION LOG] The single telemetry update condenses the audit trail into counts
+        // plus failures and records total execution duration for performance monitoring.
+        const completeEntry: AuditEntry = {
+            timestamp: Temporal.Now.instant().toString(),
+            stage: 'COMPLETE',
+            action: 'terminated',
+            details: { status: 'SUCCESS' }
+        };
+        const audit_log_final = [...audit_log, completeEntry];
 
         const integrityChecks = audit_log_final.filter(entry => entry.action === 'integrity_checked');
 
@@ -860,53 +936,60 @@ export async function clinicalServe<T>(options: ProtocolOptions<T>) {
         // strict v.safeParse() validation boundary using IntegrityCheckDetailsSchema.
         // This ensures that 'isDataPerfect' accurately reflects that ALL integrity checks passed
         // based on a validated structural contract.
-        const isDataPerfect = integrityChecks.length > 0 && integrityChecks.every(check => {
-            const validation = v.safeParse(IntegrityCheckDetailsSchema, check.details);
-            return validation.success && validation.output.passed === true;
-        });
+        const isDataPerfect = integrityChecks.length > 0 && integrityChecks.every(getIntegrityCheckPassed);
 
+        // [DECISION LOG] One entry per stage, not per check: a stage passes only when every
+        // one of its checks passed. Listing every check repeated the stage name once per
+        // profiled tag, and the failing checks themselves are kept in `audit_log` below.
+        const integrityByStage = new Map<string, boolean>();
+        for (const check of integrityChecks) {
+            integrityByStage.set(check.stage, (integrityByStage.get(check.stage) ?? true) && getIntegrityCheckPassed(check));
+        }
         const validationReport = {
-            stages_called: audit_log_final.filter(entry => entry.action === 'called').map(entry => entry.stage),
-            stages_run: audit_log_final.filter(entry => entry.action === 'run').map(entry => entry.stage),
-            integrity_checks: integrityChecks.map(check => {
-                const validation = v.safeParse(IntegrityCheckDetailsSchema, check.details);
-                return {
-                    stage: check.stage,
-                    passed: validation.success ? validation.output.passed : false
-                };
-            }),
+            stages_called: [...new Set(audit_log_final.filter(entry => entry.action === 'called').map(entry => entry.stage))],
+            stages_run: [...new Set(audit_log_final.filter(entry => entry.action === 'run').map(entry => entry.stage))],
+            integrity_checks: [...integrityByStage].map(([stage, passed]) => ({ stage, passed })),
             total_duration: Temporal.Now.instant().since(startInstant).total('milliseconds')
         };
-        
-        if (telemetryId !== null) {
-            await supabase.rpc('update_telemetry', {
+
+        if (supabase !== null && telemetryId !== null) {
+            const { audit_counts, audit_log: auditFailures } = getAuditSummary(audit_log_final);
+            const { error: telemetryCloseError } = await supabase.rpc('update_telemetry', {
                 p_id: telemetryId,
                 p_status: 'SUCCESS',
-                p_metadata: { 
-                    ...(typeof results === 'object' && results !== null ? results : { results }),
-                    stage: 'COMPLETE', 
+                p_metadata: {
+                    ...(!recordResults ? {} : typeof results === 'object' && results !== null ? results : { results }),
+                    stage: 'COMPLETE',
                     current_duration: Temporal.Now.instant().since(startInstant).total('milliseconds'),
-                    audit_log: audit_log_final,
+                    audit_counts,
+                    audit_log: [...auditFailures, completeEntry],
                     is_data_perfect: isDataPerfect,
                     validation_report: validationReport
                 }
             });
+            // supabase.rpc() resolves with { error } rather than throwing; an unlogged failure
+            // here would leave the row IN_PROGRESS with nothing saying why.
+            if (telemetryCloseError) {
+                console.error(`[Protocol] Final telemetry write FAILED for ${componentId}: ${telemetryCloseError.message}`);
+            }
         }
 
-        await reportHeartbeat(supabase, {
-            p_component_id: componentId,
-            p_status: 'COMPLETED',
-            p_message: `Protocol execution completed. Data perfection: ${isDataPerfect}`,
-            p_metadata: {
-                last_success_at: Temporal.Now.instant().toString(),
-                last_validation_report: validationReport,
-                is_data_perfect: isDataPerfect
-            }
-        });
+        if (supabase !== null) {
+            await reportHeartbeat(supabase, {
+                p_component_id: componentId,
+                p_status: 'COMPLETED',
+                p_message: `Protocol execution completed. Data perfection: ${isDataPerfect}`,
+                p_metadata: {
+                    last_success_at: Temporal.Now.instant().toString(),
+                    last_validation_report: validationReport,
+                    is_data_perfect: isDataPerfect
+                }
+            });
+        }
 
         return new Response(JSON.stringify({
             success: true,
-            version: '14.51.0',
+            version: '14.51.5',
             data: results,
             duration_ms: Temporal.Now.instant().since(startInstant).total('milliseconds'),
             timestamp: Temporal.Now.instant().toString()
@@ -931,15 +1014,16 @@ export async function clinicalServe<T>(options: ProtocolOptions<T>) {
         // failed (the `TELEMETRY_UNAVAILABLE` throw above, before `telemetryId` is assigned),
         // there is no row to update -- attempting one would either no-op against a bogus id
         // or throw a second, more confusing error out of the error handler itself. The
-        // `report_heartbeat` FAILED call below is unconditional because it is a component
-        // health signal, not a per-run audit row, and does not depend on telemetry having
-        // registered successfully.
+        // `report_heartbeat` FAILED call below runs whenever the function has a database
+        // client, registered or not, because it is a component health signal, not a per-run
+        // audit row, and does not depend on telemetry having registered successfully.
         // [GUARD] Wrapped in its own try/catch so a DB outage that caused (or accompanies)
         // the original failure cannot throw a SECOND, unhandled exception out of the error
         // handler and crash the function with no response at all.
-        if (telemetryId !== null) {
+        const { audit_counts, audit_log: auditFailures } = getAuditSummary(audit_log);
+        if (supabase !== null && telemetryId !== null) {
             try {
-                await supabase.rpc('update_telemetry', {
+                const { error: failedTelemetryError } = await supabase.rpc('update_telemetry', {
                     p_id: telemetryId,
                     p_status: 'FAILED',
                     p_metadata: {
@@ -947,9 +1031,15 @@ export async function clinicalServe<T>(options: ProtocolOptions<T>) {
                         error_code: code,
                         error_detail: internalDetail,
                         current_duration: Temporal.Now.instant().since(startInstant).total('milliseconds'),
-                        audit_log
+                        audit_counts,
+                        audit_log: auditFailures
                     }
                 });
+                if (failedTelemetryError) {
+                    console.error(
+                        `[Protocol] Failed to persist terminal FAILED telemetry state for ${componentId}: ${failedTelemetryError.message}`
+                    );
+                }
             } catch (telemetryCloseError: unknown) {
                 console.error(
                     `[Protocol] Failed to persist terminal FAILED telemetry state for ${componentId}: ` +
@@ -958,26 +1048,29 @@ export async function clinicalServe<T>(options: ProtocolOptions<T>) {
             }
         }
 
-        try {
-            await reportHeartbeat(supabase, {
-                p_component_id: componentId,
-                p_status: 'FAILED',
-                p_message: `Fatal protocol error [${code}] in ${componentId}.`,
-                p_metadata: {
-                    last_failure_at: Temporal.Now.instant().toString(),
-                    is_data_perfect: false,
-                    last_validation_report: {
-                        error_code: code,
-                        error: internalDetail,
-                        audit_log
+        if (supabase !== null) {
+            try {
+                await reportHeartbeat(supabase, {
+                    p_component_id: componentId,
+                    p_status: 'FAILED',
+                    p_message: `Fatal protocol error [${code}] in ${componentId}.`,
+                    p_metadata: {
+                        last_failure_at: Temporal.Now.instant().toString(),
+                        is_data_perfect: false,
+                        last_validation_report: {
+                            error_code: code,
+                            error: internalDetail,
+                            audit_counts,
+                            audit_log: auditFailures
+                        }
                     }
-                }
-            });
-        } catch (heartbeatError: unknown) {
-            console.error(
-                `[Protocol] Failed to report FAILED heartbeat for ${componentId}: ` +
-                `${heartbeatError instanceof Error ? heartbeatError.message : String(heartbeatError)}`
-            );
+                });
+            } catch (heartbeatError: unknown) {
+                console.error(
+                    `[Protocol] Failed to report FAILED heartbeat for ${componentId}: ` +
+                    `${heartbeatError instanceof Error ? heartbeatError.message : String(heartbeatError)}`
+                );
+            }
         }
 
         // [THREAT:] Returning `internalDetail` here would leak API key-pool sizes, upstream

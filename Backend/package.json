@@ -1,6 +1,6 @@
 {
   "name": "clash-manager-backend",
-  "version": "14.51.0",
+  "version": "14.51.5",
   "license": "GPL-3.0-only",
   "private": true,
   "engines": {

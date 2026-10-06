@@ -39,6 +39,10 @@ export default withVueTs(
       // vi.hoisted()/vi.mock() factories run before ESM imports are initialized,
       // so they must require() modules lazily instead of using the top-level import.
       "@typescript-eslint/no-require-imports": "off",
+      // Specs define inline stub components (defineComponent in a describe
+      // block) next to the component under test; one-per-file is a rule for
+      // shipped SFCs, not for test doubles.
+      "vue/one-component-per-file": "off",
     },
   },
 );

@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
-/* eslint-disable vue/one-component-per-file -- Lifecycle integration needs several test-local host components. */
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { defineComponent, ref, nextTick } from "vue";
 import { mount } from "@vue/test-utils";

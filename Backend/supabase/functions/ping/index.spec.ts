@@ -3,25 +3,8 @@
 
 import { describe, it, expect, vi, beforeEach, beforeAll } from "vitest";
 
-// Mock client.ts to prevent real Supabase creation and configuration crash
-vi.mock("./client.ts", () => {
-  const mockSupabase = {
-    rpc: vi.fn().mockImplementation((fn: string) => {
-      if (fn === "report_telemetry") {
-        return Promise.resolve({ data: { id: "telemetry-123" }, error: null });
-      }
-      return Promise.resolve({ data: null, error: null });
-    }),
-  };
-  return {
-    CONFIG: {
-      SUPABASE_URL: "https://test.supabase.co",
-      SUPABASE_SERVICE_ROLE_KEY: "service-key",
-      SUPABASE_ANON_KEY: "anon-key",
-    },
-    supabase: mockSupabase,
-  };
-});
+// [DECISION LOG] client.ts is NOT mocked: ping has no Supabase client to stub, and the
+// real module only reads the anon key from the Deno env stubbed in beforeAll below.
 
 let requestHandler: any;
 
@@ -81,7 +64,7 @@ describe("ping Edge Function", () => {
     expect(response.headers.get("Access-Control-Allow-Origin")).toBe("*");
   });
 
-  it("rate limits repeated anon-key probes before they can create unbounded telemetry writes", async () => {
+  it("rate limits repeated anon-key probes", async () => {
     const makeRequest = () => new Request("https://test.co/ping", {
       method: "POST",
       headers: {
@@ -136,5 +119,30 @@ describe("ping Edge Function", () => {
     // validate-project.ts --fix (see PATHS.protocol), so pinning an exact value here
     // would make this test fail on every single version bump.
     expect(body.version).toMatch(/^\d+\.\d+\.\d+$/);
+  });
+
+  // [THREAT:] Every probe used to insert a telemetry row and two heartbeats. Nothing read
+  // them, and when the database was slow the failed insert became a 503 that the app
+  // retried. Any write would have to go out over the network, so a probe that makes no
+  // network call and has no client to write with wrote nothing.
+  it("answers without touching the database: no Supabase client and no network call", async () => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch");
+    try {
+      const response = await requestHandler(new Request("https://test.co/ping", {
+        method: "POST",
+        headers: {
+          "Authorization": "Bearer anon-key",
+          "Content-Type": "application/json",
+          "x-forwarded-for": "198.51.100.88",
+        },
+        body: "{}",
+      }));
+
+      expect(response.status).toBe(200);
+      expect(fetchSpy).not.toHaveBeenCalled();
+      expect(Object.keys(await import("./client.ts"))).toEqual(["CONFIG"]);
+    } finally {
+      fetchSpy.mockRestore();
+    }
   });
 });

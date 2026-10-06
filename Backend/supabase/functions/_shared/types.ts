@@ -72,12 +72,15 @@ export interface ScannerStats {
   recruits_ingested: number;
   /** Number of entirely new recruits found during this run. */
   new_recruits?: number;
-  /** Number of new recruits meeting active threshold criteria. */
-  new_recruits_active?: number;
-  /** Number of new recruits relegated to the bench. */
-  new_recruits_benched?: number;
-  /** Number of new recruits entering the Top 50 performance tier. */
-  new_recruits_top50?: number;
+  /** Number of new recruits meeting active threshold criteria; `null` when the fate read failed. */
+  new_recruits_active?: number | null;
+  /** Number of new recruits relegated to the bench; `null` when the fate read failed. */
+  new_recruits_benched?: number | null;
+  /**
+   * Number of new recruits entering the Top 50 performance tier. `null` means unknown, with
+   * the cause in `top50_unknown_reasons`; it is never reported as a 0 it could not establish.
+   */
+  new_recruits_top50?: number | null;
   /** Number of existing recruits whose data was refreshed. */
   refreshed_recruits?: number;
   /** Distribution of ingested recruits by discovery source. */
@@ -92,6 +95,19 @@ export interface ScannerStats {
   ghosts_purged?: number;
   /** Collection of non-fatal error messages encountered during scanning. */
   errors: string[];
+  /**
+   * Why this run cannot say how many new recruits reached the Top 50, one entry per
+   * read that could not be answered. Empty means `new_recruits_top50` is a real count; a
+   * non-empty list leaves a positive count standing (those recruits were found) but turns
+   * a zero into `null`.
+   *
+   * @remarks
+   * [DECISION LOG] The epoch guard re-fires a full scan whenever the last run reported
+   * zero Top 50 recruits. A run whose discovery or fate reads failed also ends with zero,
+   * so before this field existed a starved database turned every failed scan into up to
+   * three more full scans. A non-empty list withholds the count from the guard instead.
+   */
+  top50_unknown_reasons: string[];
 }
 
 /**

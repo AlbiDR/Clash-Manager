@@ -80,7 +80,7 @@ describe("Base Theme", () => {
 
     it("should provide scrollable utility classes", () => {
       expect(baseStyles).toContain(".view-container");
-      expect(baseStyles).toContain(".scrollable-area");
+      expect(baseStyles).toContain(".list-container");
       expect(baseStyles).toContain("-webkit-overflow-scrolling: touch");
     });
   });

@@ -586,6 +586,34 @@ describe("GhostBenchmarkHost score explanations", () => {
     },
   };
 
+  it("widens the desktop popup only when its score breakdown expands", async () => {
+    stubPointerCapability(false);
+    const { show } = useGhostBenchmarkState();
+    const wrapper = mount(GhostBenchmarkHost, { global: { stubs: { Teleport: true } } });
+    show(makeAnchorEl(), { ...score, rawComparison: {
+      label: "Raw Performance", tier: "TOP TIER", value: 1000, avg: 800,
+      min: 200, max: 2000, percent: 25, isBetter: true,
+    } });
+    await nextTick();
+    expect(wrapper.find(".bc-popover").classes()).not.toContain("bc-popover--expanded");
+    const disclosure = wrapper.find<HTMLDetailsElement>(".bc-score-breakdown");
+    const close = wrapper.find<HTMLButtonElement>(".bc-close");
+    const summary = disclosure.find<HTMLElement>("summary");
+    document.body.appendChild(wrapper.element);
+    close.element.focus();
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: "Tab", shiftKey: true }));
+    expect(document.activeElement).toBe(summary.element);
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: "Tab" }));
+    expect(document.activeElement).toBe(close.element);
+    disclosure.element.open = true;
+    await disclosure.trigger("toggle");
+    expect(wrapper.find(".bc-popover").classes()).toContain("bc-popover--expanded");
+    disclosure.element.open = false;
+    await disclosure.trigger("toggle");
+    expect(wrapper.find(".bc-popover").classes()).not.toContain("bc-popover--expanded");
+    wrapper.unmount();
+  });
+
   it("keeps an explicit explanation open on scroll and closes it with Escape", async () => {
     stubPointerCapability(false);
     const { show, active } = useGhostBenchmarkState();

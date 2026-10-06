@@ -118,6 +118,9 @@ export async function runProfiler(
         let newCount = 0;
         let refreshCount = 0;
         let invalidCount = 0;
+        // Royale API calls that did not answer (any status but 404, a malformed profile, or a
+        // thrown fetch). A 404 is an answer: the player no longer exists.
+        let profileFetchFailures = 0;
         let withWins = 0;
         let withBattleCount = 0;
 
@@ -211,6 +214,7 @@ export async function runProfiler(
                             invalidCount++;
                         }
                     } else {
+                        profileFetchFailures++;
                         invalidCount++;
                     }
                 } else {
@@ -229,6 +233,7 @@ export async function runProfiler(
                             console.log(`[PROFILING] Player ${playerTag} is a ghost (404). Blacklisted.`);
                         }
                     } else {
+                        profileFetchFailures++;
                         console.error(`[PROFILING] Player ${playerTag} fetch failed with HTTP ${playerProfileApiResponse.status}`);
                     }
                     stats.errors.push(`Profile(${playerTag}): ${playerProfileApiResponse.status}`);
@@ -242,6 +247,7 @@ export async function runProfiler(
                 logAudit('PROFILING', 'integrity_checked', { passed: false, details: errorMessage });
                 logAudit('PROFILING', 'error', { tag: playerTag, message: errorMessage });
                 console.error(`[PROFILING] Exception while profiling ${playerTag}: ${errorMessage}`);
+                profileFetchFailures++;
                 invalidCount++;
             }
         });
@@ -249,6 +255,14 @@ export async function runProfiler(
         console.log(`[PROFILING] Batch processing ${tagsToFetch.length} profiles...`);
         await processBatch(profileTasks, CONCURRENCY_PROFILER);
         console.log(`[PROFILING] Batch processing complete. Valid: ${validCount}, Invalid/Filtered: ${invalidCount}`);
+
+        // [DECISION LOG] A candidate whose profile could not be fetched may have been a Top 50
+        // recruit, so a run with unanswered profiles cannot claim it found none. Without this an
+        // upstream outage profiled nobody, reported zero, and armed the epoch guard into more
+        // scans against the same outage.
+        if (profileFetchFailures > 0) {
+            stats.top50_unknown_reasons.push(`Profiler: ${profileFetchFailures} profile fetch(es) unanswered by the Royale API`);
+        }
 
         // Field health check: detect silent Royale API field renames or deprecations.
         // Key RPoS fields default to 0 via the schema, so a broken field is invisible
@@ -327,8 +341,9 @@ export async function runProfiler(
             // The stage deliberately does NOT abort here: the profiles below are already paid for
             // in Royale API quota and their ingestion does not depend on this read. Instead the
             // derived telemetry (the new/refresh split and the post-ingestion fate check that
-            // produces new_recruits_top50) is suppressed, which leaves the epoch guard armed -
-            // the fail-safe direction - rather than publishing a fabricated baseline as truth.
+            // produces new_recruits_top50) is suppressed and the Top 50 count is marked unknown,
+            // so the epoch guard is neither disarmed by a fabricated count nor re-armed by a
+            // zero that only means the read failed.
             if (existingRecruitsError) {
                 stats.errors.push(`ExistingRecruits: ${existingRecruitsError.message}`);
                 console.error(`[PROFILING] Existing recruits fetch failed: ${existingRecruitsError.message}`);
@@ -359,6 +374,7 @@ export async function runProfiler(
                     else newCount++;
                 });
             } else {
+                stats.top50_unknown_reasons.push('Profiler: existing-recruit baseline unavailable');
                 logAudit('PROFILING', 'integrity_checked', {
                     stage: 'NEW_RECRUIT_CLASSIFICATION',
                     passed: false,
@@ -374,6 +390,7 @@ export async function runProfiler(
                 });
                 if (ingestionError) {
                     stats.errors.push(`Ingest(${recruitSource}): ${ingestionError.message}`);
+                    stats.top50_unknown_reasons.push(`Profiler: sync_recruits failed for ${recruitSource}`);
                     logAudit('PROFILING', 'error', { message: `DB Ingestion Failure (${recruitSource})`, details: ingestionError });
                     console.error(`[PROFILING] DB Ingestion Failure (${recruitSource}): ${ingestionError.message}`);
                 } else {
@@ -395,6 +412,9 @@ export async function runProfiler(
                 console.log(`[PROFILING] Post-ingestion fate check for ${newTags.length} recruits...`);
                 
                 let fateResults: v.InferOutput<typeof RecruitFateSchema>[] = [];
+                // Set when a fate read fails: any snapshot held from an earlier attempt is then
+                // unconverged by definition, and counting its QUEUE rows would report a guess.
+                let fateReadFailed = false;
                 let attempts = 0;
                 const maxAttempts = 4; // Total 10s potential delay
 
@@ -426,20 +446,29 @@ export async function runProfiler(
                                 console.log(`[PROFILING] Fate check attempt ${attempts}: ${fateResults.length} found, ${queuedCount} still QUEUED...`);
                             } else {
                                 console.error(`[PROFILING] Fate validation failed on attempt ${attempts}: ${JSON.stringify(recruitsFateIntegrity.issues)}`);
+                                fateReadFailed = true;
+                                break;
                             }
                         } else if (recruitsFateError) {
+                            // [DECISION LOG] The backoff waits for triggers to promote rows, not for
+                            // a failing database to recover; repeating a read that just failed only
+                            // adds load, so a read error ends the check and the count stays unknown.
                             console.error(`[PROFILING] Fate check attempt ${attempts} error: ${JSON.stringify(recruitsFateError)}`);
+                            fateReadFailed = true;
+                            break;
                         }
                     } catch (fateCheckExecutionError: unknown) {
                         const errorMessage = fateCheckExecutionError instanceof Error ? fateCheckExecutionError.message : String(fateCheckExecutionError);
                         console.error(`[PROFILING] Fate check attempt ${attempts} exception: ${errorMessage}`);
+                        fateReadFailed = true;
+                        break;
                     }
                 }
 
-                // [THREAT:] If the telemetry loop fails to find converged results after 4 attempts,
-                // the stage stats (new_recruits_active, etc.) will be zeroed, leading to
-                // inaccurate dashboard reporting despite successful ingestion.
-                if (fateResults.length > 0) {
+                // [THREAT:] When the fate read failed or never answered, the fate counts are
+                // unknown. They are reported as null with a reason, never as 0, which would read
+                // as "no new recruit was promoted" and arm the epoch guard.
+                if (!fateReadFailed && fateResults.length > 0) {
                     // Fetch Top 50 Threshold (lowest score in active pool)
                     const { data: top50ThresholdRaw, error: top50ThresholdError } = await supabase.rpc('get_top_50_threshold');
                     
@@ -454,15 +483,28 @@ export async function runProfiler(
                         details: top50ThresholdError ? top50ThresholdError.message : (top50ThresholdIntegrity.success ? 'Threshold validated' : 'Malformed threshold payload')
                     });
 
-                    const top50ScoreThreshold = top50ThresholdIntegrity.success ? top50ThresholdIntegrity.output : 0;
-
                     stats.new_recruits_active = fateResults.filter(fateEntryCandidate => fateEntryCandidate.status === 'ACTIVE').length;
                     stats.new_recruits_benched = fateResults.filter(fateEntryCandidate => fateEntryCandidate.status === 'BENCHED').length;
-                    stats.new_recruits_top50 = fateResults.filter(fateEntryCandidate => fateEntryCandidate.status === 'ACTIVE' && Number(fateEntryCandidate.raw_potential_score) >= top50ScoreThreshold).length;
+                    // [DECISION LOG] A missing threshold used to default to 0, which counted every
+                    // new ACTIVE recruit as Top 50 and disarmed the epoch guard on a guess. Without
+                    // the threshold the count is unknown, not computed.
+                    if (top50ThresholdIntegrity.success && !top50ThresholdError) {
+                        const top50ScoreThreshold = top50ThresholdIntegrity.output;
+                        stats.new_recruits_top50 = fateResults.filter(fateEntryCandidate => fateEntryCandidate.status === 'ACTIVE' && Number(fateEntryCandidate.raw_potential_score) >= top50ScoreThreshold).length;
+                    } else {
+                        stats.new_recruits_top50 = null;
+                        stats.top50_unknown_reasons.push('Profiler: Top 50 threshold unavailable');
+                    }
                     
-                    console.log(`[PROFILING] Fate Finalized: Active=${stats.new_recruits_active}, Benched=${stats.new_recruits_benched}, Top50=${stats.new_recruits_top50}`);
+                    console.log(`[PROFILING] Fate Finalized: Active=${stats.new_recruits_active}, Benched=${stats.new_recruits_benched}, Top50=${stats.new_recruits_top50 ?? 'unknown (threshold unavailable)'}`);
                 } else {
-                    console.warn(`[PROFILING] Fate check FAILED after ${maxAttempts} attempts for ${newTags.length} tags.`);
+                    stats.new_recruits_active = null;
+                    stats.new_recruits_benched = null;
+                    stats.new_recruits_top50 = null;
+                    stats.top50_unknown_reasons.push(fateReadFailed
+                        ? `Profiler: fate read failed before ${newTags.length} new recruit(s) converged`
+                        : `Profiler: fate check unanswered for ${newTags.length} new recruit(s)`);
+                    console.warn(`[PROFILING] Fate check FAILED after ${attempts} attempt(s) for ${newTags.length} tags: Active, Benched and Top50 unknown.`);
                 }
             }
             

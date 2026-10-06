@@ -4,11 +4,13 @@
 import { ref, watch, type Ref } from "vue";
 import * as v from "valibot";
 import { useConnectionStatus } from "./useConnectionStatus";
+import { useApiState } from "../api/useApiState";
 import { lastSyncStatus } from "../api/SupabaseClient";
 import { loadCache, saveCache } from "./StorageService";
 import { useSyntheticMode } from "./useSyntheticMode";
 import { generateMockData } from "../utils/mockData";
 import { yieldToInteractionFrame } from "../utils/scheduling";
+import { FOREGROUND_POLL_INTERVAL, SOURCE_STALENESS_THRESHOLD } from "../config";
 import { MemberSchema } from "../api/MemberSchemas";
 import { WebAppDataSchema } from "../api/AppSchemas";
 import type { WebAppData } from "../types";
@@ -19,6 +21,32 @@ import {
 } from "./useClashSyncUtils";
 
 const SYNC_FAILURE_VISIBILITY_THRESHOLD = 3;
+
+/**
+ * Most background sync requests that one attempt may stand for while backing off.
+ *
+ * @remarks
+ * A backed-off client still looks once per source staleness window, so a backend
+ * that recovers is noticed before the data it shows would be called stale.
+ */
+const BACKGROUND_BACKOFF_SPAN_LIMIT = Math.floor(SOURCE_STALENESS_THRESHOLD / FOREGROUND_POLL_INTERVAL);
+
+/**
+ * Gets how many background sync requests one attempt stands for after consecutive failures.
+ *
+ * @remarks
+ * [DECISION LOG] THE POLL BACKS OFF ON FAILURE EVENTS, NOT A TIMER
+ * A fixed poll kept sending a full sync every interval at a database that was
+ * already timing out. Each consecutive failure doubles the number of background
+ * requests one attempt stands for, so the foreground poll spaces out by whole
+ * poll intervals, and the first success returns it to every request.
+ *
+ * @param failureCount - Consecutive failed sync attempts.
+ * @returns Background requests per attempt; 1 when the last attempt succeeded.
+ */
+function getBackgroundBackoffSpan(failureCount: number): number {
+  return Math.min(2 ** failureCount, BACKGROUND_BACKOFF_SPAN_LIMIT);
+}
 
 /**
  * Failure classes recognised in a transport error, and the copy shown for each.
@@ -119,6 +147,12 @@ export function useClashSync(data: Ref<WebAppData | null>) {
   /** Fault tolerance tracker for user-visible errors. */
   const consecutiveSyncFailures = ref(0);
 
+  /** Background sync requests declined since the last attempt, while backing off. */
+  let declinedBackgroundSyncs = 0;
+
+  /** Set when the backend comes back online during a backoff; lets the next background request through. */
+  let backoffWaived = false;
+
   /** The single authoritative in-flight remote synchronization attempt. */
   let activeSyncPromise: Promise<SyncAttemptResult> | null = null;
 
@@ -143,6 +177,18 @@ export function useClashSync(data: Ref<WebAppData | null>) {
   // --- DEPENDENCIES ---
   const { isSyntheticMode } = useSyntheticMode();
   const { isOnline } = useConnectionStatus();
+  const { apiStatus } = useApiState();
+
+  // [DECISION LOG] RECOVERY IS AN EVENT, NOT A POLL: the handshake reaching
+  // "online" after it was not is evidence the backend answers again, so the
+  // recovery sync fired on that transition must not wait out the backoff span.
+  // flush: "sync" sets the waiver before any pre-flush watcher, the recovery
+  // trigger among them, can request that sync.
+  watch(apiStatus, (status, previousStatus) => {
+    if (status === "online" && previousStatus !== "online" && consecutiveSyncFailures.value > 0) {
+      backoffWaived = true;
+    }
+  }, { flush: "sync" });
 
   // A physical disconnect invalidates the active transport immediately. This
   // releases the single-flight lock promptly and lets the first reconnect
@@ -335,15 +381,28 @@ export function useClashSync(data: Ref<WebAppData | null>) {
     const syncPromise = (async (): Promise<SyncAttemptResult> => {
       loading.value = true;
       try {
+        // Only a dataset that came from Supabase carries a blacklist the server
+        // reported; the empty placeholder's [] means unknown, not "none dismissed".
+        const knownBlacklist = data.value?.dataSource === "SUPABASE" ? data.value.blacklist : undefined;
         const remoteData = await fetchRemoteWithTimeout({
           force,
           signal: requestController.signal,
+          knownBlacklist,
         });
         const remoteDataValidation = v.safeParse(WebAppDataSchema, remoteData);
 
         if (!remoteDataValidation.success) {
           console.error("[Sync] Data Validation Failure Details:", JSON.stringify(remoteDataValidation.issues, null, 2));
           throw new Error("Remote data validation failed");
+        }
+
+        // [DECISION LOG] AN EMPTY ROSTER IS NOT A SUCCESSFUL SYNC: a clan always
+        // has members, so an empty roster over a populated one means the read
+        // lost its rows (a revoked grant, an unpopulated snapshot), not that the
+        // clan emptied. Committing it would wipe the cache and show a green pill.
+        const cachedMemberCount = data.value?.lb.length ?? 0;
+        if (remoteDataValidation.output.lb.length === 0 && cachedMemberCount > 0) {
+          throw new Error(`Roster validation failed: the server returned no members over ${cachedMemberCount} cached`);
         }
 
         await yieldToInteractionFrame();
@@ -391,6 +450,13 @@ export function useClashSync(data: Ref<WebAppData | null>) {
     if (syncIntent === "background" && !isOnline.value && !force) {
       lastSyncStatus.value = "OFFLINE";
       return;
+    }
+
+    if (syncIntent === "background" && !force) {
+      declinedBackgroundSyncs++;
+      if (!backoffWaived && declinedBackgroundSyncs < getBackgroundBackoffSpan(consecutiveSyncFailures.value)) return;
+      backoffWaived = false;
+      declinedBackgroundSyncs = 0;
     }
 
     const syncResult = await executeRemoteSync(force);

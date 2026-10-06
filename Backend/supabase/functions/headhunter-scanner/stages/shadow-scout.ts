@@ -86,16 +86,24 @@ export async function runShadowScout(
                     }
                 });
                 console.log(`[SHADOW_SCOUT] Added ${addedCount} new shadow candidates (filtered out ${shadowTargetsIntegrity.output.length - addedCount} via exclusion set)`);
+            } else {
+                stats.top50_unknown_reasons.push('ShadowScout: shadow targets failed validation');
             }
         } else {
-            console.error(`[SHADOW_SCOUT] RPC error: ${shadowTargetsError?.message || 'Unknown RPC error'}`);
-            logAudit('SHADOW_SCOUT', 'integrity_checked', { passed: false, details: shadowTargetsError?.message || 'Unknown RPC error' });
+            // [DECISION LOG] A failed read is recorded as a failure, not as "no shadow targets":
+            // the run's Top 50 count no longer covers this source, so it must not feed the epoch guard.
+            const rpcErrorMessage = shadowTargetsError?.message || 'Unknown RPC error';
+            console.error(`[SHADOW_SCOUT] RPC error: ${rpcErrorMessage}`);
+            stats.errors.push(`ShadowScout: ${rpcErrorMessage}`);
+            stats.top50_unknown_reasons.push(`ShadowScout: ${rpcErrorMessage}`);
+            logAudit('SHADOW_SCOUT', 'integrity_checked', { passed: false, details: rpcErrorMessage });
         }
         logAudit('SHADOW_SCOUT', 'terminated');
         console.log(`[SHADOW_SCOUT] Terminated smoothly.`);
     } catch (shadowScoutExecutionError: unknown) {
         const errorMessage = shadowScoutExecutionError instanceof Error ? shadowScoutExecutionError.message : String(shadowScoutExecutionError);
         stats.errors.push(`ShadowScout: ${errorMessage}`);
+        stats.top50_unknown_reasons.push(`ShadowScout: ${errorMessage}`);
         logAudit('SHADOW_SCOUT', 'integrity_checked', { passed: false, details: errorMessage });
         logAudit('SHADOW_SCOUT', 'error', { message: errorMessage });
         logAudit('SHADOW_SCOUT', 'terminated', { error: true });

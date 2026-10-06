@@ -83,6 +83,7 @@ function freshStats(): ScannerStats {
         profiles_scanned: 0,
         recruits_ingested: 0,
         errors: [],
+        top50_unknown_reasons: [],
     };
 }
 
@@ -246,5 +247,162 @@ describe("runProfiler discovery-source integrity", () => {
         // And the skip is recorded rather than silent: a candidate vanishing without
         // a trace is how this would go unnoticed a second time.
         expect(stats.errors.some((e) => e.includes("no discovery source"))).toBe(true);
+    });
+});
+
+// [THREAT:] The epoch guard re-fires a full scan whenever a run reports zero Top 50
+// recruits. Every read below used to end a failed run at exactly that zero, so a
+// starved database earned up to three more full scans. These tests prove a failed
+// read marks the count unknown instead, and that a clean run still counts.
+describe("runProfiler marks the Top 50 count unknown when a read fails", () => {
+    function setNewEligibleRecruit() {
+        mockFetchWithRotation.mockResolvedValue({ ok: true, status: 200, json: async () => eligibleProfile });
+        rpcQueues.get_recent_scans = [{ data: [], error: null }];
+    }
+
+    async function updateStatsUnderFakeTimers(stats: ScannerStats) {
+        vi.useFakeTimers();
+        try {
+            const run = runProfiler(new Map<string, RecruitSource>([["#PLAYER1", "TOURNAMENT"]]), new Set(), 5000, stats, vi.fn());
+            await vi.runAllTimersAsync();
+            await run;
+        } finally {
+            vi.useRealTimers();
+        }
+    }
+
+    const getFateCalls = () => mockSupabase.rpc.mock.calls.filter(([name]: [string]) => name === "get_recruits_fate");
+
+    it("marks the count unknown and skips the fate check when the existing-recruit baseline read fails", async () => {
+        setNewEligibleRecruit();
+        rpcQueues.get_recruits_fate = [{ data: null, error: { message: "canceling statement due to statement timeout" } }];
+        const stats = freshStats();
+
+        await updateStatsUnderFakeTimers(stats);
+
+        expect(stats.top50_unknown_reasons).toContain("Profiler: existing-recruit baseline unavailable");
+        expect(getFateCalls()).toHaveLength(1);
+    });
+
+    it("stops the fate check at the first read error instead of repeating it", async () => {
+        setNewEligibleRecruit();
+        rpcQueues.get_recruits_fate = [
+            { data: [], error: null },
+            { data: null, error: { message: "canceling statement due to statement timeout" } },
+        ];
+        rpcResponses.sync_recruits = { data: null, error: null };
+        const stats = freshStats();
+
+        await updateStatsUnderFakeTimers(stats);
+
+        expect(getFateCalls()).toHaveLength(2);
+        expect(stats.new_recruits_top50).toBeNull();
+        expect(stats.top50_unknown_reasons.some((reason) => reason.includes("fate read failed"))).toBe(true);
+    });
+
+    it("leaves the count uncomputed when the Top 50 threshold read fails", async () => {
+        setNewEligibleRecruit();
+        rpcQueues.get_recruits_fate = [
+            { data: [], error: null },
+            { data: [{ status: "ACTIVE", raw_potential_score: 9000 }], error: null },
+        ];
+        rpcResponses.sync_recruits = { data: null, error: null };
+        rpcResponses.get_top_50_threshold = { data: null, error: { message: "canceling statement due to statement timeout" } };
+        const stats = freshStats();
+
+        await updateStatsUnderFakeTimers(stats);
+
+        expect(stats.new_recruits_active).toBe(1);
+        expect(stats.new_recruits_top50).toBeNull();
+        expect(stats.top50_unknown_reasons).toContain("Profiler: Top 50 threshold unavailable");
+    });
+
+    it("marks the count unknown when the recruit batch write fails", async () => {
+        setNewEligibleRecruit();
+        rpcQueues.get_recruits_fate = [{ data: [], error: null }];
+        rpcResponses.sync_recruits = { data: null, error: { message: "canceling statement due to statement timeout" } };
+        const stats = freshStats();
+
+        await updateStatsUnderFakeTimers(stats);
+
+        expect(stats.top50_unknown_reasons).toContain("Profiler: sync_recruits failed for TOURNAMENT");
+    });
+
+    // The ADR gate's reproduction: an unconverged snapshot (a row still QUEUE), then a
+    // failed read. Counting that snapshot reported 0 Top 50 with no reason, which fed the
+    // guard a zero; the parent commit kept polling and found 1.
+    it("reports the count unknown, not 0, when a fate read fails after an unconverged snapshot", async () => {
+        setNewEligibleRecruit();
+        rpcQueues.get_recruits_fate = [
+            { data: [], error: null },
+            { data: [{ status: "QUEUE", raw_potential_score: 9000 }], error: null },
+            { data: null, error: { message: "canceling statement due to statement timeout" } },
+        ];
+        rpcResponses.sync_recruits = { data: null, error: null };
+        rpcResponses.get_top_50_threshold = { data: 8000, error: null };
+        const stats = freshStats();
+
+        await updateStatsUnderFakeTimers(stats);
+
+        expect(getFateCalls()).toHaveLength(3);
+        expect(stats.new_recruits_top50).toBeNull();
+        expect(stats.new_recruits_active).toBeNull();
+        expect(stats.top50_unknown_reasons.some((reason) => reason.includes("fate read failed"))).toBe(true);
+        expect(mockSupabase.rpc.mock.calls.some(([name]: [string]) => name === "get_top_50_threshold")).toBe(false);
+    });
+
+    it("reports the count unknown when a fate read answers with a malformed payload", async () => {
+        setNewEligibleRecruit();
+        rpcQueues.get_recruits_fate = [
+            { data: [], error: null },
+            { data: [{ status: "QUEUE", raw_potential_score: 9000 }], error: null },
+            { data: [{ wrong: "shape" }], error: null },
+        ];
+        rpcResponses.sync_recruits = { data: null, error: null };
+        rpcResponses.get_top_50_threshold = { data: 8000, error: null };
+        const stats = freshStats();
+
+        await updateStatsUnderFakeTimers(stats);
+
+        expect(getFateCalls()).toHaveLength(3);
+        expect(stats.new_recruits_top50).toBeNull();
+        expect(stats.top50_unknown_reasons.some((reason) => reason.includes("fate read failed"))).toBe(true);
+    });
+
+    it("marks the count unknown when the Royale API does not answer a profile", async () => {
+        mockFetchWithRotation.mockResolvedValue({ ok: false, status: 503, json: async () => ({}) });
+        rpcQueues.get_recent_scans = [{ data: [], error: null }];
+        const stats = freshStats();
+
+        await updateStatsUnderFakeTimers(stats);
+
+        expect(stats.top50_unknown_reasons.some((reason) => reason.includes("unanswered by the Royale API"))).toBe(true);
+    });
+
+    it("treats a 404 profile as an answer, not an unknown", async () => {
+        mockFetchWithRotation.mockResolvedValue({ ok: false, status: 404, json: async () => ({}) });
+        rpcQueues.get_recent_scans = [{ data: [], error: null }];
+        rpcResponses.report_dead_recruit = { data: null, error: null };
+        const stats = freshStats();
+
+        await updateStatsUnderFakeTimers(stats);
+
+        expect(stats.top50_unknown_reasons).toEqual([]);
+    });
+
+    it("counts the Top 50 and records no reason when every read answers", async () => {
+        setNewEligibleRecruit();
+        rpcQueues.get_recruits_fate = [
+            { data: [], error: null },
+            { data: [{ status: "ACTIVE", raw_potential_score: 9000 }], error: null },
+        ];
+        rpcResponses.sync_recruits = { data: null, error: null };
+        rpcResponses.get_top_50_threshold = { data: 8000, error: null };
+        const stats = freshStats();
+
+        await updateStatsUnderFakeTimers(stats);
+
+        expect(stats.new_recruits_top50).toBe(1);
+        expect(stats.top50_unknown_reasons).toEqual([]);
     });
 });

@@ -1020,7 +1020,10 @@ describe("clinicalServe", () => {
   });
 
   describe("Intermediate Heartbeat and Telemetry Closure", () => {
-    it("updates telemetry with status IN_PROGRESS when handler calls heartbeat", async () => {
+    // [THREAT:] heartbeat() used to rewrite the whole telemetry row (results plus the
+    // full audit trail so far) after every stage: four to six large JSONB updates per
+    // run on a database short of disk I/O. The row is now written once, at the end.
+    it("writes nothing when the handler calls heartbeat; the row is updated once, at the end", async () => {
       const { supabase, calls } = makeSupabaseMock(async (fn) => {
         if (fn === "report_telemetry") return { data: { id: "tid-heartbeat-cb" }, error: null };
         return { data: null, error: null };
@@ -1035,20 +1038,22 @@ describe("clinicalServe", () => {
         schema: EMPTY_SCHEMA,
         handler: async (_payload, logAudit, heartbeat) => {
           logAudit("STAGE_1", "run", { details: "processing" });
-          await heartbeat("STAGE_1", { processed: 5 });
+          await heartbeat("STAGE_1");
+          logAudit("STAGE_2", "run", { details: "processing" });
+          await heartbeat("STAGE_2");
           return { done: true };
         },
       });
 
       expect(response.status).toBe(200);
-
-      const inProgressCalls = calls.filter(
-        (c) => c.fn === "update_telemetry" && (c.args as any).p_status === "IN_PROGRESS",
-      );
-      expect(inProgressCalls.length).toBeGreaterThan(0);
-      expect((inProgressCalls[0].args as any).p_id).toBe("tid-heartbeat-cb");
-      expect((inProgressCalls[0].args as any).p_metadata.stage).toBe("STAGE_1");
-      expect((inProgressCalls[0].args as any).p_metadata.processed).toBe(5);
+      const updateCalls = calls.filter((c) => c.fn === "update_telemetry");
+      expect(updateCalls).toHaveLength(1);
+      expect((updateCalls[0].args as any).p_status).toBe("SUCCESS");
+      expect((updateCalls[0].args as any).p_id).toBe("tid-heartbeat-cb");
+      // The stage boundaries still reach the persisted record, as counts.
+      const counts = (updateCalls[0].args as any).p_metadata.audit_counts;
+      expect(counts.STAGE_1.terminated).toBe(1);
+      expect(counts.STAGE_2.terminated).toBe(1);
     });
 
     it("handles telemetry persistence exception inside catch block without crashing", async () => {
@@ -1179,6 +1184,119 @@ describe("clinicalServe", () => {
       const metadata = (updateCall!.args as any).p_metadata;
       expect(metadata.is_data_perfect).toBe(false);
       expect(metadata.validation_report.integrity_checks).toEqual([]);
+    });
+  });
+
+  describe("Persisted telemetry shape (counts plus failures, written once)", () => {
+    // Mirrors substrate.verify_run_integrity() (master_migration.sql), which trigger
+    // tr_telemetry_integrity_sync runs on every SUCCESS update: false for a missing or
+    // empty audit_log, for any 'error' entry, or for resulted_data with
+    // is_100_percent_match = false; true otherwise.
+    function getRunIntegrityVerdict(auditLog: unknown): boolean {
+      if (!Array.isArray(auditLog) || auditLog.length === 0) return false;
+      return !auditLog.some((entry: any) =>
+        entry?.action === "error" ||
+        (entry?.action === "resulted_data" && entry?.details?.is_100_percent_match === false));
+    }
+
+    async function fetchTelemetryCapture(handler: Parameters<typeof clinicalServe>[0]["handler"], extra: Record<string, unknown> = {}) {
+      const { supabase, calls } = makeSupabaseMock(async (fn) => {
+        if (fn === "report_telemetry") return { data: { id: "tid-shape" }, error: null };
+        return { data: null, error: null };
+      });
+      const response = await clinicalServe({
+        req: makeRequest({}, BEARER_TOKEN, { "x-forwarded-for": "10.9.9.9" }),
+        supabase: supabase as any,
+        bearerToken: BEARER_TOKEN,
+        eventType: "TEST_EVENT",
+        componentId: "shape-spec",
+        schema: EMPTY_SCHEMA,
+        handler,
+        ...extra,
+      });
+      const update = calls.find((c) => c.fn === "update_telemetry");
+      const heartbeat = calls.find((c) => c.fn === "report_heartbeat" && (c.args as any).p_status !== "RUNNING");
+      return { response, metadata: (update?.args as any)?.p_metadata, status: (update?.args as any)?.p_status, heartbeat };
+    }
+
+    it("persists per-stage counts and only the failing entries, not the full trail", async () => {
+      const { metadata } = await fetchTelemetryCapture(async (_payload, logAudit) => {
+        for (let tag = 0; tag < 50; tag++) {
+          logAudit("PROFILING", "called", { tag });
+          logAudit("PROFILING", "integrity_checked", { passed: true, details: "ok" });
+        }
+        logAudit("PROFILING", "integrity_checked", { passed: false, details: "malformed profile" });
+        logAudit("PROFILING", "error", { tag: "#GHOST", status: 404 });
+        return { scanned: 50 };
+      });
+
+      expect(metadata.audit_counts.PROFILING).toEqual({ called: 50, integrity_checked: 51, error: 1 });
+      expect(metadata.audit_log.map((entry: any) => entry.action)).toEqual(["integrity_checked", "error", "terminated"]);
+      expect(metadata.audit_log.at(-1).stage).toBe("COMPLETE");
+      expect(metadata.validation_report.integrity_checks).toEqual([{ stage: "PROFILING", passed: false }]);
+      expect(metadata.validation_report.stages_called).toEqual(["PROFILING"]);
+      expect(metadata.scanned).toBe(50);
+    });
+
+    it("gives verify_run_integrity the same verdict it gave the full trail", async () => {
+      const clean = await fetchTelemetryCapture(async (_payload, logAudit) => {
+        logAudit("STAGE", "run", {});
+        logAudit("STAGE", "integrity_checked", { passed: true });
+        return {};
+      });
+      expect(getRunIntegrityVerdict(clean.metadata.audit_log)).toBe(true);
+
+      const failing = await fetchTelemetryCapture(async (_payload, logAudit) => {
+        logAudit("STAGE", "run", {});
+        logAudit("STAGE", "error", { message: "write failed" });
+        return {};
+      });
+      expect(getRunIntegrityVerdict(failing.metadata.audit_log)).toBe(false);
+
+      const mismatched = await fetchTelemetryCapture(async (_payload, logAudit) => {
+        logAudit("STAGE", "resulted_data", { is_100_percent_match: false });
+        logAudit("STAGE", "resulted_data", { count: 3 });
+        return {};
+      });
+      expect(getRunIntegrityVerdict(mismatched.metadata.audit_log)).toBe(false);
+      expect(mismatched.metadata.audit_log.filter((entry: any) => entry.action === "resulted_data")).toHaveLength(1);
+    });
+
+    it("does not copy a public proxy's response body into telemetry, but still returns it", async () => {
+      const harvest = { items: Array.from({ length: 200 }, (_, index) => ({ tag: `#P${index}` })), region: "Global" };
+      const { response, metadata } = await fetchTelemetryCapture(async () => harvest, {
+        rateLimit: { maxRequests: 1000, windowMs: 60_000 },
+      });
+
+      expect(response.status).toBe(200);
+      expect((await response.json()).data.items).toHaveLength(200);
+      expect(metadata.items).toBeUndefined();
+      expect(metadata.region).toBeUndefined();
+      expect(metadata.stage).toBe("COMPLETE");
+    });
+
+    it("keeps a cron pipeline's statistics in telemetry", async () => {
+      const { metadata } = await fetchTelemetryCapture(async () => ({ recruits_ingested: 7, errors: [] }));
+
+      expect(metadata.recruits_ingested).toBe(7);
+    });
+
+    it("persists counts plus failures on the FAILED path too", async () => {
+      const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+      try {
+        const { metadata, status, heartbeat } = await fetchTelemetryCapture(async (_payload, logAudit) => {
+          logAudit("STAGE", "called", {});
+          logAudit("STAGE", "run", {});
+          throw new Error("stage exploded");
+        });
+
+        expect(status).toBe("FAILED");
+        expect(metadata.audit_counts.STAGE).toEqual({ called: 1, run: 1 });
+        expect(metadata.audit_log.map((entry: any) => entry.stage)).toEqual(["FATAL_ERROR"]);
+        expect((heartbeat!.args as any).p_metadata.last_validation_report.audit_log).toHaveLength(1);
+      } finally {
+        consoleErrorSpy.mockRestore();
+      }
     });
   });
 });

@@ -13,6 +13,7 @@ import type {
 import { SbRosterRowSchema } from "./MemberSchemas";
 import { SbHeadhunterRowSchema } from "./RecruitSchemas";
 import { mapSbRosterRow, mapSbHeadhunterRow } from "./DataMappers";
+import { cleanTag } from "../utils/text";
 import * as v from "valibot";
 
 export { NetworkError } from "./ApiErrors";
@@ -43,6 +44,16 @@ export const lastSyncStatus = ref<"TIMEOUT" | "AUTH" | "VALIDATION" | "OFFLINE" 
  * foreground-sync failure.
  */
 export const OPTIONAL_METADATA_TIMEOUT_MS = 3_000;
+
+/**
+ * The pipeline component whose last_success_at dates the game data on screen.
+ *
+ * @remarks
+ * Nightly maintenance also refreshes the roster snapshot when it completes, but
+ * it fetches no game data (it purges, folds and rotates), so counting its stamp
+ * would make a stalled ingestor read as fresh after every nightly run.
+ */
+const FRESHNESS_SOURCE = "ROYALE_DATA_INGESTOR";
 
 /**
  * Status indicator for backend ingestion pipeline execution.
@@ -169,10 +180,11 @@ type OptionalQueryResponse = {
 };
 
 /**
- * Runs a non-essential query with its own cancellation scope. The authoritative
- * roster and headhunter views remain strict; heartbeat and blacklist enrichment
- * can safely degrade because roster timestamps and server-side filtering retain
- * their core contracts.
+ * Runs a non-essential query with its own cancellation scope. The roster and
+ * headhunter snapshots stay strict. The heartbeat may degrade because roster
+ * timestamps can stand in for it; the blacklist is read through here only while
+ * a last known blacklist can stand in for it (see getDismissedTags), because the
+ * snapshot no longer filters dismissals server-side.
  *
  * @param label - Diagnostic string identifier for telemetry and logging.
  * @param parentSignal - AbortSignal from the parent fetch context.
@@ -221,6 +233,51 @@ async function resolveOptionalQuery<T extends OptionalQueryResponse>(
     if (timeoutId) clearTimeout(timeoutId);
     parentSignal.removeEventListener("abort", abortFromParent);
   }
+}
+
+const BlacklistRowsSchema = v.array(v.object({
+  player_tag: v.string(),
+}));
+
+/**
+ * Resolves the tags of the recruits that must be withheld from the headhunter snapshot.
+ *
+ * @remarks
+ * [DECISION LOG] AN UNKNOWN BLACKLIST IS NOT AN EMPTY ONE
+ * Reading a failed or malformed blacklist as "nothing dismissed" re-lists every
+ * recruit dismissed since the snapshot was last refreshed. A partial list is no
+ * better, so one malformed row voids the whole read. The last known blacklist
+ * stands in when there is one; otherwise the sync fails and the cached dataset
+ * stays on screen.
+ *
+ * @param blacklistResponse - The blacklist read, or null if it timed out or failed.
+ * @param knownBlacklist - Blacklist committed by the last successful sync, if any.
+ * @returns Dismissed player tags, each prefixed with '#'.
+ * @throws Error if the read is unusable and no blacklist is known.
+ */
+function getDismissedTags(
+  blacklistResponse: OptionalQueryResponse | null,
+  knownBlacklist?: readonly string[],
+): string[] {
+  const blacklistValidation = blacklistResponse && !blacklistResponse.error
+    ? v.safeParse(BlacklistRowsSchema, blacklistResponse.data)
+    : null;
+
+  if (blacklistValidation?.success) {
+    return blacklistValidation.output
+      .map(({ player_tag: observedPlayerTag }) =>
+        observedPlayerTag ? (observedPlayerTag.startsWith("#") ? observedPlayerTag : `#${observedPlayerTag}`) : "",
+      )
+      .filter(Boolean);
+  }
+
+  const failureReason = blacklistResponse?.error?.message
+    ?? (blacklistResponse ? "malformed rows" : "no response");
+  if (knownBlacklist) {
+    console.warn(`[Sync] Recruit blacklist unavailable (${failureReason}); filtering with the last known blacklist.`);
+    return [...knownBlacklist];
+  }
+  throw new Error(`Recruit blacklist unavailable (${failureReason}); dismissed recruits cannot be withheld`);
 }
 
 /**
@@ -352,13 +409,27 @@ export async function fetchResourcePressure(): Promise<ResourcePressureWarning |
   }
 }
 
+/** A handshake result, carrying the edge function's HTTP status when it answered with an error. */
+export type PingResult = PingResponse & { httpStatus?: number };
+
+/**
+ * Reads the HTTP status of an edge function's error answer.
+ *
+ * @param functionError - The error returned by `functions.invoke`.
+ * @returns The status, or undefined when the function never answered (network or relay failure).
+ */
+function getEdgeFunctionStatus(functionError: unknown): number | undefined {
+  const errorContext: unknown = (functionError as { context?: unknown } | null)?.context;
+  return errorContext instanceof Response ? errorContext.status : undefined;
+}
+
 /**
  * Performs a connectivity handshake with the Supabase backend.
  *
  * @param options - Optional configuration including AbortSignal.
- * @returns A PingResponse indicating success or error.
+ * @returns A PingResult indicating success or error.
  */
-export async function ping(options?: { signal?: AbortSignal; force?: boolean }): Promise<PingResponse> {
+export async function ping(options?: { signal?: AbortSignal; force?: boolean }): Promise<PingResult> {
   try {
     const supabase = createSupabaseClient();
     // [DECISION LOG] Invokes the `ping` Edge Function rather than the `features.ping()`
@@ -380,7 +451,7 @@ export async function ping(options?: { signal?: AbortSignal; force?: boolean }):
       headers: { Authorization: `Bearer ${getSupabaseKey()}` },
       ...(options?.signal ? { signal: options.signal } : {}),
     });
-    if (pingError) return { status: 'error', message: pingError.message };
+    if (pingError) return { status: 'error', message: pingError.message, httpStatus: getEdgeFunctionStatus(pingError) };
     return { status: 'success', message: 'Pong', version: data?.version };
   } catch (pingHandshakeError) {
     return { status: 'error', message: String(pingHandshakeError) };
@@ -396,12 +467,13 @@ export async function ping(options?: { signal?: AbortSignal; force?: boolean }):
  * Valibot schema validation on all inbound data.
  *
  * [DECISION LOG] FRESHNESS EVIDENCE RESOLUTION
- * Combines independent source-freshness evidence from the pipeline heartbeat
- * and individual roster row ingestion timestamps using the newest valid observation.
- * A terminal pipeline failure or delayed heartbeat write must not obscure the
- * freshness of committed roster rows.
+ * The ingestor heartbeat's last_success_at is the freshness of the payload.
+ * Roster row timestamps are only a lower bound, used when the heartbeat
+ * cannot be read.
  *
  * @param options - Fetch configuration including AbortSignal.
+ * @param options.knownBlacklist - Blacklist committed by the last successful sync;
+ *   stands in if this sync's blacklist read fails. Omit when no sync has succeeded.
  * @returns A Promise resolving to a fully populated WebAppData object.
  * @throws Error if any fetch fails or data validation fails.
  *
@@ -411,48 +483,60 @@ export async function ping(options?: { signal?: AbortSignal; force?: boolean }):
 export async function fetchRemote(options?: {
   signal?: AbortSignal;
   force?: boolean;
+  knownBlacklist?: readonly string[];
 }): Promise<WebAppData> {
   if (!isConfigured()) throw new Error("Supabase is not configured");
   
   const supabase = createSupabaseClient();
   const signal = options?.signal || new AbortController().signal;
 
-  // [TYPES] postgrest-js's `.single()` narrows its return type to `PostgrestBuilder`,
-  // which doesn't expose `.abortSignal()` -- but `.single()` returns `this` under the
-  // hood (see PostgrestTransformBuilder.single), so the real object still has the
-  // method at runtime. `.abortSignal()` must stay last (it resolves to a terminal,
-  // non-chainable value once awaited, same as every other query below), so this is
-  // a narrow type-only cast rather than a chain reorder.
   // [FIX] SCHEMA REACHABILITY: this previously addressed `substrate.pipeline_heartbeat`
   // directly. The remote Data API exposes only public/storage/graphql_public/features,
   // so PostgREST rejected every call with PGRST106 and the error was discarded below,
   // leaving the freshness stamp permanently null. Reads now go through the granted
   // `features.pipeline_heartbeat_view` projection.
-  const heartbeatQueryWithSingle = supabase
-    .schema('features')
-    .from('pipeline_heartbeat_view')
-    .select('last_success_at')
-    .eq('component_id', 'ROYALE_DATA_INGESTOR')
-    .single() as unknown as { abortSignal: (s: AbortSignal) => PromiseLike<{ data: { last_success_at: string | null } | null; error: { message: string } | null }> };
+  const fetchHeartbeats = (heartbeatSignal: AbortSignal) =>
+    supabase.schema('features').from('pipeline_heartbeat_view')
+      .select('component_id,last_success_at')
+      .eq('component_id', FRESHNESS_SOURCE)
+      .abortSignal(heartbeatSignal);
 
   // [ADR] Direct View Access: Bypassing the minimal SW-oriented get_pwa_data RPC
-  // to fetch high-fidelity datasets directly from the authoritative feature views.
+  // to fetch high-fidelity datasets directly from the feature schema.
   // Roster and headhunter are the product payload and stay fail-closed. The
-  // heartbeat and blacklist are enrichment: a single slow optional projection
-  // must not make an otherwise complete refresh look offline.
+  // heartbeat is enrichment: a single slow optional projection must not make an
+  // otherwise complete refresh look offline. The blacklist is optional only
+  // while a last known copy exists (see below).
+  // [DECISION LOG] SNAPSHOTS, NOT LIVE VIEWS: roster_view and headhunter_view
+  // are computed on demand and cost about a second of server time per read,
+  // which under load outran the server's 6 s read timeout and left a cold
+  // start with nothing to show. The sync reads their materialized snapshots,
+  // refreshed server-side when a pipeline run completes, so a read is an
+  // indexed scan of a few hundred rows however busy the instance is. Order is
+  // stated here because a snapshot has no storage order of its own.
+  // [DECISION LOG] THE SNAPSHOT FREEZES THE BLACKLIST FILTER: headhunter_view
+  // withholds blacklisted recruits, but its snapshot keeps whatever the view
+  // returned at the last pipeline refresh, so a recruit dismissed since then is
+  // still in it. The client withholds them using the live blacklist. That read
+  // is optional only while a last known blacklist can stand in for it; without
+  // one it gets the same transport budget as the snapshots.
+  // [FIX] SCHEMA REACHABILITY: was `drivers.recruit_blacklist`, which the Data API
+  // does not expose. `features.recruit_blacklist_view` also drops lapsed entries.
+  const fetchBlacklist = (blacklistSignal: AbortSignal) =>
+    supabase.schema('features').from('recruit_blacklist_view').select('player_tag').abortSignal(blacklistSignal);
   const rosterRequest =
-    supabase.schema('features').from('roster_view').select('*').abortSignal(signal),
+    supabase.schema('features').from('roster_materialized').select('*')
+      .order('raw_performance_score', { ascending: false, nullsFirst: false })
+      .order('performance_score', { ascending: false, nullsFirst: false })
+      .abortSignal(signal),
   headhunterRequest =
-    supabase.schema('features').from('headhunter_view').select('*').limit(250).abortSignal(signal),
-  heartbeatRequest = resolveOptionalQuery("Pipeline heartbeat", signal, (optionalSignal) =>
-    heartbeatQueryWithSingle.abortSignal(optionalSignal),
-  ),
-  blacklistRequest = resolveOptionalQuery("Recruit blacklist", signal, (optionalSignal) =>
-    // [FIX] SCHEMA REACHABILITY: was `drivers.recruit_blacklist`, which the Data API
-    // does not expose; the warn-and-continue below meant the client-side blacklist was
-    // permanently empty. `features.recruit_blacklist_view` also drops lapsed entries.
-    supabase.schema('features').from('recruit_blacklist_view').select('player_tag').abortSignal(optionalSignal),
-  );
+    supabase.schema('features').from('headhunter_materialized').select('*')
+      .order('raw_potential_score', { ascending: false })
+      .limit(250).abortSignal(signal),
+  heartbeatRequest = resolveOptionalQuery("Pipeline heartbeat", signal, fetchHeartbeats),
+  blacklistRequest = options?.knownBlacklist
+    ? resolveOptionalQuery("Recruit blacklist", signal, fetchBlacklist)
+    : fetchBlacklist(signal);
 
   const [rosterResponse, headhunterResponse, heartbeatResponse, blacklistResponse] = await Promise.all([
     rosterRequest,
@@ -463,10 +547,7 @@ export async function fetchRemote(options?: {
 
   if (rosterResponse.error) throw new Error(`Roster Fetch Error: ${rosterResponse.error.message}`);
   if (headhunterResponse.error) throw new Error(`Headhunter Fetch Error: ${headhunterResponse.error.message}`);
-  if (blacklistResponse?.error) {
-    console.warn("[Sync] Blacklist fetch failed; continuing with server-filtered recruits.", blacklistResponse.error.message);
-  }
-  
+
   // [GUARD] VALIDATION BOUNDARY: Harden external view data before domain mapping.
   // One malformed row must not discard every valid member or recruit, but a
   // wholly malformed payload is still rejected rather than certified as empty.
@@ -494,61 +575,51 @@ export async function fetchRemote(options?: {
     throw new Error("Headhunter validation failed for every row");
   }
 
-  const BlacklistRowSchema = v.object({
-    player_tag: v.string(),
-  });
-  const rawBlacklistData: unknown = blacklistResponse?.error ? [] : blacklistResponse?.data ?? [];
-  const blacklistData = Array.isArray(rawBlacklistData)
-    ? rawBlacklistData.flatMap((blacklistRow) => {
-      const validation = v.safeParse(BlacklistRowSchema, blacklistRow);
-      return validation.success ? [validation.output] : [];
-    })
-    : [];
-  if (blacklistResponse && !blacklistResponse.error && (!Array.isArray(rawBlacklistData) || blacklistData.length !== rawBlacklistData.length)) {
-    console.warn("[Sync] Ignored malformed optional blacklist data.");
-  }
-  const blacklistTags = blacklistData
-    .map((blacklistRow) => {
-      const observedPlayerTag = blacklistRow.player_tag;
-      return observedPlayerTag ? (observedPlayerTag.startsWith("#") ? observedPlayerTag : `#${observedPlayerTag}`) : "";
-    })
-    .filter(Boolean);
+  const blacklistTags = getDismissedTags(blacklistResponse, options?.knownBlacklist);
+  const dismissedRecruitIds = new Set(blacklistTags.map(cleanTag));
 
   const leaderboardMembers: LeaderboardMember[] = rosterData.map(mapSbRosterRow);
-  const headhunterRecruits: Recruit[] = headhunterData.map(mapSbHeadhunterRow);
+  const headhunterRecruits: Recruit[] = headhunterData
+    .map(mapSbHeadhunterRow)
+    .filter((recruit) => !dismissedRecruitIds.has(recruit.id));
   // SSOT: vars.PLAYER_TAG is injected by deploy-pwa.yml as VITE_PLAYER_TAG at build time.
   const playerTag: string = import.meta.env.VITE_PLAYER_TAG || "";
   
-  // [DECISION LOG] INDEPENDENT SOURCE-FRESHNESS EVIDENCE COMBINATION
-  // A terminal pipeline failure can be written after the roster transaction has
-  // already committed. In that case `last_success_at` remains behind even
-  // though the rows the user is actually viewing carry a newer `last_ingested_at`.
-  // Treating the heartbeat as unconditionally dominant made a freshly populated
-  // console read as an hour old.
-  const HeartbeatRowSchema = v.object({
+  // [DECISION LOG] THE HEARTBEAT IS THE FRESHNESS SIGNAL
+  // The roster is a snapshot refreshed by the same COMPLETED heartbeat write that
+  // stamps the ingestor's `last_success_at`, so that stamp is how fresh the game
+  // data on screen is. Nightly maintenance also refreshes the snapshot, but only
+  // the ingestor's last_success_at dates the game data (see FRESHNESS_SOURCE).
+  // Row timestamps were combined with it (newest wins) because a run could commit
+  // rows and then report FAILED; such rows now never reach the snapshot, which
+  // refreshes only on COMPLETED. Row timestamps also stop meaning "last ingested"
+  // once unchanged rows are no longer rewritten: a quiet clan would read as stale
+  // and an old member edit would vouch for a stalled pipeline. They remain only a
+  // lower bound for a sync whose heartbeat read failed.
+  const HeartbeatRowsSchema = v.array(v.object({
     last_success_at: v.nullable(v.string()),
-  });
+  }));
   const heartbeatValidation = heartbeatResponse?.error || !heartbeatResponse?.data
     ? null
-    : v.safeParse(HeartbeatRowSchema, heartbeatResponse.data);
+    : v.safeParse(HeartbeatRowsSchema, heartbeatResponse.data);
   if (!heartbeatResponse || heartbeatResponse.error || (heartbeatValidation && !heartbeatValidation.success)) {
-    console.warn("[Sync] Pipeline heartbeat unavailable; deriving freshness from roster data.");
+    console.warn("[Sync] Pipeline heartbeat unavailable; using roster timestamps as a lower bound on freshness.");
   }
-  const heartbeatTimestamp = heartbeatValidation?.success
-    ? parseTimestamp(heartbeatValidation.output.last_success_at)
-    : null;
+  const heartbeatTimestamps = heartbeatValidation?.success
+    ? heartbeatValidation.output
+      .map((heartbeatRow) => parseTimestamp(heartbeatRow.last_success_at))
+      .filter((heartbeatStamp): heartbeatStamp is number => heartbeatStamp !== null)
+    : [];
+  const heartbeatTimestamp = heartbeatTimestamps.length > 0 ? Math.max(...heartbeatTimestamps) : null;
   const rosterTimestamps = rosterData
     .map((rosterRow) => parseTimestamp(rosterRow.last_ingested_at))
     .filter((rosterTimestamp): rosterTimestamp is number => rosterTimestamp !== null);
   const rosterTimestamp = rosterTimestamps.length > 0 ? Math.max(...rosterTimestamps) : null;
 
-  // [DECISION LOG] NEWEST OBSERVATION SELECTION
+  // [DECISION LOG] NO FORGED FRESHNESS
   // Never replace unknown freshness with the client's current clock, as doing so
   // makes arbitrarily old source data appear freshly ingested.
-  // Both timestamps describe remote data, so use the newest valid observation via Math.max.
-  // Pipeline health remains independently visible in Settings; a lagging or failed heartbeat
-  // must not falsify the age of the successfully fetched roster payload.
-  const timestamp = Math.max(heartbeatTimestamp ?? 0, rosterTimestamp ?? 0);
+  const timestamp = heartbeatTimestamp ?? rosterTimestamp ?? 0;
   
   const webAppData: WebAppData = {
     lb: leaderboardMembers,

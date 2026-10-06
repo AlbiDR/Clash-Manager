@@ -2,6 +2,7 @@
 // Copyright (C) 2026 AlbiDR
 
 import { getApiUrl, isConfigured, ping } from "./SupabaseClient";
+import { getRetryDelayMs } from "./SupabaseTransport";
 import { ref, readonly } from "vue";
 import type { PingResponse } from "@core/types";
 
@@ -51,6 +52,22 @@ let connectivityListenersRegistered = false;
 
 const HANDSHAKE_TIMEOUT_MS = 25000;
 
+/** Consecutive handshake failures after which the backend is reported offline. */
+const HANDSHAKE_FAILURE_LIMIT = 5;
+
+/**
+ * Edge function answers that mean the backend is out of capacity: 503 (unavailable
+ * or failed to boot) and 546 (worker resource limit).
+ *
+ * @remarks
+ * [DECISION LOG] AN OVERLOADED BACKEND IS NOT RETRIED
+ * Retrying these feeds the overload that produced them. The handshake reports
+ * offline at once and is re-armed by the browser's online event, by the app
+ * returning to the foreground, or by the foreground poll, the same paths that
+ * recover from an exhausted retry chain.
+ */
+const EDGE_OVERLOAD_STATUS = new Set([503, 546]);
+
 function clearRetryTimer() {
   if (retryTimer !== null) {
     clearTimeout(retryTimer);
@@ -69,11 +86,29 @@ function handleBrowserOnline() {
   void checkApiStatus();
 }
 
+/**
+ * Re-arms an offline handshake when the app returns to the foreground.
+ *
+ * @remarks
+ * [DECISION LOG] RECOVERY DOES NOT WAIT FOR THE POLL
+ * An overloaded backend and an exhausted retry chain both leave the handshake
+ * offline with no timer. The foreground poll that re-arms it is suspended under
+ * power saving, and the app's visibility refresh waits for half an hour hidden,
+ * so a power-saving device could stay offline long after the backend recovered.
+ * Coming back to the foreground is the user asking to see current data.
+ */
+function handleVisibilityRecovery() {
+  if (document.visibilityState === "visible" && apiStatus.value === "offline" && navigator.onLine) {
+    void checkApiStatus();
+  }
+}
+
 function registerConnectivityRecovery() {
   if (connectivityListenersRegistered || typeof window === "undefined") return;
 
   window.addEventListener("offline", handleBrowserOffline);
   window.addEventListener("online", handleBrowserOnline);
+  if (typeof document !== "undefined") document.addEventListener("visibilitychange", handleVisibilityRecovery);
   connectivityListenersRegistered = true;
 }
 
@@ -129,7 +164,7 @@ async function checkApiStatus() {
     // (Project Waking) while ensuring the UI eventually hard-fails if unreachable.
     const response = await Promise.race([
       ping({ signal }),
-      new Promise<PingResponse>((_, reject) => {
+      new Promise<never>((_, reject) => {
         timeoutId = setTimeout(() => {
           handshakeTimedOut = true;
           if (handshakeController?.signal === signal) {
@@ -153,7 +188,8 @@ async function checkApiStatus() {
       consecutiveFailures = 0;
       isInitialized = true;
     } else {
-      handleFailure(handshakeTimedOut ? undefined : signal);
+      const backendOverloaded = response?.httpStatus !== undefined && EDGE_OVERLOAD_STATUS.has(response.httpStatus);
+      handleFailure(handshakeTimedOut ? undefined : signal, !backendOverloaded);
     }
   } catch (handshakeError: unknown) {
     // [DECISION LOG] ABORT RESILIENCE
@@ -174,8 +210,11 @@ async function checkApiStatus() {
 
 /**
  * Handles failed connectivity attempts with progressive backoff.
+ *
+ * @param signal - The failed handshake's signal; an aborted one was superseded and is ignored.
+ * @param retryable - False when retrying would add load to an overloaded backend.
  */
-function handleFailure(signal?: AbortSignal) {
+function handleFailure(signal?: AbortSignal, retryable = true) {
   if (signal?.aborted) return;
   consecutiveFailures++;
 
@@ -189,22 +228,21 @@ function handleFailure(signal?: AbortSignal) {
   }
 
   // [DECISION LOG] PROGRESSIVE RECOVERY
-  // Rationale: Only hard-fail after 5 attempts (~45s cumulative) to allow for
+  // Rationale: Only hard-fail after HANDSHAKE_FAILURE_LIMIT attempts to allow for
   // transient network hops or Edge Function cold starts. Intermediate failures
-  // are marked as 'stale' with an exponential backoff.
-  if (consecutiveFailures >= 5) {
+  // are marked as 'stale' with a jittered exponential backoff.
+  if (!retryable || consecutiveFailures >= HANDSHAKE_FAILURE_LIMIT) {
     apiStatus.value = "offline";
     isInitialized = true; 
   } else {
     // [THREAT:] RETRY STORM
-    // Rationale: Exponential backoff (2s, 4s, 6s, 8s capped at 10s) prevents
-    // slamming the backend or API proxy during an outage.
+    // Rationale: The same jittered exponential backoff as the read transport, so
+    // clients that failed together do not come back together.
     apiStatus.value = "stale";
-    const delay = Math.min(consecutiveFailures * 2000, 10000);
     retryTimer = setTimeout(() => {
       retryTimer = null;
       void checkApiStatus();
-    }, delay);
+    }, getRetryDelayMs(consecutiveFailures - 1));
   }
 }
 
@@ -266,6 +304,7 @@ export function resetApiState() {
     if (connectivityListenersRegistered && typeof window !== "undefined") {
       window.removeEventListener("offline", handleBrowserOffline);
       window.removeEventListener("online", handleBrowserOnline);
+      if (typeof document !== "undefined") document.removeEventListener("visibilitychange", handleVisibilityRecovery);
     }
     connectivityListenersRegistered = false;
     isInitialized = false;

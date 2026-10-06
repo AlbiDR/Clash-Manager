@@ -40,6 +40,23 @@ function walkFiles(root) {
 }
 
 /**
+ * The inside of one opening tag, where a ">" inside a quoted attribute value
+ * belongs to the value and does not end the tag.
+ *
+ * Every scan here used to read a tag as `<name[^>]*>`, which ends at the first
+ * ">" anywhere. `:disabled="position >= total"` therefore cut the tag short and
+ * nothing after the comparison was seen: GhostBenchmarkHost.vue's "Show later
+ * entry" stepper was invisible to every rule while its `<=` twin directly
+ * above it was reported. Vue puts comparisons in attribute values routinely,
+ * so an icon-only button written that way could ship with no accessible name
+ * under a PASS.
+ *
+ * The three alternatives cannot overlap (only a quote opens a quoted value), so
+ * the scan stays linear. A tag with an unbalanced quote is not matched.
+ */
+const TAG_BODY = String.raw`(?:[^>"']|"[^"]*"|'[^']*')*`;
+
+/**
  * The SFC's root <template> block, found by counting nesting rather than by a
  * non-greedy match.
  *
@@ -58,11 +75,11 @@ function walkFiles(root) {
  * direction is the only acceptable way for this to be wrong.
  */
 function extractVueTemplate(content) {
-  const opening = /<template\b[^>]*>/i.exec(content);
+  const opening = new RegExp(String.raw`<template\b${TAG_BODY}>`, "i").exec(content);
   if (!opening) return { text: content, offset: 0 };
 
   const innerStart = opening.index + opening[0].length;
-  const tag = /<template\b[^>]*?(\/)?>|<\/template\s*>/gi;
+  const tag = new RegExp(String.raw`<template\b(${TAG_BODY})>|<\/template\s*>`, "gi");
   tag.lastIndex = innerStart;
 
   let depth = 1;
@@ -71,7 +88,7 @@ function extractVueTemplate(content) {
     if (match[0].startsWith("</")) {
       depth -= 1;
       if (depth === 0) return { text: content.slice(innerStart, match.index), offset: innerStart };
-    } else if (!match[1]) {
+    } else if (!/\/\s*$/.test(match[1])) {
       depth += 1;
     }
   }
@@ -122,23 +139,118 @@ function isNativeClickableObservation(tagName, tag, attrs) {
  */
 function isIconOnly(inner) {
   const withoutIcons = inner
-    .replace(/<Icon\b[^>]*\/>/gi, " ")
-    .replace(/<Icon\b[^>]*>[\s\S]*?<\/Icon>/gi, " ")
-    .replace(/<svg\b[^>]*>[\s\S]*?<\/svg>/gi, " ")
-    .replace(/<[^>]+>/g, " ")
+    .replace(new RegExp(String.raw`<Icon\b${TAG_BODY}\/>`, "gi"), " ")
+    .replace(new RegExp(String.raw`<Icon\b${TAG_BODY}>[\s\S]*?<\/Icon>`, "gi"), " ")
+    .replace(new RegExp(String.raw`<svg\b${TAG_BODY}>[\s\S]*?<\/svg>`, "gi"), " ")
+    .replace(new RegExp(String.raw`<\/?[A-Za-z]${TAG_BODY}>`, "g"), " ")
     .replace(/\{\{[\s\S]*?\}\}/g, "X");
   return /<Icon\b|<svg\b/i.test(inner) && withoutIcons.trim() === "";
 }
 
 const ACCESSIBLE_NAME_ATTRS = ["aria-label", ":aria-label", "v-bind:aria-label", "aria-labelledby", ":aria-labelledby", "title", ":title"];
 
+/**
+ * The SFC's script blocks with comments and string contents blanked, so that
+ * neither a comment saying "haptics" nor a "(" inside a string is read as code.
+ * Single and double quoted strings stop at a line end, so a quote inside a
+ * regex literal cannot swallow the rest of the file.
+ */
+function scriptCode(content) {
+  return [...content.matchAll(new RegExp(String.raw`<script\b${TAG_BODY}>([\s\S]*?)<\/script\s*>`, "gi"))]
+    .map(match => match[1])
+    .join("\n")
+    .replace(/\/\*[\s\S]*?\*\/|\/\/[^\n]*|"(?:\\.|[^"\\\n])*"|'(?:\\.|[^'\\\n])*'|`(?:\\.|[^`\\])*`/g, token =>
+      token.startsWith("/") ? " " : token[0].repeat(2),
+    );
+}
+
+function identifierPattern(name) {
+  return new RegExp(String.raw`(?<![\w$.])${name.replaceAll("$", "\\$")}(?![\w$])`);
+}
+
+/**
+ * The local names the script binds from useHaptics(): `const haptics =
+ * useHaptics()` gives haptics, `const { tap, success: ok } = useHaptics()`
+ * gives tap and ok.
+ */
+function hapticBindings(code) {
+  const names = [];
+  for (const match of code.matchAll(/\b(?:const|let|var)\s+(\{[^}]*\}|[\w$]+)\s*(?::[^=]+)?=\s*useHaptics\s*\(/g)) {
+    if (!match[1].startsWith("{")) {
+      names.push(match[1]);
+      continue;
+    }
+    for (const part of match[1].slice(1, -1).split(",")) {
+      const local = part.split(":").pop().split("=")[0].replace("...", "").trim();
+      if (local) names.push(local);
+    }
+  }
+  return names;
+}
+
+/**
+ * The source of the script's own declaration of `name`, from `function name`
+ * or `const name =` until the brackets it opened are closed and its statement
+ * ends. Empty when the script declares no such name, which is how a function
+ * that comes from a composable (`const { hide } = useX()`) reads: no evidence.
+ */
+function declarationSource(code, name) {
+  const id = name.replaceAll("$", "\\$");
+  const start = new RegExp(String.raw`\bfunction\s*\*?\s*${id}(?![\w$])|\b(?:const|let|var)\s+${id}(?![\w$])`).exec(code);
+  if (!start) return "";
+  let depth = 0;
+  for (let index = start.index; index < code.length; index += 1) {
+    const char = code[index];
+    if ("({[".includes(char)) depth += 1;
+    else if (")}]".includes(char)) depth -= 1;
+    if (depth < 0 || (depth === 0 && (char === ";" || char === "\n"))) return code.slice(start.index, index);
+  }
+  return "";
+}
+
+/**
+ * The script functions a click expression calls by name: `open` and
+ * `open(item)` name open; `item.open()` names nothing, because a member call
+ * is not a function this file declares.
+ */
+function calledFunctions(expression) {
+  const trimmed = expression.trim();
+  if (/^[A-Za-z_$][\w$]*$/.test(trimmed)) return [trimmed];
+  return [...trimmed.matchAll(/(?<![\w$.])([A-Za-z_$][\w$]*)\s*\(/g)].map(match => match[1]);
+}
+
+/**
+ * Whether this clickable element is itself wired to haptics.
+ *
+ * The rule used to accept any file in which the word useHaptics appeared, so
+ * one imperative call anywhere exempted every click in that file, including
+ * controls that never vibrate. The evidence now has to belong to the element:
+ * v-tactile on it, or an event handler on it that uses a name the script binds
+ * from useHaptics() (`haptics.tap(); go()`), or that calls a function the
+ * script declares whose own body does (`selectOption(value)`). Every event on
+ * the element counts, not only the click: NavigationDock vibrates on
+ * pointerdown on purpose, so the tap is felt before the click resolves. Only
+ * one level is followed: a handler that reaches haptics through a second
+ * helper is reported, which is the direction an observation should be wrong in.
+ */
+function hasHapticEvidence(attrs, code) {
+  if (hasAttribute(attrs, ["v-tactile", "vTactile"])) return true;
+  const bindings = hapticBindings(code).map(identifierPattern);
+  if (bindings.length === 0) return false;
+  const usesHaptics = source => bindings.some(binding => binding.test(source));
+  return [...attrs]
+    .filter(([name]) => /^(?:@|v-on:)/.test(name))
+    .some(([, handler]) => usesHaptics(handler) || calledFunctions(handler).some(name => usesHaptics(declarationSource(code, name))));
+}
+
 function auditTemplate({ repoPath, content }) {
   const template = extractVueTemplate(content);
   const searchable = stripTemplateComments(template.text);
+  const code = scriptCode(content);
   const violations = [];
   const observations = [];
 
-  for (const match of searchable.matchAll(/<select\b[^>]*>/gi)) {
+  for (const match of searchable.matchAll(new RegExp(String.raw`<select\b${TAG_BODY}>`, "gi"))) {
     violations.push({
       code: "raw-select",
       severity: "fail",
@@ -148,7 +260,7 @@ function auditTemplate({ repoPath, content }) {
     });
   }
 
-  for (const match of searchable.matchAll(/<a\b[^>]*>/gi)) {
+  for (const match of searchable.matchAll(new RegExp(String.raw`<a\b${TAG_BODY}>`, "gi"))) {
     const attrs = tagAttributes(match[0]);
     if (!hasExternalHref(attrs)) continue;
     if (attrs.get("target") !== "_blank" || !/\bnoopener\b/.test(attrs.get("rel") || "")) {
@@ -167,7 +279,7 @@ function auditTemplate({ repoPath, content }) {
   // stage reported PASS on 77 files every night while four such buttons sat in
   // the tree: its three rules covered raw selects, external links and haptic
   // evidence, and nothing about whether a control can be named aloud.
-  for (const match of searchable.matchAll(/<(button|a)\b([^>]*)>([\s\S]*?)<\/\1>/gi)) {
+  for (const match of searchable.matchAll(new RegExp(String.raw`<(button|a)\b(${TAG_BODY})>([\s\S]*?)<\/\1>`, "gi"))) {
     const attrs = tagAttributes(`<${match[1]}${match[2]}>`);
     if (hasAttribute(attrs, ACCESSIBLE_NAME_ATTRS)) continue;
     if (!isIconOnly(match[3])) continue;
@@ -180,17 +292,18 @@ function auditTemplate({ repoPath, content }) {
     });
   }
 
-  for (const match of searchable.matchAll(/<([\w.-]+)\b[^>]*@click(?:\.[\w.-]+)?=[^>]*>/g)) {
+  for (const match of searchable.matchAll(new RegExp(String.raw`<([\w.-]+)\b${TAG_BODY}>`, "g"))) {
     const tagName = match[1];
     const attrs = tagAttributes(match[0]);
+    if (![...attrs.keys()].some(name => /^@click(?:\.[\w.-]+)?$/.test(name))) continue;
     if (!isNativeClickableObservation(tagName, match[0], attrs)) continue;
-    if (!hasAttribute(attrs, ["v-tactile", "vTactile"]) && !/\buseHaptics\b/.test(content)) {
+    if (!hasHapticEvidence(attrs, code)) {
       observations.push({
         code: "click-without-local-haptic-evidence",
         severity: "observe",
         path: repoPath,
         line: lineForOffset(content, template.offset + match.index),
-        message: "Clickable template element has no local v-tactile/useHaptics evidence; inspect before selecting a Stage 12 target.",
+        message: "Clickable template element has no haptic evidence of its own (v-tactile, or an event handler that calls the script's useHaptics binding); inspect before selecting a Stage 12 target.",
       });
     }
   }

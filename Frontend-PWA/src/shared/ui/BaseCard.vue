@@ -253,8 +253,8 @@ const scoreActionLabel = computed(() => {
   cursor: pointer;
   position: relative;
   overflow: visible;
-  user-select: none;
   -webkit-user-select: none;
+  user-select: none;
   -webkit-tap-highlight-color: transparent;
   touch-action: pan-y;
   /* [PERF] OPTIMIZED: Removed 'all', strictly animates composited properties + colors */

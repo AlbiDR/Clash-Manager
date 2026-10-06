@@ -6,6 +6,8 @@ import { useGhostBenchmarkState } from "../directives/ghostBenchmarkState";
 import { usePointerCapability } from "../composables/usePointerCapability";
 import BenchmarkContent from "./BenchmarkContent.vue";
 import Icon from "./Icon.vue";
+import { vTactile } from "../directives/vTactile";
+import { useDismissOnBack } from "@core";
 
 /**
  * [UI] GHOST BENCHMARK HOST
@@ -21,10 +23,14 @@ import Icon from "./Icon.vue";
 const { active, hide, ignoreBackdropClick } = useGhostBenchmarkState();
 const { isCoarsePointer } = usePointerCapability();
 const isScore = computed(() => typeof active.value?.content === "object" && "kind" in active.value.content);
+// Only the score explanation is a modal surface; a plain benchmark tooltip is not.
+useDismissOnBack(isScore, hide);
+const scoreExpanded = ref(false);
 const scoreKey = computed(() => {
   const content = active.value?.content;
   return typeof content === "object" && "kind" in content ? `${content.context}:${content.name}` : undefined;
 });
+watch(scoreKey, () => { scoreExpanded.value = false; });
 const sheetEl = useTemplateRef<HTMLElement>("sheetEl");
 let returnFocus: HTMLElement | null = null;
 
@@ -33,7 +39,13 @@ function handleKeydown(event: KeyboardEvent) {
   if (event.key === "Escape") { event.preventDefault(); hide(); return; }
   if (event.key !== "Tab") return;
   const panel = isCoarsePointer.value ? sheetEl.value : popoverEl.value;
-  const controls = panel?.querySelectorAll<HTMLElement>("button:not(:disabled), summary");
+  const controls = [...panel?.querySelectorAll<HTMLElement>("button:not(:disabled), summary") ?? []].filter(control => {
+    // Closed disclosures keep their descendants in the DOM but out of the tab order.
+    for (let ancestor = control.parentElement; ancestor && ancestor !== panel; ancestor = ancestor.parentElement) {
+      if (ancestor instanceof HTMLDetailsElement && !ancestor.open && !ancestor.querySelector("summary")?.contains(control)) return false;
+    }
+    return true;
+  });
   if (!controls?.length) return;
   const first = controls[0];
   const last = controls[controls.length - 1];
@@ -90,6 +102,12 @@ function positionPopover() {
     top: `${top}px`,
     transform: `translateX(-50%) translateY(${translateY})`,
   };
+}
+
+async function onScoreExpanded(expanded: boolean) {
+  scoreExpanded.value = expanded;
+  await nextTick();
+  positionPopover();
 }
 
 // Watch active state to reposition popover on fine pointers
@@ -207,7 +225,7 @@ onUnmounted(() => {
         v-if="active && !isCoarsePointer"
         ref="popoverEl"
         class="bc-popover"
-        :class="{ 'bc-popover--score': isScore }"
+        :class="{ 'bc-popover--score': isScore, 'bc-popover--expanded': isScore && scoreExpanded }"
         :role="isScore ? 'dialog' : undefined"
         :aria-modal="isScore ? 'true' : undefined"
         :aria-label="isScore ? 'Score explanation' : undefined"
@@ -215,6 +233,7 @@ onUnmounted(() => {
       >
         <button
           v-if="isScore"
+          v-tactile
           type="button"
           class="bc-close"
           aria-label="Close score explanation"
@@ -228,6 +247,7 @@ onUnmounted(() => {
         <BenchmarkContent
           :key="scoreKey"
           :data="active.content"
+          @expanded="onScoreExpanded"
           @toggle.capture="positionPopover"
         />
       </div>
@@ -255,6 +275,7 @@ onUnmounted(() => {
           <div class="bc-sheet-handle" />
           <button
             v-if="isScore"
+            v-tactile
             type="button"
             class="bc-close"
             aria-label="Close score explanation"
@@ -270,6 +291,7 @@ onUnmounted(() => {
             class="bc-stepper"
           >
             <button
+              v-tactile
               type="button"
               class="bc-step"
               aria-label="Show earlier entry"
@@ -286,6 +308,7 @@ onUnmounted(() => {
               <span class="bc-stepper-position">{{ active.stepper.position }} / {{ active.stepper.total }}</span>
             </div>
             <button
+              v-tactile
               type="button"
               class="bc-step"
               aria-label="Show later entry"
@@ -302,6 +325,7 @@ onUnmounted(() => {
             v-else
             :key="scoreKey"
             :data="active.content"
+            @expanded="onScoreExpanded"
           />
         </div>
       </div>
@@ -314,13 +338,15 @@ onUnmounted(() => {
 .bc-popover.bc-popover--score {
   --score-content-max-height: calc(100dvh - var(--sys-space-24) - var(--sys-space-48) - var(--sys-space-24));
   background: var(--sys-color-surface-container);
-  width: min(var(--sys-layout-score-popup-width), calc(100vw - var(--sys-space-24)));
   max-height: calc(100dvh - var(--sys-space-24));
   overflow: hidden;
   overscroll-behavior: contain;
   pointer-events: auto;
   padding: var(--sys-space-24);
   padding-top: var(--sys-space-48);
+}
+.bc-popover.bc-popover--expanded {
+  width: min(var(--sys-layout-score-popup-width), calc(100vw - var(--sys-space-24)));
 }
 .bc-sheet.bc-sheet--score {
   --score-content-max-height: calc(100dvh - var(--sys-safe-top) - var(--sys-space-24) - var(--sys-space-48) - var(--sys-space-24) - var(--sys-safe-bottom));

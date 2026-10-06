@@ -35,6 +35,7 @@ function freshStats(): ScannerStats {
         profiles_scanned: 0,
         recruits_ingested: 0,
         errors: [],
+        top50_unknown_reasons: [],
     };
 }
 
@@ -66,6 +67,20 @@ describe("runShadowScout", () => {
             (entry) => entry.action === "integrity_checked" && JSON.stringify(entry.details).includes("shadow rpc failed"),
         );
         expect(failureEntry).toBeDefined();
+        // A failed read is a failure, not "no shadow targets": it must reach stats.errors
+        // and keep this run's Top 50 count away from the epoch guard.
+        expect(stats.errors.some((error) => error.includes("shadow rpc failed"))).toBe(true);
+        expect(stats.top50_unknown_reasons.some((reason) => reason.includes("shadow rpc failed"))).toBe(true);
+    });
+
+    it("records nothing unknown when the read answers with no targets", async () => {
+        rpcResponses.get_shadow_discovery_targets = { data: [], error: null };
+
+        const stats = freshStats();
+        await runShadowScout(new Map<string, string>(), new Set(), stats, makeAuditCollector().logAudit);
+
+        expect(stats.errors).toEqual([]);
+        expect(stats.top50_unknown_reasons).toEqual([]);
     });
 
     it("adds only un-excluded targets as SHADOW candidates and updates stats", async () => {
@@ -101,6 +116,7 @@ describe("runShadowScout", () => {
             (entry) => entry.action === "integrity_checked" && JSON.stringify(entry.details).includes("Unexpected RPC data shape"),
         );
         expect(failureEntry).toBeDefined();
+        expect(stats.top50_unknown_reasons).toContain("ShadowScout: shadow targets failed validation");
     });
 
     it("does not throw when the RPC implementation itself rejects", async () => {
@@ -112,5 +128,6 @@ describe("runShadowScout", () => {
 
         await expect(runShadowScout(candidates, new Set(), stats, logAudit)).resolves.toBeUndefined();
         expect(stats.errors.some((e) => e.includes("network down"))).toBe(true);
+        expect(stats.top50_unknown_reasons.some((reason) => reason.includes("network down"))).toBe(true);
     });
 });

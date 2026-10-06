@@ -2,6 +2,7 @@
 <!-- Copyright (C) 2026 AlbiDR -->
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref, useId, useTemplateRef, watch } from "vue";
+import { useDismissOnBack } from "@core";
 import { useSearchField } from "../composables/useSearchField";
 import { vTactile } from "../directives/vTactile";
 import Icon from "./Icon.vue";
@@ -176,6 +177,8 @@ function closeOptions(): void {
   if (!props.open) return;
   emit("update:open", false);
 }
+
+useDismissOnBack(() => props.open, closeOptions);
 
 /**
  * Selects a sort criteria option and dismisses bottom sheet.
@@ -488,8 +491,8 @@ onUnmounted(() => {
   overflow: auto;
   color: var(--sys-color-on-surface);
   background: var(--sys-surface-glass);
-  backdrop-filter: var(--sys-surface-glass-blur);
   -webkit-backdrop-filter: var(--sys-surface-glass-blur);
+  backdrop-filter: var(--sys-surface-glass-blur);
   border: 1px solid var(--sys-surface-glass-border);
   border-radius: var(--sys-shape-corner-large);
   box-shadow: var(--sys-elevation-3);

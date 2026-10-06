@@ -267,8 +267,10 @@ describe("runDeepDepth shadow-lead registry write gating (F5)", () => {
 
 /**
  * Coverage for the no-op ingest skip. Only recruits may skip ingest_player_battles,
- * only when the fetched log is provably already stored, and any doubt (missing or
- * malformed data, a failed lookup) must fall back to ingesting as before.
+ * and only when the fetched log is provably already stored; missing or malformed
+ * per-row data falls back to ingesting. A lookup that could not be answered at all
+ * defers the recruits to the next cycle instead of re-sending every battle log to a
+ * database that was too slow to answer it.
  */
 describe("runDeepDepth skips ingest_player_battles for recruits with nothing new", () => {
     const storedLatest = validBattleLogPayload[0].battleTime;
@@ -341,29 +343,41 @@ describe("runDeepDepth skips ingest_player_battles for recruits with nothing new
         expect(mockSupabase.rpc.mock.calls.find(([name]: [string]) => name === "get_latest_battle_times")).toBeUndefined();
     });
 
-    it("ingests everything when the latest-battle-times lookup fails", async () => {
-        rpcResponses.get_ingestion_targets = { data: { "drivers.members": [], "drivers.recruits": ["#RECRUIT1"] }, error: null };
-        rpcResponses.get_latest_battle_times = { data: null, error: { message: "function does not exist" } };
+    it("defers recruits, still ingests members, and says why when the latest-battle-times lookup fails", async () => {
+        rpcResponses.get_ingestion_targets = { data: { "drivers.members": ["#MEMBER1"], "drivers.recruits": ["#RECRUIT1"] }, error: null };
+        rpcResponses.get_latest_battle_times = { data: null, error: { message: "canceling statement due to statement timeout" } };
         arrangeBattleLog();
         const results = freshResults();
         const { entries, logAudit } = makeAuditCollector();
 
         await runDeepDepth(results, logAudit);
 
-        expect(ingestCallsFor("#RECRUIT1")).toHaveLength(1);
+        expect(ingestCallsFor("#MEMBER1")).toHaveLength(1);
+        expect(ingestCallsFor("#RECRUIT1")).toHaveLength(0);
+        const fetchedPaths = mockFetchWithRotation.mock.calls.map(([path]: [string]) => path);
+        expect(fetchedPaths.some((path: string) => path.includes(encodeURIComponent("#RECRUIT1")))).toBe(false);
+
         const check = entries.find(entry => (entry.details as { stage?: string })?.stage === "LATEST_BATTLE_TIMES");
         expect((check?.details as { passed: boolean }).passed).toBe(false);
-        expect(results.battles.success).toBe(true);
+        const deferral = entries.find(entry => entry.action === "error" && JSON.stringify(entry.details).includes("deferred to the next cycle"));
+        expect((deferral?.details as { recruits_deferred: number }).recruits_deferred).toBe(1);
+        const terminated = entries.find(entry => entry.action === "terminated");
+        expect((terminated?.details as { recruits_deferred: number }).recruits_deferred).toBe(1);
+        expect(results.battles.success).toBe(false);
+        expect(results.battles.error).toContain("deferred");
     });
 
-    it("ingests everything when the lookup payload is malformed", async () => {
+    it("defers recruits when the lookup payload is malformed", async () => {
         rpcResponses.get_ingestion_targets = { data: { "drivers.members": [], "drivers.recruits": ["#RECRUIT1"] }, error: null };
         rpcResponses.get_latest_battle_times = { data: [{ player_tag: "#RECRUIT1" }], error: null };
         arrangeBattleLog();
+        const results = freshResults();
 
-        await runDeepDepth(freshResults(), makeAuditCollector().logAudit);
+        await runDeepDepth(results, makeAuditCollector().logAudit);
 
-        expect(ingestCallsFor("#RECRUIT1")).toHaveLength(1);
+        expect(ingestCallsFor("#RECRUIT1")).toHaveLength(0);
+        expect(mockFetchWithRotation).not.toHaveBeenCalled();
+        expect(results.battles.success).toBe(false);
     });
 });
 

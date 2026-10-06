@@ -215,7 +215,7 @@ describe('useLaboratory', () => {
 
       expect(layoutProps.value.loading).toBe(true);
       expect(layoutProps.value.status.type).toBe('loading');
-      expect(layoutProps.value.status.text).toBe('Scanning Vault...');
+      expect(layoutProps.value.status.text).toBe('Scanning');
     });
 
     it('keeps the initial skeleton until the first operation without hiding later recalculations', async () => {
@@ -256,7 +256,7 @@ describe('useLaboratory', () => {
       await nextTick();
 
       expect(layoutProps.value.loading).toBe(false);
-      expect(layoutProps.value.status.text).toBe('Computing Trajectory...');
+      expect(layoutProps.value.status.text).toBe('Simulating');
       store.setSimulating(false);
     });
 
@@ -270,7 +270,7 @@ describe('useLaboratory', () => {
 
       expect(layoutProps.value.syncError).toBe("Fail");
       expect(layoutProps.value.status.type).toBe('error');
-      expect(layoutProps.value.status.text).toBe('Extraction Failed');
+      expect(layoutProps.value.status.text).toBe('Fetch Failed');
     });
 
     it('uses a compact warning status when no tag is present', async () => {
