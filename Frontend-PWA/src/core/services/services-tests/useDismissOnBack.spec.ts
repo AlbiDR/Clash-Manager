@@ -34,6 +34,7 @@ let routerPops: RouterPop[] = [];
 let lateSaw: ReturnType<typeof vi.fn>;
 // Task rounds one history step takes to fire its popstate, measured once.
 let roundsPerStep = 0;
+let probeLanded = false;
 
 function handleObservedPop(): void {
   popCount += 1;
@@ -53,19 +54,35 @@ function fetchNextRound(): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, 0));
 }
 
-async function fetchRoundsPerStep(): Promise<number> {
-  let landed = false;
-  const noteLanding = (): void => { landed = true; };
+function handleProbeLanding(): void {
+  probeLanded = true;
+}
+
+/**
+ * Takes one probe step back and one forward, recording the most task rounds
+ * either took to fire its popstate. Stepping forward again returns to the
+ * probe entry, so nothing is left ahead of it; jsdom's history cannot shrink,
+ * so a copy of the starting entry stays behind it, which every test's base
+ * entry replaces anyway.
+ */
+async function updateHistoryByProbe(): Promise<void> {
+  window.addEventListener("popstate", handleProbeLanding);
   history.pushState(history.state, "");
-  window.addEventListener("popstate", noteLanding);
-  history.back();
-  let rounds = 0;
-  while (!landed) {
-    await fetchNextRound();
-    rounds += 1;
+  for (const step of [() => history.back(), () => history.forward()]) {
+    probeLanded = false;
+    step();
+    let rounds = 0;
+    while (!probeLanded) {
+      await fetchNextRound();
+      rounds += 1;
+    }
+    roundsPerStep = Math.max(roundsPerStep, rounds);
   }
-  window.removeEventListener("popstate", noteLanding);
-  return rounds;
+  window.removeEventListener("popstate", handleProbeLanding);
+}
+
+function getRoundsPerStep(): number {
+  return roundsPerStep;
 }
 
 /** Resolves once `pops` more popstate events have fired, steps included. */
@@ -84,7 +101,7 @@ async function fetchSettledPopCount(): Promise<number> {
   let seen: number;
   do {
     seen = popCount;
-    for (let round = 0; round <= roundsPerStep; round++) await fetchNextRound();
+    for (let round = 0; round <= getRoundsPerStep(); round++) await fetchNextRound();
   } while (popCount !== seen);
   return popCount;
 }
@@ -142,7 +159,7 @@ function setBaseEntry(path: string): void {
 
 describe("useDismissOnBack", () => {
   beforeAll(async () => {
-    roundsPerStep = await fetchRoundsPerStep();
+    await updateHistoryByProbe();
   });
 
   beforeEach(() => {
