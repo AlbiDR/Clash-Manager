@@ -25,7 +25,7 @@
 | `ProfileClient.ts` | Calls the [`sync-player-cards`](../../../../Backend/supabase/functions/sync-player-cards/README.md) Edge Function for the [Laboratory](../../features/laboratory/README.md). |
 | `MaintenanceClient.ts` | Manual backend maintenance triggers and web-push subscription registration. |
 | `DataMappers.ts` | Raw Supabase rows to domain models (Voyage history, heritage tenure, score fallbacks). |
-| `*Schemas.ts` | Valibot schemas per domain (`Base`, `Member`, `Recruit`, `Profile`, `Voyage`, `App`, `Offline`, `Maintenance`), aggregated by `DataSchemas.ts`. |
+| `*Schemas.ts` | Valibot schemas per domain (`Base`, `Member`, `Recruit`, `Profile`, `Score`, `Voyage`, `App`, `Offline`, `Maintenance`), aggregated by `DataSchemas.ts`. |
 
 ## Realtime Subscription & Validation Boundaries
 

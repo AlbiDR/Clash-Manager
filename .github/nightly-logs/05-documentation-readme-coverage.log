@@ -190,3 +190,4 @@
 * [2026-10-03] [Stage 5] [03:05Z-03:09Z 5m] [checks doc-debt=OK] CHANGED: Frontend-PWA/src/shared/composables/README.md -- Reconciled shared composables README with usePrecisionSlider details and useMotionPreference
 * [2026-10-04] [Stage 5] [03:19Z-03:23Z 3m] [checks doc-debt=OK] CLEAN: Codebase -- Audited doc-debt targets in shared/ui README; confirmed prose accurate
 * [2026-10-05] [Stage 5] [03:11Z-03:15Z 5m] [checks doc-debt=OK] CLEAN: Codebase -- Audited documentation debt targets and confirmed README accuracy
+* [2026-10-06] [Stage 5] [03:06Z-03:11Z 5m] [checks doc-debt=OK] CHANGED: Frontend-PWA/src/core/api/README.md -- docs(readme): Reconcile core/api and shared/ui READMEs with ScoreSchemas and ScoreCompositionPanel
