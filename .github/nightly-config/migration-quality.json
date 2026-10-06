@@ -88,7 +88,8 @@
     "Backend/supabase/migrations/20261005211604_reduce_sync_battle_read_cost.sql": "efe0e23eb4e6a1435dae71e3f4ca1c39838905df900a66da2996145ad004e35b",
     "Backend/supabase/migrations/20261005213231_align_public_read_timeout.sql": "46ab2b9ec8bd61126aee7f5fde9169096d9dd55ebfffdb41a5dff56c01169f91",
     "Backend/supabase/migrations/20261006203000_narrow_realtime_publication.sql": "917934a852439a199388082646e49fede82f6b5e9b5db6c493dc4cecfaa45bd0",
-    "Backend/supabase/migrations/20261006204000_materialize_sync_views.sql": "94f952e972326143c4cea6dfc905234bb7fc35692290b31d3fef0aa6c0a87106"
+    "Backend/supabase/migrations/20261006204000_materialize_sync_views.sql": "94f952e972326143c4cea6dfc905234bb7fc35692290b31d3fef0aa6c0a87106",
+    "Backend/supabase/migrations/20261006213500_store_unchanged_raw_responses_once.sql": "9cddcbc16f656fb1dd41aec695f55628d7f61736526ec82852bae5c014955474"
   },
   "exemptions": []
 }
