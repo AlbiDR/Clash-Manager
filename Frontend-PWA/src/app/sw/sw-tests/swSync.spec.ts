@@ -124,14 +124,14 @@ describe("swSync", () => {
     const BLACKLIST_URL = `${mockSupabaseUrl}/rest/v1/recruit_blacklist_view?select=player_tag`;
 
     /** Answers the snapshot and blacklist reads by URL; both run in parallel. */
-    const mockSnapshotReads = (recruits: unknown, blacklist: unknown = []) => {
+    const setSnapshotReads = (recruits: unknown, blacklist: unknown = []) => {
       vi.mocked(fetch).mockImplementation(async (input) => ({
         ok: true,
         json: async () => (String(input) === HEADHUNTER_SNAPSHOT_URL ? recruits : blacklist),
       }) as any);
     };
 
-    const mockConfiguredSettings = () => {
+    const setConfiguredSettings = () => {
       vi.mocked(openDB).mockResolvedValue({} as any);
       vi.mocked(getValue).mockImplementation(async (db, key) => {
         if (key === "cm_notifications_enabled") return true;
@@ -176,7 +176,7 @@ describe("swSync", () => {
         return null;
       });
 
-      mockSnapshotReads([
+      setSnapshotReads([
         { player_tag: "#A", s: 85 },
         { player_tag: "#B", s: 70 },
         { player_tag: "#C", s: 90 },
@@ -210,7 +210,7 @@ describe("swSync", () => {
         return null; // No threshold
       });
 
-      mockSnapshotReads([{ player_tag: "#A", s: 76 }, { player_tag: "#B", s: 74 }]);
+      setSnapshotReads([{ player_tag: "#A", s: 76 }, { player_tag: "#B", s: 74 }]);
 
       await handleBackgroundSync();
 
@@ -226,7 +226,7 @@ describe("swSync", () => {
         return null;
       });
 
-      mockSnapshotReads([{ player_tag: "#A", s: 50 }]);
+      setSnapshotReads([{ player_tag: "#A", s: 50 }]);
 
       const mockNotification = { close: vi.fn() };
       mockGetNotifications.mockResolvedValue([mockNotification]);
@@ -266,7 +266,7 @@ describe("swSync", () => {
         return null;
       });
 
-      mockSnapshotReads([{ invalid: "data" }]); // Fails SwSupabaseResponseSchema
+      setSnapshotReads([{ invalid: "data" }]); // Fails SwSupabaseResponseSchema
 
       await handleBackgroundSync();
 
@@ -275,8 +275,8 @@ describe("swSync", () => {
     });
 
     it("does not count recruits dismissed since the snapshot was taken", async () => {
-      mockConfiguredSettings();
-      mockSnapshotReads(
+      setConfiguredSettings();
+      setSnapshotReads(
         [
           { player_tag: "#KEPT", s: 90 },
           { player_tag: "#DISMISSED", s: 95 },
@@ -295,7 +295,7 @@ describe("swSync", () => {
     });
 
     it("leaves the badge as it was when the blacklist cannot be read", async () => {
-      mockConfiguredSettings();
+      setConfiguredSettings();
       vi.mocked(fetch).mockImplementation(async (input) => (String(input) === HEADHUNTER_SNAPSHOT_URL
         ? { ok: true, json: async () => [{ player_tag: "#A", s: 90 }] }
         : { ok: false, status: 503 }) as any);
@@ -310,8 +310,8 @@ describe("swSync", () => {
     });
 
     it("leaves the badge as it was when the blacklist is malformed", async () => {
-      mockConfiguredSettings();
-      mockSnapshotReads([{ player_tag: "#A", s: 90 }], [{ player_tag: "#A" }, { tag: "#B" }]);
+      setConfiguredSettings();
+      setSnapshotReads([{ player_tag: "#A", s: 90 }], [{ player_tag: "#A" }, { tag: "#B" }]);
 
       await handleBackgroundSync();
 

@@ -170,10 +170,11 @@ type OptionalQueryResponse = {
 };
 
 /**
- * Runs a non-essential query with its own cancellation scope. The authoritative
- * roster and headhunter views remain strict; heartbeat and blacklist enrichment
- * can safely degrade because roster timestamps and server-side filtering retain
- * their core contracts.
+ * Runs a non-essential query with its own cancellation scope. The roster and
+ * headhunter snapshots stay strict. The heartbeat may degrade because roster
+ * timestamps can stand in for it; the blacklist is read through here only while
+ * a last known blacklist can stand in for it (see getDismissedTags), because the
+ * snapshot no longer filters dismissals server-side.
  *
  * @param label - Diagnostic string identifier for telemetry and logging.
  * @param parentSignal - AbortSignal from the parent fetch context.
