@@ -16,6 +16,15 @@ LAST_AGED:   2026-10-05
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-06] PR #2105 [Stage 12]: Calibration pass: 7 consecutive CLEAN runs verified; 1 candidate file reviewed (GhostBenchmarkHost.vue) across 77 files examined in 10 UX categories.
+**Domain:** ux | **Commit:** 93e1ead15 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2105)
+**Files:** .github/nightly-logs/12-apk-ux-coverage.log, .github/nightly-logs/12-apk-ux-pr-body.md
+**Why:** Audit status PASS with zero violations; calibration pass confirmed 1 candidate file (GhostBenchmarkHost.vue) verified clean.
+**Change:** Calibration pass: 7 consecutive CLEAN runs verified; 1 candidate file reviewed (GhostBenchmarkHost.vue) across 77 files examined in 10 UX categories.
+**Result:** apk-ux-audit-status.txt: PASS; apk-ux-audit.json: 1 candidate files reviewed; UX categories 1-10 checked
+**Nudges:** 0
+
+
 ### [2026-10-06] PR #2104 [Stage 11]: Inspected APK wrapper performance settings, WebView caching mode LOAD_CACHE_ELSE_NETWORK, service worker precache route, Vite code splitting, and precache footprint (15 files, 67.6 KB). All 9 performance invariants verified optimal.
 **Domain:** apk | **Commit:** f07ef1668 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2104)
 **Files:** .github/nightly-logs/11-apk-optimization-coverage.log, .github/nightly-logs/11-apk-optimization-pr-body.md
