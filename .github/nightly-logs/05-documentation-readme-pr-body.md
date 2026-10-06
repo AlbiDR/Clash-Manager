@@ -1,29 +1,26 @@
 ### Nightly Stage 5: Documentation README - Architecture Truth Architect
 
-**Status:** CLEAN
+**Status:** CHANGED
 
-In plain terms: nothing needed fixing. This run checked the documentation README area and found it already correct, so the only file here is the log recording that the check happened.
+In plain terms: this is a documentation change to 2 files in the documentation README area. Nothing about how the app runs is affected.
 
-**What was checked:** Audited documentation debt targets and confirmed README accuracy
+**What changed:** docs(readme): Reconcile core/api and shared/ui READMEs with ScoreSchemas and ScoreCompositionPanel
 
-**Why:** All listed files in doc-debt.txt carry accurate README prose matching current implementations
+**Why:** Reconciled shared/ui README with ScoreCompositionPanel, GhostBenchmarkHost, BenchmarkContent, ConfirmDialog, and LinkRow, and core/api README with ScoreSchemas domain
 
-**Result:** Audit completed with no source change required.
+**Result:** PASSED: git diff --check verified zero whitespace or syntax errors
 
-**Files changed:** .github/nightly-logs/05-documentation-readme-coverage.log
-
-**Verified accurate:** Frontend-PWA/src/core/services/StorageService.ts, Frontend-PWA/src/core/services/useConsoleMetadata.ts, Frontend-PWA/src/features/headhunter/components/RecruitCard.vue, Frontend-PWA/src/shared/composables/useMotionPreference.ts, Frontend-PWA/src/shared/ui/AnimatedDigits.vue, Frontend-PWA/src/shared/ui/ViewOptions.vue
+**Files changed:** .github/nightly-logs/05-documentation-readme-coverage.log, Frontend-PWA/src/core/api/README.md, Frontend-PWA/src/shared/ui/README.md
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: documentation
-  Cycle: nightly-cycle/2026-10-05
+  Cycle: nightly-cycle/2026-10-06
   Contract: cea68a5bbba1bd2cbc6d3bdfe2639f37f3935b571beab59f5da1501b1180b22d
-  Why: All listed files in doc-debt.txt carry accurate README prose matching current implementations
-  Change: Audited documentation debt targets and confirmed README accuracy
-  Result: Audit completed with no source change required.
-  Files: .github/nightly-logs/05-documentation-readme-coverage.log
-  Verified: Frontend-PWA/src/core/services/StorageService.ts, Frontend-PWA/src/core/services/useConsoleMetadata.ts, Frontend-PWA/src/features/headhunter/components/RecruitCard.vue, Frontend-PWA/src/shared/composables/useMotionPreference.ts, Frontend-PWA/src/shared/ui/AnimatedDigits.vue, Frontend-PWA/src/shared/ui/ViewOptions.vue
-  Nudges: 1
-  Execution: 4999834405a4e7237dd5e330d4332ed6afb78336
+  Why: Reconciled shared/ui README with ScoreCompositionPanel, GhostBenchmarkHost, BenchmarkContent, ConfirmDialog, and LinkRow, and core/api README with ScoreSchemas domain
+  Change: docs(readme): Reconcile core/api and shared/ui READMEs with ScoreSchemas and ScoreCompositionPanel
+  Result: PASSED: git diff --check verified zero whitespace or syntax errors
+  Files: .github/nightly-logs/05-documentation-readme-coverage.log, Frontend-PWA/src/core/api/README.md, Frontend-PWA/src/shared/ui/README.md
+  Nudges: 0
+  Execution: 0c8d2766f059f20ab556ff8289259a9e7a253898
 -->
