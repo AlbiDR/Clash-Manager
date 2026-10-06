@@ -14,7 +14,7 @@ import { runDeepDepth } from "./stages/deep-depth.ts";
  *
  * @param targetTag - The authoritative Clash Royale tag for the target clan.
  * @param logAudit - Telemetry sink for clinical audit logs.
- * @param heartbeat - Persistence hook for intermediate pipeline state.
+ * @param heartbeat - Marks a stage boundary in the audit trail (in memory; persisted once at the end).
  * @returns Consolidated ingestion metrics and diagnostic metadata.
  *
  * @remarks

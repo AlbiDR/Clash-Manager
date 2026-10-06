@@ -450,6 +450,50 @@ async function reportHeartbeat(
 }
 
 /**
+ * Whether an `integrity_checked` audit entry carries a structurally valid `passed: true`.
+ *
+ * @param entry - An audit entry whose action is `integrity_checked`.
+ * @returns `true` only for a check that validates against IntegrityCheckDetailsSchema and passed.
+ */
+function isPassedIntegrityCheck(entry: AuditEntry): boolean {
+    const validation = v.safeParse(IntegrityCheckDetailsSchema, entry.details);
+    return validation.success && validation.output.passed === true;
+}
+
+/**
+ * Condenses a run's audit trail into what is persisted: per-stage action counts plus
+ * every entry that records a failure.
+ *
+ * @remarks
+ * [DECISION LOG] The in-memory trail grows with every tag a run touches (about six
+ * entries per profiled recruit), and it used to be written to governance_telemetry in
+ * full after every stage and again at the end: four to six rewrites of a JSONB value
+ * that reached hundreds of kilobytes on a database short of disk I/O. The counts keep
+ * the shape of the run; the failures keep the detail a diagnosis needs. A clean entry
+ * ("called", "run", a passed check) says nothing a count does not.
+ * [GUARD] Failures stay an array of AuditEntry under `audit_log`: trigger
+ * tr_telemetry_integrity_sync calls substrate.verify_run_integrity(), which reads
+ * metadata->'audit_log', answers false for a missing or empty array, and false for any
+ * entry whose action is 'error'. Every 'error' entry is kept, and callers append the
+ * run's closing entry so a clean run is never empty, so it reaches the same verdict it
+ * reached on the full trail.
+ *
+ * @param entries - The run's complete in-memory audit trail.
+ * @returns `audit_counts` (stage to action to count) and `audit_log` (failures only, in order).
+ */
+function summarizeAuditLog(entries: AuditEntry[]) {
+    const audit_counts: Record<string, Partial<Record<AuditEntry['action'], number>>> = {};
+    for (const entry of entries) {
+        const stageCounts = audit_counts[entry.stage] ??= {};
+        stageCounts[entry.action] = (stageCounts[entry.action] ?? 0) + 1;
+    }
+    const audit_log = entries.filter((entry) =>
+        entry.action === 'error' || (entry.action === 'integrity_checked' && !isPassedIntegrityCheck(entry))
+    );
+    return { audit_counts, audit_log };
+}
+
+/**
  * CONFIGURATION: ProtocolOptions
  *
  * @remarks
@@ -526,11 +570,24 @@ export interface ProtocolOptions<T> {
      */
     corsRestricted?: boolean;
     /**
+     * Whether the handler's return value is copied into the run's telemetry row.
+     *
+     * @remarks
+     * [DECISION LOG] For the cron pipelines the return value is the run's statistics, a
+     * few hundred bytes worth keeping. For the public proxies it is the response body
+     * itself (a leaderboard, a battle log, a card collection) that nothing ever read back
+     * out of governance_telemetry. Omit this option to retain the established pattern of
+     * `corsRestricted`: functions with a `rateLimit` (the public proxies) record no
+     * results; all other functions record them.
+     */
+    recordResults?: boolean;
+    /**
      * The core business logic handler to be executed within the clinical wrapper.
      *
      * @param payload - The validated and typed request body.
      * @param logAudit - A telemetry sink for recording clinical audit entries.
-     * @param heartbeat - A persistence hook for updating intermediate pipeline state.
+     * @param heartbeat - Marks a stage boundary in the audit trail. It writes nothing to the
+     *                    database; the trail is persisted once, when the run ends.
      * @returns A promise resolving to the final execution results.
      */
     handler: (
@@ -592,6 +649,7 @@ export async function clinicalServe<T>(options: ProtocolOptions<T>) {
     // bearer-only functions retain the original blanket `Access-Control-Allow-Origin: *`.
     // See `resolveCorsHeaders` for the full behavior in each mode.
     const corsRestricted = options.corsRestricted ?? !!rateLimit;
+    const recordResults = options.recordResults ?? !rateLimit;
 
     // 1. CORS Preflight
     if (req.method === "OPTIONS") {
@@ -835,23 +893,14 @@ export async function clinicalServe<T>(options: ProtocolOptions<T>) {
 
         /**
          * Heartbeat closure for the handler.
-         * [DECISION LOG] Provides a mechanism for long-running handlers to persist
-         * intermediate results, ensuring partial progress is not lost on timeout.
+         * [DECISION LOG] Records the stage boundary in memory only. It used to rewrite the
+         * whole telemetry row (results plus the full audit trail so far) after every stage,
+         * so that a run killed mid-way still showed how far it got. Nothing read that
+         * progress back, every stage also logs to the function's console, and each rewrite
+         * cost the database a large JSONB update. The trail is now written once, at the end.
          */
-        const heartbeat = async (stage: string, currentResults: unknown) => {
+        const heartbeat = async (stage: string) => {
             logAudit(stage, 'terminated', { status: 'IN_PROGRESS' });
-            if (supabase !== null && telemetryId !== null) {
-                await supabase.rpc('update_telemetry', {
-                    p_id: telemetryId,
-                    p_status: 'IN_PROGRESS',
-                    p_metadata: { 
-                        ...(typeof currentResults === 'object' && currentResults !== null ? currentResults : { results: currentResults }),
-                        stage, 
-                        current_duration: Temporal.Now.instant().since(startInstant).total('milliseconds'),
-                        audit_log
-                    }
-                });
-            }
         };
 
         // 5. Logic Execution
@@ -861,12 +910,13 @@ export async function clinicalServe<T>(options: ProtocolOptions<T>) {
         // 6. Governance: Completion & Telemetry Closure
         // [DECISION LOG] Final telemetry update aggregates all audit entries and
         // calculates total execution duration for performance monitoring.
-        const audit_log_final = [...audit_log, { 
-            timestamp: Temporal.Now.instant().toString(), 
-            stage: 'COMPLETE', 
-            action: 'terminated' as const, 
-            details: { status: 'SUCCESS' } 
-        }];
+        const completeEntry: AuditEntry = {
+            timestamp: Temporal.Now.instant().toString(),
+            stage: 'COMPLETE',
+            action: 'terminated',
+            details: { status: 'SUCCESS' }
+        };
+        const audit_log_final = [...audit_log, completeEntry];
 
         const integrityChecks = audit_log_final.filter(entry => entry.action === 'integrity_checked');
 
@@ -876,33 +926,33 @@ export async function clinicalServe<T>(options: ProtocolOptions<T>) {
         // strict v.safeParse() validation boundary using IntegrityCheckDetailsSchema.
         // This ensures that 'isDataPerfect' accurately reflects that ALL integrity checks passed
         // based on a validated structural contract.
-        const isDataPerfect = integrityChecks.length > 0 && integrityChecks.every(check => {
-            const validation = v.safeParse(IntegrityCheckDetailsSchema, check.details);
-            return validation.success && validation.output.passed === true;
-        });
+        const isDataPerfect = integrityChecks.length > 0 && integrityChecks.every(isPassedIntegrityCheck);
 
+        // [DECISION LOG] One entry per stage, not per check: a stage passes only when every
+        // one of its checks passed. Listing every check repeated the stage name once per
+        // profiled tag, and the failing checks themselves are kept in `audit_log` below.
+        const integrityByStage = new Map<string, boolean>();
+        for (const check of integrityChecks) {
+            integrityByStage.set(check.stage, (integrityByStage.get(check.stage) ?? true) && isPassedIntegrityCheck(check));
+        }
         const validationReport = {
-            stages_called: audit_log_final.filter(entry => entry.action === 'called').map(entry => entry.stage),
-            stages_run: audit_log_final.filter(entry => entry.action === 'run').map(entry => entry.stage),
-            integrity_checks: integrityChecks.map(check => {
-                const validation = v.safeParse(IntegrityCheckDetailsSchema, check.details);
-                return {
-                    stage: check.stage,
-                    passed: validation.success ? validation.output.passed : false
-                };
-            }),
+            stages_called: [...new Set(audit_log_final.filter(entry => entry.action === 'called').map(entry => entry.stage))],
+            stages_run: [...new Set(audit_log_final.filter(entry => entry.action === 'run').map(entry => entry.stage))],
+            integrity_checks: [...integrityByStage].map(([stage, passed]) => ({ stage, passed })),
             total_duration: Temporal.Now.instant().since(startInstant).total('milliseconds')
         };
-        
+
         if (supabase !== null && telemetryId !== null) {
+            const { audit_counts, audit_log: auditFailures } = summarizeAuditLog(audit_log_final);
             await supabase.rpc('update_telemetry', {
                 p_id: telemetryId,
                 p_status: 'SUCCESS',
-                p_metadata: { 
-                    ...(typeof results === 'object' && results !== null ? results : { results }),
-                    stage: 'COMPLETE', 
+                p_metadata: {
+                    ...(!recordResults ? {} : typeof results === 'object' && results !== null ? results : { results }),
+                    stage: 'COMPLETE',
                     current_duration: Temporal.Now.instant().since(startInstant).total('milliseconds'),
-                    audit_log: audit_log_final,
+                    audit_counts,
+                    audit_log: [...auditFailures, completeEntry],
                     is_data_perfect: isDataPerfect,
                     validation_report: validationReport
                 }
@@ -955,6 +1005,7 @@ export async function clinicalServe<T>(options: ProtocolOptions<T>) {
         // [GUARD] Wrapped in its own try/catch so a DB outage that caused (or accompanies)
         // the original failure cannot throw a SECOND, unhandled exception out of the error
         // handler and crash the function with no response at all.
+        const { audit_counts, audit_log: auditFailures } = summarizeAuditLog(audit_log);
         if (supabase !== null && telemetryId !== null) {
             try {
                 await supabase.rpc('update_telemetry', {
@@ -965,7 +1016,8 @@ export async function clinicalServe<T>(options: ProtocolOptions<T>) {
                         error_code: code,
                         error_detail: internalDetail,
                         current_duration: Temporal.Now.instant().since(startInstant).total('milliseconds'),
-                        audit_log
+                        audit_counts,
+                        audit_log: auditFailures
                     }
                 });
             } catch (telemetryCloseError: unknown) {
@@ -988,7 +1040,8 @@ export async function clinicalServe<T>(options: ProtocolOptions<T>) {
                         last_validation_report: {
                             error_code: code,
                             error: internalDetail,
-                            audit_log
+                            audit_counts,
+                            audit_log: auditFailures
                         }
                     }
                 });
