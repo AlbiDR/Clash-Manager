@@ -16,6 +16,15 @@ LAST_AGED:   2026-10-06
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-07] PR #2113 [Stage 8]: package.json -- Bumped knip to ^6.40.0 in monorepo catalog and refreshed pnpm-lock.yaml
+**Domain:** dependencies | **Commit:** 757e398e4 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2113)
+**Files:** .github/nightly-logs/08-dependency-audit-coverage.log, .github/nightly-logs/08-dependency-audit-pr-body.md, package.json, pnpm-lock.yaml, pnpm-workspace.yaml
+**Why:** Tier 1 patch bump for knip
+**Change:** package.json -- Bumped knip to ^6.40.0 in monorepo catalog and refreshed pnpm-lock.yaml
+**Result:** pnpm test passed 219 test files and 2276 tests; pnpm test:nightly-lifecycle passed 50 tests
+**Nudges:** 1
+
+
 ### [2026-10-07] PR #2112 [Stage 7]: Catalog and package version scans confirmed zero drift across package manifests (root package.json, Frontend-PWA/package.json, Backend/package.json ground truth v14.51.5) and derived locations via pnpm audit:version.
 **Domain:** versioning | **Commit:** 6e7606430 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2112)
 **Files:** .github/nightly-logs/07-version-integrity-coverage.log, .github/nightly-logs/07-version-integrity-pr-body.md
