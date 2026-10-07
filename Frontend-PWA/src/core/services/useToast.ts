@@ -34,6 +34,7 @@ export const UNDO_TOAST_DURATION_MS = 7000;
 const TOAST_ACTION_LOCK_DURATION_MS = 800;
 
 /** Global reactive state for active toasts. */
+// EPHEMERAL: intentionally resets on cold start
 const toasts = ref<ToastOptions[]>([]);
 
 interface ToastTimerState {
@@ -46,6 +47,7 @@ interface ToastTimerState {
 }
 
 /** Authoritative lifetime state for transient toasts. */
+// EPHEMERAL: intentionally resets on cold start
 const toastTimers = new Map<string, ToastTimerState>();
 
 /**

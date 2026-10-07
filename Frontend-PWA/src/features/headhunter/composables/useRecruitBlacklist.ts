@@ -3,6 +3,7 @@
 
 import { ref } from "vue";
 
+// EPHEMERAL: intentionally resets on cold start
 // Singleton in-memory state shared across components within this session.
 // Intentionally NOT persisted to localStorage - tombstones are ephemeral optimistic-UI
 // state only. Authoritative dismissed state lives in drivers.recruit_blacklist (server SSOT),
