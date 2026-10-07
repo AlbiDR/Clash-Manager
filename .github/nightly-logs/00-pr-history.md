@@ -16,6 +16,15 @@ LAST_AGED:   2026-10-06
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-07] PR #2108 [Stage 2]: Frontend-PWA/src/core/services/services-tests/useConnectionStatus.spec.ts -- Closed coverage gaps in useConnectionStatus composable with saturating unit/boundary tests.
+**Domain:** verification | **Commit:** 7dbf5b06f | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2108)
+**Files:** .github/nightly-logs/02-verification-coverage.log, .github/nightly-logs/02-verification-pr-body.md, Frontend-PWA/src/core/services/services-tests/useConnectionStatus.spec.ts
+**Why:** Closed coverage gaps for unconfigured API state, waking/stale/checking statuses, non-standard fallbacks, and setSuccess timer transitions.
+**Change:** Frontend-PWA/src/core/services/services-tests/useConnectionStatus.spec.ts -- Closed coverage gaps in useConnectionStatus composable with saturating unit/boundary tests.
+**Result:** Added 4 tests to useConnectionStatus.spec.ts; verified mutation by inverting unconfigured condition in useConnectionStatus.ts which failed with AssertionError: expected 'syncing' to be 'offline'.
+**Nudges:** 0
+
+
 ### [2026-10-06] PR #2107 [Stage 1]: Audited Edge Function endpoints, in-memory state variables, Valibot boundary schemas, and cross-layer architectural isolations across 42 files; zero threat vectors found
 **Domain:** hardening | **Commit:** 53cb4bfcf | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2107)
 **Files:** .github/nightly-logs/00-pr-history.md, .github/nightly-logs/01-hardening-coverage.log, .github/nightly-logs/01-hardening-pr-body.md
