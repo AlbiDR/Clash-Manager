@@ -66,12 +66,7 @@ describe("useConnectionStatus", () => {
   });
 
   it("prioritizes physical offline status (Priority #1)", () => {
-    // Set navigator.onLine to false (simulating event listener trigger)
-    // Note: In our composable we listen to window events.
-    // Testing the event listener specifically is hard in JSDOM without triggering real events.
-    // Instead we can access the internal ref if we exposed it, or simulate the event.
-
-    const { status, isOnline: _isOnline } = useConnectionStatus();
+    const { status } = useConnectionStatus();
 
     // Simulate offline event
     window.dispatchEvent(new Event("offline"));
@@ -85,10 +80,15 @@ describe("useConnectionStatus", () => {
     expect(status.value).toBe("offline");
   });
 
-  it("prioritizes success state over syncing (Priority #3)", async () => {
-    const { status, setSuccess, setSyncing } = useConnectionStatus();
+  it("treats unconfigured API status as offline (Priority #2)", () => {
+    mockApiStatus.value = "unconfigured";
+    const { status } = useConnectionStatus();
+    expect(status.value).toBe("offline");
+  });
 
+  it("prioritizes success state over syncing (Priority #3) and clears fading state after timeout", () => {
     vi.useFakeTimers();
+    const { status, setSuccess, setSyncing } = useConnectionStatus();
 
     setSyncing(true);
     expect(status.value).toBe("syncing");
@@ -97,8 +97,12 @@ describe("useConnectionStatus", () => {
     // Success should override syncing
     expect(status.value).toBe("success-resolve");
 
-    // After timeout, should revert to syncing if still syncing
-    vi.advanceTimersByTime(1800);
+    // Before 1800ms, success-resolve remains active
+    vi.advanceTimersByTime(1799);
+    expect(status.value).toBe("success-resolve");
+
+    // After 1800ms timeout, should revert to syncing if still syncing
+    vi.advanceTimersByTime(1);
     expect(status.value).toBe("syncing");
 
     vi.useRealTimers();
@@ -110,9 +114,22 @@ describe("useConnectionStatus", () => {
     expect(status.value).toBe("syncing");
   });
 
-  it("returns 'syncing' when API is checking (Priority #4)", () => {
-    mockApiStatus.value = "checking";
+  it("returns 'syncing' when API status is checking, waking, or stale (Priority #4)", () => {
     const { status } = useConnectionStatus();
+
+    mockApiStatus.value = "checking";
+    expect(status.value).toBe("syncing");
+
+    mockApiStatus.value = "waking";
+    expect(status.value).toBe("syncing");
+
+    mockApiStatus.value = "stale";
+    expect(status.value).toBe("syncing");
+  });
+
+  it("falls back to 'syncing' when API status is unknown or non-standard", () => {
+    const { status } = useConnectionStatus();
+    mockApiStatus.value = "some-unknown-status";
     expect(status.value).toBe("syncing");
   });
 
