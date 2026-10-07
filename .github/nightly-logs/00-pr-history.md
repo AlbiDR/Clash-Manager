@@ -16,6 +16,15 @@ LAST_AGED:   2026-10-06
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-07] PR #2114 [Stage 9]: Compliant -- (1) changed-files: 106, dep-viols: 0, knip: 11 unused files, 1 unused dep; (2) clean-streak: 6; (3) inspected: core/config, useSettings, useConsoleController; (4) substrate compliant, hunt clean
+**Domain:** architecture | **Commit:** d835357fd | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2114)
+**Files:** .github/nightly-logs/09-refactor-proposals-coverage.log, .github/nightly-logs/09-refactor-proposals-pr-body.md
+**Why:** Bounded candidate scan confirmed substrate compliance with CleanStack ADR, and defect hunt on useProgressiveList passed cleanly.
+**Change:** Compliant -- (1) changed-files: 106, dep-viols: 0, knip: 11 unused files, 1 unused dep; (2) clean-streak: 6; (3) inspected: core/config, useSettings, useConsoleController; (4) substrate compliant, hunt clean
+**Result:** pnpm -F clash-manager-pwa type-check PASSED, pnpm --dir Frontend-PWA test PASSED (219 test files, 2276 tests), pnpm --dir Backend test PASSED (26 test files, 348 tests), depcruise 0 violations
+**Nudges:** 0
+
+
 ### [2026-10-07] PR #2113 [Stage 8]: package.json -- Bumped knip to ^6.40.0 in monorepo catalog and refreshed pnpm-lock.yaml
 **Domain:** dependencies | **Commit:** 757e398e4 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2113)
 **Files:** .github/nightly-logs/08-dependency-audit-coverage.log, .github/nightly-logs/08-dependency-audit-pr-body.md, package.json, pnpm-lock.yaml, pnpm-workspace.yaml
