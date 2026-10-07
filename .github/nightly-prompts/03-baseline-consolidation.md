@@ -44,7 +44,8 @@ Your mind functions as a DDL compiler. The repository's SQL-aware lexer and fold
 ## 2. Core Task and Project Scope
 
 ### A. Target A: Chronological Migration Folding
-- **Scouting Boundary:** Read `/tmp/nightly/pending-migrations.txt` (pre-computed by setup; do not re-scan the migrations directory). It lists only migrations that still own an unfolded schema object. An empty file means the baseline already represents the current migration state.
+- **Scouting Boundary:** Read `/tmp/nightly/pending-migrations.txt` (pre-computed by setup; do not re-scan the migrations directory). It lists only migrations that still own an unfolded schema object, oldest first (filenames are timestamped). An empty file means the baseline already represents the current migration state.
+- **Resumable Fold:** The backlog never has to fit one session. The baseline is tonight's one target; fold into it one migration at a time, oldest first, until the Step 2 stopping rule says stop. What remains reappears in `pending-migrations.txt` next night (setup recomputes it from fold state), so a partial fold is a successful night. On 2026-10-05 this stage read 22 pending migrations, folded none, and finalized `CLEAN`; on 2026-10-06 a session told to fold all of them at once ended `FAILED` after 42 minutes, publishing nothing.
 - **Tooling:**
   - **Static authority:** Read `/tmp/nightly/fold-state.json`, `/tmp/nightly/fold-state-status.txt`, `/tmp/nightly/migration-quality.json`, and `/tmp/nightly/migration-quality-status.txt`. Exit code/status `DEGRADED` is inconclusive, not clean.
   - **Semantic authority:** Read `/tmp/nightly/database-verification-status.txt`. When it is `DB-AVAILABLE`, run `pnpm test:database-baseline` after static verification. When it is `DB-UNAVAILABLE`, record that exact state; required CI supplies the semantic gate.
@@ -81,34 +82,38 @@ Your mind functions as a DDL compiler. The repository's SQL-aware lexer and fold
 ## 3. Daily Process (Execution Loop)
 
 ### Step 1: Compilation Scan
-- **Active Intelligence Check:** Before processing, read `.github/nightly-logs/00-pipeline-intelligence.md` (specifically Section I migration folding cadence, Section II pitfalls, and Section V Stage 3 context). You must check the migration folding threshold constraint in Section I (operational debt warning if >3 migrations unfolded) and check Section II to ensure no soft-delete boolean flags or bad patterns are folded into the baseline migration.
-- **CLEAN Evidence Floor:** A clean run must name the pending migration count, migration-quality status, fold-state status, and database verification availability actually checked, plus whether the read-only RLS/search_path/formatting audit ran. Do not finalize with only "baseline current" or "no source changes required".
-- **CLEAN Calibration Gate:** Read `/tmp/nightly/clean-calibration.txt` before finalizing. If it says `calibration-due: YES` and no migrations are pending, treat the read-only baseline audit as a calibration pass. The CLEAN summary must include the ordinary CLEAN-since-calibration count, pending migration count, migration-quality status, fold-state status, and database verification availability. Begin that CLEAN summary with `Calibration pass:` so the counter registers it.
+- **Active Intelligence Check:** Before processing, read `.github/nightly-logs/00-pipeline-intelligence.md` (specifically Section I migration folding cadence, Section II pitfalls, and Section V Stage 3 context). Check the migration folding threshold constraint in Section I (operational debt warning if >3 migrations unfolded): a backlog above it means fold tonight, not fold it all tonight. Check Section II to ensure no soft-delete boolean flags or bad patterns are folded into the baseline migration.
+- **CLEAN Evidence Floor:** A clean run must name the pending migration count, migration-quality status, fold-state status, and database verification availability actually checked, plus whether the read-only RLS/search_path/formatting audit ran. Do not finalize with only "baseline current" or "no source changes required". `CLEAN` also requires an empty `pending-migrations.txt`.
+- **CLEAN Calibration Gate:** Read `/tmp/nightly/clean-calibration.txt` before finalizing. If it says `calibration-due: YES` and no migrations are pending, treat the read-only baseline audit as a calibration pass. The CLEAN summary must include the ordinary CLEAN-since-calibration count, pending migration count, migration-quality status, fold-state status, and database verification availability. Begin that CLEAN summary with `Calibration pass:` so the counter registers it. While migrations are pending, calibration does not apply: tonight's work is folding.
 - **Scan execution:**
   - Require migration quality `PASS`. `FAIL` or `DEGRADED` cannot finalize `CLEAN`; do not edit incremental migrations.
-  - Identify all newer migrations from `/tmp/nightly/pending-migrations.txt` only.
+  - Take the work list from `/tmp/nightly/pending-migrations.txt` only, in file order.
   - If `/tmp/nightly/pending-migrations.txt` is empty (no newer migrations exist):
     1. Perform a read-only audit of the existing master migration to verify Row Level Security (RLS) compliance, search_path isolation, and formatting conventions.
     2. Do not reformat or reorder a clean baseline merely to manufacture a diff.
     3. If a structural deviation is detected, resolve only that deviation.
     4. If the audit is clean, proceed directly to finalization with `CLEAN`.
+  - If it is not empty, go to Step 2. A read-only audit never substitutes for folding.
 
+### Step 2: DDL Folding Integration (One Migration per Unit)
+- **Unit:** the oldest pending migration not yet folded tonight. Bring every object fold-state attributes to it (`<- <filename>` in the output of `node .github/scripts/database/fold-state.mjs Backend/supabase/migrations`) to its final form in the baseline. If one of those objects references an object the baseline does not declare yet (`ABSENT` under a later migration), fold that object's final definition in the same unit, so the baseline never references a missing object. Never skip past a migration to a newer one: later migrations can redefine the same objects.
+- **Context Economy:** Read only the unit's migration, and find its objects in the baseline with `grep -n` instead of loading the whole baseline. Context spent on later migrations is lost to the unit in hand.
+- **Patching:** Parse the migration as UTF-8 text and apply each DDL statement as a text-level patch directly to the baseline's tables, functions, views, and triggers. Resolve conflicts programmatically (e.g., compile final column datatypes, default values, check constraints, and unique indexes).
+- **Checkpoint:** Before the first unit, copy the baseline to `/tmp/nightly/baseline-checkpoint.sql`. Every unit ends with Step 3, and only a verified unit refreshes that copy, so the baseline is never left half-edited. A unit still failing after one targeted correction and one rerun is restored from the copy, ends tonight's folding, and is named as the blocker. If `budget` prints `SUBMIT` mid-unit, restore the copy and go to Step 4.
+- **Stopping Rule:** Time each unit with `date +%s`, verification included. After each verified unit, run `node .github/scripts/nightly/nightly-stage.mjs budget --stage 3`. Start another unit only while it prints `WORK` and the seconds left before `work-deadline-epoch` in `/tmp/nightly/stage-manifest.txt` exceed your longest unit so far, judged against the next migration's size. If that deadline cannot be read, treat the time as spent. There is no per-night migration count: the budget and your measured units decide.
 
-### Step 2: DDL Folding Integration
-- Parse the incremental SQL migration files as UTF-8 text and apply each DDL statement as a text-level patch to the master baseline.
-- Apply modifications directly to the baseline tables, functions, views, and triggers.
-- Resolve conflicts programmatically (e.g., compile final column datatypes, default values, check constraints, and unique indexes).
-
-### Step 3: Local Compilation and Verification
-- Run `pnpm audit:migrations` and `node .github/scripts/database/fold-state.mjs Backend/supabase/migrations`; both must pass statically.
-- If database verification is available, run `pnpm test:database-baseline`; it must prove baseline idempotency, pgTAP success, and catalog equivalence.
+### Step 3: Local Compilation and Verification (Every Unit)
+- Run `pnpm audit:migrations`; it must pass.
+- Run `node .github/scripts/database/fold-state.mjs Backend/supabase/migrations`. It keeps exiting 1 while later migrations remain, so a unit passes when its migration is gone from "Migrations owning unfolded objects" and no unfolded entry appears that the previous run did not list (for the first unit, setup's `/tmp/nightly/fold-state.txt`). Output without a `RESULT:` line means the check could not run: a failed verification, never a pass.
+- If database verification is available, run `pnpm test:database-baseline`. While migrations remain, its pgTAP and catalog-equivalence steps still miss their objects, so a unit passes when the baseline applies to a fresh database and every reported failure belongs to a migration still to fold; full idempotency, pgTAP, and catalog-equivalence proof is required once nothing remains.
 - If database verification is unavailable, use the literal evidence `DB-UNAVAILABLE`; do not claim semantic verification.
-- The finalization summary must include migrations examined, objects folded/reconciled, migration-quality result, static result, and semantic result.
+- Every unit ends fully verified, so the last unit's verification is the final one. The finalization summary must include migrations examined, objects folded/reconciled, migration-quality result, static result, and semantic result.
 
 ### Step 4: Finalize
 
-- Use `CHANGED` only when the verified diff contains a stage-owned file in addition to the coverage log.
-- Use `CLEAN` when the audit completed and no source change is required.
+- Use `CHANGED` only when the verified diff contains a stage-owned file in addition to the coverage log, as any verified unit does. A partial fold is a success: the summary names the migrations folded tonight, the objects folded, how many migrations remain and the next in line, or the blocker and why. Call the remainder still to fold, not `UNFOLDED`: in capitals that word reports a failed check, and a planned remainder is not one.
+- Use `CLEAN` only when `pending-migrations.txt` was empty and the audit completed with no source change required. `CLEAN` is forbidden while `/tmp/nightly/fold-state-status.txt` reads `PENDING`: finalize refuses it once, then records `PARTIAL-RUN`.
+- If migrations were pending and no unit could be verified, finalize `PARTIAL-RUN` naming the blocking migration and why. Never claim `CLEAN` over pending work.
 - Use `SKIPPED` or `PARTIAL-RUN` only after restoring every non-log change.
 - Do not append another summary line manually; finalization replaces the lifecycle sentinel.
 - Run `node .github/scripts/nightly/nightly-stage.mjs budget --stage 3`, then `node .github/scripts/nightly/nightly-stage.mjs finalize --stage 3 --status <STATUS> --summary "<what changed>" --why "<rationale>" --result "<verification result>"`.
