@@ -16,6 +16,15 @@ LAST_AGED:   2026-10-06
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-07] PR #2112 [Stage 7]: Catalog and package version scans confirmed zero drift across package manifests (root package.json, Frontend-PWA/package.json, Backend/package.json ground truth v14.51.5) and derived locations via pnpm audit:version.
+**Domain:** versioning | **Commit:** 6e7606430 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2112)
+**Files:** .github/nightly-logs/07-version-integrity-coverage.log, .github/nightly-logs/07-version-integrity-pr-body.md
+**Why:** Ground truth version 14.51.5 and catalog usage are fully synchronized across all monorepo manifests and derived targets.
+**Change:** Catalog and package version scans confirmed zero drift across package manifests (root package.json, Frontend-PWA/package.json, Backend/package.json ground truth v14.51.5) and derived locations via pnpm audit:version.
+**Result:** Catalog scan (Frontend-PWA, Backend), package version scan (package.json, Frontend-PWA/package.json, Backend/package.json v14.51.5), and pnpm audit:version validation all passed with 0 drift detected.
+**Nudges:** 0
+
+
 ### [2026-10-07] PR #2111 [Stage 6]: docs(tsdoc): harden useDismissOnBack interface contracts and inline logic annotations
 **Domain:** documentation | **Commit:** 746f48409 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2111)
 **Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, .github/nightly-logs/06-documentation-tsdoc-pr-body.md, Frontend-PWA/src/core/services/useDismissOnBack.ts
