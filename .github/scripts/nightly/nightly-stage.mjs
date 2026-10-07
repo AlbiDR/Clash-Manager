@@ -394,26 +394,113 @@ export function resolveResult(rawResult, status, state, recordRefusal = () => {}
  * enforces as log-only, matching what this stage can actually produce when it
  * finds a violation it is forbidden to fix (it never rewrites history).
  *
+ * FOLD-STATE PENDING (added 2026-10-06)
+ * The second reading that refuses a Stage 3 CLEAN. On 2026-10-04 (v14.50.138,
+ * 28ff25739) fold-state.mjs stopped hiding unfolded migrations behind
+ * DEGRADED, so update-nightly-context.sh began writing PENDING to
+ * fold-state-status.txt, and the unfolded migrations, oldest first, to
+ * pending-migrations.txt. The very next night Stage 3 read 22 of them, folded
+ * none, and committed this line:
+ *   * [2026-10-05] [Stage 3] [01:06Z-01:27Z 22m] [checks database-verification=DB-UNAVAILABLE fold-state=PENDING migration-quality=PASS] CLEAN: Codebase -- Completed read-only baseline consolidation audit. Pending migrations count: 22 (fold-state status: PENDING). ...
+ * finalize accepted it, because this function only knew migration-quality
+ * FAIL, and the recap graded it a healthy clean run, because its self-report
+ * guard (hasSelfReportedFailure) only knows FAIL, DIVERGENT and UNFOLDED. A
+ * CLEAN is the contract's claim that "no source change is required"; PENDING
+ * is fold-state.mjs exiting 1 with a non-empty list of objects it replayed and
+ * did not find in the baseline. Those two cannot both be true, so there is no
+ * legitimate Stage 3 CLEAN while PENDING holds, and that is exactly what makes
+ * PENDING safe to enforce here every night the backlog lasts: the refusal fires
+ * only on a CLEAN, and a stage that folds and declares CHANGED, or runs out of
+ * time and declares PARTIAL-RUN, is never refused at all.
+ *
+ * The refusal tells the stage to fold the OLDEST pending migrations and
+ * finalize CHANGED, not to fold all of them, and says a partial fold is a valid
+ * CHANGED. That is the 2026-10-06 evidence: the next Stage 3 session
+ * (sessions/17685247323826051852) went FAILED after 42 minutes of a 45-minute
+ * work budget, most likely trying to fold the whole 22-migration backlog in
+ * one sitting, and a FAILED session loses the stage its whole night because
+ * the watchdog marks it NO_OUTPUT and nothing retries it. Folding oldest first
+ * keeps chronological replay intact, and whatever is not reached stays in
+ * pending-migrations.txt as tomorrow's work, so the backlog shrinks every
+ * night instead of the stage either doing nothing or attempting everything.
+ * The pending count, the oldest file and the minutes left are all read from
+ * this session's own inputs, never from a constant.
+ *
+ * WHY A START-OF-SESSION READING IS STILL TRUE AT FINALIZE
+ * fold-state-status.txt is computed once, by `start`, before any work. That is
+ * still the current state for a CLEAN declaration specifically, because a CLEAN
+ * carries no source change: validateChangedPaths rejects a Stage 3 CLEAN whose
+ * diff holds anything but the coverage log, so the migrations and the baseline
+ * fold-state.mjs measured are, byte for byte, the ones being declared clean.
+ * The reading can only go stale after a source edit, and a source edit can
+ * never finalize CLEAN anyway; for that stage the refusal's advice (CHANGED) is
+ * the right status regardless.
+ *
+ * ONE REFUSAL, SHARED BY BOTH READINGS
+ * A stage can hit both: migration-quality FAIL (self-reported on 2026-09-07
+ * and 2026-09-17) and fold-state PENDING are independent. Both are evaluated
+ * together on every call, so the one refusal names every reading that applies,
+ * and the single `statusRefused` flag that predates PENDING records it. A flag
+ * per reading would be wrong, not merely redundant: what this function owes
+ * the chokepoint is one --status refusal per session, full stop. With a shared
+ * flag that bound is a property of the flag alone. With one flag per reading it
+ * would also depend on the readings never changing between calls, and a stage
+ * that regenerated its context files by hand between two finalize calls,
+ * turning on a reading that was off, would be refused twice. Reusing the flag
+ * also leaves the persisted session-state shape unchanged.
+ *
+ * IF THE READING IS MISSING
+ * Asked of every new detector: if it could not be evaluated at all, would its
+ * output differ from "no problem"? Here, no, and deliberately: a missing,
+ * empty or unreadable fold-state-status.txt does not refuse, because refusing
+ * on an absent input would put a throw at the chokepoint on exactly the nights
+ * the context script itself broke. That direction is not silent, though. The
+ * coverage line's `[checks ...]` field is built from the same status map this
+ * guard reads (finalize reads it once and hands it to both), so a lost
+ * fold-state reading is a line with no `fold-state=` entry, and the recap's
+ * blind-spot reader (evaluateBlindSpots in nightly-blind-spots.mjs) reports a
+ * check that has stopped being reported as unknown, never as fine. The pending
+ * list alone never refuses: under DEGRADED the context script fills it from a
+ * filename heuristic, so it is not evidence of unfolded work by itself.
+ *
  * What this deliberately does NOT enforce: fold-state DEGRADED and database
  * DB-UNAVAILABLE. Those say a check could not run, not that it found
  * something, and 03-baseline-consolidation.md names static audit as the
  * authoritative substitute when the database is unreachable, which
  * 00-nightly-agent-contract.md allows for a CLEAN. DB-UNAVAILABLE has held on
  * every Stage 3 night that reported it since 2026-08-31, so a block here would
- * fire every night at the chokepoint. They reach the reader instead: finalize
- * writes every sub-check status into the coverage line's `[checks ...]` field
- * (subCheckField), and the recap's blind-spot reader grades a check that has
- * stopped running. A migration-quality DEGRADED, which the prompt also says
- * cannot finalize CLEAN and which has occurred 0 times, surfaces there too as
- * a newly lost check. Do not extend this function to cover them.
+ * fire every night at the chokepoint against CLEANs the contract permits.
+ * PENDING differs in kind, not degree: it is a check that ran and found work,
+ * like FAIL, which is why it belongs here and they do not. They reach the
+ * reader instead: finalize writes every sub-check status into the coverage
+ * line's `[checks ...]` field (subCheckField), and the recap's blind-spot
+ * reader grades a check that has stopped running. A migration-quality
+ * DEGRADED, which the prompt also says cannot finalize CLEAN and which has
+ * occurred 0 times, surfaces there too as a newly lost check. Do not extend
+ * this function to cover an "it could not run" value; only a reading that
+ * says the check ran and found something belongs here.
+ *
+ * `readings` is either the bare migration-quality status string, the original
+ * single-check signature that every existing caller and test still passes and
+ * that keeps its exact meaning, or `{ migrationQuality, foldState,
+ * pendingMigrations }`, where pendingMigrations is the pending-migrations.txt
+ * list in file order and is used only to make the refusal specific.
  */
-export function resolveStatus(status, stage, state, migrationQualityStatus, recordRefusal = () => {}) {
-  if (stage.number !== 3 || status !== "CLEAN" || migrationQualityStatus !== "FAIL") return status;
+export function resolveStatus(status, stage, state, readings, recordRefusal = () => {}) {
+  const read = readings !== null && typeof readings === "object" ? readings : { migrationQuality: readings };
+  const failing = read.migrationQuality === "FAIL";
+  const pending = read.foldState === "PENDING";
+  if (stage.number !== 3 || status !== "CLEAN" || (!failing && !pending)) return status;
+
+  const found = [
+    failing && "migration-quality-status.txt reads FAIL",
+    pending && "fold-state-status.txt reads PENDING",
+  ].filter(Boolean).join(" and ");
 
   const spent = workPhase(state) === "SUBMIT";
   if (spent || state?.statusRefused) {
     console.error(
-      `Nightly: --status CLEAN was requested while migration-quality-status.txt reads FAIL.`
+      `Nightly: --status CLEAN was requested while ${found}.`
       + (spent
         ? " The work budget has ended, so it is recorded as PARTIAL-RUN instead of blocking publication."
         : " This stage was already asked once, so it is recorded as PARTIAL-RUN instead of blocking publication."),
@@ -422,6 +509,9 @@ export function resolveStatus(status, stage, state, migrationQualityStatus, reco
   }
 
   recordRefusal();
+  if (pending) {
+    throw new Error(foldPendingRefusal(found, failing, read.pendingMigrations, state));
+  }
   throw new Error(
     "--status CLEAN cannot stand: migration-quality-status.txt reads FAIL, and this stage's own prompt says FAIL cannot finalize CLEAN.\n"
     + "Stage 3 never rewrites history, so it cannot resolve this violation itself.\n"
@@ -429,6 +519,47 @@ export function resolveStatus(status, stage, state, migrationQualityStatus, reco
     + '  --status PARTIAL-RUN --result "migration-quality FAIL: 6 historical violations, needs a human; fold-state DEGRADED, database DB-UNAVAILABLE"\n'
     + "Everything else about this finalize call was accepted; only --status needs changing.",
   );
+}
+
+/**
+ * The refusal for a Stage 3 CLEAN over fold-state PENDING, alone or with a
+ * migration-quality FAIL. Only ever built on the refusal path, which runs only
+ * while workPhase(state) is WORK, so the session's deadline is known to be
+ * readable and still ahead.
+ *
+ * A guard an agent cannot satisfy is a slower way to fail, so this names both
+ * ways out and the exact data each needs: how many migrations are pending, which
+ * one is oldest, and how many minutes of this session's own work budget remain
+ * (from workDeadlineEpoch, which `start` derives from the registry's
+ * workBudgetMinutes). When the pending list could not be read the count is shown
+ * as a placeholder rather than as 0, because 0 would read as "nothing to fold".
+ *
+ * With a FAIL alongside, the FAIL-only advice (PARTIAL-RUN, always) is not
+ * repeated. This function has never refused a CHANGED over a FAIL, and what
+ * 03-baseline-consolidation.md bars on a FAIL night is a CLEAN and any edit to
+ * an incremental migration, neither of which a fold is: a fold writes the
+ * baseline. Holding every fold hostage to a FAIL would let the backlog grow on
+ * every night that FAIL persists, so both ways out stay open and the stage only
+ * has to name the FAIL in its --result.
+ */
+function foldPendingRefusal(found, failing, pendingMigrations, state) {
+  const pendingList = Array.isArray(pendingMigrations) ? pendingMigrations : [];
+  const total = pendingList.length > 0 ? String(pendingList.length) : "<N>";
+  const minutesLeft = Math.max(0, Math.floor((state.workDeadlineEpoch - epochSeconds()) / 60));
+  return [
+    `--status CLEAN cannot stand: ${found}.`,
+    `fold-state.mjs ran and found ${total} migration(s) in pending-migrations.txt whose schema objects are not in the baseline yet, so there is folding work to do and CLEAN would claim there is none.`
+    + (pendingList.length > 0 ? ` The oldest is ${pendingList[0]}.` : ""),
+    ...(failing
+      ? ["migration-quality also reads FAIL: never edit an incremental migration to clear it (Stage 3 never rewrites history), and name it in --result whichever status you choose."]
+      : []),
+    "Run node .github/scripts/nightly/nightly-stage.mjs budget --stage 3 now, and again after each migration you fold:",
+    `  While it prints WORK (${minutesLeft} minutes of this session's work budget remain now): fold the OLDEST pending migrations first, one at a time, in the order pending-migrations.txt lists them. At SUBMIT, restore any fold you have not verified and finalize --status CHANGED with the ones you have. A partial fold is a valid CHANGED; the migrations you do not reach stay pending and are tomorrow's work, so the list does not have to be finished in one session. For example:`,
+    `    --status CHANGED --result "folded the oldest <K> of ${total} pending migrations; fold-state.mjs now reports <REST> pending, audit:migrations PASS"`,
+    "  If it already prints SUBMIT, or not even the oldest migration can be folded and verified in the time left: restore every non-log change and finalize --status PARTIAL-RUN with a --result naming the pending count, for example:",
+    `    --status PARTIAL-RUN --result "fold-state PENDING: ${total} migrations still unfolded, none folded this session"`,
+    "This call recorded only the refusal: the coverage-log sentinel is still in place, so finalize can simply be run again with the right status.",
+  ].join("\n");
 }
 
 /**
@@ -1175,6 +1306,27 @@ export function readSubCheckStatuses(dir) {
   }
 }
 
+/**
+ * pending-migrations.txt as a list, in the file's own order. The context script
+ * sorts it by filename, and the timestamp prefix makes that chronological, so
+ * the first entry is the oldest unfolded migration.
+ *
+ * Read only to make Stage 3's fold-state PENDING refusal specific (the count
+ * and the oldest file, see resolveStatus), never to decide it. Never throws,
+ * for the same chokepoint reason as readSubCheckStatuses: any failure returns
+ * [], and the refusal then shows the count as a placeholder, not as 0.
+ */
+export function readPendingMigrations(dir) {
+  try {
+    return readFileSync(path.join(dir || contextDir(), "pending-migrations.txt"), "utf8")
+      .split("\n")
+      .map(line => line.trim())
+      .filter(Boolean);
+  } catch {
+    return [];
+  }
+}
+
 export function finalLogLine(stage, status, summary, paths, date, window, checks) {
   const target = paths.find(
     filePath => filePath !== stage.coverageLog && !BOOKKEEPING_PATH.test(filePath),
@@ -1201,7 +1353,19 @@ function finalizeCommand(repoRoot, stage, status, summary, dryRun, details = {})
   // collapse: see nudgeMetadataLine.
   const stateObserved = existsSync(statePath);
   const state = stateObserved ? JSON.parse(readFileSync(statePath, "utf8")) : {};
-  status = resolveStatus(status, stage, state, readOptional(path.join(contextDir(), "migration-quality-status.txt")), () => {
+  // One read of the sub-check statuses, shared by the --status guard below and
+  // by the coverage line's `[checks ...]` field, so the guard decides on the
+  // exact bytes the line records. On 2026-10-05 that field said
+  // `fold-state=PENDING` on a Stage 3 line the guard had let through as CLEAN;
+  // with one shared read, a line can no longer carry a reading the guard did
+  // not see. readSubCheckStatuses never throws, and a file it cannot read is
+  // absent from both: see "IF THE READING IS MISSING" at resolveStatus.
+  const subChecks = readSubCheckStatuses();
+  status = resolveStatus(status, stage, state, {
+    migrationQuality: subChecks["migration-quality"],
+    foldState: subChecks["fold-state"],
+    pendingMigrations: readPendingMigrations(),
+  }, () => {
     atomicWrite(statePath, `${JSON.stringify({ ...state, statusRefused: true }, null, 2)}\n`);
   });
   const result = resolveResult(details.result, status, state, () => {
@@ -1218,8 +1382,9 @@ function finalizeCommand(repoRoot, stage, status, summary, dryRun, details = {})
   const window = formatRunWindow(state.startEpoch, epochSeconds());
   // Same rule for the sub-check record: readSubCheckStatuses never throws and
   // subCheckField is pure, so a missing or unreadable context dir costs only
-  // the field. It is never an invariant.
-  const checks = subCheckField(readSubCheckStatuses());
+  // the field. It is never an invariant. The statuses are the ones the --status
+  // guard already read above, not a second read.
+  const checks = subCheckField(subChecks);
   const finalLine = finalLogLine(stage, status, normalizedSummary, paths, date, window, checks);
   const replacement = replaceSentinel(readFileSync(logPath, "utf8"), sentinel, finalLine);
   invariant(!state.stage || state.stage === stage.number, "Session state belongs to a different stage.");

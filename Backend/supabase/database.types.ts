@@ -806,6 +806,7 @@ export type Database = {
         Returns: Json
       }
       sync_voyage_activation_job: { Args: never; Returns: undefined }
+      sync_voyage_finalization_job: { Args: never; Returns: undefined }
     }
     Enums: {
       recruit_event_type:
@@ -877,9 +878,8 @@ export type Database = {
       }
     }
     Views: {
-      headhunter_view: {
+      headhunter_materialized: {
         Row: {
-          score_composition: Json | null
           cards: number | null
           donations: number | null
           found_date: string | null
@@ -894,6 +894,33 @@ export type Database = {
           potential_score: number | null
           raw_potential_score: number | null
           royaleapi_link: string | null
+          score_composition: Json | null
+          tenure_days: number | null
+          tenure_label: string | null
+          tier: string | null
+          trophies: number | null
+          war_wins: number | null
+          win_rate: number | null
+        }
+        Relationships: []
+      }
+      headhunter_view: {
+        Row: {
+          cards: number | null
+          donations: number | null
+          found_date: string | null
+          has_heritage_blessing: boolean | null
+          heritage_status: string | null
+          ingame_link: string | null
+          last_seen_at: string | null
+          longevity: number | null
+          longevity_label: string | null
+          player_name: string | null
+          player_tag: string | null
+          potential_score: number | null
+          raw_potential_score: number | null
+          royaleapi_link: string | null
+          score_composition: Json | null
           tenure_days: number | null
           tenure_label: string | null
           tier: string | null
@@ -946,9 +973,8 @@ export type Database = {
         }
         Relationships: []
       }
-      roster_view: {
+      roster_materialized: {
         Row: {
-          score_composition: Json | null
           avg_daily_donations: number | null
           avg_fame: number | null
           clan_rank: number | null
@@ -968,6 +994,43 @@ export type Database = {
           raw_performance_score: number | null
           role: string | null
           royaleapi_link: string | null
+          score_composition: Json | null
+          stability_index: number | null
+          tenure_days: number | null
+          tenure_label: string | null
+          trophies: number | null
+          v_hist: string | null
+          voyage_index: number | null
+          voyage_merit: number | null
+          war_participation: number | null
+          war_wins: number | null
+          week_fame: number | null
+          win_rate: number | null
+        }
+        Relationships: []
+      }
+      roster_view: {
+        Row: {
+          avg_daily_donations: number | null
+          avg_fame: number | null
+          clan_rank: number | null
+          decks_used_today: number | null
+          decks_used_weekly: number | null
+          donations: number | null
+          donations_received: number | null
+          exp_level: number | null
+          hist: string | null
+          ingame_link: string | null
+          last_ingested_at: string | null
+          last_seen_at: string | null
+          last_seen_label: string | null
+          performance_score: number | null
+          player_name: string | null
+          player_tag: string | null
+          raw_performance_score: number | null
+          role: string | null
+          royaleapi_link: string | null
+          score_composition: Json | null
           stability_index: number | null
           tenure_days: number | null
           tenure_label: string | null
@@ -984,7 +1047,6 @@ export type Database = {
       }
       scoring_view: {
         Row: {
-          score_composition: Json | null
           avg_daily_donations: number | null
           avg_fame: number | null
           baseline_raw_score: number | null
@@ -1002,6 +1064,7 @@ export type Database = {
           player_tag: string | null
           raw_performance_score: number | null
           recorded_weeks: number | null
+          score_composition: Json | null
           stability_index: number | null
           tenure_days: number | null
           trophies: number | null
@@ -1069,6 +1132,14 @@ export type Database = {
         Args: { p_crowns: number; p_player_tag: string }
         Returns: Json
       }
+      sync_snapshot_marker: {
+        Args: never
+        Returns: {
+          generation: number
+          refreshed_at: string
+          snapshot_name: string
+        }[]
+      }
       trigger_backend_update: { Args: never; Returns: Json }
       undismiss_recruits: { Args: { player_tags: string[] }; Returns: Json }
     }
@@ -1108,6 +1179,13 @@ export type Database = {
         }[]
       }
       get_ingestion_targets: { Args: never; Returns: Json }
+      get_latest_battle_times: {
+        Args: { p_player_tags: string[] }
+        Returns: {
+          latest_battle_time: string
+          player_tag: string
+        }[]
+      }
       get_recent_scans: {
         Args: { p_since: string; p_tags: string[] }
         Returns: {
@@ -1393,6 +1471,7 @@ export type Database = {
           is_data_perfect: boolean | null
           last_failure_at: string | null
           last_message: string | null
+          last_request_id: number | null
           last_success_at: string | null
           last_triggered_at: string | null
           last_validation_report: Json | null
@@ -1405,6 +1484,7 @@ export type Database = {
           is_data_perfect?: boolean | null
           last_failure_at?: string | null
           last_message?: string | null
+          last_request_id?: number | null
           last_success_at?: string | null
           last_triggered_at?: string | null
           last_validation_report?: Json | null
@@ -1417,6 +1497,7 @@ export type Database = {
           is_data_perfect?: boolean | null
           last_failure_at?: string | null
           last_message?: string | null
+          last_request_id?: number | null
           last_success_at?: string | null
           last_triggered_at?: string | null
           last_validation_report?: Json | null
@@ -1509,6 +1590,24 @@ export type Database = {
         }
         Relationships: []
       }
+      sync_snapshot_state: {
+        Row: {
+          generation: number
+          refreshed_at: string | null
+          snapshot_name: string
+        }
+        Insert: {
+          generation?: number
+          refreshed_at?: string | null
+          snapshot_name: string
+        }
+        Update: {
+          generation?: number
+          refreshed_at?: string | null
+          snapshot_name?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       cron_health: {
@@ -1542,17 +1641,6 @@ export type Database = {
       }
     }
     Functions: {
-      performance_contributions: {
-        Args: {
-          avg_fame: number
-          current_fame: number
-          daily_donations: number
-          stability: number
-          trophies: number
-          war_rate: number
-        }
-        Returns: Json
-      }
       check_resource_pressure: { Args: never; Returns: undefined }
       config_int: { Args: { p_key: string }; Returns: number }
       dispatch_royale_ingestion: { Args: never; Returns: string }
@@ -1570,6 +1658,19 @@ export type Database = {
         }[]
       }
       get_vault_secret: { Args: { p_name: string }; Returns: string }
+      idle_week_credit: { Args: never; Returns: number }
+      min_stability_weeks: { Args: never; Returns: number }
+      performance_contributions: {
+        Args: {
+          avg_fame: number
+          current_fame: number
+          daily_donations: number
+          stability: number
+          trophies: number
+          war_rate: number
+        }
+        Returns: Json
+      }
       pipeline_watchdog: { Args: never; Returns: number }
       purge_clanned_recruits: { Args: never; Returns: number }
       purge_cron_history: { Args: never; Returns: number }
@@ -1588,6 +1689,11 @@ export type Database = {
       purge_stale_member_snapshots: { Args: never; Returns: number }
       purge_stale_recruits: { Args: never; Returns: number }
       purge_worst_recruits: { Args: never; Returns: number }
+      recency_weight_floor: { Args: never; Returns: number }
+      refresh_materialized_view: {
+        Args: { p_relation: unknown }
+        Returns: boolean
+      }
       report_anchor_yield: {
         Args: {
           p_keyword: string
