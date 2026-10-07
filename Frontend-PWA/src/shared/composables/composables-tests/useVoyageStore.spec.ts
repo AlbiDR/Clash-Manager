@@ -27,6 +27,43 @@ vi.mock("@core/api/VoyageClient", () => ({
   setVoyageEnd: vi.fn()
 }));
 
+type VoyageViewResponse = Awaited<ReturnType<typeof VoyageClient.fetchVoyageSummary>>;
+type VoyageContributionResponse = Awaited<ReturnType<typeof VoyageClient.fetchVoyageContributions>>;
+
+function createDeferred<T>() {
+  let resolve!: (value: T) => void;
+  let reject!: (reason?: unknown) => void;
+  const promise = new Promise<T>((resolvePromise, rejectPromise) => {
+    resolve = resolvePromise;
+    reject = rejectPromise;
+  });
+  return { promise, resolve, reject };
+}
+
+function createVoyageViewSummary(id: number): VoyageViewResponse {
+  return {
+    event: {
+      id,
+      clan_tag: "#CLAN1",
+      status: "ACTIVE",
+      target_crowns: 1000 + id,
+      start_at: "2026-01-01T00:00:00Z",
+      end_at: null,
+      activated_by: null,
+      is_victory: false,
+    },
+    total_voyage_crowns: id * 100,
+    progress_ratio: id / 10,
+  };
+}
+
+async function flushPromiseContinuations(): Promise<void> {
+  await Promise.resolve();
+  await Promise.resolve();
+  await Promise.resolve();
+  await Promise.resolve();
+}
+
 describe("useVoyageStore", () => {
   beforeEach(() => {
     setActivePinia(createPinia());
@@ -57,6 +94,105 @@ describe("useVoyageStore", () => {
   });
 
   describe("refresh", () => {
+    it("coalesces overlapping refresh demand into sequential passes with pass-scoped promises", async () => {
+      const summaryResponses = Array.from({ length: 3 }, () => createDeferred<VoyageViewResponse>());
+      const contributionResponses = Array.from({ length: 3 }, () => createDeferred<VoyageContributionResponse>());
+      let summaryRequestCount = 0;
+      let contributionRequestCount = 0;
+      vi.mocked(VoyageClient.fetchVoyageSummary).mockImplementation(
+        () => summaryResponses[summaryRequestCount++]!.promise,
+      );
+      vi.mocked(VoyageClient.fetchVoyageContributions).mockImplementation(
+        () => contributionResponses[contributionRequestCount++]!.promise,
+      );
+
+      const store = useVoyageStore();
+      const firstCaller = store.refresh();
+      const initialSummaryRequests = summaryRequestCount;
+      const initialContributionRequests = contributionRequestCount;
+
+      const secondCaller = store.refresh();
+      const thirdCaller = store.refresh();
+      summaryResponses[0]!.resolve(createVoyageViewSummary(1));
+      contributionResponses[0]!.resolve([]);
+      await firstCaller;
+
+      const trailingSummaryRequests = summaryRequestCount;
+      const trailingContributionRequests = contributionRequestCount;
+      const firstPassSettledWhileTrailingFetchRuns = store.loading;
+      const fourthCaller = store.refresh();
+      let fourthCallerSettled = false;
+      void fourthCaller.then(() => { fourthCallerSettled = true; });
+
+      summaryResponses[1]!.resolve(createVoyageViewSummary(2));
+      contributionResponses[1]!.resolve([
+        { player_tag: "#P2", player_name: "Latest Player", total_voyage_crowns: 200, percentage_voyage_crowns: 20 },
+      ]);
+      await Promise.all([secondCaller, thirdCaller]);
+      const finalSummaryRequests = summaryRequestCount;
+      const finalContributionRequests = contributionRequestCount;
+      const queuedPassSettledBeforeLaterPass = store.loading && !fourthCallerSettled;
+
+      summaryResponses[2]!.resolve(createVoyageViewSummary(3));
+      contributionResponses[2]!.resolve([
+        { player_tag: "#P3", player_name: "Final Player", total_voyage_crowns: 300, percentage_voyage_crowns: 30 },
+      ]);
+      await fourthCaller;
+
+      expect(initialSummaryRequests).toBe(1);
+      expect(initialContributionRequests).toBe(1);
+      expect(trailingSummaryRequests).toBe(2);
+      expect(trailingContributionRequests).toBe(2);
+      expect(finalSummaryRequests).toBe(3);
+      expect(finalContributionRequests).toBe(3);
+      expect(firstPassSettledWhileTrailingFetchRuns).toBe(true);
+      expect(queuedPassSettledBeforeLaterPass).toBe(true);
+      expect(store.summary?.event.id).toBe(3);
+      expect(store.summary?.contributions[0]?.player_name).toBe("Final Player");
+      expect(store.loading).toBe(false);
+      expect(fourthCallerSettled).toBe(true);
+    });
+
+    it("waits for both reads to settle before starting queued demand", async () => {
+      const summaryResponses = [createDeferred<VoyageViewResponse>(), createDeferred<VoyageViewResponse>()];
+      const contributionResponses = [createDeferred<VoyageContributionResponse>(), createDeferred<VoyageContributionResponse>()];
+      let summaryRequestCount = 0;
+      let contributionRequestCount = 0;
+      vi.mocked(VoyageClient.fetchVoyageSummary).mockImplementation(
+        () => summaryResponses[summaryRequestCount++]!.promise,
+      );
+      vi.mocked(VoyageClient.fetchVoyageContributions).mockImplementation(
+        () => contributionResponses[contributionRequestCount++]!.promise,
+      );
+
+      const store = useVoyageStore();
+      const firstCaller = store.refresh();
+      await Promise.resolve();
+      const queuedCaller = store.refresh();
+      let queuedCallerSettled = false;
+      void queuedCaller.then(() => { queuedCallerSettled = true; });
+      summaryResponses[0]!.reject(new Error("Fast summary failure"));
+      await flushPromiseContinuations();
+      const summaryReadsBeforeSiblingSettled = summaryRequestCount;
+      const contributionReadsBeforeSiblingSettled = contributionRequestCount;
+      const queuedCallerWaitedForSibling = !queuedCallerSettled && store.loading;
+
+      contributionResponses[0]!.resolve([]);
+      await flushPromiseContinuations();
+      const readsAfterSiblingSettled = summaryRequestCount;
+      summaryResponses[1]!.resolve(createVoyageViewSummary(2));
+      contributionResponses[1]!.resolve([]);
+      await Promise.all([firstCaller, queuedCaller]);
+
+      expect(summaryReadsBeforeSiblingSettled).toBe(1);
+      expect(contributionReadsBeforeSiblingSettled).toBe(1);
+      expect(queuedCallerWaitedForSibling).toBe(true);
+      expect(readsAfterSiblingSettled).toBe(2);
+      expect(summaryRequestCount).toBe(2);
+      expect(contributionRequestCount).toBe(2);
+      expect(store.loading).toBe(false);
+    });
+
     it("should fetch and populate state on success", async () => {
       const mockSummary = {
         event: {
@@ -112,6 +248,45 @@ describe("useVoyageStore", () => {
 
       expect(store.loading).toBe(false);
       expect(consoleSpy).toHaveBeenCalledWith("[Voyage] Refresh failed:", "API Error");
+    });
+
+    it("runs queued refresh demand after a failed read and then stops without new demand", async () => {
+      const summaryResponses = [createDeferred<VoyageViewResponse>(), createDeferred<VoyageViewResponse>()];
+      const contributionResponses = [createDeferred<VoyageContributionResponse>(), createDeferred<VoyageContributionResponse>()];
+      let summaryRequestCount = 0;
+      let contributionRequestCount = 0;
+      vi.mocked(VoyageClient.fetchVoyageSummary).mockImplementation(
+        () => summaryResponses[summaryRequestCount++]!.promise,
+      );
+      vi.mocked(VoyageClient.fetchVoyageContributions).mockImplementation(
+        () => contributionResponses[contributionRequestCount++]!.promise,
+      );
+
+      const store = useVoyageStore();
+      const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+      const firstCaller = store.refresh();
+      await Promise.resolve();
+      const queuedCaller = store.refresh();
+
+      summaryResponses[0]!.reject(new Error("Temporary read failure"));
+      contributionResponses[0]!.resolve([]);
+      await Promise.resolve();
+      await Promise.resolve();
+      await Promise.resolve();
+
+      summaryResponses[1]!.resolve({
+        event: { id: 2, clan_tag: "#CLAN1", status: "ACTIVE", target_crowns: 1200, start_at: "2026-01-01T00:00:00Z", end_at: null },
+        total_voyage_crowns: 900,
+        progress_ratio: 0.75,
+      });
+      contributionResponses[1]!.resolve([]);
+      await Promise.all([firstCaller, queuedCaller]);
+
+      expect(summaryRequestCount).toBe(2);
+      expect(contributionRequestCount).toBe(2);
+      expect(errorSpy).toHaveBeenCalledWith("[Voyage] Refresh failed:", "Temporary read failure");
+      expect(store.summary?.event.id).toBe(2);
+      expect(store.loading).toBe(false);
     });
 
     it("keeps the last summary when a later read fails instead of showing no voyage", async () => {
