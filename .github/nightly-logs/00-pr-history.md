@@ -16,6 +16,31 @@ LAST_AGED:   2026-10-06
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-07] PR #2116 [Stage 10]: verified asset links, web manifest parity, version codes/names sync, release metadata, cleartext traffic policy, and Android permissions; zero mismatches found
+**Domain:** apk | **Commit:** 6fa3cad00 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2116)
+**Files:** .github/nightly-logs/10-apk-integrity-coverage.log, .github/nightly-logs/10-apk-integrity-pr-body.md
+**Why:** Audit confirmed full consistency between PWA web manifest and native Android packaging configuration with no source changes needed.
+**Change:** verified asset links, web manifest parity, version codes/names sync, release metadata, cleartext traffic policy, and Android permissions; zero mismatches found
+**Result:** pnpm audit:apk and node APK/verify-android-source.mjs APK/android passed all wrapper invariant checks, test:apk-release passed 11 of 11, test:version-code passed 18 of 18, test:apk-native passed 19 of 19
+**Nudges:** 0
+
+### [2026-10-07] PR #2117 [Stage 11]: Calibration pass: 7 ordinary clean runs verified; inspected WebView cache mode, preraster, DOM storage, acceleration, SW routes, navigation preload, Vite code splitting, and asset footprint (15 files, 67.6 KB).
+**Domain:** apk | **Commit:** db6abf4f3 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2117)
+**Files:** .github/nightly-logs/11-apk-optimization-coverage.log, .github/nightly-logs/11-apk-optimization-pr-body.md
+**Why:** Routine calibration pass required (calibration-due: YES). All 9 performance invariants and asset precache limits verified optimal across full wrapper set.
+**Change:** Calibration pass: 7 ordinary clean runs verified; inspected WebView cache mode, preraster, DOM storage, acceleration, SW routes, navigation preload, Vite code splitting, and asset footprint (15 files, 67.6 KB).
+**Result:** pnpm audit:apk-perf and pnpm test:apk-performance passed 9/9 invariants and 10/10 unit tests cleanly.
+**Nudges:** 0
+
+### [2026-10-07] PR #2115 [Stage 12]: Global APK UX audit passed with zero violations across 77 frontend files
+**Domain:** ux | **Commit:** 2fb661c58 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2115)
+**Files:** .github/nightly-logs/12-apk-ux-coverage.log, .github/nightly-logs/12-apk-ux-pr-body.md
+**Why:** Broad sweep of Frontend-PWA/src showed all dropdowns, click targets, haptic feedback hooks, layout insets, text selection containment, and external link isolations comply with hybrid shell standards.
+**Change:** Global APK UX audit passed with zero violations across 77 frontend files
+**Result:** apk-ux-audit-status.txt: PASS; apk-ux-audit.json: 0 candidate files reviewed; UX categories 1-10 checked
+**Nudges:** 0
+
+
 ### [2026-10-07] PR #2114 [Stage 9]: Compliant -- (1) changed-files: 106, dep-viols: 0, knip: 11 unused files, 1 unused dep; (2) clean-streak: 6; (3) inspected: core/config, useSettings, useConsoleController; (4) substrate compliant, hunt clean
 **Domain:** architecture | **Commit:** d835357fd | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2114)
 **Files:** .github/nightly-logs/09-refactor-proposals-coverage.log, .github/nightly-logs/09-refactor-proposals-pr-body.md
