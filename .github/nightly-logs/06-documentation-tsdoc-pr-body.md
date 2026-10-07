@@ -4,23 +4,23 @@
 
 In plain terms: this changes 1 code file, so the app's behaviour may be affected. No tests were added or changed alongside it.
 
-**What changed:** docs(tsdoc): harden useGhostBenchmarkState interface contracts and inline logic annotations
+**What changed:** docs(tsdoc): harden useDismissOnBack interface contracts and inline logic annotations
 
-**Why:** Documented interface contracts, stepper mechanics, backdrop click suppression threat vector, and reactive state behavior in ghostBenchmarkState.ts
+**Why:** Synchronized useDismissOnBack TSDoc contracts and decision logs with implementation and ViewOptions.vue integration
 
-**Result:** PASSED (vue-tsc type-check and Vitest unit tests passed)
+**Result:** PASSED (vue-tsc type-check and 219 vitest files passed)
 
-**Files changed:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, Frontend-PWA/src/shared/directives/ghostBenchmarkState.ts
+**Files changed:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, Frontend-PWA/src/core/services/useDismissOnBack.ts
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: documentation
-  Cycle: nightly-cycle/2026-10-06
+  Cycle: nightly-cycle/2026-10-07
   Contract: a9f522cc73babe487aa3df1b083524daba64c0dd03c9e1b446dd4bd70c376bae
-  Why: Documented interface contracts, stepper mechanics, backdrop click suppression threat vector, and reactive state behavior in ghostBenchmarkState.ts
-  Change: docs(tsdoc): harden useGhostBenchmarkState interface contracts and inline logic annotations
-  Result: PASSED (vue-tsc type-check and Vitest unit tests passed)
-  Files: .github/nightly-logs/06-documentation-tsdoc-coverage.log, Frontend-PWA/src/shared/directives/ghostBenchmarkState.ts
+  Why: Synchronized useDismissOnBack TSDoc contracts and decision logs with implementation and ViewOptions.vue integration
+  Change: docs(tsdoc): harden useDismissOnBack interface contracts and inline logic annotations
+  Result: PASSED (vue-tsc type-check and 219 vitest files passed)
+  Files: .github/nightly-logs/06-documentation-tsdoc-coverage.log, Frontend-PWA/src/core/services/useDismissOnBack.ts
   Nudges: 0
-  Execution: 6d7d882bbe1994cbd307866a8de342499ca68472
+  Execution: 9f7dda54defe16b696e4ae38a18c900372e2dad8
 -->
