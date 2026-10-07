@@ -259,4 +259,6 @@ test("the restart notes cover every outcome the intervention classifier can assi
   }
   // Not yet recovered must stay true while the fresh session is still running.
   assert.match(REDISPATCH_NOTES.ACCEPTED_NO_DELIVERY, /has not been recovered/);
+  assert.match(REDISPATCH_NOTES.REQUEST_UNKNOWN, /cannot confirm whether Jules accepted it/);
+  assert.match(REDISPATCH_NOTES.REQUEST_UNKNOWN, /will not retry this run/);
 });

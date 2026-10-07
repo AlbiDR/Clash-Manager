@@ -17,6 +17,7 @@ import {
   validateNightlyEvents,
 } from "./nightly-events.mjs";
 import { prNumberFromTag } from "./nightly-ledger.mjs";
+import { REDISPATCH_NOT_SENT_MARKER } from "./nightly-intervention.mjs";
 import { validateExecutionProvenance } from "./nightly-provenance.mjs";
 import {
   buildRecap,
@@ -225,7 +226,11 @@ export function buildStageExplanation(inputs, stageNumber) {
         : classification.intervention.attempted
           ? classification.intervention.requestAccepted
             ? "The intervention request was accepted, but no durable merge followed."
-            : "The intervention request was rejected."
+            : classification.intervention.requestAccepted === false
+              ? classification.intervention.channel === "watchdog-redispatch"
+                ? "The intervention request was definitively not sent."
+                : "The intervention request was rejected."
+              : "The intervention request outcome is unknown; no replacement session or durable merge confirms acceptance."
           : "No explicit intervention evidence was recorded.",
     },
     {
@@ -298,10 +303,12 @@ function renderEvent(event) {
   const redispatch = event.payload?.requested?.evidence?.set?.redispatch;
   const detail = dispatch?.error
     ? `Dispatch error: ${dispatch.error}`
-    : redispatch?.error
-      ? `Restart of ${redispatch.failedSessionName} failed: ${redispatch.error}`
-      : redispatch?.sessionName
-        ? `Restarted ${redispatch.failedSessionName} as ${redispatch.sessionName}`
+    : redispatch?.sessionName
+      ? `Restarted ${redispatch.failedSessionName} as ${redispatch.sessionName}`
+      : redispatch?.error && redispatch.error.includes(REDISPATCH_NOT_SENT_MARKER)
+      ? `Restart of ${redispatch.failedSessionName} was not sent: ${redispatch.error}`
+      : redispatch?.error
+        ? `Restart of ${redispatch.failedSessionName} has unknown outcome: ${redispatch.error}`
         : null;
   return [
     `  #${event.sequence} ${event.recordedAt} [${event.source}] ${event.type}`,

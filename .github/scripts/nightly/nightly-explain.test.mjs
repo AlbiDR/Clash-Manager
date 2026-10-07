@@ -206,7 +206,7 @@ test("old runs remain legacy snapshots after newer cycles begin recording events
   assert.match(explanation.eventIntegrity.reason, /predates the first recorded event cycle/);
 });
 
-test("explain shows which session a restart replaced, or why it failed", () => {
+test("explain distinguishes a known not-sent restart from an ambiguous POST", () => {
   // 2026-10-06: the watchdog started a fresh session for Stage 3's FAILED one.
   const explainWith = redispatch => {
     const ledger = createEmptyLedger();
@@ -220,6 +220,7 @@ test("explain shows which session a restart replaced, or why it failed", () => {
   };
   const base = { requestedAt: `${DATE}T03:00:00.000Z`, failedSessionName: "sessions/one" };
   assert.match(explainWith({ ...base, sessionName: "sessions/two", ok: true }), /Restarted sessions\/one as sessions\/two/);
-  assert.match(explainWith({ ...base, sessionName: null, ok: false, error: "HTTP 500" }), /Restart of sessions\/one failed: HTTP 500/);
+  assert.match(explainWith({ ...base, sessionName: null, ok: false, error: "ledger could not be saved before the request, so it was not sent: disk full" }), /Restart of sessions\/one was not sent/);
+  assert.match(explainWith({ ...base, sessionName: null, ok: null, error: "HTTP 500" }), /Restart of sessions\/one has unknown outcome: HTTP 500/);
   assert.doesNotMatch(explainWith({ ...base, sessionName: null, ok: null }), /Restarted|Restart of/, "an unanswered request claims neither outcome");
 });

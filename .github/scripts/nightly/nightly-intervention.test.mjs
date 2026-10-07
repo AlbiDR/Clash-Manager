@@ -97,7 +97,11 @@ test("a restart whose session never published is accepted without delivery, not 
 });
 
 test("a restart request Jules rejected is not a recovery", () => {
-  const intervention = classifyIntervention(restarted({ failedSessionName: "sessions/one", ok: false, error: "HTTP 500" }), { merged: false });
+  const intervention = classifyIntervention(restarted({
+    failedSessionName: "sessions/one",
+    ok: false,
+    error: "ledger could not be saved before the request, so it was not sent: disk full",
+  }), { merged: false });
   assert.equal(intervention.requestAccepted, false);
   assert.equal(intervention.outcome, INTERVENTION_OUTCOMES.REQUEST_REJECTED);
 });
@@ -113,7 +117,34 @@ test("a restart whose answer was lost is judged by whether the stage merged", ()
   assert.equal(merged.effective, true);
   const unmerged = classifyIntervention(restarted(lost, { state: "ESCALATED" }), { merged: false });
   assert.equal(unmerged.effective, false);
-  assert.equal(unmerged.requestAccepted, false);
+  assert.equal(unmerged.requestAccepted, null);
+  assert.equal(unmerged.outcome, INTERVENTION_OUTCOMES.REQUEST_UNKNOWN);
+});
+
+test("a recorded replacement resolves an ambiguous restart as accepted without claiming delivery", () => {
+  const entry = {
+    ...restarted({ failedSessionName: "sessions/one", sessionName: null, ok: null, error: "request timed out" }),
+    state: "RUNNING",
+    evidence: {
+      redispatch: { failedSessionName: "sessions/one", sessionName: null, ok: null, error: "request timed out" },
+      session: { name: "sessions/two", state: "RUNNING" },
+    },
+  };
+  const intervention = classifyIntervention(entry, { merged: false });
+  assert.equal(intervention.requestAccepted, true);
+  assert.equal(intervention.effective, false);
+  assert.equal(intervention.outcome, INTERVENTION_OUTCOMES.ACCEPTED_NO_DELIVERY);
+});
+
+test("a legacy false flag with only a transport error remains unknown", () => {
+  const intervention = classifyIntervention(restarted({
+    failedSessionName: "sessions/one",
+    sessionName: null,
+    ok: false,
+    error: "Jules API 500 Error: response lost after acceptance",
+  }), { merged: false });
+  assert.equal(intervention.requestAccepted, null);
+  assert.equal(intervention.outcome, INTERVENTION_OUTCOMES.REQUEST_UNKNOWN);
 });
 
 test("a restarted session that also needed a nudge names both rungs and credits the one that delivered", () => {

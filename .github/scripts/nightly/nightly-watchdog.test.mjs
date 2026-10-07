@@ -55,6 +55,7 @@ import {
 } from "./nightly-watchdog.mjs";
 import { isObserved, stageInterventionHistory } from "./nightly-health.mjs";
 import { stageSessionTitle } from "./nightly-dispatch.mjs";
+import { classifyIntervention, INTERVENTION_OUTCOMES } from "./nightly-intervention.mjs";
 
 const registry = JSON.parse(readFileSync(new URL("../../nightly-config/stages.json", import.meta.url), "utf8"));
 
@@ -2516,7 +2517,7 @@ test("a second watchdog pass does not start another session", async () => {
   assert.equal(again.find(entry => entry.stage === 3).state, "ESCALATED", "a spent restart is a stage failing for the second time tonight");
 });
 
-test("a rejected restart request is recorded with its error and never retried", async () => {
+test("an HTTP error from the restart POST stays ambiguous and is never retried", async () => {
   const { date, ledger, entries, julesSessions } = failedRun();
   const api = julesApi({ status: 500, text: "boom" });
   const args = { registry, date, config: RESTART_CONFIG, fetchImpl: api.fetchImpl, now: AT_0300Z };
@@ -2525,13 +2526,94 @@ test("a rejected restart request is recorded with its error and never retried", 
   assert.equal(first.requested.length, 0);
   assert.equal(first.failed.length, 1);
   const recorded = ledger.runs[date]["3"].evidence.redispatch;
-  assert.equal(recorded.ok, false);
+  assert.equal(recorded.ok, null);
   assert.match(recorded.error, /Jules API 500/);
 
   // An ambiguous failure may already have created a session: asking again could mean two pull requests.
   const second = await redispatchFailedStages({ entries, ledger, julesSessions, ...args });
   assert.equal(api.calls.length, 1);
   assert.equal(second.exhausted.length, 1);
+});
+
+test("a matched FAILED replacement is reported after an ambiguous POST without spending another restart", () => {
+  for (const ok of [null, false]) {
+    const { date, ledger, entries } = failedRun();
+    const redispatch = {
+      requestedAt: `${date}T03:00:00.000Z`,
+      failedSessionName: FAILED_SESSION,
+      sessionName: null,
+      ok,
+      error: "Jules API 500 Error: response lost after acceptance",
+    };
+    upsertStageEntry(ledger, registry, date, 3, { evidence: { redispatch } });
+    const original = entries.find(entry => entry.stage === 3);
+    const replacement = {
+      ...original,
+      evidence: {
+        ...original.evidence,
+        julesSession: { ...original.evidence.julesSession, name: "9990002", id: "9990002", state: "FAILED" },
+      },
+    };
+
+    const plan = planRedispatches({ entries: [replacement], ledger, registry, date, now: AT_0300Z });
+    assert.deepEqual(plan.candidates, [], `ok=${ok}: a spent restart never becomes a new candidate`);
+    assert.equal(plan.exhausted[0].restartSeen, true, `ok=${ok}`);
+    assert.equal(plan.exhausted[0].observedReplacementName, "sessions/9990002", `ok=${ok}`);
+    assert.match(renderRedispatchReport({ ...plan, requested: [], failed: [] }), /its restart sessions\/9990002 also FAILED/);
+
+    const stillOriginal = planRedispatches({ entries: [original], ledger, registry, date, now: AT_0300Z });
+    assert.deepEqual(stillOriginal.candidates, [], `ok=${ok}: the original failure remains spent`);
+    assert.equal(stillOriginal.exhausted[0].restartSeen, false, `ok=${ok}: the original is not the replacement`);
+    assert.equal(stillOriginal.exhausted[0].observedReplacementName, null, `ok=${ok}`);
+    assert.match(renderRedispatchReport({ ...stillOriginal, requested: [], failed: [] }), /restart request outcome is unknown/);
+  }
+
+  const { date, ledger, entries } = failedRun();
+  upsertStageEntry(ledger, registry, date, 3, {
+    evidence: { redispatch: {
+      failedSessionName: FAILED_SESSION,
+      sessionName: null,
+      ok: false,
+      error: "ledger could not be saved before the request, so it was not sent: disk full",
+    } },
+  });
+  const original = entries.find(entry => entry.stage === 3);
+  const differentSession = {
+    ...original,
+    evidence: { ...original.evidence, julesSession: { ...original.evidence.julesSession, name: "9990002", state: "FAILED" } },
+  };
+  const knownNotSent = planRedispatches({ entries: [differentSession], ledger, registry, date, now: AT_0300Z });
+  assert.deepEqual(knownNotSent.candidates, []);
+  assert.equal(knownNotSent.exhausted[0].restartSeen, false);
+  assert.match(renderRedispatchReport({ ...knownNotSent, requested: [], failed: [] }), /restart requested at .* failed \(ledger could not be saved before the request, so it was not sent/);
+});
+
+test("a POST timeout stays ambiguous and a later replacement merge confirms recovery", async () => {
+  const { date, ledger, entries, julesSessions } = failedRun();
+  const calls = [];
+  const fetchImpl = async (...args) => {
+    calls.push(args);
+    throw new Error("request timed out while waiting for response");
+  };
+
+  await redispatchFailedStages({
+    entries, ledger, registry, date, julesSessions, config: RESTART_CONFIG, fetchImpl, now: AT_0300Z,
+  });
+  const recorded = ledger.runs[date]["3"].evidence.redispatch;
+  assert.equal(recorded.ok, null);
+  assert.match(recorded.error, /request timed out/);
+  assert.equal(calls.length, 1);
+
+  // The later merged row is independent publication evidence for the same stage/run.
+  const mergedEntry = {
+    ...entries.find(entry => entry.stage === 3),
+    state: "MERGED",
+    evidence: { redispatch: recorded, session: { name: "sessions/replacement", state: "COMPLETED" } },
+  };
+  const intervention = classifyIntervention(mergedEntry, { merged: true });
+  assert.equal(intervention.outcome, INTERVENTION_OUTCOMES.EFFECTIVE);
+  assert.equal(intervention.effective, true);
+  assert.equal(calls.length, 1, "an ambiguous POST is not retried");
 });
 
 test("an ambiguous restart tracks its same-cycle session when Jules lists it later", async () => {
@@ -2584,7 +2666,7 @@ test("the restart's error text never carries the Jules key into the committed le
       config: { ...RESTART_CONFIG, julesApiKey: "sekrit-key-123" }, fetchImpl: api.fetchImpl, now: AT_0300Z,
     });
     assert.doesNotMatch(JSON.stringify(ledger), /sekrit-key-123/);
-    assert.equal(ledger.runs[date]["3"].evidence.redispatch.ok, false);
+    assert.equal(ledger.runs[date]["3"].evidence.redispatch.ok, null);
   } finally {
     configureRedaction(CONFIG);
   }
@@ -2707,12 +2789,16 @@ test("the step summary says what happened to every FAILED stage, and when it did
 
   const report = renderRedispatchReport({
     requested: [{ stage: 3, failedSessionName: FAILED_SESSION, sessionName: "sessions/9990001" }],
-    failed: [{ stage: 5, failedSessionName: "sessions/2", error: "HTTP 500" }],
+    failed: [
+      { stage: 4, failedSessionName: "sessions/1", error: "ledger could not be saved before the request, so it was not sent: disk full" },
+      { stage: 5, failedSessionName: "sessions/2", error: "HTTP 500" },
+    ],
     declined: [{ stage: 1, failedSessionName: "sessions/3", reason: "a session started now would declare cycle 2026-10-07, not 2026-10-06" }],
     exhausted: [{ stage: 8, restartSeen: true, redispatch: { failedSessionName: "sessions/4", sessionName: "sessions/5" } }],
   });
   assert.match(report, /Stage 3: session sessions\/17685247323826051852 FAILED; started fresh session sessions\/9990001/);
-  assert.match(report, /Stage 5: .*restart request failed and will not be retried this run: HTTP 500/);
+  assert.match(report, /Stage 4: .*restart request was not sent and will not be retried this run/);
+  assert.match(report, /Stage 5: .*restart request outcome is unknown and will not be retried this run: HTTP 500/);
   assert.match(report, /Stage 1: .*not restarted, because a session started now would declare cycle 2026-10-07/);
   assert.match(report, /Stage 8: its restart sessions\/5 also FAILED/);
 });

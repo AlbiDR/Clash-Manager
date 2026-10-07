@@ -1829,6 +1829,19 @@ test("a restart whose session never published says the stage has not been recove
   assert.match(text, /the watchdog started a fresh one automatically, but no pull request has followed from it; this stage has not been recovered/);
 });
 
+test("an unanswered restart with no replacement or merge stays unknown in the recap", () => {
+  const result = classifyRestarted({
+    ...restartEntry(),
+    state: "ESCALATED",
+    failureClass: "JULES_SESSION_FAILED",
+    evidence: { redispatch: { failedSessionName: "sessions/one", sessionName: null, ok: null, error: "request timed out" } },
+  }, null);
+  assert.equal(result.intervention.outcome, "REQUEST_UNKNOWN");
+  const text = renderRecap(singleStage(result, { merged: 0, clean: 0, stuck: 1, grade: 7, rationale: "Partial block: one stage failed or got stuck." }));
+  assert.match(text, /cannot confirm whether Jules accepted it/);
+  assert.doesNotMatch(text, /request did not go through/);
+});
+
 test("a restarted session that then needed a nudge says both", () => {
   const result = classifyRestarted(restartEntry({ recovery: { ok: true } }));
   assert.equal(result.rescuedBy, "watchdog-nudge");

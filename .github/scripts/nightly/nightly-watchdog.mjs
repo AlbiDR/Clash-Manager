@@ -9,7 +9,7 @@ import { FAILURE_CLASSES, ensureRunEntries, loadLedger, prNumberFromTag, recordC
 import { createRedactor, redactDeep } from "./nightly-redact.mjs";
 import { buildFallbackPlan, extractSessionPatch, publishFallback } from "./nightly-publish-fallback.mjs";
 import { HEALTH, evaluatePipelineHealth, renderHealthReport } from "./nightly-health.mjs";
-import { getInterventionAttemptCount } from "./nightly-intervention.mjs";
+import { getInterventionAttemptCount, REDISPATCH_NOT_SENT_MARKER } from "./nightly-intervention.mjs";
 import { NIGHTLY_EVENT_SOURCES, getCycleDate, getCycleId, getEvidenceDate } from "./nightly-events.mjs";
 import { getExecutionProvenance } from "./nightly-provenance.mjs";
 // The dispatcher's own session request, borrowed for the one-shot restart of a
@@ -1478,15 +1478,22 @@ export function planRedispatches({ entries, ledger, registry, date, julesSession
     if (entry.failureClass !== FAILURE_CLASSES.JULES_SESSION_FAILED) continue;
     const spent = stageEntry(ledger, date, entry.stage)?.evidence?.redispatch;
     if (spent) {
+      const observedSessionName = julesSessionPath({ name: entry.evidence?.julesSession?.name || "" });
+      const failedSessionName = julesSessionPath({ name: spent.failedSessionName || "" });
+      const knownNotSent = spent.ok === false
+        && typeof spent.error === "string"
+        && spent.error.includes(REDISPATCH_NOT_SENT_MARKER);
+      const observedReplacementName = !knownNotSent && observedSessionName && failedSessionName && observedSessionName !== failedSessionName
+        ? observedSessionName
+        : null;
       exhausted.push({
         stage: entry.stage,
         redispatch: spent,
-        // The tracked session can only still be the original one if the restart
-        // never produced a session, or Jules has not listed it yet. Saying "the
-        // fresh session also failed" in that case would describe a session
-        // nobody has seen.
-        restartSeen: Boolean(spent.sessionName)
-          && julesSessionPath({ name: entry.evidence?.julesSession?.name || "" }) === julesSessionPath({ name: spent.sessionName }),
+        observedReplacementName,
+        // A current FAILED session with a different canonical resource name
+        // proves a replacement was observed, even when the POST response never
+        // returned its name to the ledger.
+        restartSeen: Boolean(observedReplacementName),
       });
       continue;
     }
@@ -1619,9 +1626,11 @@ export async function redispatchFailedStages({
     } catch (error) {
       const message = redact(error?.message || String(error));
       upsertStageEntry(ledger, registry, date, entry.stage, {
-        evidence: { redispatch: { ...intent, ok: false, error: message } },
+        // A thrown POST can follow server acceptance. Keep the pre-request
+        // intent's unknown status and never retry this one-shot mutation.
+        evidence: { redispatch: { ...intent, ok: null, error: message } },
       }, { source: NIGHTLY_EVENT_SOURCES.WATCHDOG_RECOVERY });
-      errorLine(`Stage ${entry.stage}: restart request failed and will not be retried this run. ${message}`);
+      errorLine(`Stage ${entry.stage}: restart request outcome is unknown and will not be retried this run. ${message}`);
       failed.push({ stage: entry.stage, failedSessionName, error: message });
     }
     try {
@@ -1657,7 +1666,10 @@ export function renderRedispatchReport(result) {
     lines.push(`- Stage ${item.stage}: session ${item.failedSessionName} FAILED; started fresh session ${item.sessionName}.`);
   }
   for (const item of result.failed || []) {
-    lines.push(`- Stage ${item.stage}: session ${item.failedSessionName} FAILED; the restart request failed and will not be retried this run: ${item.error}`);
+    const knownNotSent = typeof item.error === "string" && item.error.includes(REDISPATCH_NOT_SENT_MARKER);
+    lines.push(knownNotSent
+      ? `- Stage ${item.stage}: session ${item.failedSessionName} FAILED; the restart request was not sent and will not be retried this run: ${item.error}`
+      : `- Stage ${item.stage}: session ${item.failedSessionName} FAILED; the restart request outcome is unknown and will not be retried this run: ${item.error}`);
   }
   for (const item of result.declined || []) {
     lines.push(`- Stage ${item.stage}: session ${item.failedSessionName || "unknown"} FAILED; not restarted, because ${item.reason}.`);
@@ -1665,10 +1677,12 @@ export function renderRedispatchReport(result) {
   for (const item of result.exhausted || []) {
     const { redispatch } = item;
     lines.push(item.restartSeen
-      ? `- Stage ${item.stage}: its restart ${redispatch.sessionName} also FAILED (first session ${redispatch.failedSessionName}); one restart per run, so it stays failed.`
-      : redispatch.ok === false
+      ? `- Stage ${item.stage}: its restart ${item.observedReplacementName || redispatch.sessionName} also FAILED (first session ${redispatch.failedSessionName}); one restart per run, so it stays failed.`
+      : redispatch.ok === false && typeof redispatch.error === "string" && redispatch.error.includes(REDISPATCH_NOT_SENT_MARKER)
         ? `- Stage ${item.stage}: the restart requested at ${redispatch.requestedAt} failed (${redispatch.error}); one restart per run, so it stays failed.`
-        : `- Stage ${item.stage}: a restart was requested at ${redispatch.requestedAt} but Jules has not listed ${redispatch.sessionName || "its session"} yet; not requested again.`);
+        : redispatch.error
+          ? `- Stage ${item.stage}: the restart request outcome is unknown (${redispatch.error}); it will not be requested again this run.`
+          : `- Stage ${item.stage}: a restart was requested at ${redispatch.requestedAt}, but Jules has not listed ${redispatch.sessionName || "its session"} yet; its outcome is unknown and it will not be requested again.`);
   }
   if (lines.length === 0) return "";
   return ["", "Failed-session restarts (at most one per stage per run):", ...lines, ""].join("\n");

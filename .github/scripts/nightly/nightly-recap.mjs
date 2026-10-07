@@ -1014,6 +1014,8 @@ function stageNotes(stage) {
       : "The fallback publication attempt was accepted, but no merged result followed; this stage was not recovered.");
   } else if (stage.intervention?.outcome === INTERVENTION_OUTCOMES.REQUEST_REJECTED) {
     notes.push("The automatic recovery request failed before it reached the stage; this stage was not recovered.");
+  } else if (stage.intervention?.outcome === INTERVENTION_OUTCOMES.REQUEST_UNKNOWN) {
+    notes.push(REDISPATCH_NOTES.REQUEST_UNKNOWN);
   }
   // A malformed description does not mean the work was wrong: in all five cases
   // on 2026-09-03 the code, tests and coverage log landed correctly.

@@ -341,6 +341,7 @@ export const FAILURE_PHRASES = {
 export const REDISPATCH_NOTES = {
   EFFECTIVE: "Its first Jules session failed outright. The watchdog started a fresh session automatically and that one published; nobody had to do anything.",
   ACCEPTED_NO_DELIVERY: "After its first Jules session failed, the watchdog started a fresh one automatically, but no pull request has followed from it; this stage has not been recovered.",
+  REQUEST_UNKNOWN: "After its first Jules session failed, the watchdog recorded a restart request, but it cannot confirm whether Jules accepted it. No replacement or merged pull request is confirmed, and it will not retry this run.",
   REQUEST_REJECTED: "After its first Jules session failed, the watchdog asked Jules for a fresh one, but the request did not go through; this stage was not recovered.",
   EARLIER: "Its first Jules session failed outright, so the watchdog started a fresh one automatically.",
 };
