@@ -9,8 +9,10 @@ import {
   RESOLVED_BLOCKER_KEYS,
   createEmptyLedger,
   ensureRunEntries,
+  resolveEvidence,
   upsertStageEntry,
 } from './nightly-ledger.mjs';
+import { NIGHTLY_EVENT_SOURCES } from './nightly-events.mjs';
 
 const registry = JSON.parse(readFileSync(new URL('../../nightly-config/stages.json', import.meta.url), 'utf8'));
 const DATE = '2026-09-10';
@@ -83,4 +85,29 @@ test('an untagged row is left alone so real failures still record normally', () 
   assert.equal(row.state, 'BLOCKED');
   assert.equal(row.failureClass, 'NO_PUBLISHED_OUTPUT');
   assert.ok(!row.evidence.withheldFailureClasses, 'nothing is withheld when nothing was guarded');
+});
+
+// The watchdog's one restart of a FAILED session is bounded by evidence.redispatch.
+// If a merge cleared it, the next pass could restart the stage a second time.
+test('evidence.redispatch is durable: merging the stage never clears the restart record', () => {
+  const redispatch = { failedSessionName: 'sessions/one', sessionName: 'sessions/two', ok: true };
+  assert.equal(RESOLVED_BLOCKER_KEYS.includes('redispatch'), false);
+  const merged = resolveEvidence({ redispatch, julesSession: { name: 'sessions/one' } }, { tag: `nightly/${DATE}/stage-3/pr-9` }, 'MERGED', null);
+  assert.deepEqual(merged.redispatch, redispatch);
+});
+
+test('a restart is named as its own transition, distinct from a nudge to the old session', () => {
+  const ledger = createEmptyLedger();
+  ensureRunEntries(ledger, registry, DATE);
+  const names = [];
+  for (const redispatch of [
+    { requestedAt: `${DATE}T03:00:00Z`, failedSessionName: 'sessions/one', sessionName: null, ok: null, error: null },
+    { requestedAt: `${DATE}T03:00:00Z`, failedSessionName: 'sessions/one', sessionName: 'sessions/two', ok: true, error: null },
+  ]) {
+    upsertStageEntry(ledger, registry, DATE, 3, { state: 'ESCALATED', failureClass: 'JULES_SESSION_FAILED', evidence: { redispatch } }, { source: NIGHTLY_EVENT_SOURCES.WATCHDOG_RECOVERY });
+    names.push(ledger.events.at(-1).payload.transition.name);
+  }
+  upsertStageEntry(ledger, registry, DATE, 4, { state: 'ESCALATED', failureClass: 'JULES_SESSION_FAILED', evidence: { redispatch: { failedSessionName: 'sessions/x', ok: false, error: 'HTTP 500' } } }, { source: NIGHTLY_EVENT_SOURCES.WATCHDOG_RECOVERY });
+  names.push(ledger.events.at(-1).payload.transition.name);
+  assert.deepEqual(names, ['JULES_REDISPATCH_REQUESTED', 'JULES_SESSION_REDISPATCHED', 'JULES_REDISPATCH_FAILED']);
 });

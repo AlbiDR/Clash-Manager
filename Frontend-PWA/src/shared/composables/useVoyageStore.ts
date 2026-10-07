@@ -51,6 +51,11 @@ export const useVoyageStore = defineStore("voyage", () => {
   /** Unix timestamp (ms) of the last successful state refresh. */
   const lastUpdated = ref<number>(0);
 
+  /** A refresh pass and the promise callers use to await that pass. */
+  type RefreshPass = { promise: Promise<void>; resolve: () => void };
+  let activeRefreshPass: RefreshPass | null = null;
+  let queuedRefreshPass: RefreshPass | null = null;
+
   /**
    * Realtime channel instance for listening to Postgres changes in the voyage tables.
    * // EPHEMERAL: intentionally resets on cold start.
@@ -161,16 +166,37 @@ export const useVoyageStore = defineStore("voyage", () => {
   /**
    * Authoritative fetch of the voyage state and performance aggregates.
    */
-  async function refresh() {
-    loading.value = true;
-    try {
-      // [THREAT:] Anemic variable pathogens (Target C) can mask structural intent.
-      // [DECISION LOG] Renamed to domain-descriptive terms to align with CleanStack standards.
-      const [voyageSummarySnapshot, contributionLedgerSnapshot] = await Promise.all([
-        apiFetchVoyageSummary(),
-        apiFetchVoyageContributions()
-      ]);
+  function createRefreshPass(): RefreshPass {
+    let resolve!: () => void;
+    const promise = new Promise<void>((resolvePromise) => {
+      resolve = resolvePromise;
+    });
+    return { promise, resolve };
+  }
 
+  function loadVoyageRefreshPass(refreshPass: RefreshPass): void {
+    activeRefreshPass = refreshPass;
+    loading.value = true;
+
+    void (async () => {
+      const [summaryResult, contributionResult] = await Promise.allSettled([
+        apiFetchVoyageSummary(),
+        apiFetchVoyageContributions(),
+      ] as const);
+
+      if (summaryResult.status === "rejected" || contributionResult.status === "rejected") {
+        const refreshFailure = summaryResult.status === "rejected"
+          ? summaryResult.reason
+          : contributionResult.status === "rejected"
+            ? contributionResult.reason
+            : new Error("Voyage refresh failed");
+        const errorMessage = refreshFailure instanceof Error ? refreshFailure.message : String(refreshFailure);
+        console.error("[Voyage] Refresh failed:", errorMessage);
+        return;
+      }
+
+      const voyageSummarySnapshot = summaryResult.value;
+      const contributionLedgerSnapshot = contributionResult.value;
       if (voyageSummarySnapshot && voyageSummarySnapshot.event) {
         summary.value = {
           event: {
@@ -204,14 +230,31 @@ export const useVoyageStore = defineStore("voyage", () => {
         summary.value = null;
         cleanupListeners();
       }
-    } catch (voyageRefreshError: unknown) {
-      // [THREAT:] Silent failures in state hydration (Target C).
-      // [DECISION LOG] Explicitly catching and logging state hydration errors.
+    })().catch((voyageRefreshError: unknown) => {
       const errorMessage = voyageRefreshError instanceof Error ? voyageRefreshError.message : String(voyageRefreshError);
       console.error("[Voyage] Refresh failed:", errorMessage);
-    } finally {
-      loading.value = false;
+    }).finally(() => {
+      refreshPass.resolve();
+      if (queuedRefreshPass) {
+        const nextRefreshPass = queuedRefreshPass;
+        queuedRefreshPass = null;
+        loadVoyageRefreshPass(nextRefreshPass);
+      } else {
+        activeRefreshPass = null;
+        loading.value = false;
+      }
+    });
+  }
+
+  function refresh(): Promise<void> {
+    if (activeRefreshPass) {
+      if (!queuedRefreshPass) queuedRefreshPass = createRefreshPass();
+      return queuedRefreshPass.promise;
     }
+
+    const refreshPass = createRefreshPass();
+    loadVoyageRefreshPass(refreshPass);
+    return refreshPass.promise;
   }
 
   // Compose actions from externalized logic

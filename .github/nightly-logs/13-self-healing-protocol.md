@@ -520,6 +520,22 @@
   - Root Cause: Stalled completion reserve prior to PR publication.
   - Resolution Details: Watchdog nudge successfully recovered the session (`ok: true`). Stage 8 completed and published PR #2101 for 2026-10-06. Pipeline intervention rate for 2026-10-06: 1/11 merged stages (9.1%).
 
+* Stage 3 (Baseline Consolidation) Session Failure on 2026-10-07:
+  - Session: sessions/6453806597080966560
+  - State: [FAILED - monitor] (2026-10-07)
+  - Symptom: Stage 3 failed to produce published output and was recorded as ledger state `ESCALATED` with `failureClass: JULES_SESSION_FAILED` after a 28-minute session.
+  - Root Cause: Jules session terminated in a failed state during baseline consolidation checks without writing terminal coverage log results or opening a PR. Recurrence of 2026-10-06 Stage 3 failure mode.
+  - Recommended Fix: Audit Stage 3 session logs for potential context limit exhaustion or database connection timeouts during baseline consolidation checks.
+
+* Watchdog Recovery Nudge Interventions on 2026-10-07:
+  - Stages: Stage 10 (APK Integrity) and Stage 11 (APK Optimization)
+  - State: [RESCUED - monitor] (2026-10-07)
+  - Sessions: Stage 10 (`sessions/18326218505671420360`), Stage 11 (`sessions/10032127153092069326`)
+  - Symptom: Stage 10 and Stage 11 sessions required watchdog nudge interventions (`nudgedAt: 2026-10-07T10:25:12.021Z` for Stage 10; `nudgedAt: 2026-10-07T10:25:14.617Z` for Stage 11) due to stalled post-commit reserve / finalization.
+  - Root Cause: Stalled completion reserve prior to PR publication.
+  - Health Verdict: Stage 12 rated `DEGRADING` ("intervention rate rose from 19% to 22%").
+  - Resolution Details: Watchdog nudges successfully recovered both sessions (`ok: true`). Stage 10 published PR #2116 (CLEAN) and Stage 11 published PR #2117 (CLEAN). Pipeline intervention rate for 2026-10-07: 2/11 merged stages (18.2%).
+
 
 ## Section 2: Cross-Stage Coherence Bugs (Priority 2)
 
@@ -571,53 +587,53 @@
 ## Section 3: No-Diff and Low-Value Audit (Priority 3)
 
 * Stage 1 (Harden):
-  - Consecutive No-Diff Days: 9 (CLEAN logged on 2026-10-05; audit duration: 6m)
+  - Consecutive No-Diff Days: 10 (CLEAN logged on 2026-10-06; audit duration: 6m)
   - Analysis: Audited Edge Function endpoints, in-memory state variables, Valibot boundary schemas, and cross-layer architectural isolations across 42 files; zero threat vectors found.
 
 * Stage 2 (Verify):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-10-06 in ghostBenchmarkState.spec.ts; audit duration: 20m)
-  - Analysis: Added unit tests for useGhostBenchmarkState stepper parameter and ignoreBackdropClick flag in Frontend-PWA/src/shared/directives/directives-tests/ghostBenchmarkState.spec.ts.
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-10-07 in useConnectionStatus.spec.ts; audit duration: 10m)
+  - Analysis: Closed coverage gaps in useConnectionStatus composable with saturating unit/boundary tests in Frontend-PWA/src/core/services/services-tests/useConnectionStatus.spec.ts.
 
 * Stage 3 (Baseline Consolidation):
-  - Consecutive No-Diff Days: 25 (FAILED on 2026-10-06; audit duration: 22m)
+  - Consecutive No-Diff Days: 26 (FAILED on 2026-10-07; session duration: 28m)
   - Analysis: Session failed (JULES_SESSION_FAILED) during baseline consolidation audit; fold-state: PENDING.
 
 * Stage 4 (Optimization):
-  - Consecutive No-Diff Days: 22 (CLEAN logged on 2026-10-06; audit duration: 4m)
-  - Analysis: Inspected 111 changed files and Edge Functions for SQL view substrate hygiene; zero structural rot or unreferenced views found.
+  - Consecutive No-Diff Days: 23 (CLEAN logged on 2026-10-07; audit duration: 4m)
+  - Analysis: Inspected 106 changed files and Edge Functions for SQL view substrate hygiene; zero structural rot or unreferenced views found.
 
 * Stage 5 (README):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-10-06 in README.md; audit duration: 5m)
-  - Analysis: Reconciled core/api and shared/ui READMEs with ScoreSchemas and ScoreCompositionPanel.
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-10-07 in README.md; audit duration: 6m)
+  - Analysis: Reconciled ViewOptions.vue documentation debt with useDismissOnBack back navigation dismissal in Frontend-PWA/src/shared/ui/README.md.
 
 * Stage 6 (TSDoc):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-10-06 in ghostBenchmarkState.ts; audit duration: 4m)
-  - Analysis: Hardened useGhostBenchmarkState interface contracts and inline logic annotations in Frontend-PWA/src/shared/directives/ghostBenchmarkState.ts.
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-10-07 in useDismissOnBack.ts; audit duration: 8m)
+  - Analysis: Hardened useDismissOnBack interface contracts and inline logic annotations in Frontend-PWA/src/core/services/useDismissOnBack.ts.
 
 * Stage 7 (Version Integrity):
-  - Consecutive No-Diff Days: 156 (CLEAN logged on 2026-10-06; audit duration: 2m)
-  - Analysis: Scanned root, Frontend-PWA, and Backend package.json manifests and catalog declarations; verified zero drift lines via pnpm audit:version across all 3 manifests at version 14.51.0.
+  - Consecutive No-Diff Days: 157 (CLEAN logged on 2026-10-07; audit duration: 2m)
+  - Analysis: Catalog and package version scans confirmed zero drift across package manifests (root package.json, Frontend-PWA/package.json, Backend/package.json ground truth v14.51.5) and derived locations via pnpm audit:version.
 
 * Stage 8 (Dependency Audit):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-10-06 in package.json; audit duration: 7m)
-  - Analysis: Bumped simple-git-hooks to ^2.14.0 in monorepo catalogs and updated pnpm-lock.yaml.
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-10-07 in package.json; audit duration: 7m)
+  - Analysis: Bumped knip to ^6.40.0 in monorepo catalog and refreshed pnpm-lock.yaml.
 
 * Stage 9 (Refactor):
-  - Consecutive No-Diff Days: 6 (CLEAN logged on 2026-10-06; audit duration: 8m)
-  - Analysis: Scanned 111 changed files, 0 dep-violations, knip OK; clean calibration streak: 5; inspected core/config, ghostBenchmarkState, GhostBenchmarkHost.
+  - Consecutive No-Diff Days: 7 (CLEAN logged on 2026-10-07; audit duration: 5m)
+  - Analysis: Scanned 106 changed files, 0 dep-violations, knip 11 unused files, 1 unused dep; clean calibration streak: 6; inspected core/config, useSettings, useConsoleController; substrate compliant.
 
 * Stage 10 (APK-Integrity):
-  - Consecutive No-Diff Days: 89 (CLEAN logged on 2026-10-06; audit duration: 3m)
-  - Analysis: Audited PWA and APK wrapper invariants: asset links, manifest parity, version code/name sync, release metadata, and security policy with zero mismatches found.
+  - Consecutive No-Diff Days: 90 (CLEAN logged on 2026-10-07; audit duration: 4m)
+  - Analysis: Audited PWA and APK wrapper invariants: asset links, manifest parity, version code/name sync, release metadata, cleartext traffic policy, and Android permissions; zero mismatches found.
 
 * Stage 11 (APK-Optimization):
-  - Consecutive No-Diff Days: 23 (CLEAN logged on 2026-10-06; audit duration: 2m)
-  - Analysis: Inspected APK wrapper performance settings, WebView caching mode LOAD_CACHE_ELSE_NETWORK, service worker precache route, Vite code splitting, and precache footprint (15 files, 67.6 KB). All 9 performance invariants verified optimal.
+  - Consecutive No-Diff Days: 24 (CLEAN logged on 2026-10-07; audit duration: 4m)
+  - Analysis: Calibration pass: 7 ordinary clean runs verified; inspected WebView cache mode, preraster, DOM storage, acceleration, SW routes, navigation preload, Vite code splitting, and asset footprint (15 files, 67.6 KB). All 9 performance invariants verified optimal.
 
 * Stage 12 (APK-UX):
-  - Consecutive No-Diff Days: 8 (CLEAN logged on 2026-10-06; audit duration: 4m)
-  - Analysis: Calibration pass: 7 consecutive CLEAN runs verified; 1 candidate file reviewed (GhostBenchmarkHost.vue) across 77 files examined in 10 UX categories.
+  - Consecutive No-Diff Days: 9 (CLEAN logged on 2026-10-07; audit duration: 2m)
+  - Analysis: Global APK UX audit passed with zero violations across 77 frontend files.
 
 * Stage 13 (Self-Healing):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-10-06; audit duration: 6m)
-  - Analysis: Completed daily self-healing audit pass for 2026-10-06: documented Stage 3 session failure (JULES_SESSION_FAILED), Stage 8 watchdog nudge recovery (1/11 intervention rate = 9.1%), recorded 0 unfinalized sentinels, and updated Section 3 metrics.
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-10-07; audit duration: 5m)
+  - Analysis: Completed daily self-healing audit pass for 2026-10-07: documented Stage 3 session failure (JULES_SESSION_FAILED), Stage 10 & 11 watchdog nudge recovery (2/11 intervention rate = 18.2%), noted Stage 12 DEGRADING health verdict, and updated Section 3 metrics.

@@ -9,9 +9,12 @@ import { FAILURE_CLASSES, ensureRunEntries, loadLedger, prNumberFromTag, recordC
 import { createRedactor, redactDeep } from "./nightly-redact.mjs";
 import { buildFallbackPlan, extractSessionPatch, publishFallback } from "./nightly-publish-fallback.mjs";
 import { HEALTH, evaluatePipelineHealth, renderHealthReport } from "./nightly-health.mjs";
-import { getInterventionAttemptCount } from "./nightly-intervention.mjs";
-import { NIGHTLY_EVENT_SOURCES, getCycleId, getEvidenceDate } from "./nightly-events.mjs";
+import { getInterventionAttemptCount, REDISPATCH_NOT_SENT_MARKER } from "./nightly-intervention.mjs";
+import { NIGHTLY_EVENT_SOURCES, getCycleDate, getCycleId, getEvidenceDate } from "./nightly-events.mjs";
 import { getExecutionProvenance } from "./nightly-provenance.mjs";
+// The dispatcher's own session request, borrowed for the one-shot restart of a
+// FAILED session. See redispatchFailedStages for why it is shared, not copied.
+import { createJulesSession } from "./nightly-dispatch.mjs";
 // The composer the stage itself uses, and the parser the recap itself uses.
 // Imported rather than reimplemented: a second copy of either would be a second
 // definition of the pull request body format, and the whole reason a published
@@ -347,12 +350,21 @@ export function hasDanglingSentinel(content, stageNumber, date) {
   return String(content || "").includes(sentinel);
 }
 
-export function matchJulesSession(sessions, stage, date, preferredSessionName = null) {
-  const evidenceDate = expectedEvidenceDate(stage.number, date);
+/**
+ * Every Jules session whose prompt names this stage, newest first, on any date.
+ *
+ * Two prompt shapes reach here and both must match: the Jules UI schedule's
+ * bootstrap block opens with `# [Stage 3]`, and a session created through
+ * createJulesSession (the dispatcher, and the watchdog's restart of a FAILED
+ * session) carries the stage prompt file itself, which opens with `# S03:`.
+ * Each stage prompt names only its own header, so neither shape can claim a
+ * neighbour's session.
+ */
+function sessionsForStage(sessions, stage) {
   const compactHeader = `S${String(stage.number).padStart(2, "0")}:`;
   const legacyHeader = `[Stage ${stage.number}]`;
   const legacyPaddedHeader = `[Stage ${String(stage.number).padStart(2, "0")}]`;
-  const matches = (sessions || [])
+  return (sessions || [])
     .filter(session => {
       if (typeof session?.prompt !== "string") return false;
       return session.prompt.includes(compactHeader) ||
@@ -360,6 +372,32 @@ export function matchJulesSession(sessions, stage, date, preferredSessionName = 
         session.prompt.includes(legacyPaddedHeader);
     })
     .sort((a, b) => String(b.createTime || "").localeCompare(String(a.createTime || "")));
+}
+
+/**
+ * The session a stage's ledger row is tracking for this run, or null.
+ *
+ * A known restart outranks the dispatcher's record. Both names are pins, and
+ * matchJulesSession honours a pin before it looks at dates. If a restart was
+ * attempted but Jules did not return its session name, do not fall back to the
+ * failed dispatch pin: the request may have been accepted, so let the existing
+ * stage and evidence-date filters find a listed replacement. With no matching
+ * replacement, those filters still return the original session. A known name
+ * remains pinned because it is authoritative even when a newer duplicate exists.
+ *
+ * Absent either record this is null and matching falls back to the newest
+ * session on the evidence date, which is also the restart whenever one exists
+ * (see planRedispatches for the guard that relies on that).
+ */
+export function trackedSessionName(ledger, date, stageNumber) {
+  const evidence = ledger?.runs?.[date]?.[String(stageNumber)]?.evidence;
+  if (evidence?.redispatch) return evidence.redispatch.sessionName || null;
+  return evidence?.dispatchSessionName || null;
+}
+
+export function matchJulesSession(sessions, stage, date, preferredSessionName = null) {
+  const evidenceDate = expectedEvidenceDate(stage.number, date);
+  const matches = sessionsForStage(sessions, stage);
   if (preferredSessionName) {
     const preferredPath = julesSessionPath({ name: preferredSessionName });
     const exact = matches.find(session => julesSessionPath(session) === preferredPath);
@@ -697,7 +735,8 @@ async function createOrUpdateEscalationIssue(date, entries, summary, config = CO
     "The Nightly watchdog detected unresolved stage states after the post-window cutoff.",
     "",
     summary,
-    "Automated recovery already attempted a nudge for any JULES_SESSION_STUCK stage.",
+    "Automated recovery already attempted a nudge for any JULES_SESSION_STUCK stage,",
+    "and at most one fresh session for any JULES_SESSION_FAILED stage it could restart.",
     "The stages below survived that pass and need attention:",
     "",
     ...unresolved.map(entry => `- Stage ${entry.stage}: ${entry.state} (${entry.failureClass || "unclassified"})`),
@@ -906,7 +945,7 @@ export function runFrontier({ registry, date, observed, previousLedger = null })
     // was due, on the first night this fix was deployed. The recap read
     // correctly throughout, because its own frontier never consulted pull
     // requests, which is exactly why nobody saw it.
-    const preferredSessionName = previousLedger?.runs?.[date]?.[String(stage.number)]?.evidence?.dispatchSessionName || null;
+    const preferredSessionName = trackedSessionName(previousLedger, date, stage.number);
     const reached = [...(observed.tags || [])].some(tag => tag.startsWith(`nightly/${evidenceDate}/stage-${stage.number}/pr-`))
       || observed.coverageStages.has(stage.number)
       || prs.some(pr => prDateMatchesStage(pr, stage.number, date)
@@ -945,7 +984,7 @@ export function evaluateNightlyRun({ registry, date, observed, previousLedger, f
             observed.julesSessions,
             stage,
             date,
-            previousLedger?.runs?.[date]?.[String(stage.number)]?.evidence?.dispatchSessionName || null,
+            trackedSessionName(previousLedger, date, stage.number),
           )),
           // The stage's own clock, not Jules'. See parseRunWindow.
           run: observed.runWindows?.get(stage.number) || null,
@@ -1006,7 +1045,7 @@ export function evaluateNightlyRun({ registry, date, observed, previousLedger, f
       observed.julesSessions,
       stage,
       date,
-      previousLedger?.runs?.[date]?.[String(stage.number)]?.evidence?.dispatchSessionName || null,
+      trackedSessionName(previousLedger, date, stage.number),
     );
     if (julesMatch && IN_FLIGHT_JULES_STATES.has(julesMatch.state)) {
       entries.push({
@@ -1124,8 +1163,15 @@ export function evaluateNightlyRun({ registry, date, observed, previousLedger, f
     // second watchdog pass on the same day, the prior day catches chronic failure.
     const priorDate = utcDayOffset(-1, new Date(`${date}T00:00:00.000Z`));
     const hasFailed = candidate => candidate?.state === "NO_OUTPUT" || candidate?.state === "ESCALATED";
+    // A stage whose one restart has already been spent this run is failing for
+    // the second time tonight, however the pass between saw it. Without this,
+    // a restart that went QUEUED -> RUNNING -> FAILED would land as NO_OUTPUT,
+    // because the row it replaces says RUNNING, and read as a first failure
+    // with a retry still to come when none is (see planRedispatches).
+    const restartSpent = Boolean(stageEntry(previousLedger, date, stage.number)?.evidence?.redispatch);
     const recurring = hasFailed(stageEntry(previousLedger, date, stage.number))
-      || hasFailed(stageEntry(previousLedger, priorDate, stage.number));
+      || hasFailed(stageEntry(previousLedger, priorDate, stage.number))
+      || restartSpent;
     // Without session evidence we cannot tell a stuck session from a stage that
     // never ran, so say so explicitly instead of guessing NO_PUBLISHED_OUTPUT.
     const failureClass = julesAvailable === false
@@ -1319,6 +1365,329 @@ export async function recoverStuckStages({
   return { attempted, recovered, failed, unrecovered };
 }
 
+/**
+ * Whether a session started now would be filed under THIS run.
+ *
+ * A restarted session does not inherit its run: `nightly-stage.mjs start`
+ * reads the wall clock inside the Jules VM and derives the cycle from it with
+ * getCycleDate, exactly as the scheduled session did. So a restart is only the
+ * same run's retry if the clock still names this cycle when the new session
+ * starts. When it does not, the work is filed under the NEXT run's slot for
+ * that stage, which is the corruption merge-nightly-core's stageTagDate
+ * documents for PR #1499, #1668 and #2070: the wrong night's recap claims it,
+ * the watchdog reads it as "the next run has started" and judges stages that
+ * have not run yet, and the following night's own session for that stage is
+ * credited with work it never did.
+ *
+ * Two cases reach that, and this refuses both:
+ *   - Stage 1 always. It starts the evening before its cycle, and a watchdog
+ *     pass only ever judges run D on day D, after midnight, by which time a new
+ *     Stage 1 session declares cycle D+1. Stage 1 FAILED on 2026-09-14 and this
+ *     would have declined it. That is a real limit, kept rather than worked
+ *     around: handing the session its date would mean changing how the
+ *     lifecycle reads its clock, which is out of scope for a retry.
+ *   - Any stage once its session could still be running past midnight UTC, and
+ *     any re-inspection of a past date (the workflow's explicit --date input).
+ *
+ * WHY THE WHOLE SESSION BUDGET AND NOT THE START. The cycle is fixed when the
+ * session's start command runs, which is some unknown time after creation.
+ * sessionBudgetMinutes is the registry's own bound on how long a session lives
+ * at all, so a session that has not started within it never will; requiring
+ * the cycle to hold at both ends of that span therefore covers every start
+ * time the session can have. No clock time and no new threshold: the bound is
+ * the one the lifecycle already enforces on itself.
+ *
+ * COULD NOT BE EVALUATED -> REFUSED. A missing or non-numeric budget, or an
+ * unreadable clock, returns ok:false with a reason the report prints. The
+ * missing-input direction is the old behaviour (the stage stays failed and
+ * says why), never a session filed under a guessed cycle.
+ */
+export function redispatchWindow(stageNumber, date, now, sessionBudgetMinutes) {
+  const budget = Number(sessionBudgetMinutes);
+  const start = new Date(now);
+  if (!Number.isFinite(budget) || budget <= 0 || Number.isNaN(start.getTime())) {
+    return {
+      ok: false,
+      reason: "the registry session budget or the current time is unreadable, so the cycle a new session would declare cannot be predicted",
+    };
+  }
+  const end = new Date(start.getTime() + budget * 60_000);
+  const foreign = [start, end]
+    .map(instant => getCycleDate(stageNumber, utcDayOffset(0, instant)))
+    .find(cycle => cycle !== date);
+  if (foreign) {
+    return {
+      ok: false,
+      reason: `a session started now would declare cycle ${foreign}, not ${date}, and file its work under that run instead`,
+    };
+  }
+  return { ok: true, reason: null };
+}
+
+/**
+ * Sessions for this stage that Jules holds besides the failed one, on this run.
+ *
+ * The SECOND, independent bound on restarting. The first is the ledger's
+ * evidence.redispatch, written before the request leaves. If that record is
+ * ever lost (a runner killed between the request and the ledger push), the
+ * session it created is still visible here, from Jules itself, and so is a
+ * human re-running the stage by hand from the Jules UI. Either way a retry has
+ * already happened and starting another would open a duplicate pull request.
+ *
+ * "Besides" means: dated to this run's evidence date, or created after the
+ * failed session. The second clause is for a pinned failed session, which
+ * matchJulesSession returns even when something newer exists.
+ *
+ * COULD NOT BE EVALUATED? Only if the session list were missing, and it cannot
+ * be on any pass that reaches here: JULES_SESSION_FAILED is itself read off
+ * that list, and an unavailable list classifies the stage as
+ * JULES_API_UNAVAILABLE instead, which is never restarted.
+ */
+function otherStageSessions(julesSessions, stage, date, failedSessionName) {
+  const failedPath = julesSessionPath({ name: failedSessionName });
+  const stageSessions = sessionsForStage(julesSessions, stage);
+  const failed = stageSessions.find(session => julesSessionPath(session) === failedPath);
+  const failedCreated = String(failed?.createTime || "");
+  const evidenceDate = expectedEvidenceDate(stage.number, date);
+  return stageSessions.filter(session => {
+    if (julesSessionPath(session) === failedPath) return false;
+    const created = String(session.createTime || "");
+    return created.slice(0, 10) === evidenceDate || (failedCreated !== "" && created > failedCreated);
+  });
+}
+
+/**
+ * Which FAILED stages get their one restart on this pass, and why the rest do
+ * not. Pure, so every refusal is testable without a network.
+ *
+ * Only JULES_SESSION_FAILED. STUCK and EMPTY sessions finished and are owned by
+ * the nudge and the fallback publisher; NO_PUBLISHED_OUTPUT has no session to
+ * say what happened; JULES_API_UNAVAILABLE means the observer is blind, and
+ * restarting blind is how a stage gets two pull requests.
+ *
+ * `declined` is printed in the step summary on every pass that sees one, so a
+ * FAILED stage that was not restarted always says why rather than reading as
+ * forgotten. `exhausted` is a stage whose restart is already spent: it is not a
+ * candidate again for this run date, whatever became of the first request.
+ */
+export function planRedispatches({ entries, ledger, registry, date, julesSessions = [], now = Date.now() }) {
+  const candidates = [];
+  const declined = [];
+  const exhausted = [];
+  for (const entry of entries || []) {
+    if (entry.failureClass !== FAILURE_CLASSES.JULES_SESSION_FAILED) continue;
+    const spent = stageEntry(ledger, date, entry.stage)?.evidence?.redispatch;
+    if (spent) {
+      const observedSessionName = julesSessionPath({ name: entry.evidence?.julesSession?.name || "" });
+      const failedSessionName = julesSessionPath({ name: spent.failedSessionName || "" });
+      const knownNotSent = spent.ok === false
+        && typeof spent.error === "string"
+        && spent.error.includes(REDISPATCH_NOT_SENT_MARKER);
+      const observedReplacementName = !knownNotSent && observedSessionName && failedSessionName && observedSessionName !== failedSessionName
+        ? observedSessionName
+        : null;
+      exhausted.push({
+        stage: entry.stage,
+        redispatch: spent,
+        observedReplacementName,
+        // A current FAILED session with a different canonical resource name
+        // proves a replacement was observed, even when the POST response never
+        // returned its name to the ledger.
+        restartSeen: Boolean(observedReplacementName),
+      });
+      continue;
+    }
+    const stage = registry.stages.find(candidate => candidate.number === entry.stage);
+    const failedSessionName = entry.evidence?.julesSession?.name || null;
+    if (!stage || !failedSessionName) {
+      declined.push({ stage: entry.stage, reason: "the failed session has no resource name to record against the restart" });
+      continue;
+    }
+    const window = redispatchWindow(stage.number, date, now, registry.sessionBudgetMinutes);
+    if (!window.ok) {
+      declined.push({ stage: entry.stage, failedSessionName, reason: window.reason });
+      continue;
+    }
+    const others = otherStageSessions(julesSessions, stage, date, failedSessionName);
+    if (others.length > 0) {
+      declined.push({
+        stage: entry.stage,
+        failedSessionName,
+        reason: `Jules already holds another session for this stage and run (${others.map(julesSessionPath).join(", ")})`,
+      });
+      continue;
+    }
+    candidates.push(entry);
+  }
+  return { candidates, declined, exhausted };
+}
+
+/**
+ * Starts ONE fresh Jules session for a stage whose session ended FAILED.
+ *
+ * WHY. On 2026-10-06 Stage 3's session 17685247323826051852 went FAILED after
+ * 42 minutes (created 01:22:05Z, last update 02:04:07Z) against a 45 minute
+ * work budget, and the stage lost the whole night: this file classified it
+ * JULES_SESSION_FAILED, wrote NO_OUTPUT then ESCALATED, and nothing acted on
+ * it. The nudge cannot help, because a FAILED session will not resume, and the
+ * fallback publisher cannot either, because it publishes a finished change set
+ * that a failed session never holds. Four of 56 ledger runs have lost a stage
+ * this way (2026-08-19 S8, 2026-09-10 S3, 2026-09-14 S1, 2026-10-06 S3).
+ *
+ * NARROW ON PURPOSE. This is a one-shot retry of a session the Jules UI
+ * schedule already started, not a scheduler. The owner deferred moving stage
+ * triggering into this repository (the dispatch migration), and nothing here
+ * starts a stage that was not started, retries twice, or runs on a timer. It
+ * fires only from a watchdog pass that has observed the FAILED state.
+ *
+ * BOUNDED, AND THE BOUND IS WRITTEN FIRST. At most one restart per stage per run
+ * date, enforced by evidence.redispatch on the ledger row. That record is
+ * written and persisted to disk BEFORE the request crosses the Jules boundary,
+ * the same order nightly-dispatch.mjs uses, so a later pass can never mistake an
+ * attempted restart for one that was never tried, including one whose answer
+ * was lost. A failed request is recorded with its error and is NOT retried: an
+ * ambiguous failure (a timeout after Jules accepted the POST) may already have
+ * created a session, and a second request would then mean two pull requests.
+ * The session list is the independent second bound (see otherStageSessions).
+ *
+ * ACCOUNTED AS AN INTERVENTION. dispatchAttempts goes up, because this is a
+ * dispatch; interventionAttempts does not, because that is the nudge budget and
+ * the fresh session deserves its own if it strands. evidence.redispatch is what
+ * classifyIntervention reads as the watchdog-redispatch channel, so a stage
+ * that merges through the restart is never scored as unaided.
+ *
+ * THE FINAL PASS MAY RESTART TOO, and that is deliberate. The 13:00 UTC --final
+ * pass is often the first to see a late failure, because GitHub delivers a
+ * fraction of the hourly crons and the last stage has no successor to fire a
+ * reactive pass. Its terminal judgement is a verdict on what the run has
+ * produced so far, not a lock on the ledger: the restarted session's pull
+ * request fires this workflow's own pull_request trigger and Sync Nightly PRs,
+ * so its merge is still recorded against the same run. What must never happen
+ * on that pass or any other is a session filed under a different run, and
+ * redispatchWindow refuses that whatever the pass.
+ *
+ * ORDERED FIRST in the recovery block. The classes are disjoint from the nudge
+ * ladder's, so order changes nothing about which stage gets which remedy; it
+ * only means the new session starts as early as possible and its record is on
+ * disk before the nudge pass spends up to its whole poll window waiting.
+ */
+export async function redispatchFailedStages({
+  entries,
+  ledger,
+  registry,
+  date,
+  julesSessions = [],
+  config = CONFIG,
+  fetchImpl = fetch,
+  now = Date.now(),
+  persist = () => {},
+  createSession = createJulesSession,
+} = {}) {
+  const plan = planRedispatches({ entries, ledger, registry, date, julesSessions, now });
+  const requested = [];
+  const failed = [];
+
+  for (const entry of plan.candidates) {
+    const stage = registry.stages.find(candidate => candidate.number === entry.stage);
+    const failedSessionName = julesSessionPath({ name: entry.evidence.julesSession.name });
+    const requestedAt = new Date(now).toISOString();
+    const intent = { requestedAt, failedSessionName, sessionName: null, ok: null, error: null };
+    const prior = stageEntry(ledger, date, entry.stage);
+    upsertStageEntry(ledger, registry, date, entry.stage, {
+      // Counts dispatches this repository made. The Jules UI schedule's own
+      // trigger never reaches the ledger, so after one restart this reads 1
+      // while Jules holds two sessions; evidence.redispatch names both.
+      dispatchAttempts: (prior?.dispatchAttempts || 0) + 1,
+      evidence: { redispatch: intent },
+    }, { source: NIGHTLY_EVENT_SOURCES.WATCHDOG_RECOVERY, recordedAt: requestedAt });
+
+    // Not sent unless the bound is on disk. A restart the ledger cannot
+    // remember is the one that could be sent again by the next pass.
+    try {
+      persist();
+    } catch (error) {
+      const message = redact(`ledger could not be saved before the request, so it was not sent: ${error.message}`);
+      upsertStageEntry(ledger, registry, date, entry.stage, {
+        evidence: { redispatch: { ...intent, ok: false, error: message } },
+      }, { source: NIGHTLY_EVENT_SOURCES.WATCHDOG_RECOVERY });
+      errorLine(`Stage ${entry.stage}: restart not sent. ${message}`);
+      failed.push({ stage: entry.stage, failedSessionName, error: message });
+      continue;
+    }
+
+    try {
+      const session = await createSession(stage, registry, date, redact, { config, fetchImpl });
+      const sessionName = julesSessionPath(session);
+      upsertStageEntry(ledger, registry, date, entry.stage, {
+        evidence: { redispatch: { ...intent, sessionName, ok: true } },
+      }, { source: NIGHTLY_EVENT_SOURCES.WATCHDOG_RECOVERY });
+      logLine(`Stage ${entry.stage}: session ${failedSessionName} FAILED; started fresh session ${sessionName}.`);
+      requested.push({ stage: entry.stage, failedSessionName, sessionName });
+    } catch (error) {
+      const message = redact(error?.message || String(error));
+      upsertStageEntry(ledger, registry, date, entry.stage, {
+        // A thrown POST can follow server acceptance. Keep the pre-request
+        // intent's unknown status and never retry this one-shot mutation.
+        evidence: { redispatch: { ...intent, ok: null, error: message } },
+      }, { source: NIGHTLY_EVENT_SOURCES.WATCHDOG_RECOVERY });
+      errorLine(`Stage ${entry.stage}: restart request outcome is unknown and will not be retried this run. ${message}`);
+      failed.push({ stage: entry.stage, failedSessionName, error: message });
+    }
+    try {
+      persist();
+    } catch (error) {
+      // The intent is already on disk, which is what bounds the retry; the
+      // final save at the end of the pass writes the outcome.
+      errorLine(`Stage ${entry.stage}: could not save the restart outcome yet: ${error.message}`);
+    }
+  }
+
+  return { requested, failed, declined: plan.declined, exhausted: plan.exhausted };
+}
+
+/**
+ * The restart pass in the step summary.
+ *
+ * Silent only when no stage's session FAILED, which is the one case with
+ * nothing to say. A FAILED stage always produces a line: restarted, request
+ * failed, declined with the reason, or restart already spent. `null` means the
+ * step did not run at all (dry run, --no-recover, --no-redispatch, or a fault),
+ * and says so rather than reading as a night with no failures.
+ */
+export function renderRedispatchReport(result) {
+  if (result === null || result === undefined) {
+    return "\nFailed-session restarts: not evaluated on this pass.\n";
+  }
+  if (result.error) {
+    return `\nFailed-session restarts: NOT EVALUATED, the restart step failed: ${result.error}\n`;
+  }
+  const lines = [];
+  for (const item of result.requested || []) {
+    lines.push(`- Stage ${item.stage}: session ${item.failedSessionName} FAILED; started fresh session ${item.sessionName}.`);
+  }
+  for (const item of result.failed || []) {
+    const knownNotSent = typeof item.error === "string" && item.error.includes(REDISPATCH_NOT_SENT_MARKER);
+    lines.push(knownNotSent
+      ? `- Stage ${item.stage}: session ${item.failedSessionName} FAILED; the restart request was not sent and will not be retried this run: ${item.error}`
+      : `- Stage ${item.stage}: session ${item.failedSessionName} FAILED; the restart request outcome is unknown and will not be retried this run: ${item.error}`);
+  }
+  for (const item of result.declined || []) {
+    lines.push(`- Stage ${item.stage}: session ${item.failedSessionName || "unknown"} FAILED; not restarted, because ${item.reason}.`);
+  }
+  for (const item of result.exhausted || []) {
+    const { redispatch } = item;
+    lines.push(item.restartSeen
+      ? `- Stage ${item.stage}: its restart ${item.observedReplacementName || redispatch.sessionName} also FAILED (first session ${redispatch.failedSessionName}); one restart per run, so it stays failed.`
+      : redispatch.ok === false && typeof redispatch.error === "string" && redispatch.error.includes(REDISPATCH_NOT_SENT_MARKER)
+        ? `- Stage ${item.stage}: the restart requested at ${redispatch.requestedAt} failed (${redispatch.error}); one restart per run, so it stays failed.`
+        : redispatch.error
+          ? `- Stage ${item.stage}: the restart request outcome is unknown (${redispatch.error}); it will not be requested again this run.`
+          : `- Stage ${item.stage}: a restart was requested at ${redispatch.requestedAt}, but Jules has not listed ${redispatch.sessionName || "its session"} yet; its outcome is unknown and it will not be requested again.`);
+  }
+  if (lines.length === 0) return "";
+  return ["", "Failed-session restarts (at most one per stage per run):", ...lines, ""].join("\n");
+}
+
 // Publishes a finished patch ourselves after the native publisher missed its
 // handoff window. See nightly-publish-fallback.mjs for why this is safe to do
 // autonomously (the patch is validated against the same per-stage write
@@ -1462,7 +1831,7 @@ export function rehearseFallbackPublisher({ registry, date, observed, ledger = n
       observed?.julesSessions,
       stage,
       date,
-      ledger?.runs?.[date]?.[String(stage.number)]?.evidence?.dispatchSessionName || null,
+      trackedSessionName(ledger, date, stage.number),
     );
     if (!session) continue;
     const finished = String(session.state || "").toUpperCase() === "COMPLETED";
@@ -1582,7 +1951,7 @@ export async function publishStrandedWork({
       julesSessions,
       stage,
       date,
-      ledger?.runs?.[date]?.[String(entry.stage)]?.evidence?.dispatchSessionName || null,
+      trackedSessionName(ledger, date, entry.stage),
     );
     const plan = buildFallbackPlan({ stage, session, date: expectedEvidenceDate(entry.stage, date) });
 
@@ -1659,7 +2028,14 @@ export function renderSummary(date, entries) {
 
   for (const entry of entries) {
     const suffix = entry.evidence?.prNumber ? ` PR #${entry.evidence.prNumber}` : "";
-    lines.push(`- Stage ${entry.stage}: ${entry.state}${suffix}`);
+    // A restarted stage says so on its own line on every later pass of the run,
+    // so a RUNNING or NO_OUTPUT here is never read without knowing it is the
+    // second session of the night (see redispatchFailedStages).
+    const restart = entry.evidence?.redispatch;
+    const restarted = restart
+      ? ` (restarted after ${restart.failedSessionName} FAILED${restart.sessionName ? `, now ${restart.sessionName}` : restart.ok === false ? ", restart request failed" : ""})`
+      : "";
+    lines.push(`- Stage ${entry.stage}: ${entry.state}${suffix}${restarted}`);
   }
 
   if (failing.length > 0) {
@@ -1775,7 +2151,7 @@ function parseArgs(argv) {
     const token = argv[index];
     invariant(token.startsWith("--"), `Unexpected argument: ${token}`);
     const key = token.slice(2);
-    if (key === "dry-run" || key === "no-recover" || key === "create-issues" || key === "no-fallback-publish" || key === "final" || key === "no-body-repair") {
+    if (key === "dry-run" || key === "no-recover" || key === "create-issues" || key === "no-fallback-publish" || key === "final" || key === "no-body-repair" || key === "no-redispatch") {
       options.set(key, true);
       continue;
     }
@@ -1837,6 +2213,36 @@ export async function runCli(argv = process.argv.slice(2), config = CONFIG) {
       // before it is ever written, not before it is printed.
       evidence: redactDeep(entry.evidence, redact),
     }, { source: NIGHTLY_EVENT_SOURCES.WATCHDOG_OBSERVER });
+  }
+
+  // null until the restart step runs, so the summary can tell "not evaluated"
+  // from "no stage failed". See renderRedispatchReport.
+  let redispatch = null;
+  if (!options.get("dry-run") && !options.get("no-recover") && !options.get("no-redispatch") && observerHealthy) {
+    // Its own try, outside the recovery block's: a fault in the restart step
+    // must not cost a stranded stage its nudge, which is the remedy that has
+    // actually carried this pipeline. First in order; see
+    // redispatchFailedStages for why that is safe and why it helps.
+    try {
+      redispatch = await redispatchFailedStages({
+        entries,
+        ledger,
+        registry,
+        date,
+        julesSessions,
+        config,
+        now: Date.now(),
+        // Written to the same path the pass ends by saving, so the workflow's
+        // commit step pushes it even if this process dies after the request.
+        persist: () => saveLedger(ledger, config.ledgerPath),
+      });
+      // `entries` is deliberately not re-read here. A restart changes no
+      // stage's state, only its evidence, and the nudge ladder below must see
+      // exactly the verdicts this pass observed.
+    } catch (error) {
+      errorLine(`Nightly watchdog restart pass failed: ${error.message}`);
+      redispatch = { error: redact(error.message || String(error)) };
+    }
   }
 
   if (!options.get("dry-run") && !options.get("no-recover")) {
@@ -1914,8 +2320,9 @@ export async function runCli(argv = process.argv.slice(2), config = CONFIG) {
   const recoveryReport = renderRecoveryReadiness(julesAvailable, julesError);
   const rehearsalReport = renderRehearsalReport(rehearsal);
   const healthReport = renderHealthReport(health);
+  const redispatchReport = renderRedispatchReport(redispatch);
   const summary = redact(
-    `${renderSummary(date, entries)}${recoveryReport}${rehearsalReport}${healthReport}${promotionReport}${staleReport}`,
+    `${renderSummary(date, entries)}${redispatchReport}${recoveryReport}${rehearsalReport}${healthReport}${promotionReport}${staleReport}`,
   );
   logLine(summary);
   if (process.env.GITHUB_STEP_SUMMARY) {

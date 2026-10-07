@@ -7,6 +7,7 @@ import test from "node:test";
 
 import {
   METADATA_PLACEHOLDERS,
+  REDISPATCH_NOTES,
   PLACEHOLDER_RESULTS,
   PLAIN_PREFIX,
   RESULT_LABEL,
@@ -25,6 +26,7 @@ import {
   stageTag,
 } from "./nightly-prose.mjs";
 import { renderPlainSummary } from "./nightly-stage.mjs";
+import { INTERVENTION_OUTCOMES } from "./nightly-intervention.mjs";
 
 const registry = JSON.parse(readFileSync(new URL("../../nightly-config/stages.json", import.meta.url), "utf8"));
 
@@ -240,4 +242,23 @@ test("every reader treats a bare verdict as a placeholder", () => {
   // Scoped to the result field. A Change or a Why is a different kind of
   // sentence and a one-word one is a separate defect, judged elsewhere.
   assert.equal(isPlaceholderField("change", "PASSED"), false);
+});
+
+test("the restart notes cover every outcome the intervention classifier can assign", () => {
+  // nightly-prose.mjs must stay import-free, so it spells the keys out; this is
+  // what stops them drifting from the classifier's vocabulary. A missing key
+  // would print "undefined" in the recap.
+  for (const outcome of Object.keys(INTERVENTION_OUTCOMES).filter(name => name !== "NONE")) {
+    assert.equal(typeof REDISPATCH_NOTES[outcome], "string", `no note for ${outcome}`);
+    assert.ok(REDISPATCH_NOTES[outcome].length > 20);
+  }
+  assert.equal(typeof REDISPATCH_NOTES.EARLIER, "string");
+  for (const [key, note] of Object.entries(REDISPATCH_NOTES)) {
+    assert.doesNotMatch(note, /[^\x00-\x7F]/, `${key} must be plain ASCII`);
+    assert.doesNotMatch(note, /watchdog-redispatch/, `${key} must say it in plain words, not by channel name`);
+  }
+  // Not yet recovered must stay true while the fresh session is still running.
+  assert.match(REDISPATCH_NOTES.ACCEPTED_NO_DELIVERY, /has not been recovered/);
+  assert.match(REDISPATCH_NOTES.REQUEST_UNKNOWN, /cannot confirm whether Jules accepted it/);
+  assert.match(REDISPATCH_NOTES.REQUEST_UNKNOWN, /will not retry this run/);
 });

@@ -75,9 +75,11 @@ import {
   NEW_KINDS,
   RECOVERED_KINDS,
   STANDING_KINDS,
+  SUB_CHECKS,
   blindSpotCoverage,
   databaseVerificationValue,
   evaluateBlindSpots,
+  statedSubChecks,
   subCheckHistory,
 } from "./nightly-blind-spots.mjs";
 import { calibrationOn } from "./nightly-clean-calibration.mjs";
@@ -89,6 +91,7 @@ import {
 import {
   FAILURE_PHRASES,
   PLAIN_PREFIX,
+  REDISPATCH_NOTES,
   RESULT_LABEL,
   WHY_LABEL,
   changeLabel,
@@ -254,11 +257,12 @@ export function runProgress({ registry, ledger, date, coverageByStage, tags }) {
  * an unrelated commit closed it -- the pipeline detected a real problem and
  * had no way to say so any louder than a line in a log file.
  *
- * Scoped to the ALL-CAPS status vocabulary this repo's checkers actually use
- * for a failing result (FAIL, DIVERGENT, UNFOLDED), not a general word search:
- * `\bFAIL\b` also doesn't match "FAILED" or "failover", so ordinary prose about
- * failure handling does not trip it. Checked against every terminal coverage
- * line ever written: only the two Stage 3 lines above match.
+ * Scoped to the ALL-CAPS status vocabulary this repo's checkers actually use,
+ * not a general word search: `\bFAIL\b` also doesn't match "FAILED" or
+ * "failover", so ordinary prose about failure handling does not trip it.
+ * Re-measured on 2026-10-06 over all 1970 terminal coverage lines on
+ * origin/Nightly (2026-07-14 to 2026-10-06): FAIL appears on exactly three,
+ * the two Stage 3 CLEAN lines above and Stage 3's PARTIAL-RUN of 2026-09-24.
  *
  * DEGRADED, SKIPPED and DB-UNAVAILABLE are absent on purpose. They are not
  * failures: they mean a check could not run at all, which is a different
@@ -267,13 +271,210 @@ export function runProgress({ registry, ledger, date, coverageByStage, tags }) {
  * 2026-08-31 and tell the reader nothing. Their reader is evaluateBlindSpots
  * in nightly-blind-spots.mjs, which treats FAIL as a check that ran, so the
  * two readers split the vocabulary and never both fire on one value.
+ *
+ * TWO KINDS OF CONTRADICTION, AND ONLY ONE DEPENDS ON THE DECLARED STATUS
+ * (2026-10-06)
+ * On 2026-10-05 Stage 3 read 22 pending migrations, folded none of them and
+ * finalized CLEAN. Its committed coverage line:
+ *
+ *   * [2026-10-05] [Stage 3] [01:06Z-01:27Z 22m] [checks database-verification=DB-UNAVAILABLE fold-state=PENDING migration-quality=PASS] CLEAN: Codebase -- Completed read-only baseline consolidation audit. Pending migrations count: 22 (fold-state status: PENDING). Migration quality: PASS. Database verification: DB-UNAVAILABLE. Clean calibration streak: 10.
+ *
+ * finalize accepted it (resolveStatus in nightly-stage.mjs refuses a CLEAN
+ * only over migration-quality FAIL), and this guard, which then knew only
+ * FAIL, DIVERGENT and UNFOLDED, printed "no stage's own summary contradicted
+ * the outcome it declared" under "Grade: 10/10 - Optimal run". The next night
+ * the same stage's Jules session went FAILED after 42 of its 45 budgeted
+ * minutes, most likely trying to fold the whole backlog in one sitting, and
+ * the stage lost the night. The 10/10 was the last place that backlog could
+ * have been seen before then, and it said there was nothing to see.
+ *
+ * FAIL is a verdict about the project: a check ran and found a defect, and no
+ * outcome the stage declares makes it go away (Stage 3 never rewrites
+ * history, so a historical migration-quality FAIL needs a human whatever the
+ * stage calls its night). It contradicts every outcome, PARTIAL-RUN included,
+ * which is how 2026-09-24 reads.
+ *
+ * PENDING is a verdict about the stage's own queue: there is folding work,
+ * and folding it is this stage's job. Whether that contradicts the outcome
+ * depends on the outcome. CLEAN claims nothing needed doing, so it cannot
+ * stand beside PENDING. CHANGED claims the stage did some of the work, and
+ * after a partial fold the honest report names what is left. PARTIAL-RUN and
+ * SKIPPED already say the work was not finished. It could not be otherwise
+ * even for a complete fold: fold-state-status.txt is written once, by the
+ * context script `start` runs before any folding, and finalize copies it into
+ * the [checks] field, so every night Stage 3 does its job carries
+ * fold-state=PENDING. A status-independent PENDING would grade every
+ * successful fold a 6.
+ *
+ * UNFOLDED and DIVERGENT moved to this side on the same date, for the same
+ * reason. They are fold-state.mjs's own words for that same queue, not
+ * failures: UNFOLDED is its overall verdict (exit code 1, which the context
+ * script turns into PENDING) and DIVERGENT the reason it gives for one object
+ * still to fold, and 00-pipeline-intelligence.md names exactly these as Stage
+ * 3's trigger to fold. Left status-independent, a CHANGED partial fold that
+ * quoted fold-state.mjs's own re-check would be graded a 6 for doing its job.
+ * Neither word appears on any terminal line, so the move restates no night.
+ *
+ * WHERE OUTSTANDING WORK IS READ FROM
+ * The structured [checks ...] field first. It is finalize's copy of the
+ * producer's status file, so it says PENDING whether or not the agent chose
+ * to narrate it. Then the prose, through statedSubChecks: the blind-spot
+ * reader's own parser, which binds a value to its check's alias
+ * ("fold-state status: PENDING"), so there is still one parser of sub-check
+ * prose. PENDING is never matched as a bare word, because it is overloaded in
+ * this pipeline: age-pr-history.mts writes "**Commit:** PENDING" as a
+ * placeholder, Stage 13's prompt has it search the history for "PENDING"
+ * contradictions, and this file's own outcome for a stage not yet run is
+ * PENDING. A bare match would charge a stage with somebody else's
+ * placeholder. UNFOLDED and DIVERGENT mean nothing else here and keep
+ * matching as bare words, as they always have. Measured over the same 1970
+ * lines and the live PR history, the outstanding-work half matches exactly
+ * one stage-night: S03 on 2026-10-05.
+ *
+ * The blind-spot split still holds. For evaluateBlindSpots PENDING and
+ * UNFOLDED are a fold-state check that ran (fold-state's `answered` set): on
+ * 2026-10-05 it reports the check RESTORED, good news it never grades, and
+ * only this guard says the CLEAN beside it was wrong.
+ *
+ * WHEN IT CANNOT BE EVALUATED
+ * With no [checks] field (every line before 2026-09-25, or a finalize that
+ * could not read its context dir) and no fold-state words, the
+ * outstanding-work half finds nothing, and on its own that would read exactly
+ * like "nothing outstanding". It is not left there: outstandingWorkUnstated
+ * reports a CLEAN that is silent about a check whose last report was work
+ * still to do, and the rubric grades that night as unverified rather than
+ * optimal. The blind-spot reader already reports the other silence, one whose
+ * last report was "could not run" (UNSTATED). The one silence left quiet is a
+ * CLEAN after a last report of nothing to do (CLEAN, FOLDED), which agrees
+ * with it. The FAIL half keeps the limit it always had: a FAIL that neither
+ * the prose nor a [checks] field recorded is not seen here. For the one FAIL
+ * with a history, Stage 3's migration-quality, resolveStatus refuses the CLEAN
+ * at finalize before the line is ever written, and the [checks] field now
+ * carries the value even when the prose drops it.
  */
-const SELF_REPORTED_FAILURE_RE = /\b(FAIL|DIVERGENT|UNFOLDED)\b/;
+export const SELF_REPORT_KINDS = Object.freeze({
+  // A check ran and found a defect. Contradicts every declared outcome.
+  FAILURE: "FAILURE",
+  // The stage's own queue is not empty. Contradicts a CLEAN only.
+  OUTSTANDING_WORK: "OUTSTANDING_WORK",
+});
 
-function hasSelfReportedFailure({ declared, history }) {
-  return SELF_REPORTED_FAILURE_RE.test(
-    [declared?.summary, history?.change, history?.result].filter(Boolean).join(" "),
-  );
+const FAILURE_VALUES = new Set(["FAIL"]);
+const OUTSTANDING_WORK_VALUES = new Set(["PENDING", "UNFOLDED", "DIVERGENT"]);
+// The subset that may match as a bare word. PENDING may not; see above.
+const BARE_OUTSTANDING_WORK = ["UNFOLDED", "DIVERGENT"];
+
+const wordPattern = values => new RegExp(`\\b(${[...values].join("|")})\\b`);
+const SELF_REPORTED_FAILURE_RE = wordPattern(FAILURE_VALUES);
+const BARE_OUTSTANDING_WORK_RE = wordPattern(BARE_OUTSTANDING_WORK);
+
+/**
+ * The checks whose own vocabulary can say "work still to do", derived from
+ * SUB_CHECKS rather than named here, so a check that learns PENDING joins the
+ * day its vocabulary does. Today that is fold-state alone.
+ */
+const WORK_BEARING_CHECKS = SUB_CHECKS.filter(check => check.answered.some(value => OUTSTANDING_WORK_VALUES.has(value)));
+
+function subCheckLabel(id) {
+  return SUB_CHECKS.find(check => check.id === id)?.label || id;
+}
+
+/** The first stated value in the set, earlier sources first, or null. */
+function firstStatedValue(sources, values) {
+  for (const stated of sources) {
+    for (const [check, entry] of Object.entries(stated)) {
+      if (values.has(entry.value)) return { check, label: subCheckLabel(check), value: entry.value, source: entry.source };
+    }
+  }
+  return null;
+}
+
+/**
+ * Every way a stage's own record contradicts the outcome it declared, as
+ * `[{ kind, check, label, value, source }]`, empty when nothing does. See the
+ * block above for which words count, from where, and against which outcome.
+ *
+ * The prose FAIL match is tried before the structured one only so the nights
+ * already on record (2026-09-07, 09-17, 09-24) keep their exact wording; both
+ * fire on the same outcomes.
+ */
+export function selfReportedContradictions({ declared, history }) {
+  const prose = [declared?.summary, history?.change, history?.result].filter(Boolean).join(" ");
+  const sources = [statedSubChecks({ structured: declared?.checks ?? null }), statedSubChecks({ prose })];
+  const found = [];
+
+  const failureWord = SELF_REPORTED_FAILURE_RE.exec(prose);
+  const failure = failureWord
+    ? { check: null, label: null, value: failureWord[1], source: "prose" }
+    : firstStatedValue(sources, FAILURE_VALUES);
+  if (failure) found.push({ kind: SELF_REPORT_KINDS.FAILURE, ...failure });
+
+  if (declared?.status === "CLEAN") {
+    const bareWord = BARE_OUTSTANDING_WORK_RE.exec(prose);
+    const outstanding = firstStatedValue(sources, OUTSTANDING_WORK_VALUES)
+      || (bareWord ? { check: null, label: null, value: bareWord[1], source: "prose" } : null);
+    if (outstanding) found.push({ kind: SELF_REPORT_KINDS.OUTSTANDING_WORK, ...outstanding });
+  }
+  return found;
+}
+
+/**
+ * A CLEAN that says nothing tonight about a check whose last report, on an
+ * earlier night, was work still to do. This is the outstanding-work half's
+ * answer to "what if it could not be evaluated": see WHEN IT CANNOT BE
+ * EVALUATED above.
+ *
+ * `stageNights` is one stage's subCheckHistory, the same nights the blind-spot
+ * reader judges, so "last report" means the same thing in both sections.
+ * Returns `[{ check, label, last: { date, value } }]`, empty when nothing is
+ * unstated.
+ */
+export function outstandingWorkUnstated(stageNights, date) {
+  const nights = (stageNights || []).filter(night => night.date <= date);
+  const tonight = nights.find(night => night.date === date) || null;
+  const items = [];
+  for (const check of WORK_BEARING_CHECKS) {
+    if (tonight?.stated[check.id]) continue;
+    const last = nights.filter(night => night.date < date && night.stated[check.id]).at(-1);
+    if (!last || !OUTSTANDING_WORK_VALUES.has(last.stated[check.id].value)) continue;
+    items.push({ check: check.id, label: check.label, last: { date: last.date, value: last.stated[check.id].value } });
+  }
+  return items;
+}
+
+// A stage built by hand (tests, or any caller predating the detail field)
+// carries only the boolean, which always meant a failing sub-check in prose.
+function contradictionsOf(stage) {
+  return stage.selfReport?.length ? stage.selfReport : [{ kind: SELF_REPORT_KINDS.FAILURE, source: "prose" }];
+}
+
+function contradictionPhrase(item, verb) {
+  if (item.kind === SELF_REPORT_KINDS.OUTSTANDING_WORK) {
+    return `its own ${item.label || "summary"} ${verb} work still to do (${item.value})`;
+  }
+  if (item.source === "structured") return `its own ${item.label} ${verb} a failing result (${item.value})`;
+  return `its own summary ${verb} a failing sub-check`;
+}
+
+// Shared by the grade rationale and the Self-report guard line, so the two
+// can never word the same gap differently (see selfContradictionClause).
+function unstatedClause(stages) {
+  const items = stages.flatMap(s => (s.selfReportUnstated || []).map(item =>
+    `${stageTag(s.stage)} declared ${s.outcome} without restating its ${item.label}, which last reported work still to do (${item.last.value} on ${item.last.date})`));
+  return `${joinList(items)}, so ${items.length === 1 ? "that CLEAN" : "those CLEANs"} could not be checked against it`;
+}
+
+// The stage's own words that show the contradiction: its Result when that
+// carries the value, else its summary. On 2026-10-05 the Result ("Static audit
+// PASS; database verification DB-UNAVAILABLE.") said nothing about the 22
+// pending migrations its summary named, so quoting it would have shown the
+// reader the one sentence with no contradiction in it. A value only the
+// [checks] field held falls back to whichever the stage left, as before.
+function contradictionQuote(stage) {
+  const values = contradictionsOf(stage).map(item => item.value).filter(Boolean);
+  const showing = [stage.result, stage.summary].filter(Boolean).map(String)
+    .find(text => values.some(value => new RegExp(`\\b${value}\\b`).test(text)));
+  return showing || stage.result || stage.summary || "";
 }
 
 /**
@@ -313,6 +514,8 @@ export function classifyStage({ stage, entry, tag, declared, history, progress }
 
   if (!merged && !pending && entry?.state && !["MERGED", "RECOVERABLE"].includes(entry.state)) outcome = "STUCK";
 
+  const selfReport = selfReportedContradictions({ declared, history });
+
   return {
     stage: stage.number,
     slug: stage.slug,
@@ -320,7 +523,11 @@ export function classifyStage({ stage, entry, tag, declared, history, progress }
     outcome,
     merged,
     rescued,
-    selfReportedFailure: hasSelfReportedFailure({ declared, history }),
+    // The boolean is what grades; the list says which contradiction it was, so
+    // the rationale and the guard line can name it. Kept as two fields because
+    // every caller that builds stages by hand sets only the boolean.
+    selfReportedFailure: selfReport.length > 0,
+    selfReport,
     // Whether the watchdog actually reached a verdict for this stage. `merged`
     // reads through to durable tags, but `rescued` can only come from a ledger
     // row, so without this flag an absent row is indistinguishable from an
@@ -358,8 +565,11 @@ export function classifyStage({ stage, entry, tag, declared, history, progress }
 // stage actually declared. Before this, the rationale hardcoded "declared its
 // outcome clean" even when the stage had declared PARTIAL-RUN or another
 // non-clean outcome, contradicting the guard line a few paragraphs later.
+// Since 2026-10-06 it also names WHICH contradiction (contradictionPhrase): a
+// CLEAN over pending folding work is not "a failing sub-check", and saying so
+// would send the reader looking for a failure that does not exist.
 function selfContradictionClause(stages) {
-  return joinList(stages.map(s => `${stageTag(s.stage)} declared ${s.outcome} while its own summary reported a failing sub-check`));
+  return joinList(stages.map(s => `${stageTag(s.stage)} declared ${s.outcome} while ${joinList(contradictionsOf(s).map(item => contradictionPhrase(item, "reported")))}`));
 }
 
 // The grade rubric, encoded declaratively so the thresholds are the published
@@ -393,7 +603,10 @@ export const GRADE_RUBRIC = [
   // it is not a 9 either: 9 is reserved for a run where nothing was actually
   // wrong and a watchdog nudge sufficed. Here something IS wrong by the
   // stage's own account, and nothing in the run addressed it. See
-  // hasSelfReportedFailure for the evidence this is grounded in.
+  // selfReportedContradictions for the evidence this is grounded in. Since
+  // 2026-10-06 that includes a CLEAN over the stage's own pending work: on
+  // 2026-10-05 Stage 3 declared CLEAN over fold-state=PENDING and 22 unfolded
+  // migrations, and this rubric graded the night 10/10.
   {
     grade: 6,
     when: r => (r.selfContradicted || []).length > 0,
@@ -410,6 +623,20 @@ export const GRADE_RUBRIC = [
     grade: 8,
     when: r => (r.newBlindSpots || []).length > 0,
     why: r => `Lost check: every stage completed, but ${lostCheckClause(r.newBlindSpots)}`,
+  },
+  // A CLEAN that is silent about work its own check last reported as still to
+  // do (outstandingWorkUnstated). Not a 6, because nothing on the night
+  // contradicts the CLEAN; the evidence that could have is missing. Not a 10
+  // either, because a 10 would then rest on the guard not being able to look,
+  // which is the "could not be evaluated reads as fine" shape the guard's
+  // comment rules out. Above the rescue 9 so the rationale names the thing
+  // that needs a look rather than the nudge that needed nothing. Fires on no
+  // ledger date up to 2026-10-06: fold-state was first reported as work still
+  // to do on 2026-10-05, and Stage 3 left no line on 2026-10-06.
+  {
+    grade: 9,
+    when: r => (r.selfReportUnstated || []).length > 0,
+    why: r => `Unverified: every stage completed, but ${unstatedClause(r.selfReportUnstated)}.`,
   },
   // Still a 9, because a stage that needed rescuing is not the same as one that
   // did not, and the health check that spots a RISING rescue rate depends on
@@ -493,6 +720,8 @@ export function gradeRun(stages, liveness = null) {
     clean: stages.filter(s => s.outcome === "CLEAN").length,
     unobserved: stages.filter(s => !s.observed).length,
     selfContradicted: stages.filter(s => s.selfReportedFailure),
+    // `|| []` for the same reason as the blind spots below.
+    selfReportUnstated: stages.filter(s => (s.selfReportUnstated || []).length > 0),
     // `|| []` keeps every caller that builds stages by hand, and every stage
     // that has never reported a sub-check, exactly where it was.
     newBlindSpots: stages.flatMap(s => (s.blindSpots || []).filter(b => NEW_KINDS.has(b.kind))),
@@ -534,6 +763,13 @@ export function buildRecap({ ledger, registry, date, coverageByStage, prHistory,
     // A stage whose turn has not come has reported nothing yet, and calling
     // that "not reported tonight" would be a claim about a night still ahead.
     blindSpots: stage.outcome === "PENDING" ? [] : evaluateBlindSpots(subChecks[stage.stage], date, { stage: stage.stage }),
+    // Only a CLEAN can be contradicted by work still to do, and a stage
+    // already flagged needs no second reason to be looked at. Read from the
+    // same nights the blind-spot reader judges, so both sections agree on
+    // what the stage last said.
+    selfReportUnstated: stage.outcome === "CLEAN" && !stage.selfReportedFailure
+      ? outstandingWorkUnstated(subChecks[stage.stage], date)
+      : [],
     // Whether tonight's line registered as a calibration, by the counter's own
     // rule (due AND marked; see nightly-clean-calibration.mjs). Read from the
     // stage's whole log, because "was it due" depends on the nights before.
@@ -759,7 +995,16 @@ function stageNotes(stage) {
   if (phrase && stage.outcome === "STUCK" && (stage.summary || stage.title)) {
     notes.push(phrase);
   }
-  if (stage.rescued) {
+  // A fresh session after a FAILED one (the watchdog's restart, since
+  // 2026-10-06) has its own sentences. The generic branches below would call it
+  // "recovered via watchdog-redispatch" or reuse the fallback publisher's
+  // wording. When the fresh session then needed a later rung too, both are said.
+  const redispatched = stage.intervention?.channels?.includes("watchdog-redispatch");
+  const restartedOnly = redispatched && stage.intervention.channel === "watchdog-redispatch";
+  if (redispatched && !restartedOnly) notes.push(REDISPATCH_NOTES.EARLIER);
+  if (restartedOnly) {
+    notes.push(REDISPATCH_NOTES[stage.intervention.outcome]);
+  } else if (stage.rescued) {
     notes.push(stage.rescuedBy === "watchdog-nudge"
       ? "Its Jules session finished the work but never opened the PR. The watchdog nudged it automatically; nobody had to do anything."
       : `This stage could not finish unaided and was recovered via ${stage.rescuedBy || "retry"}.`);
@@ -769,6 +1014,8 @@ function stageNotes(stage) {
       : "The fallback publication attempt was accepted, but no merged result followed; this stage was not recovered.");
   } else if (stage.intervention?.outcome === INTERVENTION_OUTCOMES.REQUEST_REJECTED) {
     notes.push("The automatic recovery request failed before it reached the stage; this stage was not recovered.");
+  } else if (stage.intervention?.outcome === INTERVENTION_OUTCOMES.REQUEST_UNKNOWN) {
+    notes.push(REDISPATCH_NOTES.REQUEST_UNKNOWN);
   }
   // A malformed description does not mean the work was wrong: in all five cases
   // on 2026-09-03 the code, tests and coverage log landed correctly.
@@ -1131,12 +1378,22 @@ export function overviewCaveats(recap) {
  * a check tonight, and what is trending badly. Pace is excluded on purpose:
  * a slow stage that still delivers is not a call on the reader's time. A
  * standing blind spot is already in the grade and the caveats.
+ *
+ * A stage the self-report guard flagged, or could not check against its own
+ * last report of work still to do, is a call on the reader's time by the
+ * rubric's own words ("nothing in this run addressed it", "could not be
+ * checked"). It was missing here until 2026-10-06, so the 6/10 nights of
+ * 2026-09-17 and 09-24 told the reader "Nothing in this run needs you" in the
+ * paragraph right under a grade saying the opposite (09-07 escaped only
+ * because the same stage had also lost a check), and once the guard learned
+ * PENDING, 2026-10-05 would have done the same over 22 unfolded migrations.
  */
 function attentionLabels(recap) {
   const stages = recap?.stages || [];
   const lostCheck = stages.filter(s => (s.blindSpots || []).some(b => NEW_KINDS.has(b.kind)));
   return [...new Set([
     ...stages.filter(s => s.outcome === "STUCK").map(stageLabel),
+    ...stages.filter(s => s.selfReportedFailure || (s.selfReportUnstated || []).length > 0).map(stageLabel),
     ...lostCheck.map(stageLabel),
     ...(recap?.health?.chronic || []).map(stageLabel),
     ...(recap?.health?.degrading || []).map(stageLabel),
@@ -1493,8 +1750,8 @@ function evidenceGuardSection(recap) {
 
 /**
  * Whether any stage's own summary contradicts the outcome it declared -- see
- * hasSelfReportedFailure. Printed unconditionally, in the same spirit as the
- * evidence guard above: a silent section here would read exactly like
+ * selfReportedContradictions. Printed unconditionally, in the same spirit as
+ * the evidence guard above: a silent section here would read exactly like
  * "checked, none found" whether or not the check actually ran, and those are
  * not the same claim.
  *
@@ -1502,22 +1759,32 @@ function evidenceGuardSection(recap) {
  * a stage wrote. It used to print the same unscoped sentence on dates where
  * only 5 of 13 stages had any (2026-08-12 to 08-24, 09-10, 09-14), which is
  * the vacuous-truth shape. The full-scope sentence is unchanged byte for byte.
+ *
+ * For the same reason a CLEAN the guard could not check against its own last
+ * report of work still to do (outstandingWorkUnstated) qualifies the line
+ * rather than leaving the all-clear to stand for it. Nothing else changes, so
+ * every night without one prints exactly what it printed before 2026-10-06.
  */
 function selfReportGuardSection(recap) {
   const stages = recap.stages || [];
   const flagged = stages.filter(s => s.selfReportedFailure);
+  const unstated = stages.filter(s => (s.selfReportUnstated || []).length > 0);
+  const caveat = unstated.length > 0 ? unstatedClause(unstated) : "";
   if (flagged.length === 0) {
     const worded = stages.filter(stageLeftOwnWords);
-    if (worded.length === 0) return ["Self-report guard: not measured, no stage left words of its own to check.", ""];
+    if (worded.length === 0) {
+      return [`Self-report guard: not measured, no stage left words of its own to check.${caveat ? ` ${caveat}.` : ""}`, ""];
+    }
     const scope = worded.length === stages.length
       ? ""
       : ` (checked the ${worded.length} of ${stages.length} stages that left words of their own)`;
-    return [`Self-report guard: no stage's own summary contradicted the outcome it declared${scope}.`, ""];
+    return [`Self-report guard: no stage's own summary contradicted the outcome it declared${scope}${caveat ? `, but ${caveat}` : ""}.`, ""];
   }
   const parts = flagged.map(s => {
-    const quote = escapeInline(s.result || s.summary || "");
-    return `${stageTag(s.stage)} declared ${s.outcome} but its own summary reports a failing sub-check ("${quote}")`;
+    const quote = escapeInline(contradictionQuote(s));
+    return `${stageTag(s.stage)} declared ${s.outcome} but ${joinList(contradictionsOf(s).map(item => contradictionPhrase(item, "reports")))} ("${quote}")`;
   });
+  if (caveat) parts.push(caveat);
   return [`Self-report guard: ${parts.join("; ")}.`, ""];
 }
 

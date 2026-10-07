@@ -314,8 +314,10 @@ export function prNumberFromTag(tag) {
 }
 
 // Durable keys (`tag`, `commitSha`, `coverageLog`, `julesSession`, `recovery`,
-// `julesApiError`, `dispatchSessionName`) are deliberately never cleared: they
-// are the audit trail of what actually happened, a successful nudge included.
+// `redispatch`, `julesApiError`, `dispatchSessionName`) are deliberately never
+// cleared: they are the audit trail of what actually happened, a successful
+// nudge included. `redispatch` is also the watchdog's primary bound on
+// restarting a FAILED session, so clearing it would re-arm a second restart.
 export function resolveEvidence(currentEvidence, patchEvidence, state, failureClass) {
   const merged = { ...(currentEvidence || {}), ...(patchEvidence || {}) };
   if (state !== "MERGED" || failureClass) return merged;
@@ -425,6 +427,13 @@ export function getStageTransition({ current, next, requested, source }) {
   if (source === NIGHTLY_EVENT_SOURCES.DISPATCHER && next.state === "RUNNING") name = "JULES_SESSION_DISPATCHED";
   else if (source === NIGHTLY_EVENT_SOURCES.DISPATCHER && evidence.dispatch?.error) name = "JULES_DISPATCH_FAILED";
   else if (source === NIGHTLY_EVENT_SOURCES.DISPATCHER && evidence.dispatch) name = "JULES_DISPATCH_REQUESTED";
+  // The watchdog's one-shot restart of a FAILED session, named in parallel with
+  // the dispatcher's three because it is the same request made for a different
+  // reason. Distinct from RECOVERY_REQUESTED so `nightly:explain` can tell a
+  // new session from a nudge to an old one without reading evidence by hand.
+  else if (source === NIGHTLY_EVENT_SOURCES.WATCHDOG_RECOVERY && evidence.redispatch?.error) name = "JULES_REDISPATCH_FAILED";
+  else if (source === NIGHTLY_EVENT_SOURCES.WATCHDOG_RECOVERY && evidence.redispatch?.sessionName) name = "JULES_SESSION_REDISPATCHED";
+  else if (source === NIGHTLY_EVENT_SOURCES.WATCHDOG_RECOVERY && evidence.redispatch) name = "JULES_REDISPATCH_REQUESTED";
   else if (source === NIGHTLY_EVENT_SOURCES.WATCHDOG_RECOVERY && evidence.recovery) name = "RECOVERY_REQUESTED";
   else if (source === NIGHTLY_EVENT_SOURCES.WATCHDOG_FALLBACK && evidence.fallbackPublish) name = "FALLBACK_PUBLICATION_REQUESTED";
   else if (source === NIGHTLY_EVENT_SOURCES.WATCHDOG_BODY_REPAIR) name = "PULL_REQUEST_BODY_REPAIRED";

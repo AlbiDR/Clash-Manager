@@ -29,6 +29,7 @@ import {
   validateRegistryData,
   composeCommitSubject,
   formatRunWindow,
+  readPendingMigrations,
   readSubCheckStatuses,
   resolveVerified,
   subCheckField,
@@ -845,6 +846,356 @@ test("Stage 3 is asked once, never twice, for the same FAILing CLEAN", () => {
   }
   assert.equal(refusals.length, 1, "a second refusal was recorded");
   assert.match(errors[0], /already asked once/);
+});
+
+// --- resolveStatus: fold-state PENDING cannot finalize a Stage 3 CLEAN ---
+//
+// On 2026-10-04 (v14.50.138) fold-state.mjs stopped hiding unfolded migrations
+// behind DEGRADED, and on 2026-10-05 Stage 3 read 22 of them, folded none, and
+// finalized CLEAN. This is that night's committed record, byte for byte, from
+// .github/nightly-logs/03-baseline-consolidation-coverage.log on origin/Nightly,
+// with the finalize arguments that wrote it (--why and --result are from the
+// same night's PR body sidecar, commit f9ccf7792). finalize accepted it and the
+// recap graded it clean. Wherever the input matters, the tests below replay
+// that night rather than an invented one, so the refusal is proven against the
+// input that actually got through.
+const REAL_2026_10_05_LINE = "* [2026-10-05] [Stage 3] [01:06Z-01:27Z 22m] [checks database-verification=DB-UNAVAILABLE fold-state=PENDING migration-quality=PASS] CLEAN: Codebase -- Completed read-only baseline consolidation audit. Pending migrations count: 22 (fold-state status: PENDING). Migration quality: PASS. Database verification: DB-UNAVAILABLE. Clean calibration streak: 10.";
+const NIGHT_2026_10_05 = {
+  date: "2026-10-05",
+  // The line's own window. Its seconds were not recorded, so these are any
+  // pair that reproduces it: 01:06:00 to 01:27:45 is a 21.75-minute run,
+  // which formatRunWindow rounds to the 22m the line records.
+  startEpoch: Date.UTC(2026, 9, 5, 1, 6, 0) / 1000,
+  finalizeEpoch: Date.UTC(2026, 9, 5, 1, 27, 45) / 1000,
+  summary: "Completed read-only baseline consolidation audit. Pending migrations count: 22 (fold-state status: PENDING). Migration quality: PASS. Database verification: DB-UNAVAILABLE. Clean calibration streak: 10.",
+  why: "Read-only audit verified master migration baseline. Migration quality PASS.",
+  result: "Static audit PASS; database verification DB-UNAVAILABLE.",
+  statuses: { "database-verification": "DB-UNAVAILABLE", "fold-state": "PENDING", "migration-quality": "PASS" },
+};
+
+// The pending list itself was not committed, only its length, so the count is
+// taken from the stage's own summary and the names are stand-ins in the same
+// timestamp-prefixed, chronologically sorted shape the context script writes.
+function pendingOf2026_10_05() {
+  const count = Number(/Pending migrations count: (\d+)/.exec(NIGHT_2026_10_05.summary)?.[1]);
+  assert.ok(Number.isInteger(count) && count > 0, "the replayed summary no longer states a pending count");
+  return Array.from({ length: count }, (_, index) => `202606${String(index + 1).padStart(2, "0")}000000_unfolded.sql`);
+}
+
+// The session state `start` would have written that night: the work deadline
+// comes from the registry's own workBudgetMinutes, exactly as startCommand
+// derives it, so a budget change moves this test with it.
+function stateOf2026_10_05(extra = {}) {
+  const { startEpoch } = NIGHT_2026_10_05;
+  return { stage: 3, startEpoch, workDeadlineEpoch: startEpoch + registry.workBudgetMinutes * 60, ...extra };
+}
+
+function readingsOf2026_10_05() {
+  return {
+    migrationQuality: NIGHT_2026_10_05.statuses["migration-quality"],
+    foldState: NIGHT_2026_10_05.statuses["fold-state"],
+    pendingMigrations: pendingOf2026_10_05(),
+  };
+}
+
+// workPhase reads the clock through NIGHTLY_NOW_EPOCH, so replaying the night
+// means pinning that, and restoring it whatever the assertion does.
+function atEpoch(epoch, body) {
+  const previous = process.env.NIGHTLY_NOW_EPOCH;
+  process.env.NIGHTLY_NOW_EPOCH = String(epoch);
+  try {
+    return body();
+  } finally {
+    if (previous === undefined) delete process.env.NIGHTLY_NOW_EPOCH;
+    else process.env.NIGHTLY_NOW_EPOCH = previous;
+  }
+}
+
+function capturingErrors(body) {
+  const errors = [];
+  const originalError = console.error;
+  console.error = message => errors.push(String(message));
+  try {
+    return { value: body(), errors };
+  } finally {
+    console.error = originalError;
+  }
+}
+
+test("the 2026-10-05 Stage 3 CLEAN over fold-state PENDING is refused, with the way to fold instead", () => {
+  const stage = getStage(registry, 3);
+  const state = stateOf2026_10_05();
+  const readings = readingsOf2026_10_05();
+  const pending = readings.pendingMigrations;
+  const { finalizeEpoch } = NIGHT_2026_10_05;
+  const refusals = [];
+
+  atEpoch(finalizeEpoch, () => {
+    // Without this the test could pass by replaying the night past its
+    // deadline, which would exercise the downgrade instead of the refusal.
+    assert.equal(workPhase(state), "WORK", "the real night still had budget when it finalized");
+    assert.throws(
+      () => resolveStatus("CLEAN", stage, state, readings, () => refusals.push(true)),
+      error => {
+        assert.match(error.message, /^--status CLEAN cannot stand: fold-state-status\.txt reads PENDING\.\n/);
+        assert.ok(error.message.includes(`found ${pending.length} migration(s)`), "the refusal must carry the real pending count");
+        assert.ok(error.message.includes(`The oldest is ${pending[0]}.`), "the refusal must name where to start");
+        const minutesLeft = Math.floor((state.workDeadlineEpoch - finalizeEpoch) / 60);
+        assert.ok(error.message.includes(`${minutesLeft} minutes of this session's work budget remain`));
+        // Both ways out, and the one the 2026-10-06 FAILED session needed:
+        // a partial fold is a complete night's work.
+        assert.match(error.message, /fold the OLDEST pending migrations first/);
+        assert.match(error.message, /--status CHANGED/);
+        assert.match(error.message, /A partial fold is a valid CHANGED/);
+        assert.match(error.message, /tomorrow's work/);
+        assert.ok(error.message.includes(`--status PARTIAL-RUN --result "fold-state PENDING: ${pending.length} migrations still unfolded`));
+        // migration-quality read PASS that night, so it must not be blamed.
+        assert.doesNotMatch(error.message, /migration-quality/);
+        return true;
+      },
+    );
+  });
+  assert.equal(refusals.length, 1, "the refusal must be recorded, or the next call repeats it");
+});
+
+test("the second CLEAN of that session is recorded as PARTIAL-RUN, never refused again", () => {
+  const stage = getStage(registry, 3);
+  const refusals = [];
+  const asked = stateOf2026_10_05({ statusRefused: true });
+  const { value, errors } = atEpoch(NIGHT_2026_10_05.finalizeEpoch, () => capturingErrors(
+    () => resolveStatus("CLEAN", stage, asked, readingsOf2026_10_05(), () => refusals.push(true)),
+  ));
+  assert.equal(value, "PARTIAL-RUN");
+  assert.equal(refusals.length, 0, "a second refusal was recorded");
+  assert.equal(errors.length, 1, "a downgrade must say so out loud");
+  assert.match(errors[0], /fold-state-status\.txt reads PENDING/);
+  assert.match(errors[0], /already asked once/);
+});
+
+test("once the budget says SUBMIT, a PENDING CLEAN is downgraded at once and spends no refusal", () => {
+  const stage = getStage(registry, 3);
+  const state = stateOf2026_10_05();
+  const refusals = [];
+  // The deadline itself is SUBMIT (budgetPhase uses >=), so this is the first
+  // second the escape applies, read from the session's own deadline.
+  const { value, errors } = atEpoch(state.workDeadlineEpoch, () => {
+    assert.equal(workPhase(state), "SUBMIT");
+    return capturingErrors(() => resolveStatus("CLEAN", stage, state, readingsOf2026_10_05(), () => refusals.push(true)));
+  });
+  assert.equal(value, "PARTIAL-RUN");
+  assert.equal(refusals.length, 0, "a refusal was spent past the budget");
+  assert.match(errors[0], /fold-state-status\.txt reads PENDING/);
+  assert.match(errors[0], /work budget has ended/);
+
+  // Unreadable session state is SUBMIT too (workPhase), so a stage whose state
+  // file is gone is never blocked by this guard either.
+  const blind = capturingErrors(() => resolveStatus("CLEAN", stage, {}, readingsOf2026_10_05(), () => refusals.push(true)));
+  assert.equal(blind.value, "PARTIAL-RUN");
+  assert.equal(refusals.length, 0);
+});
+
+// The legitimate answers to a PENDING night. The guard exists to stop a false
+// CLEAN, so a stage that folded (CHANGED, partial or not) or that honestly ran
+// out of time must pass straight through, every night the backlog lasts.
+test("a stage that folds, or says it could not, is never refused over PENDING", () => {
+  const stage = getStage(registry, 3);
+  const state = stateOf2026_10_05();
+  const honest = ["CHANGED", "PARTIAL-RUN", "SKIPPED"];
+  assert.ok(honest.length > 0, "an empty corpus makes this loop assert nothing");
+  atEpoch(NIGHT_2026_10_05.finalizeEpoch, () => {
+    for (const status of honest) {
+      assert.equal(
+        resolveStatus(status, stage, state, readingsOf2026_10_05(), () => assert.fail(`${status} spent a refusal`)),
+        status,
+      );
+    }
+  });
+});
+
+test("fold-state PENDING binds Stage 3 alone", () => {
+  const now = Math.floor(Date.now() / 1000);
+  const working = { startEpoch: now - 60, workDeadlineEpoch: now + 1800 };
+  const others = registry.stages.filter(stage => stage.number !== 3);
+  assert.ok(others.length > 0, "an empty corpus makes this loop assert nothing");
+  for (const stage of others) {
+    assert.equal(
+      resolveStatus("CLEAN", stage, working, readingsOf2026_10_05(), () => assert.fail(`Stage ${stage.number} spent a refusal`)),
+      "CLEAN",
+    );
+  }
+});
+
+// The missing-input direction, answered on purpose. Accepting is the safe way
+// to fail here: a throw at finalize on the nights the context script broke
+// would cost Stage 3 its output exactly when it has least evidence. And it is
+// not silent: finalize builds the coverage line's [checks ...] field from the
+// same statuses this guard reads, so a missing fold-state is a line with no
+// `fold-state=` entry, which the recap's blind-spot reader reports as a check
+// nobody reported, never as one that ran clean.
+test("a missing, empty or non-PENDING fold-state reading never refuses a CLEAN", () => {
+  const stage = getStage(registry, 3);
+  const now = Math.floor(Date.now() / 1000);
+  const working = { startEpoch: now - 60, workDeadlineEpoch: now + 1800 };
+  const neverRefused = () => assert.fail("a refusal was spent without a PENDING reading");
+  const readings = [undefined, null, "", "CLEAN", "DEGRADED", "SKIPPED"];
+  assert.ok(readings.length > 0, "an empty corpus makes this loop assert nothing");
+  for (const foldState of readings) {
+    assert.equal(
+      resolveStatus("CLEAN", stage, working, { migrationQuality: "PASS", foldState }, neverRefused),
+      "CLEAN",
+      `fold-state ${JSON.stringify(foldState)} refused a CLEAN`,
+    );
+  }
+  assert.equal(resolveStatus("CLEAN", stage, working, {}, neverRefused), "CLEAN");
+  // Under DEGRADED the context script fills the pending list from a filename
+  // heuristic, so the list alone is never evidence of unfolded work.
+  assert.equal(
+    resolveStatus("CLEAN", stage, working, { foldState: "DEGRADED", pendingMigrations: pendingOf2026_10_05() }, neverRefused),
+    "CLEAN",
+  );
+});
+
+test("a PENDING reading with no readable pending list still refuses, and never calls the count 0", () => {
+  const stage = getStage(registry, 3);
+  const now = Math.floor(Date.now() / 1000);
+  const working = { startEpoch: now - 60, workDeadlineEpoch: now + 1800 };
+  assert.throws(
+    () => resolveStatus("CLEAN", stage, working, { migrationQuality: "PASS", foldState: "PENDING" }),
+    error => {
+      assert.match(error.message, /found <N> migration\(s\)/);
+      assert.doesNotMatch(error.message, /found 0 /);
+      assert.doesNotMatch(error.message, /The oldest is/);
+      return true;
+    },
+  );
+});
+
+// A stage can hit both readings at once. It is still asked exactly once, the
+// one refusal names both, and a FAIL does not take folding away: the prompt
+// bars a CLEAN and any edit to an incremental migration on a FAIL night, and a
+// fold is neither, so CHANGED stays open as long as the FAIL is named.
+test("a FAIL and a PENDING together cost one refusal, which names both and still allows a fold", () => {
+  const stage = getStage(registry, 3);
+  const state = stateOf2026_10_05();
+  const readings = { ...readingsOf2026_10_05(), migrationQuality: "FAIL" };
+  const refusals = [];
+  atEpoch(NIGHT_2026_10_05.finalizeEpoch, () => {
+    assert.throws(
+      () => resolveStatus("CLEAN", stage, state, readings, () => refusals.push(true)),
+      error => {
+        assert.match(error.message, /^--status CLEAN cannot stand: migration-quality-status\.txt reads FAIL and fold-state-status\.txt reads PENDING\.\n/);
+        assert.match(error.message, /migration-quality also reads FAIL/);
+        assert.match(error.message, /--status CHANGED/);
+        return true;
+      },
+    );
+    assert.equal(refusals.length, 1);
+    const { value, errors } = capturingErrors(
+      () => resolveStatus("CLEAN", stage, { ...state, statusRefused: true }, readings, () => refusals.push(true)),
+    );
+    assert.equal(value, "PARTIAL-RUN");
+    assert.match(errors[0], /migration-quality-status\.txt reads FAIL and fold-state-status\.txt reads PENDING/);
+  });
+  assert.equal(refusals.length, 1, "two readings bought two refusals");
+});
+
+// Why the refusal flag is shared rather than one per reading: the bound owed
+// to the chokepoint is one --status refusal per session whatever the inputs
+// do. A session refused for FAIL whose fold-state then reads PENDING (its
+// context files regenerated between calls) must be downgraded, not asked again.
+test("a session already refused once is never refused again, whichever reading turned on", () => {
+  const stage = getStage(registry, 3);
+  let state = stateOf2026_10_05();
+  const refusals = [];
+  const record = () => {
+    refusals.push(true);
+    state = { ...state, statusRefused: true };
+  };
+  atEpoch(NIGHT_2026_10_05.finalizeEpoch, () => {
+    assert.throws(() => resolveStatus("CLEAN", stage, state, { migrationQuality: "FAIL", foldState: "CLEAN" }, record));
+    const { value } = capturingErrors(() => resolveStatus("CLEAN", stage, state, readingsOf2026_10_05(), record));
+    assert.equal(value, "PARTIAL-RUN");
+  });
+  assert.equal(refusals.length, 1, "a second refusal was recorded for a different reading");
+});
+
+// The original single-check signature still means exactly what it meant: the
+// object form and the bare string agree on every migration-quality value, down
+// to the bytes of the FAIL refusal, so no existing caller changed behaviour.
+test("the object form agrees with the original string form on migration-quality", () => {
+  const stage = getStage(registry, 3);
+  const now = Math.floor(Date.now() / 1000);
+  const working = { startEpoch: now - 60, workDeadlineEpoch: now + 1800 };
+  const outcome = readings => {
+    try {
+      return { status: resolveStatus("CLEAN", stage, working, readings) };
+    } catch (error) {
+      return { refusal: error.message };
+    }
+  };
+  const values = ["FAIL", "PASS", "DEGRADED", ""];
+  assert.ok(values.length > 0, "an empty corpus makes this loop assert nothing");
+  for (const value of values) {
+    assert.deepEqual(outcome({ migrationQuality: value }), outcome(value), `migration-quality ${value} diverged`);
+  }
+  assert.ok(outcome("FAIL").refusal, "FAIL must still refuse");
+});
+
+test("readPendingMigrations keeps the file's order and never throws", t => {
+  const dir = temporaryContext(t);
+  assert.deepEqual(readPendingMigrations(dir), [], "a missing list reads as empty, never as a throw");
+  writeFileSync(path.join(dir, "pending-migrations.txt"), "20260601000000_a.sql\n\n  20260602000000_b.sql  \n");
+  assert.deepEqual(readPendingMigrations(dir), ["20260601000000_a.sql", "20260602000000_b.sql"]);
+
+  const odd = temporaryContext(t);
+  mkdirSync(path.join(odd, "pending-migrations.txt"));
+  assert.deepEqual(readPendingMigrations(odd), [], "an unreadable list reads as empty, never as a throw");
+});
+
+// The whole defect end to end, through the real CLI: the exact 2026-10-05
+// finalize call, replayed twice in a disposable repository with that night's
+// context files. The first call must refuse and leave the sentinel for the
+// retry; the second must publish, and what it writes must be that night's line
+// with only its status corrected. Before this guard the first call wrote
+// REAL_2026_10_05_LINE verbatim.
+test("replaying the 2026-10-05 Stage 3 finalize can no longer write that night's CLEAN line", t => {
+  const repoRoot = createTemporaryRepo();
+  const testContext = temporaryContext(t);
+  t.after(() => rmSync(repoRoot, { recursive: true, force: true }));
+  const stage = getStage(registry, 3);
+  const night = NIGHT_2026_10_05;
+
+  for (const [name, value] of Object.entries(night.statuses)) {
+    writeFileSync(path.join(testContext, `${name}-status.txt`), `${value}\n`);
+  }
+  writeFileSync(path.join(testContext, "pending-migrations.txt"), `${pendingOf2026_10_05().join("\n")}\n`);
+  writeFileSync(path.join(testContext, "TODAY"), `${night.date}\n`);
+  const statePath = path.join(testContext, "session-state.json");
+  writeFileSync(statePath, `${JSON.stringify(stateOf2026_10_05({ cycleId: `nightly-cycle/${night.date}` }), null, 2)}\n`);
+  const logPath = path.join(repoRoot, stage.coverageLog);
+  mkdirSync(path.dirname(logPath), { recursive: true });
+  const sentinel = `${sentinelLine(night.date, 3)}\n`;
+  writeFileSync(logPath, sentinel);
+
+  const env = { NIGHTLY_CONTEXT_DIR: testContext, NIGHTLY_TODAY: night.date, NIGHTLY_NOW_EPOCH: String(night.finalizeEpoch) };
+  const args = [
+    scriptPath, "finalize", "--stage", "3", "--status", "CLEAN",
+    "--summary", night.summary, "--why", night.why, "--result", night.result,
+  ];
+
+  const refused = run(process.execPath, args, repoRoot, env);
+  assert.notEqual(refused.status, 0, "the 2026-10-05 CLEAN was accepted again");
+  assert.match(refused.stderr, /fold-state-status\.txt reads PENDING/);
+  assert.equal(readFileSync(logPath, "utf8"), sentinel, "a refused finalize must leave the sentinel for the retry");
+  assert.equal(JSON.parse(readFileSync(statePath, "utf8")).statusRefused, true, "the refusal must be recorded before the throw");
+
+  const published = run(process.execPath, args, repoRoot, env);
+  assert.equal(published.status, 0, published.stderr);
+  assert.match(published.stderr, /already asked once/);
+  const log = readFileSync(logPath, "utf8");
+  assert.ok(!log.includes(REAL_2026_10_05_LINE), "the 2026-10-05 CLEAN line was written");
+  assert.equal(log, `${REAL_2026_10_05_LINE.replace("] CLEAN: Codebase -- ", "] PARTIAL-RUN: Codebase -- ")}\n`);
+  assert.match(readFileSync(path.join(testContext, "pr-body.md"), "utf8"), /\*\*Status:\*\* PARTIAL-RUN/);
 });
 
 

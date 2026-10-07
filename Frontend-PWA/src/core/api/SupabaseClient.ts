@@ -239,6 +239,109 @@ const BlacklistRowsSchema = v.array(v.object({
   player_tag: v.string(),
 }));
 
+const SyncSnapshotMarkerRowsSchema = v.array(v.object({
+  snapshot_name: v.picklist(["roster", "headhunter"]),
+  generation: v.union([v.string(), v.number()]),
+  refreshed_at: v.nullable(v.string()),
+}));
+
+type SnapshotMarkerName = "roster" | "headhunter";
+type SnapshotRefreshMarker = { generation: string; refreshedAt: string };
+type SnapshotMarkers = Record<SnapshotMarkerName, SnapshotRefreshMarker>;
+type SnapshotRows<T> = { marker: SnapshotRefreshMarker; rows: T[] };
+type RosterSnapshotRow = v.InferOutput<typeof SbRosterRowSchema>;
+type HeadhunterSnapshotRow = v.InferOutput<typeof SbHeadhunterRowSchema>;
+
+// In-memory only: a cold start always obtains snapshots once before it can skip reads.
+let rosterSnapshotCache: SnapshotRows<RosterSnapshotRow> | null = null;
+let headhunterSnapshotCache: SnapshotRows<HeadhunterSnapshotRow> | null = null;
+
+function normalizeSnapshotGeneration(generation: string | number): string | null {
+  if (typeof generation === "number") {
+    return Number.isSafeInteger(generation) && generation >= 0 ? String(generation) : null;
+  }
+  return /^(0|[1-9]\d*)$/.test(generation) ? generation : null;
+}
+
+function parseSnapshotMarkers(response: OptionalQueryResponse | null): SnapshotMarkers | null {
+  if (!response || response.error) return null;
+  const validation = v.safeParse(SyncSnapshotMarkerRowsSchema, response.data);
+  if (!validation.success || validation.output.length !== 2) return null;
+
+  const markers: Partial<SnapshotMarkers> = {};
+  for (const row of validation.output) {
+    const generation = normalizeSnapshotGeneration(row.generation);
+    if (!generation || !row.refreshed_at || parseTimestamp(row.refreshed_at) === null || markers[row.snapshot_name]) {
+      return null;
+    }
+    markers[row.snapshot_name] = { generation, refreshedAt: row.refreshed_at };
+  }
+
+  if (!markers.roster || !markers.headhunter) return null;
+  return { roster: markers.roster, headhunter: markers.headhunter };
+}
+
+function markersMatch(left: SnapshotRefreshMarker, right: SnapshotRefreshMarker): boolean {
+  return left.generation === right.generation && left.refreshedAt === right.refreshedAt;
+}
+
+async function fetchRosterSnapshot(
+  supabase: ReturnType<typeof createSupabaseClient>,
+  signal: AbortSignal,
+  marker: SnapshotRefreshMarker | null,
+): Promise<RosterSnapshotRow[]> {
+  if (marker && rosterSnapshotCache && markersMatch(rosterSnapshotCache.marker, marker)) {
+    return rosterSnapshotCache.rows;
+  }
+
+  const response = await supabase.schema("features").from("roster_materialized").select("*")
+    .order("raw_performance_score", { ascending: false, nullsFirst: false })
+    .order("performance_score", { ascending: false, nullsFirst: false })
+    .abortSignal(signal);
+  if (response.error) throw new Error(`Roster Fetch Error: ${response.error.message}`);
+
+  const rawData: unknown = response.data ?? [];
+  if (!Array.isArray(rawData)) throw new Error("Roster payload was not an array");
+  const rows = rawData.flatMap((row: unknown) => {
+    const validation = v.safeParse(SbRosterRowSchema, row);
+    return validation.success ? [validation.output] : [];
+  });
+  const rejectedRows = rawData.length - rows.length;
+  if (rejectedRows > 0) console.warn(`[Sync] Dropped ${rejectedRows} invalid roster row(s).`);
+  if (rawData.length > 0 && rows.length === 0) throw new Error("Roster validation failed for every row");
+
+  if (marker && rows.length > 0) rosterSnapshotCache = { marker, rows };
+  return rows;
+}
+
+async function fetchHeadhunterSnapshot(
+  supabase: ReturnType<typeof createSupabaseClient>,
+  signal: AbortSignal,
+  marker: SnapshotRefreshMarker | null,
+): Promise<HeadhunterSnapshotRow[]> {
+  if (marker && headhunterSnapshotCache && markersMatch(headhunterSnapshotCache.marker, marker)) {
+    return headhunterSnapshotCache.rows;
+  }
+
+  const response = await supabase.schema("features").from("headhunter_materialized").select("*")
+    .order("raw_potential_score", { ascending: false })
+    .limit(250).abortSignal(signal);
+  if (response.error) throw new Error(`Headhunter Fetch Error: ${response.error.message}`);
+
+  const rawData: unknown = response.data ?? [];
+  if (!Array.isArray(rawData)) throw new Error("Headhunter payload was not an array");
+  const rows = rawData.flatMap((row: unknown) => {
+    const validation = v.safeParse(SbHeadhunterRowSchema, row);
+    return validation.success ? [validation.output] : [];
+  });
+  const rejectedRows = rawData.length - rows.length;
+  if (rejectedRows > 0) console.warn(`[Sync] Dropped ${rejectedRows} invalid headhunter row(s).`);
+  if (rawData.length > 0 && rows.length === 0) throw new Error("Headhunter validation failed for every row");
+
+  if (marker) headhunterSnapshotCache = { marker, rows };
+  return rows;
+}
+
 /**
  * Resolves the tags of the recruits that must be withheld from the headhunter snapshot.
  *
@@ -489,6 +592,7 @@ export async function fetchRemote(options?: {
   
   const supabase = createSupabaseClient();
   const signal = options?.signal || new AbortController().signal;
+  signal.throwIfAborted();
 
   // [FIX] SCHEMA REACHABILITY: this previously addressed `substrate.pipeline_heartbeat`
   // directly. The remote Data API exposes only public/storage/graphql_public/features,
@@ -524,56 +628,31 @@ export async function fetchRemote(options?: {
   // does not expose. `features.recruit_blacklist_view` also drops lapsed entries.
   const fetchBlacklist = (blacklistSignal: AbortSignal) =>
     supabase.schema('features').from('recruit_blacklist_view').select('player_tag').abortSignal(blacklistSignal);
-  const rosterRequest =
-    supabase.schema('features').from('roster_materialized').select('*')
-      .order('raw_performance_score', { ascending: false, nullsFirst: false })
-      .order('performance_score', { ascending: false, nullsFirst: false })
-      .abortSignal(signal),
-  headhunterRequest =
-    supabase.schema('features').from('headhunter_materialized').select('*')
-      .order('raw_potential_score', { ascending: false })
-      .limit(250).abortSignal(signal),
-  heartbeatRequest = resolveOptionalQuery("Pipeline heartbeat", signal, fetchHeartbeats),
-  blacklistRequest = options?.knownBlacklist
+  const markerResponse = await resolveOptionalQuery(
+    "Snapshot marker",
+    signal,
+    (markerSignal) => supabase.schema('features')
+      .rpc('sync_snapshot_marker', undefined, { get: true }).abortSignal(markerSignal),
+  );
+  const snapshotMarkers = parseSnapshotMarkers(markerResponse);
+  const rosterRequest = fetchRosterSnapshot(supabase, signal, snapshotMarkers?.roster ?? null);
+  const headhunterRequest = fetchHeadhunterSnapshot(supabase, signal, snapshotMarkers?.headhunter ?? null);
+  const heartbeatRequest = resolveOptionalQuery("Pipeline heartbeat", signal, fetchHeartbeats);
+  const blacklistRequest = options?.knownBlacklist
     ? resolveOptionalQuery("Recruit blacklist", signal, fetchBlacklist)
     : fetchBlacklist(signal);
 
-  const [rosterResponse, headhunterResponse, heartbeatResponse, blacklistResponse] = await Promise.all([
-    rosterRequest,
-    headhunterRequest,
+  const [snapshotResults, heartbeatResponse, blacklistResponse] = await Promise.all([
+    Promise.allSettled([rosterRequest, headhunterRequest]),
     heartbeatRequest,
     blacklistRequest,
   ]);
-
-  if (rosterResponse.error) throw new Error(`Roster Fetch Error: ${rosterResponse.error.message}`);
-  if (headhunterResponse.error) throw new Error(`Headhunter Fetch Error: ${headhunterResponse.error.message}`);
-
-  // [GUARD] VALIDATION BOUNDARY: Harden external view data before domain mapping.
-  // One malformed row must not discard every valid member or recruit, but a
-  // wholly malformed payload is still rejected rather than certified as empty.
-  const rawRosterData: unknown = rosterResponse.data ?? [];
-  const rawHeadhunterData: unknown = headhunterResponse.data ?? [];
-  if (!Array.isArray(rawRosterData)) throw new Error("Roster payload was not an array");
-  if (!Array.isArray(rawHeadhunterData)) throw new Error("Headhunter payload was not an array");
-
-  const rosterData = rawRosterData.flatMap((rosterRow) => {
-    const validation = v.safeParse(SbRosterRowSchema, rosterRow);
-    return validation.success ? [validation.output] : [];
-  });
-  const headhunterData = rawHeadhunterData.flatMap((headhunterRow) => {
-    const validation = v.safeParse(SbHeadhunterRowSchema, headhunterRow);
-    return validation.success ? [validation.output] : [];
-  });
-  const rejectedRosterRows = rawRosterData.length - rosterData.length;
-  const rejectedHeadhunterRows = rawHeadhunterData.length - headhunterData.length;
-  if (rejectedRosterRows > 0) console.warn(`[Sync] Dropped ${rejectedRosterRows} invalid roster row(s).`);
-  if (rejectedHeadhunterRows > 0) console.warn(`[Sync] Dropped ${rejectedHeadhunterRows} invalid headhunter row(s).`);
-  if (rawRosterData.length > 0 && rosterData.length === 0) {
-    throw new Error("Roster validation failed for every row");
-  }
-  if (rawHeadhunterData.length > 0 && headhunterData.length === 0) {
-    throw new Error("Headhunter validation failed for every row");
-  }
+  const rosterResult = snapshotResults[0];
+  const headhunterResult = snapshotResults[1];
+  if (rosterResult.status === "rejected") throw rosterResult.reason;
+  if (headhunterResult.status === "rejected") throw headhunterResult.reason;
+  const rosterData = rosterResult.value;
+  const headhunterData = headhunterResult.value;
 
   const blacklistTags = getDismissedTags(blacklistResponse, options?.knownBlacklist);
   const dismissedRecruitIds = new Set(blacklistTags.map(cleanTag));
@@ -620,6 +699,7 @@ export async function fetchRemote(options?: {
   // Never replace unknown freshness with the client's current clock, as doing so
   // makes arbitrarily old source data appear freshly ingested.
   const timestamp = heartbeatTimestamp ?? rosterTimestamp ?? 0;
+  signal.throwIfAborted();
   
   const webAppData: WebAppData = {
     lb: leaderboardMembers,

@@ -4,23 +4,23 @@
 
 In plain terms: nothing needed fixing. This run checked the APK UX area and found it already correct, so the only file here is the log recording that the check happened.
 
-**What was checked:** Calibration pass: 7 consecutive CLEAN runs verified; 1 candidate file reviewed (GhostBenchmarkHost.vue) across 77 files examined in 10 UX categories.
+**What was checked:** Global APK UX audit passed with zero violations across 77 frontend files
 
-**Why:** Audit status PASS with zero violations; calibration pass confirmed 1 candidate file (GhostBenchmarkHost.vue) verified clean.
+**Why:** Broad sweep of Frontend-PWA/src showed all dropdowns, click targets, haptic feedback hooks, layout insets, text selection containment, and external link isolations comply with hybrid shell standards.
 
-**Result:** apk-ux-audit-status.txt: PASS; apk-ux-audit.json: 1 candidate files reviewed; UX categories 1-10 checked
+**Result:** apk-ux-audit-status.txt: PASS; apk-ux-audit.json: 0 candidate files reviewed; UX categories 1-10 checked
 
 **Files changed:** .github/nightly-logs/12-apk-ux-coverage.log
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: ux
-  Cycle: nightly-cycle/2026-10-06
+  Cycle: nightly-cycle/2026-10-07
   Contract: f279dcd9fa3e895a0f76426a8bcab2381910b64ed4f8694d2c16ab7f8ec4ce04
-  Why: Audit status PASS with zero violations; calibration pass confirmed 1 candidate file (GhostBenchmarkHost.vue) verified clean.
-  Change: Calibration pass: 7 consecutive CLEAN runs verified; 1 candidate file reviewed (GhostBenchmarkHost.vue) across 77 files examined in 10 UX categories.
-  Result: apk-ux-audit-status.txt: PASS; apk-ux-audit.json: 1 candidate files reviewed; UX categories 1-10 checked
+  Why: Broad sweep of Frontend-PWA/src showed all dropdowns, click targets, haptic feedback hooks, layout insets, text selection containment, and external link isolations comply with hybrid shell standards.
+  Change: Global APK UX audit passed with zero violations across 77 frontend files
+  Result: apk-ux-audit-status.txt: PASS; apk-ux-audit.json: 0 candidate files reviewed; UX categories 1-10 checked
   Files: .github/nightly-logs/12-apk-ux-coverage.log
   Nudges: 0
-  Execution: fd572cd1e0f1c50c4f8850b00f28d32ddbbe7bce
+  Execution: 2eb03b289c36d11ae9a9188c34d90a207d565a94
 -->

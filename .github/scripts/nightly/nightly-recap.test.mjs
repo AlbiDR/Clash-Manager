@@ -13,6 +13,8 @@ import {
   evidenceRefNames,
   gradeRun,
   latestRunDate,
+  outstandingWorkUnstated,
+  selfReportedContradictions,
   declaredCoverageRecord,
   plainSubject,
   parsePrHistoryEntry,
@@ -1650,4 +1652,200 @@ test("the CI database check is printed in the database lane's block, a failure m
   assert.match(s03({ status: "completed", conclusion: "cancelled" }), /^Database check: finished in CI without a verdict \(cancelled\)\.$/m);
   assert.match(s03({ status: "in_progress" }), /^Database check: still running in CI on this pull request\.$/m);
   assert.doesNotMatch(s03(null), /Database check/, "no recorded run, no line");
+});
+
+// --- Self-report guard: work still to do ---------------------------------------
+//
+// On 2026-10-05 Stage 3 read 22 pending migrations, folded none of them and
+// finalized CLEAN. This is its committed coverage line, which the guard graded
+// "10/10 - Optimal run" because it knew only FAIL, DIVERGENT and UNFOLDED:
+//
+//   * [2026-10-05] [Stage 3] [01:06Z-01:27Z 22m] [checks database-verification=DB-UNAVAILABLE
+//     fold-state=PENDING migration-quality=PASS] CLEAN: Codebase -- Completed read-only baseline
+//     consolidation audit. Pending migrations count: 22 (fold-state status: PENDING). ...
+//
+// PENDING is a verdict about the stage's own queue, so unlike FAIL it only
+// contradicts a CLEAN: after a partial fold a CHANGED legitimately says folding
+// remains, and every night Stage 3 does its job carries fold-state=PENDING in
+// its [checks] field because that file is written before any folding starts.
+
+const S03_PROSE = "Completed read-only baseline consolidation audit. Pending migrations count: 22 (fold-state status: PENDING). Migration quality: PASS. Database verification: DB-UNAVAILABLE. Clean calibration streak: 10.";
+const S03_CHECKS = { "database-verification": "DB-UNAVAILABLE", "fold-state": "PENDING", "migration-quality": "PASS" };
+const s03Declared = (status, extra = {}) => ({ status, target: "Codebase", summary: S03_PROSE, checks: S03_CHECKS, ...extra });
+const classifyS03 = declared => classifyStage({
+  stage: stageOf(3),
+  entry: { state: "MERGED", failureClass: null, attempts: 0, evidence: {} },
+  tag: "nightly/2026-10-05/stage-3/pr-2107",
+  declared,
+  history: null,
+});
+
+test("the 2026-10-05 Stage 3 CLEAN over fold-state PENDING is flagged, from its own [checks] field", () => {
+  const result = classifyS03(s03Declared("CLEAN"));
+  assert.equal(result.outcome, "CLEAN");
+  assert.equal(result.selfReportedFailure, true);
+  assert.equal(result.selfReport.length, 1);
+  assert.deepEqual(
+    { kind: result.selfReport[0].kind, value: result.selfReport[0].value, source: result.selfReport[0].source },
+    { kind: "OUTSTANDING_WORK", value: "PENDING", source: "structured" },
+  );
+});
+
+test("the same CLEAN is flagged from its prose alone, for lines written before the [checks] field", () => {
+  const result = classifyS03(s03Declared("CLEAN", { checks: null }));
+  assert.equal(result.selfReportedFailure, true);
+  assert.equal(result.selfReport[0].value, "PENDING");
+  assert.equal(result.selfReport[0].source, "prose");
+});
+
+test("PENDING contradicts a CLEAN only: a partial fold, a PARTIAL-RUN or a SKIPPED saying so is not flagged", () => {
+  for (const status of ["CHANGED", "PARTIAL-RUN", "SKIPPED"]) {
+    const result = selfReportedContradictions({ declared: s03Declared(status), history: null });
+    assert.deepEqual(result, [], `${status} over PENDING must not be flagged`);
+  }
+});
+
+test("a CLEAN with nothing pending is not flagged", () => {
+  const declared = { status: "CLEAN", target: "Codebase", summary: "Audit complete. Pending migrations count: 0 (fold-state status: CLEAN).", checks: { "fold-state": "CLEAN" } };
+  assert.deepEqual(selfReportedContradictions({ declared, history: null }), []);
+});
+
+test("a bare PENDING is somebody else's placeholder, never a self-report", () => {
+  // age-pr-history writes "**Commit:** PENDING" before a merge, and Stage 13
+  // searches the history for the word. Only a value bound to its check counts.
+  const declared = { status: "CLEAN", target: "Codebase", summary: "History block still shows Commit: PENDING until the pull request merges.", checks: null };
+  assert.deepEqual(selfReportedContradictions({ declared, history: null }), []);
+});
+
+test("UNFOLDED and DIVERGENT, fold-state's own words for the queue, contradict a CLEAN but not a partial fold", () => {
+  for (const word of ["UNFOLDED", "DIVERGENT"]) {
+    const summary = `fold-state ${word} after audit`;
+    const clean = selfReportedContradictions({ declared: { status: "CLEAN", summary, checks: null }, history: null });
+    assert.equal(clean.length, 1, `${word} over CLEAN`);
+    assert.equal(clean[0].kind, "OUTSTANDING_WORK");
+    const changed = selfReportedContradictions({ declared: { status: "CHANGED", summary, checks: null }, history: null });
+    assert.deepEqual(changed, [], `${word} over a CHANGED partial fold`);
+  }
+});
+
+test("a FAIL contradicts every declared outcome, the PARTIAL-RUN of 2026-09-24 included", () => {
+  for (const status of ["CLEAN", "CHANGED", "PARTIAL-RUN"]) {
+    const found = selfReportedContradictions({ declared: { status, summary: "migration-quality FAIL on two files", checks: null }, history: null });
+    assert.equal(found.length, 1, `FAIL over ${status}`);
+    assert.equal(found[0].kind, "FAILURE");
+  }
+});
+
+test("a CLEAN silent about a check whose last report was work still to do is reported as unchecked", () => {
+  const nights = [
+    { date: "2026-10-04", stated: { "fold-state": { value: "CLEAN", source: "prose" } } },
+    { date: "2026-10-05", stated: { "fold-state": { value: "PENDING", source: "structured" } } },
+  ];
+  const silent = outstandingWorkUnstated(nights, "2026-10-07");
+  assert.equal(silent.length, 1);
+  assert.deepEqual(silent[0].last, { date: "2026-10-05", value: "PENDING" });
+  assert.equal(silent[0].check, "fold-state");
+
+  // It stated the check tonight: nothing to report, whatever it said.
+  const stated = [...nights, { date: "2026-10-07", stated: { "fold-state": { value: "CLEAN", source: "prose" } } }];
+  assert.deepEqual(outstandingWorkUnstated(stated, "2026-10-07"), []);
+  // Its last report agreed with a CLEAN, or it never reported at all: nothing to doubt.
+  assert.deepEqual(outstandingWorkUnstated(nights.slice(0, 1), "2026-10-07"), []);
+  assert.deepEqual(outstandingWorkUnstated([], "2026-10-07"), []);
+  assert.deepEqual(outstandingWorkUnstated(undefined, "2026-10-07"), []);
+});
+
+test("a night's grade names the contradiction, and an unchecked CLEAN is a 9, never a 10", () => {
+  const stage = (num, extra = {}) => ({ stage: num, outcome: "CLEAN", merged: true, rescued: false, observed: true, ...extra });
+  const rest = Array.from({ length: 12 }, (_, i) => stage(i + 1));
+
+  const flagged = gradeRun([...rest, stage(13, {
+    selfReportedFailure: true,
+    selfReport: [{ kind: "OUTSTANDING_WORK", label: "fold-state check", value: "PENDING", source: "structured" }],
+  })]);
+  assert.equal(flagged.grade, 6);
+  assert.match(flagged.rationale, /S13 declared CLEAN while its own fold-state check reported work still to do \(PENDING\)/);
+  assert.doesNotMatch(flagged.rationale, /failing sub-check/, "a pending queue is not a failure");
+
+  const unchecked = gradeRun([...rest, stage(13, {
+    selfReportUnstated: [{ check: "fold-state", label: "fold-state check", last: { date: "2026-10-05", value: "PENDING" } }],
+  })]);
+  assert.equal(unchecked.grade, 9);
+  assert.match(unchecked.rationale, /Unverified: .*S13 declared CLEAN without restating its fold-state check, which last reported work still to do \(PENDING on 2026-10-05\)/);
+
+  // A stage that is contradicted outright outranks one that merely could not be checked.
+  const both = gradeRun([...rest, stage(13, {
+    selfReportedFailure: true,
+    selfReport: [{ kind: "OUTSTANDING_WORK", label: "fold-state check", value: "PENDING", source: "structured" }],
+    selfReportUnstated: [{ check: "fold-state", label: "fold-state check", last: { date: "2026-10-05", value: "PENDING" } }],
+  })]);
+  assert.equal(both.grade, 6);
+});
+
+test("the recap names a CLEAN over pending work in the guard line and points the reader at it", () => {
+  const text = renderRecap(overviewRecap({
+    stages: [
+      { stage: 5, slug: "documentation-readme", outcome: "CLEAN", merged: true },
+      {
+        stage: 3, slug: "baseline-consolidation", outcome: "CLEAN", merged: true, prNumber: 2107,
+        summary: S03_PROSE, selfReportedFailure: true,
+        selfReport: [{ kind: "OUTSTANDING_WORK", label: "fold-state check", value: "PENDING", source: "structured" }],
+      },
+    ],
+  }));
+  assert.match(text, /Self-report guard: S03 declared CLEAN but its own fold-state check reports work still to do \(PENDING\) \("Completed read-only baseline consolidation audit\. Pending migrations count: 22/);
+  assert.doesNotMatch(text, /reports a failing sub-check/);
+  // A flagged night must not tell the reader nothing needs them, directly under a grade that says otherwise.
+  assert.match(text, /The part worth your attention is S03 baseline consolidation/);
+  assert.doesNotMatch(text, /Nothing in this run needs you/);
+});
+
+// --- A stage rescued by the watchdog's restart of a FAILED session -----------------
+
+const restartEntry = (extra = {}) => ({
+  state: "MERGED", failureClass: null, attempts: 0,
+  evidence: { redispatch: { failedSessionName: "sessions/one", sessionName: "sessions/two", ok: true }, ...extra },
+});
+const classifyRestarted = (entry, tag = "nightly/2026-10-06/stage-3/pr-2120") => classifyStage({
+  stage: stageOf(3), entry, tag, declared: null, history: null,
+  progress: { frontier: 13, over: true },
+});
+
+test("a stage that merged through the restart is credited to it, in plain words, never as unaided", () => {
+  const result = classifyRestarted(restartEntry());
+  assert.equal(result.rescued, true);
+  assert.equal(result.rescuedBy, "watchdog-redispatch");
+  const text = renderRecap(singleStage(result, { rescued: 1, grade: 9, rationale: "Minor issues: every stage completed. One stage needed the watchdog." }));
+  assert.match(text, /Its first Jules session failed outright\. The watchdog started a fresh session automatically and that one published; nobody had to do anything\./);
+  assert.doesNotMatch(text, /finished the work but never opened the PR/, "that is the nudge's sentence, for a different failure");
+  assert.doesNotMatch(text, /watchdog-redispatch/, "the channel name is not prose");
+});
+
+test("a restart whose session never published says the stage has not been recovered", () => {
+  // No merge tag: nothing was published, whatever the restart did.
+  const result = classifyRestarted({ ...restartEntry(), state: "ESCALATED", failureClass: "JULES_SESSION_FAILED" }, null);
+  assert.equal(result.rescued, false);
+  const text = renderRecap(singleStage(result, { merged: 0, clean: 0, stuck: 1, grade: 7, rationale: "Partial block: one stage failed or got stuck." }));
+  assert.match(text, /the watchdog started a fresh one automatically, but no pull request has followed from it; this stage has not been recovered/);
+});
+
+test("an unanswered restart with no replacement or merge stays unknown in the recap", () => {
+  const result = classifyRestarted({
+    ...restartEntry(),
+    state: "ESCALATED",
+    failureClass: "JULES_SESSION_FAILED",
+    evidence: { redispatch: { failedSessionName: "sessions/one", sessionName: null, ok: null, error: "request timed out" } },
+  }, null);
+  assert.equal(result.intervention.outcome, "REQUEST_UNKNOWN");
+  const text = renderRecap(singleStage(result, { merged: 0, clean: 0, stuck: 1, grade: 7, rationale: "Partial block: one stage failed or got stuck." }));
+  assert.match(text, /cannot confirm whether Jules accepted it/);
+  assert.doesNotMatch(text, /request did not go through/);
+});
+
+test("a restarted session that then needed a nudge says both", () => {
+  const result = classifyRestarted(restartEntry({ recovery: { ok: true } }));
+  assert.equal(result.rescuedBy, "watchdog-nudge");
+  const text = renderRecap(singleStage(result, { rescued: 1, grade: 9, rationale: "Minor issues: every stage completed. One stage needed the watchdog." }));
+  assert.match(text, /Its first Jules session failed outright, so the watchdog started a fresh one automatically\./);
+  assert.match(text, /The watchdog nudged it automatically/);
 });
