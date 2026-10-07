@@ -16,6 +16,15 @@ LAST_AGED:   2026-10-06
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-07] PR #2110 [Stage 5]: Reconcile ViewOptions.vue documentation debt with useDismissOnBack back navigation dismissal
+**Domain:** documentation | **Commit:** 9c9bf30f0 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2110)
+**Files:** .github/nightly-logs/05-documentation-readme-coverage.log, .github/nightly-logs/05-documentation-readme-pr-body.md, Frontend-PWA/src/shared/ui/README.md
+**Why:** doc-debt target Frontend-PWA/src/shared/ui/ViewOptions.vue documentation updated to reflect useDismissOnBack integration
+**Change:** Reconcile ViewOptions.vue documentation debt with useDismissOnBack back navigation dismissal
+**Result:** PASSED (git diff check clean, pnpm test passed)
+**Nudges:** 0
+
+
 ### [2026-10-07] PR #2109 [Stage 4]: Inspected 106 changed files and Edge Functions for SQL view substrate hygiene; zero structural rot or unreferenced views found.
 **Domain:** optimization | **Commit:** 884969ac1 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2109)
 **Files:** .github/nightly-logs/04-optimization-coverage.log, .github/nightly-logs/04-optimization-pr-body.md
