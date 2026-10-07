@@ -377,14 +377,13 @@ function sessionsForStage(sessions, stage) {
 /**
  * The session a stage's ledger row is tracking for this run, or null.
  *
- * A restart outranks the dispatcher's record. Both are pins, and matchJulesSession
- * honours a pin before it looks at dates, so whichever one this returns is the
- * session every later pass reads. Returning the dispatcher's name after a
- * restart would pin the FAILED session that caused it, and the watchdog would
- * re-read FAILED on every pass of the night while the fresh session worked or
- * published unseen. The pin also matters for dating: matchJulesSession's date
- * filter compares createTime against the stage's evidence date, and a restart
- * is by definition created later than the session it replaces.
+ * A known restart outranks the dispatcher's record. Both names are pins, and
+ * matchJulesSession honours a pin before it looks at dates. If a restart was
+ * attempted but Jules did not return its session name, do not fall back to the
+ * failed dispatch pin: the request may have been accepted, so let the existing
+ * stage and evidence-date filters find a listed replacement. With no matching
+ * replacement, those filters still return the original session. A known name
+ * remains pinned because it is authoritative even when a newer duplicate exists.
  *
  * Absent either record this is null and matching falls back to the newest
  * session on the evidence date, which is also the restart whenever one exists
@@ -392,7 +391,8 @@ function sessionsForStage(sessions, stage) {
  */
 export function trackedSessionName(ledger, date, stageNumber) {
   const evidence = ledger?.runs?.[date]?.[String(stageNumber)]?.evidence;
-  return evidence?.redispatch?.sessionName || evidence?.dispatchSessionName || null;
+  if (evidence?.redispatch) return evidence.redispatch.sessionName || null;
+  return evidence?.dispatchSessionName || null;
 }
 
 export function matchJulesSession(sessions, stage, date, preferredSessionName = null) {

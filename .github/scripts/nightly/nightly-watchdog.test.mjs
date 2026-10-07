@@ -2534,6 +2534,46 @@ test("a rejected restart request is recorded with its error and never retried", 
   assert.equal(second.exhausted.length, 1);
 });
 
+test("an ambiguous restart tracks its same-cycle session when Jules lists it later", async () => {
+  const { date, ledger, entries, julesSessions } = failedRun();
+  upsertStageEntry(ledger, registry, date, 3, { evidence: { dispatchSessionName: FAILED_SESSION } });
+  const api = julesApi({ status: 500, text: "response lost after acceptance" });
+  const args = { registry, date, config: RESTART_CONFIG, fetchImpl: api.fetchImpl, now: AT_0300Z };
+
+  await redispatchFailedStages({ entries, ledger, julesSessions, ...args });
+  assert.equal(api.calls.length, 1);
+  assert.equal(ledger.runs[date]["3"].evidence.redispatch.sessionName, null);
+
+  const replacement = {
+    id: "9990002", name: "sessions/9990002", state: "IN_PROGRESS",
+    createTime: "2026-10-06T03:01:00Z", prompt: "# S03: Baseline Consolidation",
+  };
+  const anotherDate = { ...replacement, id: "9990003", name: "sessions/9990003", createTime: "2026-10-07T01:00:00Z" };
+  const anotherStage = { ...replacement, id: "9990004", name: "sessions/9990004", prompt: "# S04: Optimization" };
+  const observed = failedObserved(date, 3, [...julesSessions, replacement, anotherDate, anotherStage]);
+  const nextPass = evaluateNightlyRun({ registry, date, observed, previousLedger: ledger });
+
+  assert.equal(nextPass.find(entry => entry.stage === 3).state, "RUNNING");
+  assert.equal(nextPass.find(entry => entry.stage === 3).evidence.session.id, replacement.id);
+  assert.equal(api.calls.length, 1, "observing a replacement never sends another restart");
+});
+
+test("an ambiguous restart still tracks the original failure when no replacement is listed", async () => {
+  const { date, ledger, entries, julesSessions } = failedRun();
+  upsertStageEntry(ledger, registry, date, 3, { evidence: { dispatchSessionName: FAILED_SESSION } });
+  const api = julesApi({ status: 500, text: "response lost after acceptance" });
+
+  await redispatchFailedStages({
+    entries, ledger, registry, date, julesSessions, config: RESTART_CONFIG, fetchImpl: api.fetchImpl, now: AT_0300Z,
+  });
+  const observed = failedObserved(date, 3, julesSessions);
+  const nextPass = evaluateNightlyRun({ registry, date, observed, previousLedger: ledger });
+
+  assert.equal(nextPass.find(entry => entry.stage === 3).failureClass, "JULES_SESSION_FAILED");
+  assert.equal(nextPass.find(entry => entry.stage === 3).evidence.julesSession.name, FAILED_SESSION);
+  assert.equal(api.calls.length, 1);
+});
+
 test("the restart's error text never carries the Jules key into the committed ledger", async () => {
   configureRedaction({ ...RESTART_CONFIG, julesApiKey: "sekrit-key-123" });
   try {
