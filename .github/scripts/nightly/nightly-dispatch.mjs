@@ -13,6 +13,11 @@
  * This only replaces WHERE a stage gets triggered. It does not change how the
  * session's PR gets published (still Jules' own AUTO_CREATE_PR automation) or
  * how a stuck session gets recovered (still Nightly Watchdog).
+ *
+ * createJulesSession is also borrowed by Nightly Watchdog for its one-shot
+ * restart of a FAILED session. That is a retry of a session the Jules UI
+ * schedule already started, not a move of stage triggering into this
+ * repository: the owner deferred that migration, and nothing here changes it.
  * ============================================================================
  */
 
@@ -78,16 +83,27 @@ export function stageSessionTitle(stage, date) {
 // inlining it: Jules is given full repo access via githubRepoContext, the
 // same as when a stage is triggered by its own scheduled task, so the prompt
 // text does not need to embed anything the session can read itself.
-async function createJulesSession(stage, registry, date, redact) {
-  invariant(CONFIG.julesApiKey, "JULES_API_KEY is missing.");
-  invariant(CONFIG.owner && CONFIG.repo, "GITHUB_REPOSITORY is missing or malformed.");
+//
+// EXPORTED FOR ONE OTHER CALLER, AND ONLY ONE. Nightly Watchdog uses this to
+// start a single fresh session for a stage whose session ended FAILED (see
+// redispatchFailedStages there; 2026-10-06 Stage 3 lost its whole night to
+// session 17685247323826051852 and nothing retried it). Sharing it keeps one
+// definition of what a stage session is: a second copy of this payload in the
+// watchdog would be free to drift from the dispatcher's, and the first night
+// anyone noticed would be the night a retried stage opened its pull request
+// against the wrong branch. `config` and `fetchImpl` are injectable for that
+// caller's tests in the same way nudgeJulesSession's are; with no options this
+// behaves exactly as it did for the dispatcher alone.
+export async function createJulesSession(stage, registry, date, redact, { config = CONFIG, fetchImpl = fetch } = {}) {
+  invariant(config.julesApiKey, "JULES_API_KEY is missing.");
+  invariant(config.owner && config.repo, "GITHUB_REPOSITORY is missing or malformed.");
 
   const prompt = fs.readFileSync(stage.prompt, "utf8");
   const payload = {
     prompt,
     title: stageSessionTitle(stage, date),
     sourceContext: {
-      source: `sources/github/${CONFIG.owner}/${CONFIG.repo}`,
+      source: `sources/github/${config.owner}/${config.repo}`,
       githubRepoContext: {
         startingBranch: registry.targetBranch,
       },
@@ -96,11 +112,11 @@ async function createJulesSession(stage, registry, date, redact) {
     automationMode: "AUTO_CREATE_PR",
   };
 
-  const res = await fetch(`${JULES_API_BASE}/sessions`, {
+  const res = await fetchImpl(`${JULES_API_BASE}/sessions`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "X-Goog-Api-Key": CONFIG.julesApiKey,
+      "X-Goog-Api-Key": config.julesApiKey,
     },
     body: JSON.stringify(payload),
   });

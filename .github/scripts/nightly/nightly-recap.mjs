@@ -89,6 +89,7 @@ import {
 import {
   FAILURE_PHRASES,
   PLAIN_PREFIX,
+  REDISPATCH_NOTES,
   RESULT_LABEL,
   WHY_LABEL,
   changeLabel,
@@ -759,7 +760,16 @@ function stageNotes(stage) {
   if (phrase && stage.outcome === "STUCK" && (stage.summary || stage.title)) {
     notes.push(phrase);
   }
-  if (stage.rescued) {
+  // A fresh session after a FAILED one (the watchdog's restart, since
+  // 2026-10-06) has its own sentences. The generic branches below would call it
+  // "recovered via watchdog-redispatch" or reuse the fallback publisher's
+  // wording. When the fresh session then needed a later rung too, both are said.
+  const redispatched = stage.intervention?.channels?.includes("watchdog-redispatch");
+  const restartedOnly = redispatched && stage.intervention.channel === "watchdog-redispatch";
+  if (redispatched && !restartedOnly) notes.push(REDISPATCH_NOTES.EARLIER);
+  if (restartedOnly) {
+    notes.push(REDISPATCH_NOTES[stage.intervention.outcome]);
+  } else if (stage.rescued) {
     notes.push(stage.rescuedBy === "watchdog-nudge"
       ? "Its Jules session finished the work but never opened the PR. The watchdog nudged it automatically; nobody had to do anything."
       : `This stage could not finish unaided and was recovered via ${stage.rescuedBy || "retry"}.`);
@@ -769,6 +779,8 @@ function stageNotes(stage) {
       : "The fallback publication attempt was accepted, but no merged result followed; this stage was not recovered.");
   } else if (stage.intervention?.outcome === INTERVENTION_OUTCOMES.REQUEST_REJECTED) {
     notes.push("The automatic recovery request failed before it reached the stage; this stage was not recovered.");
+  } else if (stage.intervention?.outcome === INTERVENTION_OUTCOMES.REQUEST_UNKNOWN) {
+    notes.push(REDISPATCH_NOTES.REQUEST_UNKNOWN);
   }
   // A malformed description does not mean the work was wrong: in all five cases
   // on 2026-09-03 the code, tests and coverage log landed correctly.
