@@ -16,6 +16,15 @@ LAST_AGED:   2026-10-06
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-07] PR #2111 [Stage 6]: docs(tsdoc): harden useDismissOnBack interface contracts and inline logic annotations
+**Domain:** documentation | **Commit:** 746f48409 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2111)
+**Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, .github/nightly-logs/06-documentation-tsdoc-pr-body.md, Frontend-PWA/src/core/services/useDismissOnBack.ts
+**Why:** Synchronized useDismissOnBack TSDoc contracts and decision logs with implementation and ViewOptions.vue integration
+**Change:** docs(tsdoc): harden useDismissOnBack interface contracts and inline logic annotations
+**Result:** PASSED (vue-tsc type-check and 219 vitest files passed)
+**Nudges:** 0
+
+
 ### [2026-10-07] PR #2110 [Stage 5]: Reconcile ViewOptions.vue documentation debt with useDismissOnBack back navigation dismissal
 **Domain:** documentation | **Commit:** 9c9bf30f0 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2110)
 **Files:** .github/nightly-logs/05-documentation-readme-coverage.log, .github/nightly-logs/05-documentation-readme-pr-body.md, Frontend-PWA/src/shared/ui/README.md
