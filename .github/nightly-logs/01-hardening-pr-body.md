@@ -1,26 +1,26 @@
 ### Nightly Stage 1: Hardening - Runtime Integrity Auditor
 
-**Status:** CLEAN
+**Status:** CHANGED
 
-In plain terms: nothing needed fixing. This run checked the hardening area and found it already correct, so the only file here is the log recording that the check happened.
+In plain terms: this changes 5 code files, so the app's behaviour may be affected. No tests were added or changed alongside it.
 
-**What was checked:** Audited Edge Function endpoints, in-memory state variables, Valibot boundary schemas, and cross-layer architectural isolations across 42 files; zero threat vectors found
+**What changed:** Annotated in-memory reactive state variables with explicit EPHEMERAL comments across Core and Shared UI services
 
-**Why:** System threat scan across non-public Edge Functions, data schema contracts, Pinia stores, and architectural boundaries verified full alignment with CleanStack security standards.
+**Why:** Hardened state lifecycle documentation to satisfy Target A security requirements
 
-**Result:** PASS (pnpm test passed all 219 test files and 2274 tests cleanly with zero regressions)
+**Result:** PASS (pnpm test passed all 219 test files and 2285 tests cleanly)
 
-**Files changed:** .github/nightly-logs/00-pr-history.md, .github/nightly-logs/01-hardening-coverage.log
+**Files changed:** .github/nightly-logs/00-pr-history.md, .github/nightly-logs/01-hardening-coverage.log, Frontend-PWA/src/core/services/useDismissOnBack.ts, Frontend-PWA/src/core/services/useToast.ts, Frontend-PWA/src/core/services/useUiCoordinator.ts, Frontend-PWA/src/features/headhunter/composables/useRecruitBlacklist.ts, Frontend-PWA/src/shared/directives/ghostBenchmarkState.ts
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: hardening
-  Cycle: nightly-cycle/2026-10-07
+  Cycle: nightly-cycle/2026-10-08
   Contract: b8cc17977cd40f02490c220999b57dcbf99eb8b7a2175f40feb87a2655548621
-  Why: System threat scan across non-public Edge Functions, data schema contracts, Pinia stores, and architectural boundaries verified full alignment with CleanStack security standards.
-  Change: Audited Edge Function endpoints, in-memory state variables, Valibot boundary schemas, and cross-layer architectural isolations across 42 files; zero threat vectors found
-  Result: PASS (pnpm test passed all 219 test files and 2274 tests cleanly with zero regressions)
-  Files: .github/nightly-logs/00-pr-history.md, .github/nightly-logs/01-hardening-coverage.log
+  Why: Hardened state lifecycle documentation to satisfy Target A security requirements
+  Change: Annotated in-memory reactive state variables with explicit EPHEMERAL comments across Core and Shared UI services
+  Result: PASS (pnpm test passed all 219 test files and 2285 tests cleanly)
+  Files: .github/nightly-logs/00-pr-history.md, .github/nightly-logs/01-hardening-coverage.log, Frontend-PWA/src/core/services/useDismissOnBack.ts, Frontend-PWA/src/core/services/useToast.ts, Frontend-PWA/src/core/services/useUiCoordinator.ts, Frontend-PWA/src/features/headhunter/composables/useRecruitBlacklist.ts, Frontend-PWA/src/shared/directives/ghostBenchmarkState.ts
   Nudges: 0
-  Execution: e751541c39a335751ce15b25c7cc2b3418f00e69
+  Execution: fdde47921526c61eb4f0220fdc998176dd56edba
 -->

@@ -50,6 +50,7 @@ export interface GhostBenchmarkStepper {
  * `useGhostBenchmarkState()` observes and mutates the same state, with no
  * store/DI mechanism required.
  */
+// EPHEMERAL: intentionally resets on cold start
 const active = ref<GhostBenchmarkEntry | null>(null);
 
 /**
@@ -64,6 +65,7 @@ const active = ref<GhostBenchmarkEntry | null>(null);
  * ignores that one click and clears this flag as soon as any new touch begins,
  * so no timer is involved and a genuine dismiss tap is never swallowed.
  */
+// EPHEMERAL: intentionally resets on cold start
 const ignoreBackdropClick = ref(false);
 
 /**

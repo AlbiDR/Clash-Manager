@@ -5,6 +5,7 @@ import { ref, computed, reactive } from "vue";
 import type { ConsoleFabAction, ConsoleFabActivity } from "@core/types";
 
 // Global state to share across instances (Singleton pattern)
+// EPHEMERAL: intentionally resets on cold start
 const isFabVisible = ref(false);
 
 /**
@@ -15,6 +16,7 @@ const isFabVisible = ref(false);
  * that FAB configuration (labels, actions, and loading states) remains synchronized
  * across disparate feature views without prop-drilling or complex event buses.
  */
+// EPHEMERAL: intentionally resets on cold start
 const fabState = reactive({
   /** The primary label displayed on the FAB action button. */
   label: "Open",
