@@ -155,9 +155,12 @@ describe("Requests issued per failed sync", () => {
   it("issues one request per read when the database cancels every read for its statement timeout", async () => {
     vi.stubEnv("VITE_SUPABASE_URL", "https://test.supabase.co");
     vi.stubEnv("VITE_SUPABASE_PUBLISHABLE_KEY", "test-key");
-    /** Roster, headhunter, heartbeat and blacklist. */
-    const READS_PER_SYNC = 4;
-    const fetchMock = vi.fn().mockImplementation(() => Promise.resolve(Response.json(STATEMENT_TIMEOUT_BODY, { status: 500 })));
+    /** Marker RPC, roster, headhunter, heartbeat and blacklist. */
+    const READS_PER_SYNC = 5;
+    const fetchMock = vi.fn((request: Request) => {
+      const endpoint = new URL(request.url).pathname;
+      return Promise.resolve(Response.json({ ...STATEMENT_TIMEOUT_BODY, message: `cancelled ${endpoint}` }, { status: 500 }));
+    });
     vi.stubGlobal("fetch", fetchMock);
     vi.useFakeTimers();
 
@@ -166,5 +169,17 @@ describe("Requests issued per failed sync", () => {
 
     expect(String(await failedSync)).toContain("Roster Fetch Error");
     expect(fetchMock).toHaveBeenCalledTimes(READS_PER_SYNC);
+    const requestedEndpoints = fetchMock.mock.calls.map(([request]) => new URL(request.url).pathname);
+    expect(requestedEndpoints.sort()).toEqual([
+      "/rest/v1/headhunter_materialized",
+      "/rest/v1/pipeline_heartbeat_view",
+      "/rest/v1/recruit_blacklist_view",
+      "/rest/v1/roster_materialized",
+      "/rest/v1/rpc/sync_snapshot_marker",
+    ]);
+    const markerRequest = fetchMock.mock.calls.find(([request]) =>
+      new URL(request.url).pathname === "/rest/v1/rpc/sync_snapshot_marker",
+    )?.[0];
+    expect(markerRequest?.method).toBe("GET");
   });
 });

@@ -28,18 +28,17 @@ const mockFrom = {
   abortSignal: vi.fn(),
   insert: vi.fn(),
 };
-
+const mockRpcQuery = { abortSignal: vi.fn() };
 // Make them fluent and thenable
 [mockFrom.select, mockFrom.order, mockFrom.limit, mockFrom.eq, mockFrom.single, mockFrom.abortSignal, mockFrom.insert].forEach(m => {
   m.mockImplementation(() => {
     return Object.assign(Promise.resolve({ data: null, error: null }), mockFrom);
   });
 });
-
 // Hoisted mock client -- referenced directly in tests so vi.clearAllMocks()
 // does not sever the reference to the mock factory's return value.
 const mockClient = {
-  rpc: vi.fn().mockResolvedValue({ data: null, error: null }),
+  rpc: vi.fn(() => mockRpcQuery),
   from: vi.fn(() => mockFrom),
   functions: { invoke: vi.fn().mockResolvedValue({ data: null, error: null }) },
 };
@@ -65,7 +64,7 @@ describe("SupabaseClient", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     // vi.clearAllMocks() wipes mock implementations; restore a safe default.
-    mockClient.rpc.mockResolvedValue({ data: null, error: null });
+    mockRpcQuery.abortSignal.mockResolvedValue({ data: null, error: null });
     mockClient.functions.invoke.mockResolvedValue({ data: null, error: null });
 
     // Reset env vars
@@ -259,6 +258,170 @@ describe("SupabaseClient", () => {
   });
 
   describe("Data Fetching", () => {
+    const markerRows = (rosterGeneration: string, headhunterGeneration: string) => [
+      { snapshot_name: "roster", generation: rosterGeneration, refreshed_at: "2026-10-07T10:00:00Z" },
+      { snapshot_name: "headhunter", generation: headhunterGeneration, refreshed_at: "2026-10-07T10:00:00Z" },
+    ];
+
+    const setMarker = (rows: unknown) => {
+      vi.mocked(mockRpcQuery.abortSignal).mockResolvedValueOnce({ data: rows, error: null });
+    };
+
+    const setSuccessfulReads = (rosterRows: unknown, headhunterRows: unknown) => {
+      vi.mocked(mockFrom.abortSignal)
+        .mockResolvedValueOnce({ data: rosterRows, error: null })
+        .mockResolvedValueOnce({ data: headhunterRows, error: null })
+        .mockResolvedValueOnce({ data: [{ component_id: "ROYALE_DATA_INGESTOR", last_success_at: "2026-10-07T10:00:00Z" }], error: null })
+        .mockResolvedValueOnce({ data: [], error: null });
+    };
+
+    it("reads the marker before snapshots and skips unchanged snapshots while refreshing the blacklist", async () => {
+      setMarker(markerRows("101", "201"));
+      setSuccessfulReads(
+        [{ player_tag: "#ABC", player_name: "Hero", trophies: 5000 }],
+        [{ player_tag: "#XYZ", player_name: "Recruit", trophies: 4000 }],
+      );
+
+      await SupabaseClient.fetchRemote();
+
+      setMarker(markerRows("101", "201"));
+      vi.mocked(mockFrom.abortSignal)
+        .mockResolvedValueOnce({ data: [{ component_id: "ROYALE_DATA_INGESTOR", last_success_at: "2026-10-07T10:01:00Z" }], error: null })
+        .mockResolvedValueOnce({ data: [{ player_tag: "#XYZ" }], error: null });
+      const unchanged = await SupabaseClient.fetchRemote();
+
+      expect(vi.mocked(mockRpcQuery.abortSignal).mock.invocationCallOrder[0]).toBeLessThan(
+        vi.mocked(mockFrom.abortSignal).mock.invocationCallOrder[0],
+      );
+      expect(mockClient.rpc).toHaveBeenNthCalledWith(1, "sync_snapshot_marker", undefined, { get: true });
+      const requestedRelations = vi.mocked(mockClient.from).mock.calls.map(([relation]) => relation);
+      expect(requestedRelations.filter((relation) => relation === "roster_materialized")).toHaveLength(1);
+      expect(requestedRelations.filter((relation) => relation === "headhunter_materialized")).toHaveLength(1);
+      expect(requestedRelations.filter((relation) => relation === "recruit_blacklist_view")).toHaveLength(2);
+      expect(unchanged.hh).toEqual([]);
+      expect(vi.mocked(mockFrom.abortSignal)).toHaveBeenCalledTimes(6);
+    });
+
+    it("reloads only the snapshot whose validated marker changed", async () => {
+      setMarker(markerRows("301", "401"));
+      setSuccessfulReads([], [{ player_tag: "#XYZ", player_name: "Recruit", trophies: 4000 }]);
+      await SupabaseClient.fetchRemote();
+
+      setMarker(markerRows("302", "401"));
+      vi.mocked(mockFrom.abortSignal)
+        .mockResolvedValueOnce({ data: [{ player_tag: "#ABC", player_name: "Hero", trophies: 5000 }], error: null })
+        .mockResolvedValueOnce({ data: [{ component_id: "ROYALE_DATA_INGESTOR", last_success_at: "2026-10-07T10:01:00Z" }], error: null })
+        .mockResolvedValueOnce({ data: [], error: null });
+      const changed = await SupabaseClient.fetchRemote();
+
+      const requestedRelations = vi.mocked(mockClient.from).mock.calls.map(([relation]) => relation);
+      expect(requestedRelations.filter((relation) => relation === "roster_materialized")).toHaveLength(2);
+      expect(requestedRelations.filter((relation) => relation === "headhunter_materialized")).toHaveLength(1);
+      expect(changed.lb.map((member) => member.id)).toEqual(["ABC"]);
+    });
+
+    it("advances only a successfully fetched snapshot marker after a partial failure", async () => {
+      setMarker(markerRows("501", "601"));
+      setSuccessfulReads([], [{ player_tag: "#XYZ", player_name: "Recruit", trophies: 4000 }]);
+      await SupabaseClient.fetchRemote();
+
+      setMarker(markerRows("502", "602"));
+      vi.mocked(mockFrom.abortSignal)
+        .mockResolvedValueOnce({ data: null, error: { message: "Roster unavailable" } })
+        .mockResolvedValueOnce({ data: [{ player_tag: "#NEW", player_name: "New recruit", trophies: 4500 }], error: null })
+        .mockResolvedValueOnce({ data: null, error: null })
+        .mockResolvedValueOnce({ data: [], error: null });
+      await expect(SupabaseClient.fetchRemote()).rejects.toThrow("Roster Fetch Error: Roster unavailable");
+
+      setMarker(markerRows("502", "602"));
+      vi.mocked(mockFrom.abortSignal)
+        .mockResolvedValueOnce({ data: [{ player_tag: "#ABC", player_name: "Hero", trophies: 5000 }], error: null })
+        .mockResolvedValueOnce({ data: [{ component_id: "ROYALE_DATA_INGESTOR", last_success_at: "2026-10-07T10:02:00Z" }], error: null })
+        .mockResolvedValueOnce({ data: [], error: null });
+      await SupabaseClient.fetchRemote();
+
+      const requestedRelations = vi.mocked(mockClient.from).mock.calls.map(([relation]) => relation);
+      expect(requestedRelations.filter((relation) => relation === "roster_materialized")).toHaveLength(3);
+      expect(requestedRelations.filter((relation) => relation === "headhunter_materialized")).toHaveLength(2);
+    });
+
+    it("falls back to both full snapshot reads for invalid, unavailable, or seeded-null markers", async () => {
+      const markerFailures: unknown[] = [
+        [{ snapshot_name: "roster", generation: "invalid", refreshed_at: "2026-10-07T10:00:00Z" }, ...markerRows("701", "801").slice(1)],
+        null,
+        [
+          { snapshot_name: "roster", generation: "0", refreshed_at: null },
+          { snapshot_name: "headhunter", generation: "0", refreshed_at: null },
+        ],
+      ];
+
+      for (const [index, marker] of markerFailures.entries()) {
+        if (index === 1) {
+          vi.mocked(mockRpcQuery.abortSignal).mockResolvedValueOnce({ data: null, error: { message: "RPC unavailable" } });
+        } else {
+          setMarker(marker);
+        }
+        setSuccessfulReads([], []);
+        await SupabaseClient.fetchRemote();
+      }
+
+      const requestedRelations = vi.mocked(mockClient.from).mock.calls.map(([relation]) => relation);
+      expect(requestedRelations.filter((relation) => relation === "roster_materialized")).toHaveLength(3);
+      expect(requestedRelations.filter((relation) => relation === "headhunter_materialized")).toHaveLength(3);
+    });
+
+    it("rejects a parent-aborted sync when cached snapshots and known blacklist cover optional reads", async () => {
+      setMarker(markerRows("901", "902"));
+      setSuccessfulReads(
+        [{ player_tag: "#ABC", player_name: "Hero", trophies: 5000 }],
+        [{ player_tag: "#XYZ", player_name: "Recruit", trophies: 4000 }],
+      );
+      await SupabaseClient.fetchRemote();
+      SupabaseClient.lastSyncStatus.value = null;
+
+      setMarker(markerRows("901", "902"));
+      const controller = new AbortController();
+      const startedSignals: AbortSignal[] = [];
+      const optionalReadsStarted = new Promise<void>((resolve) => {
+        const markStarted = (signal: AbortSignal) => {
+          startedSignals.push(signal);
+          if (startedSignals.length === 2) resolve();
+          return new Promise<{ data: unknown; error: { message: string } | null }>((_finish, reject) => {
+            signal.addEventListener("abort", () => reject(signal.reason), { once: true });
+          });
+        };
+        vi.mocked(mockFrom.abortSignal)
+          .mockImplementationOnce((signal: AbortSignal) => markStarted(signal))
+          .mockImplementationOnce((signal: AbortSignal) => markStarted(signal));
+      });
+
+      const refresh = SupabaseClient.fetchRemote({ signal: controller.signal, knownBlacklist: ["#XYZ"] });
+      await optionalReadsStarted;
+      controller.abort(new DOMException("Disconnected", "AbortError"));
+
+      await expect(refresh).rejects.toThrow("Disconnected");
+      expect(SupabaseClient.lastSyncStatus.value).not.toBe("SUCCESS");
+      expect(vi.mocked(mockFrom.abortSignal)).toHaveBeenCalledTimes(6);
+    });
+
+    it("retries an empty roster on the same marker and can recover with valid rows", async () => {
+      setMarker(markerRows("1001", "1002"));
+      setSuccessfulReads([], [{ player_tag: "#XYZ", player_name: "Recruit", trophies: 4000 }]);
+      const emptyResult = await SupabaseClient.fetchRemote();
+      expect(emptyResult.lb).toEqual([]);
+
+      setMarker(markerRows("1001", "1002"));
+      vi.mocked(mockFrom.abortSignal)
+        .mockResolvedValueOnce({ data: [{ player_tag: "#ABC", player_name: "Hero", trophies: 5000 }], error: null })
+        .mockResolvedValueOnce({ data: [{ component_id: "ROYALE_DATA_INGESTOR", last_success_at: "2026-10-07T10:01:00Z" }], error: null })
+        .mockResolvedValueOnce({ data: [], error: null });
+      const recovered = await SupabaseClient.fetchRemote();
+
+      const requestedRelations = vi.mocked(mockClient.from).mock.calls.map(([relation]) => relation);
+      expect(requestedRelations.filter((relation) => relation === "roster_materialized")).toHaveLength(2);
+      expect(recovered.lb.map((member) => member.id)).toEqual(["ABC"]);
+    });
+
     it("fetchRemote transforms data correctly on success", async () => {
       vi.mocked(mockFrom.abortSignal)
         .mockResolvedValueOnce({ data: [{ player_tag: '#ABC', player_name: 'Hero', trophies: 5000 }], error: null }) // Roster
