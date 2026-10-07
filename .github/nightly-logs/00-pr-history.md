@@ -16,6 +16,15 @@ LAST_AGED:   2026-10-06
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-07] PR #2118 [Stage 13]: Documented Stage 3 failure, Stage 10/11 watchdog recoveries, Stage 12 degrading status, and updated Section 3 metrics for 2026-10-07
+**Domain:** pipeline | **Commit:** e55f83a45 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2118)
+**Files:** .github/nightly-logs/13-self-healing-protocol-coverage.log, .github/nightly-logs/13-self-healing-protocol-pr-body.md, .github/nightly-logs/13-self-healing-protocol.md
+**Why:** Daily pipeline self-healing protocol audit
+**Change:** Documented Stage 3 failure, Stage 10/11 watchdog recoveries, Stage 12 degrading status, and updated Section 3 metrics for 2026-10-07
+**Result:** git diff --check returned 0 issues; verified Section 1 and Section 3 updates in .github/nightly-logs/13-self-healing-protocol.md
+**Nudges:** 1
+
+
 ### [2026-10-07] PR #2116 [Stage 10]: verified asset links, web manifest parity, version codes/names sync, release metadata, cleartext traffic policy, and Android permissions; zero mismatches found
 **Domain:** apk | **Commit:** 6fa3cad00 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2116)
 **Files:** .github/nightly-logs/10-apk-integrity-coverage.log, .github/nightly-logs/10-apk-integrity-pr-body.md
