@@ -50,8 +50,10 @@ import { getCycleDate, getEvidenceDate } from "./nightly-events.mjs";
 //
 // WHY FAIL COUNTS AS ANSWERED
 // A FAIL is a check that ran and found something. Reporting it is the
-// self-report guard's job (hasSelfReportedFailure in nightly-recap.mjs), so
+// self-report guard's job (selfReportedContradictions in nightly-recap.mjs), so
 // the two readers partition the vocabulary and never double-count one value.
+// fold-state PENDING and UNFOLDED split the same way since 2026-10-06: here a
+// check that ran, there a CLEAN declared over work still to do.
 //
 // Measured against every terminal coverage record (779, 2026-07-14 to
 // 2026-09-22) and every version of every PR-history block (561 stage-nights):
