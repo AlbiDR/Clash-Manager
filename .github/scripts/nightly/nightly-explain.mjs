@@ -292,7 +292,17 @@ function renderEvent(event) {
   const requested = Object.keys(event.payload?.requested || {}).sort();
   const transition = event.payload?.transition;
   const dispatch = event.payload?.requested?.evidence?.set?.dispatch;
-  const detail = dispatch?.error ? `Dispatch error: ${dispatch.error}` : null;
+  // The watchdog's restart of a FAILED session (since 2026-10-06) is the same
+  // request made for a different reason, so its diagnostic is shown the same
+  // way, together with the two sessions it connects.
+  const redispatch = event.payload?.requested?.evidence?.set?.redispatch;
+  const detail = dispatch?.error
+    ? `Dispatch error: ${dispatch.error}`
+    : redispatch?.error
+      ? `Restart of ${redispatch.failedSessionName} failed: ${redispatch.error}`
+      : redispatch?.sessionName
+        ? `Restarted ${redispatch.failedSessionName} as ${redispatch.sessionName}`
+        : null;
   return [
     `  #${event.sequence} ${event.recordedAt} [${event.source}] ${event.type}`,
     `    State: ${before} -> ${after}`,

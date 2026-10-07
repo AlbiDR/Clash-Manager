@@ -315,6 +315,36 @@ export const FAILURE_PHRASES = {
   RECOVERED_BY_FALLBACK_PUBLISH: "Jules never published it, so the repository opened the pull request itself from the session's finished work.",
 };
 
+/**
+ * What the watchdog's restart of a failed session means for a stage, in the
+ * same plain register as the nudge note ("The watchdog nudged it
+ * automatically; nobody had to do anything").
+ *
+ * WHY THESE EXIST
+ * Until 2026-10-06 a FAILED Jules session ended its stage's night: Stage 3's
+ * session 17685247323826051852 failed after 42 minutes and nothing retried it.
+ * The watchdog now starts one fresh session for such a stage. Without its own
+ * sentences the recap would fall through to its generic branches and print
+ * "recovered via watchdog-redispatch", or worse describe it with the fallback
+ * publisher's wording, which is a different rung that needs a finished change
+ * set the failed session never had.
+ *
+ * Keyed by the outcome nightly-intervention.mjs assigns, spelled out rather
+ * than imported because this module must stay import-free; the test asserts
+ * the keys still match that vocabulary. EARLIER is the one extra key: the
+ * fresh session itself needed a later rung, whose own note follows this one.
+ *
+ * ACCEPTED_NO_DELIVERY says "has not been recovered", not "was not": the
+ * restart may still be running when the recap is read, and the sentence must
+ * be true both while it runs and after it is over without a pull request.
+ */
+export const REDISPATCH_NOTES = {
+  EFFECTIVE: "Its first Jules session failed outright. The watchdog started a fresh session automatically and that one published; nobody had to do anything.",
+  ACCEPTED_NO_DELIVERY: "After its first Jules session failed, the watchdog started a fresh one automatically, but no pull request has followed from it; this stage has not been recovered.",
+  REQUEST_REJECTED: "After its first Jules session failed, the watchdog asked Jules for a fresh one, but the request did not go through; this stage was not recovered.",
+  EARLIER: "Its first Jules session failed outright, so the watchdog started a fresh one automatically.",
+};
+
 /** "a", "a and b", "a, b and c". */
 export function joinList(items) {
   const list = (items || []).filter(Boolean);

@@ -1799,3 +1799,40 @@ test("the recap names a CLEAN over pending work in the guard line and points the
   assert.match(text, /The part worth your attention is S03 baseline consolidation/);
   assert.doesNotMatch(text, /Nothing in this run needs you/);
 });
+
+// --- A stage rescued by the watchdog's restart of a FAILED session -----------------
+
+const restartEntry = (extra = {}) => ({
+  state: "MERGED", failureClass: null, attempts: 0,
+  evidence: { redispatch: { failedSessionName: "sessions/one", sessionName: "sessions/two", ok: true }, ...extra },
+});
+const classifyRestarted = (entry, tag = "nightly/2026-10-06/stage-3/pr-2120") => classifyStage({
+  stage: stageOf(3), entry, tag, declared: null, history: null,
+  progress: { frontier: 13, over: true },
+});
+
+test("a stage that merged through the restart is credited to it, in plain words, never as unaided", () => {
+  const result = classifyRestarted(restartEntry());
+  assert.equal(result.rescued, true);
+  assert.equal(result.rescuedBy, "watchdog-redispatch");
+  const text = renderRecap(singleStage(result, { rescued: 1, grade: 9, rationale: "Minor issues: every stage completed. One stage needed the watchdog." }));
+  assert.match(text, /Its first Jules session failed outright\. The watchdog started a fresh session automatically and that one published; nobody had to do anything\./);
+  assert.doesNotMatch(text, /finished the work but never opened the PR/, "that is the nudge's sentence, for a different failure");
+  assert.doesNotMatch(text, /watchdog-redispatch/, "the channel name is not prose");
+});
+
+test("a restart whose session never published says the stage has not been recovered", () => {
+  // No merge tag: nothing was published, whatever the restart did.
+  const result = classifyRestarted({ ...restartEntry(), state: "ESCALATED", failureClass: "JULES_SESSION_FAILED" }, null);
+  assert.equal(result.rescued, false);
+  const text = renderRecap(singleStage(result, { merged: 0, clean: 0, stuck: 1, grade: 7, rationale: "Partial block: one stage failed or got stuck." }));
+  assert.match(text, /the watchdog started a fresh one automatically, but no pull request has followed from it; this stage has not been recovered/);
+});
+
+test("a restarted session that then needed a nudge says both", () => {
+  const result = classifyRestarted(restartEntry({ recovery: { ok: true } }));
+  assert.equal(result.rescuedBy, "watchdog-nudge");
+  const text = renderRecap(singleStage(result, { rescued: 1, grade: 9, rationale: "Minor issues: every stage completed. One stage needed the watchdog." }));
+  assert.match(text, /Its first Jules session failed outright, so the watchdog started a fresh one automatically\./);
+  assert.match(text, /The watchdog nudged it automatically/);
+});

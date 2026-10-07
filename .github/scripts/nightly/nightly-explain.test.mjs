@@ -205,3 +205,21 @@ test("old runs remain legacy snapshots after newer cycles begin recording events
   assert.equal(explanation.eventIntegrity.verified, false);
   assert.match(explanation.eventIntegrity.reason, /predates the first recorded event cycle/);
 });
+
+test("explain shows which session a restart replaced, or why it failed", () => {
+  // 2026-10-06: the watchdog started a fresh session for Stage 3's FAILED one.
+  const explainWith = redispatch => {
+    const ledger = createEmptyLedger();
+    upsertStageEntry(ledger, registry, DATE, 3, {
+      state: "ESCALATED",
+      failureClass: "JULES_SESSION_FAILED",
+      evidence: { redispatch },
+      lastObservedAt: `${DATE}T03:01:00.000Z`,
+    }, { source: NIGHTLY_EVENT_SOURCES.WATCHDOG_RECOVERY });
+    return renderStageExplanation(buildStageExplanation(inputsFor(ledger), 3));
+  };
+  const base = { requestedAt: `${DATE}T03:00:00.000Z`, failedSessionName: "sessions/one" };
+  assert.match(explainWith({ ...base, sessionName: "sessions/two", ok: true }), /Restarted sessions\/one as sessions\/two/);
+  assert.match(explainWith({ ...base, sessionName: null, ok: false, error: "HTTP 500" }), /Restart of sessions\/one failed: HTTP 500/);
+  assert.doesNotMatch(explainWith({ ...base, sessionName: null, ok: null }), /Restarted|Restart of/, "an unanswered request claims neither outcome");
+});
