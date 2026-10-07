@@ -48,33 +48,57 @@
  */
 import { onScopeDispose, watch, type WatchSource } from "vue";
 
-/** The key this module adds to a history state; the router's own keys are kept. */
+/**
+ * The key added to window.history.state to associate a history entry with a specific overlay ID.
+ *
+ * @remarks
+ * Preserves the router's existing history state properties while appending `cmOverlay`.
+ */
 export const OVERLAY_ENTRY_KEY = "cmOverlay";
 
+/**
+ * Internal record representing an actively open overlay instance.
+ */
 interface OpenOverlay {
+  /** Unique monotonic identifier for the overlay history entry. */
   id: number;
-  /** Address the overlay opened on, compared with the live address when it closes. */
+  /** Address (location.href) on which the overlay opened. */
   href: string;
+  /** Callback triggered to close the overlay when hardware or gesture Back is pressed. */
   close: () => void;
 }
 
-/** An entry left in history by an overlay that closed while a newer entry sat on it. */
+/**
+ * Internal record representing an unpopable history entry left behind by an overlay that closed out-of-order.
+ */
 interface DeadEntry {
-  /** Address the overlay opened on, which its entry shares with the entry below. */
+  /** Address on which the overlay opened, sharing its URL with the underlying entry. */
   href: string;
-  /** Whether the user is below it, having been stepped over it by Back. */
+  /** Indicates whether the user's current history location sits below this dead entry. */
   below: boolean;
 }
 
+/** Internal stack tracking actively open overlays ordered by creation ID. */
 const openOverlays: OpenOverlay[] = [];
+
+/** Internal map of dead history entries keyed by overlay ID. */
 const deadEntries = new Map<number, DeadEntry>();
-// Ids grow across page loads too, so an entry left by an earlier load always
-// compares as older than anything opened since.
+
+/** Monotonically increasing ID counter initialized to Date.now(). */
 let nextId = Date.now();
-// Set while a pop this module started has yet to land; see handlePopState.
+
+/** Flag signaling that an upcoming popstate event was initiated internally by this module. */
 let ownPopPending = false;
+
+/** Flag tracking whether the window popstate event listener has been attached. */
 let listening = false;
 
+/**
+ * Extracts the overlay ID attached to a given history state object.
+ *
+ * @param state - The history state object retrieved from PopStateEvent or window.history.state.
+ * @returns The numeric overlay ID if present; otherwise 0.
+ */
 function entryId(state: unknown): number {
   const id = (state as Record<string, unknown> | null)?.[OVERLAY_ENTRY_KEY];
   return typeof id === "number" ? id : 0;
@@ -91,6 +115,8 @@ function entryId(state: unknown): number {
  * left behind (a malformed state, an entry from an earlier load) is never
  * stepped over, and neither is a dead entry the router has since rewritten
  * to another address with a replace: that is a page of its own.
+ *
+ * @param landed - The overlay ID of the landed history state.
  */
 function handleDeadEntry(landed: number): void {
   const dead = deadEntries.get(landed);
@@ -102,6 +128,15 @@ function handleDeadEntry(landed: number): void {
   else history.back();
 }
 
+/**
+ * Window popstate event handler.
+ *
+ * @remarks
+ * Evaluates whether a history popstate lands on an overlay entry or normal route state,
+ * dismissing newly unstacked overlays in reverse order.
+ *
+ * @param event - The native PopStateEvent.
+ */
 function handlePopState(event: PopStateEvent): void {
   // A pop this module started lands as the next popstate. One that never lands
   // (a step at the start of history fires none) is settled by the next
@@ -122,6 +157,9 @@ function handlePopState(event: PopStateEvent): void {
   handleDeadEntry(landed);
 }
 
+/**
+ * Idempotently attaches the window popstate listener on first overlay opening.
+ */
 function ensureListening(): void {
   if (listening || typeof window === "undefined") return;
   // No capture: the router, added first, must handle every pop before this.
@@ -129,6 +167,12 @@ function ensureListening(): void {
   listening = true;
 }
 
+/**
+ * Registers an open overlay, pushing a history state entry and tracking its close callback.
+ *
+ * @param close - Closure callback to invoke on back-button dismissal.
+ * @returns Generated numeric overlay ID.
+ */
 function open(close: () => void): number {
   ensureListening();
   // The push below drops every entry ahead of this one, among them any dead
@@ -142,6 +186,11 @@ function open(close: () => void): number {
   return id;
 }
 
+/**
+ * Releases an overlay's history entry when dismissed programmatically or via UI interaction.
+ *
+ * @param id - The numeric overlay ID to release.
+ */
 function release(id: number): void {
   const index = openOverlays.findIndex((overlay) => overlay.id === id);
   // Already gone: Back closed it and its entry with it.
@@ -173,10 +222,18 @@ function release(id: number): void {
 }
 
 /**
- * Closes the overlay on Back while `isOpen` is true.
+ * COMPOSABLE: useDismissOnBack (Layer 1 - @core)
  *
- * @param isOpen - Whether the overlay is showing.
- * @param close - Closes it; called when Back is pressed while it is the top-most.
+ * @remarks
+ * Binds an overlay's visible state to browser history navigation.
+ * Automatically pushes a transient history entry when `isOpen` becomes true,
+ * and handles closing or releasing history state when Back is pressed or unmounted.
+ *
+ * @param isOpen - Reactive watch source indicating whether the overlay is showing.
+ * @param close - Callback invoked when Back is pressed while the overlay is on top.
+ *
+ * @sideeffects
+ * Manipulates `window.history` state entries and attaches a `popstate` listener.
  */
 export function useDismissOnBack(isOpen: WatchSource<boolean>, close: () => void): void {
   let id: number | null = null;
@@ -200,7 +257,12 @@ export function useDismissOnBack(isOpen: WatchSource<boolean>, close: () => void
   });
 }
 
-/** Test support: forget every open overlay and dead entry, and stop listening. */
+/**
+ * Test Helper: Resets internal overlay stack, dead entries map, and event listeners.
+ *
+ * @remarks
+ * Used in unit tests to ensure clean state isolation between test suites.
+ */
 export function resetDismissOnBackForTests(): void {
   openOverlays.length = 0;
   deadEntries.clear();
