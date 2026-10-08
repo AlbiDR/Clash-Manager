@@ -15,6 +15,15 @@ LAST_AGED:   2026-10-07
 ---
 
 ## T1 -- Active (last 7 days)
+
+### [2026-10-07] PR #2119 [Stage 1]: Annotated in-memory reactive state variables with explicit EPHEMERAL comments across Core and Shared UI services
+**Domain:** hardening | **Commit:** 26091c1cf | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2119)
+**Files:** .github/nightly-logs/*, Frontend-PWA/src/core/services/*, Frontend-PWA/src/features/headhunter/composables/* (8 files)
+**Why:** Hardened state lifecycle documentation to satisfy Target A security requirements
+**Change:** Annotated in-memory reactive state variables with explicit EPHEMERAL comments across Core and Shared UI services
+**Result:** PASS (pnpm test passed all 219 test files and 2285 tests cleanly)
+**Nudges:** 0
+
 ### [2026-10-07] PR #2118 [Stage 13]: Documented Stage 3 failure, Stage 10/11 watchdog recoveries, Stage 12 degrading status, and updated Section 3 metrics for 2026-10-07
 **Domain:** pipeline | **Commit:** e55f83a45 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2118)
 **Files:** .github/nightly-logs/13-self-healing-protocol-coverage.log, .github/nightly-logs/13-self-healing-protocol-pr-body.md, .github/nightly-logs/13-self-healing-protocol.md
