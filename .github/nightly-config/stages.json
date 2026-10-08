@@ -128,12 +128,12 @@
         "selection": "Use the precomputed pending-migrations and fold-state evidence; fold the oldest unresolved schema transition first, or perform the bounded clean audit when none remain.",
         "verification": [
           "Run pnpm audit:migrations and the fold-state checker.",
-          "Run pnpm test:database-baseline only when database verification is available; otherwise record DB-UNAVAILABLE."
+          "When database verification is available, run pnpm test:database-baseline and report its structured fold-state mode and only the guarantees it verifies; otherwise record DB-UNAVAILABLE."
         ],
         "evidence": [
           "Pending migration count and migration-quality and fold-state statuses.",
           "Database verification availability.",
-          "RLS, search_path, formatting, and semantic verification outcomes that actually ran."
+          "RLS, search_path, formatting, and semantic verification outcomes that actually ran, including partial-mode pending object/migration counts and explicit pgTAP/equivalence availability."
         ]
       }
     },

@@ -7,15 +7,29 @@ set -euo pipefail
 REPO_ROOT=$(git rev-parse --show-toplevel)
 SOURCE_SUPABASE="${REPO_ROOT}/Backend/supabase"
 BASELINE=$(find "${SOURCE_SUPABASE}/migrations" -maxdepth 1 -type f -name '*_master_migration.sql' -print -quit)
+if [[ -z "${BASELINE}" ]]; then
+  echo "Database baseline migration is missing." >&2
+  exit 1
+fi
+FOLD_DECISION=$(node "${REPO_ROOT}/.github/scripts/database/baseline-completeness.mjs" "${SOURCE_SUPABASE}/migrations")
+read -r FOLD_STATUS PENDING_OBJECTS PENDING_MIGRATIONS SEMANTIC_ONLY UNSUPPORTED BASELINE_PGTAP CATALOG_EQUIVALENCE <<<"$(node -e '
+const decision = JSON.parse(process.argv[1]);
+console.log([
+  decision.status,
+  decision.pendingObjectCount,
+  decision.pendingMigrationCount,
+  decision.semanticOnlyObjectCount,
+  decision.unsupportedStatementCount,
+  decision.baselinePgTap,
+  decision.catalogEquivalence,
+].join(" "));
+' "${FOLD_DECISION}")"
 
 if ! command -v supabase >/dev/null 2>&1 || ! command -v docker >/dev/null 2>&1 || ! docker info >/dev/null 2>&1; then
   echo "DB-UNAVAILABLE: supabase CLI and a running Docker daemon are required." >&2
   exit 2
 fi
-if [[ -z "${BASELINE}" ]]; then
-  echo "Database baseline migration is missing." >&2
-  exit 1
-fi
+echo "Fold-state: ${FOLD_STATUS}; pending objects=${PENDING_OBJECTS}; pending migrations=${PENDING_MIGRATIONS}; semantic-only objects=${SEMANTIC_ONLY}; unsupported statements=${UNSUPPORTED}."
 
 TEMP_ROOT=$(mktemp -d "${TMPDIR:-/tmp}/clash-baseline.XXXXXX")
 PROJECT_ID="clash_baseline_${$}"
@@ -88,28 +102,111 @@ schema_snapshot() {
     > "${output}"
 }
 
+VERIFICATION_STATUS=0
+record_failure() {
+  local description=$1
+  local status=$2
+  if [[ "${status}" -eq 0 ]]; then status=1; fi
+  if [[ "${VERIFICATION_STATUS}" -eq 0 ]]; then VERIFICATION_STATUS=${status}; fi
+  echo "FAIL: ${description} (exit status ${status})." >&2
+}
+
 prepare_project baseline
-start_project
-schema_snapshot "${TEMP_ROOT}/baseline-first.sql"
-run_database_tests
-apply_baseline_again
-schema_snapshot "${TEMP_ROOT}/baseline-second.sql"
-if ! diff -u "${TEMP_ROOT}/baseline-first.sql" "${TEMP_ROOT}/baseline-second.sql" > "${TEMP_ROOT}/idempotency.diff"; then
-  echo "Baseline is not idempotent; second application changed catalog state." >&2
-  cat "${TEMP_ROOT}/idempotency.diff" >&2
-  exit 1
+BASELINE_STARTED=0
+if start_project; then
+  BASELINE_STARTED=1
+else
+  status=$?
+  record_failure "baseline database start" "${status}"
 fi
-stop_project
+
+if [[ "${BASELINE_STARTED}" == "1" ]]; then
+  BASELINE_FIRST_READY=0
+  BASELINE_SECOND_READY=0
+  if schema_snapshot "${TEMP_ROOT}/baseline-first.sql"; then
+    BASELINE_FIRST_READY=1
+  else
+    status=$?
+    record_failure "baseline catalog snapshot" "${status}"
+  fi
+
+  if [[ "${BASELINE_PGTAP}" == "true" ]]; then
+    if run_database_tests; then :; else
+      status=$?
+      record_failure "baseline-only pgTAP" "${status}"
+    fi
+  else
+    echo "BASELINE-ONLY pgTAP PENDING: fold-state ${FOLD_STATUS} has ${PENDING_OBJECTS} pending objects owned by ${PENDING_MIGRATIONS} migrations."
+  fi
+
+  if apply_baseline_again; then
+    if schema_snapshot "${TEMP_ROOT}/baseline-second.sql"; then
+      BASELINE_SECOND_READY=1
+    else
+      status=$?
+      record_failure "baseline post-reapply catalog snapshot" "${status}"
+    fi
+  else
+    status=$?
+    record_failure "baseline idempotency reapply" "${status}"
+  fi
+
+  if [[ "${BASELINE_FIRST_READY}" == "1" && "${BASELINE_SECOND_READY}" == "1" ]]; then
+    if diff -u "${TEMP_ROOT}/baseline-first.sql" "${TEMP_ROOT}/baseline-second.sql" > "${TEMP_ROOT}/idempotency.diff"; then :; else
+      status=$?
+      echo "Baseline is not idempotent; second application changed catalog state." >&2
+      cat "${TEMP_ROOT}/idempotency.diff" >&2
+      record_failure "baseline idempotency catalog comparison" "${status}"
+    fi
+  fi
+
+  if stop_project; then :; else
+    status=$?
+    record_failure "baseline database stop" "${status}"
+  fi
+fi
 
 find "${TEMP_ROOT}/supabase/migrations" -maxdepth 1 -type f -name '*.sql' -delete
 prepare_project full
-start_project
-run_database_tests
-schema_snapshot "${TEMP_ROOT}/full-replay.sql"
-if ! diff -u "${TEMP_ROOT}/baseline-first.sql" "${TEMP_ROOT}/full-replay.sql" > "${TEMP_ROOT}/catalog.diff"; then
-  echo "Baseline-only and full migration replay catalogs differ." >&2
-  cat "${TEMP_ROOT}/catalog.diff" >&2
-  exit 1
+FULL_STARTED=0
+if start_project; then
+  FULL_STARTED=1
+else
+  status=$?
+  record_failure "full-history database start" "${status}"
 fi
 
-echo "Database baseline semantic verification PASS: idempotent, pgTAP-clean, and catalog-equivalent."
+FULL_REPLAY_READY=0
+if [[ "${FULL_STARTED}" == "1" ]]; then
+  if run_database_tests; then :; else
+    status=$?
+    record_failure "full-history pgTAP" "${status}"
+  fi
+  if schema_snapshot "${TEMP_ROOT}/full-replay.sql"; then
+    FULL_REPLAY_READY=1
+  else
+    status=$?
+    record_failure "full-history catalog snapshot" "${status}"
+  fi
+fi
+
+if [[ "${CATALOG_EQUIVALENCE}" == "true" && "${BASELINE_FIRST_READY:-0}" == "1" && "${FULL_REPLAY_READY}" == "1" ]]; then
+  if diff -u "${TEMP_ROOT}/baseline-first.sql" "${TEMP_ROOT}/full-replay.sql" > "${TEMP_ROOT}/catalog.diff"; then :; else
+    status=$?
+    echo "Baseline-only and full migration replay catalogs differ." >&2
+    cat "${TEMP_ROOT}/catalog.diff" >&2
+    record_failure "strict baseline/full catalog equality" "${status}"
+  fi
+fi
+
+if [[ "${VERIFICATION_STATUS}" -ne 0 ]]; then
+  echo "Database baseline semantic verification FAILED (first required check exit status ${VERIFICATION_STATUS})." >&2
+  exit "${VERIFICATION_STATUS}"
+fi
+
+if [[ "${CATALOG_EQUIVALENCE}" != "true" ]]; then
+  echo "BASELINE-ONLY behavior and baseline/full catalog equivalence PENDING: ${PENDING_OBJECTS} objects owned by ${PENDING_MIGRATIONS} migrations remain to fold."
+  echo "Database baseline semantic verification PASS (partial): baseline apply and idempotency passed; full-history replay pgTAP passed. No baseline-equivalence claim."
+else
+  echo "Database baseline semantic verification PASS: baseline applies idempotently; baseline and full replay pass pgTAP and have equivalent catalogs."
+fi
