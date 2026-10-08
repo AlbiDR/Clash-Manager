@@ -16,6 +16,15 @@ LAST_AGED:   2026-10-07
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-08] PR #2122 [Stage 3]: Folded unit 20260620142000_headhunter_epoch_guard.sql into master migration
+**Domain:** database | **Commit:** 3218ec4cc | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2122)
+**Files:** .github/nightly-logs/03-baseline-consolidation-coverage.log, .github/nightly-logs/03-baseline-consolidation-pr-body.md, Backend/supabase/migrations/20260531232406_master_migration.sql
+**Why:** Integrated headhunter_epoch_state, update_epoch_state, and run_headhunter_epoch_guard into baseline
+**Change:** Folded unit 20260620142000_headhunter_epoch_guard.sql into master migration
+**Result:** PASS (audit:migrations PASS, fold-state 28 remaining, DB-UNAVAILABLE)
+**Nudges:** 0
+
+
 ### [2026-10-08] PR #2121 [Stage 4]: Inspected 57 changed files and Edge Functions for SQL view substrate hygiene; zero structural rot or unreferenced views found.
 **Domain:** optimization | **Commit:** a97500936 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2121)
 **Files:** .github/nightly-logs/04-optimization-coverage.log, .github/nightly-logs/04-optimization-pr-body.md
