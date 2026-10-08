@@ -6,8 +6,39 @@ CREATE EXTENSION IF NOT EXISTS pgtap;
 SELECT plan(8);
 
 SELECT ok(
-  EXISTS (SELECT 1 FROM pg_index WHERE indexrelid = 'drivers.uq_player_battle'::regclass
-    AND indisunique AND indisvalid),
+  EXISTS (
+    SELECT 1
+    FROM pg_index i
+    JOIN pg_class index_class ON index_class.oid = i.indexrelid
+    JOIN pg_am access_method ON access_method.oid = index_class.relam
+    WHERE i.indexrelid = 'drivers.uq_player_battle'::regclass
+      AND i.indrelid = 'drivers.player_battles'::regclass
+      AND i.indisunique
+      AND i.indisvalid
+      AND i.indisready
+      AND i.indislive
+      AND i.indimmediate
+      AND i.indpred IS NULL
+      AND i.indexprs IS NULL
+      AND i.indnkeyatts = 2
+      AND i.indnatts = 2
+      AND access_method.amname = 'btree'
+      AND (
+        SELECT array_agg(a.attname::text ORDER BY k.ordinality)
+        FROM unnest(i.indkey::smallint[]) WITH ORDINALITY AS k(attnum, ordinality)
+        JOIN pg_attribute a
+          ON a.attrelid = i.indrelid
+         AND a.attnum = k.attnum
+      ) = ARRAY['player_tag', 'battle_time']::text[]
+      AND (
+        SELECT count(*) = 2 AND bool_and(a.attnotnull)
+        FROM pg_attribute a
+        WHERE a.attrelid = i.indrelid
+          AND a.attname IN ('player_tag', 'battle_time')
+          AND a.attnum > 0
+          AND NOT a.attisdropped
+      )
+  ),
   'Battle deduplication keeps its valid unique index'
 );
 SELECT ok(

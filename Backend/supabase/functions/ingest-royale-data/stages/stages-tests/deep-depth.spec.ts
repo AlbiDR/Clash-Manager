@@ -339,8 +339,37 @@ describe("runDeepDepth skips ingest_player_battles for recruits with nothing new
 
         await runDeepDepth(freshResults(), makeAuditCollector().logAudit);
 
-        expect(ingestCallsFor("#BOTH1").length).toBeGreaterThan(0);
+        expect(mockFetchWithRotation).toHaveBeenCalledTimes(1);
+        expect(ingestCallsFor("#BOTH1")).toHaveLength(1);
         expect(mockSupabase.rpc.mock.calls.find(([name]: [string]) => name === "get_latest_battle_times")).toBeUndefined();
+    });
+
+    it("deduplicates repeated members and recruits while preserving member-first order", async () => {
+        rpcResponses.get_ingestion_targets = {
+            data: {
+                "drivers.members": ["#MEMBER2", "#BOTH2", "#MEMBER2"],
+                "drivers.recruits": ["#BOTH2", "#RECRUIT2", "#RECRUIT2"],
+            },
+            error: null,
+        };
+        rpcResponses.get_latest_battle_times = {
+            data: [{ player_tag: "#RECRUIT2", latest_battle_time: "20260725T093151.000Z" }],
+            error: null,
+        };
+        arrangeBattleLog();
+
+        await runDeepDepth(freshResults(), makeAuditCollector().logAudit);
+
+        expect(mockFetchWithRotation.mock.calls.map(([path]: [string]) => path)).toEqual([
+            "/players/%23MEMBER2/battlelog",
+            "/players/%23BOTH2/battlelog",
+            "/players/%23RECRUIT2/battlelog",
+        ]);
+        const lookup = mockSupabase.rpc.mock.calls.find(([name]: [string]) => name === "get_latest_battle_times");
+        expect((lookup![1] as { p_player_tags: string[] }).p_player_tags).toEqual(["#RECRUIT2"]);
+        expect(ingestCallsFor("#MEMBER2")).toHaveLength(1);
+        expect(ingestCallsFor("#BOTH2")).toHaveLength(1);
+        expect(ingestCallsFor("#RECRUIT2")).toHaveLength(1);
     });
 
     it("defers recruits, still ingests members, and says why when the latest-battle-times lookup fails", async () => {

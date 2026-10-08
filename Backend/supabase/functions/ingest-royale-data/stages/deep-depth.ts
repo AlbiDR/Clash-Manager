@@ -134,10 +134,10 @@ export async function runDeepDepth(
         // the validated targetsSnapshot would lead to a runtime crash when spreading undefined.
         // [DECISION LOG] Corrected property access to 'members' and 'recruits' to match
         // the IngestionTargetsSchema contract defined in Layer 1 (rpcSchemas.ts).
-        const ingestionTargets = [
+        const ingestionTargets = Array.from(new Set([
             ...targetsSnapshot.members,
             ...targetsSnapshot.recruits
-        ];
+        ]));
 
         // Tracks whether the shadow-lead registry write actually landed, so the stage
         // cannot report success while a database write silently failed.
@@ -156,7 +156,9 @@ export async function runDeepDepth(
             // reschedules next_poll_at (their tiered polling), so skipping it would change
             // how often they are polled. A tag present in both lists is treated as a member.
             const memberTags = new Set(targetsSnapshot.members);
-            const skippableRecruits = targetsSnapshot.recruits.filter(tag => !memberTags.has(tag));
+            const skippableRecruits = Array.from(new Set(
+                targetsSnapshot.recruits.filter(tag => !memberTags.has(tag))
+            ));
             const latestBattleTimes = await fetchLatestBattleTimes(skippableRecruits, logAudit);
 
             // [DECISION LOG] DEFER, DO NOT FLOOD: when the skip check could not be answered,

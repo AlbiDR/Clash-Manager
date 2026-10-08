@@ -319,12 +319,12 @@ jobs:
 
           # 3. Deploy the Hunter (Edge Function)
           echo "[DEPLOY] Launching The Hunter (Edge Function)..."
-          supabase functions deploy ingest-royale-data --project-ref "$PROJECT_ID" --no-verify-jwt
-          supabase functions deploy headhunter-scanner --project-ref "$PROJECT_ID" --no-verify-jwt
-          supabase functions deploy sync-player-cards --project-ref "$PROJECT_ID" --no-verify-jwt
-          supabase functions deploy query-royale-api --project-ref "$PROJECT_ID" --no-verify-jwt
-          supabase functions deploy fetch-player-battlelog --project-ref "$PROJECT_ID" --no-verify-jwt
-          supabase functions deploy ping --project-ref "$PROJECT_ID" --no-verify-jwt
+          supabase functions deploy ingest-royale-data --project-ref "$PROJECT_ID" --no-verify-jwt --use-api
+          supabase functions deploy headhunter-scanner --project-ref "$PROJECT_ID" --no-verify-jwt --use-api
+          supabase functions deploy sync-player-cards --project-ref "$PROJECT_ID" --no-verify-jwt --use-api
+          supabase functions deploy query-royale-api --project-ref "$PROJECT_ID" --no-verify-jwt --use-api
+          supabase functions deploy fetch-player-battlelog --project-ref "$PROJECT_ID" --no-verify-jwt --use-api
+          supabase functions deploy ping --project-ref "$PROJECT_ID" --no-verify-jwt --use-api
 
       - name: Verify live app availability
         env:
