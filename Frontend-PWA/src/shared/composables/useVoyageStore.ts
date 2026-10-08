@@ -33,12 +33,44 @@ import {
 } from "@core/api/VoyageClient";
 import { useVoyageActions } from "./useVoyageActions";
 
+/**
+ * STORE: useVoyageStore
+ *
+ * @remarks
+ * Authoritative Pinia store for managing Clan Voyage event lifecycle, realtime postgres subscriptions,
+ * participant contribution tracking, and scheduled events.
+ *
+ * [ARCHITECTURE] ADR LAYER: @features (Layer 3)
+ * - Satisfies ADR Section III: State Management Hierarchy.
+ * - Permitted Imports: @core services, @shared composables, Vue reactivity, Pinia.
+ *
+ * @returns
+ * - `summary`: Reactive snapshot of active Voyage event and member contributions.
+ * - `loading`: Boolean ref indicating if a refresh or event mutation is in progress.
+ * - `lastUpdated`: Timestamp (ms) of the last successful state refresh.
+ * - `status`: Computed Voyage status (`IDLE` | `PENDING` | `ACTIVE` | `COMPLETED`).
+ * - `isActive`: Computed boolean indicating if the event is currently active.
+ * - `isAwaitingEnd`: Computed boolean indicating if the event is active but lacks an end timestamp.
+ * - `startsAt`: Computed Date object representing scheduled start time.
+ * - `isPending`: Computed boolean indicating if the event is pending and scheduled for the future.
+ * - `isVictory`: Computed boolean indicating if progress ratio reached or exceeded 1.0 (100%).
+ * - `progressRatio`: Computed completion ratio normalized to [0.0, 1.0].
+ * - `totalCrowns`: Computed aggregate crowns earned by all clan members during event.
+ * - `targetCrowns`: Computed crown requirement target.
+ * - `endsAt`: Computed Date object representing projected end time.
+ * - `contributions`: Computed array of member contributions.
+ * - `refresh`: Asynchronous function triggering state fetch and realtime subscription setup.
+ * - `scheduleVoyage`: Action to schedule a new voyage event.
+ * - `setVoyageEnd`: Action to record voyage end timestamp.
+ * - `cancelSchedule`: Action to cancel a scheduled voyage event.
+ * - `activateVoyage`: Action to activate a scheduled voyage event.
+ *
+ * @sideeffects
+ * - Establishes and unsubscribes Postgres changes on Supabase realtime channel `voyage-updates`.
+ * - Mutates local Pinia reactive state (`summary`, `loading`, `lastUpdated`).
+ * - Executes Supabase RPC network requests via `@core/api/VoyageClient`.
+ */
 export const useVoyageStore = defineStore("voyage", () => {
-  /**
-   * @remarks
-   * Satisfies ADR Section III: State Management Hierarchy.
-   * Encapsulates feature-specific state for the Clan Voyage silo.
-   */
 
   // --- STATE ---
 
@@ -120,13 +152,19 @@ export const useVoyageStore = defineStore("voyage", () => {
   // --- REALTIME ---
 
   /**
-   * Establishes Postgres realtime listeners for the voyage tables.
+   * Establishes Postgres realtime listeners for the voyage tables (`clan_voyage`, `clan_voyage_contributions`).
+   *
+   * @remarks
+   * Automatically triggered when the active voyage is in `ACTIVE` or `PENDING` status.
+   *
+   * [THREAT] Prevents duplicate channel subscriptions by checking existing `realtimeChannel` reference.
    */
   function setupRealtimeListeners() {
     if (realtimeChannel) return;
 
     const supabase = createSupabaseClient();
     
+    // [DECISION] Subscribe to postgres changes across both event metadata and player contribution ledgers.
     realtimeChannel = supabase
       .channel('voyage-updates')
       .on(
@@ -164,7 +202,9 @@ export const useVoyageStore = defineStore("voyage", () => {
   // --- ACTIONS ---
 
   /**
-   * Authoritative fetch of the voyage state and performance aggregates.
+   * Factory function creating an isolated refresh pass queue token.
+   *
+   * @returns RefreshPass token containing the promise and its explicit resolve trigger.
    */
   function createRefreshPass(): RefreshPass {
     let resolve!: () => void;
@@ -174,17 +214,28 @@ export const useVoyageStore = defineStore("voyage", () => {
     return { promise, resolve };
   }
 
+  /**
+   * Executes a single voyage state refresh pass fetching summary and contributions in parallel.
+   *
+   * @param refreshPass - The current active refresh pass token to resolve upon completion.
+   *
+   * @remarks
+   * [THREAT] Employs single-flight queuing (`activeRefreshPass` and `queuedRefreshPass`) to prevent
+   * concurrent network request thundering herd when multiple realtime events fire in rapid succession.
+   */
   function loadVoyageRefreshPass(refreshPass: RefreshPass): void {
     activeRefreshPass = refreshPass;
     loading.value = true;
 
     void (async () => {
+      // [PERF] Parallel execution of summary and contribution network RPCs for fast state convergence.
       const [summaryResult, contributionResult] = await Promise.allSettled([
         apiFetchVoyageSummary(),
         apiFetchVoyageContributions(),
       ] as const);
 
       if (summaryResult.status === "rejected" || contributionResult.status === "rejected") {
+        // [THREAT] Gracefully handles individual network RPC failures without throwing unhandled promise rejections.
         const refreshFailure = summaryResult.status === "rejected"
           ? summaryResult.reason
           : contributionResult.status === "rejected"
@@ -246,6 +297,11 @@ export const useVoyageStore = defineStore("voyage", () => {
     });
   }
 
+  /**
+   * Authoritative fetch of the voyage state and performance aggregates.
+   *
+   * @returns A promise that resolves when the current or queued refresh pass finishes.
+   */
   function refresh(): Promise<void> {
     if (activeRefreshPass) {
       if (!queuedRefreshPass) queuedRefreshPass = createRefreshPass();
