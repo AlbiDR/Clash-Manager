@@ -16,6 +16,15 @@ LAST_AGED:   2026-10-07
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-08] PR #2131 [Stage 13]: Documented 2026-10-08 pipeline self-healing findings
+**Domain:** pipeline | **Commit:** 8e797837c | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2131)
+**Files:** .github/nightly-logs/13-self-healing-protocol-coverage.log, .github/nightly-logs/13-self-healing-protocol-pr-body.md, .github/nightly-logs/13-self-healing-protocol.md
+**Why:** Audited Stage 1-13 execution evidence and updated protocol document
+**Change:** Documented 2026-10-08 pipeline self-healing findings
+**Result:** pnpm nightly:recap and ledger verified cleanly
+**Nudges:** 0
+
+
 ### [2026-10-08] PR #2130 [Stage 12]: verified 0 candidate files across 10 UX categories; no source modifications required
 **Domain:** ux | **Commit:** 6da06ea8f | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2130)
 **Files:** .github/nightly-logs/12-apk-ux-coverage.log, .github/nightly-logs/12-apk-ux-pr-body.md
