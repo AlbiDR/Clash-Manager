@@ -543,3 +543,4 @@
 * [2026-10-05] [Stage 8] [06:22Z-06:30Z 8m] CHANGED: package.json -- Bumped supabase devDependency from ^2.118.0 to ^2.119.0 in monorepo catalogs and updated pnpm-lock.yaml
 * [2026-10-06] [Stage 8] [06:05Z-06:12Z 7m] CHANGED: package.json -- Bumped simple-git-hooks to ^2.14.0 in monorepo catalogs and updated lockfile
 * [2026-10-07] [Stage 8] [06:07Z-06:14Z 7m] CHANGED: package.json -- package.json -- Bumped knip to ^6.40.0 in monorepo catalog and refreshed pnpm-lock.yaml
+* [2026-10-08] [Stage 8] [06:25Z-06:31Z 6m] CHANGED: package.json -- Bumped @supabase/supabase-js catalog entry from ^2.117.2 to ^2.117.3
