@@ -79,9 +79,11 @@ interface DeadEntry {
 }
 
 /** Internal stack tracking actively open overlays ordered by creation ID. */
+// EPHEMERAL: intentionally resets on cold start
 const openOverlays: OpenOverlay[] = [];
 
 /** Internal map of dead history entries keyed by overlay ID. */
+// EPHEMERAL: intentionally resets on cold start
 const deadEntries = new Map<number, DeadEntry>();
 
 /** Monotonically increasing ID counter initialized to Date.now(). */

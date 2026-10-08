@@ -353,6 +353,128 @@ describe("useVoyageStore", () => {
 
       expect(SupabaseClient.createSupabaseClient).toHaveBeenCalled();
     });
+
+    it("triggers refresh when realtime Postgres changes event callbacks are fired", async () => {
+      const onCallbacks: Array<() => void> = [];
+      const mockChannel = {
+        on: vi.fn((_event: string, _filter: unknown, cb: () => void) => {
+          onCallbacks.push(cb);
+          return mockChannel;
+        }),
+        subscribe: vi.fn().mockReturnThis(),
+        unsubscribe: vi.fn(),
+      };
+
+      vi.mocked(SupabaseClient.createSupabaseClient).mockReturnValue({
+        channel: vi.fn().mockReturnValue(mockChannel),
+      } as any);
+
+      vi.mocked(VoyageClient.fetchVoyageSummary).mockResolvedValue({
+        event: { id: 10, clan_tag: "#CLAN", status: "ACTIVE", target_crowns: 1000, start_at: "2026-01-01T00:00:00Z", end_at: null },
+        total_voyage_crowns: 100,
+        progress_ratio: 0.1,
+      } as any);
+      vi.mocked(VoyageClient.fetchVoyageContributions).mockResolvedValue([]);
+
+      const store = useVoyageStore();
+      await store.refresh();
+
+      expect(onCallbacks).toHaveLength(2);
+      expect(VoyageClient.fetchVoyageSummary).toHaveBeenCalledTimes(1);
+
+      // Fire the first Postgres change callback (clan_voyage)
+      onCallbacks[0]!();
+      await flushPromiseContinuations();
+      expect(VoyageClient.fetchVoyageSummary).toHaveBeenCalledTimes(2);
+
+      // Fire the second Postgres change callback (clan_voyage_contributions)
+      onCallbacks[1]!();
+      await flushPromiseContinuations();
+      expect(VoyageClient.fetchVoyageSummary).toHaveBeenCalledTimes(3);
+    });
+
+    it("unsubscribes from realtime channel when voyage transitions to COMPLETED or null", async () => {
+      const unsubscribeSpy = vi.fn();
+      const mockChannel = {
+        on: vi.fn().mockReturnThis(),
+        subscribe: vi.fn().mockReturnThis(),
+        unsubscribe: unsubscribeSpy,
+      };
+
+      vi.mocked(SupabaseClient.createSupabaseClient).mockReturnValue({
+        channel: vi.fn().mockReturnValue(mockChannel),
+      } as any);
+
+      vi.mocked(VoyageClient.fetchVoyageSummary).mockResolvedValueOnce({
+        event: { id: 10, clan_tag: "#CLAN", status: "ACTIVE", target_crowns: 1000, start_at: "2026-01-01T00:00:00Z", end_at: null },
+        total_voyage_crowns: 100,
+        progress_ratio: 0.1,
+      } as any);
+      vi.mocked(VoyageClient.fetchVoyageContributions).mockResolvedValue([]);
+
+      const store = useVoyageStore();
+      await store.refresh();
+
+      expect(unsubscribeSpy).not.toHaveBeenCalled();
+
+      // Refresh again with COMPLETED status
+      vi.mocked(VoyageClient.fetchVoyageSummary).mockResolvedValueOnce({
+        event: { id: 10, clan_tag: "#CLAN", status: "COMPLETED", target_crowns: 1000, start_at: "2026-01-01T00:00:00Z", end_at: "2026-01-05T00:00:00Z" },
+        total_voyage_crowns: 1000,
+        progress_ratio: 1.0,
+      } as any);
+
+      await store.refresh();
+      expect(unsubscribeSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it("maintains single realtime subscription idempotently when refreshed repeatedly while ACTIVE", async () => {
+      const mockChannel = {
+        on: vi.fn().mockReturnThis(),
+        subscribe: vi.fn().mockReturnThis(),
+        unsubscribe: vi.fn(),
+      };
+      const channelSpy = vi.fn().mockReturnValue(mockChannel);
+
+      vi.mocked(SupabaseClient.createSupabaseClient).mockReturnValue({
+        channel: channelSpy,
+      } as any);
+
+      vi.mocked(VoyageClient.fetchVoyageSummary).mockResolvedValue({
+        event: { id: 10, clan_tag: "#CLAN", status: "ACTIVE", target_crowns: 1000, start_at: "2026-01-01T00:00:00Z", end_at: null },
+        total_voyage_crowns: 100,
+        progress_ratio: 0.1,
+      } as any);
+      vi.mocked(VoyageClient.fetchVoyageContributions).mockResolvedValue([]);
+
+      const store = useVoyageStore();
+      await store.refresh();
+      await store.refresh();
+      await store.refresh();
+
+      expect(channelSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it("normalizes contribution performance_score and numeric properties correctly", async () => {
+      vi.mocked(VoyageClient.fetchVoyageSummary).mockResolvedValue({
+        event: { id: 10, clan_tag: "#CLAN", status: "ACTIVE", target_crowns: 1000, start_at: "2026-01-01T00:00:00Z", end_at: null },
+        total_voyage_crowns: 100,
+        progress_ratio: 0.1,
+      } as any);
+
+      vi.mocked(VoyageClient.fetchVoyageContributions).mockResolvedValue([
+        { player_tag: "#P1", player_name: "Score User", total_voyage_crowns: 50, percentage_voyage_crowns: "50", performance_score: "92.5" },
+        { player_tag: "#P2", player_name: "No Score User", total_voyage_crowns: 50, percentage_voyage_crowns: "50", performance_score: null },
+      ] as any);
+
+      const store = useVoyageStore();
+      await store.refresh();
+
+      expect(store.contributions).toHaveLength(2);
+      expect(store.contributions[0]?.performance_score).toBe(92.5);
+      expect(store.contributions[0]?.percentage_voyage_crowns).toBe(50);
+      expect(store.contributions[1]?.performance_score).toBeUndefined();
+    });
   });
 
   describe("computed properties", () => {
