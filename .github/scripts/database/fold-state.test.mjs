@@ -2,12 +2,17 @@
 // Copyright (C) 2026 AlbiDR
 
 import assert from 'node:assert/strict';
-import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { chmod, cp, mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { execFileSync } from 'node:child_process';
 import os from 'node:os';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 
+import { decideBaselineCompleteness } from './baseline-completeness.mjs';
 import { checkFoldState } from './fold-state.mjs';
+
+const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
 
 async function fixture(migration) {
   const directory = await mkdtemp(path.join(os.tmpdir(), 'fold-state-'));
@@ -185,6 +190,365 @@ test('a bare baseline trigger against an OR REPLACE incremental is not silently 
   const report = await checkFoldState({ migrationsDir: directory });
   assert.notEqual(triggerOf(report).status, 'reconciled');
   await rm(directory, { recursive: true, force: true });
+});
+
+function foldReport(status, objects, unsupported = []) {
+  const counts = { folded: 0, reconciled: 0, unfolded: 0, 'semantic-only': 0 };
+  for (const object of objects) counts[object.status] += 1;
+  return {
+    version: 1,
+    status,
+    baseline: '20260531232406_master_migration.sql',
+    migrationsReplayed: 3,
+    counts,
+    objects,
+    unsupported,
+  };
+}
+
+test('baseline completeness distinguishes complete from pending fold debt', () => {
+  const complete = foldReport('FOLDED', [
+    { key: 'TABLE:app.items', source: '20260531232407_change.sql', status: 'folded' },
+    { key: 'COLUMN:app.items.label', source: '20260531232408_change.sql', status: 'reconciled' },
+  ]);
+  assert.deepEqual(decideBaselineCompleteness(complete), {
+    status: 'FOLDED', mode: 'complete', pendingObjectCount: 0, pendingMigrationCount: 0,
+    semanticOnlyObjectCount: 0, unsupportedStatementCount: 0,
+    baselinePgTap: true, fullReplayPgTap: true, catalogEquivalence: true,
+  });
+
+  const partial = foldReport('UNFOLDED', [
+    { key: 'COLUMN:app.items.label', source: '20260531232408_change.sql', status: 'unfolded', reason: 'DIVERGENT' },
+    { key: 'FUNCTION:app.read_items()', source: '20260531232408_change.sql', status: 'unfolded', reason: 'ABSENT' },
+  ]);
+  const decision = decideBaselineCompleteness(partial);
+  assert.equal(decision.mode, 'partial');
+  assert.equal(decision.pendingObjectCount, 2);
+  assert.equal(decision.pendingMigrationCount, 1);
+  assert.equal(decision.baselinePgTap, false);
+  assert.equal(decision.fullReplayPgTap, true, 'partial mode still requires full-history behavior tests');
+  assert.equal(decision.catalogEquivalence, false);
+});
+
+test('baseline completeness fails closed for malformed, unsupported, or contradictory fold-state', () => {
+  assert.throws(() => decideBaselineCompleteness(null), /malformed fold-state/i);
+  assert.throws(() => decideBaselineCompleteness({ version: 2, status: 'FOLDED' }), /unsupported or malformed/i);
+  assert.throws(() => decideBaselineCompleteness(foldReport('DEGRADED', [])), /DEGRADED/);
+
+  const malformedCount = foldReport('UNFOLDED', [
+    { key: 'COLUMN:app.items.label', source: 'change.sql', status: 'unfolded', reason: 'ABSENT' },
+  ]);
+  malformedCount.counts.unfolded = 0;
+  assert.throws(() => decideBaselineCompleteness(malformedCount), /count mismatch/i);
+
+  const contradictoryComplete = foldReport('FOLDED', [
+    { key: 'COLUMN:app.items.label', source: 'change.sql', status: 'unfolded', reason: 'DIVERGENT' },
+  ]);
+  assert.throws(() => decideBaselineCompleteness(contradictoryComplete), /contradictory FOLDED/i);
+
+  const unsupportedObjectStatus = foldReport('UNFOLDED', [
+    { key: 'COLUMN:app.items.label', source: 'change.sql', status: 'unfolded', reason: 'ABSENT' },
+  ]);
+  unsupportedObjectStatus.objects[0].status = 'future-state';
+  assert.throws(() => decideBaselineCompleteness(unsupportedObjectStatus), /unsupported fold-state object/i);
+
+  const unsupportedCountSchema = foldReport('FOLDED', []);
+  unsupportedCountSchema.counts.future = 0;
+  assert.throws(() => decideBaselineCompleteness(unsupportedCountSchema), /unsupported fold-state count schema/i);
+
+  const divergentClaimedFolded = foldReport('FOLDED', [
+    { key: 'COLUMN:app.items.label', source: 'change.sql', status: 'folded', reason: 'DIVERGENT' },
+  ]);
+  assert.throws(() => decideBaselineCompleteness(divergentClaimedFolded), /contradictory folded-object reason/i);
+});
+
+async function dockerVerifierFixture(t, {
+  folded = false,
+  failBaselinePgTap = false,
+  failFullPgTap = false,
+  failBaselineIdempotency = false,
+  failCatalogEquality = false,
+  runtimeSchemas = 'public,storage,graphql_public,features',
+  runtimeSchemasUnavailable = false,
+  roleSchemaOverride = null,
+} = {}) {
+  const root = await mkdtemp(path.join(os.tmpdir(), 'baseline-verifier-test-'));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const repo = path.join(root, 'repo');
+  const databaseScripts = path.join(repo, '.github/scripts/database');
+  const migrations = path.join(repo, 'Backend/supabase/migrations');
+  const databaseTests = path.join(repo, 'Backend/supabase/tests/database');
+  const bin = path.join(root, 'bin');
+  await Promise.all([
+    mkdir(databaseScripts, { recursive: true }),
+    mkdir(migrations, { recursive: true }),
+    mkdir(databaseTests, { recursive: true }),
+    mkdir(path.join(repo, '.github/nightly-config'), { recursive: true }),
+    mkdir(bin),
+  ]);
+  for (const file of ['test-database-baseline.sh', 'baseline-completeness.mjs', 'fold-state.mjs', 'audit-migrations.mjs', 'sql-lexer.mjs', 'baseline-rules.mjs']) {
+    await cp(path.join(REPO_ROOT, '.github/scripts/database', file), path.join(databaseScripts, file));
+  }
+  await cp(path.join(REPO_ROOT, '.github/nightly-config/migration-quality.json'), path.join(repo, '.github/nightly-config/migration-quality.json'));
+  await writeFile(path.join(repo, 'Backend/supabase/config.toml'), 'project_id = "fixture"\n[api]\nport = 54321\n[db]\nport = 54322\n');
+  await writeFile(path.join(migrations, '20260531232406_master_migration.sql'), 'CREATE TABLE public.items (id bigint);\n');
+  await writeFile(path.join(migrations, '20260531232407_add_label.sql'), folded
+    ? 'CREATE TABLE public.items (id bigint);\n'
+    : 'ALTER TABLE public.items ADD COLUMN label text;\n');
+  await writeFile(path.join(databaseTests, 'fixture.test.sql'), 'SELECT 1;\n');
+  execFileSync('git', ['init', '--quiet'], { cwd: repo });
+  const roleSchemaFile = path.join(root, 'authenticator-schema-setting.txt');
+  if (roleSchemaOverride !== null) await writeFile(roleSchemaFile, `${roleSchemaOverride}\n`);
+
+  const supabase = path.join(bin, 'supabase');
+  await writeFile(supabase, `#!/usr/bin/env bash
+set -euo pipefail
+cmd=$1
+shift || true
+if [[ "$cmd" == start ]]; then
+  if [[ "${'${'}FAKE_ROLE_SCHEMA_INITIAL_SET:-0}" == 1 ]]; then printf '%s\n' "$FAKE_ROLE_SCHEMA_INITIAL" > "$FAKE_ROLE_SCHEMA_FILE"; else rm -f "$FAKE_ROLE_SCHEMA_FILE"; fi
+  count=$(find supabase/migrations -maxdepth 1 -type f -name '*.sql' | wc -l | tr -d ' ')
+  mode=baseline
+  [[ "$count" -eq 1 ]] || mode=full
+  printf '%s' "$mode" > "$FAKE_DB_MODE"
+  echo "start:$mode" >> "$FAKE_DB_LOG"
+elif [[ "$cmd" == stop ]]; then
+  echo stop >> "$FAKE_DB_LOG"
+elif [[ "$cmd" == test ]]; then
+  mode=$(cat "$FAKE_DB_MODE")
+  echo "pgtap:$mode" >> "$FAKE_DB_LOG"
+  if [[ -s "$FAKE_ROLE_SCHEMA_FILE" ]] && grep -Eq '(^|,)substrate(,|$)' "$FAKE_ROLE_SCHEMA_FILE"; then exit 21; fi
+  if [[ "$mode" == baseline && "${'${'}FAKE_BASELINE_PGTAP_FAIL:-0}" == 1 ]]; then exit 17; fi
+  if [[ "$mode" == full && "${'${'}FAKE_FULL_PGTAP_FAIL:-0}" == 1 ]]; then exit 19; fi
+fi
+`);
+  await chmod(supabase, 0o755);
+  const docker = path.join(bin, 'docker');
+  await writeFile(docker, `#!/usr/bin/env bash
+set -euo pipefail
+if [[ "$1" == info ]]; then exit 0; fi
+mode=$(cat "$FAKE_DB_MODE")
+if [[ "$1" == inspect && "$*" == *supabase_rest_clash_baseline_* && "$*" == *PGRST_DB_SCHEMAS* ]]; then
+  echo "read:runtime-schemas" >> "$FAKE_DB_LOG"
+  if [[ "${'${'}FAKE_RUNTIME_UNAVAILABLE:-0}" == 1 ]]; then exit 31; fi
+  printf 'PGRST_DB_SCHEMAS=%s\n' "$FAKE_RUNTIME_SCHEMAS"
+elif [[ "$1" == exec && "$2" == supabase_db_clash_baseline_* && "$*" == *"pg_db_role_setting"* ]]; then
+  echo "read:authenticator-role-setting" >> "$FAKE_DB_LOG"
+  if [[ -s "$FAKE_ROLE_SCHEMA_FILE" ]]; then sed 's/^/pgrst.db_schemas=/' "$FAKE_ROLE_SCHEMA_FILE"; fi
+elif [[ "$1" == exec && "$2" == supabase_db_clash_baseline_* && "$*" == *"ALTER ROLE authenticator SET pgrst.db_schemas"* ]]; then
+  schema=$(sed -n "s/.*SET pgrst.db_schemas = '\\([^']*\\)'.*/\\1/p" <<<"$*")
+  [[ -n "$schema" ]] || exit 32
+  printf '%s\n' "$schema" > "$FAKE_ROLE_SCHEMA_FILE"
+  echo "set:authenticator-schema-context" >> "$FAKE_DB_LOG"
+elif [[ "$*" == *pg_dump* ]]; then
+  echo "dump:$mode" >> "$FAKE_DB_LOG"
+  if [[ "${'${'}FAKE_CATALOG_MISMATCH:-0}" == 1 ]]; then echo "catalog-$mode";
+  elif [[ "${'${'}FAKE_COMPLETE:-0}" == 1 ]]; then echo catalog-complete;
+  else echo "catalog-$mode"; fi
+elif [[ "$*" == *psql* ]]; then
+  cat >/dev/null
+  echo "psql:$mode" >> "$FAKE_DB_LOG"
+  if [[ "$mode" == baseline && "${'${'}FAKE_BASELINE_IDEMPOTENCY_FAIL:-0}" == 1 ]]; then exit 23; fi
+else
+  echo "unexpected docker command: $*" >&2
+  exit 20
+fi
+`);
+  await chmod(docker, 0o755);
+  return {
+    repo,
+    env: {
+      ...process.env,
+      PATH: `${bin}:${process.env.PATH}`,
+      FAKE_DB_LOG: path.join(root, 'calls.log'),
+      FAKE_DB_MODE: path.join(root, 'mode.txt'),
+      FAKE_ROLE_SCHEMA_FILE: roleSchemaFile,
+      ...(roleSchemaOverride !== null ? { FAKE_ROLE_SCHEMA_INITIAL: roleSchemaOverride, FAKE_ROLE_SCHEMA_INITIAL_SET: '1' } : {}),
+      FAKE_RUNTIME_SCHEMAS: runtimeSchemas ?? '',
+      ...(runtimeSchemasUnavailable ? { FAKE_RUNTIME_UNAVAILABLE: '1' } : {}),
+      ...(folded ? { FAKE_COMPLETE: '1' } : {}),
+      ...(failBaselinePgTap ? { FAKE_BASELINE_PGTAP_FAIL: '1' } : {}),
+      ...(failFullPgTap ? { FAKE_FULL_PGTAP_FAIL: '1' } : {}),
+      ...(failBaselineIdempotency ? { FAKE_BASELINE_IDEMPOTENCY_FAIL: '1' } : {}),
+      ...(failCatalogEquality ? { FAKE_CATALOG_MISMATCH: '1' } : {}),
+    },
+  };
+}
+
+test('Docker verifier skips baseline-only pgTAP under fold debt and always tests full replay', async t => {
+  const fixture = await dockerVerifierFixture(t);
+  execFileSync('bash', ['.github/scripts/database/test-database-baseline.sh'], {
+    cwd: fixture.repo,
+    env: fixture.env,
+    stdio: 'pipe',
+  });
+  const calls = await (await import('node:fs/promises')).readFile(fixture.env.FAKE_DB_LOG, 'utf8');
+  assert.match(calls, /start:baseline/);
+  assert.doesNotMatch(calls, /pgtap:baseline/);
+  assert.match(calls, /start:full/);
+  assert.match(calls, /pgtap:full/);
+  assert.match(calls, /set:authenticator-schema-context/);
+});
+
+test('Docker verifier copies measured PostgREST schemas into absent role context without masking exposure', async t => {
+  const exposedSchemas = 'public,storage,graphql_public,features,substrate';
+  const fixture = await dockerVerifierFixture(t, { runtimeSchemas: exposedSchemas });
+  let failure;
+  try {
+    execFileSync('bash', ['.github/scripts/database/test-database-baseline.sh'], {
+      cwd: fixture.repo,
+      env: fixture.env,
+      stdio: 'pipe',
+    });
+  } catch (error) {
+    failure = error;
+  }
+  assert.equal(failure?.status, 21, 'an actually exposed substrate schema still fails the pgTAP probe');
+  const calls = await (await import('node:fs/promises')).readFile(fixture.env.FAKE_DB_LOG, 'utf8');
+  const roleSchemas = await (await import('node:fs/promises')).readFile(fixture.env.FAKE_ROLE_SCHEMA_FILE, 'utf8');
+  assert.equal(roleSchemas.trim(), exposedSchemas, 'the measured runtime list is applied without replacing substrate');
+  assert.match(calls, /read:runtime-schemas/);
+  assert.match(calls, /set:authenticator-schema-context/);
+  assert.match(calls, /pgtap:full/);
+});
+
+test('Docker verifier preserves existing authenticator schema override and fails on exposed substrate', async t => {
+  const override = 'public,features,substrate';
+  const fixture = await dockerVerifierFixture(t, {
+    runtimeSchemas: 'public,storage,graphql_public,features',
+    roleSchemaOverride: override,
+  });
+  let failure;
+  try {
+    execFileSync('bash', ['.github/scripts/database/test-database-baseline.sh'], {
+      cwd: fixture.repo,
+      env: fixture.env,
+      stdio: 'pipe',
+    });
+  } catch (error) {
+    failure = error;
+  }
+  assert.equal(failure?.status, 21);
+  const calls = await (await import('node:fs/promises')).readFile(fixture.env.FAKE_DB_LOG, 'utf8');
+  const roleSchemas = await (await import('node:fs/promises')).readFile(fixture.env.FAKE_ROLE_SCHEMA_FILE, 'utf8');
+  assert.equal(roleSchemas.trim(), override, 'existing role GUC remains authoritative');
+  assert.match(calls, /Preserving|read:authenticator-role-setting/);
+  assert.doesNotMatch(calls, /set:authenticator-schema-context/);
+});
+
+test('Docker verifier fails closed when runtime schema evidence is unavailable or malformed', async t => {
+  for (const scenario of [
+    { name: 'unavailable', runtimeSchemasUnavailable: true },
+    { name: 'malformed', runtimeSchemas: 'public,,features' },
+  ]) {
+    await t.test(scenario.name, async t => {
+      const fixture = await dockerVerifierFixture(t, scenario);
+      let failure;
+      try {
+        execFileSync('bash', ['.github/scripts/database/test-database-baseline.sh'], {
+          cwd: fixture.repo,
+          env: fixture.env,
+          stdio: 'pipe',
+        });
+      } catch (error) {
+        failure = error;
+      }
+      assert.equal(failure?.status, 1, 'missing runtime evidence fails the verifier');
+      const calls = await (await import('node:fs/promises')).readFile(fixture.env.FAKE_DB_LOG, 'utf8');
+      assert.doesNotMatch(calls, /set:authenticator-schema-context/);
+      assert.doesNotMatch(calls, /pgtap:full/);
+      assert.doesNotMatch(`${failure.stdout}\n${failure.stderr}`, /semantic verification PASS/);
+    });
+  }
+});
+
+test('Docker verifier fails closed on empty, malformed, or conflicting authenticator overrides', async t => {
+  for (const scenario of [
+    { name: 'empty override cannot hide runtime exposure', roleSchemaOverride: '', runtimeSchemas: 'public,features,substrate' },
+    { name: 'malformed override', roleSchemaOverride: 'public,,features' },
+    { name: 'conflicting applicable overrides', roleSchemaOverride: 'public,features\npublic,features,substrate' },
+  ]) {
+    await t.test(scenario.name, async t => {
+      const fixture = await dockerVerifierFixture(t, scenario);
+      let failure;
+      try {
+        execFileSync('bash', ['.github/scripts/database/test-database-baseline.sh'], {
+          cwd: fixture.repo,
+          env: fixture.env,
+          stdio: 'pipe',
+        });
+      } catch (error) {
+        failure = error;
+      }
+      assert.equal(failure?.status, 1, 'invalid role evidence fails the verifier');
+      const calls = await (await import('node:fs/promises')).readFile(fixture.env.FAKE_DB_LOG, 'utf8');
+      assert.match(calls, /read:authenticator-role-setting/);
+      assert.doesNotMatch(calls, /set:authenticator-schema-context/);
+      assert.doesNotMatch(calls, /pgtap:full/);
+      assert.doesNotMatch(`${failure.stdout}\n${failure.stderr}`, /semantic verification PASS/);
+    });
+  }
+});
+
+test('Docker verifier propagates a genuine full-replay pgTAP failure', async t => {
+  const fixture = await dockerVerifierFixture(t, { failFullPgTap: true });
+  let failure;
+  try {
+    execFileSync('bash', ['.github/scripts/database/test-database-baseline.sh'], {
+      cwd: fixture.repo,
+      env: fixture.env,
+      stdio: 'pipe',
+    });
+  } catch (error) {
+    failure = error;
+  }
+  assert.equal(failure?.status, 19);
+  const calls = await (await import('node:fs/promises')).readFile(fixture.env.FAKE_DB_LOG, 'utf8');
+  assert.match(calls, /pgtap:full/);
+  assert.doesNotMatch(calls, /pgtap:baseline/);
+});
+
+test('complete-mode baseline pgTAP failure still runs idempotency, full replay and strict catalog check, then fails without PASS', async t => {
+  const fixture = await dockerVerifierFixture(t, { folded: true, failBaselinePgTap: true, failCatalogEquality: true });
+  let failure;
+  try {
+    execFileSync('bash', ['.github/scripts/database/test-database-baseline.sh'], {
+      cwd: fixture.repo,
+      env: fixture.env,
+      stdio: 'pipe',
+    });
+  } catch (error) {
+    failure = error;
+  }
+  assert.equal(failure?.status, 17, 'retain the baseline pgTAP exit status');
+  const calls = await (await import('node:fs/promises')).readFile(fixture.env.FAKE_DB_LOG, 'utf8');
+  assert.ok(calls.indexOf('pgtap:baseline') < calls.indexOf('psql:baseline'));
+  assert.ok(calls.indexOf('psql:baseline') < calls.indexOf('start:full'));
+  assert.ok(calls.indexOf('start:full') < calls.indexOf('pgtap:full'));
+  assert.match(calls, /dump:full/);
+  assert.doesNotMatch(`${failure.stdout}\n${failure.stderr}`, /\bPASS\b/);
+  assert.match(`${failure.stdout}\n${failure.stderr}`, /catalogs differ/);
+});
+
+test('complete-mode idempotency failure does not bypass full replay and ends failed without PASS', async t => {
+  const fixture = await dockerVerifierFixture(t, { folded: true, failBaselineIdempotency: true });
+  let failure;
+  try {
+    execFileSync('bash', ['.github/scripts/database/test-database-baseline.sh'], {
+      cwd: fixture.repo,
+      env: fixture.env,
+      stdio: 'pipe',
+    });
+  } catch (error) {
+    failure = error;
+  }
+  assert.equal(failure?.status, 23, 'retain the baseline reapply failure status');
+  const calls = await (await import('node:fs/promises')).readFile(fixture.env.FAKE_DB_LOG, 'utf8');
+  assert.match(calls, /pgtap:baseline/);
+  assert.match(calls, /start:full/);
+  assert.match(calls, /pgtap:full/);
+  assert.match(calls, /dump:full/);
+  assert.doesNotMatch(`${failure.stdout}\n${failure.stderr}`, /\bPASS\b/);
 });
 
 // --- Routine settings, dropped policies, and what DEGRADED may hide ----------

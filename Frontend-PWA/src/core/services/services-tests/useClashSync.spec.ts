@@ -518,6 +518,124 @@ describe("useClashSync", () => {
       expect(data.value).toEqual(remotePayload);
     });
 
+    it("runs one fresh trailing pass for invalidations received during an active sync", async () => {
+      const stalePayload: WebAppData = {
+        lb: [], hh: [], timestamp: 4200, dataSource: "SUPABASE", blacklist: ["#R1"],
+      };
+      const freshPayload: WebAppData = {
+        lb: [],
+        hh: [{ id: "R1", n: "Restored recruit", t: 4000, d: { don: 10, war: 1, ago: "2026-10-08", cards: 0 } }],
+        timestamp: 4300,
+        dataSource: "SUPABASE",
+        blacklist: [],
+      };
+      let resolveStale: (value: WebAppData) => void = () => {};
+      vi.mocked(fetchRemote)
+        .mockReturnValueOnce(new Promise((resolve) => { resolveStale = resolve; }))
+        .mockResolvedValueOnce(freshPayload);
+      data.value = stalePayload;
+      const sync = useClashSync(data);
+
+      const leadingPass = sync.startBackgroundSync();
+      const invalidationPass = sync.refreshAfterInvalidation();
+      const coalescedInvalidationPass = sync.refreshAfterInvalidation();
+
+      expect(fetchRemote).toHaveBeenCalledTimes(1);
+      resolveStale(stalePayload);
+      await leadingPass;
+      await Promise.all([invalidationPass, coalescedInvalidationPass]);
+
+      expect(fetchRemote).toHaveBeenCalledTimes(2);
+      expect(data.value?.blacklist).toEqual([]);
+      expect(data.value?.hh.map((recruit) => recruit.id)).toEqual(["R1"]);
+    });
+
+    it("queues a new trailing pass for invalidation during the follow-up without extending prior callers", async () => {
+      const payloads: WebAppData[] = [
+        { lb: [], hh: [], timestamp: 4200, blacklist: ["#R1"] },
+        { lb: [], hh: [], timestamp: 4300, blacklist: [] },
+        { lb: [], hh: [], timestamp: 4400, blacklist: ["#R2"] },
+      ];
+      const resolvers: Array<(value: WebAppData) => void> = [];
+      vi.mocked(fetchRemote).mockImplementation(() => new Promise((resolve) => {
+        resolvers.push(resolve);
+      }));
+      const sync = useClashSync(data);
+
+      const leadingPass = sync.startBackgroundSync();
+      const firstInvalidationPass = sync.refreshAfterInvalidation();
+      const coalescedInvalidationPass = sync.refreshAfterInvalidation();
+      expect(fetchRemote).toHaveBeenCalledTimes(1);
+
+      resolvers[0]!(payloads[0]!);
+      await leadingPass;
+      await vi.waitFor(() => expect(fetchRemote).toHaveBeenCalledTimes(2));
+      const nextInvalidationPass = sync.refreshAfterInvalidation();
+      resolvers[1]!(payloads[1]!);
+      await Promise.all([firstInvalidationPass, coalescedInvalidationPass]);
+
+      expect(data.value?.timestamp).toBe(4300);
+      await vi.waitFor(() => expect(fetchRemote).toHaveBeenCalledTimes(3));
+      resolvers[2]!(payloads[2]!);
+      await nextInvalidationPass;
+      expect(data.value?.timestamp).toBe(4400);
+    });
+
+    it("keeps an invalidation behind queued abort recovery as its own forced pass", async () => {
+      const stalePayload: WebAppData = {
+        lb: [], hh: [], timestamp: 4200, dataSource: "SUPABASE", blacklist: ["#R1"],
+      };
+      const recoveryPayload: WebAppData = {
+        lb: [], hh: [], timestamp: 4300, dataSource: "SUPABASE", blacklist: ["#R1"],
+      };
+      const freshPayload: WebAppData = {
+        lb: [],
+        hh: [{ id: "R1", n: "Restored recruit", t: 4000, d: { don: 10, war: 1, ago: "2026-10-08", cards: 0 } }],
+        timestamp: 4400,
+        dataSource: "SUPABASE",
+        blacklist: [],
+      };
+      const requests: Array<{
+        force: boolean | undefined;
+        resolve: (value: WebAppData) => void;
+        reject: (reason: Error) => void;
+      }> = [];
+      vi.mocked(fetchRemote).mockImplementation(({ force }) => new Promise((resolve, reject) => {
+        requests.push({ force, resolve, reject });
+      }));
+      data.value = stalePayload;
+      const sync = useClashSync(data);
+
+      const abortedLeadingPass = sync.startBackgroundSync();
+      const leadingSignal = vi.mocked(fetchRemote).mock.calls[0]![0]!.signal;
+      mockConnectionStatus.isOnline.value = false;
+      await nextTick();
+      expect(leadingSignal?.aborted).toBe(true);
+
+      mockConnectionStatus.isOnline.value = true;
+      const ordinaryRecoveryPass = sync.startBackgroundSync();
+      let invalidationSettled = false;
+      const invalidationPass = sync.refreshAfterInvalidation().then(() => {
+        invalidationSettled = true;
+      });
+
+      requests[0]!.reject(new Error("Network connection lost"));
+      await abortedLeadingPass;
+      await vi.waitFor(() => expect(fetchRemote).toHaveBeenCalledTimes(2));
+      requests[1]!.resolve(recoveryPayload);
+      await ordinaryRecoveryPass;
+
+      expect(invalidationSettled).toBe(false);
+      await vi.waitFor(() => expect(fetchRemote).toHaveBeenCalledTimes(3));
+      expect(requests.map(({ force }) => force)).toEqual([false, false, true]);
+      requests[2]!.resolve(freshPayload);
+      await invalidationPass;
+
+      expect(data.value?.blacklist).toEqual([]);
+      expect(data.value?.hh.map((recruit) => recruit.id)).toEqual(["R1"]);
+      expect(data.value?.timestamp).toBe(4400);
+    });
+
     it("aborts a doomed request and starts a fresh sync after reconnect", async () => {
       const recoveredPayload: WebAppData = {
         lb: [], hh: [], timestamp: 4300, dataSource: "SUPABASE", blacklist: [],

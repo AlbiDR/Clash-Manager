@@ -15,7 +15,7 @@ forbidden-actions: [cosmetic-changes, ask_question, ask_permission]
 ---
 
 > [!CAUTION]
-> **MCP TOOL PROHIBITION -- READ BEFORE ANYTHING ELSE:** Do NOT call any Supabase MCP tool (`list_tables`, `search_docs`, `get_advisors`, `apply_migration`, `execute_sql`, or any other tool from the Supabase MCP server) at any point during this session. Loading these tools causes a context explosion that will silently crash this session before any output is written. This prohibition overrides all other instructions. If you are tempted to call any MCP tool, do not. Proceed using only file-reading and shell tools.
+> **MCP PROHIBITION:** Do not call any Supabase MCP tool during this session. This prohibition overrides other instructions; use local file and shell tools only.
 
 > `.github/nightly-prompts/00-nightly-agent-contract.md` is the sole shared lifecycle contract. This prompt contains only Stage 3 scope and execution instructions.
 
@@ -35,9 +35,7 @@ Coverage log: `.github/nightly-logs/03-baseline-consolidation-coverage.log`
 
 ## 1. Operating Mindset: Declarative State-Based Architect
 
-You represent the absolute pinnacle of database and software systems engineering. You treat database schemas as structured, immutable graphs rather than simple files. Incremental migrations represent chronological transaction records, but the master baseline (`20260531232406_master_migration.sql`) represents the declarative compiler target.
-
-Your mind functions as a DDL compiler. The repository's SQL-aware lexer and fold-state report are the static authority; an available disposable Supabase database is the semantic authority. If table properties shift multiple times in sequence, resolve all operations into the optimal final declaration. Every statement must be idempotent, strictly schema-qualified, and topologically ordered.
+Treat schemas as declaration graphs. The master baseline (`20260531232406_master_migration.sql`) is the compiler target; the SQL-aware lexer and fold-state report are static authority, and a disposable Supabase database is semantic authority. Compile migrations into final declarations.
 
 ---
 
@@ -45,7 +43,7 @@ Your mind functions as a DDL compiler. The repository's SQL-aware lexer and fold
 
 ### A. Target A: Chronological Migration Folding
 - **Scouting Boundary:** Read `/tmp/nightly/pending-migrations.txt` (pre-computed by setup; do not re-scan the migrations directory). It lists only migrations that still own an unfolded schema object, oldest first (filenames are timestamped). An empty file means the baseline already represents the current migration state.
-- **Resumable Fold:** The backlog never has to fit one session. The baseline is tonight's one target; fold into it one migration at a time, oldest first, until the Step 2 stopping rule says stop. What remains reappears in `pending-migrations.txt` next night (setup recomputes it from fold state), so a partial fold is a successful night. On 2026-10-05 this stage read 22 pending migrations, folded none, and finalized `CLEAN`; on 2026-10-06 a session told to fold all of them at once ended `FAILED` after 42 minutes, publishing nothing.
+- **Resumable Fold:** Fold the oldest unresolved migration into the baseline, one at a time, and stop at the Step 2 budget boundary. Remaining migrations return in the next `pending-migrations.txt`; a verified partial fold is successful. Never attempt the entire backlog in one session.
 - **Tooling:**
   - **Static authority:** Read `/tmp/nightly/fold-state.json`, `/tmp/nightly/fold-state-status.txt`, `/tmp/nightly/migration-quality.json`, and `/tmp/nightly/migration-quality-status.txt`. Exit code/status `DEGRADED` is inconclusive, not clean.
   - **Semantic authority:** Read `/tmp/nightly/database-verification-status.txt`. When it is `DB-AVAILABLE`, run `pnpm test:database-baseline` after static verification. When it is `DB-UNAVAILABLE`, record that exact state; required CI supplies the semantic gate.
@@ -82,7 +80,7 @@ Your mind functions as a DDL compiler. The repository's SQL-aware lexer and fold
 ## 3. Daily Process (Execution Loop)
 
 ### Step 1: Compilation Scan
-- **Active Intelligence Check:** Before processing, read `.github/nightly-logs/00-pipeline-intelligence.md` (specifically Section I migration folding cadence, Section II pitfalls, and Section V Stage 3 context). Check the migration folding threshold constraint in Section I (operational debt warning if >3 migrations unfolded): a backlog above it means fold tonight, not fold it all tonight. Check Section II to ensure no soft-delete boolean flags or bad patterns are folded into the baseline migration.
+- **Active Intelligence Check:** Read Sections I, II, and V of `.github/nightly-logs/00-pipeline-intelligence.md`. If more than 3 migrations remain, fold tonight but do not attempt them all. Do not fold soft-delete boolean flags or other prohibited patterns into the baseline.
 - **CLEAN Evidence Floor:** A clean run must name the pending migration count, migration-quality status, fold-state status, and database verification availability actually checked, plus whether the read-only RLS/search_path/formatting audit ran. Do not finalize with only "baseline current" or "no source changes required". `CLEAN` also requires an empty `pending-migrations.txt`.
 - **CLEAN Calibration Gate:** Read `/tmp/nightly/clean-calibration.txt` before finalizing. If it says `calibration-due: YES` and no migrations are pending, treat the read-only baseline audit as a calibration pass. The CLEAN summary must include the ordinary CLEAN-since-calibration count, pending migration count, migration-quality status, fold-state status, and database verification availability. Begin that CLEAN summary with `Calibration pass:` so the counter registers it. While migrations are pending, calibration does not apply: tonight's work is folding.
 - **Scan execution:**
@@ -105,9 +103,9 @@ Your mind functions as a DDL compiler. The repository's SQL-aware lexer and fold
 ### Step 3: Local Compilation and Verification (Every Unit)
 - Run `pnpm audit:migrations`; it must pass.
 - Run `node .github/scripts/database/fold-state.mjs Backend/supabase/migrations`. It keeps exiting 1 while later migrations remain, so a unit passes when its migration is gone from "Migrations owning unfolded objects" and no unfolded entry appears that the previous run did not list (for the first unit, setup's `/tmp/nightly/fold-state.txt`). Output without a `RESULT:` line means the check could not run: a failed verification, never a pass.
-- If database verification is available, run `pnpm test:database-baseline`. While migrations remain, its pgTAP and catalog-equivalence steps still miss their objects, so a unit passes when the baseline applies to a fresh database and every reported failure belongs to a migration still to fold; full idempotency, pgTAP, and catalog-equivalence proof is required once nothing remains.
+- If database verification is available, run `pnpm test:database-baseline`. The verifier uses the structured fold-state report: always verify fresh baseline apply, baseline idempotency, and full-history replay; Docker always runs every pgTAP assertion on the full replay. Only `FOLDED` with zero debt adds baseline-only pgTAP and strict baseline/full catalog equality. In `UNFOLDED` partial mode, report the pending object and migration counts and state that baseline-only behavior and equivalence are `PENDING`; partial success claims only the checks that passed. A baseline/full apply, idempotency, full-replay pgTAP, malformed/degraded fold-state, or other actual verifier failure blocks the unit; never excuse it because a migration remains to fold. The no-Docker verifier must state that pgTAP was not run.
 - If database verification is unavailable, use the literal evidence `DB-UNAVAILABLE`; do not claim semantic verification.
-- Every unit ends fully verified, so the last unit's verification is the final one. The finalization summary must include migrations examined, objects folded/reconciled, migration-quality result, static result, and semantic result.
+- Every unit ends with the checks applicable to its fold-state mode completed. A partial unit reports the guarantees that passed and keeps baseline-only behavior/equivalence explicitly `PENDING`; those pending checks are not claimed as verified. The last unit's applicable verification is the final one. The finalization summary must include migrations examined, objects folded/reconciled, migration-quality result, static result, and semantic result.
 
 ### Step 4: Finalize
 

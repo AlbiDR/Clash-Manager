@@ -159,6 +159,9 @@ export function useClashSync(data: Ref<WebAppData | null>) {
   /** Cancellation authority for the active remote transport. */
   let activeSyncController: AbortController | null = null;
 
+  /** One invalidation refresh queued behind the current pass, if any. */
+  let queuedInvalidationPromise: Promise<SyncAttemptResult> | null = null;
+
   /** Indicates the provenance of the dataset (SUPABASE). */
   const dataSource = ref<"SUPABASE" | null>(null);
 
@@ -358,11 +361,24 @@ export function useClashSync(data: Ref<WebAppData | null>) {
    * @param force - If true, requests cache bypass at the Supabase transport layer.
    * @returns Bounded result indicating execution success or normalized error context.
    */
-  function executeRemoteSync(force: boolean): Promise<SyncAttemptResult> {
+  function executeRemoteSync(force: boolean, queueInvalidation = false): Promise<SyncAttemptResult> {
     // [DECISION LOG] Single-Flight Promise Lock: Deduplicate concurrent sync calls.
     // Re-use active in-flight sync promise if execution is already underway to eliminate
     // duplicate network requests and race conditions on reactive state commitment.
     if (activeSyncPromise) {
+      if (queueInvalidation) {
+        if (queuedInvalidationPromise) return queuedInvalidationPromise;
+
+        const activePromise = activeSyncPromise;
+        const invalidationPromise = activePromise.then(() => {
+          // Release the queue slot before starting this pass. An invalidation
+          // during the follow-up then queues its own subsequent pass.
+          queuedInvalidationPromise = null;
+          return executeRemoteSync(force, queueInvalidation);
+        });
+        queuedInvalidationPromise = invalidationPromise;
+        return invalidationPromise;
+      }
       if (activeSyncController?.signal.aborted) {
         return activeSyncPromise.then(() => executeRemoteSync(force));
       }
@@ -440,7 +456,11 @@ export function useClashSync(data: Ref<WebAppData | null>) {
    * @param syncIntent - Intent type ("background" or "manual").
    * @param force - If true, forces remote transport cache bypass.
    */
-  async function runSync(syncIntent: SyncIntent, force: boolean): Promise<void> {
+  async function runSync(
+    syncIntent: SyncIntent,
+    force: boolean,
+    queueInvalidation = false,
+  ): Promise<void> {
     if (isSyntheticMode.value) {
       console.debug("[Sync] Synthetic Mode active: Refreshing mock data");
       await commitSyncResult(generateMockData(), { remoteSuccess: true });
@@ -459,7 +479,7 @@ export function useClashSync(data: Ref<WebAppData | null>) {
       declinedBackgroundSyncs = 0;
     }
 
-    const syncResult = await executeRemoteSync(force);
+    const syncResult = await executeRemoteSync(force, queueInvalidation);
     if (syncResult.success) return;
 
     // [DECISION LOG] Fault Visibility Thresholding: Suppress transient background sync
@@ -476,6 +496,14 @@ export function useClashSync(data: Ref<WebAppData | null>) {
   /** Triggers a user-visible foreground synchronization from Supabase. */
   async function refreshFromSupabase(): Promise<void> {
     await runSync("manual", true);
+  }
+
+  /**
+   * Refreshes after a server invalidation, queuing one pass behind an active sync.
+   * Invalidation callers share a queued pass and resolve when that pass finishes.
+   */
+  async function refreshAfterInvalidation(): Promise<void> {
+    await runSync("manual", true, true);
   }
 
   /**
@@ -538,6 +566,7 @@ export function useClashSync(data: Ref<WebAppData | null>) {
     loadLocal,
     updateLocalData,
     refreshFromSupabase,
+    refreshAfterInvalidation,
     startBackgroundSync,
     updatePlayerLocally
   };

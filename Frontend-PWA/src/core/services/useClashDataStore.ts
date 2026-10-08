@@ -185,6 +185,8 @@ export const useClashDataStore = defineStore("clashData", () => {
      * Brokered from {@link useClashSync}.
      */
     refreshFromSupabase: sync.refreshFromSupabase,
+    /** Queues a fresh pass when a server invalidation arrives during a sync. */
+    refreshAfterInvalidation: sync.refreshAfterInvalidation,
     /**
      * Patches a specific player's data in the local state.
      * Brokered from {@link useClashSync}.
