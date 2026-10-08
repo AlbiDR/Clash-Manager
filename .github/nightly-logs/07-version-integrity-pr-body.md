@@ -4,23 +4,23 @@
 
 In plain terms: nothing needed fixing. This run checked the version integrity area and found it already correct, so the only file here is the log recording that the check happened.
 
-**What was checked:** Catalog and package version scans confirmed zero drift across package manifests (root package.json, Frontend-PWA/package.json, Backend/package.json ground truth v14.51.5) and derived locations via pnpm audit:version.
+**What was checked:** Scanned catalog adherence in PWA and Backend package.json and version consistency across root, PWA, and Backend package.json, badges, APK manifests, and substrate constants against ground truth 14.52.2; 0 drift lines found.
 
-**Why:** Ground truth version 14.51.5 and catalog usage are fully synchronized across all monorepo manifests and derived targets.
+**Why:** No version drift or catalog violations found across all package manifests and derived files.
 
-**Result:** Catalog scan (Frontend-PWA, Backend), package version scan (package.json, Frontend-PWA/package.json, Backend/package.json v14.51.5), and pnpm audit:version validation all passed with 0 drift detected.
+**Result:** pnpm audit:version reported 0 drift lines across all manifests and derived locations.
 
 **Files changed:** .github/nightly-logs/07-version-integrity-coverage.log
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: versioning
-  Cycle: nightly-cycle/2026-10-07
+  Cycle: nightly-cycle/2026-10-08
   Contract: 294f64f1358ef17af7639062d355427eaf3ce873f96ed18c821b7f7412d9219a
-  Why: Ground truth version 14.51.5 and catalog usage are fully synchronized across all monorepo manifests and derived targets.
-  Change: Catalog and package version scans confirmed zero drift across package manifests (root package.json, Frontend-PWA/package.json, Backend/package.json ground truth v14.51.5) and derived locations via pnpm audit:version.
-  Result: Catalog scan (Frontend-PWA, Backend), package version scan (package.json, Frontend-PWA/package.json, Backend/package.json v14.51.5), and pnpm audit:version validation all passed with 0 drift detected.
+  Why: No version drift or catalog violations found across all package manifests and derived files.
+  Change: Scanned catalog adherence in PWA and Backend package.json and version consistency across root, PWA, and Backend package.json, badges, APK manifests, and substrate constants against ground truth 14.52.2; 0 drift lines found.
+  Result: pnpm audit:version reported 0 drift lines across all manifests and derived locations.
   Files: .github/nightly-logs/07-version-integrity-coverage.log
   Nudges: 0
-  Execution: 0cbbfd13d8c31ac56edab01482dc3e3006231b94
+  Execution: 1eee691c920460057dd5a336b80517e249a13a6d
 -->
