@@ -16,6 +16,15 @@ LAST_AGED:   2026-10-07
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-08] PR #2120 [Stage 2]: Frontend-PWA/src/shared/composables/composables-tests/useVoyageStore.spec.ts -- Closed realtime subscription lifecycle and contribution score normalization gaps in useVoyageStore.
+**Domain:** verification | **Commit:** 20ec1b838 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2120)
+**Files:** .github/nightly-logs/02-verification-coverage.log, .github/nightly-logs/02-verification-pr-body.md, Frontend-PWA/src/shared/composables/composables-tests/useVoyageStore.spec.ts
+**Why:** Recent-change priority gap closure for useVoyageStore store logic.
+**Change:** Frontend-PWA/src/shared/composables/composables-tests/useVoyageStore.spec.ts -- Closed realtime subscription lifecycle and contribution score normalization gaps in useVoyageStore.
+**Result:** Added 4 unit tests covering realtime postgres change callbacks, channel unsubscriptions on completed transition, subscription setup idempotency, and contribution performance_score string-to-number parsing. Verified non-trivial via mutation test (expecting 999 instead of 92.5) which caught the break.
+**Nudges:** 0
+
+
 ### [2026-10-07] PR #2119 [Stage 1]: Annotated in-memory reactive state variables with explicit EPHEMERAL comments across Core and Shared UI services
 **Domain:** hardening | **Commit:** 26091c1cf | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2119)
 **Files:** .github/nightly-logs/*, Frontend-PWA/src/core/services/*, Frontend-PWA/src/features/headhunter/composables/* (8 files)
