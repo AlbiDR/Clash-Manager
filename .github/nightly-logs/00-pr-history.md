@@ -16,6 +16,15 @@ LAST_AGED:   2026-10-07
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-08] PR #2128 [Stage 10]: Audited APK and PWA wrapper integrity invariants; verified asset links, manifest parity, version codes/names, release metadata, and security policy.
+**Domain:** apk | **Commit:** b715f9502 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2128)
+**Files:** .github/nightly-logs/10-apk-integrity-coverage.log, .github/nightly-logs/10-apk-integrity-pr-body.md
+**Why:** No mismatches found between web client PWA manifest, TWA manifest, Android manifest, and release configuration.
+**Change:** Audited APK and PWA wrapper integrity invariants; verified asset links, manifest parity, version codes/names, release metadata, and security policy.
+**Result:** Passed pnpm audit:apk, pnpm apk:verify:source, pnpm test:apk-native, and pnpm test:apk-release.
+**Nudges:** 0
+
+
 ### [2026-10-08] PR #2126 [Stage 8]: Bumped @supabase/supabase-js catalog entry from ^2.117.2 to ^2.117.3
 **Domain:** dependencies | **Commit:** feebc68c4 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2126)
 **Files:** .github/nightly-logs/08-dependency-audit-coverage.log, .github/nightly-logs/08-dependency-audit-pr-body.md, package.json, pnpm-lock.yaml, pnpm-workspace.yaml
