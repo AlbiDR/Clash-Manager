@@ -536,6 +536,14 @@
   - Health Verdict: Stage 12 rated `DEGRADING` ("intervention rate rose from 19% to 22%").
   - Resolution Details: Watchdog nudges successfully recovered both sessions (`ok: true`). Stage 10 published PR #2116 (CLEAN) and Stage 11 published PR #2117 (CLEAN). Pipeline intervention rate for 2026-10-07: 2/11 merged stages (18.2%).
 
+* Redispatched Session Failure and Watchdog Interventions on 2026-10-08:
+  - Stages: Stage 3 (Baseline Consolidation), Stage 5 (README), and Stage 6 (TSDoc)
+  - State: [RESCUED - monitor] (2026-10-08)
+  - Sessions: Stage 3 initial session (`sessions/5505685036417912377`, `FAILED`; redispatched as `sessions/2897676741416564606`, `COMPLETED`), Stage 5 (`sessions/10041133379201509658`, `nudgedAt: 2026-10-08T05:43:57.854Z`), Stage 6 (`sessions/18120863945703712565`, `nudgedAt: 2026-10-08T05:44:00.673Z`)
+  - Symptom: Stage 3 initial session failed before PR creation and was automatically redispatched by watchdog. Stage 5 and Stage 6 sessions completed their audit work but stalled prior to opening PRs, requiring watchdog nudges.
+  - Root Cause: Unhandled runtime exception or API timeout during Stage 3 initial run; post-commit / publication stall for Stages 5 and 6.
+  - Resolution Details: Stage 3 redispatch succeeded and published PR #2122. Watchdog nudges successfully recovered Stage 5 (PR #2125) and Stage 6 (PR #2124). Pipeline intervention rate for 2026-10-08: 2 nudged / 12 merged stages (16.7%), plus 1 automatic redispatch.
+
 
 ## Section 2: Cross-Stage Coherence Bugs (Priority 2)
 
@@ -584,56 +592,64 @@
   - Root Cause: Session entered prolonged post-commit or finalization reserve prior to watchdog recovery dispatch.
   - Resolution Details: Watchdog nudge successfully recovered the session (`ok: true`). Stage 10 completed and published PR #1936 (CLEAN coverage log entry) for 2026-09-23. Pipeline intervention rate for 2026-09-23: 1/12 merged stages (8.3%).
 
+* Database Check CI Workflow Failure on Consolidated Baseline Migration (Stage 3, 2026-10-08):
+  - Stage: Stage 3 (Baseline Consolidation)
+  - State: [ACTIVE - monitor] (2026-10-08)
+  - PR: PR #2122 (run #37720805241)
+  - Symptom: GitHub Actions `database-verification` workflow reported `conclusion: failure` on PR #2122 after Stage 3 folded migration unit into baseline.
+  - Root Cause: Remote CI database migration verification failed during validation of the folded baseline migration against target Supabase schema invariants.
+  - Recommended Fix: Audit baseline migration SQL ordering and dependency constraints in Stage 3 migration baseline.
+
 ## Section 3: No-Diff and Low-Value Audit (Priority 3)
 
 * Stage 1 (Harden):
-  - Consecutive No-Diff Days: 10 (CLEAN logged on 2026-10-06; audit duration: 6m)
-  - Analysis: Audited Edge Function endpoints, in-memory state variables, Valibot boundary schemas, and cross-layer architectural isolations across 42 files; zero threat vectors found.
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-10-08 in Core/Shared UI services; audit duration: 11m)
+  - Analysis: Annotated in-memory reactive state variables with explicit EPHEMERAL comments across Core and Shared UI services; verified with 219 test files (2285 tests).
 
 * Stage 2 (Verify):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-10-07 in useConnectionStatus.spec.ts; audit duration: 10m)
-  - Analysis: Closed coverage gaps in useConnectionStatus composable with saturating unit/boundary tests in Frontend-PWA/src/core/services/services-tests/useConnectionStatus.spec.ts.
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-10-08 in useVoyageStore.spec.ts; audit duration: 15m)
+  - Analysis: Added 4 unit tests covering realtime postgres change callbacks, channel unsubscriptions on completed transition, subscription setup idempotency, and contribution performance_score string-to-number parsing in Frontend-PWA/src/shared/composables/composables-tests/useVoyageStore.spec.ts.
 
 * Stage 3 (Baseline Consolidation):
-  - Consecutive No-Diff Days: 26 (FAILED on 2026-10-07; session duration: 28m)
-  - Analysis: Session failed (JULES_SESSION_FAILED) during baseline consolidation audit; fold-state: PENDING.
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-10-08; audit duration: 10m)
+  - Analysis: Folded migration unit into master baseline migration (fold-state: 28 remaining). Redispatched session completed after initial session failure. Note: CI database verification failed on PR #2122.
 
 * Stage 4 (Optimization):
-  - Consecutive No-Diff Days: 23 (CLEAN logged on 2026-10-07; audit duration: 4m)
-  - Analysis: Inspected 106 changed files and Edge Functions for SQL view substrate hygiene; zero structural rot or unreferenced views found.
+  - Consecutive No-Diff Days: 24 (CLEAN logged on 2026-10-08; audit duration: 6m)
+  - Analysis: Inspected 57 changed files and Edge Functions for SQL view substrate hygiene; zero structural rot or unreferenced views found.
 
 * Stage 5 (README):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-10-07 in README.md; audit duration: 6m)
-  - Analysis: Reconciled ViewOptions.vue documentation debt with useDismissOnBack back navigation dismissal in Frontend-PWA/src/shared/ui/README.md.
+  - Consecutive No-Diff Days: 1 (CLEAN logged on 2026-10-08; audit duration: 7m)
+  - Analysis: Audited 8 doc-debt source files and verified adjacent Edge Function READMEs; all described Edge Function schemas, protocol contracts, RPOS thresholds, rate limits, and security controls match current implementation truth. Session recovered via watchdog nudge (PR #2125).
 
 * Stage 6 (TSDoc):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-10-07 in useDismissOnBack.ts; audit duration: 8m)
-  - Analysis: Hardened useDismissOnBack interface contracts and inline logic annotations in Frontend-PWA/src/core/services/useDismissOnBack.ts.
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-10-08 in useVoyageStore.ts; audit duration: 5m)
+  - Analysis: Hardened useVoyageStore interface contracts and inline logic annotations in Frontend-PWA/src/shared/composables/useVoyageStore.ts. Session recovered via watchdog nudge (PR #2124).
 
 * Stage 7 (Version Integrity):
-  - Consecutive No-Diff Days: 157 (CLEAN logged on 2026-10-07; audit duration: 2m)
-  - Analysis: Catalog and package version scans confirmed zero drift across package manifests (root package.json, Frontend-PWA/package.json, Backend/package.json ground truth v14.51.5) and derived locations via pnpm audit:version.
+  - Consecutive No-Diff Days: 158 (CLEAN logged on 2026-10-08; audit duration: 3m)
+  - Analysis: Catalog adherence in PWA and Backend package.json and version consistency across package manifests, badges, APK manifests, and substrate constants confirmed ground truth v14.52.2 with 0 drift lines via pnpm audit:version.
 
 * Stage 8 (Dependency Audit):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-10-07 in package.json; audit duration: 7m)
-  - Analysis: Bumped knip to ^6.40.0 in monorepo catalog and refreshed pnpm-lock.yaml.
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-10-08 in package.json; audit duration: 6m)
+  - Analysis: Bumped @supabase/supabase-js catalog entry from ^2.117.2 to ^2.117.3; verified across 219 test files (2289 tests).
 
 * Stage 9 (Refactor):
-  - Consecutive No-Diff Days: 7 (CLEAN logged on 2026-10-07; audit duration: 5m)
-  - Analysis: Scanned 106 changed files, 0 dep-violations, knip 11 unused files, 1 unused dep; clean calibration streak: 6; inspected core/config, useSettings, useConsoleController; substrate compliant.
+  - Consecutive No-Diff Days: 8 (CLEAN logged on 2026-10-08; audit duration: 6m)
+  - Analysis: Calibration pass on 57 candidate files: 0 dep-violations, knip 11 unused files / 1 dep; clean calibration streak: 7; inspected useClashSync.ts, profiler.ts, and widened Core service useConnectionStatus.ts. Substrate compliant.
 
 * Stage 10 (APK-Integrity):
-  - Consecutive No-Diff Days: 90 (CLEAN logged on 2026-10-07; audit duration: 4m)
-  - Analysis: Audited PWA and APK wrapper invariants: asset links, manifest parity, version code/name sync, release metadata, cleartext traffic policy, and Android permissions; zero mismatches found.
+  - Consecutive No-Diff Days: 91 (CLEAN logged on 2026-10-08; audit duration: 4m)
+  - Analysis: Audited PWA and APK wrapper invariants: asset links, manifest parity, version code/name sync, release metadata, cleartext traffic policy, and Android permissions; zero mismatches found. Passed pnpm audit:apk, pnpm apk:verify:source, pnpm test:apk-native, and pnpm test:apk-release.
 
 * Stage 11 (APK-Optimization):
-  - Consecutive No-Diff Days: 24 (CLEAN logged on 2026-10-07; audit duration: 4m)
-  - Analysis: Calibration pass: 7 ordinary clean runs verified; inspected WebView cache mode, preraster, DOM storage, acceleration, SW routes, navigation preload, Vite code splitting, and asset footprint (15 files, 67.6 KB). All 9 performance invariants verified optimal.
+  - Consecutive No-Diff Days: 25 (CLEAN logged on 2026-10-08; audit duration: 4m)
+  - Analysis: Audited WebView settings, SW caching strategies, and precache footprint (15 files, 67.6 KB). All 9 performance invariants verified optimal via pnpm audit:apk-perf.
 
 * Stage 12 (APK-UX):
-  - Consecutive No-Diff Days: 9 (CLEAN logged on 2026-10-07; audit duration: 2m)
-  - Analysis: Global APK UX audit passed with zero violations across 77 frontend files.
+  - Consecutive No-Diff Days: 10 (CLEAN logged on 2026-10-08; audit duration: 5m)
+  - Analysis: Global APK UX audit passed with zero candidate files remaining across 10 UX categories.
 
 * Stage 13 (Self-Healing):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-10-07; audit duration: 5m)
-  - Analysis: Completed daily self-healing audit pass for 2026-10-07: documented Stage 3 session failure (JULES_SESSION_FAILED), Stage 10 & 11 watchdog nudge recovery (2/11 intervention rate = 18.2%), noted Stage 12 DEGRADING health verdict, and updated Section 3 metrics.
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-10-08; audit duration: 4m)
+  - Analysis: Completed daily self-healing audit pass for 2026-10-08: documented Stage 3 initial session failure (`FAILED`, redispatched), Stage 5 & 6 watchdog nudge recovery (2/12 intervention rate = 16.7%), Stage 3 CI DB check failure on PR #2122, and updated Section 3 metrics.
