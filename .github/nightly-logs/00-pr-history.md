@@ -16,6 +16,15 @@ LAST_AGED:   2026-10-07
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-08] PR #2123 [Stage 7]: Scanned catalog adherence in PWA and Backend package.json and version consistency across root, PWA, and Backend package.json, badges, APK manifests, and substrate constants against ground truth 14.52.2; 0 drift lines found.
+**Domain:** versioning | **Commit:** 21c4e3b58 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2123)
+**Files:** .github/nightly-logs/07-version-integrity-coverage.log, .github/nightly-logs/07-version-integrity-pr-body.md
+**Why:** No version drift or catalog violations found across all package manifests and derived files.
+**Change:** Scanned catalog adherence in PWA and Backend package.json and version consistency across root, PWA, and Backend package.json, badges, APK manifests, and substrate constants against ground truth 14.52.2; 0 drift lines found.
+**Result:** pnpm audit:version reported 0 drift lines across all manifests and derived locations.
+**Nudges:** 0
+
+
 ### [2026-10-08] PR #2122 [Stage 3]: Folded unit 20260620142000_headhunter_epoch_guard.sql into master migration
 **Domain:** database | **Commit:** 3218ec4cc | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2122)
 **Files:** .github/nightly-logs/03-baseline-consolidation-coverage.log, .github/nightly-logs/03-baseline-consolidation-pr-body.md, Backend/supabase/migrations/20260531232406_master_migration.sql
