@@ -37,6 +37,7 @@ PORT_OFFSET=$(( ($$ % 400) * 10 ))
 API_PORT=$(( 55000 + PORT_OFFSET % 8000 ))
 DB_PORT=$(( API_PORT + 1 ))
 CONTAINER="supabase_db_${PROJECT_ID}"
+POSTGREST_CONTAINER="supabase_rest_${PROJECT_ID}"
 
 cleanup() {
   if [[ -d "${TEMP_ROOT}/supabase" ]]; then
@@ -74,6 +75,55 @@ stop_project() {
 
 run_database_tests() {
   (cd "${TEMP_ROOT}" && supabase test db)
+}
+
+configure_database_test_schema_context() {
+  local runtime_schemas role_schema_override setting schema_value first_schema=""
+  local schema_csv_pattern='^[[:space:]]*[a-z_][a-z0-9_]*(,[[:space:]]*[a-z_][a-z0-9_]*)*[[:space:]]*$'
+  if ! runtime_schemas=$(docker inspect --format '{{range .Config.Env}}{{if eq (index (split . "=") 0) "PGRST_DB_SCHEMAS"}}{{println .}}{{end}}{{end}}' "${POSTGREST_CONTAINER}" | sed -n 's/^PGRST_DB_SCHEMAS=//p'); then
+    echo "Unable to read PGRST_DB_SCHEMAS from the temporary PostgREST container." >&2
+    return 1
+  fi
+  if [[ ! "${runtime_schemas}" =~ ${schema_csv_pattern} ]]; then
+    echo "Temporary PostgREST PGRST_DB_SCHEMAS is missing or malformed; refusing to run the schema exposure probe." >&2
+    return 1
+  fi
+  runtime_schemas=${runtime_schemas//[[:space:]]/}
+
+  if ! role_schema_override=$(docker exec "${CONTAINER}" psql \
+      --set ON_ERROR_STOP=1 --tuples-only --no-align \
+      --username postgres --dbname postgres \
+      --command "SELECT config.setting FROM pg_db_role_setting AS s JOIN pg_roles AS r ON r.oid = s.setrole CROSS JOIN LATERAL unnest(s.setconfig) AS config(setting) WHERE r.rolname = 'authenticator' AND (s.setdatabase = 0 OR s.setdatabase = (SELECT oid FROM pg_database WHERE datname = current_database())) AND config.setting LIKE 'pgrst.db_schemas=%'"); then
+    echo "Unable to inspect the temporary authenticator schema GUC." >&2
+    return 1
+  fi
+  if [[ -n "${role_schema_override}" ]]; then
+    while IFS= read -r setting; do
+      schema_value=${setting#pgrst.db_schemas=}
+      if [[ "${setting}" != pgrst.db_schemas=* || ! "${schema_value}" =~ ${schema_csv_pattern} ]]; then
+        echo "Temporary authenticator schema override is missing or malformed; refusing to run the exposure probe." >&2
+        return 1
+      fi
+      schema_value=${schema_value//[[:space:]]/}
+      if [[ -n "${first_schema}" && "${first_schema}" != "${schema_value}" ]]; then
+        echo "Temporary authenticator has conflicting applicable schema overrides; refusing to run the exposure probe." >&2
+        return 1
+      fi
+      first_schema=${schema_value}
+    done <<<"${role_schema_override}"
+    echo "Preserving the temporary authenticator pgrst.db_schemas override for the exposure probe."
+    return 0
+  fi
+
+  # This role setting supplies test context in the disposable CLI stack only.
+  # Derive it from the running PostgREST container; never mask exposed schemas.
+  if ! docker exec "${CONTAINER}" psql \
+      --set ON_ERROR_STOP=1 --username postgres --dbname postgres \
+      --command "ALTER ROLE authenticator SET pgrst.db_schemas = '${runtime_schemas}'" >/dev/null; then
+    echo "Unable to apply measured PostgREST schemas as temporary test context." >&2
+    return 1
+  fi
+  echo "Applied measured PostgREST schemas as temporary pgTAP context."
 }
 
 apply_baseline_again() {
@@ -130,12 +180,22 @@ if [[ "${BASELINE_STARTED}" == "1" ]]; then
     record_failure "baseline catalog snapshot" "${status}"
   fi
 
+  BASELINE_SCHEMA_CONTEXT_READY=0
   if [[ "${BASELINE_PGTAP}" == "true" ]]; then
+    if configure_database_test_schema_context; then
+      BASELINE_SCHEMA_CONTEXT_READY=1
+    else
+      status=$?
+      record_failure "baseline PostgREST schema context" "${status}"
+    fi
+  fi
+
+  if [[ "${BASELINE_PGTAP}" == "true" && "${BASELINE_SCHEMA_CONTEXT_READY}" == "1" ]]; then
     if run_database_tests; then :; else
       status=$?
       record_failure "baseline-only pgTAP" "${status}"
     fi
-  else
+  elif [[ "${BASELINE_PGTAP}" != "true" ]]; then
     echo "BASELINE-ONLY pgTAP PENDING: fold-state ${FOLD_STATUS} has ${PENDING_OBJECTS} pending objects owned by ${PENDING_MIGRATIONS} migrations."
   fi
 
@@ -178,9 +238,14 @@ fi
 
 FULL_REPLAY_READY=0
 if [[ "${FULL_STARTED}" == "1" ]]; then
-  if run_database_tests; then :; else
+  if configure_database_test_schema_context; then
+    if run_database_tests; then :; else
+      status=$?
+      record_failure "full-history pgTAP" "${status}"
+    fi
+  else
     status=$?
-    record_failure "full-history pgTAP" "${status}"
+    record_failure "full-history PostgREST schema context" "${status}"
   fi
   if schema_snapshot "${TEMP_ROOT}/full-replay.sql"; then
     FULL_REPLAY_READY=1

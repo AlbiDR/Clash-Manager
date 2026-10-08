@@ -268,6 +268,9 @@ async function dockerVerifierFixture(t, {
   failFullPgTap = false,
   failBaselineIdempotency = false,
   failCatalogEquality = false,
+  runtimeSchemas = 'public,storage,graphql_public,features',
+  runtimeSchemasUnavailable = false,
+  roleSchemaOverride = null,
 } = {}) {
   const root = await mkdtemp(path.join(os.tmpdir(), 'baseline-verifier-test-'));
   t.after(() => rm(root, { recursive: true, force: true }));
@@ -294,6 +297,8 @@ async function dockerVerifierFixture(t, {
     : 'ALTER TABLE public.items ADD COLUMN label text;\n');
   await writeFile(path.join(databaseTests, 'fixture.test.sql'), 'SELECT 1;\n');
   execFileSync('git', ['init', '--quiet'], { cwd: repo });
+  const roleSchemaFile = path.join(root, 'authenticator-schema-setting.txt');
+  if (roleSchemaOverride !== null) await writeFile(roleSchemaFile, `${roleSchemaOverride}\n`);
 
   const supabase = path.join(bin, 'supabase');
   await writeFile(supabase, `#!/usr/bin/env bash
@@ -301,6 +306,7 @@ set -euo pipefail
 cmd=$1
 shift || true
 if [[ "$cmd" == start ]]; then
+  if [[ "${'${'}FAKE_ROLE_SCHEMA_INITIAL_SET:-0}" == 1 ]]; then printf '%s\n' "$FAKE_ROLE_SCHEMA_INITIAL" > "$FAKE_ROLE_SCHEMA_FILE"; else rm -f "$FAKE_ROLE_SCHEMA_FILE"; fi
   count=$(find supabase/migrations -maxdepth 1 -type f -name '*.sql' | wc -l | tr -d ' ')
   mode=baseline
   [[ "$count" -eq 1 ]] || mode=full
@@ -311,6 +317,7 @@ elif [[ "$cmd" == stop ]]; then
 elif [[ "$cmd" == test ]]; then
   mode=$(cat "$FAKE_DB_MODE")
   echo "pgtap:$mode" >> "$FAKE_DB_LOG"
+  if [[ -s "$FAKE_ROLE_SCHEMA_FILE" ]] && grep -Eq '(^|,)substrate(,|$)' "$FAKE_ROLE_SCHEMA_FILE"; then exit 21; fi
   if [[ "$mode" == baseline && "${'${'}FAKE_BASELINE_PGTAP_FAIL:-0}" == 1 ]]; then exit 17; fi
   if [[ "$mode" == full && "${'${'}FAKE_FULL_PGTAP_FAIL:-0}" == 1 ]]; then exit 19; fi
 fi
@@ -321,7 +328,19 @@ fi
 set -euo pipefail
 if [[ "$1" == info ]]; then exit 0; fi
 mode=$(cat "$FAKE_DB_MODE")
-if [[ "$*" == *pg_dump* ]]; then
+if [[ "$1" == inspect && "$*" == *supabase_rest_clash_baseline_* && "$*" == *PGRST_DB_SCHEMAS* ]]; then
+  echo "read:runtime-schemas" >> "$FAKE_DB_LOG"
+  if [[ "${'${'}FAKE_RUNTIME_UNAVAILABLE:-0}" == 1 ]]; then exit 31; fi
+  printf 'PGRST_DB_SCHEMAS=%s\n' "$FAKE_RUNTIME_SCHEMAS"
+elif [[ "$1" == exec && "$2" == supabase_db_clash_baseline_* && "$*" == *"pg_db_role_setting"* ]]; then
+  echo "read:authenticator-role-setting" >> "$FAKE_DB_LOG"
+  if [[ -s "$FAKE_ROLE_SCHEMA_FILE" ]]; then sed 's/^/pgrst.db_schemas=/' "$FAKE_ROLE_SCHEMA_FILE"; fi
+elif [[ "$1" == exec && "$2" == supabase_db_clash_baseline_* && "$*" == *"ALTER ROLE authenticator SET pgrst.db_schemas"* ]]; then
+  schema=$(sed -n "s/.*SET pgrst.db_schemas = '\\([^']*\\)'.*/\\1/p" <<<"$*")
+  [[ -n "$schema" ]] || exit 32
+  printf '%s\n' "$schema" > "$FAKE_ROLE_SCHEMA_FILE"
+  echo "set:authenticator-schema-context" >> "$FAKE_DB_LOG"
+elif [[ "$*" == *pg_dump* ]]; then
   echo "dump:$mode" >> "$FAKE_DB_LOG"
   if [[ "${'${'}FAKE_CATALOG_MISMATCH:-0}" == 1 ]]; then echo "catalog-$mode";
   elif [[ "${'${'}FAKE_COMPLETE:-0}" == 1 ]]; then echo catalog-complete;
@@ -343,6 +362,10 @@ fi
       PATH: `${bin}:${process.env.PATH}`,
       FAKE_DB_LOG: path.join(root, 'calls.log'),
       FAKE_DB_MODE: path.join(root, 'mode.txt'),
+      FAKE_ROLE_SCHEMA_FILE: roleSchemaFile,
+      ...(roleSchemaOverride !== null ? { FAKE_ROLE_SCHEMA_INITIAL: roleSchemaOverride, FAKE_ROLE_SCHEMA_INITIAL_SET: '1' } : {}),
+      FAKE_RUNTIME_SCHEMAS: runtimeSchemas ?? '',
+      ...(runtimeSchemasUnavailable ? { FAKE_RUNTIME_UNAVAILABLE: '1' } : {}),
       ...(folded ? { FAKE_COMPLETE: '1' } : {}),
       ...(failBaselinePgTap ? { FAKE_BASELINE_PGTAP_FAIL: '1' } : {}),
       ...(failFullPgTap ? { FAKE_FULL_PGTAP_FAIL: '1' } : {}),
@@ -364,6 +387,107 @@ test('Docker verifier skips baseline-only pgTAP under fold debt and always tests
   assert.doesNotMatch(calls, /pgtap:baseline/);
   assert.match(calls, /start:full/);
   assert.match(calls, /pgtap:full/);
+  assert.match(calls, /set:authenticator-schema-context/);
+});
+
+test('Docker verifier copies measured PostgREST schemas into absent role context without masking exposure', async t => {
+  const exposedSchemas = 'public,storage,graphql_public,features,substrate';
+  const fixture = await dockerVerifierFixture(t, { runtimeSchemas: exposedSchemas });
+  let failure;
+  try {
+    execFileSync('bash', ['.github/scripts/database/test-database-baseline.sh'], {
+      cwd: fixture.repo,
+      env: fixture.env,
+      stdio: 'pipe',
+    });
+  } catch (error) {
+    failure = error;
+  }
+  assert.equal(failure?.status, 21, 'an actually exposed substrate schema still fails the pgTAP probe');
+  const calls = await (await import('node:fs/promises')).readFile(fixture.env.FAKE_DB_LOG, 'utf8');
+  const roleSchemas = await (await import('node:fs/promises')).readFile(fixture.env.FAKE_ROLE_SCHEMA_FILE, 'utf8');
+  assert.equal(roleSchemas.trim(), exposedSchemas, 'the measured runtime list is applied without replacing substrate');
+  assert.match(calls, /read:runtime-schemas/);
+  assert.match(calls, /set:authenticator-schema-context/);
+  assert.match(calls, /pgtap:full/);
+});
+
+test('Docker verifier preserves existing authenticator schema override and fails on exposed substrate', async t => {
+  const override = 'public,features,substrate';
+  const fixture = await dockerVerifierFixture(t, {
+    runtimeSchemas: 'public,storage,graphql_public,features',
+    roleSchemaOverride: override,
+  });
+  let failure;
+  try {
+    execFileSync('bash', ['.github/scripts/database/test-database-baseline.sh'], {
+      cwd: fixture.repo,
+      env: fixture.env,
+      stdio: 'pipe',
+    });
+  } catch (error) {
+    failure = error;
+  }
+  assert.equal(failure?.status, 21);
+  const calls = await (await import('node:fs/promises')).readFile(fixture.env.FAKE_DB_LOG, 'utf8');
+  const roleSchemas = await (await import('node:fs/promises')).readFile(fixture.env.FAKE_ROLE_SCHEMA_FILE, 'utf8');
+  assert.equal(roleSchemas.trim(), override, 'existing role GUC remains authoritative');
+  assert.match(calls, /Preserving|read:authenticator-role-setting/);
+  assert.doesNotMatch(calls, /set:authenticator-schema-context/);
+});
+
+test('Docker verifier fails closed when runtime schema evidence is unavailable or malformed', async t => {
+  for (const scenario of [
+    { name: 'unavailable', runtimeSchemasUnavailable: true },
+    { name: 'malformed', runtimeSchemas: 'public,,features' },
+  ]) {
+    await t.test(scenario.name, async t => {
+      const fixture = await dockerVerifierFixture(t, scenario);
+      let failure;
+      try {
+        execFileSync('bash', ['.github/scripts/database/test-database-baseline.sh'], {
+          cwd: fixture.repo,
+          env: fixture.env,
+          stdio: 'pipe',
+        });
+      } catch (error) {
+        failure = error;
+      }
+      assert.equal(failure?.status, 1, 'missing runtime evidence fails the verifier');
+      const calls = await (await import('node:fs/promises')).readFile(fixture.env.FAKE_DB_LOG, 'utf8');
+      assert.doesNotMatch(calls, /set:authenticator-schema-context/);
+      assert.doesNotMatch(calls, /pgtap:full/);
+      assert.doesNotMatch(`${failure.stdout}\n${failure.stderr}`, /semantic verification PASS/);
+    });
+  }
+});
+
+test('Docker verifier fails closed on empty, malformed, or conflicting authenticator overrides', async t => {
+  for (const scenario of [
+    { name: 'empty override cannot hide runtime exposure', roleSchemaOverride: '', runtimeSchemas: 'public,features,substrate' },
+    { name: 'malformed override', roleSchemaOverride: 'public,,features' },
+    { name: 'conflicting applicable overrides', roleSchemaOverride: 'public,features\npublic,features,substrate' },
+  ]) {
+    await t.test(scenario.name, async t => {
+      const fixture = await dockerVerifierFixture(t, scenario);
+      let failure;
+      try {
+        execFileSync('bash', ['.github/scripts/database/test-database-baseline.sh'], {
+          cwd: fixture.repo,
+          env: fixture.env,
+          stdio: 'pipe',
+        });
+      } catch (error) {
+        failure = error;
+      }
+      assert.equal(failure?.status, 1, 'invalid role evidence fails the verifier');
+      const calls = await (await import('node:fs/promises')).readFile(fixture.env.FAKE_DB_LOG, 'utf8');
+      assert.match(calls, /read:authenticator-role-setting/);
+      assert.doesNotMatch(calls, /set:authenticator-schema-context/);
+      assert.doesNotMatch(calls, /pgtap:full/);
+      assert.doesNotMatch(`${failure.stdout}\n${failure.stderr}`, /semantic verification PASS/);
+    });
+  }
 });
 
 test('Docker verifier propagates a genuine full-replay pgTAP failure', async t => {
