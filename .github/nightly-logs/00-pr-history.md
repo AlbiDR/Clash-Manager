@@ -16,6 +16,23 @@ LAST_AGED:   2026-10-07
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-08] PR #2126 [Stage 8]: Bumped @supabase/supabase-js catalog entry from ^2.117.2 to ^2.117.3
+**Domain:** dependencies | **Commit:** feebc68c4 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2126)
+**Files:** .github/nightly-logs/08-dependency-audit-coverage.log, .github/nightly-logs/08-dependency-audit-pr-body.md, package.json, pnpm-lock.yaml, pnpm-workspace.yaml
+**Why:** Safe Tier 1 patch bump for dependency hygiene
+**Change:** Bumped @supabase/supabase-js catalog entry from ^2.117.2 to ^2.117.3
+**Result:** pnpm test executed 219 test files and passed 2289 tests without errors
+**Nudges:** 1
+
+### [2026-10-08] PR #2127 [Stage 9]: Calibration pass: 57 candidates, 0 dep-violations, knip 11 unused files/1 dep/0 exports; clean-streak 7; opened useClashSync, profiler, useConnectionStatus; closest useClashSync tightly coupled; hunted useConnectionStatus passed 10/10.
+**Domain:** architecture | **Commit:** 27b3df710 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2127)
+**Files:** .github/nightly-logs/09-refactor-proposals-coverage.log, .github/nightly-logs/09-refactor-proposals-pr-body.md
+**Why:** Structural scan found zero CleanStack ADR violations across candidate modules useClashSync.ts, profiler.ts, and widened Core service useConnectionStatus.ts. Substrate is compliant and knip reported no actionable dead exports.
+**Change:** Calibration pass: 57 candidates, 0 dep-violations, knip 11 unused files/1 dep/0 exports; clean-streak 7; opened useClashSync, profiler, useConnectionStatus; closest useClashSync tightly coupled; hunted useConnectionStatus passed 10/10.
+**Result:** Substrate clean. Type-check passed via pnpm -F clash-manager-pwa type-check. Depcruise passed with 0 violations across 532 modules. Unit tests passed 10/10 in useConnectionStatus.spec.ts.
+**Nudges:** 0
+
+
 ### [2026-10-08] PR #2125 [Stage 5]: Audited 8 doc-debt source files and verified adjacent Edge Function READMEs
 **Domain:** documentation | **Commit:** 152e1eb55 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2125)
 **Files:** .github/nightly-logs/05-documentation-readme-coverage.log, .github/nightly-logs/05-documentation-readme-pr-body.md
