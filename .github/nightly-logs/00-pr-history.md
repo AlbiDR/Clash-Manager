@@ -16,6 +16,23 @@ LAST_AGED:   2026-10-07
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-08] PR #2125 [Stage 5]: Audited 8 doc-debt source files and verified adjacent Edge Function READMEs
+**Domain:** documentation | **Commit:** 152e1eb55 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2125)
+**Files:** .github/nightly-logs/05-documentation-readme-coverage.log, .github/nightly-logs/05-documentation-readme-pr-body.md
+**Why:** All described Edge Function schemas, protocol contracts, RPOS thresholds, rate limits, and security controls match current implementation truth
+**Change:** Audited 8 doc-debt source files and verified adjacent Edge Function READMEs
+**Result:** Clean audit complete; all 219 test files (2289 tests) passed and git diff --check verified clean
+**Nudges:** 0
+
+### [2026-10-08] PR #2124 [Stage 6]: docs(tsdoc): harden useVoyageStore interface contracts and inline logic annotations
+**Domain:** documentation | **Commit:** c6f55498e | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2124)
+**Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, .github/nightly-logs/06-documentation-tsdoc-pr-body.md, Frontend-PWA/src/shared/composables/useVoyageStore.ts
+**Why:** Synchronized useVoyageStore TSDoc contracts, ADR Section III mappings, side effects, and inline decision logs with implementation
+**Change:** docs(tsdoc): harden useVoyageStore interface contracts and inline logic annotations
+**Result:** PASSED (vue-tsc type-check and Vitest useVoyageStore unit tests passed)
+**Nudges:** 0
+
+
 ### [2026-10-08] PR #2123 [Stage 7]: Scanned catalog adherence in PWA and Backend package.json and version consistency across root, PWA, and Backend package.json, badges, APK manifests, and substrate constants against ground truth 14.52.2; 0 drift lines found.
 **Domain:** versioning | **Commit:** 21c4e3b58 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2123)
 **Files:** .github/nightly-logs/07-version-integrity-coverage.log, .github/nightly-logs/07-version-integrity-pr-body.md
