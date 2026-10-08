@@ -136,13 +136,13 @@ export function useHeadhunter() {
           const id = playerTag.startsWith('#') ? playerTag.slice(1) : playerTag;
           applyLocalDismissal([id]);
         },
-        () => clashDataStore.refreshFromSupabase(),
+        () => clashDataStore.refreshAfterInvalidation(),
         (blacklistSubscriptionError) => {
           console.error("[Headhunter] Blacklist synchronization failed", blacklistSubscriptionError);
           toastError(blacklistSubscriptionError.message);
         },
         // Dismissals made while the connection was down never arrive as events.
-        () => clashDataStore.refreshFromSupabase(),
+        () => clashDataStore.refreshAfterInvalidation(),
       );
   if (getCurrentInstance()) {
     onUnmounted(stopBlacklistSync);

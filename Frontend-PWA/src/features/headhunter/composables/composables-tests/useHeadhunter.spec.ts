@@ -17,6 +17,7 @@ const mockClashData = ref<WebAppData | null>(null);
 const mockUpdateLocalData = vi.fn((newData) => {
   mockClashData.value = newData;
 });
+const mockRefreshAfterInvalidation = vi.fn().mockResolvedValue(undefined);
 const mockPost = vi.fn();
 const mockIsSyntheticMode = ref(false);
 const mockToastError = vi.fn();
@@ -39,6 +40,7 @@ vi.mock("@core/services/useClashDataStore", () => ({
   useClashDataStore: () => ({
     data: mockClashData,
     updateLocalData: mockUpdateLocalData,
+    refreshAfterInvalidation: mockRefreshAfterInvalidation,
   }),
 }));
 
@@ -87,6 +89,7 @@ describe("useHeadhunter", () => {
     vi.clearAllMocks();
     mockIsSyntheticMode.value = false;
     mockClashData.value = null;
+    mockRefreshAfterInvalidation.mockClear();
 
     // Reset modules
     mockModules.experimentalNotifications = true;
@@ -142,6 +145,24 @@ describe("useHeadhunter", () => {
     onError(subscriptionFailure as never);
 
     expect(mockToastError).toHaveBeenCalledWith("Realtime unavailable");
+  });
+
+  it("uses trailing invalidation refreshes for DELETE and reconnect while INSERT stays immediate", async () => {
+    const { subscribeToBlacklist } = await import("@core/api/RecruitClient");
+    const { useHeadhunter } = await import("../useHeadhunter");
+    useHeadhunter();
+    const [, onDelete, , onResync] = vi.mocked(subscribeToBlacklist).mock.calls.at(-1)!;
+
+    const deletePass = onDelete("#R1");
+    const reconnectPass = onResync!();
+    expect(mockRefreshAfterInvalidation).toHaveBeenCalledTimes(2);
+
+    mockClashData.value = sampleData;
+    const [onInsert] = vi.mocked(subscribeToBlacklist).mock.calls.at(-1)!;
+    onInsert("#R1");
+    expect(mockUpdateLocalData).toHaveBeenLastCalledWith(expect.objectContaining({ hh: [sampleRecruit2] }));
+
+    await Promise.all([deletePass, reconnectPass]);
   });
 
   it("should update badge with total count if setting is disabled", async () => {
