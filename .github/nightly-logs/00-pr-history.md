@@ -16,6 +16,15 @@ LAST_AGED:   2026-10-08
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-09] PR #2136 [Stage 5]: Reconcile StatusPill, BaseSelect, and ConfirmDialog documentation with useDismissOnBack integration
+**Domain:** documentation | **Commit:** 35e1c176f | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2136)
+**Files:** .github/nightly-logs/05-documentation-readme-coverage.log, .github/nightly-logs/05-documentation-readme-pr-body.md, Frontend-PWA/src/shared/ui/README.md
+**Why:** doc-debt targets in shared/ui carry accurate useDismissOnBack back navigation overlay dismissal descriptions
+**Change:** Reconcile StatusPill, BaseSelect, and ConfirmDialog documentation with useDismissOnBack integration
+**Result:** git diff --check clean, 219 vitest files passed (2299 tests)
+**Nudges:** 0
+
+
 ### [2026-10-09] PR #2135 [Stage 3]: Folded 2 migrations (20260915190000_harden_ingestion_delivery_lease.sql and 20260915190011_backend_health_and_safe_maintenance.sql) into master baseline
 **Domain:** database | **Commit:** bb27e6a70 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2135)
 **Files:** .github/nightly-logs/03-baseline-consolidation-coverage.log, .github/nightly-logs/03-baseline-consolidation-pr-body.md, Backend/supabase/migrations/20260531232406_master_migration.sql
