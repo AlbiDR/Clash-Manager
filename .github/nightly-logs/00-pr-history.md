@@ -16,6 +16,15 @@ LAST_AGED:   2026-10-08
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-09] PR #2137 [Stage 6]: docs(tsdoc): harden SupabaseClient TSDoc interface contracts and inline annotations
+**Domain:** documentation | **Commit:** 1fa536747 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2137)
+**Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, .github/nightly-logs/06-documentation-tsdoc-pr-body.md, Frontend-PWA/src/core/api/SupabaseClient.ts
+**Why:** Hardened Layer 1 SupabaseClient TSDoc contracts, ADR Section III mappings, and inline decision/threat logs with implementation
+**Change:** docs(tsdoc): harden SupabaseClient TSDoc interface contracts and inline annotations
+**Result:** PASSED (pnpm --filter clash-manager-pwa type-check and Vitest SupabaseClient.spec.ts passed)
+**Nudges:** 0
+
+
 ### [2026-10-09] PR #2136 [Stage 5]: Reconcile StatusPill, BaseSelect, and ConfirmDialog documentation with useDismissOnBack integration
 **Domain:** documentation | **Commit:** 35e1c176f | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2136)
 **Files:** .github/nightly-logs/05-documentation-readme-coverage.log, .github/nightly-logs/05-documentation-readme-pr-body.md, Frontend-PWA/src/shared/ui/README.md
