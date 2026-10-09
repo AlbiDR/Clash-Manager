@@ -16,6 +16,15 @@ LAST_AGED:   2026-10-08
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-09] PR #2143 [Stage 12]: Global webview interactions and viewport hygiene verified clean
+**Domain:** ux | **Commit:** ed6929a10 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2143)
+**Files:** .github/nightly-logs/12-apk-ux-coverage.log, .github/nightly-logs/12-apk-ux-pr-body.md
+**Why:** Structured APK UX audit reported PASS with 77 files examined and 0 violations or candidates found; manual candidate sweep verified no raw selectors, unsafe anchors, or missing insets
+**Change:** Global webview interactions and viewport hygiene verified clean
+**Result:** apk-ux-audit-status.txt: PASS; apk-ux-audit.json: 0 candidate files reviewed; UX categories 1-10 checked
+**Nudges:** 0
+
+
 ### [2026-10-09] PR #2142 [Stage 10]: PWA and APK wrapper integrity audit verified across asset links, manifest parity, version code/name sync, release metadata, and security policy using pnpm audit:apk.
 **Domain:** apk | **Commit:** 3daab35b5 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2142)
 **Files:** .github/nightly-logs/10-apk-integrity-coverage.log, .github/nightly-logs/10-apk-integrity-pr-body.md
