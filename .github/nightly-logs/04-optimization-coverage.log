@@ -126,3 +126,4 @@
 * [2026-10-06] [Stage 4] [02:09Z-02:13Z 4m] CLEAN: Codebase -- Inspected 111 changed files and Edge Functions for SQL view substrate hygiene; zero structural rot or unreferenced views found.
 * [2026-10-07] [Stage 4] [02:03Z-02:07Z 4m] CLEAN: Codebase -- Inspected 106 changed files and Edge Functions for SQL view substrate hygiene; zero structural rot or unreferenced views found.
 * [2026-10-08] [Stage 4] [02:31Z-02:37Z 6m] CLEAN: Codebase -- Inspected 57 changed files and Edge Functions for SQL view substrate hygiene; zero structural rot or unreferenced views found.
+* [2026-10-09] [Stage 4] [02:31Z-02:37Z 6m] CLEAN: Codebase -- Calibration pass: Inspected 52 changed files and widened scan to migrations for SQL view definitions (7 clean since calibration); zero structural rot or unreferenced database views found.
