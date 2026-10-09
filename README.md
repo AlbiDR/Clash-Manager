@@ -211,7 +211,7 @@ On the backend, data flows one way: Edge Functions fetch and validate game data,
 
 | Area | Technology |
 | :--- | :--- |
-| **Client** | Vue 3.5, TypeScript (strict), Vue Router 5 (experimental data loaders), Pinia, Vite 7 |
+| **Client** | Vue 3.5, TypeScript (strict), Vue Router 5 (experimental data loaders), Pinia, Vite 8 |
 | **PWA** | vite-plugin-pwa, Workbox (custom service worker), IndexedDB with in-memory fallback |
 | **Validation** | Valibot schema boundaries on all external data, client and server |
 | **Backend** | Supabase, Postgres 17, Deno Edge Functions, pg_cron, pg_net, Vault, row-level security |
@@ -240,7 +240,7 @@ The Android build is a custom WebView wrapper around the same PWA, plus a native
 
 ### [Backend](Backend/README.md)
 
-A Supabase project running five Deno Edge Functions behind a rotating pool of ~20 Clash Royale API keys (routed through the RoyaleAPI static-IP proxy). It ingests clan, war, and battle data, discovers recruits, proxies leaderboard and battle-log lookups, and syncs player card collections for the Laboratory.
+A Supabase project running six Deno Edge Functions: five game-data functions using a rotating pool of ~20 Clash Royale API keys (routed through the RoyaleAPI static-IP proxy), plus a lightweight `ping` connectivity and version probe. It ingests clan, war, and battle data, discovers recruits, proxies leaderboard and battle-log lookups, and syncs player card collections for the Laboratory.
 
 ---
 
@@ -254,7 +254,7 @@ This repository maintains itself. Every night an external coding agent runs a **
 
 ### Prerequisites
 
-- Node.js 24+
+- Node.js 24.15.0 or newer
 - pnpm 10+
 
 ### Run the app
@@ -264,7 +264,7 @@ git clone https://github.com/albidr/Clash-Manager.git
 cd Clash-Manager
 pnpm install
 
-pnpm dev:pwa          # start the PWA at http://localhost:5173
+pnpm dev:pwa          # start the PWA at http://localhost:5173/Clash-Manager/
 ```
 
 Point the client at a Supabase project with a `.env` file in `Frontend-PWA/`:

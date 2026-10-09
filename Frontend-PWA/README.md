@@ -15,11 +15,11 @@ The Vue 3.5 progressive web app: an installable, offline-first dashboard for Cla
 
 ## Quick start
 
-Requires Node 24+ and pnpm 10+.
+Requires Node 24.15.0 or newer and pnpm 10+.
 
 ```bash
 pnpm install
-pnpm dev            # http://localhost:5173  (from this directory)
+pnpm dev            # http://localhost:5173/Clash-Manager/  (from this directory)
 ```
 
 Create a `.env` here pointing at a Supabase project:
