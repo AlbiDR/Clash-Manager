@@ -16,6 +16,23 @@ LAST_AGED:   2026-10-08
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-09] PR #2135 [Stage 3]: Folded 2 migrations (20260915190000_harden_ingestion_delivery_lease.sql and 20260915190011_backend_health_and_safe_maintenance.sql) into master baseline
+**Domain:** database | **Commit:** bb27e6a70 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2135)
+**Files:** .github/nightly-logs/03-baseline-consolidation-coverage.log, .github/nightly-logs/03-baseline-consolidation-pr-body.md, Backend/supabase/migrations/20260531232406_master_migration.sql
+**Why:** Declarative schema consolidation and security hardening of master migration
+**Change:** Folded 2 migrations (20260915190000_harden_ingestion_delivery_lease.sql and 20260915190011_backend_health_and_safe_maintenance.sql) into master baseline
+**Result:** pnpm audit:migrations PASS (71 examined, 0 violations); static fold-state checked (26 remaining); database verification DB-UNAVAILABLE
+**Nudges:** 0
+
+### [2026-10-09] PR #2134 [Stage 4]: Calibration pass: Inspected 52 changed files and widened scan to migrations for SQL view definitions (7 clean since calibration); zero structural rot or unreferenced database views found.
+**Domain:** optimization | **Commit:** f49c03440 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2134)
+**Files:** .github/nightly-logs/04-optimization-coverage.log, .github/nightly-logs/04-optimization-pr-body.md
+**Why:** Systematic substrate and source audit confirmed all 10 SQL database views are actively referenced with zero dead code or performance bottlenecks present.
+**Change:** Calibration pass: Inspected 52 changed files and widened scan to migrations for SQL view definitions (7 clean since calibration); zero structural rot or unreferenced database views found.
+**Result:** All 219 test files passed (2299 tests, 0 failures) and view reference integrity confirmed.
+**Nudges:** 0
+
+
 ### [2026-10-09] PR #2133 [Stage 2]: Closed zero-coverage gap in L1 Core fetchResourcePressure API utility with saturating unit/boundary tests in SupabaseClient.spec.ts.
 **Domain:** verification | **Commit:** bbac6cbd5 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2133)
 **Files:** .github/nightly-logs/02-verification-coverage.log, .github/nightly-logs/02-verification-pr-body.md, Frontend-PWA/src/core/api/api-tests/SupabaseClient.spec.ts
