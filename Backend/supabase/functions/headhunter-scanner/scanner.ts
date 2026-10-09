@@ -10,6 +10,8 @@ import { runTournamentDiscovery } from "./stages/tournament-finder.ts";
 import { runProfiler } from "./stages/profiler.ts";
 import { runRescan } from "./stages/rescan.ts";
 import { runGhostPurge } from "./stages/ghost-purge.ts";
+import { withAbortSignal } from "../_shared/abortSignal.ts";
+import { ScannerWorkBudget } from "./work-budget.ts";
 
 /**
  * L4 App: Headhunter Scanner Orchestrator
@@ -27,6 +29,21 @@ export async function executeScanner(
     logAudit: (stage: string, action: AuditEntry['action'], details?: unknown) => void,
     heartbeat: (stage: string) => Promise<void>
 ) {
+    const workBudget = new ScannerWorkBudget();
+    try {
+        return await executeScannerWithBudget(tournaments, logAudit, heartbeat, workBudget);
+    } finally {
+        workBudget.dispose();
+    }
+}
+
+async function executeScannerWithBudget(
+    tournaments: string[],
+    logAudit: (stage: string, action: AuditEntry['action'], details?: unknown) => void,
+    heartbeat: (stage: string) => Promise<void>,
+    workBudget: ScannerWorkBudget,
+) {
+    const signal = workBudget.signal;
     const startInstant = Temporal.Now.instant();
     const stats: ScannerStats = {
         discovery_targets: 0,
@@ -47,7 +64,11 @@ export async function executeScanner(
     };
 
     // --- CONTEXT BOOT: FETCH EXCLUSIONS AND THRESHOLDS ---
-    const { data: scannerContextRaw, error: scannerContextError } = await supabase.rpc('get_headhunter_context');
+    const { data: scannerContextRaw, error: scannerContextError } = await withAbortSignal(
+        supabase.rpc('get_headhunter_context'),
+        signal,
+    );
+    workBudget.throwIfStopped();
 
     // [GUARD] VALIDATION BOUNDARY: Target C [1]
     // Rationale: Ensure scanner parameters are valid before pipeline execution.
@@ -71,46 +92,50 @@ export async function executeScanner(
     // EPHEMERAL: intentionally resets on cold start
     const candidates = new Map<string, RecruitSource>(); // tag -> source
 
-    // --- TIMEOUT HELPER ---
-    const STAGE_TIMEOUT = 10 * 60 * 1000; // 10 minutes
-    const withTimeout = async <T>(promise: Promise<T>, stageName: string): Promise<T> => {
-        const timeout = new Promise<never>((_, reject) => 
-            setTimeout(() => reject(new Error(`Stage ${stageName} timed out after 10m`)), STAGE_TIMEOUT)
-        );
-        return Promise.race([promise, timeout]);
+    // --- STAGE DEADLINE HELPER ---
+    const runStage = async <T>(promise: Promise<T>): Promise<T> => {
+        try {
+            const result = await promise;
+            workBudget.throwIfStopped();
+            return result;
+        } catch (stageError: unknown) {
+            workBudget.throwIfStopped();
+            throw stageError;
+        }
     };
 
     // --- S0: GHOST PURGE (clean house before discovering new leads) ---
     try {
-        const evicted = await withTimeout(
-            runGhostPurge(exclusionSet, stats, logAudit),
-            'S0_GHOST_PURGE'
-        );
+        const evicted = await runStage(runGhostPurge(exclusionSet, stats, logAudit, signal, workBudget.admissionSignal));
         stats.ghosts_purged = evicted;
     } catch (ghostPurgeExecutionError: unknown) {
         const message = ghostPurgeExecutionError instanceof Error ? ghostPurgeExecutionError.message : String(ghostPurgeExecutionError);
         stats.errors.push(`S0_GHOST_PURGE: ${message}`);
         logAudit('GHOST_PURGE', 'error', { message });
     }
+    workBudget.throwIfStopped();
     await heartbeat('S0_GHOST_PURGE');
+    workBudget.throwIfStopped();
 
     // --- DISCOVERY PHASE (S1-S3) ---
 
     // S1: Shadow Scouting
     try {
-        await withTimeout(runShadowScout(candidates, exclusionSet, stats, logAudit), 'S1_SHADOW_SCOUT');
+        await runStage(runShadowScout(candidates, exclusionSet, stats, logAudit, signal));
     } catch (shadowScoutExecutionError: unknown) {
         const message = shadowScoutExecutionError instanceof Error ? shadowScoutExecutionError.message : String(shadowScoutExecutionError);
         stats.errors.push(`S1_SHADOW_SCOUT: ${message}`);
         stats.top50_unknown_reasons.push(`S1_SHADOW_SCOUT: ${message}`);
         logAudit('SHADOW_SCOUT', 'error', { message });
     }
+    workBudget.throwIfStopped();
     await heartbeat('S1_SHADOW_SCOUT');
+    workBudget.throwIfStopped();
 
     // S2: Tournament Discovery
     try {
         if (tournaments.includes("AUTO")) {
-            await withTimeout(runTournamentDiscovery(candidates, exclusionSet, requiredTrophies, stats, logAudit), 'S2_TOURNAMENT_DISCOVERY');
+            await runStage(runTournamentDiscovery(candidates, exclusionSet, requiredTrophies, stats, logAudit, signal, workBudget.admissionSignal));
         }
     } catch (tournamentDiscoveryExecutionError: unknown) {
         const message = tournamentDiscoveryExecutionError instanceof Error ? tournamentDiscoveryExecutionError.message : String(tournamentDiscoveryExecutionError);
@@ -118,7 +143,9 @@ export async function executeScanner(
         stats.top50_unknown_reasons.push(`S2_TOURNAMENT_DISCOVERY: ${message}`);
         logAudit('TOURNAMENT_DISCOVERY', 'error', { message });
     }
+    workBudget.throwIfStopped();
     await heartbeat('S2_TOURNAMENT_DISCOVERY');
+    workBudget.throwIfStopped();
 
     // Discovery cap check: the profiler hard-caps at 1000 candidates. If we hit
     // that ceiling, lower-priority sources (tournament) lose candidates silently.
@@ -135,26 +162,30 @@ export async function executeScanner(
 
     // S3: Profiling & Ingestion
     try {
-        await withTimeout(runProfiler(candidates, exclusionSet, requiredTrophies, stats, logAudit), 'S3_PROFILING');
+        await runStage(runProfiler(candidates, exclusionSet, requiredTrophies, stats, logAudit, signal, workBudget.admissionSignal));
     } catch (profilingExecutionError: unknown) {
         const message = profilingExecutionError instanceof Error ? profilingExecutionError.message : String(profilingExecutionError);
         stats.errors.push(`S3_PROFILING: ${message}`);
         stats.top50_unknown_reasons.push(`S3_PROFILING: ${message}`);
         logAudit('PROFILING', 'error', { message });
     }
+    workBudget.throwIfStopped();
     await heartbeat('S3_PROFILING');
+    workBudget.throwIfStopped();
 
     // --- MAINTENANCE PHASE (S4) ---
 
     // S4: Stale Recruit Re-scan (refresh existing ACTIVE pool, evict newly-clanned players)
     try {
-        await withTimeout(runRescan(exclusionSet, requiredTrophies, stats, logAudit), 'S4_RESCAN');
+        await runStage(runRescan(exclusionSet, requiredTrophies, stats, logAudit, signal, workBudget.admissionSignal));
     } catch (rescanExecutionError: unknown) {
         const message = rescanExecutionError instanceof Error ? rescanExecutionError.message : String(rescanExecutionError);
         stats.errors.push(`S4_RESCAN: ${message}`);
         logAudit('RESCAN', 'error', { message });
     }
+    workBudget.throwIfStopped();
     await heartbeat('S4_RESCAN');
+    workBudget.throwIfStopped();
 
     // --- EPOCH GUARD FEEDBACK ---
     // Report the top-50 outcome to the epoch guard state machine so it can
@@ -167,6 +198,7 @@ export async function executeScanner(
     // the telemetry, and the guard is left exactly as it was found. A positive count stands
     // even then: those recruits were found, and disarming the guard is the truthful answer.
     const top50Count = stats.new_recruits_top50;
+    workBudget.throwIfStopped();
     const top50Known = typeof top50Count === 'number'
         && (top50Count >= 1 || stats.top50_unknown_reasons.length === 0);
     if (!top50Known) {
@@ -184,7 +216,11 @@ export async function executeScanner(
         // is gated on success so the epoch guard is never reported as updated when it was not.
         // The catch is retained for genuine transport-level rejections (network/abort).
         try {
-            const { error: epochStateError } = await supabase.rpc('update_epoch_state', { p_top50: top50Count });
+            const { error: epochStateError } = await withAbortSignal(
+                supabase.rpc('update_epoch_state', { p_top50: top50Count }),
+                signal,
+            );
+            workBudget.throwIfStopped();
             if (epochStateError) {
                 stats.errors.push(`EPOCH_GUARD: ${epochStateError.message}`);
                 logAudit('EPOCH_GUARD', 'error', { message: epochStateError.message, details: epochStateError });
@@ -193,12 +229,14 @@ export async function executeScanner(
                 logAudit('EPOCH_GUARD', 'terminated', { new_recruits_top50: top50Count });
             }
         } catch (epochStateExecutionError: unknown) {
+            workBudget.throwIfStopped();
             const message = epochStateExecutionError instanceof Error ? epochStateExecutionError.message : String(epochStateExecutionError);
             stats.errors.push(`EPOCH_GUARD: ${message}`);
             logAudit('EPOCH_GUARD', 'error', { message });
         }
     }
 
+    workBudget.throwIfStopped();
     return {
         ...stats,
         duration_ms: Temporal.Now.instant().since(startInstant).total('milliseconds')

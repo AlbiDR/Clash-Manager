@@ -11,6 +11,8 @@ on:
         required: true
         default: 'AUTO'
 
+permissions: {}
+
 jobs:
   scout:
     name: "Manual Scouting Pipeline"

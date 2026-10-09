@@ -4730,16 +4730,12 @@ GRANT SELECT ON features.voyage_summary TO authenticated, anon, service_role;
 CREATE OR REPLACE VIEW features.pipeline_heartbeat_view AS
   SELECT
     ph.component_id,
-    ph.last_success_at,
-    ph.status,
-    ph.last_triggered_at,
-    ph.last_failure_at
+    ph.last_success_at
   FROM substrate.pipeline_heartbeat ph;
 
 COMMENT ON VIEW features.pipeline_heartbeat_view IS
-  'Anon-readable, public-safe pipeline status projection for the PWA. Exposes
-   completion timing and status only; private operational messages remain in
-   substrate.pipeline_heartbeat.';
+  'Historical two-column PWA heartbeat projection. Later immutable migrations
+   expand this view to the current public-safe five-column projection.';
 
 GRANT SELECT ON features.pipeline_heartbeat_view TO authenticated, anon, service_role;
 

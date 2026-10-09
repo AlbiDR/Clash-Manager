@@ -4,6 +4,7 @@
 import { supabase } from "../client.ts";
 import { ScannerStats, AuditEntry, RecruitSource } from "../../_shared/types.ts";
 import { SHADOW_DISCOVERY_LIMIT } from "../../_shared/config.ts";
+import { withAbortSignal } from "../../_shared/abortSignal.ts";
 import * as v from "npm:valibot@1.5.0";
 import { ShadowTargetSchema } from "../../_shared/schemas.ts";
 
@@ -41,15 +42,18 @@ export async function runShadowScout(
     candidates: Map<string, RecruitSource>,
     exclusionSet: Set<string>,
     stats: ScannerStats,
-    logAudit: (stage: string, action: AuditEntry['action'], details?: unknown) => void
+    logAudit: (stage: string, action: AuditEntry['action'], details?: unknown) => void,
+    signal?: AbortSignal,
 ) {
     logAudit('SHADOW_SCOUT', 'triggered');
     console.log(`[SHADOW_SCOUT] Triggered. Candidates map size: ${candidates.size}, Exclusion set size: ${exclusionSet.size}`);
     try {
         logAudit('SHADOW_SCOUT', 'called');
         console.log(`[SHADOW_SCOUT] Fetching shadow discovery targets via RPC...`);
-        const { data: shadowTargetsRaw, error: shadowTargetsError } = await supabase
-            .rpc('get_shadow_discovery_targets', { p_limit: SHADOW_DISCOVERY_LIMIT });
+        const { data: shadowTargetsRaw, error: shadowTargetsError } = await withAbortSignal(
+            supabase.rpc('get_shadow_discovery_targets', { p_limit: SHADOW_DISCOVERY_LIMIT }),
+            signal,
+        );
         
         const shadowTargets = shadowTargetsRaw ?? [];
         logAudit('SHADOW_SCOUT', 'run', { count: Array.isArray(shadowTargets) ? shadowTargets.length : 0, error: shadowTargetsError });

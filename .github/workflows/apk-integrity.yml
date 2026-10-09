@@ -31,6 +31,9 @@ on:
       - "Frontend-PWA/src/core/types/index.ts"
       - "Frontend-PWA/src/core/config/index.ts"
 
+permissions:
+  contents: read
+
 jobs:
   custom-layer-intact:
     runs-on: ubuntu-latest

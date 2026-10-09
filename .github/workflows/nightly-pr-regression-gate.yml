@@ -72,6 +72,9 @@ concurrency:
   group: nightly-pr-gate-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 jobs:
   regression:
     name: "Suite must not regress"

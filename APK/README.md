@@ -53,7 +53,7 @@ Declared permissions: `SYSTEM_ALERT_WINDOW`, `FOREGROUND_SERVICE`, `FOREGROUND_S
 | `openProfiles(tagsJson, delayMs)` | void | The same run without the taps and without the tap targets: opens each profile for `delayMs`, then the next. Used by the Roster, whose players are already in the clan. |
 | `openPlayerProfile(tag)` | void | Deep-links to a Clash Royale player profile. |
 | `openExternalUrl(url)` | void | Opens a URL via an Android intent. |
-| `downloadApkFile(url, filename, sha256?)` | boolean | Downloads the latest APK through `DownloadManager`, verifies SHA-256 when metadata provides it, then opens Android's installer for user confirmation. |
+| `downloadApkFile(url, filename, sha256?)` | boolean | Requires valid SHA-256 metadata and an allowed release URL. Downloads through `DownloadManager`, verifies SHA-256, then opens Android's installer for user confirmation. Returns `false` on rejection so the PWA can open its browser download fallback. |
 
 The PWA-side contract for these methods lives in [`core/types`](../Frontend-PWA/src/core/types/README.md); changing a signature here means changing it there too.
 
@@ -85,6 +85,8 @@ Every tool version is pinned in [`toolchain.json`](toolchain.json): the JDK (25,
 Signed release builds run in CI (`.github/workflows/apk-release.yml`): it resolves the JDK, Android packages, and hash-verified apktool from `toolchain.json`, then runs `build-apk.sh --check` before signing. That check compiles `src/` and refuses a stale or mismatched checked-in `classes.dex`; the release then packages the verified `android/` tree, preserving its recovered library classes. It decodes the keystore from secrets, builds, aligns, signs, verifies the signature, runs the integrity gate, and commits the signed `release/clashmanager-v<version>+<buildNumber>.apk` back to Beta. `<buildNumber>` is CI's monotonic `github.run_number`, distinct from `versionCode` (which is derived purely from `<version>` - see `verify-apk-integrity.mjs`), so two builds of the same version can still be told apart from a downloaded file alone. `release/latest.json` points at that one tracked versioned filename and build number for scripts, older clients, DownloadManager save names, and already-current update checks.
 
 ## Seeing it run
+
+Reuse `node APK/apk-dev.mjs start`; never force-stop CM Dev (`am start -S`, `am force-stop`, or `apk-dev stop`), because Android switches its accessibility service off. A person must restore that setting. Follow the canonical [APK device-testing skill](../.github/agents/skills/apk-device-testing/SKILL.md) for the device-testing procedure and permission guidance.
 
 `./APK/build-apk.sh --dev` builds **CM Dev**: the same native code under its own package id (`com.albidr.clashmanager.dev`), debuggable, signed with the local debug key, so it installs next to the real app. It loads the live PWA by default; `CLASHMANAGER_DEV_URL=http://localhost:5173/Clash-Manager/` points it at the local dev server, reached from the device with `node APK/apk-dev.mjs reverse 5173`.
 

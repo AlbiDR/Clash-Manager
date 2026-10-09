@@ -3,7 +3,9 @@
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { ScannerStats } from "../../../_shared/types.ts";
+import { CONCURRENCY_RESCAN } from "../../../_shared/config.ts";
 import { calculateRpos, calculateWeightedWinRate } from "../../../_shared/utils.ts";
+import { ScannerAdmissionDeadlineExceededError } from "../../work-budget.ts";
 
 /**
  * Direct coverage of how `runRescan()` wires calculateRpos()/
@@ -32,7 +34,7 @@ const { mockSupabase, mockFetchWithRotation, mockProcessBatch, rpcResponses } = 
     // Deterministic stand-in for the real `p-limit`-backed processBatch:
     // executes every task sequentially and returns their results, preserving
     // real semantics without depending on p-limit being resolvable at all.
-    const mockProcessBatch = vi.fn(async (tasks: Array<() => Promise<unknown>>) => {
+    const mockProcessBatch = vi.fn(async (tasks: Array<() => Promise<unknown>>, _concurrency?: number, _signal?: AbortSignal) => {
         const results: unknown[] = [];
         for (const task of tasks) {
             results.push(await task());
@@ -82,6 +84,25 @@ beforeEach(() => {
     vi.clearAllMocks();
     for (const key of Object.keys(rpcResponses)) delete rpcResponses[key];
 });
+
+async function runAbortableBatch(
+    tasks: Array<() => Promise<unknown>>,
+    concurrency: number,
+    signal?: AbortSignal,
+): Promise<void> {
+    let nextTask = 0;
+    const workers = Array.from({ length: Math.min(concurrency, tasks.length) }, async () => {
+        while (!signal?.aborted) {
+            const task = tasks[nextTask++];
+            if (!task) return;
+            await task();
+        }
+    });
+    const settled = await Promise.allSettled(workers);
+    const rejection = settled.find((worker) => worker.status === "rejected");
+    if (signal?.aborted) throw signal.reason;
+    if (rejection?.status === "rejected") throw rejection.reason;
+}
 
 describe("runRescan recruit persistence wiring", () => {
     it("wires calculateRpos()/calculateWeightedWinRate() output into the sync_recruits payload for a refreshed recruit", async () => {
@@ -290,5 +311,43 @@ describe("runRescan recruit persistence wiring", () => {
 
             consoleWarnSpy.mockRestore();
         });
+    });
+
+    it("checkpoints completed rescan rows when admission closes before the deferred batch finishes", async () => {
+        const admission = new AbortController();
+        const hard = new AbortController();
+        const admissionError = new ScannerAdmissionDeadlineExceededError();
+        const staleRows = Array.from({ length: CONCURRENCY_RESCAN + 5 }, (_, index) => ({ player_tag: `#STALE${index}` }));
+        let fetchStarts = 0;
+
+        rpcResponses.get_stale_recruits = { data: staleRows, error: null };
+        mockProcessBatch.mockImplementation((tasks, concurrency = CONCURRENCY_RESCAN, signal) =>
+            runAbortableBatch(tasks, concurrency, signal));
+        mockFetchWithRotation.mockImplementation((_endpoint: string, _retries: unknown, signal: AbortSignal) => {
+            fetchStarts++;
+            if (fetchStarts === 1) {
+                return Promise.resolve({
+                    ok: true,
+                    status: 200,
+                    json: async () => {
+                        admission.abort(admissionError);
+                        return { ...staleProfile, tag: "#STALE0" };
+                    },
+                });
+            }
+            return new Promise((_resolve, reject) => {
+                signal.addEventListener("abort", () => reject(signal.reason), { once: true });
+            });
+        });
+
+        await expect(runRescan(new Set(), 6000, freshStats(), vi.fn(), hard.signal, admission.signal))
+            .rejects.toBe(admissionError);
+
+        expect(fetchStarts).toBe(CONCURRENCY_RESCAN);
+        const syncCalls = mockSupabase.rpc.mock.calls.filter(([name]: [string]) => name === "sync_recruits");
+        expect(syncCalls).toHaveLength(1);
+        expect(syncCalls[0][1].p_recruits).toHaveLength(1);
+        expect(syncCalls[0][1].p_recruits[0]).toMatchObject({ player_tag: "#STALE0", status: "ACTIVE" });
+        expect(syncCalls[0][1].p_recruits[0]).not.toHaveProperty("source");
     });
 });

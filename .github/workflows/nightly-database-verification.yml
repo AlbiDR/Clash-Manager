@@ -67,8 +67,16 @@ jobs:
         uses: supabase/setup-cli@v1
         with:
           version: latest
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          github-token: ${{ github.token }}
 
       - name: Verify the baseline rebuilds the migrated database
+        env:
+          DATABASE_TYPES_OUTPUT: ${{ runner.temp }}/candidate-database.types.ts
         run: bash .github/scripts/database/test-database-baseline.sh
+
+      - name: Preserve generated candidate database types
+        uses: actions/upload-artifact@v4
+        with:
+          name: candidate-database-types
+          path: ${{ runner.temp }}/candidate-database.types.ts
+          if-no-files-found: error

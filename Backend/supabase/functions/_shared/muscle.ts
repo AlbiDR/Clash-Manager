@@ -4,6 +4,7 @@
 import pLimit from "npm:p-limit@7.3.0";
 import * as v from "npm:valibot@1.5.0";
 import { KeyPoolSchema } from "./schemas.ts";
+import { throwIfAborted } from "./abortSignal.ts";
 
 /**
  * L1 Core: Native Muscle Engine
@@ -78,7 +79,11 @@ console.log(`[Native-Muscle] Key Farm online. Keys will be resolved lazily per r
  * @returns A standard Fetch `Response` object.
  * @throws Error if all keys in the rotation pool are exhausted or rejected by the proxy.
  */
-export async function fetchWithRotation(endpoint: string, maxRetries: number = DEFAULT_MAX_RETRIES): Promise<Response> {
+export async function fetchWithRotation(
+  endpoint: string,
+  maxRetries: number = DEFAULT_MAX_RETRIES,
+  signal?: AbortSignal,
+): Promise<Response> {
   const keys = getKeys();
   const startIndex = Math.floor(Math.random() * keys.length);
   
@@ -86,13 +91,16 @@ export async function fetchWithRotation(endpoint: string, maxRetries: number = D
   // [DECISION LOG] Key rotation is implemented via a random offset (startIndex) followed by a linear
   // probe to ensure all keys are tried before declaring failure.
   for (let rotationIndex = INITIAL_INDEX; rotationIndex < keys.length; rotationIndex++) {
+    throwIfAborted(signal);
     const targetIndex = (startIndex + rotationIndex) % keys.length;
     let key = keys[targetIndex].trim().replace(/^"|"$/g, "");
     
     let retryAttempt = INITIAL_INDEX;
     while (retryAttempt <= maxRetries) {
+      throwIfAborted(signal);
       try {
         const apiResponse = await fetch(`https://proxy.royaleapi.dev/v1${endpoint}`, {
+          signal,
           headers: { 
             Authorization: `Bearer ${key}`,
             "Accept": "application/json"
@@ -117,6 +125,7 @@ export async function fetchWithRotation(endpoint: string, maxRetries: number = D
         
         return apiResponse;
       } catch (fetchError: unknown) {
+        throwIfAborted(signal);
         const errorMessage = fetchError instanceof Error ? fetchError.message : String(fetchError);
         console.warn(`[Native-Muscle] Fetch failed for key [${targetIndex}]: ${errorMessage}`);
         if (retryAttempt === maxRetries) {
@@ -152,8 +161,20 @@ const DEFAULT_CONCURRENCY = 20;
  */
 export async function processBatch<T>(
   tasks: (() => Promise<T>)[],
-  concurrency: number = DEFAULT_CONCURRENCY
+  concurrency: number = DEFAULT_CONCURRENCY,
+  signal?: AbortSignal,
 ): Promise<T[]> {
     const limit = pLimit(concurrency);
+    if (signal) {
+        const settledTasks = await Promise.allSettled(tasks.map(task => limit(async () => {
+            throwIfAborted(signal);
+            return await task();
+        })));
+        const firstRejectedTask = settledTasks.find(
+            (task): task is PromiseRejectedResult => task.status === 'rejected',
+        );
+        if (firstRejectedTask) throw firstRejectedTask.reason;
+        return settledTasks.map((task) => (task as PromiseFulfilledResult<T>).value);
+    }
     return Promise.all(tasks.map(task => limit(task)));
 }

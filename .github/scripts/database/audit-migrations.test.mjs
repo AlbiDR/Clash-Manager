@@ -66,6 +66,98 @@ test('passes a concise migration and a declarative baseline', async t => {
   assert.equal(report.summary.migrationsExamined, 1);
 });
 
+test('rejects a retained view migration that removes a baseline output column', async t => {
+  const root = await fixture({
+    baselineExtra: 'CREATE OR REPLACE VIEW app.heartbeat AS SELECT h.component_id, h.last_success_at, h.status FROM app.heartbeats h;',
+    migrationBody: 'CREATE OR REPLACE VIEW app.heartbeat AS SELECT h.component_id, h.last_success_at FROM app.heartbeats h;',
+  });
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const report = await auditMigrations({ repoRoot: root });
+  assert.equal(report.status, 'FAIL');
+  assert.deepEqual(report.viewHistoryViolations, [
+    'Backend/supabase/migrations/20260102000000_change.sql: CREATE OR REPLACE VIEW app.heartbeat changes existing output columns [component_id, last_success_at, status] to [component_id, last_success_at]',
+  ]);
+});
+
+test('allows a retained view migration to append output columns', async t => {
+  const root = await fixture({
+    baselineExtra: 'CREATE OR REPLACE VIEW app.heartbeat AS SELECT h.component_id, h.last_success_at FROM app.heartbeats h;',
+    migrationBody: 'CREATE OR REPLACE VIEW app.heartbeat AS SELECT h.component_id, h.last_success_at, h.status FROM app.heartbeats h;',
+  });
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const report = await auditMigrations({ repoRoot: root });
+  assert.equal(report.status, 'PASS');
+  assert.deepEqual(report.viewHistoryViolations, []);
+});
+
+test('detects a CTE-form replacement that removes a retained output column', async t => {
+  const root = await fixture({
+    baselineExtra: 'CREATE OR REPLACE VIEW app.v AS SELECT a, b FROM app.source_rows;',
+    migrationBody: 'CREATE OR REPLACE VIEW app.v AS WITH q AS (SELECT a, b FROM app.source_rows) SELECT a FROM q;',
+  });
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const report = await auditMigrations({ repoRoot: root });
+  assert.equal(report.status, 'FAIL');
+  assert.match(report.viewHistoryViolations.join('\n'), /app\.v changes existing output columns \[a, b\] to \[a\]/);
+});
+
+test('keeps quoted mixed-case view identity distinct from an unquoted name', async t => {
+  const root = await fixture({
+    baselineExtra: 'CREATE OR REPLACE VIEW app.v AS SELECT a, b FROM app.source_rows;',
+    migrationBody: 'DROP VIEW IF EXISTS app."V"; CREATE OR REPLACE VIEW app.v AS SELECT a FROM app.source_rows;',
+  });
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const report = await auditMigrations({ repoRoot: root });
+  assert.equal(report.status, 'FAIL');
+  assert.match(report.viewHistoryViolations.join('\n'), /app\.v changes existing output columns \[a, b\] to \[a\]/);
+});
+
+test('matches quoted lowercase identifiers with their PostgreSQL unquoted identity', async t => {
+  const root = await fixture({
+    baselineExtra: 'CREATE OR REPLACE VIEW app.v AS SELECT a, b FROM app.source_rows;',
+    migrationBody: 'DROP VIEW IF EXISTS app."v"; CREATE OR REPLACE VIEW app.v AS SELECT a FROM app.source_rows;',
+  });
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const report = await auditMigrations({ repoRoot: root });
+  assert.equal(report.status, 'PASS');
+  assert.deepEqual(report.viewHistoryViolations, []);
+});
+
+test('models documented DROP VIEW lists, CASCADE, view options, explicit names and CTE replacements', async t => {
+  const root = await fixture({
+    baselineExtra: `CREATE OR REPLACE VIEW app.v (a, b) AS SELECT s.a, s.b FROM app.source_rows s;
+CREATE OR REPLACE VIEW app.other AS SELECT s.a, s.b FROM app.source_rows s;`,
+    migrationBody: `DROP VIEW IF EXISTS app.v, app.other CASCADE;
+CREATE VIEW app.v WITH (security_barrier = true) AS WITH q AS (SELECT s.a, s.b FROM app.source_rows s) SELECT a, b FROM q;`,
+  });
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const report = await auditMigrations({ repoRoot: root });
+  assert.equal(report.status, 'PASS');
+  assert.deepEqual(report.viewHistoryViolations, []);
+});
+
+test('models CASCADE removal of tracked dependent views before replacement', async t => {
+  const root = await fixture({
+    baselineExtra: `CREATE OR REPLACE VIEW app.base AS SELECT a, b FROM app.source_rows;
+CREATE OR REPLACE VIEW app.dependent AS SELECT a, b FROM app.base;`,
+    migrationBody: `DROP VIEW IF EXISTS app.base CASCADE;
+CREATE OR REPLACE VIEW app.base AS SELECT a FROM app.source_rows;
+CREATE OR REPLACE VIEW app.dependent AS SELECT a FROM app.base;`,
+  });
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const report = await auditMigrations({ repoRoot: root });
+  assert.equal(report.status, 'PASS');
+  assert.deepEqual(report.viewHistoryViolations, []);
+});
+
+test('fails closed for an ordinary view query form outside the bounded projection model', async t => {
+  const root = await fixture({ migrationBody: 'CREATE VIEW app.values_view AS VALUES (1), (2);' });
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const report = await auditMigrations({ repoRoot: root });
+  assert.equal(report.status, 'FAIL');
+  assert.match(report.viewHistoryViolations.join('\n'), /cannot prove ordinary CREATE VIEW output columns/);
+});
+
 test('fails comment budget and baseline purity violations', async t => {
   const root = await fixture({ migrationComment: Array(8).fill('-- narrative').join('\n') });
   t.after(() => rm(root, { recursive: true, force: true }));

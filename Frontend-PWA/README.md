@@ -3,7 +3,7 @@
 
 # Clash Manager PWA
 
-[![Client](https://img.shields.io/badge/Client-v14.52.6-42b883?style=flat-square&logo=vue.js&logoColor=white)](README.md)
+[![Client](https://img.shields.io/badge/Client-v14.52.8-42b883?style=flat-square&logo=vue.js&logoColor=white)](README.md)
 [![Vue 3.5](https://img.shields.io/badge/Vue-3.5-42b883?style=flat-square&logo=vue.js&logoColor=white)](https://vuejs.org)
 [![Vite 8](https://img.shields.io/badge/Vite-8-646CFF?style=flat-square&logo=vite&logoColor=white)](https://vite.dev)
 
@@ -15,11 +15,11 @@ The Vue 3.5 progressive web app: an installable, offline-first dashboard for Cla
 
 ## Quick start
 
-Requires Node 24+ and pnpm 10+.
+Requires Node 24.15.0 or newer and pnpm 10+.
 
 ```bash
 pnpm install
-pnpm dev            # http://localhost:5173  (from this directory)
+pnpm dev            # http://localhost:5173/Clash-Manager/  (from this directory)
 ```
 
 Create a `.env` here pointing at a Supabase project:

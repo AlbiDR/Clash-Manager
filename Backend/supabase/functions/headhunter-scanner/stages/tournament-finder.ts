@@ -6,6 +6,7 @@ import { supabase } from "../client.ts";
 import { fetchWithRotation, processBatch } from "../../_shared/muscle.ts";
 import { ScannerStats, AuditEntry, RecruitSource } from "../../_shared/types.ts";
 import { DiscoveryAnchorSchema, DiscoveryCacheItemSchema, RoyaleTournamentListSchema, RoyaleTournamentSchema } from "../../_shared/schemas.ts";
+import { withAbortSignal } from "../../_shared/abortSignal.ts";
 
 const ANCHOR_LIMIT = 36;
 const CACHE_HOURS = 5 / 60; // 5 minutes cache window
@@ -36,7 +37,9 @@ export async function runTournamentDiscovery(
     exclusionSet: Set<string>,
     requiredTrophies: number,
     stats: ScannerStats,
-    logAudit: (stage: string, action: AuditEntry['action'], details?: unknown) => void
+    logAudit: (stage: string, action: AuditEntry['action'], details?: unknown) => void,
+    signal?: AbortSignal,
+    admissionSignal?: AbortSignal,
 ) {
     logAudit('TOURNAMENT_DISCOVERY', 'triggered');
     console.log(`[TOURNAMENT_DISCOVERY] Triggered. Candidates map size: ${candidates.size}, Exclusion set size: ${exclusionSet.size}, Required trophies: ${requiredTrophies}`);
@@ -46,7 +49,10 @@ export async function runTournamentDiscovery(
         // [SCHEMA] The data API only exposes the `public` schema to RPC. A thin
         // public.get_active_discovery_anchors wrapper (migration) delegates to the
         // substrate implementation - same pattern as get_shadow_discovery_targets / get_discovery_cache.
-        const { data: discoveryAnchorsRaw, error: discoveryAnchorsError } = await supabase.rpc('get_active_discovery_anchors', { p_limit: ANCHOR_LIMIT });
+        const { data: discoveryAnchorsRaw, error: discoveryAnchorsError } = await withAbortSignal(
+            supabase.rpc('get_active_discovery_anchors', { p_limit: ANCHOR_LIMIT }),
+            signal,
+        );
 
         // [DECISION LOG] SKIP WHEN A GATING READ FAILS: the anchors choose which keywords to
         // search and the cache says which tournaments were already read. When either read
@@ -88,7 +94,10 @@ export async function runTournamentDiscovery(
         console.log(`[TOURNAMENT_DISCOVERY] Using ${keywords.length} keyword(s) (fallback=${isUsingFallback}): ${keywords.slice(0, 10).join(', ')}${keywords.length > 10 ? ` +${keywords.length - 10} more` : ''}`);
 
 
-        const { data: discoveryCacheRaw, error: discoveryCacheError } = await supabase.rpc('get_discovery_cache', { p_hours: CACHE_HOURS });
+        const { data: discoveryCacheRaw, error: discoveryCacheError } = await withAbortSignal(
+            supabase.rpc('get_discovery_cache', { p_hours: CACHE_HOURS }),
+            signal,
+        );
 
         // [GUARD] VALIDATION BOUNDARY: Discovery cache validation.
         // [THREAT:] Prevents runtime errors if the discovery cache view structure changes.
@@ -120,7 +129,7 @@ export async function runTournamentDiscovery(
             let keywordYield = 0;
             try {
                 // [THREAT:] fetchWithRotation handles API key rotation to prevent IP/Token banning.
-                const tournamentListApiResponse = await fetchWithRotation(`/tournaments?name=${keyword}&limit=${TOURNAMENT_SEARCH_LIMIT}`);
+                const tournamentListApiResponse = await fetchWithRotation(`/tournaments?name=${keyword}&limit=${TOURNAMENT_SEARCH_LIMIT}`, undefined, admissionSignal ?? signal);
                 logAudit('TOURNAMENT_DISCOVERY', 'run', { keyword, status: tournamentListApiResponse.status });
                 console.log(`[TOURNAMENT_DISCOVERY] Keyword '${keyword}' returned HTTP ${tournamentListApiResponse.status}`);
                 if (!tournamentListApiResponse.ok) {
@@ -182,7 +191,7 @@ export async function runTournamentDiscovery(
                         return;
                     }
                     try {
-                        const tournamentDetailApiResponse = await fetchWithRotation(`/tournaments/${encodeURIComponent(tournamentTargetCandidate.tag)}`);
+                        const tournamentDetailApiResponse = await fetchWithRotation(`/tournaments/${encodeURIComponent(tournamentTargetCandidate.tag)}`, undefined, admissionSignal ?? signal);
                         if (tournamentDetailApiResponse.ok) {
                             const tournamentDetailsRaw: unknown = await tournamentDetailApiResponse.json();
 
@@ -251,7 +260,10 @@ export async function runTournamentDiscovery(
                             // unchecked failure here never populates the discovery cache, so the
                             // blacklist stays empty and every tournament detail is re-fetched on every
                             // run - pure Royale API quota amplification with zero added signal.
-                            const { error: discoveryCacheUpsertError } = await supabase.rpc('upsert_discovery_cache', { p_tag: tournamentTargetCandidate.tag, p_type: 'TOURNAMENT' });
+                            const { error: discoveryCacheUpsertError } = await withAbortSignal(
+                                supabase.rpc('upsert_discovery_cache', { p_tag: tournamentTargetCandidate.tag, p_type: 'TOURNAMENT' }),
+                                signal,
+                            );
                             if (discoveryCacheUpsertError) {
                                 stats.errors.push(`DiscoveryCache(${tournamentTargetCandidate.tag}): ${discoveryCacheUpsertError.message}`);
                                 logAudit('TOURNAMENT_DISCOVERY', 'error', {
@@ -271,17 +283,20 @@ export async function runTournamentDiscovery(
                         console.error(`[TOURNAMENT_DISCOVERY] Exception while fetching tournament ${tournamentTargetCandidate.tag}: ${errorMessage}`);
                     }
                 });
-                await processBatch(tournamentDetailTasks, BATCH_TOURNAMENTS);
+                await processBatch(tournamentDetailTasks, BATCH_TOURNAMENTS, admissionSignal ?? signal);
 
                 // 2. Report yield for autonomy
                 // [DECISION LOG] Reporting yield allows the system to prioritize keywords that produce more recruits.
                 // [THREAT:] supabase.rpc() resolves with { error } instead of throwing. A silently
                 // dropped yield report freezes anchor prioritization on stale scores, so the
                 // discovery engine keeps spending quota on keywords that stopped producing.
-                const { error: anchorYieldError } = await supabase.rpc('report_anchor_yield', {
-                    p_keyword: keyword,
-                    p_yield: keywordYield
-                });
+                const { error: anchorYieldError } = await withAbortSignal(
+                    supabase.rpc('report_anchor_yield', {
+                        p_keyword: keyword,
+                        p_yield: keywordYield
+                    }),
+                    signal,
+                );
                 if (anchorYieldError) {
                     stats.errors.push(`AnchorYield(${keyword}): ${anchorYieldError.message}`);
                     logAudit('TOURNAMENT_DISCOVERY', 'error', { keyword, message: 'Anchor yield report failed', details: anchorYieldError });
@@ -299,7 +314,7 @@ export async function runTournamentDiscovery(
             }
         });
         
-        await processBatch(discoveryTasks, BATCH_KEYWORDS);
+        await processBatch(discoveryTasks, BATCH_KEYWORDS, admissionSignal ?? signal);
         console.log(`[TOURNAMENT_DISCOVERY] All keywords processed. Total new candidates discovered: ${discoveryCount}`);
         if (upstreamFailures > 0) {
             stats.top50_unknown_reasons.push(`TournamentDiscovery: ${upstreamFailures} Royale API request(s) unanswered`);

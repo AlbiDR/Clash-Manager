@@ -215,7 +215,88 @@ export function prBodySidecarPath(stage) {
   return String(stage.coverageLog).replace(/-coverage\.log$/, "-pr-body.md");
 }
 
-export function validateChangedPaths(stage, status, changedPaths) {
+function majorWatchlistSection(content, label, allowMissing = false) {
+  const lines = String(content || "").split(/\r?\n/);
+  const headingPattern = /^\s{0,3}#{1,6}\s+(?:Section\s*2\s*[-:—–]\s*)?Major Version Watchlist\s*:?\s*#*\s*$/i;
+  const documentedHeadingPattern = /^\s*\*\*Section\s*2\s*[-:—–]\s*Major Version Watchlist\s*:?\*\*/i;
+  const starts = lines.flatMap((line, index) =>
+    headingPattern.test(line) || documentedHeadingPattern.test(line) ? [index] : [],
+  );
+  invariant(starts.length <= 1, `${label} has multiple Major Version Watchlist sections.`);
+  if (starts.length === 0) {
+    const malformedHeading = lines.some(line =>
+      /^\s{0,3}#{1,6}\s+.*major\s+version\s+watchlist/i.test(line) ||
+      /^\s*\*\*Section\s*2\s*[-:—–].*major\s+version\s+watchlist/i.test(line),
+    );
+    invariant(!malformedHeading, `${label} has a malformed Major Version Watchlist heading.`);
+    invariant(allowMissing, `${label} is missing its Major Version Watchlist section.`);
+    return new Map();
+  }
+
+  const start = starts[0];
+  let end = lines.length;
+  for (let index = start + 1; index < lines.length; index += 1) {
+    if (/^\s{0,3}#{1,6}\s+/.test(lines[index]) || /^\s*\*\*Section\s+\d+\s*[-:—–]/i.test(lines[index])) {
+      end = index;
+      break;
+    }
+  }
+  const section = lines.slice(start + 1, end);
+  const tableHeader = section.findIndex(line => /^\s*\|/.test(line));
+  invariant(tableHeader >= 0, `${label} Major Version Watchlist section has no markdown table.`);
+  const cells = line => line.trim().replace(/^\|/, "").replace(/\|$/, "").split("|").map(cell => cell.trim());
+  const expected = ["package", "current", "latest major", "first detected", "notes"];
+  invariant(
+    JSON.stringify(cells(section[tableHeader]).map(cell => cell.toLowerCase())) === JSON.stringify(expected),
+    `${label} Major Version Watchlist table has an unsupported header.`,
+  );
+  invariant(tableHeader + 1 < section.length, `${label} Major Version Watchlist table is missing its separator row.`);
+  const separator = cells(section[tableHeader + 1]);
+  const hasSeparator = separator.length === expected.length && separator.every(cell => /^:?-{3,}:?$/.test(cell));
+  invariant(
+    hasSeparator || !separator.some(cell => /^:?-+:?$/.test(cell)),
+    `${label} Major Version Watchlist table has a malformed separator row.`,
+  );
+  const rowStart = hasSeparator ? tableHeader + 2 : tableHeader + 1;
+
+  const entries = new Map();
+  for (const line of section.slice(rowStart)) {
+    if (!line.trim()) continue;
+    if (/^\s*\* \[\d{4}-\d{2}-\d{2}\] \[Stage 8\]/.test(line)) break;
+    invariant(/^\s*\|/.test(line), `${label} Major Version Watchlist table contains non-table content after its rows.`);
+    const row = cells(line);
+    invariant(row.length === expected.length && row.every(Boolean), `${label} Major Version Watchlist has a malformed row.`);
+    const packageName = row[0].toLowerCase();
+    invariant(!entries.has(packageName), `${label} Major Version Watchlist has duplicate package ${row[0]}.`);
+    entries.set(packageName, row);
+  }
+  return entries;
+}
+
+export function majorWatchlistChanged(baseContent, currentContent) {
+  const before = majorWatchlistSection(baseContent, "Base", true);
+  const after = majorWatchlistSection(currentContent, "Current", false);
+  const names = new Set([...before.keys(), ...after.keys()]);
+  return [...names].some(name => JSON.stringify(before.get(name) || null) !== JSON.stringify(after.get(name) || null));
+}
+
+function watchlistChangedFromExecutionBase(repoRoot, executionRevision, coverageLog) {
+  invariant(/^[a-f0-9]{7,64}$/i.test(String(executionRevision || "")), "Stage 8 watchlist-only CHANGED requires its recorded execution base revision.");
+  const commitCheck = spawnSync("git", ["cat-file", "-e", `${executionRevision}^{commit}`], { cwd: repoRoot, encoding: "utf8" });
+  invariant(commitCheck.status === 0, `Unable to read Stage 8 execution base ${executionRevision}.`);
+  const blob = spawnSync("git", ["show", `${executionRevision}:${coverageLog}`], { cwd: repoRoot, encoding: "utf8", maxBuffer: 10 * 1024 * 1024 });
+  let baseContent;
+  if (blob.status === 0) {
+    baseContent = String(blob.stdout || "");
+  } else {
+    const pathCheck = spawnSync("git", ["cat-file", "-e", `${executionRevision}:${coverageLog}`], { cwd: repoRoot, encoding: "utf8" });
+    invariant(pathCheck.status !== 0, `Unable to read ${coverageLog} at Stage 8 execution base ${executionRevision}.`);
+    baseContent = "";
+  }
+  return majorWatchlistChanged(baseContent, readFileSync(path.join(repoRoot, coverageLog), "utf8"));
+}
+
+export function validateChangedPaths(stage, status, changedPaths, { watchlistChanged = false } = {}) {
   invariant(FINAL_STATUSES.has(status), `Unsupported final status: ${status}`);
   // The pull request body sidecar is removed BEFORE any rule sees it, rather
   // than exempted in each one. It is bookkeeping this runner writes itself, not
@@ -263,8 +344,10 @@ export function validateChangedPaths(stage, status, changedPaths) {
 
   if (status === "CHANGED") {
     invariant(
-      stage.number === 8 || paths.some(filePath => filePath !== stage.coverageLog),
-      "CHANGED requires a non-coverage-log change.",
+      paths.some(filePath => filePath !== stage.coverageLog) || (stage.number === 8 && watchlistChanged),
+      stage.number === 8
+        ? "CHANGED requires a non-coverage-log change or an actual Major Version Watchlist entry delta."
+        : "CHANGED requires a non-coverage-log change.",
     );
   }
 
@@ -1373,7 +1456,14 @@ function finalizeCommand(repoRoot, stage, status, summary, dryRun, details = {})
   });
   const date = readOptional(path.join(contextDir(), "TODAY")) || utcDate();
   const paths = changedPaths(repoRoot);
-  validateChangedPaths(stage, status, paths);
+  const validationPaths = [...new Set(paths.map(normalizeRepoPath).filter(Boolean))]
+    .filter(filePath => filePath !== prBodySidecarPath(stage));
+  const stage8WatchlistOnly =
+    stage.number === 8 && status === "CHANGED" && validationPaths.length === 1 && validationPaths[0] === stage.coverageLog;
+  const watchlistChanged = stage8WatchlistOnly
+    ? watchlistChangedFromExecutionBase(repoRoot, state.executionRevision, stage.coverageLog)
+    : false;
+  validateChangedPaths(stage, status, paths, { watchlistChanged });
 
   const logPath = path.join(repoRoot, stage.coverageLog);
   const sentinel = sentinelLine(date, stage.number);

@@ -239,5 +239,37 @@ describe("Native Muscle Engine (muscle.ts)", () => {
 
       await expect(processBatch(tasks, 2)).rejects.toThrow("task failure");
     });
+
+    it("aborts an active upstream fetch and never starts queued batch work after cancellation", async () => {
+      const controller = new AbortController();
+      const budgetError = new Error("scanner work budget expired");
+      let startedTasks = 0;
+      let queuedTaskStarted = false;
+      const mockFetch = vi.fn((_url: string | URL | Request, init?: RequestInit) => new Promise<Response>((_resolve, reject) => {
+        const signal = init?.signal;
+        if (signal) signal.addEventListener("abort", () => reject(signal.reason), { once: true });
+      }));
+      globalThis.fetch = mockFetch;
+
+      const batch = processBatch([
+        async () => {
+          startedTasks++;
+          await fetchWithRotation("/blocked-profile", undefined, controller.signal);
+          return "finished";
+        },
+        async () => {
+          queuedTaskStarted = true;
+          return "queued";
+        },
+      ], 1, controller.signal);
+
+      await vi.waitFor(() => expect(mockFetch).toHaveBeenCalledTimes(1));
+      controller.abort(budgetError);
+
+      await expect(batch).rejects.toBe(budgetError);
+      expect(startedTasks).toBe(1);
+      expect(queuedTaskStarted).toBe(false);
+      expect(mockFetch.mock.calls[0][1]?.signal).toBe(controller.signal);
+    });
   });
 });
