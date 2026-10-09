@@ -8,6 +8,9 @@ on:
     branches: [ Stable, Beta ]
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   intelligence-suite:
     runs-on: ubuntu-latest

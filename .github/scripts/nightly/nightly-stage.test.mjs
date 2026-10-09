@@ -25,6 +25,7 @@ import {
   replaceSentinel,
   sentinelLine,
   prBodySidecarPath,
+  majorWatchlistChanged,
   validateChangedPaths,
   validateRegistryData,
   composeCommitSubject,
@@ -172,6 +173,107 @@ test("fallback finalization rejects every non-log change", () => {
     () => validateChangedPaths(stage, "PARTIAL-RUN", [stage.coverageLog, "Frontend-PWA/src/App.vue"]),
     /log-only diff/,
   );
+});
+
+const watchlist = rows => [
+  "## Section 2 - Major Version Watchlist",
+  "| Package | Current | Latest Major | First Detected | Notes |",
+  "| --- | --- | --- | --- | --- |",
+  ...rows.map(row => `| ${row.join(" | ")} |`),
+].join("\n");
+
+test("Stage 8 log-only CHANGED needs an actual watchlist entry delta", () => {
+  const stage8 = getStage(registry, 8);
+  const before = watchlist([["vue", "^3.5.0", "4.0.0", "2026-08-01", "Breaking API changes"]]);
+  assert.equal(majorWatchlistChanged("legacy coverage history without a structured watchlist", before), true, "the first valid structured watchlist is an actual addition");
+  assert.equal(majorWatchlistChanged(before, `${watchlist([["vue", "^3.5.0", "4.0.0", "2026-08-01", "Breaking API changes"]])}\n* [2026-08-08] [Stage 8] IN-PROGRESS: audit`), false);
+  assert.equal(majorWatchlistChanged(before, watchlist([
+    ["vue", "^3.5.0", "4.0.0", "2026-08-01", "Breaking API changes"],
+    ["vite", "^7.0.0", "8.0.0", "2026-08-08", "Rolldown migration"],
+  ])), true, "a new entry is substantive");
+  assert.equal(majorWatchlistChanged(before, [
+    "## Section 2 - Major Version Watchlist",
+    "| Package       | Current  | Latest Major | First Detected | Notes                                      |",
+    "| express       | ^4.18.2  | 5.2.1        | 2026-03-14     | Breaking: route matching, async error flow |",
+  ].join("\n")), true, "the exact prompt example remains accepted without a separator row");
+  assert.equal(majorWatchlistChanged(before, watchlist([["vue", "^3.5.0", "4.0.0", "2026-08-01", "Reviewed incompatibility"]])), true, "an entry update is substantive");
+  assert.equal(majorWatchlistChanged(before, watchlist([])), true, "an entry removal is visible");
+  assert.throws(() => majorWatchlistChanged(before, "coverage metadata without a watchlist"), /missing its Major Version Watchlist section/);
+  assert.throws(() => majorWatchlistChanged("## Major Version Watchlists\nlegacy entries", before), /malformed Major Version Watchlist heading/);
+  assert.throws(() => majorWatchlistChanged("## Major Version Watchlist\n| Package | Current | Latest | |\n", before), /unsupported header/);
+  assert.throws(() => majorWatchlistChanged(before, `${watchlist([["vue", "^3.5.0", "4.0.0", "2026-08-01", "Breaking API changes"]])}\n| malformed | row |`), /malformed row/);
+  assert.throws(() => majorWatchlistChanged(before, [
+    "## Section 2 - Major Version Watchlist",
+    "| Package | Current | Latest Major | First Detected | Notes |",
+    "| ---- | not-a-separator | ---- | ---- | ---- |",
+    "| vue | ^3.5.0 | 4.0.0 | 2026-08-01 | Breaking API changes |",
+  ].join("\n")), /malformed separator row/);
+  assert.throws(() => validateChangedPaths(stage8, "CHANGED", [stage8.coverageLog]), /actual Major Version Watchlist entry delta/);
+  assert.doesNotThrow(() => validateChangedPaths(stage8, "CHANGED", [stage8.coverageLog], { watchlistChanged: true }));
+  assert.doesNotThrow(() => validateChangedPaths(stage8, "CHANGED", [stage8.coverageLog, "pnpm-lock.yaml"]));
+});
+
+test("real Stage 8 finalize compares watchlist entries with its recorded execution base", t => {
+  const repoRoot = createTemporaryRepo();
+  const testContext = mkdtempSync(path.join(os.tmpdir(), "nightly-stage8-finalize-context-test-"));
+  t.after(() => {
+    rmSync(repoRoot, { recursive: true, force: true });
+    rmSync(testContext, { recursive: true, force: true });
+  });
+  const stage8 = getStage(registry, 8);
+  const logPath = path.join(repoRoot, stage8.coverageLog);
+  mkdirSync(path.dirname(logPath), { recursive: true });
+  const baseLog = `${watchlist([["vue", "^3.5.0", "4.0.0", "2026-08-01", "Breaking API changes"]])}\n`;
+  writeFileSync(logPath, baseLog);
+  assert.equal(run("git", ["add", stage8.coverageLog], repoRoot).status, 0);
+  assert.equal(run("git", ["commit", "-m", "test: seed Stage 8 watchlist"], repoRoot).status, 0);
+  const executionRevision = run("git", ["rev-parse", "HEAD"], repoRoot).stdout.trim();
+  const sentinel = `${sentinelLine("2026-08-08", 8)}\n`;
+  const changedLog = `${watchlist([
+    ["vue", "^3.5.0", "4.0.0", "2026-08-01", "Breaking API changes"],
+    ["vite", "^7.0.0", "8.0.0", "2026-08-08", "Rolldown migration"],
+  ])}\n${sentinel}`;
+  writeFileSync(logPath, changedLog);
+  writeFileSync(path.join(repoRoot, prBodySidecarPath(stage8)), "previous generated body\n");
+  mkdirSync(testContext, { recursive: true });
+  writeFileSync(path.join(testContext, "session-state.json"), `${JSON.stringify({ stage: 8, executionRevision, startEpoch: 900, runId: "test", cycleId: "nightly-cycle/2026-08-08" })}\n`);
+  writeFileSync(path.join(testContext, "TODAY"), "2026-08-08\n");
+  const outcome = run(process.execPath, [scriptPath, "finalize", "--stage", "8", "--status", "CHANGED", "--summary", "Added a major watchlist entry", "--result", "Validated the new major version entry"], repoRoot, {
+    NIGHTLY_CONTEXT_DIR: testContext,
+    NIGHTLY_TODAY: "2026-08-08",
+    NIGHTLY_NOW_EPOCH: "1000",
+  });
+  assert.equal(outcome.status, 0, outcome.stderr);
+  assert.match(readFileSync(logPath, "utf8"), /CHANGED: Codebase -- Added a major watchlist entry/);
+});
+
+test("real Stage 8 finalize rejects reworded progress metadata without a watchlist delta", t => {
+  const repoRoot = createTemporaryRepo();
+  const testContext = mkdtempSync(path.join(os.tmpdir(), "nightly-stage8-progress-context-test-"));
+  t.after(() => {
+    rmSync(repoRoot, { recursive: true, force: true });
+    rmSync(testContext, { recursive: true, force: true });
+  });
+  const stage8 = getStage(registry, 8);
+  const logPath = path.join(repoRoot, stage8.coverageLog);
+  mkdirSync(path.dirname(logPath), { recursive: true });
+  const row = ["vue", "^3.5.0", "4.0.0", "2026-08-01", "Breaking API changes"];
+  writeFileSync(logPath, `* [2026-08-01] [Stage 8] CLEAN: old progress text\n\n${watchlist([row])}\n`);
+  assert.equal(run("git", ["add", stage8.coverageLog], repoRoot).status, 0);
+  assert.equal(run("git", ["commit", "-m", "test: seed Stage 8 progress log"], repoRoot).status, 0);
+  const executionRevision = run("git", ["rev-parse", "HEAD"], repoRoot).stdout.trim();
+  writeFileSync(logPath, `* [2026-08-01] [Stage 8] CLEAN: reworded progress metadata\n\n${watchlist([row])}\n${sentinelLine("2026-08-08", 8)}\n`);
+  mkdirSync(testContext, { recursive: true });
+  writeFileSync(path.join(testContext, "session-state.json"), `${JSON.stringify({ stage: 8, executionRevision, startEpoch: 900 })}\n`);
+  writeFileSync(path.join(testContext, "TODAY"), "2026-08-08\n");
+  const outcome = run(process.execPath, [scriptPath, "finalize", "--stage", "8", "--status", "CHANGED", "--summary", "Updated audit progress wording", "--result", "The audit remains in progress"], repoRoot, {
+    NIGHTLY_CONTEXT_DIR: testContext,
+    NIGHTLY_TODAY: "2026-08-08",
+    NIGHTLY_NOW_EPOCH: "1000",
+  });
+  assert.notEqual(outcome.status, 0);
+  assert.match(outcome.stderr, /actual Major Version Watchlist entry delta/);
+  assert.doesNotMatch(readFileSync(logPath, "utf8"), /\[2026-08-08\] \[Stage 8\] CHANGED:/);
 });
 
 test("stage-specific write boundaries reject unsafe diffs", () => {

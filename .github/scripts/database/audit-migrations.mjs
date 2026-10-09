@@ -46,6 +46,371 @@ function splitTopLevel(value) {
   return parts;
 }
 
+function topLevelKeywordIndex(source, keyword) {
+  let depth = 0;
+  let quote = null;
+  for (let index = 0; index < source.length; index += 1) {
+    const char = source[index];
+    if (quote) {
+      if (char === quote && source[index + 1] === quote) index += 1;
+      else if (char === quote) quote = null;
+      continue;
+    }
+    if (char === "'" || char === '"') quote = char;
+    else if (char === '(') depth += 1;
+    else if (char === ')') depth -= 1;
+    else if (depth === 0 && source.slice(index, index + keyword.length).toUpperCase() === keyword
+      && !/[\w$]/.test(source[index - 1] ?? '')
+      && !/[\w$]/.test(source[index + keyword.length] ?? '')) return index;
+  }
+  return -1;
+}
+
+function normalizedIdentifier(value) {
+  const trimmed = value.trim();
+  if (trimmed.startsWith('"') && trimmed.endsWith('"')) {
+    return trimmed.slice(1, -1).replaceAll('""', '"');
+  }
+  return trimmed.toLowerCase();
+}
+
+function sqlIdentifierAt(source, start) {
+  let index = start;
+  while (/\s/.test(source[index] ?? '')) index += 1;
+  const tokenStart = index;
+  let value;
+  if (source[index] === '"') {
+    index += 1;
+    let closed = false;
+    while (index < source.length) {
+      if (source[index] === '"' && source[index + 1] === '"') index += 2;
+      else if (source[index] === '"') {
+        index += 1;
+        closed = true;
+        break;
+      } else index += 1;
+    }
+    if (!closed) return null;
+    value = normalizedIdentifier(source.slice(tokenStart, index));
+  } else {
+    const match = source.slice(index).match(/^[A-Za-z_][A-Za-z0-9_$]*/);
+    if (!match) return null;
+    index += match[0].length;
+    value = match[0].toLowerCase();
+  }
+  return { end: index, value };
+}
+
+function qualifiedViewIdentifierAt(source, start) {
+  let index = start;
+  const parts = [];
+  while (true) {
+    const part = sqlIdentifierAt(source, index);
+    if (!part) return null;
+    parts.push(part.value);
+    index = part.end;
+    while (/\s/.test(source[index] ?? '')) index += 1;
+    if (source[index] !== '.') break;
+    index += 1;
+  }
+  return {
+    end: index,
+    key: JSON.stringify(parts),
+    name: parts.map(part => /^[a-z_][a-z0-9_$]*$/.test(part) ? part : `"${part.replaceAll('"', '""')}"`).join('.'),
+  };
+}
+
+function matchingParen(source, open) {
+  let depth = 0;
+  let quote = null;
+  for (let index = open; index < source.length; index += 1) {
+    const char = source[index];
+    if (quote) {
+      if (char === quote && source[index + 1] === quote) index += 1;
+      else if (char === quote) quote = null;
+    } else if (char === "'" || char === '"') quote = char;
+    else if (char === '(') depth += 1;
+    else if (char === ')' && --depth === 0) return index;
+  }
+  return -1;
+}
+
+function cteOutputColumns(query, mainSelectIndex) {
+  const prefix = query.slice(0, mainSelectIndex);
+  const withHead = prefix.match(/^WITH\s+(?:RECURSIVE\s+)?/i);
+  if (!withHead) return new Map();
+  const definitions = new Map();
+  let cursor = withHead[0].length;
+  while (cursor < prefix.length) {
+    const name = sqlIdentifierAt(prefix, cursor);
+    if (!name) return new Map();
+    cursor = name.end;
+    while (/\s/.test(prefix[cursor] ?? '')) cursor += 1;
+    let explicitNames = null;
+    if (prefix[cursor] === '(') {
+      const close = matchingParen(prefix, cursor);
+      if (close < 0) return new Map();
+      explicitNames = splitTopLevel(prefix.slice(cursor + 1, close)).map(item => {
+        const part = sqlIdentifierAt(item, 0);
+        return part && !item.slice(part.end).trim() ? part.value : null;
+      });
+      if (explicitNames.length === 0 || explicitNames.some(item => !item)) return new Map();
+      cursor = close + 1;
+      while (/\s/.test(prefix[cursor] ?? '')) cursor += 1;
+    }
+    const asHead = prefix.slice(cursor).match(/^AS\s+(?:(?:NOT\s+)?MATERIALIZED\s+)?\(/i);
+    if (!asHead) return new Map();
+    const open = cursor + asHead[0].lastIndexOf('(');
+    const close = matchingParen(prefix, open);
+    if (close < 0) return new Map();
+    let columns = viewSelectProjection(prefix.slice(open + 1, close));
+    if (explicitNames) {
+      if (!columns || columns.length !== explicitNames.length) columns = null;
+      else columns = explicitNames;
+    }
+    if (columns?.some(item => !item)) columns = null;
+    definitions.set(name.value, columns);
+    cursor = close + 1;
+    while (/\s/.test(prefix[cursor] ?? '')) cursor += 1;
+    if (prefix[cursor] !== ',') break;
+    cursor += 1;
+    while (/\s/.test(prefix[cursor] ?? '')) cursor += 1;
+  }
+  return definitions;
+}
+
+function soleCteSourceColumns(query, fromIndex, ctes) {
+  if (fromIndex < 0) return null;
+  const source = query.slice(fromIndex + 'FROM'.length).trim().replace(/;$/, '').trim();
+  const relation = sqlIdentifierAt(source, 0);
+  if (!relation || source.slice(relation.end).trim()) return null;
+  return ctes.get(relation.value) || null;
+}
+
+function viewSelectProjection(query) {
+  const selectIndex = topLevelKeywordIndex(query, 'SELECT');
+  if (selectIndex < 0) return null;
+  const projectionStart = selectIndex + 'SELECT'.length;
+  const fromRelativeIndex = topLevelKeywordIndex(query.slice(projectionStart), 'FROM');
+  const fromIndex = fromRelativeIndex < 0 ? -1 : projectionStart + fromRelativeIndex;
+  const projectionEnd = fromIndex < 0 ? query.length : fromIndex;
+  const expressions = splitTopLevel(query.slice(projectionStart, projectionEnd).trim());
+  if (expressions.length === 0) return null;
+  const ctes = cteOutputColumns(query, selectIndex);
+  const sourceColumns = soleCteSourceColumns(query, fromIndex, ctes);
+  const columns = [];
+  for (const expression of expressions) {
+    const trimmed = expression.trim();
+    if (trimmed === '*') {
+      if (!sourceColumns) return null;
+      columns.push(...sourceColumns);
+      continue;
+    }
+    if (/(?:^|\.)\s*\*$/.test(trimmed)) return null;
+    const alias = expression.match(/\s+AS\s+("(?:""|[^"])+"|[A-Za-z_][\w$]*)\s*$/i);
+    if (alias) {
+      columns.push(normalizedIdentifier(alias[1]));
+      continue;
+    }
+    const reference = expression.trim().match(/^(?:(?:"(?:""|[^"])+"|[A-Za-z_][\w$]*)\s*\.\s*)*("(?:""|[^"])+"|[A-Za-z_][\w$]*)$/);
+    columns.push(reference ? normalizedIdentifier(reference[1].split('.').at(-1)) : null);
+  }
+  return columns;
+}
+
+function simpleViewProjection(sql) {
+  sql = sql.replace(/;\s*$/, '');
+  const head = sql.match(/^CREATE\s+(OR\s+REPLACE\s+)?VIEW\s+/i);
+  if (!head) return null;
+  const identifier = qualifiedViewIdentifierAt(sql, head[0].length);
+  if (!identifier) return null;
+  let cursor = identifier.end;
+  while (/\s/.test(sql[cursor] ?? '')) cursor += 1;
+
+  let explicitColumns = null;
+  if (sql[cursor] === '(') {
+    const close = matchingParen(sql, cursor);
+    if (close < 0) return null;
+    explicitColumns = splitTopLevel(sql.slice(cursor + 1, close)).map(column => {
+      const name = sqlIdentifierAt(column, 0);
+      return name && !column.slice(name.end).trim() ? name.value : null;
+    });
+    if (explicitColumns.length === 0 || explicitColumns.some(column => !column)) return null;
+    cursor = close + 1;
+    while (/\s/.test(sql[cursor] ?? '')) cursor += 1;
+  }
+
+  if (/^WITH\s*\(/i.test(sql.slice(cursor))) {
+    const open = sql.indexOf('(', cursor + 'WITH'.length);
+    const close = matchingParen(sql, open);
+    if (open < 0 || close < 0) return null;
+    cursor = close + 1;
+  }
+  const asOffset = topLevelKeywordIndex(sql.slice(cursor), 'AS');
+  if (asOffset < 0) return null;
+  const query = sql.slice(cursor + asOffset + 2).trim();
+  const projectedColumns = viewSelectProjection(query);
+  let columns = projectedColumns && projectedColumns.every(Boolean) ? projectedColumns : null;
+  if (explicitColumns) {
+    if (!projectedColumns || projectedColumns.length !== explicitColumns.length) columns = null;
+    else columns = explicitColumns;
+  }
+  return { key: identifier.key, name: identifier.name, replace: Boolean(head[1]), columns, query };
+}
+
+function dropViewIdentifiers(sql) {
+  const head = sql.match(/^DROP\s+VIEW\s+(?:IF\s+EXISTS\s+)?/i);
+  if (!head) return null;
+  let cursor = head[0].length;
+  const identifiers = [];
+  while (cursor < sql.length) {
+    while (/\s/.test(sql[cursor] ?? '')) cursor += 1;
+    const identifier = qualifiedViewIdentifierAt(sql, cursor);
+    if (!identifier) return null;
+    identifiers.push(identifier);
+    cursor = identifier.end;
+    while (/\s/.test(sql[cursor] ?? '')) cursor += 1;
+    if (sql[cursor] !== ',') break;
+    cursor += 1;
+  }
+  const suffix = sql.slice(cursor).trim().replace(/;$/, '').trim();
+  if (!identifiers.length || (suffix && !/^(?:CASCADE|RESTRICT)$/i.test(suffix))) return null;
+  return { identifiers, cascade: /^CASCADE$/i.test(suffix) };
+}
+
+function trackedViewReferences(query, views) {
+  const references = new Set();
+  for (let index = 0; index < query.length; index += 1) {
+    if (query[index] === "'") {
+      index += 1;
+      while (index < query.length) {
+        if (query[index] === "'" && query[index + 1] === "'") index += 2;
+        else if (query[index] === "'") break;
+        else index += 1;
+      }
+      continue;
+    }
+    if (query[index] === '"') {
+      index += 1;
+      while (index < query.length) {
+        if (query[index] === '"' && query[index + 1] === '"') index += 2;
+        else if (query[index] === '"') break;
+        else index += 1;
+      }
+      continue;
+    }
+    if (query[index] === '$') {
+      const tag = query.slice(index).match(/^\$(?:[A-Za-z_][A-Za-z0-9_]*)?\$/)?.[0];
+      if (tag) {
+        const end = query.indexOf(tag, index + tag.length);
+        if (end >= 0) {
+          index = end + tag.length - 1;
+          continue;
+        }
+      }
+    }
+    const keyword = ['FROM', 'JOIN'].find(candidate =>
+      query.slice(index, index + candidate.length).toUpperCase() === candidate
+      && !/[\w$]/.test(query[index - 1] ?? '')
+      && !/[\w$]/.test(query[index + candidate.length] ?? ''),
+    );
+    if (!keyword) continue;
+    let cursor = index + keyword.length;
+    while (/\s/.test(query[cursor] ?? '')) cursor += 1;
+    const only = query.slice(cursor).match(/^ONLY\b/i);
+    if (only) {
+      cursor += only[0].length;
+      while (/\s/.test(query[cursor] ?? '')) cursor += 1;
+    }
+    const identifier = qualifiedViewIdentifierAt(query, cursor);
+    if (identifier && views.has(identifier.key)) references.add(identifier.key);
+  }
+  return [...references];
+}
+
+/**
+ * PostgreSQL allows CREATE OR REPLACE VIEW to append output columns, but not
+ * remove, rename, or reorder columns already present. A folded baseline may
+ * therefore make an otherwise valid retained historical migration fail on a
+ * fresh replay. Compare statically recognizable view projections in replay
+ * order so the migration audit catches that incompatibility without Docker.
+ */
+export function incompatibleViewReplacementViolations(sources) {
+  const views = new Map();
+  const violations = [];
+  for (const { path: sourcePath, source } of sources) {
+    const parsed = lexSql(source);
+    if (parsed.error) {
+      violations.push(`${sourcePath}: cannot inspect view history after SQL lexer error: ${parsed.error}`);
+      continue;
+    }
+    for (const statement of parsed.statements) {
+      const sql = statementHead(statement);
+      if (/^DROP\s+VIEW\b/i.test(sql)) {
+        const dropped = dropViewIdentifiers(sql);
+        if (!dropped) {
+          violations.push(`${sourcePath}: cannot model ordinary DROP VIEW statement: ${sql.slice(0, 120)}`);
+          continue;
+        }
+        const removed = new Set(dropped.identifiers.map(identifier => identifier.key));
+        if (dropped.cascade) {
+          let changed = true;
+          while (changed) {
+            changed = false;
+            for (const [key, view] of views) {
+              if (!removed.has(key) && view.dependencies.some(dependency => removed.has(dependency))) {
+                removed.add(key);
+                changed = true;
+              }
+            }
+          }
+        }
+        for (const key of removed) views.delete(key);
+        continue;
+      }
+      if (/^ALTER\s+VIEW\b/i.test(sql)) {
+        violations.push(`${sourcePath}: cannot model ALTER VIEW output history: ${sql.slice(0, 120)}`);
+        continue;
+      }
+      const alterTable = sql.match(/^ALTER\s+TABLE\s+(?:ONLY\s+)?/i);
+      if (alterTable) {
+        const identifier = qualifiedViewIdentifierAt(sql, alterTable[0].length);
+        if (identifier && views.has(identifier.key)) {
+          violations.push(`${sourcePath}: cannot model ALTER TABLE changes to tracked view ${identifier.name}`);
+          continue;
+        }
+      }
+      const isViewCreate = /^CREATE\s+(?:OR\s+REPLACE\s+)?(?:(?:TEMP|TEMPORARY)\s+)?VIEW\b/i.test(sql);
+      const next = simpleViewProjection(sql);
+      if (!next) {
+        if (isViewCreate) violations.push(`${sourcePath}: cannot prove ordinary CREATE VIEW output contract: ${sql.slice(0, 120)}`);
+        continue;
+      }
+      if (!next.columns) {
+        violations.push(`${sourcePath}: cannot prove ordinary CREATE VIEW output columns for ${next.name}`);
+      }
+      const previous = views.get(next.key);
+      if (next.replace && previous) {
+        if (!previous.columns || !next.columns) {
+          violations.push(`${sourcePath}: cannot prove CREATE OR REPLACE VIEW ${next.name} preserves its prior output columns`);
+        } else if (next.columns.length < previous.columns.length
+          || previous.columns.some((column, index) => next.columns[index] !== column)) {
+          violations.push(
+            `${sourcePath}: CREATE OR REPLACE VIEW ${next.name} changes existing output columns `
+            + `[${previous.columns.join(', ')}] to [${next.columns.join(', ')}]`,
+          );
+        }
+      }
+      views.set(next.key, {
+        columns: next.columns,
+        dependencies: trackedViewReferences(next.query, views),
+        path: sourcePath,
+      });
+    }
+  }
+  return [...new Set(violations)];
+}
+
 function functionDefinition(sql) {
   const head = sql.match(/^CREATE(?: OR REPLACE)? FUNCTION ([\w".]+)\s*\(/i);
   if (!head) return null;
@@ -287,11 +652,13 @@ export async function auditMigrations({ repoRoot = REPO_ROOT } = {}) {
   const exemptionByPath = new Map((policy.exemptions ?? []).map(item => [item.path, item]));
   const migrations = [];
   const migrationSources = [];
+  const migrationEntries = [];
 
   for (const [index, filename] of filenames.entries()) {
     const relativePath = paths[index];
     const source = await readFile(path.join(migrationsDir, filename), 'utf8');
     migrationSources.push(source);
+    migrationEntries.push({ path: relativePath, source });
     const parsed = lexSql(source);
     const lines = source.split('\n');
     const commentLines = topLevelCommentLines(source, parsed.comments);
@@ -328,11 +695,16 @@ export async function auditMigrations({ repoRoot = REPO_ROOT } = {}) {
 
   const baselineSource = await readFile(path.join(repoRoot, policy.baseline), 'utf8');
   const baseline = inspectBaseline(baselineSource, policy);
+  const viewHistoryViolations = incompatibleViewReplacementViolations([
+    { path: policy.baseline, source: baselineSource },
+    ...migrationEntries.filter(entry => entry.path !== policy.baseline),
+  ]);
   const securityViolations = serviceRoleOnlyFunctionViolations(
     migrationSources,
     policy.serviceRoleOnlyFunctions,
   );
   const violationCount = policyErrors.length + baseline.violations.length + securityViolations.length
+    + viewHistoryViolations.length
     + migrations.reduce((count, migration) => count + migration.violations.length, 0);
   const degraded = baseline.unsupportedStatements.length > 0;
   return {
@@ -348,6 +720,7 @@ export async function auditMigrations({ repoRoot = REPO_ROOT } = {}) {
     },
     policyErrors,
     securityViolations,
+    viewHistoryViolations,
     migrations,
     baseline: { path: policy.baseline, violations: baseline.violations },
     unsupportedStatements: baseline.unsupportedStatements,
@@ -363,6 +736,7 @@ function printHuman(report) {
   console.log(`Unsupported statements: ${report.summary.unsupportedStatements}`);
   for (const error of report.policyErrors) console.log(`POLICY: ${error}`);
   for (const error of report.securityViolations) console.log(`SECURITY: ${error}`);
+  for (const error of report.viewHistoryViolations) console.log(`VIEW HISTORY: ${error}`);
   for (const error of report.baseline.violations) console.log(`BASELINE: ${error}`);
   for (const migration of report.migrations) {
     for (const error of migration.violations) console.log(`${migration.path}: ${error}`);
