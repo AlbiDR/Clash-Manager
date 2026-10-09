@@ -28,20 +28,29 @@ export { NetworkError } from "./ApiErrors";
  * @remarks
  * This module serves as the primary gateway for all remote data operations.
  * It enforces strict validation boundaries (Valibot) at the entry point to
- * ensure Layer 1 domain integrity.
+ * ensure Layer 1 domain integrity. Satisfies ADR Section III: Validation Boundaries.
  *
  * Architectural Context:
  * - Layer: Layer 1 (@core)
  */
 
+/**
+ * Reactive tracking reference for remote sync status.
+ *
+ * @remarks
+ * Updated by {@link fetchRemote} upon completion or error resolution.
+ */
 export const lastSyncStatus = ref<"TIMEOUT" | "AUTH" | "VALIDATION" | "OFFLINE" | "SUCCESS" | null>(null);
 
 /**
+ * Timeout window (ms) for optional diagnostic metadata and heartbeat PostgREST queries.
+ *
+ * @remarks
  * [DECISION LOG] OPTIONAL METADATA TIMEOUT
  * Rationale: Optional provenance reads must never hold the roster and recruiting payload
  * hostage. Three seconds is long enough for a healthy PostgREST round trip but
  * short enough that a degraded heartbeat projection cannot turn into a full
- * foreground-sync failure.
+ * foreground-sync failure. Satisfies ADR Section III: Diagnostic Isolation.
  */
 export const OPTIONAL_METADATA_TIMEOUT_MS = 3_000;
 
@@ -147,16 +156,18 @@ export const createSupabaseClient = () => {
 };
 
 /**
- * Checks if the Supabase environment variables are present.
- * @returns True if both URL and Key are defined.
+ * Checks if the Supabase environment variables are present and valid.
+ *
+ * @returns True if both endpoint URL and publishable key are defined.
  */
 export function isConfigured(): boolean {
   return Boolean(getSupabaseUrl() && getSupabaseKey());
 }
 
 /**
- * Retrieves the current Supabase endpoint URL.
- * @returns The URL string or a placeholder if unconfigured.
+ * Retrieves the current Supabase endpoint URL string or placeholder.
+ *
+ * @returns The resolved URL string or placeholder string when unconfigured.
  */
 export function getApiUrl(): string {
   return getSupabaseUrl() || "(not configured)";
@@ -285,6 +296,15 @@ function markersMatch(left: SnapshotRefreshMarker, right: SnapshotRefreshMarker)
   return left.generation === right.generation && left.refreshedAt === right.refreshedAt;
 }
 
+/**
+ * Fetches the materialized roster snapshot from Supabase, utilizing marker-based memory caching.
+ *
+ * @param supabase - The scoped Supabase client instance.
+ * @param signal - AbortSignal for network cancellation.
+ * @param marker - Current snapshot refresh marker or null if unverified.
+ * @returns Promise resolving to validated roster snapshot rows.
+ * @throws Error if the query fails or payload validation rejects all rows.
+ */
 async function fetchRosterSnapshot(
   supabase: ReturnType<typeof createSupabaseClient>,
   signal: AbortSignal,
@@ -314,6 +334,15 @@ async function fetchRosterSnapshot(
   return rows;
 }
 
+/**
+ * Fetches the materialized headhunter recruiting snapshot from Supabase, utilizing marker-based memory caching.
+ *
+ * @param supabase - The scoped Supabase client instance.
+ * @param signal - AbortSignal for network cancellation.
+ * @param marker - Current snapshot refresh marker or null if unverified.
+ * @returns Promise resolving to validated headhunter snapshot rows.
+ * @throws Error if the query fails or payload validation rejects all rows.
+ */
 async function fetchHeadhunterSnapshot(
   supabase: ReturnType<typeof createSupabaseClient>,
   signal: AbortSignal,
