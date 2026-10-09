@@ -16,6 +16,23 @@ LAST_AGED:   2026-10-08
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-09] PR #2142 [Stage 10]: PWA and APK wrapper integrity audit verified across asset links, manifest parity, version code/name sync, release metadata, and security policy using pnpm audit:apk.
+**Domain:** apk | **Commit:** 3daab35b5 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2142)
+**Files:** .github/nightly-logs/10-apk-integrity-coverage.log, .github/nightly-logs/10-apk-integrity-pr-body.md
+**Why:** All wrapper configurations, manifest values, security policies, and binary metadata are fully synchronized with no mismatches.
+**Change:** PWA and APK wrapper integrity audit verified across asset links, manifest parity, version code/name sync, release metadata, and security policy using pnpm audit:apk.
+**Result:** pnpm audit:apk, node APK/verify-apk-integrity.mjs, and node APK/verify-android-source.mjs executed successfully with 0 errors.
+**Nudges:** 0
+
+### [2026-10-09] PR #2141 [Stage 11]: Audited WebView settings, SW caching strategies, and precache footprint; zero source changes required
+**Domain:** apk | **Commit:** 85dfbee35 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2141)
+**Files:** .github/nightly-logs/11-apk-optimization-coverage.log, .github/nightly-logs/11-apk-optimization-pr-body.md
+**Why:** All 9 native WebView and SW caching invariants are PRESENT and static precache footprint (67.6 KB) is well within limits
+**Change:** Audited WebView settings, SW caching strategies, and precache footprint; zero source changes required
+**Result:** pnpm audit:apk-perf PASSED with 0 violations
+**Nudges:** 0
+
+
 ### [2026-10-09] PR #2140 [Stage 9]: Extracted sync failure classification and backoff span utilities from useClashSync into useClashSyncUtils
 **Domain:** architecture | **Commit:** b1cc10659 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2140)
 **Files:** .github/nightly-logs/09-refactor-proposals-coverage.log, .github/nightly-logs/09-refactor-proposals-pr-body.md, Frontend-PWA/src/core/services/services-tests/useClashSyncUtils.spec.ts, Frontend-PWA/src/core/services/useClashSync.ts, Frontend-PWA/src/core/services/useClashSyncUtils.ts
