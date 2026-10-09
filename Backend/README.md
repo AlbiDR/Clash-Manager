@@ -3,7 +3,7 @@
 
 # Clash Manager Backend
 
-[![Backend](https://img.shields.io/badge/Backend-v14.52.6-3ECF8E?style=flat-square&logo=supabase&logoColor=white)](README.md)
+[![Backend](https://img.shields.io/badge/Backend-v14.52.8-3ECF8E?style=flat-square&logo=supabase&logoColor=white)](README.md)
 [![Deno](https://img.shields.io/badge/Edge-Deno-000000?style=flat-square&logo=deno&logoColor=white)](supabase/functions)
 [![Postgres 17](https://img.shields.io/badge/Postgres-17-4169E1?style=flat-square&logo=postgresql&logoColor=white)](supabase/migrations)
 
@@ -31,7 +31,7 @@ findings and the ordered work list.
 
 ## Edge Functions
 
-Five Deno functions live in [`supabase/functions/`](supabase/functions). All share the request handler, key-rotation, and secret-loading code in [`_shared/`](supabase/functions/_shared/README.md), authenticate service-to-service calls with an internal bearer token, and route every Clash Royale API request through a rotating pool of keys (the "Key Farm") behind the RoyaleAPI static-IP proxy.
+Six Deno functions live in [`supabase/functions/`](supabase/functions). The five game-data functions share the request handler, key-rotation, and secret-loading code in [`_shared/`](supabase/functions/_shared/README.md), authenticate service-to-service calls with an internal bearer token, and route every Clash Royale API request through a rotating pool of keys (the "Key Farm") behind the RoyaleAPI static-IP proxy. `ping` uses the shared handler with the anonymous key as its bearer credential and makes no database or Clash Royale API calls.
 
 | Function | Trigger | Purpose |
 | :--- | :--- | :--- |
@@ -40,6 +40,7 @@ Five Deno functions live in [`supabase/functions/`](supabase/functions). All sha
 | [`query-royale-api`](supabase/functions/query-royale-api/README.md) | On demand from the PWA | Harvests clanless players from the Path of Legends leaderboard without persisting them. |
 | [`fetch-player-battlelog`](supabase/functions/fetch-player-battlelog/README.md) | On demand | Fetches one player's freshest battle log by querying every key in parallel. |
 | [`sync-player-cards`](supabase/functions/sync-player-cards/README.md) | On demand from the Laboratory | Syncs a player's card collection, normalized to a 1-16 level scale. |
+| [`ping`](supabase/functions/ping/index.ts) | On demand from the PWA | Lightweight connectivity and backend-version probe; does not check database health. |
 
 ---
 
@@ -86,13 +87,13 @@ The scoring formulas (RPeS/PeS for members, RPoS/PoS for recruits) are summarize
 
 ## Development
 
-The backend is managed with the Supabase CLI.
+The backend is managed with the workspace's Supabase CLI. After `pnpm install`, run the following commands from the repository root; `--workdir Backend` selects the project containing `supabase/config.toml`. Local-stack commands require Docker to be installed and running.
 
 ```bash
-supabase start                                              # local stack
-supabase migration new <name>                              # new migration
-supabase functions serve ingest-royale-data --no-verify-jwt # run a function locally
-supabase test db                                           # run pgTAP tests
+pnpm exec supabase start --workdir Backend                                              # local stack
+pnpm exec supabase migration new <name> --workdir Backend                               # new migration
+pnpm exec supabase functions serve ingest-royale-data --no-verify-jwt --workdir Backend  # run a function locally
+pnpm exec supabase test db --workdir Backend                                            # run pgTAP tests
 ```
 
 Migrations are the single source of truth: change the schema in a migration file, never in the dashboard. After any schema or RPC change, regenerate the TypeScript types.
@@ -150,7 +151,7 @@ pnpm exec supabase db query --linked --workdir Backend \
 
 ### Deployment
 
-`.github/workflows/deploy-supabase.yml` runs on pushes to `Beta` or `Stable` that touch `Backend/**`. It syncs secrets and the Vault, pushes migrations, and deploys all five Edge Functions.
+`.github/workflows/deploy-supabase.yml` runs on pushes to `Beta` or `Stable` that touch `Backend/**`. It syncs secrets and the Vault, pushes migrations, and deploys all six Edge Functions, including `ping`.
 
 ---
 

@@ -4,6 +4,7 @@
 import { supabase } from "../client.ts";
 import { ScannerStats, AuditEntry } from "../../_shared/types.ts";
 import { fetchWithRotation, processBatch } from "../../_shared/muscle.ts";
+import { withAbortSignal } from "../../_shared/abortSignal.ts";
 import * as v from "npm:valibot@1.5.0";
 import { RoyalePlayerSchema, StaleRecruitSchema } from "../../_shared/schemas.ts";
 
@@ -43,12 +44,17 @@ import { RoyalePlayerSchema, StaleRecruitSchema } from "../../_shared/schemas.ts
 export async function runGhostPurge(
     exclusionSet: Set<string>,
     stats: ScannerStats,
-    logAudit: (stage: string, action: AuditEntry['action'], details?: unknown) => void
+    logAudit: (stage: string, action: AuditEntry['action'], details?: unknown) => void,
+    signal?: AbortSignal,
+    admissionSignal?: AbortSignal,
 ): Promise<number> {
     console.log(`[GHOST_PURGE] Starting hot-zone audit of top 50 active recruits...`);
 
     // --- 1. Pull the top 50 active recruits by RPoS ---
-    const { data: hotZoneTargetsRaw, error: hotZoneTargetsError } = await supabase.rpc('get_hot_zone_recruits', { p_limit: 50 });
+    const { data: hotZoneTargetsRaw, error: hotZoneTargetsError } = await withAbortSignal(
+        supabase.rpc('get_hot_zone_recruits', { p_limit: 50 }),
+        signal,
+    );
 
     if (hotZoneTargetsError) {
         console.error(`[GHOST_PURGE] Failed to fetch hot-zone targets: ${hotZoneTargetsError.message}`);
@@ -83,7 +89,7 @@ export async function runGhostPurge(
     // [THREAT:] Prevents Error 546 (Worker Resource Limit) by capping active fetch tasks.
     const purgeTasks = targets.map((recruitCandidate) => async () => {
         try {
-            const playerProfileResponse = await fetchWithRotation(`/players/${encodeURIComponent(recruitCandidate.player_tag)}`);
+            const playerProfileResponse = await fetchWithRotation(`/players/${encodeURIComponent(recruitCandidate.player_tag)}`, undefined, admissionSignal ?? signal);
             if (!playerProfileResponse.ok) {
                 // [DECISION LOG] 404 indicates the player likely no longer exists (tag change/deleted).
                 // Purge immediately to clean the hot-zone.
@@ -92,7 +98,10 @@ export async function runGhostPurge(
                     // unchecked call would advance ghostsEvicted for an eviction that never happened
                     // and stats.ghosts_purged would report phantom purges.
                     // [DECISION LOG] The counter only advances once the write is confirmed.
-                    const { error: deadRecruitPurgeError } = await supabase.rpc('purge_recruits', { p_tags: [recruitCandidate.player_tag] });
+                    const { error: deadRecruitPurgeError } = await withAbortSignal(
+                        supabase.rpc('purge_recruits', { p_tags: [recruitCandidate.player_tag] }),
+                        signal,
+                    );
                     if (deadRecruitPurgeError) {
                         console.error(`[GHOST_PURGE] Failed to purge dead recruit ${recruitCandidate.player_tag}: ${deadRecruitPurgeError.message}`);
                         stats.errors.push(`GHOST_PURGE:${recruitCandidate.player_tag}: ${deadRecruitPurgeError.message}`);
@@ -128,7 +137,10 @@ export async function runGhostPurge(
                 // [DECISION LOG] The counter and the 'evicted_clanned_ghost' audit entry are both
                 // gated on RPC success. On failure the tag is deliberately NOT added to touchedTags,
                 // so its last_scan stays stale and the S4 rescan retries the eviction next cycle.
-                const { error: clannedGhostPurgeError } = await supabase.rpc('purge_recruits', { p_tags: [playerProfileSnapshot.tag] });
+                const { error: clannedGhostPurgeError } = await withAbortSignal(
+                    supabase.rpc('purge_recruits', { p_tags: [playerProfileSnapshot.tag] }),
+                    signal,
+                );
                 if (clannedGhostPurgeError) {
                     console.error(`[GHOST_PURGE] Failed to evict clanned ghost ${playerProfileSnapshot.tag}: ${clannedGhostPurgeError.message}`);
                     stats.errors.push(`GHOST_PURGE:${playerProfileSnapshot.tag}: ${clannedGhostPurgeError.message}`);
@@ -154,14 +166,17 @@ export async function runGhostPurge(
         }
     });
 
-    await processBatch(purgeTasks, 10);
+    await processBatch(purgeTasks, 10, admissionSignal ?? signal);
 
     // --- 3. Bulk-touch all verified clanless recruits in one RPC call ---
     // [DECISION LOG] `refreshed` reports confirmed last_scan writes, not attempted ones, so a
     // failed touch_recruits cannot inflate the audit trail with refreshes that never landed.
     let recruitsRefreshed = 0;
     if (touchedTags.length > 0) {
-        const { error: touchErr } = await supabase.rpc('touch_recruits', { p_tags: touchedTags });
+        const { error: touchErr } = await withAbortSignal(
+            supabase.rpc('touch_recruits', { p_tags: touchedTags }),
+            signal,
+        );
         if (touchErr) {
             console.warn(`[GHOST_PURGE] touch_recruits failed: ${touchErr.message}`);
             stats.errors.push(`GHOST_PURGE:touch_recruits: ${touchErr.message}`);

@@ -49,6 +49,17 @@ export const CONCURRENCY_DISCOVERY_KEYWORDS = 3;
 export const CONCURRENCY_DISCOVERY_TOURNAMENTS = 5;
 
 /**
+ * HEADHUNTER SCANNER: bound work after executeScanner starts. Observed workers
+ * terminated at 151-157 seconds; 120 seconds is below the documented 150-second
+ * Free-plan ceiling, but does not guarantee an end-to-end response time because
+ * Vault setup and protocol/terminal reporting happen outside this scanner budget.
+ */
+export const SCANNER_WORK_BUDGET_MS = 120_000;
+// Close new/cancellable external fetch work 30s before the hard scanner limit
+// so completed profiler/rescan rows have time for their existing bulk RPCs.
+export const SCANNER_CHECKPOINT_RESERVE_MS = 30_000;
+
+/**
  * HARVESTER: Operational thresholds and discovery parameters.
  */
 export const PLAYER_LEADERBOARD_LIMIT = 1000;

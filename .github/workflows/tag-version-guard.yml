@@ -14,6 +14,9 @@ on:
     tags:
       - "v*"
 
+permissions:
+  contents: read
+
 jobs:
   verify:
     name: "Verify tag matches package.json"

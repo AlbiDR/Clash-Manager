@@ -253,6 +253,13 @@ if [[ "${FULL_STARTED}" == "1" ]]; then
     status=$?
     record_failure "full-history catalog snapshot" "${status}"
   fi
+  # Optional CI artifact: generate the complete candidate types from the same
+  # disposable database that passed replay, rather than from production before
+  # its new migration has been deployed.
+  if [[ "${VERIFICATION_STATUS}" -eq 0 && -n "${DATABASE_TYPES_OUTPUT:-}" ]]; then
+    (cd "${TEMP_ROOT}" && supabase gen types typescript --local \
+      --schema substrate,drivers,features,public) > "${DATABASE_TYPES_OUTPUT}"
+  fi
 fi
 
 if [[ "${CATALOG_EQUIVALENCE}" == "true" && "${BASELINE_FIRST_READY:-0}" == "1" && "${FULL_REPLAY_READY}" == "1" ]]; then

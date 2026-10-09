@@ -4,7 +4,9 @@
 import { describe, it, expect, vi, beforeEach, beforeAll } from "vitest";
 import { readFileSync } from "node:fs";
 import type { ScannerStats, RecruitSource, RecruitSyncRow } from "../../../_shared/types.ts";
+import { CONCURRENCY_PROFILER } from "../../../_shared/config.ts";
 import { calculateRpos, calculateWeightedWinRate } from "../../../_shared/utils.ts";
+import { ScannerAdmissionDeadlineExceededError, ScannerWorkBudgetExceededError } from "../../work-budget.ts";
 
 /**
  * Direct coverage of how `runProfiler()` wires calculateRpos()/
@@ -41,7 +43,7 @@ const { mockSupabase, mockFetchWithRotation, mockProcessBatch, rpcQueues, rpcRes
     // Deterministic stand-in for the real `p-limit`-backed processBatch:
     // executes every task sequentially and returns their results, preserving
     // real semantics without depending on p-limit being resolvable at all.
-    const mockProcessBatch = vi.fn(async (tasks: Array<() => Promise<unknown>>) => {
+    const mockProcessBatch = vi.fn(async (tasks: Array<() => Promise<unknown>>, _concurrency?: number, _signal?: AbortSignal) => {
         const results: unknown[] = [];
         for (const task of tasks) {
             results.push(await task());
@@ -111,6 +113,25 @@ beforeEach(() => {
     for (const key of Object.keys(rpcResponses)) delete rpcResponses[key];
 });
 
+async function runAbortableBatch(
+    tasks: Array<() => Promise<unknown>>,
+    concurrency: number,
+    signal?: AbortSignal,
+): Promise<void> {
+    let nextTask = 0;
+    const workers = Array.from({ length: Math.min(concurrency, tasks.length) }, async () => {
+        while (!signal?.aborted) {
+            const task = tasks[nextTask++];
+            if (!task) return;
+            await task();
+        }
+    });
+    const settled = await Promise.allSettled(workers);
+    const rejection = settled.find((worker) => worker.status === "rejected");
+    if (signal?.aborted) throw signal.reason;
+    if (rejection?.status === "rejected") throw rejection.reason;
+}
+
 describe("runProfiler recruit persistence wiring", () => {
     it("wires calculateRpos()/calculateWeightedWinRate() output into the sync_recruits payload for an eligible recruit", async () => {
         rpcQueues.get_recent_scans = [{ data: [], error: null }]; // nothing recently scanned, so the candidate is fetched
@@ -176,6 +197,78 @@ describe("runProfiler recruit persistence wiring", () => {
 
         const syncCall = mockSupabase.rpc.mock.calls.find(([name]: [string]) => name === "sync_recruits");
         expect(syncCall).toBeUndefined();
+    });
+
+    it("checkpoints completed profiles at the admission deadline without starting queued work", async () => {
+        const admission = new AbortController();
+        const hard = new AbortController();
+        const admissionError = new ScannerAdmissionDeadlineExceededError();
+        const candidates = new Map<string, RecruitSource>(
+            Array.from({ length: CONCURRENCY_PROFILER + 5 }, (_, index) => [`#PROFILE${index}`, "SHADOW"]),
+        );
+        let fetchStarts = 0;
+
+        rpcQueues.get_recent_scans = [{ data: [], error: null }];
+        mockProcessBatch.mockImplementation((tasks, concurrency = CONCURRENCY_PROFILER, signal) =>
+            runAbortableBatch(tasks, concurrency, signal));
+        mockFetchWithRotation.mockImplementation((_endpoint: string, _retries: unknown, signal: AbortSignal) => {
+            fetchStarts++;
+            if (fetchStarts === 1) {
+                return Promise.resolve({
+                    ok: true,
+                    status: 200,
+                    json: async () => {
+                        admission.abort(admissionError);
+                        return { ...eligibleProfile, tag: "#PROFILE0" };
+                    },
+                });
+            }
+            return new Promise((_resolve, reject) => {
+                signal.addEventListener("abort", () => reject(signal.reason), { once: true });
+            });
+        });
+
+        await expect(runProfiler(candidates, new Set(), 5000, freshStats(), vi.fn(), hard.signal, admission.signal))
+            .rejects.toBe(admissionError);
+
+        expect(fetchStarts).toBe(CONCURRENCY_PROFILER);
+        const syncCalls = mockSupabase.rpc.mock.calls.filter(([name]: [string]) => name === "sync_recruits");
+        expect(syncCalls).toHaveLength(1);
+        expect(syncCalls[0][1].p_recruits).toHaveLength(1);
+        expect(syncCalls[0][1].p_recruits[0]).toMatchObject({
+            player_tag: "#PROFILE0",
+            source: "SHADOW",
+            status: "ACTIVE",
+        });
+        expect(mockSupabase.rpc.mock.calls.some(([name]: [string]) => name === "get_recruits_fate")).toBe(false);
+    });
+
+    it("does not start a checkpoint RPC after the hard DB deadline", async () => {
+        const admission = new AbortController();
+        const hard = new AbortController();
+        const hardError = new ScannerWorkBudgetExceededError();
+        const candidates = new Map<string, RecruitSource>(
+            Array.from({ length: CONCURRENCY_PROFILER + 1 }, (_, index) => [`#HARD${index}`, "TOURNAMENT"]),
+        );
+
+        rpcQueues.get_recent_scans = [{ data: [], error: null }];
+        mockProcessBatch.mockImplementation((tasks, concurrency = CONCURRENCY_PROFILER, signal) =>
+            runAbortableBatch(tasks, concurrency, signal));
+        mockFetchWithRotation.mockImplementationOnce(async (_endpoint: string, _retries: unknown, signal: AbortSignal) => ({
+            ok: true,
+            status: 200,
+            json: async () => {
+                admission.abort(new ScannerAdmissionDeadlineExceededError());
+                hard.abort(hardError);
+                return { ...eligibleProfile, tag: "#HARD0" };
+            },
+        })).mockImplementation((_endpoint: string, _retries: unknown, signal: AbortSignal) => new Promise((_resolve, reject) => {
+            signal.addEventListener("abort", () => reject(signal.reason), { once: true });
+        }));
+
+        await expect(runProfiler(candidates, new Set(), 5000, freshStats(), vi.fn(), hard.signal, admission.signal))
+            .rejects.toBe(hardError);
+        expect(mockSupabase.rpc.mock.calls.some(([name]: [string]) => name === "sync_recruits")).toBe(false);
     });
 });
 
