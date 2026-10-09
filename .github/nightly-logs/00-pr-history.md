@@ -16,6 +16,15 @@ LAST_AGED:   2026-10-08
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-09] PR #2138 [Stage 7]: Version integrity audit verified ground truth 14.52.6 across root, Frontend-PWA, Backend package.json, README badges, APK manifests, and code constants. No drift detected.
+**Domain:** versioning | **Commit:** 0e1f5d8ff | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2138)
+**Files:** .github/nightly-logs/07-version-integrity-coverage.log, .github/nightly-logs/07-version-integrity-pr-body.md
+**Why:** Catalog protocol adherence and monorepo version consistency scans confirmed full alignment with ground truth 14.52.6 with zero drift across all manifests and derived files.
+**Change:** Version integrity audit verified ground truth 14.52.6 across root, Frontend-PWA, Backend package.json, README badges, APK manifests, and code constants. No drift detected.
+**Result:** pnpm audit:version passed cleanly with 0 drift or catalog violations detected across 10 version-bearing files and manifests.
+**Nudges:** 0
+
+
 ### [2026-10-09] PR #2137 [Stage 6]: docs(tsdoc): harden SupabaseClient TSDoc interface contracts and inline annotations
 **Domain:** documentation | **Commit:** 1fa536747 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2137)
 **Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, .github/nightly-logs/06-documentation-tsdoc-pr-body.md, Frontend-PWA/src/core/api/SupabaseClient.ts
