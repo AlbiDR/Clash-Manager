@@ -43,8 +43,12 @@ const APK_DEV = path.join(APK_DIR, "apk-dev.mjs");
 const ACTIVITY = `${DEV_PACKAGE}/com.albidr.clashmanager.MainActivity`;
 const COMMAND_TIMEOUT_MS = 120_000;
 const PAGE_TIMEOUT_MS = 20_000;
+const POPULATION_TIMEOUT_MS = 25_000;
 const POLL_INTERVAL_MS = 300;
 const REPORT_VERSION = 1;
+const POPULATION_DB_NAME = "clash_manager_v14";
+const POPULATION_STORE_NAME = "keyval";
+const POPULATION_CACHE_KEY = "CLAN_MANAGER_DATA_V8";
 
 const FATAL_ANDROID_RUNTIME_MARKER = /FATAL EXCEPTION|Fatal signal|ANR in com\.albidr\.clashmanager\.dev/i;
 const WEBVIEW_CONSOLE_MARKER = /\[(?:INFO|WARNING|ERROR):CONSOLE\(\d+\)\]/i;
@@ -80,6 +84,18 @@ const FRONTEND_LOG_HEALTH_RULES = Object.freeze([
     status: "DEGRADED",
     pattern: /\[Sync\]\s+Cache hydration failed:/i,
     message: "CM frontend could not hydrate its local sync cache",
+  },
+  {
+    id: "sync-remote-failure",
+    status: "DEGRADED",
+    pattern: /\[Sync\]\s+Remote sync failed\s+\(Attempt\s+\d+\):/i,
+    message: "CM frontend could not complete a remote Supabase sync",
+  },
+  {
+    id: "sync-cache-validation",
+    status: "FAIL",
+    pattern: /\[Sync\]\s+Local cache validation failed:/i,
+    message: "CM frontend rejected its saved client dataset during cache validation",
   },
 ]);
 
@@ -163,6 +179,102 @@ const BRIDGE_SNAPSHOT_EXPRESSION = `(() => {
   };
 })()`;
 
+// Read the already-existing IndexedDB database only. The databases() guard is
+// deliberate: opening an absent database would create it and turn an empty
+// cache into misleading evidence. No record is written or deleted.
+function populationSnapshotExpression(route) {
+  return `(${async function populationSnapshot(route, timeoutMs, intervalMs, dbName, storeName, cacheKey) {
+  const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+  const deadline = Date.now() + timeoutMs;
+  let latest = null;
+  while (Date.now() <= deadline) {
+    const expectedHash = `#${route}`;
+    const bodyLines = document.body?.innerText?.split(/\r?\n/).map((line) => line.trim()).filter(Boolean) ?? [];
+    const routeHeading = bodyLines[0] ?? null;
+    const sourceStatus = document.querySelector(".status-label")?.textContent?.trim() ?? null;
+    const selector = route === "/roster" ? '[data-bone="MemberCard.card"]' : '[data-bone="RecruitCard.card"]';
+    const visibleCards = [...document.querySelectorAll(selector)].filter((card) => card.getClientRects().length > 0).length;
+    const matchingRequests = performance.getEntriesByType("resource").flatMap((entry) => {
+      try {
+        const url = new URL(entry.name);
+        return url.hostname.endsWith(".supabase.co")
+          ? [{ status: Number.isFinite(entry.responseStatus) ? entry.responseStatus : null }]
+          : [];
+      } catch (_) { return []; }
+    });
+    const supabase = {
+      total: matchingRequests.length,
+      successful: matchingRequests.filter((request) => request.status >= 200 && request.status < 300).length,
+      failed: matchingRequests.filter((request) => request.status !== null && request.status >= 400).length,
+      unknown: matchingRequests.filter((request) => request.status === null).length,
+    };
+
+    let cache = { status: "MISSING", rosterRows: null, recruitRows: null, dataSource: null, timestampPresent: false };
+    try {
+      if (typeof indexedDB.databases !== "function") {
+        cache = { ...cache, status: "UNSUPPORTED" };
+      } else {
+        const databases = await indexedDB.databases();
+        if (databases.some((database) => database.name === dbName)) {
+          const database = await new Promise((resolve, reject) => {
+            const request = indexedDB.open(dbName);
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = () => reject(request.error || new Error("IndexedDB open failed"));
+          });
+          try {
+            if (database.objectStoreNames.contains(storeName)) {
+              const value = await new Promise((resolve, reject) => {
+                const request = database.transaction(storeName, "readonly").objectStore(storeName).get(cacheKey);
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => reject(request.error || new Error("IndexedDB read failed"));
+              });
+              cache = value && typeof value === "object"
+                ? {
+                    status: "READ",
+                    rosterRows: Array.isArray(value.lb) ? value.lb.length : null,
+                    recruitRows: Array.isArray(value.hh) ? value.hh.length : null,
+                    dataSource: typeof value.dataSource === "string" ? value.dataSource : null,
+                    timestampPresent: Number.isFinite(value.timestamp) && value.timestamp > 0,
+                  }
+                : { ...cache, status: "EMPTY" };
+            } else {
+              cache = { ...cache, status: "STORE_MISSING" };
+            }
+          } finally { database.close(); }
+        }
+      }
+    } catch (error) {
+      cache = { ...cache, status: "ERROR", message: String(error?.name || "IndexedDB read failed") };
+    }
+
+    const routeReady = location.hash === expectedHash
+      && document.readyState === "complete"
+      && document.title.length > 0;
+    latest = {
+      route,
+      routeReady,
+      hash: location.hash,
+      title: document.title,
+      routeHeading,
+      sourceStatus,
+      visibleCards,
+      cache,
+      supabase,
+    };
+    if (routeReady && sourceStatus === "DB" && cache.status === "READ" && cache.timestampPresent && supabase.successful > 0) {
+      const rowCount = route === "/roster" ? cache.rosterRows : cache.recruitRows;
+      if (Number.isInteger(rowCount) && (rowCount > 0 || route === "/headhunter")) {
+        const settled = rowCount === 0 ? visibleCards === 0 : visibleCards > 0;
+        if (settled) return latest;
+      }
+    }
+    if (Date.now() + intervalMs > deadline) break;
+    await sleep(intervalMs);
+  }
+  return latest ?? { route, routeReady: false, cache: { status: "UNOBSERVED" }, supabase: { total: 0, successful: 0, failed: 0, unknown: 0 }, visibleCards: 0 };
+}.toString()})(${JSON.stringify(route)}, ${POPULATION_TIMEOUT_MS}, ${POLL_INTERVAL_MS}, ${JSON.stringify(POPULATION_DB_NAME)}, ${JSON.stringify(POPULATION_STORE_NAME)}, ${JSON.stringify(POPULATION_CACHE_KEY)})`;
+}
+
 export function usage() {
   return [
     "Usage: node APK/device-acceptance.mjs [--display] [--output <directory>]",
@@ -237,6 +349,52 @@ export function parsePackageInfo(value) {
 
 export function routeHash(route) {
   return `#${route}`;
+}
+
+/** Judge UI population against the read-only client cache and observed Supabase responses. */
+export function assessPopulationSnapshot(snapshot) {
+  const route = snapshot?.route;
+  const roster = route === "/roster";
+  const headhunter = route === "/headhunter";
+  const cache = snapshot?.cache;
+  const supabase = snapshot?.supabase;
+  const visibleCards = snapshot?.visibleCards;
+  const rowCount = roster ? cache?.rosterRows : headhunter ? cache?.recruitRows : null;
+  let message = null;
+
+  if (!roster && !headhunter) message = `unsupported population route ${String(route)}`;
+  else if (!snapshot?.routeReady) message = `${route} route did not become ready`;
+  else if (snapshot?.routeHeading !== (roster ? "Roster" : "Headhunter")) message = `${route} rendered ${String(snapshot?.routeHeading ?? "no route heading")}`;
+  else if (snapshot?.sourceStatus !== "DB") message = `${route} status pill is ${String(snapshot?.sourceStatus ?? "missing")}, expected DB`;
+  else if (cache?.status !== "READ") message = `client dataset cache could not be read (${String(cache?.status ?? "missing")})`;
+  else if (cache?.dataSource !== "SUPABASE") message = `client dataset source is ${String(cache?.dataSource ?? "missing")}, expected SUPABASE`;
+  else if (!cache?.timestampPresent) message = "client dataset has no valid timestamp";
+  else if (!Number.isInteger(rowCount) || rowCount < 0) message = `client dataset has no valid ${roster ? "roster" : "recruit"} row count`;
+  else if (!Number.isInteger(visibleCards) || visibleCards < 0) message = "visible card count is invalid";
+  else if (!Number.isInteger(supabase?.successful) || supabase.successful < 1) message = "no successful Supabase response was observed in this WebView";
+  else if (roster && rowCount === 0) message = "Supabase-backed roster dataset is empty";
+  else if (roster && visibleCards === 0) message = "roster dataset is populated but no roster cards rendered";
+  else if (roster && visibleCards > rowCount) message = `rendered roster cards (${visibleCards}) exceed cached roster rows (${rowCount})`;
+  else if (headhunter && rowCount === 0 && visibleCards !== 0) message = "recruit cards rendered while the Supabase-backed recruit dataset is empty";
+  else if (headhunter && rowCount > 0 && visibleCards === 0) message = "recruit dataset is populated but no recruit cards rendered";
+  else if (headhunter && visibleCards > Math.min(rowCount, 50)) message = `rendered recruit cards (${visibleCards}) exceed the dataset/top-50 window (${Math.min(rowCount, 50)})`;
+
+  return {
+    status: message ? "FAIL" : "PASS",
+    message,
+    route,
+    datasetSource: cache?.dataSource ?? null,
+    sourceStatus: snapshot?.sourceStatus ?? null,
+    cachedRows: Number.isInteger(rowCount) ? rowCount : null,
+    visibleCards: Number.isInteger(visibleCards) ? visibleCards : null,
+    emptyRecruitment: headhunter && rowCount === 0 && visibleCards === 0,
+    supabase: supabase && {
+      total: Number.isInteger(supabase.total) ? supabase.total : 0,
+      successful: Number.isInteger(supabase.successful) ? supabase.successful : 0,
+      failed: Number.isInteger(supabase.failed) ? supabase.failed : 0,
+      unknown: Number.isInteger(supabase.unknown) ? supabase.unknown : 0,
+    },
+  };
 }
 
 /** Physical devices are left visually untouched unless their operator opted in. */
@@ -714,6 +872,22 @@ async function run(options, output) {
       const routeResult = await attempt(report, `route: ${route.path}`, () => navigateTo(route));
       if (routeResult.ok) {
         await attempt(report, `screenshot: ${route.path}`, () => takeScreenshot(report, output, route.path.slice(1)));
+        if (route.path === "/roster" || route.path === "/headhunter") {
+          await attempt(report, `populated Supabase client data: ${route.path}`, () => {
+            const snapshot = pageEval(populationSnapshotExpression(route.path));
+            const assessment = assessPopulationSnapshot(snapshot);
+            if (assessment.status !== "PASS") {
+              throw new Error(`${assessment.message}; observed ${JSON.stringify(assessment)}`);
+            }
+            return {
+              ...assessment,
+              cacheStatus: snapshot.cache?.status ?? null,
+              routeReady: snapshot.routeReady === true,
+              supabaseFailedResponses: snapshot.supabase?.failed ?? 0,
+              supabaseUnknownResponses: snapshot.supabase?.unknown ?? 0,
+            };
+          });
+        }
       }
     }
 

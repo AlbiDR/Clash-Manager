@@ -9,7 +9,13 @@ import { setTimeout as delay } from 'node:timers/promises';
 const REQUEST_TIMEOUT_MS = 25_000;
 const MAX_ATTEMPTS = 3;
 const RETRY_DELAY_MS = 10_000;
-const APP_VIEWS = ['roster_view', 'headhunter_view', 'recruit_blacklist_view'];
+// Probe the client's snapshots, not computed scoring views: an availability
+// check must not itself repeat the expensive work that snapshots avoid.
+export const APP_READS = [
+  { relation: 'roster_materialized', query: 'select=*&order=raw_performance_score.desc.nullslast,performance_score.desc.nullslast', requiresRows: true },
+  { relation: 'headhunter_materialized', query: 'select=*&order=raw_potential_score.desc&limit=250' },
+  { relation: 'recruit_blacklist_view', query: 'select=player_tag' },
+];
 
 export async function verifyAppAvailability({ projectId, url, key, token, fetchImpl = fetch }) {
   if (!projectId || !url || !key || !token) {
@@ -51,14 +57,31 @@ export async function verifyAppAvailability({ projectId, url, key, token, fetchI
 
   // Use the same public key and schema as the deployed PWA. A management SQL
   // query or service-role read would miss revoked view/function privileges.
-  await Promise.all(APP_VIEWS.map(async (view) => {
-    const response = await fetchImpl(`${url.replace(/\/$/, '')}/rest/v1/${view}?select=*&limit=1`, {
+  // One shared deadline bounds the entire data pass, including response bodies.
+  const controller = new AbortController();
+  const signal = AbortSignal.any([controller.signal, AbortSignal.timeout(REQUEST_TIMEOUT_MS)]);
+  const reads = APP_READS.map(async ({ relation, query, requiresRows }) => {
+    const response = await fetchImpl(`${url.replace(/\/$/, '')}/rest/v1/${relation}?${query}`, {
       headers: { apikey: key, 'Accept-Profile': 'features', 'Cache-Control': 'no-cache' },
-      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+      signal,
     });
-    if (!response.ok) throw new Error(`Anonymous ${view} read failed: HTTP ${response.status}`);
-    if (!Array.isArray(await response.json())) throw new Error(`${view} did not return a row array.`);
-  }));
+    if (!response.ok) throw new Error(`Anonymous ${relation} read failed: HTTP ${response.status}`);
+    const rows = await response.json();
+    if (!Array.isArray(rows)) throw new Error(`${relation} did not return a row array.`);
+    if (requiresRows && rows.length === 0) throw new Error(`${relation} returned no members; app population is unavailable.`);
+    if (rows.some(row => typeof row?.player_tag !== 'string' || !row.player_tag.trim())) {
+      throw new Error(`${relation} returned rows without player identities.`);
+    }
+  });
+  try {
+    await Promise.all(reads);
+  } catch (error) {
+    // Finish cancelling the failed pass before main can retry. Promise.all's
+    // early rejection alone leaves sibling fetches consuming the old budget.
+    controller.abort(error);
+    await Promise.allSettled(reads);
+    throw error;
+  }
 }
 
 async function main() {
@@ -70,7 +93,7 @@ async function main() {
         key: process.env.VITE_SUPABASE_PUBLISHABLE_KEY,
         token: process.env.SUPABASE_ACCESS_TOKEN,
       });
-      console.log('App availability verified: database, REST, blacklist publication, and anonymous roster/recruit/blacklist reads.');
+      console.log('App availability verified: database, REST, blacklist publication, populated roster snapshot, and anonymous recruit/blacklist reads.');
       return;
     } catch (error) {
       console.error(`App availability attempt ${attempt}/${MAX_ATTEMPTS}: ${error.message}`);

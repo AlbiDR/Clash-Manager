@@ -45,6 +45,9 @@ jobs:
       - name: Verify APK/android retains the custom native layer
         run: node APK/verify-android-source.mjs APK/android
 
+      - name: Verify device population acceptance assertions
+        run: node --test APK/device-acceptance.test.mjs
+
   native-source:
     name: Java source compiles, passes its tests, and matches the shipped dex
     runs-on: ubuntu-latest
