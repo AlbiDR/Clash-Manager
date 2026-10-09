@@ -16,6 +16,15 @@ LAST_AGED:   2026-10-08
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-09] PR #2140 [Stage 9]: Extracted sync failure classification and backoff span utilities from useClashSync into useClashSyncUtils
+**Domain:** architecture | **Commit:** b1cc10659 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2140)
+**Files:** .github/nightly-logs/09-refactor-proposals-coverage.log, .github/nightly-logs/09-refactor-proposals-pr-body.md, Frontend-PWA/src/core/services/services-tests/useClashSyncUtils.spec.ts, Frontend-PWA/src/core/services/useClashSync.ts, Frontend-PWA/src/core/services/useClashSyncUtils.ts
+**Why:** Satisfied Target B / SRP by decomposing oversized service file useClashSync.ts and extracting stateless pure utilities into useClashSyncUtils.ts
+**Change:** Extracted sync failure classification and backoff span utilities from useClashSync into useClashSyncUtils
+**Result:** PASS: vue-tsc type-check, vitest unit tests (2307 passed), depcruise zero violations
+**Nudges:** 0
+
+
 ### [2026-10-09] PR #2139 [Stage 8]: Bumped supabase devDependency to ^2.120.0 in catalogs and updated pnpm-lock.yaml
 **Domain:** dependencies | **Commit:** 9f3884bc3 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2139)
 **Files:** .github/nightly-logs/08-dependency-audit-coverage.log, .github/nightly-logs/08-dependency-audit-pr-body.md, package.json, pnpm-lock.yaml, pnpm-workspace.yaml
