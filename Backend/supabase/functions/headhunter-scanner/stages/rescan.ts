@@ -4,6 +4,7 @@
 import * as v from "npm:valibot@1.5.0";
 import { supabase } from "../client.ts";
 import { fetchWithRotation, processBatch } from "../../_shared/muscle.ts";
+import { throwIfAborted, withAbortSignal } from "../../_shared/abortSignal.ts";
 import { ScannerStats, AuditEntry, RecruitSyncRow } from "../../_shared/types.ts";
 import { getRposComposition, calculateWeightedWinRate } from "../../_shared/utils.ts";
 import { RESCAN_BATCH_LIMIT, CONCURRENCY_RESCAN } from "../../_shared/config.ts";
@@ -45,13 +46,15 @@ import { RoyalePlayerSchema, StaleRecruitSchema } from "../../_shared/schemas.ts
  * - **Database (RPC):** `purge_recruits`: Evicts targets who have joined other clans.
  * - **Database (RPC):** `sync_recruits`: Synchronizes refreshed profile data.
  *
- * @throws Never - Catch-all block ensures stage completion and error logging.
+ * @throws Re-throws scanner deadline aborts after logging so the orchestrator fails the invocation.
  */
 export async function runRescan(
     exclusionSet: Set<string>,
     requiredTrophies: number,
     stats: ScannerStats,
-    logAudit: (stage: string, action: AuditEntry['action'], details?: unknown) => void
+    logAudit: (stage: string, action: AuditEntry['action'], details?: unknown) => void,
+    signal?: AbortSignal,
+    admissionSignal?: AbortSignal,
 ) {
     logAudit('RESCAN', 'triggered');
     console.log(`[RESCAN] Triggered. Fetching stale recruits...`);
@@ -59,8 +62,10 @@ export async function runRescan(
         // [GUARD] VALIDATION BOUNDARY: Database ingress must pass through a Valibot schema.
         // [THREAT:] Prevents runtime crashes if the database schema drift or malformed data exists in the recruits table.
         // [DECISION LOG] Explicitly fetching and validating the shape of staleRecruitsRaw before processing.
-        const { data: staleRecruitsRaw, error: staleRecruitsError } = await supabase
-            .rpc('get_stale_recruits', { p_limit: RESCAN_BATCH_LIMIT });
+        const { data: staleRecruitsRaw, error: staleRecruitsError } = await withAbortSignal(
+            supabase.rpc('get_stale_recruits', { p_limit: RESCAN_BATCH_LIMIT }),
+            signal,
+        );
 
         logAudit('RESCAN', 'run', { count: Array.isArray(staleRecruitsRaw) ? staleRecruitsRaw.length : 0, error: staleRecruitsError?.message });
 
@@ -97,12 +102,15 @@ export async function runRescan(
         const rescanProcessingQueue = staleRecruits.map((recruitSnapshot) => async () => {
             const targetPlayerTag = recruitSnapshot.player_tag;
             try {
-                const playerProfileApiResponse = await fetchWithRotation(`/players/${encodeURIComponent(targetPlayerTag)}`);
+                const playerProfileApiResponse = await fetchWithRotation(`/players/${encodeURIComponent(targetPlayerTag)}`, undefined, admissionSignal ?? signal);
                 if (!playerProfileApiResponse.ok) {
                     if (playerProfileApiResponse.status === 404) {
                         // [THREAT:] Silent RPC failures can leave "ghost" recruits in the database.
                         // [DECISION LOG] Capturing and logging RPC error to ensure visibility of purge failures.
-                        const { error: deadRecruitPurgeError } = await supabase.rpc('report_dead_recruit', { p_player_tag: targetPlayerTag });
+                        const { error: deadRecruitPurgeError } = await withAbortSignal(
+                            supabase.rpc('report_dead_recruit', { p_player_tag: targetPlayerTag }),
+                            signal,
+                        );
                         if (deadRecruitPurgeError) {
                             logAudit('RESCAN', 'error', { tag: targetPlayerTag, message: 'Failed to report dead recruit', details: deadRecruitPurgeError });
                         }
@@ -134,7 +142,10 @@ export async function runRescan(
                 if (playerProfileSnapshot.clan?.tag && !exclusionSet.has(playerProfileSnapshot.tag)) {
                     // [THREAT:] Silent RPC failures can leave clanned players in the recruitment pool.
                     // [DECISION LOG] Capturing and logging RPC error for purge accountability.
-                    const { error: clannedRecruitPurgeError } = await supabase.rpc('purge_recruits', { p_tags: [playerProfileSnapshot.tag] });
+                    const { error: clannedRecruitPurgeError } = await withAbortSignal(
+                        supabase.rpc('purge_recruits', { p_tags: [playerProfileSnapshot.tag] }),
+                        signal,
+                    );
                     if (clannedRecruitPurgeError) {
                         logAudit('RESCAN', 'error', { tag: playerProfileSnapshot.tag, message: 'Failed to purge clanned recruit', details: clannedRecruitPurgeError });
                     }
@@ -182,6 +193,7 @@ export async function runRescan(
                 console.log(`[RESCAN] Player ${targetPlayerTag} prepared for refresh. trophies=${playerProfileSnapshot.trophies}`);
                 stats.profiles_scanned++;
             } catch (rescanExecutionError: unknown) {
+                if (signal?.aborted || admissionSignal?.aborted) throw rescanExecutionError;
                 const errorMessage = rescanExecutionError instanceof Error ? rescanExecutionError.message : String(rescanExecutionError);
                 logAudit('RESCAN', 'error', { tag: targetPlayerTag, message: errorMessage });
                 console.error(`[RESCAN] Exception while processing ${targetPlayerTag}: ${errorMessage}`);
@@ -189,13 +201,26 @@ export async function runRescan(
         });
 
         console.log(`[RESCAN] Batch processing ${staleRecruits.length} rescan tasks...`);
-        await processBatch(rescanProcessingQueue, CONCURRENCY_RESCAN);
+        let checkpointCompletedRows = false;
+        try {
+            await processBatch(rescanProcessingQueue, CONCURRENCY_RESCAN, admissionSignal ?? signal);
+            checkpointCompletedRows = Boolean(admissionSignal?.aborted);
+        } catch (rescanBatchError: unknown) {
+            throwIfAborted(signal);
+            if (!admissionSignal?.aborted) throw rescanBatchError;
+            checkpointCompletedRows = true;
+        }
 
         if (refreshedRecruitBatch.length > 0) {
             console.log(`[RESCAN] Synchronizing ${refreshedRecruitBatch.length} refreshed profiles via RPC...`);
             // [THREAT:] Silent RPC failures during bulk sync could lead to stale data persisting despite successful API fetches.
             // [DECISION LOG] Capturing and logging sync errors for operational transparency.
-            const { error: rescanBatchSyncError } = await supabase.rpc('sync_recruits', { p_recruits: refreshedRecruitBatch });
+            throwIfAborted(signal);
+            const { error: rescanBatchSyncError } = await withAbortSignal(
+                supabase.rpc('sync_recruits', { p_recruits: refreshedRecruitBatch }),
+                signal,
+            );
+            throwIfAborted(signal);
             if (rescanBatchSyncError) {
                 console.error(`[RESCAN] Sync failure: ${rescanBatchSyncError.message}`);
                 logAudit('RESCAN', 'error', { message: 'Batch sync failed', details: rescanBatchSyncError });
@@ -220,6 +245,7 @@ export async function runRescan(
                 console.log(`[RESCAN] Successfully synchronized ${refreshedRecruitBatch.length} profiles.`);
             }
         }
+        if (checkpointCompletedRows) throwIfAborted(admissionSignal);
         logAudit('RESCAN', 'terminated', { candidates: staleRecruits.length, rescanned: stats.rescans_processed });
         console.log(`[RESCAN] Terminated smoothly. Processed ${staleRecruits.length} candidates, refreshed ${stats.rescans_processed} successfully.`);
     } catch (rescanExecutionError: unknown) {
@@ -229,5 +255,6 @@ export async function runRescan(
         logAudit('RESCAN', 'error', { message: errorMessage });
         logAudit('RESCAN', 'terminated', { error: true });
         console.error(`[RESCAN] Fatal exception: ${errorMessage}`);
+        if (signal?.aborted || admissionSignal?.aborted) throw rescanExecutionError;
     }
 }

@@ -2,6 +2,7 @@
 // Copyright (C) 2026 AlbiDR
 
 import { describe, it, expect, vi, beforeEach, beforeAll } from "vitest";
+import { ScannerWorkBudgetExceededError } from "./work-budget.ts";
 
 /**
  * Coverage for `headhunter-scanner/index.ts`, the public Deno.serve entry
@@ -14,10 +15,17 @@ import { describe, it, expect, vi, beforeEach, beforeAll } from "vitest";
  * `fetch-player-battlelog/index.spec.ts`.
  */
 
+const { mockSupabase } = vi.hoisted(() => ({
+    mockSupabase: {
+        rpc: vi.fn((name: string) => Promise.resolve(
+            name === "report_telemetry"
+                ? { data: { id: 1 }, error: null }
+                : { data: null, error: null },
+        )),
+    },
+}));
+
 vi.mock("./client.ts", () => {
-    const mockSupabase = {
-        rpc: vi.fn().mockResolvedValue({ data: null, error: null }),
-    };
     return {
         CONFIG: {
             SUPABASE_URL: "https://test.supabase.co",
@@ -74,6 +82,7 @@ beforeAll(async () => {
 beforeEach(() => {
     mockExecuteScanner.mockReset();
     mockExecuteScanner.mockResolvedValue({ ghosts_purged: 0, errors: [] });
+    mockSupabase.rpc.mockClear();
 });
 
 describe("headhunter-scanner Edge Function", () => {
@@ -153,5 +162,30 @@ describe("headhunter-scanner Edge Function", () => {
         expect(response.status).toBe(500);
         const body = await response.json();
         expect(body.code).toBe("INTERNAL_ERROR");
+    });
+
+    it("records a scanner budget expiry as FAILED telemetry and heartbeat, never COMPLETED", async () => {
+        mockExecuteScanner.mockRejectedValue(new ScannerWorkBudgetExceededError());
+        const req = new Request("https://test.co/headhunter-scanner", {
+            method: "POST",
+            headers: { "Authorization": "Bearer internal-bearer", "Content-Type": "application/json" },
+            body: JSON.stringify({ tournaments: ["AUTO"] }),
+        });
+
+        const response = await requestHandler(req);
+        const body = await response.json();
+        const rpcCalls = mockSupabase.rpc.mock.calls as unknown as Array<[string, Record<string, unknown>]>;
+        const telemetryStatuses = rpcCalls
+            .filter(([name]) => name === "update_telemetry")
+            .map(([, args]) => args.p_status);
+        const heartbeatStatuses = rpcCalls
+            .filter(([name]) => name === "report_heartbeat")
+            .map(([, args]) => args.p_status);
+
+        expect(response.status).toBe(500);
+        expect(body.code).toBe("INTERNAL_ERROR");
+        expect(telemetryStatuses).toEqual(["FAILED"]);
+        expect(heartbeatStatuses).toContain("FAILED");
+        expect(heartbeatStatuses).not.toContain("COMPLETED");
     });
 });

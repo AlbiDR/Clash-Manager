@@ -3,6 +3,8 @@
 
 import { describe, it, expect, vi, beforeEach, beforeAll } from "vitest";
 import type { AuditEntry } from "../_shared/types.ts";
+import { SCANNER_CHECKPOINT_RESERVE_MS, SCANNER_WORK_BUDGET_MS } from "../_shared/config.ts";
+import { ScannerAdmissionDeadlineExceededError, ScannerWorkBudgetExceededError } from "./work-budget.ts";
 
 /**
  * Coverage for `scanner.ts`, the S0-S4 orchestrator. All five stage handlers
@@ -131,6 +133,58 @@ describe("executeScanner orchestration", () => {
         expect(callOrder).toEqual(["S0_GHOST_PURGE", "S1_SHADOW_SCOUT", "S2_TOURNAMENT_DISCOVERY", "S3_PROFILING", "S4_RESCAN"]);
         expect(result.ghosts_purged).toBe(3);
         expect(result.duration_ms).toBe(42);
+    });
+
+    it("aborts in-flight work at the configured deadline and starts no later scanner stages", async () => {
+        vi.useFakeTimers();
+        mockRunGhostPurge.mockImplementationOnce((...args: unknown[]) => new Promise<number>((resolve) => {
+            const signal = args[3] as AbortSignal;
+            signal.addEventListener("abort", () => resolve(0), { once: true });
+        }));
+        const { logAudit } = makeAuditCollector();
+
+        const run = executeScanner(["AUTO"], logAudit, vi.fn(async () => undefined));
+        const runFailure = expect(run).rejects.toBeInstanceOf(ScannerWorkBudgetExceededError);
+        await vi.advanceTimersByTimeAsync(SCANNER_WORK_BUDGET_MS);
+
+        await runFailure;
+        expect(mockRunGhostPurge).toHaveBeenCalledTimes(1);
+        expect(mockRunShadowScout).not.toHaveBeenCalled();
+        expect(mockRunTournamentDiscovery).not.toHaveBeenCalled();
+        expect(mockRunProfiler).not.toHaveBeenCalled();
+        expect(mockRunRescan).not.toHaveBeenCalled();
+        expect(mockSupabase.rpc.mock.calls.some(([name]: [string]) => name === "update_epoch_state")).toBe(false);
+        expect(vi.getTimerCount()).toBe(0);
+        vi.useRealTimers();
+    });
+
+    it("closes stage admission at the checkpoint cutoff without reaching later stages or epoch success", async () => {
+        vi.useFakeTimers();
+        mockRunGhostPurge.mockImplementationOnce((...args: unknown[]) => new Promise<number>((resolve) => {
+            const admissionSignal = args[4] as AbortSignal;
+            admissionSignal.addEventListener("abort", () => resolve(0), { once: true });
+        }));
+        const run = executeScanner(["AUTO"], vi.fn(), vi.fn(async () => undefined));
+        const runFailure = expect(run).rejects.toBeInstanceOf(ScannerAdmissionDeadlineExceededError);
+
+        await vi.advanceTimersByTimeAsync(SCANNER_WORK_BUDGET_MS - SCANNER_CHECKPOINT_RESERVE_MS);
+        await runFailure;
+
+        expect(mockRunGhostPurge).toHaveBeenCalledTimes(1);
+        expect(mockRunShadowScout).not.toHaveBeenCalled();
+        expect(mockRunTournamentDiscovery).not.toHaveBeenCalled();
+        expect(mockRunProfiler).not.toHaveBeenCalled();
+        expect(mockRunRescan).not.toHaveBeenCalled();
+        expect(mockSupabase.rpc.mock.calls.some(([name]: [string]) => name === "update_epoch_state")).toBe(false);
+        expect(vi.getTimerCount()).toBe(0);
+        vi.useRealTimers();
+    });
+
+    it("clears the work-budget timer after ordinary success", async () => {
+        vi.useFakeTimers();
+        await executeScanner(["#SOMETAG"], vi.fn(), vi.fn(async () => undefined));
+        expect(vi.getTimerCount()).toBe(0);
+        vi.useRealTimers();
     });
 
     it("skips tournament discovery when 'AUTO' is not in the requested tournaments list", async () => {

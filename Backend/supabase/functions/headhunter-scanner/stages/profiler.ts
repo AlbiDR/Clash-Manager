@@ -3,6 +3,7 @@
 
 import { supabase } from "../client.ts";
 import { fetchWithRotation, processBatch } from "../../_shared/muscle.ts";
+import { withAbortSignal, throwIfAborted } from "../../_shared/abortSignal.ts";
 import { ScannerStats, AuditEntry, RecruitSyncRow, RecruitSource } from "../../_shared/types.ts";
 import { getRposComposition, calculateWeightedWinRate } from "../../_shared/utils.ts";
 import {
@@ -50,7 +51,9 @@ export async function runProfiler(
     exclusionSet: Set<string>,
     requiredTrophies: number,
     stats: ScannerStats,
-    logAudit: (stage: string, action: AuditEntry['action'], details?: unknown) => void
+    logAudit: (stage: string, action: AuditEntry['action'], details?: unknown) => void,
+    signal?: AbortSignal,
+    admissionSignal?: AbortSignal,
 ) {
     // [THREAT:] Un-truncated candidate lists could exceed the memory limits of the Edge Function.
     // [DECISION LOG] The profiler hard-caps at PROFILER_BATCH_CEILING to ensure predictable execution duration.
@@ -69,8 +72,10 @@ export async function runProfiler(
         // via `.schema('drivers')` in production, only locally where config.toml's
         // schema list happens to include it. Every other read in this file goes
         // through a public.* RPC for exactly this reason; this one must too.
-        const { data: recentScansRaw, error: recentScansError } = await supabase
-            .rpc('get_recent_scans', { p_tags: tagsToProfile, p_since: thirtyMinutesAgo });
+        const { data: recentScansRaw, error: recentScansError } = await withAbortSignal(
+            supabase.rpc('get_recent_scans', { p_tags: tagsToProfile, p_since: thirtyMinutesAgo }),
+            signal,
+        );
 
         // [GUARD] DATABASE EGRESS BOUNDARY: PostgREST selects resolve with { data, error };
         // they never throw, so the error is inspected BEFORE the payload is parsed.
@@ -127,7 +132,7 @@ export async function runProfiler(
         const profileTasks = tagsToFetch.map(playerTag => async () => {
             logAudit('PROFILING', 'called', { tag: playerTag });
             try {
-                const playerProfileApiResponse = await fetchWithRotation(`/players/${encodeURIComponent(playerTag)}`);
+                const playerProfileApiResponse = await fetchWithRotation(`/players/${encodeURIComponent(playerTag)}`, undefined, admissionSignal ?? signal);
                 logAudit('PROFILING', 'run', { tag: playerTag, status: playerProfileApiResponse.status });
                 if (playerProfileApiResponse.ok) {
                     const playerProfileRaw: unknown = await playerProfileApiResponse.json();
@@ -223,7 +228,10 @@ export async function runProfiler(
                         // unchecked call would log the tag as blacklisted even when the write failed,
                         // leaving the dead tag in the discovery pool to be re-fetched every run.
                         // [DECISION LOG] The 'blacklisted_ghost' audit entry is gated on RPC success.
-                        const { error: deadRecruitReportError } = await supabase.rpc('report_dead_recruit', { p_player_tag: playerTag });
+                        const { error: deadRecruitReportError } = await withAbortSignal(
+                            supabase.rpc('report_dead_recruit', { p_player_tag: playerTag }),
+                            signal,
+                        );
                         if (deadRecruitReportError) {
                             stats.errors.push(`Blacklist(${playerTag}): ${deadRecruitReportError.message}`);
                             logAudit('PROFILING', 'error', { tag: playerTag, message: 'Failed to blacklist ghost', details: deadRecruitReportError });
@@ -242,6 +250,7 @@ export async function runProfiler(
                     invalidCount++;
                 }
             } catch (profilingExecutionError: unknown) {
+                if (signal?.aborted || admissionSignal?.aborted) throw profilingExecutionError;
                 const errorMessage = profilingExecutionError instanceof Error ? profilingExecutionError.message : String(profilingExecutionError);
                 stats.errors.push(`Profile(${playerTag}): ${errorMessage}`);
                 logAudit('PROFILING', 'integrity_checked', { passed: false, details: errorMessage });
@@ -253,7 +262,48 @@ export async function runProfiler(
         });
         
         console.log(`[PROFILING] Batch processing ${tagsToFetch.length} profiles...`);
-        await processBatch(profileTasks, CONCURRENCY_PROFILER);
+        let checkpointCompletedProfiles = false;
+        try {
+            await processBatch(profileTasks, CONCURRENCY_PROFILER, admissionSignal ?? signal);
+            checkpointCompletedProfiles = Boolean(admissionSignal?.aborted);
+        } catch (profileBatchError: unknown) {
+            // An early admission cutoff cancels queued/in-flight Royale requests. Preserve
+            // eligible responses already collected in memory before surfacing the failed run.
+            throwIfAborted(signal);
+            if (!admissionSignal?.aborted) throw profileBatchError;
+            checkpointCompletedProfiles = true;
+        }
+        throwIfAborted(signal);
+
+        if (checkpointCompletedProfiles) {
+            if (validRecruits.length > 0) {
+                const completedBySource = new Map<string, RecruitSyncRow[]>();
+                for (const completedRecruit of validRecruits) {
+                    const source = completedRecruit.source || 'UNKNOWN';
+                    if (!completedBySource.has(source)) completedBySource.set(source, []);
+                    completedBySource.get(source)!.push(completedRecruit);
+                }
+
+                for (const [source, completedBatch] of completedBySource) {
+                    // The hard signal remains live only until the scanner's hard deadline.
+                    // Each existing per-source RPC keeps DB004's synchronous rotation/fate path.
+                    throwIfAborted(signal);
+                    const { error: checkpointError } = await withAbortSignal(
+                        supabase.rpc('sync_recruits', { p_recruits: completedBatch }),
+                        signal,
+                    );
+                    throwIfAborted(signal);
+                    if (checkpointError) {
+                        stats.errors.push(`Checkpoint(${source}): ${checkpointError.message}`);
+                        logAudit('PROFILING', 'error', { message: `Checkpoint ingestion failed (${source})`, details: checkpointError });
+                    } else {
+                        logAudit('PROFILING', 'run', { checkpointed: completedBatch.length, source });
+                    }
+                }
+            }
+            // This failed invocation must not continue into fate polling or report epoch success.
+            throwIfAborted(admissionSignal);
+        }
         console.log(`[PROFILING] Batch processing complete. Valid: ${validCount}, Invalid/Filtered: ${invalidCount}`);
 
         // [DECISION LOG] A candidate whose profile could not be fetched may have been a Top 50
@@ -328,8 +378,10 @@ export async function runProfiler(
             // returns one row per tag that exists in drivers.recruits with no
             // scan-recency filter, so it doubles as the existing-tag check here
             // without a dedicated RPC.
-            const { data: existingRecruitsRaw, error: existingRecruitsError } = await supabase
-                .rpc('get_recruits_fate', { tags: validRecruits.map(tagCandidate => tagCandidate.player_tag) });
+            const { data: existingRecruitsRaw, error: existingRecruitsError } = await withAbortSignal(
+                supabase.rpc('get_recruits_fate', { tags: validRecruits.map(tagCandidate => tagCandidate.player_tag) }),
+                signal,
+            );
 
             // [GUARD] DATABASE EGRESS BOUNDARY: PostgREST selects resolve with { data, error };
             // they never throw, so the error is inspected BEFORE the payload is parsed.
@@ -385,9 +437,10 @@ export async function runProfiler(
 
             console.log(`[PROFILING] Ingesting ${validRecruits.length} recruits into database...`);
             for (const [recruitSource, recruitBatch] of bySource) {
-                const { error: ingestionError } = await supabase.rpc('sync_recruits', {
-                    p_recruits: recruitBatch
-                });
+                const { error: ingestionError } = await withAbortSignal(
+                    supabase.rpc('sync_recruits', { p_recruits: recruitBatch }),
+                    signal,
+                );
                 if (ingestionError) {
                     stats.errors.push(`Ingest(${recruitSource}): ${ingestionError.message}`);
                     stats.top50_unknown_reasons.push(`Profiler: sync_recruits failed for ${recruitSource}`);
@@ -428,8 +481,10 @@ export async function runProfiler(
                     await new Promise(resolve => setTimeout(resolve, attempts * 1000));
 
                     try {
-                        const { data: recruitsFateRaw, error: recruitsFateError } = await supabase
-                            .rpc('get_recruits_fate', { tags: newTags });
+                        const { data: recruitsFateRaw, error: recruitsFateError } = await withAbortSignal(
+                            supabase.rpc('get_recruits_fate', { tags: newTags }),
+                            signal,
+                        );
 
                         if (!recruitsFateError && recruitsFateRaw && Array.isArray(recruitsFateRaw) && recruitsFateRaw.length > 0) {
                             // [GUARD] VALIDATION BOUNDARY: Target C [1]
@@ -458,6 +513,7 @@ export async function runProfiler(
                             break;
                         }
                     } catch (fateCheckExecutionError: unknown) {
+                        throwIfAborted(signal);
                         const errorMessage = fateCheckExecutionError instanceof Error ? fateCheckExecutionError.message : String(fateCheckExecutionError);
                         console.error(`[PROFILING] Fate check attempt ${attempts} exception: ${errorMessage}`);
                         fateReadFailed = true;
@@ -470,7 +526,10 @@ export async function runProfiler(
                 // as "no new recruit was promoted" and arm the epoch guard.
                 if (!fateReadFailed && fateResults.length > 0) {
                     // Fetch Top 50 Threshold (lowest score in active pool)
-                    const { data: top50ThresholdRaw, error: top50ThresholdError } = await supabase.rpc('get_top_50_threshold');
+                    const { data: top50ThresholdRaw, error: top50ThresholdError } = await withAbortSignal(
+                        supabase.rpc('get_top_50_threshold'),
+                        signal,
+                    );
                     
                     // [GUARD] VALIDATION BOUNDARY: Database RPC results must be validated.
                     // [THREAT:] Missing or malformed threshold would corrupt Top 50 telemetry reporting.
