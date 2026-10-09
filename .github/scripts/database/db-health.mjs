@@ -5,6 +5,7 @@
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { APP_READS } from './verify-app-availability.mjs';
 
 const REPO_ROOT = fileURLToPath(new URL('../../../', import.meta.url));
 const REQUEST_TIMEOUT_MS = 25_000;
@@ -100,12 +101,11 @@ export async function collectHealthReport() {
       if (metrics.memoryBytes === null) throw new Error('Host memory metrics are unavailable.');
       return metrics;
     }),
-    ...['roster_view', 'headhunter_view'].map(view => observe(view, async () => {
-      const url = new URL(`/rest/v1/${view}`, apiUrl);
-      url.searchParams.set('select', '*');
-      if (view === 'headhunter_view') url.searchParams.set('limit', '250');
+    ...APP_READS.map(({ relation, query, requiresRows }) => observe(relation, async () => {
+      const url = new URL(`/rest/v1/${relation}?${query}`, apiUrl);
       const rows = JSON.parse(await request(url, { headers: { apikey: publishableKey, 'Accept-Profile': 'features' } }));
       if (!Array.isArray(rows)) throw new Error('Data API returned an invalid payload.');
+      if (requiresRows && rows.length === 0) throw new Error('Roster snapshot returned no members.');
       return { rows: rows.length };
     })),
   ]);

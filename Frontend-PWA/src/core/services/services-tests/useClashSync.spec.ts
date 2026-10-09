@@ -11,7 +11,7 @@
  * and immediately - remove this docblock if that is intentional.
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { nextTick, ref, type Ref } from "vue";
+import { effectScope, nextTick, ref, type Ref } from "vue";
 import { useClashSync } from "../useClashSync";
 import { SYNC_REQUEST_TIMEOUT_MS } from "../useClashSyncUtils";
 
@@ -59,6 +59,11 @@ vi.mock("../../api/useApiState", () => ({
   useApiState: vi.fn(() => mockApiState)
 }));
 
+const mockPowerSaving = { isPowerSaving: ref(false) };
+vi.mock("../usePowerSaving", () => ({
+  usePowerSaving: vi.fn(() => mockPowerSaving),
+}));
+
 vi.mock("../StorageService", () => ({
   loadCache: vi.fn(),
   saveCache: vi.fn().mockResolvedValue(undefined)
@@ -86,10 +91,12 @@ describe("useClashSync", () => {
     mockConnectionStatus.isOnline.value = true;
     mockApiState.apiStatus.value = "online";
     mockSyntheticMode.isSyntheticMode.value = false;
+    mockPowerSaving.isPowerSaving.value = false;
     lastSyncStatus.value = null;
   });
 
   afterEach(() => {
+    vi.unstubAllGlobals();
     vi.useRealTimers();
   });
 
@@ -481,6 +488,190 @@ describe("useClashSync", () => {
   });
 
   describe("startBackgroundSync", () => {
+    it("recovers a fresh empty-cache cold start after the real sync deadline without user input", async () => {
+      vi.useFakeTimers();
+      vi.stubGlobal("document", { visibilityState: "visible" });
+      vi.spyOn(Math, "random").mockReturnValue(0.5);
+      vi.mocked(loadCache).mockResolvedValue(null);
+      const recovered: WebAppData = {
+        lb: [{
+          id: "TAG1", n: "Recovered Member", t: 1200, performanceScore: 45, performanceRawScore: 50,
+          d: { role: "member", days: 12, avg: 30, hist: "W", winRate: 50 },
+        }],
+        hh: [], timestamp: 200, dataSource: "SUPABASE", blacklist: [],
+      };
+      let resolveRecovery: (payload: WebAppData) => void = () => {};
+      vi.mocked(fetchRemote)
+        .mockReturnValueOnce(new Promise<WebAppData>(() => {}))
+        .mockReturnValueOnce(new Promise<WebAppData>((resolve) => { resolveRecovery = resolve; }));
+      const scope = effectScope();
+      const sync = scope.run(() => useClashSync(data))!;
+
+      await sync.loadLocal();
+      const emptyPlaceholder = { lb: [], hh: [], timestamp: 0, blacklist: [] };
+      expect(data.value).toEqual(emptyPlaceholder);
+
+      // This is the same automatic background call the route loader issues.
+      // fetchRemote itself remains pending; only fetchRemoteWithTimeout's real
+      // 25-second deadline can release this attempt and schedule recovery.
+      const initialSync = sync.startBackgroundSync();
+      const initialSignal = vi.mocked(fetchRemote).mock.calls[0]?.[0]?.signal;
+      expect(fetchRemote).toHaveBeenCalledTimes(1);
+      expect(initialSignal?.aborted).toBe(false);
+      await vi.advanceTimersByTimeAsync(SYNC_REQUEST_TIMEOUT_MS - 1);
+      expect(data.value).toEqual(emptyPlaceholder);
+      expect(sync.loading.value).toBe(true);
+      expect(initialSignal?.aborted).toBe(false);
+      expect(fetchRemote).toHaveBeenCalledTimes(1);
+
+      await vi.advanceTimersByTimeAsync(1);
+      await initialSync;
+      expect(lastSyncStatus.value).toBe("TIMEOUT");
+      expect(sync.syncError.value).toBe("The server took too long to answer");
+      expect(sync.loading.value).toBe(false);
+      expect(initialSignal?.aborted).toBe(true);
+      expect(data.value).toEqual(emptyPlaceholder);
+
+      await vi.advanceTimersByTimeAsync(499);
+      expect(fetchRemote).toHaveBeenCalledTimes(1);
+      expect(data.value).toEqual(emptyPlaceholder);
+      await vi.advanceTimersByTimeAsync(1);
+      await vi.waitFor(() => expect(fetchRemote).toHaveBeenCalledTimes(2));
+      expect(data.value).toEqual(emptyPlaceholder);
+
+      resolveRecovery(recovered);
+      await vi.waitFor(() => expect(data.value).toEqual(recovered));
+      expect(sync.syncError.value).toBeNull();
+      expect(saveCache).toHaveBeenCalledTimes(1);
+      expect(saveCache).toHaveBeenCalledWith(recovered);
+
+      await vi.advanceTimersByTimeAsync(5000);
+      expect(fetchRemote).toHaveBeenCalledTimes(2);
+      scope.stop();
+    });
+
+    it("automatically retries one foreground timeout and preserves cached data until recovery commits", async () => {
+      vi.useFakeTimers();
+      vi.stubGlobal("document", { visibilityState: "visible" });
+      vi.spyOn(Math, "random").mockReturnValue(0.5);
+      const cached: WebAppData = {
+        lb: [CACHED_MEMBER], hh: [], timestamp: 100, dataSource: "SUPABASE", blacklist: [],
+      };
+      const recovered: WebAppData = {
+        lb: [CACHED_MEMBER], hh: [], timestamp: 200, dataSource: "SUPABASE", blacklist: [],
+      };
+      data.value = cached;
+      vi.mocked(fetchRemote)
+        .mockRejectedValueOnce(new Error("Sync timed out"))
+        .mockResolvedValueOnce(recovered);
+      const scope = effectScope();
+      const sync = scope.run(() => useClashSync(data))!;
+
+      const firstAttempt = sync.startBackgroundSync();
+      await vi.advanceTimersByTimeAsync(0);
+      await firstAttempt;
+      expect(data.value).toEqual(cached);
+      expect(saveCache).not.toHaveBeenCalled();
+      expect(fetchRemote).toHaveBeenCalledTimes(1);
+
+      await vi.advanceTimersByTimeAsync(499);
+      expect(fetchRemote).toHaveBeenCalledTimes(1);
+      await vi.advanceTimersByTimeAsync(1);
+      await vi.waitFor(() => expect(data.value).toEqual(recovered));
+
+      expect(fetchRemote).toHaveBeenCalledTimes(2);
+      expect(saveCache).toHaveBeenCalledWith(recovered);
+      scope.stop();
+    });
+
+    it("does not keep retrying when its single automatic recovery also times out", async () => {
+      vi.useFakeTimers();
+      vi.stubGlobal("document", { visibilityState: "visible" });
+      vi.spyOn(Math, "random").mockReturnValue(0.5);
+      vi.mocked(fetchRemote).mockRejectedValue(new Error("Sync timed out"));
+      const scope = effectScope();
+      const sync = scope.run(() => useClashSync(data))!;
+
+      const firstAttempt = sync.startBackgroundSync();
+      await vi.advanceTimersByTimeAsync(0);
+      await firstAttempt;
+      await vi.advanceTimersByTimeAsync(500);
+      await vi.waitFor(() => expect(fetchRemote).toHaveBeenCalledTimes(2));
+      await vi.advanceTimersByTimeAsync(5000);
+
+      expect(fetchRemote).toHaveBeenCalledTimes(2);
+      scope.stop();
+    });
+
+    it.each([
+      ["permanent authorization failures", new Error("401 Unauthorized"), true, "visible", false],
+      ["database statement timeout", new Error("Roster Fetch Error: canceling statement due statement timeout"), true, "visible", false],
+      ["offline recovery", new Error("Sync timed out"), false, "visible", false],
+      ["hidden recovery", new Error("Sync timed out"), true, "hidden", false],
+      ["power-saving recovery", new Error("Sync timed out"), true, "visible", true],
+    ])("does not retry automatically after %s", async (_label, failure, online, visibility, powerSaving) => {
+      vi.useFakeTimers();
+      vi.stubGlobal("document", { visibilityState: "visible" });
+      vi.spyOn(Math, "random").mockReturnValue(0.5);
+      vi.mocked(fetchRemote).mockRejectedValueOnce(failure as Error);
+      const scope = effectScope();
+      const sync = scope.run(() => useClashSync(data))!;
+      const firstAttempt = sync.startBackgroundSync();
+      await vi.advanceTimersByTimeAsync(0);
+      await firstAttempt;
+
+      mockConnectionStatus.isOnline.value = online;
+      (document as Document & { visibilityState: DocumentVisibilityState }).visibilityState = visibility as DocumentVisibilityState;
+      mockPowerSaving.isPowerSaving.value = powerSaving;
+      await vi.advanceTimersByTimeAsync(1000);
+
+      expect(fetchRemote).toHaveBeenCalledTimes(1);
+      scope.stop();
+    });
+
+    it.each([
+      ["authorization", "401 Unauthorized"],
+      ["database pressure", "Roster Fetch Error: canceling statement due to statement timeout"],
+    ])("cancels an armed timeout recovery after a newer manual %s failure", async (_label, message) => {
+      vi.useFakeTimers();
+      vi.stubGlobal("document", { visibilityState: "visible" });
+      vi.spyOn(Math, "random").mockReturnValue(0.5);
+      vi.mocked(fetchRemote)
+        .mockRejectedValueOnce(new Error("Sync timed out"))
+        .mockRejectedValueOnce(new Error(message));
+      const scope = effectScope();
+      const sync = scope.run(() => useClashSync(data))!;
+
+      const firstAttempt = sync.startBackgroundSync();
+      await vi.advanceTimersByTimeAsync(0);
+      await firstAttempt;
+      expect(fetchRemote).toHaveBeenCalledTimes(1);
+      const manualAttempt = sync.refreshFromSupabase();
+      await vi.advanceTimersByTimeAsync(0);
+      await manualAttempt;
+      await vi.advanceTimersByTimeAsync(1000);
+
+      expect(fetchRemote).toHaveBeenCalledTimes(2);
+      scope.stop();
+    });
+
+    it("cancels a scheduled automatic retry when its owning scope is disposed", async () => {
+      vi.useFakeTimers();
+      vi.stubGlobal("document", { visibilityState: "visible" });
+      vi.spyOn(Math, "random").mockReturnValue(0.5);
+      vi.mocked(fetchRemote).mockRejectedValueOnce(new Error("Sync timed out"));
+      const scope = effectScope();
+      const sync = scope.run(() => useClashSync(data))!;
+
+      const firstAttempt = sync.startBackgroundSync();
+      await vi.advanceTimersByTimeAsync(0);
+      await firstAttempt;
+      scope.stop();
+      await vi.advanceTimersByTimeAsync(1000);
+
+      expect(fetchRemote).toHaveBeenCalledTimes(1);
+    });
+
     it("should skip background sync when offline unless forced", async () => {
       mockConnectionStatus.isOnline.value = false;
       const sync = useClashSync(data);
