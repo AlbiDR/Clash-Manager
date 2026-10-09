@@ -544,6 +544,14 @@
   - Root Cause: Unhandled runtime exception or API timeout during Stage 3 initial run; post-commit / publication stall for Stages 5 and 6.
   - Resolution Details: Stage 3 redispatch succeeded and published PR #2122. Watchdog nudges successfully recovered Stage 5 (PR #2125) and Stage 6 (PR #2124). Pipeline intervention rate for 2026-10-08: 2 nudged / 12 merged stages (16.7%), plus 1 automatic redispatch.
 
+* Watchdog Recovery Nudge Interventions on 2026-10-09:
+  - Stages: Stage 3 (Baseline Consolidation) and Stage 10 (APK Integrity)
+  - State: [RESCUED - monitor] (2026-10-09)
+  - Sessions: Stage 3 (`sessions/11453269830011088742`, `nudgedAt: 2026-10-09T02:41:37.355Z`), Stage 10 (`sessions/1000492409725466259`, `nudgedAt: 2026-10-09T09:34:24.086Z`)
+  - Symptom: Stage 3 and Stage 10 sessions required watchdog nudge dispatches due to stalling during post-commit or finalization before opening PRs. Note: Stage 10 exhibits recurring watchdog intervention dispatches (`[RECURRING]`, nudged on 2026-09-23, 2026-10-07, and 2026-10-09).
+  - Root Cause: Prolonged session lifetime reaching watchdog recovery thresholds prior to publication.
+  - Resolution Details: Watchdog nudges successfully recovered both sessions (`ok: true`). Stage 3 published PR #2135 (CHANGED) and Stage 10 published PR #2142 (CLEAN). Pipeline intervention rate for 2026-10-09: 2/12 merged stages (16.7%).
+
 
 ## Section 2: Cross-Stage Coherence Bugs (Priority 2)
 
@@ -603,53 +611,53 @@
 ## Section 3: No-Diff and Low-Value Audit (Priority 3)
 
 * Stage 1 (Harden):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-10-08 in Core/Shared UI services; audit duration: 11m)
-  - Analysis: Annotated in-memory reactive state variables with explicit EPHEMERAL comments across Core and Shared UI services; verified with 219 test files (2285 tests).
+  - Consecutive No-Diff Days: 1 (CLEAN logged on 2026-10-09; audit duration: 5m)
+  - Analysis: Audited Edge Function endpoints, in-memory state variables, Valibot boundary schemas, and cross-layer architectural isolations; zero threat vectors found.
 
 * Stage 2 (Verify):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-10-08 in useVoyageStore.spec.ts; audit duration: 15m)
-  - Analysis: Added 4 unit tests covering realtime postgres change callbacks, channel unsubscriptions on completed transition, subscription setup idempotency, and contribution performance_score string-to-number parsing in Frontend-PWA/src/shared/composables/composables-tests/useVoyageStore.spec.ts.
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-10-09 in SupabaseClient.spec.ts; audit duration: 21m)
+  - Analysis: Closed zero-coverage gap in L1 Core fetchResourcePressure API utility with saturating unit/boundary tests in Frontend-PWA/src/core/api/api-tests/SupabaseClient.spec.ts (PR #2133).
 
 * Stage 3 (Baseline Consolidation):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-10-08; audit duration: 10m)
-  - Analysis: Folded migration unit into master baseline migration (fold-state: 28 remaining). Redispatched session completed after initial session failure. Note: CI database verification failed on PR #2122.
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-10-09; audit duration: 13m)
+  - Analysis: Folded 2 migrations into master baseline migration (fold-state: 26 remaining). Session recovered via watchdog nudge dispatch (`nudgedAt: 2026-10-09T02:41:37.355Z`, PR #2135).
 
 * Stage 4 (Optimization):
-  - Consecutive No-Diff Days: 24 (CLEAN logged on 2026-10-08; audit duration: 6m)
-  - Analysis: Inspected 57 changed files and Edge Functions for SQL view substrate hygiene; zero structural rot or unreferenced views found.
+  - Consecutive No-Diff Days: 25 (CLEAN logged on 2026-10-09; audit duration: 6m)
+  - Analysis: Calibration pass: Inspected 52 changed files and widened scan to migrations for SQL view definitions (7 clean since calibration); zero structural rot or unreferenced database views found (PR #2134).
 
 * Stage 5 (README):
-  - Consecutive No-Diff Days: 1 (CLEAN logged on 2026-10-08; audit duration: 7m)
-  - Analysis: Audited 8 doc-debt source files and verified adjacent Edge Function READMEs; all described Edge Function schemas, protocol contracts, RPOS thresholds, rate limits, and security controls match current implementation truth. Session recovered via watchdog nudge (PR #2125).
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-10-09 in Frontend-PWA/src/shared/ui/README.md; audit duration: 5m)
+  - Analysis: Reconciled StatusPill, BaseSelect, and ConfirmDialog documentation with useDismissOnBack integration (PR #2136).
 
 * Stage 6 (TSDoc):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-10-08 in useVoyageStore.ts; audit duration: 5m)
-  - Analysis: Hardened useVoyageStore interface contracts and inline logic annotations in Frontend-PWA/src/shared/composables/useVoyageStore.ts. Session recovered via watchdog nudge (PR #2124).
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-10-09 in SupabaseClient.ts; audit duration: 8m)
+  - Analysis: Hardened SupabaseClient TSDoc interface contracts and inline annotations in Frontend-PWA/src/core/api/SupabaseClient.ts (PR #2137).
 
 * Stage 7 (Version Integrity):
-  - Consecutive No-Diff Days: 158 (CLEAN logged on 2026-10-08; audit duration: 3m)
-  - Analysis: Catalog adherence in PWA and Backend package.json and version consistency across package manifests, badges, APK manifests, and substrate constants confirmed ground truth v14.52.2 with 0 drift lines via pnpm audit:version.
+  - Consecutive No-Diff Days: 159 (CLEAN logged on 2026-10-09; audit duration: 2m)
+  - Analysis: Version integrity audit verified ground truth 14.52.6 across root, Frontend-PWA, Backend package.json, README badges, APK manifests, and code constants; zero drift lines detected (PR #2138).
 
 * Stage 8 (Dependency Audit):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-10-08 in package.json; audit duration: 6m)
-  - Analysis: Bumped @supabase/supabase-js catalog entry from ^2.117.2 to ^2.117.3; verified across 219 test files (2289 tests).
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-10-09 in package.json; audit duration: 6m)
+  - Analysis: Bumped supabase devDependency to ^2.120.0 in catalogs and updated pnpm-lock.yaml (PR #2139).
 
 * Stage 9 (Refactor):
-  - Consecutive No-Diff Days: 8 (CLEAN logged on 2026-10-08; audit duration: 6m)
-  - Analysis: Calibration pass on 57 candidate files: 0 dep-violations, knip 11 unused files / 1 dep; clean calibration streak: 7; inspected useClashSync.ts, profiler.ts, and widened Core service useConnectionStatus.ts. Substrate compliant.
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-10-09 in useClashSyncUtils.spec.ts; audit duration: 12m)
+  - Analysis: Extracted sync failure classification and backoff span utilities from useClashSync into useClashSyncUtils (PR #2140).
 
 * Stage 10 (APK-Integrity):
-  - Consecutive No-Diff Days: 91 (CLEAN logged on 2026-10-08; audit duration: 4m)
-  - Analysis: Audited PWA and APK wrapper invariants: asset links, manifest parity, version code/name sync, release metadata, cleartext traffic policy, and Android permissions; zero mismatches found. Passed pnpm audit:apk, pnpm apk:verify:source, pnpm test:apk-native, and pnpm test:apk-release.
+  - Consecutive No-Diff Days: 92 (CLEAN logged on 2026-10-09; audit duration: 2m)
+  - Analysis: PWA and APK wrapper integrity audit verified across asset links, manifest parity, version code/name sync, release metadata, and security policy using pnpm audit:apk (PR #2142). Session recovered via watchdog nudge dispatch (`nudgedAt: 2026-10-09T09:34:24.086Z`).
 
 * Stage 11 (APK-Optimization):
-  - Consecutive No-Diff Days: 25 (CLEAN logged on 2026-10-08; audit duration: 4m)
-  - Analysis: Audited WebView settings, SW caching strategies, and precache footprint (15 files, 67.6 KB). All 9 performance invariants verified optimal via pnpm audit:apk-perf.
+  - Consecutive No-Diff Days: 26 (CLEAN logged on 2026-10-09; audit duration: 3m)
+  - Analysis: Audited WebView settings, SW caching strategies, and precache footprint; zero source changes required (PR #2141).
 
 * Stage 12 (APK-UX):
-  - Consecutive No-Diff Days: 10 (CLEAN logged on 2026-10-08; audit duration: 5m)
-  - Analysis: Global APK UX audit passed with zero candidate files remaining across 10 UX categories.
+  - Consecutive No-Diff Days: 11 (CLEAN logged on 2026-10-09; audit duration: 4m)
+  - Analysis: Global webview interactions and viewport hygiene verified clean across 10 UX categories (PR #2143).
 
 * Stage 13 (Self-Healing):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-10-08; audit duration: 4m)
-  - Analysis: Completed daily self-healing audit pass for 2026-10-08: documented Stage 3 initial session failure (`FAILED`, redispatched), Stage 5 & 6 watchdog nudge recovery (2/12 intervention rate = 16.7%), Stage 3 CI DB check failure on PR #2122, and updated Section 3 metrics.
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-10-09; audit duration: 5m)
+  - Analysis: Completed daily self-healing audit pass for 2026-10-09: documented Stage 3 & 10 watchdog nudge recoveries (2/12 intervention rate = 16.7%), noted recurring watchdog nudge pattern on Stage 10 (`[RECURRING]`), and updated Section 3 metrics across Stages 1-13.
