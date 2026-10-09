@@ -1590,6 +1590,24 @@ export type Database = {
         }
         Relationships: []
       }
+      recruit_sync_rotation_guard: {
+        Row: {
+          backend_pid: number
+          nesting_depth: number
+          transaction_id: unknown
+        }
+        Insert: {
+          backend_pid: number
+          nesting_depth: number
+          transaction_id: unknown
+        }
+        Update: {
+          backend_pid?: number
+          nesting_depth?: number
+          transaction_id?: unknown
+        }
+        Relationships: []
+      }
       sync_snapshot_state: {
         Row: {
           generation: number
