@@ -16,6 +16,15 @@ LAST_AGED:   2026-10-08
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-09] PR #2139 [Stage 8]: Bumped supabase devDependency to ^2.120.0 in catalogs and updated pnpm-lock.yaml
+**Domain:** dependencies | **Commit:** 9f3884bc3 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2139)
+**Files:** .github/nightly-logs/08-dependency-audit-coverage.log, .github/nightly-logs/08-dependency-audit-pr-body.md, package.json, pnpm-lock.yaml, pnpm-workspace.yaml
+**Why:** Routine Tier 1 minor bump of supabase CLI
+**Change:** Bumped supabase devDependency to ^2.120.0 in catalogs and updated pnpm-lock.yaml
+**Result:** pnpm audit:version passed, pnpm test:nightly-lifecycle passed 62 of 62 tests
+**Nudges:** 0
+
+
 ### [2026-10-09] PR #2138 [Stage 7]: Version integrity audit verified ground truth 14.52.6 across root, Frontend-PWA, Backend package.json, README badges, APK manifests, and code constants. No drift detected.
 **Domain:** versioning | **Commit:** 0e1f5d8ff | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2138)
 **Files:** .github/nightly-logs/07-version-integrity-coverage.log, .github/nightly-logs/07-version-integrity-pr-body.md
