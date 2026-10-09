@@ -193,3 +193,4 @@
 * [2026-10-06] [Stage 5] [03:06Z-03:11Z 5m] [checks doc-debt=OK] CHANGED: Frontend-PWA/src/core/api/README.md -- docs(readme): Reconcile core/api and shared/ui READMEs with ScoreSchemas and ScoreCompositionPanel
 * [2026-10-07] [Stage 5] [03:20Z-03:27Z 6m] [checks doc-debt=OK] CHANGED: Frontend-PWA/src/shared/ui/README.md -- Reconcile ViewOptions.vue documentation debt with useDismissOnBack back navigation dismissal
 * [2026-10-08] [Stage 5] [03:15Z-03:21Z 7m] [checks doc-debt=OK] CLEAN: Codebase -- Audited 8 doc-debt source files and verified adjacent Edge Function READMEs
+* [2026-10-09] [Stage 5] [03:22Z-03:28Z 5m] [checks doc-debt=OK] CHANGED: Frontend-PWA/src/shared/ui/README.md -- Reconcile StatusPill, BaseSelect, and ConfirmDialog documentation with useDismissOnBack integration
