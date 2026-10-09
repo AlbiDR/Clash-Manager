@@ -144,3 +144,4 @@
 * [2026-10-06] [Stage 6] [04:17Z-04:21Z 4m] [checks doc-debt=OK] CHANGED: Frontend-PWA/src/shared/directives/ghostBenchmarkState.ts -- docs(tsdoc): harden useGhostBenchmarkState interface contracts and inline logic annotations
 * [2026-10-07] [Stage 6] [04:15Z-04:23Z 8m] [checks doc-debt=OK] CHANGED: Frontend-PWA/src/core/services/useDismissOnBack.ts -- docs(tsdoc): harden useDismissOnBack interface contracts and inline logic annotations
 * [2026-10-08] [Stage 6] [04:26Z-04:32Z 5m] [checks doc-debt=OK] CHANGED: Frontend-PWA/src/shared/composables/useVoyageStore.ts -- docs(tsdoc): harden useVoyageStore interface contracts and inline logic annotations
+* [2026-10-09] [Stage 6] [04:27Z-04:36Z 8m] [checks doc-debt=OK] CHANGED: Frontend-PWA/src/core/api/SupabaseClient.ts -- docs(tsdoc): harden SupabaseClient TSDoc interface contracts and inline annotations
