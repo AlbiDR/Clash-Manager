@@ -16,6 +16,15 @@ LAST_AGED:   2026-10-08
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-09] PR #2133 [Stage 2]: Closed zero-coverage gap in L1 Core fetchResourcePressure API utility with saturating unit/boundary tests in SupabaseClient.spec.ts.
+**Domain:** verification | **Commit:** bbac6cbd5 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2133)
+**Files:** .github/nightly-logs/02-verification-coverage.log, .github/nightly-logs/02-verification-pr-body.md, Frontend-PWA/src/core/api/api-tests/SupabaseClient.spec.ts
+**Why:** Recent-Change Priority: Frontend-PWA/src/core/api/SupabaseClient.ts was modified in recent commits. Its exported fetchResourcePressure utility had zero assertions in SupabaseClient.spec.ts, leaving resource pressure warning handling and timeout/error fallback boundaries unverified.
+**Change:** Closed zero-coverage gap in L1 Core fetchResourcePressure API utility with saturating unit/boundary tests in SupabaseClient.spec.ts.
+**Result:** Vitest SupabaseClient.spec.ts passed 26 of 26 tests (suite 2299 passed across 219 files). Proved new tests fail under targeted source mutation on fetchResourcePressure error guard, caught by AssertionError in fetchResourcePressure returns a validated warning record.
+**Nudges:** 0
+
+
 ### [2026-10-08] PR #2132 [Stage 1]: Audited Edge Function endpoints, in-memory state variables, Valibot boundary schemas, and cross-layer architectural isolations; zero threat vectors found
 **Domain:** hardening | **Commit:** f757c89fa | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2132)
 **Files:** .github/nightly-logs/00-pr-history.md, .github/nightly-logs/01-hardening-coverage.log, .github/nightly-logs/01-hardening-pr-body.md
