@@ -25,12 +25,13 @@ const mockFrom = {
   limit: vi.fn(),
   eq: vi.fn(),
   single: vi.fn(),
+  maybeSingle: vi.fn(),
   abortSignal: vi.fn(),
   insert: vi.fn(),
 };
 const mockRpcQuery = { abortSignal: vi.fn() };
 // Make them fluent and thenable
-[mockFrom.select, mockFrom.order, mockFrom.limit, mockFrom.eq, mockFrom.single, mockFrom.abortSignal, mockFrom.insert].forEach(m => {
+[mockFrom.select, mockFrom.order, mockFrom.limit, mockFrom.eq, mockFrom.single, mockFrom.maybeSingle, mockFrom.abortSignal, mockFrom.insert].forEach(m => {
   m.mockImplementation(() => {
     return Object.assign(Promise.resolve({ data: null, error: null }), mockFrom);
   });
@@ -64,6 +65,11 @@ describe("SupabaseClient", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     // vi.clearAllMocks() wipes mock implementations; restore a safe default.
+    [mockFrom.select, mockFrom.order, mockFrom.limit, mockFrom.eq, mockFrom.single, mockFrom.maybeSingle, mockFrom.abortSignal, mockFrom.insert].forEach(m => {
+      m.mockImplementation(() => {
+        return Object.assign(Promise.resolve({ data: null, error: null }), mockFrom);
+      });
+    });
     mockRpcQuery.abortSignal.mockResolvedValue({ data: null, error: null });
     mockClient.functions.invoke.mockResolvedValue({ data: null, error: null });
 
@@ -254,6 +260,82 @@ describe("SupabaseClient", () => {
       const result = await SupabaseClient.ping();
       expect(result.status).toBe('error');
       expect(result.message).toContain('Unexpected Crash');
+    });
+
+    it("fetchResourcePressure returns null when unconfigured", async () => {
+      vi.stubEnv('VITE_SUPABASE_URL', '');
+      vi.stubGlobal('import.meta', {
+        env: {
+          VITE_SUPABASE_URL: '',
+          VITE_SUPABASE_PUBLISHABLE_KEY: 'mock-key',
+        },
+      });
+
+      const result = await SupabaseClient.fetchResourcePressure();
+      expect(result).toBeNull();
+    });
+
+    it("fetchResourcePressure returns a validated warning record", async () => {
+      const createdIso = "2026-10-08T12:34:56Z";
+      vi.mocked(mockFrom.abortSignal).mockResolvedValueOnce({
+        data: {
+          message: "High memory pressure detected",
+          created_at: createdIso,
+        },
+        error: null,
+      });
+
+      const result = await SupabaseClient.fetchResourcePressure();
+      expect(result).toEqual({
+        message: "High memory pressure detected",
+        createdAt: Date.parse(createdIso),
+      });
+      expect(mockFrom.select).toHaveBeenCalledWith("message,created_at");
+      expect(mockFrom.limit).toHaveBeenCalledWith(1);
+    });
+
+    it("fetchResourcePressure degrades to null when query returns error", async () => {
+      vi.mocked(mockFrom.abortSignal).mockResolvedValueOnce({
+        data: null,
+        error: { message: "Permission denied" },
+      });
+      await expect(SupabaseClient.fetchResourcePressure()).resolves.toBeNull();
+    });
+
+    it("fetchResourcePressure degrades to null when message is empty", async () => {
+      vi.mocked(mockFrom.abortSignal).mockResolvedValueOnce({
+        data: { message: "", created_at: "2026-10-08T12:00:00Z" },
+        error: null,
+      });
+      await expect(SupabaseClient.fetchResourcePressure()).resolves.toBeNull();
+    });
+
+    it("fetchResourcePressure parses invalid or missing created_at as null createdAt", async () => {
+      vi.mocked(mockFrom.abortSignal).mockResolvedValueOnce({
+        data: {
+          message: "Database connections near capacity",
+          created_at: "invalid-timestamp",
+        },
+        error: null,
+      });
+
+      const result = await SupabaseClient.fetchResourcePressure();
+      expect(result).toEqual({
+        message: "Database connections near capacity",
+        createdAt: null,
+      });
+    });
+
+    it("fetchResourcePressure handles query timeouts and exceptions gracefully", async () => {
+      vi.useFakeTimers();
+      const pendingPromise = new Promise<never>(() => {});
+      vi.mocked(mockFrom.abortSignal).mockImplementationOnce(() => pendingPromise as any);
+
+      const warningPromise = SupabaseClient.fetchResourcePressure();
+      await vi.advanceTimersByTimeAsync(SupabaseClient.OPTIONAL_METADATA_TIMEOUT_MS + 100);
+
+      await expect(warningPromise).resolves.toBeNull();
+      vi.useRealTimers();
     });
   });
 
