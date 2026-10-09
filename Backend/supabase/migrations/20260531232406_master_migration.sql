@@ -613,6 +613,9 @@ CREATE TABLE IF NOT EXISTS drivers.clan_voyage (
 
 ALTER TABLE drivers.clan_voyage ENABLE ROW LEVEL SECURITY;
 
+CREATE INDEX IF NOT EXISTS idx_clan_voyage_clan_tag
+  ON drivers.clan_voyage (clan_tag);
+
 -- L2 Drivers: Per-member performance metrics for historical Clan Voyage events.
 CREATE TABLE IF NOT EXISTS drivers.clan_voyage_contributions (
     id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
@@ -629,6 +632,9 @@ CREATE TABLE IF NOT EXISTS drivers.clan_voyage_contributions (
 );
 
 ALTER TABLE drivers.clan_voyage_contributions ENABLE ROW LEVEL SECURITY;
+
+CREATE INDEX IF NOT EXISTS idx_clan_voyage_contributions_player_tag
+  ON drivers.clan_voyage_contributions (player_tag);
 
 CREATE TABLE IF NOT EXISTS drivers.exclusion_cache (
     player_tag text NOT NULL CHECK (player_tag ~ '^#[0289CGJLPQRUVY]+$'::text),
@@ -936,6 +942,39 @@ BEGIN
             'Raw logs older than ' || p_retention_hours || ' hours successfully evicted.');
 END; $function$;
 
+CREATE OR REPLACE FUNCTION substrate.dispatch_royale_ingestion()
+ RETURNS text
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'features', 'drivers', 'substrate', 'pg_temp'
+AS $function$
+DECLARE
+    v_active boolean;
+BEGIN
+    SELECT status = 'RUNNING'
+       AND last_triggered_at > now() - interval '15 minutes'
+    INTO v_active
+    FROM substrate.pipeline_heartbeat
+    WHERE component_id = 'ROYALE_DATA_INGESTOR';
+
+    IF COALESCE(v_active, false) THEN
+        INSERT INTO substrate.governance_telemetry (event_type, status, message)
+        VALUES (
+            'INGESTION_TRIGGER',
+            'SUPPRESSED',
+            'Scheduled ingestion was suppressed because the prior run still holds its 15-minute lease.'
+        );
+        RETURN 'SUPPRESSED';
+    END IF;
+
+    PERFORM substrate.run_ingest_royale_data();
+    RETURN 'DISPATCHED';
+END;
+$function$;
+
+REVOKE ALL ON FUNCTION substrate.dispatch_royale_ingestion() FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION substrate.dispatch_royale_ingestion() TO service_role;
+
 CREATE OR REPLACE FUNCTION substrate.run_ingest_royale_data()
  RETURNS void
  LANGUAGE plpgsql
@@ -956,7 +995,7 @@ BEGIN
             'apikey', v_anon,
             'Authorization', 'Bearer ' || v_token
         ),
-        timeout_milliseconds := 30000
+        timeout_milliseconds := 180000
     );
 END;
 $function$;
@@ -982,7 +1021,7 @@ BEGIN
             'Authorization', 'Bearer ' || v_token
         ),
         body := '{"tournaments": ["AUTO"]}'::jsonb,
-        timeout_milliseconds := 30000
+        timeout_milliseconds := 180000
     );
 END;
 $function$;
@@ -1145,7 +1184,8 @@ BEGIN
             'apikey',        substrate.get_vault_secret('SUPABASE_ANON_KEY'),
             'Authorization', 'Bearer ' || v_token
         ),
-        body    := '{"tournaments": ["AUTO"]}'::jsonb
+        body    := '{"tournaments": ["AUTO"]}'::jsonb,
+        timeout_milliseconds := 180000
     );
 
     INSERT INTO substrate.governance_telemetry (event_type, status, message, metadata)
@@ -1812,22 +1852,26 @@ CREATE OR REPLACE FUNCTION substrate.pipeline_watchdog()
  SECURITY DEFINER
  SET search_path TO 'public', 'features', 'drivers', 'substrate', 'pg_temp'
 AS $function$
-DECLARE v_reset_count INTEGER;
+DECLARE
+    v_reset_count integer;
 BEGIN
     UPDATE substrate.pipeline_heartbeat
     SET status          = 'FAILED',
-        last_failure_at = NOW(),
-        last_message    = 'Watchdog timeout: Pipeline exceeded 2-hour execution limit and was force-reset.',
-        updated_at      = NOW()
-    WHERE status           = 'RUNNING'
-      AND last_triggered_at < (NOW() - INTERVAL '2 hours');
+        last_failure_at = now(),
+        last_message    = 'Watchdog timeout: Pipeline exceeded its 15-minute execution lease.',
+        updated_at      = now()
+    WHERE status = 'RUNNING'
+      AND last_triggered_at < now() - interval '15 minutes';
 
     GET DIAGNOSTICS v_reset_count = ROW_COUNT;
 
     IF v_reset_count > 0 THEN
         INSERT INTO substrate.governance_telemetry (event_type, status, message)
-        VALUES ('WATCHDOG_INTERVENTION', 'WARNING',
-                'Watchdog force-reset ' || v_reset_count || ' hung pipelines.');
+        VALUES (
+            'WATCHDOG_INTERVENTION',
+            'WARNING',
+            'Watchdog marked ' || v_reset_count || ' pipeline lease(s) as failed.'
+        );
     END IF;
 
     RETURN v_reset_count;
@@ -3448,6 +3492,9 @@ BEGIN
 END;
 $function$;
 
+REVOKE ALL ON FUNCTION public.update_epoch_state(integer) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.update_epoch_state(integer) TO service_role;
+
 COMMENT ON FUNCTION public.update_epoch_state(integer) IS
     'Public RPC bridge for substrate.update_epoch_state. '
     'Required by headhunter-scanner Edge Function which calls supabase.rpc() '
@@ -3478,6 +3525,9 @@ BEGIN
     );
 END;
 $function$;
+
+REVOKE ALL ON FUNCTION public.get_headhunter_context() FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.get_headhunter_context() TO service_role;
 
 CREATE OR REPLACE FUNCTION public.rls_auto_enable()
  RETURNS event_trigger
@@ -3636,6 +3686,9 @@ BEGIN
 END;
 $function$;
 
+REVOKE ALL ON FUNCTION public.get_discovery_cache(numeric) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.get_discovery_cache(numeric) TO service_role;
+
 CREATE OR REPLACE FUNCTION public.get_active_discovery_anchors(p_limit integer DEFAULT 15)
  RETURNS TABLE(keyword text)
  LANGUAGE sql
@@ -3645,6 +3698,9 @@ CREATE OR REPLACE FUNCTION public.get_active_discovery_anchors(p_limit integer D
 AS $function$
     SELECT keyword FROM substrate.get_active_discovery_anchors(p_limit);
 $function$;
+
+REVOKE ALL ON FUNCTION public.get_active_discovery_anchors(integer) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.get_active_discovery_anchors(integer) TO service_role;
 
 CREATE OR REPLACE FUNCTION public.get_stale_recruits(p_limit integer DEFAULT 20)
  RETURNS TABLE(player_tag text)
@@ -3783,6 +3839,9 @@ BEGIN
       AND r.last_scan > p_since;
 END;
 $function$;
+
+REVOKE ALL ON FUNCTION public.get_recent_scans(text[], timestamp with time zone) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.get_recent_scans(text[], timestamp with time zone) TO service_role;
 
 COMMENT ON FUNCTION public.get_recent_scans(text[], timestamptz) IS
   'Public-schema wrapper reached by the headhunter-scanner profiler stage, which cannot see drivers.recruits directly over the Data API. Returns the subset of p_tags scanned more recently than p_since, so the profiler can skip re-fetching them from the Royale API within its 30-minute window.';
@@ -4008,6 +4067,9 @@ BEGIN
 END;
 $function$;
 
+REVOKE ALL ON FUNCTION public.sync_recruits(jsonb) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.sync_recruits(jsonb) TO service_role;
+
 CREATE OR REPLACE FUNCTION public.get_ingestion_targets()
  RETURNS jsonb
  LANGUAGE plpgsql
@@ -4182,6 +4244,9 @@ BEGIN
     END IF;
 END;
 $function$;
+
+REVOKE ALL ON FUNCTION public.ingest_player_battles(text, jsonb) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.ingest_player_battles(text, jsonb) TO service_role;
 
 -- VIEWS
 -- drivers.recruits_view removed: view was unreferenced by all application code.
@@ -4665,11 +4730,16 @@ GRANT SELECT ON features.voyage_summary TO authenticated, anon, service_role;
 CREATE OR REPLACE VIEW features.pipeline_heartbeat_view AS
   SELECT
     ph.component_id,
-    ph.last_success_at
+    ph.last_success_at,
+    ph.status,
+    ph.last_triggered_at,
+    ph.last_failure_at
   FROM substrate.pipeline_heartbeat ph;
 
 COMMENT ON VIEW features.pipeline_heartbeat_view IS
-  'Anon-readable projection of substrate.pipeline_heartbeat, limited to the component identity and its last success timestamp. Backs the PWA "last synced" indicator. Before this view the PWA queried substrate directly and PostgREST rejected it with PGRST106, so the indicator always read null.';
+  'Anon-readable, public-safe pipeline status projection for the PWA. Exposes
+   completion timing and status only; private operational messages remain in
+   substrate.pipeline_heartbeat.';
 
 GRANT SELECT ON features.pipeline_heartbeat_view TO authenticated, anon, service_role;
 
