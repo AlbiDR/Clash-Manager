@@ -8,6 +8,7 @@ import test from "node:test";
 import { fileURLToPath } from "node:url";
 
 import {
+  assessPopulationSnapshot,
   assessProcessLogHealth,
   defaultOutputDirectory,
   hasExpectedSystemTheme,
@@ -17,6 +18,94 @@ import {
   routeHash,
   shouldExerciseDisplay,
 } from "./device-acceptance.mjs";
+
+function populationSnapshot(overrides = {}) {
+  return {
+    route: "/roster",
+    routeReady: true,
+    routeHeading: "Roster",
+    sourceStatus: "DB",
+    visibleCards: 48,
+    cache: {
+      status: "READ",
+      rosterRows: 48,
+      recruitRows: 250,
+      dataSource: "SUPABASE",
+      timestampPresent: true,
+    },
+    supabase: { total: 45, successful: 45, failed: 0 },
+    ...overrides,
+  };
+}
+
+test("population acceptance requires rendered roster and a Supabase-backed client dataset", () => {
+  const result = assessPopulationSnapshot(populationSnapshot());
+  assert.equal(result.status, "PASS");
+  assert.equal(result.datasetSource, "SUPABASE");
+
+  assert.equal(assessPopulationSnapshot(populationSnapshot({ visibleCards: 0 })).status, "FAIL");
+  assert.equal(assessPopulationSnapshot(populationSnapshot({
+    cache: { ...populationSnapshot().cache, rosterRows: 0 },
+  })).status, "FAIL");
+  assert.equal(assessPopulationSnapshot(populationSnapshot({
+    cache: { ...populationSnapshot().cache, dataSource: "LOCAL" },
+  })).status, "FAIL");
+  assert.equal(assessPopulationSnapshot(populationSnapshot({
+    cache: { ...populationSnapshot().cache, timestampPresent: false },
+  })).status, "FAIL");
+  assert.equal(assessPopulationSnapshot(populationSnapshot({ sourceStatus: "SYNCING" })).status, "FAIL");
+  assert.equal(assessPopulationSnapshot(populationSnapshot({
+    supabase: { total: 2, successful: 0, failed: 2 },
+  })).status, "FAIL");
+});
+
+test("population acceptance allows genuinely empty recruitment and the documented top-50 window", () => {
+  const cache = populationSnapshot().cache;
+  const empty = assessPopulationSnapshot(populationSnapshot({
+    route: "/headhunter",
+    routeHeading: "Headhunter",
+    visibleCards: 0,
+    cache: { ...cache, recruitRows: 0 },
+  }));
+  assert.equal(empty.status, "PASS");
+  assert.equal(empty.emptyRecruitment, true);
+
+  const top50 = assessPopulationSnapshot(populationSnapshot({
+    route: "/headhunter",
+    routeHeading: "Headhunter",
+    visibleCards: 50,
+  }));
+  assert.equal(top50.status, "PASS");
+  assert.equal(top50.visibleCards, 50);
+
+  assert.equal(assessPopulationSnapshot(populationSnapshot({
+    route: "/headhunter",
+    routeHeading: "Headhunter",
+    visibleCards: 0,
+  })).status, "FAIL");
+  assert.equal(assessPopulationSnapshot(populationSnapshot({
+    route: "/headhunter",
+    routeHeading: "Headhunter",
+    visibleCards: 51,
+  })).status, "FAIL");
+  assert.equal(assessPopulationSnapshot(populationSnapshot({
+    route: "/headhunter",
+    routeHeading: "Headhunter",
+    visibleCards: 3,
+    cache: { ...cache, recruitRows: 0 },
+  })).status, "FAIL");
+});
+
+test("population acceptance reports unreadable, missing, and inconsistent client cache as failures", () => {
+  const base = populationSnapshot();
+  assert.equal(assessPopulationSnapshot(populationSnapshot({ cache: { status: "ERROR", message: "blocked" } })).status, "FAIL");
+  assert.equal(assessPopulationSnapshot(populationSnapshot({ cache: null })).status, "FAIL");
+  assert.equal(assessPopulationSnapshot(populationSnapshot({ routeReady: false })).status, "FAIL");
+  assert.equal(assessPopulationSnapshot(populationSnapshot({ routeHeading: "Headhunter" })).status, "FAIL");
+  assert.equal(assessPopulationSnapshot(populationSnapshot({ sourceStatus: "LOCAL" })).status, "FAIL");
+  assert.equal(assessPopulationSnapshot(populationSnapshot({ visibleCards: 49 })).status, "FAIL");
+  assert.ok(base.cache.rosterRows > 0);
+});
 
 test("device acceptance options default to a new ignored evidence directory", () => {
   const output = defaultOutputDirectory(new Date("2026-10-04T12:34:56.789Z"), 4321);
@@ -89,6 +178,7 @@ test("process-log health reports explicit owned Realtime and sync failures as de
     cmConsole("[Realtime] Failed to initialize subscription: Error: cannot add callbacks after subscribe()."),
     cmConsole("[Realtime] Subscription error: TIMED_OUT"),
     cmConsole("[Sync] Cache hydration failed: IndexedDB read failed", "http://localhost:5173/Clash-Manager/src/core/services/useClashSync.ts"),
+    cmConsole("[Sync] Remote sync failed (Attempt 2): Could not reach the server"),
   ].join("\n"));
 
   assert.equal(health.status, "DEGRADED");
@@ -98,8 +188,15 @@ test("process-log health reports explicit owned Realtime and sync failures as de
       { id: "realtime-subscription-initialization", status: "DEGRADED", occurrences: 1 },
       { id: "realtime-subscription-runtime", status: "DEGRADED", occurrences: 1 },
       { id: "sync-cache-hydration", status: "DEGRADED", occurrences: 1 },
+      { id: "sync-remote-failure", status: "DEGRADED", occurrences: 1 },
     ],
   );
+});
+
+test("process-log health fails when the saved dataset is rejected during local cache validation", () => {
+  const health = assessProcessLogHealth(cmConsole("[Sync] Local cache validation failed: invalid row count"));
+  assert.equal(health.status, "FAIL");
+  assert.equal(health.findings[0]?.id, "sync-cache-validation");
 });
 
 test("process-log health ignores expected platform noise and lookalike messages outside CM frontend console output", () => {

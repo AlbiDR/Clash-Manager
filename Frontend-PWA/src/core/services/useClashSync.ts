@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
-import { ref, watch, type Ref } from "vue";
+import { getCurrentScope, onScopeDispose, ref, watch, type Ref } from "vue";
 import * as v from "valibot";
 import { useConnectionStatus } from "./useConnectionStatus";
 import { useApiState } from "../api/useApiState";
@@ -10,6 +10,8 @@ import { loadCache, saveCache } from "./StorageService";
 import { useSyntheticMode } from "./useSyntheticMode";
 import { generateMockData } from "../utils/mockData";
 import { yieldToInteractionFrame } from "../utils/scheduling";
+import { getRetryDelayMs } from "../api/SupabaseTransport";
+import { usePowerSaving } from "./usePowerSaving";
 import { MemberSchema } from "../api/MemberSchemas";
 import { WebAppDataSchema } from "../api/AppSchemas";
 import type { WebAppData } from "../types";
@@ -87,6 +89,11 @@ export function useClashSync(data: Ref<WebAppData | null>) {
   /** One invalidation refresh queued behind the current pass, if any. */
   let queuedInvalidationPromise: Promise<SyncAttemptResult> | null = null;
 
+  /** One automatic foreground recovery attempt after a transient timeout. */
+  let recoveryTimer: ReturnType<typeof setTimeout> | null = null;
+  let recoveryAttempted = false;
+  let disposed = false;
+
   /** Indicates the provenance of the dataset (SUPABASE). */
   const dataSource = ref<"SUPABASE" | null>(null);
 
@@ -106,6 +113,48 @@ export function useClashSync(data: Ref<WebAppData | null>) {
   const { isSyntheticMode } = useSyntheticMode();
   const { isOnline } = useConnectionStatus();
   const { apiStatus } = useApiState();
+  const { isPowerSaving } = usePowerSaving();
+
+  function clearRecoveryTimer() {
+    if (recoveryTimer !== null) {
+      clearTimeout(recoveryTimer);
+      recoveryTimer = null;
+    }
+  }
+
+  if (getCurrentScope()) {
+    onScopeDispose(() => {
+      disposed = true;
+      clearRecoveryTimer();
+    });
+  }
+
+  function canRecoverInForeground(): boolean {
+    return !disposed
+      && isOnline.value
+      && !isPowerSaving.value
+      && typeof document !== "undefined"
+      && document.visibilityState === "visible";
+  }
+
+  function scheduleTimeoutRecovery(error: Error) {
+    // A server statement timeout is evidence of DB pressure, not a transient
+    // client deadline; immediately repeating the complete read set would add load.
+    if (
+      recoveryAttempted
+      || recoveryTimer !== null
+      || lastSyncStatus.value !== "TIMEOUT"
+      || /statement timeout|57014/i.test(error.message)
+      || !canRecoverInForeground()
+    ) return;
+
+    recoveryAttempted = true;
+    recoveryTimer = setTimeout(() => {
+      recoveryTimer = null;
+      if (!canRecoverInForeground()) return;
+      void startBackgroundSync(true);
+    }, getRetryDelayMs(0));
+  }
 
   // [DECISION LOG] RECOVERY IS AN EVENT, NOT A POLL: the handshake reaching
   // "online" after it was not is evidence the backend answers again, so the
@@ -196,6 +245,8 @@ export function useClashSync(data: Ref<WebAppData | null>) {
     if (remoteSuccess) {
       consecutiveSyncFailures.value = 0;
       syncError.value = null;
+      recoveryAttempted = false;
+      clearRecoveryTimer();
     }
 
     if (skipSave) return;
@@ -351,6 +402,9 @@ export function useClashSync(data: Ref<WebAppData | null>) {
         lastSyncStatus.value = "SUCCESS";
         return { success: true };
       } catch (syncFailure: unknown) {
+        // A newer failed attempt supersedes any recovery scheduled by an older
+        // timeout, including a manual refresh that establishes a permanent error.
+        clearRecoveryTimer();
         consecutiveSyncFailures.value++;
         const normalizedSyncError = normalizeSyncError(syncFailure);
         lastSyncStatus.value = classifySyncFailure(normalizedSyncError, isOnline.value);
@@ -406,6 +460,8 @@ export function useClashSync(data: Ref<WebAppData | null>) {
 
     const syncResult = await executeRemoteSync(force, queueInvalidation);
     if (syncResult.success) return;
+
+    if (syncIntent === "background") scheduleTimeoutRecovery(syncResult.error);
 
     // [DECISION LOG] Fault Visibility Thresholding: Suppress transient background sync
     // errors until consecutive failure count meets SYNC_FAILURE_VISIBILITY_THRESHOLD (3)
