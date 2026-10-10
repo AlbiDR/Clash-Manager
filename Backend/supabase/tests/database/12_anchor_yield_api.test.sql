@@ -3,7 +3,7 @@
 
 BEGIN;
 CREATE EXTENSION IF NOT EXISTS pgtap;
-SELECT plan(19);
+SELECT plan(20);
 
 SELECT has_function(
     'public', 'report_anchor_yield', ARRAY['text', 'integer', 'boolean'],
@@ -43,6 +43,19 @@ SELECT ok(
           AND privilege.privilege_type = 'EXECUTE'
     ),
     'PUBLIC has no execution grant on the yield bridge'
+);
+SELECT ok(
+    NOT EXISTS (
+        SELECT 1
+        FROM pg_proc AS routine
+        CROSS JOIN LATERAL aclexplode(
+            COALESCE(routine.proacl, acldefault('f', routine.proowner))
+        ) AS privilege
+        WHERE routine.oid = 'substrate.report_anchor_yield(text,integer,boolean)'::regprocedure
+          AND privilege.grantee = 0
+          AND privilege.privilege_type = 'EXECUTE'
+    ),
+    'PUBLIC has no execution grant on the private yield implementation'
 );
 SELECT ok(
     NOT has_function_privilege('anon', 'substrate.report_anchor_yield(text,integer,boolean)', 'EXECUTE')
