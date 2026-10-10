@@ -1184,8 +1184,7 @@ BEGIN
             'apikey',        substrate.get_vault_secret('SUPABASE_ANON_KEY'),
             'Authorization', 'Bearer ' || v_token
         ),
-        body    := '{"tournaments": ["AUTO"]}'::jsonb,
-        timeout_milliseconds := 180000
+        body    := '{"tournaments": ["AUTO"]}'::jsonb
     );
 
     INSERT INTO substrate.governance_telemetry (event_type, status, message, metadata)
