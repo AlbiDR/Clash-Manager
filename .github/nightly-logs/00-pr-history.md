@@ -16,6 +16,15 @@ LAST_AGED:   2026-10-09
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-10] PR #2152 [Stage 8]: Bumped @types/node catalog entry to ^26.6.5 and updated pnpm-lock.yaml
+**Domain:** dependencies | **Commit:** 26a53eb29 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2152)
+**Files:** .github/nightly-logs/08-dependency-audit-coverage.log, .github/nightly-logs/08-dependency-audit-pr-body.md, package.json, pnpm-lock.yaml, pnpm-workspace.yaml
+**Why:** Maintenance patch update for Node.js TypeScript type definitions
+**Change:** Bumped @types/node catalog entry to ^26.6.5 and updated pnpm-lock.yaml
+**Result:** Vitest test suite passed 2318 tests across 219 test files
+**Nudges:** 0
+
+
 ### [2026-10-10] PR #2151 [Stage 7]: Verified catalog protocol adherence and version consistency at 14.52.9 across package.json (root, PWA, Backend), pnpm-workspace.yaml, README badges, useProgressiveList.ts, protocol.ts, apktool.yml, and twa-manifest.json with zero drift.
 **Domain:** versioning | **Commit:** 3a74f7d94 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2151)
 **Files:** .github/nightly-logs/07-version-integrity-coverage.log, .github/nightly-logs/07-version-integrity-pr-body.md
