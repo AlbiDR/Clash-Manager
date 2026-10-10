@@ -16,6 +16,15 @@ LAST_AGED:   2026-10-09
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-10] PR #2155 [Stage 11]: Audited WebView settings, Service Worker caching strategies, and precache footprint; zero source changes required
+**Domain:** apk | **Commit:** 815f789e4 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2155)
+**Files:** .github/nightly-logs/11-apk-optimization-coverage.log, .github/nightly-logs/11-apk-optimization-pr-body.md
+**Why:** All 9 native WebView and SW caching invariants are PRESENT and static precache footprint (15 files, 67.6 KB) is well within limits
+**Change:** Audited WebView settings, Service Worker caching strategies, and precache footprint; zero source changes required
+**Result:** pnpm audit:apk-perf and pnpm test:apk-performance passed cleanly with 0 violations across 9 invariants and 10 unit tests
+**Nudges:** 0
+
+
 ### [2026-10-10] PR #2154 [Stage 10]: Verified APK/PWA wrapper invariants: asset links, manifest parity, version sync (14.52.9/14052009), release metadata (clashmanager-v14.52.9+486.apk), and security policy (usesCleartextTraffic=false) with zero mismatches.
 **Domain:** apk | **Commit:** 9a113f164 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2154)
 **Files:** .github/nightly-logs/10-apk-integrity-coverage.log, .github/nightly-logs/10-apk-integrity-pr-body.md
