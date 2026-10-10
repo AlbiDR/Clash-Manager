@@ -16,6 +16,15 @@ LAST_AGED:   2026-10-09
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-10] PR #2154 [Stage 10]: Verified APK/PWA wrapper invariants: asset links, manifest parity, version sync (14.52.9/14052009), release metadata (clashmanager-v14.52.9+486.apk), and security policy (usesCleartextTraffic=false) with zero mismatches.
+**Domain:** apk | **Commit:** 9a113f164 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2154)
+**Files:** .github/nightly-logs/10-apk-integrity-coverage.log, .github/nightly-logs/10-apk-integrity-pr-body.md
+**Why:** All native and PWA configurations remain synchronized and aligned with security policies.
+**Change:** Verified APK/PWA wrapper invariants: asset links, manifest parity, version sync (14.52.9/14052009), release metadata (clashmanager-v14.52.9+486.apk), and security policy (usesCleartextTraffic=false) with zero mismatches.
+**Result:** Verified using pnpm audit:apk, pnpm apk:verify:source, and pnpm test:apk-native; all 19 contract tests and wrapper invariant checks passed.
+**Nudges:** 0
+
+
 ### [2026-10-10] PR #2153 [Stage 9]: Audited bounded candidate set (86 changed files, 0 dep violations, 11 knip unused files, 1 knip unused dep); no viable refactor target or defects found; substrate compliant.
 **Domain:** architecture | **Commit:** f184ebd31 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2153)
 **Files:** .github/nightly-logs/09-refactor-proposals-coverage.log, .github/nightly-logs/09-refactor-proposals-pr-body.md
