@@ -16,6 +16,15 @@ LAST_AGED:   2026-10-09
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-10] PR #2151 [Stage 7]: Verified catalog protocol adherence and version consistency at 14.52.9 across package.json (root, PWA, Backend), pnpm-workspace.yaml, README badges, useProgressiveList.ts, protocol.ts, apktool.yml, and twa-manifest.json with zero drift.
+**Domain:** versioning | **Commit:** 3a74f7d94 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2151)
+**Files:** .github/nightly-logs/07-version-integrity-coverage.log, .github/nightly-logs/07-version-integrity-pr-body.md
+**Why:** Catalog protocol adherence and monorepo version consistency scans confirmed full alignment with ground truth 14.52.9 with zero drift across all manifests and derived files.
+**Change:** Verified catalog protocol adherence and version consistency at 14.52.9 across package.json (root, PWA, Backend), pnpm-workspace.yaml, README badges, useProgressiveList.ts, protocol.ts, apktool.yml, and twa-manifest.json with zero drift.
+**Result:** pnpm audit:version passed cleanly with 0 drift or catalog violations detected across 10 version-bearing files and manifests.
+**Nudges:** 0
+
+
 ### [2026-10-10] PR #2150 [Stage 6]: Harden useBenchmarking TSDoc interface contracts for ScoreExplanationData
 **Domain:** documentation | **Commit:** 4854e05d6 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2150)
 **Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, .github/nightly-logs/06-documentation-tsdoc-pr-body.md, Frontend-PWA/src/core/services/useBenchmarking.ts
