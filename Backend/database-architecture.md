@@ -84,6 +84,13 @@ backend linked to its intended project. Never paste the token into a report.
 # Current connection, real app reads, ingestion freshness and host evidence
 pnpm db:health
 
+# Preserve a resource sample, then compare it with a later capture
+pnpm --silent db:health --json > /tmp/db-health-before.json
+pnpm db:health --compare /tmp/db-health-before.json
+
+# Compare two existing reports without contacting Supabase
+pnpm db:health --compare /tmp/db-health-before.json /tmp/db-health-after.json
+
 # Read-only inventory, aggregate counts and a standalone interactive report
 pnpm db:audit --output /absolute/path/first
 
@@ -101,6 +108,16 @@ pnpm audit:cron
 pnpm audit:migrations
 pnpm audit:db-drift --live
 ```
+
+Health comparisons report disk-wait CPU time and swap pages per second over the
+resource acquisition interval. They use the midpoint between each request's
+start and completion and include timing bounds; the exporter's sample age is
+unknown. A restart, changed CPU series, counter reset or missing evidence prevents
+the affected rate from being reported as usable. Old reports without these
+fields remain readable but cannot establish interval pressure. The command
+exits with code 1 for an unavailable or degraded requested comparison, even
+when the latest app reads succeed. Keep reports private and capture a complete
+ingestion or maintenance interval when investigating a recurring slowdown.
 
 `db:audit` writes `.snapshot.json` (database evidence), `.json` (interpreted
 report) and `.html` (interactive atlas). It has no external assets or network
