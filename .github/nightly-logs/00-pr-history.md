@@ -15,6 +15,15 @@ LAST_AGED:   2026-10-10
 ---
 
 ## T1 -- Active (last 7 days)
+
+### [2026-10-10] PR #2158 [Stage 1]: Audited Edge Function endpoints, in-memory state variables, Valibot boundary schemas, and cross-layer architectural isolations across 83 changed files and Edge Functions; zero threat vectors found
+**Domain:** hardening | **Commit:** e9691e6c4 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2158)
+**Files:** .github/nightly-logs/00-pr-history.md, .github/nightly-logs/01-hardening-coverage.log, .github/nightly-logs/01-hardening-pr-body.md
+**Why:** All priority targets validated cleanly with zero actionable threats
+**Change:** Audited Edge Function endpoints, in-memory state variables, Valibot boundary schemas, and cross-layer architectural isolations across 83 changed files and Edge Functions; zero threat vectors found
+**Result:** Monorepo tests passed cleanly (219 test files, 2318 tests passed)
+**Nudges:** 0
+
 ### [2026-10-10] PR #2157 [Stage 13]: Documented Stage 2 & Stage 3 watchdog nudge recoveries and updated Section 3 metrics for 2026-10-10
 **Domain:** pipeline | **Commit:** 7cb22d0d0 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2157)
 **Files:** .github/nightly-logs/13-self-healing-protocol-coverage.log, .github/nightly-logs/13-self-healing-protocol-pr-body.md, .github/nightly-logs/13-self-healing-protocol.md
