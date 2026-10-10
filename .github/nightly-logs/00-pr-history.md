@@ -16,6 +16,31 @@ LAST_AGED:   2026-10-09
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-10] PR #2148 [Stage 2]: Added unit test suite for ScannerWorkBudget in work-budget.spec.ts
+**Domain:** verification | **Commit:** 6bac76565 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2148)
+**Files:** .github/nightly-logs/02-verification-coverage.log, .github/nightly-logs/02-verification-pr-body.md, Backend/supabase/functions/headhunter-scanner/work-budget.spec.ts
+**Why:** Closed zero-coverage gap in headhunter scanner work-budget utility module.
+**Change:** Added unit test suite for ScannerWorkBudget in work-budget.spec.ts
+**Result:** Added 9 unit tests in work-budget.spec.ts covering error formatting, signal initialization, admission cutoff timers, total budget expiration, throwIfStopped order, and dispose cleanup. Verified non-trivial mutation proof: commenting out throwIfExpired() inside throwIfStopped() in work-budget.ts caused 2 tests in work-budget.spec.ts and scanner.spec.ts to fail with AssertionError as expected.
+**Nudges:** 0
+
+### [2026-10-10] PR #2147 [Stage 3]: Folded unit 20260620142000_headhunter_epoch_guard.sql into master migration baseline
+**Domain:** database | **Commit:** 935561d9f | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2147)
+**Files:** .github/nightly-logs/03-baseline-consolidation-coverage.log, .github/nightly-logs/03-baseline-consolidation-pr-body.md, Backend/supabase/migrations/20260531232406_master_migration.sql
+**Why:** Folded oldest pending migration object DIVERGENT FUNCTION substrate.run_headhunter_epoch_guard into baseline
+**Change:** Folded unit 20260620142000_headhunter_epoch_guard.sql into master migration baseline
+**Result:** pnpm audit:migrations passed with 0 violations across 72 migrations; fold-state verified 20260620142000_headhunter_epoch_guard.sql folded
+**Nudges:** 0
+
+### [2026-10-10] PR #2146 [Stage 4]: Inspected 86 changed files and Edge Functions for SQL view substrate hygiene; zero structural rot or unreferenced views found
+**Domain:** optimization | **Commit:** 494db021e | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2146)
+**Files:** .github/nightly-logs/04-optimization-coverage.log, .github/nightly-logs/04-optimization-pr-body.md
+**Why:** All 6 known database views remain unreferenced, recent changed files and L1/L2 performance composables are optimal, and 0 source changes are required
+**Change:** Inspected 86 changed files and Edge Functions for SQL view substrate hygiene; zero structural rot or unreferenced views found
+**Result:** pnpm test passed cleanly (219 test files, 2318 tests passed)
+**Nudges:** 0
+
+
 ### [2026-10-09] PR #2145 [Stage 1]: Audited Edge Function endpoints, in-memory state variables, Valibot boundary schemas, and cross-layer architectural isolations across 80 files; zero threat vectors found
 **Domain:** hardening | **Commit:** eba9e502c | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2145)
 **Files:** .github/nightly-logs/00-pr-history.md, .github/nightly-logs/01-hardening-coverage.log, .github/nightly-logs/01-hardening-pr-body.md
