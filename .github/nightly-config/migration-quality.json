@@ -18,7 +18,8 @@
     "drivers.sync_voyage_finalization_job()",
     "public.report_heartbeat(text,text,text,jsonb)",
     "public.report_telemetry(text,text,jsonb)",
-    "public.update_telemetry(uuid,text,jsonb)"
+    "public.update_telemetry(uuid,text,jsonb)",
+    "public.report_anchor_yield(text,integer,boolean)"
   ],
   "immutableFileHashes": {
     "Backend/supabase/migrations/20260614082900_add_trail_battle_type.sql": "8c94c134ce891e5a50d8d2fd25f78e904cbcecb01101e4ace3cd12dc70034ce2",
@@ -92,7 +93,8 @@
     "Backend/supabase/migrations/20261006213500_store_unchanged_raw_responses_once.sql": "9cddcbc16f656fb1dd41aec695f55628d7f61736526ec82852bae5c014955474",
     "Backend/supabase/migrations/20261007214728_sync_snapshot_marker.sql": "f313e5f1ee1b70900db48b5f7ba865e271a012fdf07bf96a7487c0472db21623",
     "Backend/supabase/migrations/20261008200727_restore_player_battle_unique_arbiter.sql": "1f8d764c56c5e0a7699a2e3e93d333e3848e9bbc03ac42898f1bb0e423d46a15",
-    "Backend/supabase/migrations/20261009185835_suppress_duplicate_recruit_rotation.sql": "a76132111b7321b270d69beaf578ebfb7c75ec555278f2754ed674b1221cc9d9"
+    "Backend/supabase/migrations/20261009185835_suppress_duplicate_recruit_rotation.sql": "a76132111b7321b270d69beaf578ebfb7c75ec555278f2754ed674b1221cc9d9",
+    "Backend/supabase/migrations/20261010150734_report_anchor_yield_api_bridge.sql": "ccd243e27f97a9ccf87e04fa5d245281de4182d8beb3a333b2653e4797499bad"
   },
   "exemptions": []
 }
