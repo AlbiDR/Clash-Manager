@@ -1,29 +1,29 @@
 ### Nightly Stage 5: Documentation README - Architecture Truth Architect
 
-**Status:** CHANGED
+**Status:** CLEAN
 
-In plain terms: this is a documentation change to 1 file in the documentation README area. Nothing about how the app runs is affected.
+In plain terms: nothing needed fixing. This run checked the documentation README area and found it already correct, so the only file here is the log recording that the check happened.
 
-**What changed:** Reconcile StatusPill, BaseSelect, and ConfirmDialog documentation with useDismissOnBack integration
+**What was checked:** Audited 4 doc-debt files against headhunter-scanner and _shared READMEs; confirmed prose accuracy
 
-**Why:** doc-debt targets in shared/ui carry accurate useDismissOnBack back navigation overlay dismissal descriptions
+**Why:** Scanner timeout and profiler error-handling changes did not invalidate high-level architectural README prose
 
-**Result:** git diff --check clean, 219 vitest files passed (2299 tests)
+**Result:** Audit completed with no source change required.
 
-**Files changed:** .github/nightly-logs/05-documentation-readme-coverage.log, Frontend-PWA/src/shared/ui/README.md
+**Files changed:** .github/nightly-logs/05-documentation-readme-coverage.log
 
-**Verified accurate:** Frontend-PWA/src/shared/ui/StatusPill.vue, Frontend-PWA/src/shared/ui/BaseSelect.vue, Frontend-PWA/src/shared/ui/ConfirmDialog.vue
+**Verified accurate:** Backend/supabase/functions/_shared/config.ts, Backend/supabase/functions/headhunter-scanner/scanner.ts, Backend/supabase/functions/headhunter-scanner/stages/profiler.ts, Backend/supabase/functions/headhunter-scanner/scanner.spec.ts
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: documentation
-  Cycle: nightly-cycle/2026-10-09
+  Cycle: nightly-cycle/2026-10-10
   Contract: cea68a5bbba1bd2cbc6d3bdfe2639f37f3935b571beab59f5da1501b1180b22d
-  Why: doc-debt targets in shared/ui carry accurate useDismissOnBack back navigation overlay dismissal descriptions
-  Change: Reconcile StatusPill, BaseSelect, and ConfirmDialog documentation with useDismissOnBack integration
-  Result: git diff --check clean, 219 vitest files passed (2299 tests)
-  Files: .github/nightly-logs/05-documentation-readme-coverage.log, Frontend-PWA/src/shared/ui/README.md
-  Verified: Frontend-PWA/src/shared/ui/StatusPill.vue, Frontend-PWA/src/shared/ui/BaseSelect.vue, Frontend-PWA/src/shared/ui/ConfirmDialog.vue
-  Nudges: 0
-  Execution: f530a1dd5eeb551b5d204d5674675ca40c848809
+  Why: Scanner timeout and profiler error-handling changes did not invalidate high-level architectural README prose
+  Change: Audited 4 doc-debt files against headhunter-scanner and _shared READMEs; confirmed prose accuracy
+  Result: Audit completed with no source change required.
+  Files: .github/nightly-logs/05-documentation-readme-coverage.log
+  Verified: Backend/supabase/functions/_shared/config.ts, Backend/supabase/functions/headhunter-scanner/scanner.ts, Backend/supabase/functions/headhunter-scanner/stages/profiler.ts, Backend/supabase/functions/headhunter-scanner/scanner.spec.ts
+  Nudges: 1
+  Execution: fef859720d4be2b47b2c307a4446f9f9c00bb2ce
 -->
