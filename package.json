@@ -129,7 +129,7 @@
       "@ast-grep/cli": "^0.45.3",
       "@formkit/auto-animate": "^0.10.0",
       "@supabase/supabase-js": "^2.117.3",
-      "@types/node": "^26.6.4",
+      "@types/node": "^26.6.5",
       "@vite-pwa/assets-generator": "^2.0.0",
       "@vitejs/plugin-vue": "^6.0.8",
       "@vue/test-utils": "^2.5.0",
