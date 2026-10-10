@@ -36,17 +36,34 @@ export interface BenchmarkData {
   format?: "number" | "percent" | "durationMinutes";
 }
 
-/** Score payload shares the existing popup host without depending on a feature. */
+/**
+ * Score explanation payload format shared across overlay/popup hosts.
+ *
+ * @remarks
+ * Satisfies ADR Section I: Core Services & Section IV: Performance & Analytics.
+ * Encapsulates full composition details and benchmark comparisons for player score breakdowns.
+ */
 export interface ScoreExplanationData {
+  /** Discriminator property indicating a score explanation payload. */
   kind: "score";
+  /** Player or recruit name associated with the score explanation. */
   name: string;
+  /** Domain context ('lb' for Leaderboard or 'hh' for Headhunter). */
   context: "lb" | "hh";
+  /** Evaluated total performance or potential score. */
   score: number;
+  /** Detailed score composition breakdown by metric weighting. */
   composition: ScoreComposition;
+  /** Primary benchmark comparison relative to clan statistical baselines. */
   comparison: BenchmarkData | null;
   /** Raw RPeS/RPoS comparison shown before the score breakdown is expanded. */
   rawComparison?: BenchmarkData | null;
 }
+
+/**
+ * Composite content data payload type accepted by the benchmark modal and overlay components.
+ * Supports individual benchmark metrics, full score explanations, or plain text messages.
+ */
 export type BenchmarkContentData = BenchmarkData | ScoreExplanationData | string;
 
 type StatsMap = Record<string, { avg: number; max: number; min: number }>;
