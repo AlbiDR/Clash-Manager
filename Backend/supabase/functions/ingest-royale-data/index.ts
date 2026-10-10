@@ -4,6 +4,7 @@
 import { executePipeline } from "./pipeline.ts";
 import { supabase, CONFIG, syncVault } from "./client.ts";
 import { clinicalServe } from "../_shared/protocol.ts";
+import { ProtocolError } from "../_shared/errors.ts";
 import { normalizeTag } from "../_shared/utils.ts";
 import { RoyaleTagSchema } from "../_shared/schemas.ts";
 import * as v from "npm:valibot@1.5.0";
@@ -36,7 +37,29 @@ Deno.serve(async (req) => {
             // prefix-variant tag cannot reach p_clan_tag, consistent with sibling
             // functions (sync-player-cards, fetch-player-battlelog).
             const clanTag = payload.CLAN_TAG ? normalizeTag(payload.CLAN_TAG) : CONFIG.CLAN_TAG;
-            return await executePipeline(clanTag, logAudit, heartbeat);
+            let clanSyncExecutionFailed = false;
+            const pipelineAudit = (stage: string, action: Parameters<typeof logAudit>[1], details?: unknown) => {
+                if (stage === "CLAN_SYNC" && action === "error") clanSyncExecutionFailed = true;
+                logAudit(stage, action, details);
+            };
+            const results = await executePipeline(clanTag, pipelineAudit, heartbeat);
+            const requiredWriteStages = ["profile", "members", "race", "warlog"] as const;
+            const incompleteRequiredWrites = requiredWriteStages.filter(
+                (stage) => results?.[stage]?.success !== true,
+            );
+            const failedCompletionChecks = [
+                ...incompleteRequiredWrites,
+                ...(clanSyncExecutionFailed ? ["clan-sync-execution"] : []),
+            ];
+
+            if (failedCompletionChecks.length > 0) {
+                throw new ProtocolError(
+                    "INTERNAL_ERROR",
+                    `Required clan persistence incomplete: ${failedCompletionChecks.join(", ")}`,
+                );
+            }
+
+            return results;
         }
     });
 });

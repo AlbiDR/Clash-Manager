@@ -17,6 +17,10 @@ The pipeline (`pipeline.ts`) runs three stages in order:
 
 Each stage runs under a 10-minute timeout and reports progress to the governance telemetry.
 
+The entry point reports a completed ingestion cycle only when the profile, member roster, river race, and war-log persistence results are all explicitly successful and clan sync has not timed out at the pipeline boundary. Missing result fields, failed writes, or a clan-sync timeout produce a sanitized protocol error, terminal FAILED telemetry, and a FAILED heartbeat. Discovery errors remain recorded without blocking this core-write completion gate. The battle-history stage still runs after clan sync and retains its own result and error reporting; this gate does not change that stage's execution.
+
+The four clan writes are separate RPC calls, not one transaction, so a failed cycle can leave earlier writes committed. A FAILED heartbeat preserves the previous `last_success_at`, and the app keeps showing the prior materialized snapshot because snapshots refresh on a COMPLETED heartbeat. That snapshot can therefore lag partial base-table writes until a later completed cycle. A successful heartbeat and its snapshot refresh are also not an atomic publication guarantee: snapshot refresh failures are recorded separately and can leave the snapshot marker unchanged.
+
 ## Contents
 
 | File | Role |
