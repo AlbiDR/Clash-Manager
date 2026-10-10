@@ -18,8 +18,8 @@ export function parseResourceMetrics(source) {
     const match = line.match(/^(\w+)(?:\{([^}]*)\})?\s+([-+\d.eE]+|NaN|[+-]?Inf)(?:\s+\d+)?$/);
     return match ? [{ name: match[1], labels: match[2] ?? '', value: Number(match[3]) }] : [];
   });
-  const gauge = name => {
-    const values = metrics.filter(metric => metric.name === name);
+  const gauge = (name, matchesLabels = () => true) => {
+    const values = metrics.filter(metric => metric.name === name && matchesLabels(metric.labels));
     return values.length === 1 && Number.isFinite(values[0].value) && values[0].value >= 0 ? values[0].value : null;
   };
   const cpu = metrics.filter(metric => metric.name === 'node_cpu_seconds_total');
@@ -40,6 +40,7 @@ export function parseResourceMetrics(source) {
     .reduce((total, metric) => total + metric.seconds, 0);
   return {
     hostBootTimeSeconds: gauge('node_boot_time_seconds'),
+    postgresProcessStartTimeSeconds: gauge('process_start_time_seconds', labels => /(?:^|,)\s*service_type="postgresql"(?:,|$)/.test(labels)),
     cpuSeconds: validCpu ? cpuSeconds : null,
     memoryBytes: gauge('node_memory_MemTotal_bytes'),
     availableMemoryBytes: gauge('node_memory_MemAvailable_bytes'),
@@ -53,7 +54,7 @@ export function parseResourceMetrics(source) {
 /** Compare acquisition windows, not unrelated SQL or app-read completion times. */
 export function compareResourceReports(older, newer) {
   const result = {
-    status: 'UNAVAILABLE', intervalSeconds: null, intervalBoundsSeconds: null,
+    status: 'UNAVAILABLE', identitySource: null, intervalSeconds: null, intervalBoundsSeconds: null,
     ioWaitPercent: null, swapInPagesPerSecond: null, swapOutPagesPerSecond: null, issues: [],
   };
   const first = older?.resources;
@@ -63,15 +64,21 @@ export function compareResourceReports(older, newer) {
   const before = first.data;
   const after = last.data;
   const counter = value => typeof value === 'number' && Number.isFinite(value) && value >= 0;
-  if (!before || !after || !counter(before.hostBootTimeSeconds) || !counter(after.hostBootTimeSeconds)) {
-    return fail('Host boot identity is unavailable; counter continuity cannot be established.');
-  }
+  if (!before || !after) return fail('Host resource data is unavailable.');
   if ([before.hostId, after.hostId].some(value => typeof value !== 'string' || !value.trim())) {
     return fail('Host project identity is unavailable; counter continuity cannot be established.');
   }
-  if (before.hostBootTimeSeconds !== after.hostBootTimeSeconds || before.hostId !== after.hostId) {
-    return fail('Host identity changed or the host restarted.');
+  if (before.hostId !== after.hostId) return fail('Host project identity changed.');
+  const identity = counter(before.hostBootTimeSeconds) && counter(after.hostBootTimeSeconds)
+    ? 'hostBootTimeSeconds' : 'postgresProcessStartTimeSeconds';
+  result.identitySource = identity === 'hostBootTimeSeconds' ? 'HOST_BOOT_TIME' : 'POSTGRES_PROCESS_START_TIME';
+  if (!counter(before[identity]) || !counter(after[identity])) {
+    result.identitySource = null;
+    return fail('Host boot and PostgreSQL process-start continuity evidence are unavailable.');
   }
+  if (before[identity] !== after[identity]) return fail(identity === 'hostBootTimeSeconds'
+    ? 'Host boot identity changed; the host restarted.'
+    : 'PostgreSQL process-start identity changed; process or host continuity cannot be established.');
   const window = data => {
     const start = typeof data.sampleStartedAt === 'string' ? Date.parse(data.sampleStartedAt) : NaN;
     const end = typeof data.sampleCompletedAt === 'string' ? Date.parse(data.sampleCompletedAt) : NaN;
@@ -236,6 +243,7 @@ export function formatHealthReport(report) {
   if (report.resourceInterval) {
     const interval = report.resourceInterval;
     lines.push(`Host interval: ${interval.status}`);
+    if (interval.identitySource) lines.push(`Counter continuity identity: ${interval.identitySource === 'HOST_BOOT_TIME' ? 'host boot time' : 'PostgreSQL process start time'}`);
     if (interval.intervalSeconds !== null) {
       lines.push(`Resource acquisition interval: ${interval.intervalSeconds.toFixed(1)} s (window bounds ${interval.intervalBoundsSeconds.minimum.toFixed(1)}–${interval.intervalBoundsSeconds.maximum.toFixed(1)} s; rates use acquisition midpoints)`);
       const rate = value => value === null ? 'unavailable' : value.toFixed(2);

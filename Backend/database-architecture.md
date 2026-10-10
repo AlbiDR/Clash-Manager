@@ -112,7 +112,9 @@ pnpm audit:db-drift --live
 Health comparisons report disk-wait CPU time and swap pages per second over the
 resource acquisition interval. They use the midpoint between each request's
 start and completion and include timing bounds; the exporter's sample age is
-unknown. A restart, changed CPU series, counter reset or missing evidence prevents
+unknown. Continuity uses the host boot metric when available, or the exported
+PostgreSQL process start time when the provider omits it. The report names that
+identity source. A restart, changed CPU series, counter reset or missing evidence prevents
 the affected rate from being reported as usable. Old reports without these
 fields remain readable but cannot establish interval pressure. The command
 exits with code 1 for an unavailable or degraded requested comparison, even

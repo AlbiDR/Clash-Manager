@@ -48,6 +48,61 @@ node_cpu_seconds_total{cpu="0",mode="iowait"} 20`);
   ]);
 });
 
+test('selects exactly one PostgreSQL process identity without including GoTrue', () => {
+  const source = `process_start_time_seconds{project="project",service_type="gotrue"} 1.791640000e+09
+process_start_time_seconds{service_type="postgresql",project="project"} 1.7916429351e+09`;
+  const metrics = parseResourceMetrics(source);
+  assert.equal(metrics.hostBootTimeSeconds, null);
+  assert.equal(metrics.postgresProcessStartTimeSeconds, 1791642935.1);
+  assert.equal(parseResourceMetrics(source.split('\n')[0]).postgresProcessStartTimeSeconds, null);
+  for (const invalid of [
+    `${source}\nprocess_start_time_seconds{service_type="postgresql"} 1791642935.1`,
+    'process_start_time_seconds{service_type="postgresql"} NaN',
+    'process_start_time_seconds{service_type="postgresql"} -1',
+    'process_start_time_seconds{service_type="gotrue"} 100',
+    'process_start_time_seconds 100',
+  ]) assert.equal(parseResourceMetrics(invalid).postgresProcessStartTimeSeconds, null);
+});
+
+test('falls back to PostgreSQL continuity when boot evidence is absent, and rejects a process restart', () => {
+  const older = resourceReport('00', '02');
+  const newer = resourceReport('10', '12', 10);
+  const parsed = parseResourceMetrics(`process_start_time_seconds{service_type="gotrue"} 100
+process_start_time_seconds{project="project",service_type="postgresql"} 1.7916429351e+09`);
+  for (const report of [older, newer]) {
+    report.resources.data.hostBootTimeSeconds = parsed.hostBootTimeSeconds;
+    report.resources.data.postgresProcessStartTimeSeconds = parsed.postgresProcessStartTimeSeconds;
+  }
+  const result = compareResourceReports(older, newer);
+  assert.equal(result.status, 'SUCCESS');
+  assert.equal(result.identitySource, 'POSTGRES_PROCESS_START_TIME');
+  assert.equal(result.ioWaitPercent, 20);
+  assert.equal(result.swapInPagesPerSecond, 2);
+  assert.match(formatHealthReport({ ...newer, resourceInterval: result }), /Counter continuity identity: PostgreSQL process start time/);
+  newer.resources.data.postgresProcessStartTimeSeconds += 10;
+  const restarted = compareResourceReports(older, newer);
+  assert.equal(restarted.status, 'UNAVAILABLE');
+  assert.equal(restarted.swapInPagesPerSecond, null);
+  assert.match(restarted.issues.join(' '), /process-start identity changed/);
+  newer.resources.data.postgresProcessStartTimeSeconds = null;
+  assert.equal(compareResourceReports(older, newer).status, 'UNAVAILABLE');
+});
+
+test('prefers host boot continuity and does not accept a changed boot using the fallback', () => {
+  const older = resourceReport('00', '02');
+  const newer = resourceReport('10', '12', 10);
+  older.resources.data.postgresProcessStartTimeSeconds = 1000;
+  newer.resources.data.postgresProcessStartTimeSeconds = 2000;
+  assert.equal(compareResourceReports(older, newer).identitySource, 'HOST_BOOT_TIME');
+  assert.equal(compareResourceReports(older, newer).status, 'SUCCESS');
+  newer.resources.data.hostBootTimeSeconds = 200;
+  assert.equal(compareResourceReports(older, newer).status, 'UNAVAILABLE');
+  newer.resources.data.hostBootTimeSeconds = null;
+  assert.equal(compareResourceReports(older, newer).status, 'UNAVAILABLE');
+  newer.resources.data.postgresProcessStartTimeSeconds = 1000;
+  assert.equal(compareResourceReports(older, newer).status, 'SUCCESS');
+});
+
 test('does not silently use duplicate, missing, negative or nonfinite raw metrics', () => {
   for (const source of [
     'node_cpu_seconds_total{cpu="0",mode="idle"} NaN',
