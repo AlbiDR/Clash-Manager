@@ -4,23 +4,23 @@
 
 In plain terms: nothing needed fixing. This run checked the APK integrity area and found it already correct, so the only file here is the log recording that the check happened.
 
-**What was checked:** PWA and APK wrapper integrity audit verified across asset links, manifest parity, version code/name sync, release metadata, and security policy using pnpm audit:apk.
+**What was checked:** Verified APK/PWA wrapper invariants: asset links, manifest parity, version sync (14.52.9/14052009), release metadata (clashmanager-v14.52.9+486.apk), and security policy (usesCleartextTraffic=false) with zero mismatches.
 
-**Why:** All wrapper configurations, manifest values, security policies, and binary metadata are fully synchronized with no mismatches.
+**Why:** All native and PWA configurations remain synchronized and aligned with security policies.
 
-**Result:** pnpm audit:apk, node APK/verify-apk-integrity.mjs, and node APK/verify-android-source.mjs executed successfully with 0 errors.
+**Result:** Verified using pnpm audit:apk, pnpm apk:verify:source, and pnpm test:apk-native; all 19 contract tests and wrapper invariant checks passed.
 
 **Files changed:** .github/nightly-logs/10-apk-integrity-coverage.log
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: apk
-  Cycle: nightly-cycle/2026-10-09
+  Cycle: nightly-cycle/2026-10-10
   Contract: 4f9b40864d05ffea731090b36800572dd7affedd8532fcd17c8ded8c9e2fbc12
-  Why: All wrapper configurations, manifest values, security policies, and binary metadata are fully synchronized with no mismatches.
-  Change: PWA and APK wrapper integrity audit verified across asset links, manifest parity, version code/name sync, release metadata, and security policy using pnpm audit:apk.
-  Result: pnpm audit:apk, node APK/verify-apk-integrity.mjs, and node APK/verify-android-source.mjs executed successfully with 0 errors.
+  Why: All native and PWA configurations remain synchronized and aligned with security policies.
+  Change: Verified APK/PWA wrapper invariants: asset links, manifest parity, version sync (14.52.9/14052009), release metadata (clashmanager-v14.52.9+486.apk), and security policy (usesCleartextTraffic=false) with zero mismatches.
+  Result: Verified using pnpm audit:apk, pnpm apk:verify:source, and pnpm test:apk-native; all 19 contract tests and wrapper invariant checks passed.
   Files: .github/nightly-logs/10-apk-integrity-coverage.log
   Nudges: 0
-  Execution: 3dc9267a99fb3dbab557b248970e3206946a1933
+  Execution: 58b67dbf5d100b05c8b42227947cfecb04f4fc22
 -->
