@@ -16,6 +16,15 @@ LAST_AGED:   2026-10-09
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-10] PR #2153 [Stage 9]: Audited bounded candidate set (86 changed files, 0 dep violations, 11 knip unused files, 1 knip unused dep); no viable refactor target or defects found; substrate compliant.
+**Domain:** architecture | **Commit:** f184ebd31 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2153)
+**Files:** .github/nightly-logs/09-refactor-proposals-coverage.log, .github/nightly-logs/09-refactor-proposals-pr-body.md
+**Why:** Bounded structural scan confirmed depcruise PASS (0 violations across 532 modules), knip findings are framework router entries or dynamic imports, and defect hunt on useVoyageStore passed all 28 tests.
+**Change:** Audited bounded candidate set (86 changed files, 0 dep violations, 11 knip unused files, 1 knip unused dep); no viable refactor target or defects found; substrate compliant.
+**Result:** depcruise PASS (0 violations), knip OK (11 unused files, 1 unused dep @formkit/auto-animate verified active), pnpm-test Frontend-PWA passed 2318/2318 tests across 219 files including 28/28 in useVoyageStore.spec.ts.
+**Nudges:** 0
+
+
 ### [2026-10-10] PR #2152 [Stage 8]: Bumped @types/node catalog entry to ^26.6.5 and updated pnpm-lock.yaml
 **Domain:** dependencies | **Commit:** 26a53eb29 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2152)
 **Files:** .github/nightly-logs/08-dependency-audit-coverage.log, .github/nightly-logs/08-dependency-audit-pr-body.md, package.json, pnpm-lock.yaml, pnpm-workspace.yaml
