@@ -31,7 +31,7 @@ Committed locally and pushed as v14.51.5 if the ADR gate cleared the stack (see 
 - fix(edge): do less, not more, when a gating read fails; ping writes nothing.
 - perf(edge): write a run's telemetry once, as counts plus failures.
 
-Root cause of the morning stalls, measured by the Database session and Chat 6: the Nano instance (406 MB RAM) swaps continuously (467 MB of 1 GB swap in use, 1.5-3 MB/s both ways, disk reads 14-26 MB/s, iowait 31-79%, CPU under 8%, steal 0). Once the disk I/O budget is spent the instance stalls for hours; pg_cron logs "job startup timeout" on every job (05:00-10:50 UTC on Oct 4, 5, 6). CPU credits are NOT the mechanism. Buffer hit rate 99.99%, so the disk reads are OS swap, not Postgres. Storage is 137 MiB of 500 MB and does not bind. A paid plan is ruled out by the owner; every lever is demand-side.
+Incident hypothesis, not a confirmed root cause: the Database session and Chat 6 reported these observations around the morning stalls: the Nano instance has 406 MB RAM, 467 MB of 1 GB swap in use, swap activity of 1.5-3 MB/s in both directions, disk reads of 14-26 MB/s, iowait of 31-79%, CPU under 8%, and steal of 0. They also recorded pg_cron `job startup timeout` on every job from 05:00-10:50 UTC on October 4, 5, and 6. The available evidence does not establish that a daily disk I/O budget was depleted or that depletion caused the stalls. The 99.99% Postgres buffer hit rate does not by itself attribute disk reads to OS swap, and the cited evidence has no CPU-credit metrics with which to rule that mechanism out. Correlated incident-time host, database, PostgREST, and cron evidence, together with provider I/O budget or burst-balance history, is needed to test these explanations. Storage was 137 MiB of 500 MB in the cited sample, which does not indicate capacity exhaustion. A paid plan is ruled out by the owner, so the proposals below are demand-side mitigations; that constraint does not establish the outage cause.
 
 ## 2. Rules the night taught
 
@@ -55,7 +55,7 @@ Root cause of the morning stalls, measured by the Database session and Chat 6: t
 | Chat 9 | schema audit | Partial, read from the repo only. |
 | Chat 10 | app client audit | Partial, no network measurement. |
 | Chat 7 | backend-load-plan-PARTIAL.md | Repo only. |
-| DB handoff | the closed Database session | The memory and swap root cause. |
+| DB handoff | the closed Database session | Memory and swap observations; their causal role in the stalls remains unverified here. |
 
 **Verified in the repo for this merge**
 - `ingest_raw_*` inserts every payload without comparing it to the last one (master_migration `ingest_raw_war_log`).
@@ -64,13 +64,11 @@ Root cause of the morning stalls, measured by the Database session and Chat 6: t
 - `purge_orphan_players` does not read players.updated_at (baseline definition), which answers Chat 9 Q7 from the repo.
 - The app treats the roster's `last_ingested_at` as evidence of freshness (Frontend-PWA/src/core/api/SupabaseClient.ts:576-592).
 
-**What binds**
-- RAM is what runs out. Swap then uses up the disk I/O budget.
-- Chat 6 adds two facts that support this:
-  - the Postgres buffer hit rate is 99.99% (222.7M hits against 23.7k reads since restart), so the 14-26 MB/s of disk reads is OS swap, not Postgres
-  - statement time is 5.1% of one backend, so CPU is idle
-- Storage is 136.7 MiB of 500 MB (27%) and is not binding.
-- Every candidate therefore works through one of three things: fewer resident processes, less write I/O competing for the disk budget, or fewer backend forks.
+**What is supported**
+- The Database session reported high swap use and activity in its samples. This makes memory and I/O pressure plausible contributors, but the available evidence does not show that RAM exhaustion depleted a daily I/O budget or caused the job startup timeouts.
+- Chat 6 measured a 99.99% Postgres buffer hit rate (222.7M hits against 23.7k reads since restart) and statement time of 5.1% of one backend. These measurements describe that sample; they do not attribute host disk reads to OS swap or establish that CPU credits were not involved in the outage.
+- Storage was 136.7 MiB of 500 MB (27%) in the cited sample, which does not indicate capacity exhaustion.
+- The candidates target fewer resident processes, less write I/O, and fewer backend forks as demand-side levers. Their effect on recurrence needs correlated before-and-after evidence.
 
 ## Candidates, ranked by effect per unit of risk
 
@@ -148,7 +146,7 @@ Effect column: R = RAM and resident backends, W = writes, WAL and autovacuum I/O
 ## Open questions for the next measurement pass
 
 1. **Host metrics.** Swap in/out, MemAvailable, disk read bytes and iowait, in two samples at least 120 s apart, at a quiet moment and inside 05:00-10:50 UTC. Per-process RSS if obtainable (Realtime BEAM, PostgREST, Postgres). This is the baseline for every row.
-2. **The daily I/O budget.** Pull the disk I/O budget or burst balance for 72 h. Does it drain on a daily rhythm, starting from the 03:00 nightly maintenance and emptying around the 05:00 stall start? The Nano's disk baseline is about 43 Mbps, with a burst that refills over the day. No lane has explained why the stall starts and ends at the same hours each day. That decides N1's rank.
+2. **The daily I/O budget hypothesis.** Retrieve the provider's disk I/O budget or burst balance for 72 h and test whether it drains on a daily rhythm, starting from the 03:00 nightly maintenance and reaching a low point around the 05:00 stall start. The Nano's disk baseline is reported as about 43 Mbps, with a burst that refills over the day; verify those provider limits and refill behavior against the source metrics. No lane has established that the balance drains or explains why the stall starts and ends at the same hours each day. That evidence decides N1's rank.
 3. **Does Realtime idle when nobody subscribes?** With every client closed for 10 min: does the poll stop, and do the realtime_* backends exit? Are the about 97 schema reloads a day driven by the Broadcast partitions (pgoutput slot) whatever postgres_changes does?
 4. **Is the raw payload stable?** Count distinct md5(payload::text) per clan over the retained raw_war_log, raw_river_race, raw_clan_members and raw_clan_profile rows. If every row differs, W2 needs a normalised hash.
 5. **Chat 9's drift questions.**
@@ -169,7 +167,9 @@ Effect column: R = RAM and resident backends, W = writes, WAL and autovacuum I/O
 
 ## Summary for the owner
 
-The database is not short of disk space or processing power. It is short of memory. When memory runs out it borrows the disk, the disk has a small daily allowance, and once that is spent everything crawls for hours. That is what you saw on the mornings of 4, 5 and 6 October.
+Memory and I/O pressure are plausible contributors to the October 4, 5, and 6 morning stalls, but the available evidence does not establish a root cause. In particular, it does not show that a daily I/O budget was depleted, that swap caused the reported host disk reads, or that CPU credits were not involved. Treat these as hypotheses pending correlated incident-time host and service evidence and provider I/O balance history. The storage sample does not indicate capacity exhaustion. The demand-reduction proposals below remain candidates for mitigation, not proof of cause correction.
+
+**Evidence clarification, 10 October 2026 (Europe/Rome):** Four saved health captures from 17:10:56 to 17:18:17 reported current reachability and successful app-facing reads. Each capture returned roster_materialized (46 rows), headhunter_materialized (250 rows), and recruit_blacklist_view (562 rows), for 12 successful read samples. One valid resource interval of 228.75 seconds reported 6.84% I/O wait, 333.36 swap-in pages/s, and 299.65 swap-out pages/s; a shorter comparison was degraded because CPU counters did not advance. Rolling 24-hour history still showed 139-141 cron startup timeouts, latest at 14:30 UTC. These short daytime observations do not establish the cause of the earlier outages or sustained recovery.
 
 A bigger plan is off the table, so the fix is to make the database do less:
 - **The data import re-saves things that have not changed.** Every half hour it saves the same weekly war log again (about 1 MB of disk writes each time) and re-saves player and member rows that are identical. There are about 114,000 player updates a day, most of them re-saving the same names.
@@ -1413,8 +1413,9 @@ Cause: public.ingest_raw_war_log inserted the whole /riverracelog response
 (about 1 MB, 38% of all WAL measured on 2026-10-06) on every 30-minute
 ingest, although that log only changes when a war ends. Each insert also
 fired shred_war_log, which rewrote identical war_history, war_activity,
-players and members rows. On the Nano instance, whose disk I/O budget is
-already drained by swapping, that write volume is pure load.
+players and members rows. If swap activity consumes the Nano's disk I/O budget,
+this write volume could add to that pressure. The available evidence has not
+established budget depletion or its causal role in the outages.
 
 Fix:
 - ingest_raw_war_log and ingest_raw_clan_profile compare the incoming

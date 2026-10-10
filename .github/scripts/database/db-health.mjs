@@ -10,28 +10,129 @@ import { APP_READS } from './verify-app-availability.mjs';
 const REPO_ROOT = fileURLToPath(new URL('../../../', import.meta.url));
 const REQUEST_TIMEOUT_MS = 25_000;
 const BYTES_PER_MIB = 1024 * 1024;
+const CPU_MODES = ['idle', 'iowait', 'irq', 'nice', 'softirq', 'steal', 'system', 'user'];
 
 /** Gauges describe this scrape; counters describe host lifetime, never today's incident alone. */
 export function parseResourceMetrics(source) {
   const metrics = source.split('\n').flatMap(line => {
-    const match = line.match(/^(\w+)(?:\{([^}]*)\})?\s+([-+\d.eE]+)(?:\s+\d+)?$/);
+    const match = line.match(/^(\w+)(?:\{([^}]*)\})?\s+([-+\d.eE]+|NaN|[+-]?Inf)(?:\s+\d+)?$/);
     return match ? [{ name: match[1], labels: match[2] ?? '', value: Number(match[3]) }] : [];
   });
-  const gauge = name => metrics.find(metric => metric.name === name)?.value ?? null;
+  const gauge = (name, matchesLabels = () => true) => {
+    const values = metrics.filter(metric => metric.name === name && matchesLabels(metric.labels));
+    return values.length === 1 && Number.isFinite(values[0].value) && values[0].value >= 0 ? values[0].value : null;
+  };
   const cpu = metrics.filter(metric => metric.name === 'node_cpu_seconds_total');
-  const totalCpuSeconds = cpu.reduce((total, metric) => total + metric.value, 0);
-  const ioWaitSeconds = cpu.filter(metric => /mode="iowait"/.test(metric.labels))
-    .reduce((total, metric) => total + metric.value, 0);
   const swapTotal = gauge('node_memory_SwapTotal_bytes');
   const swapFree = gauge('node_memory_SwapFree_bytes');
+  const cpuSeconds = cpu.map(metric => ({
+    cpu: metric.labels.match(/(?:^|,)\s*cpu="(\d+)"/)?.[1],
+    mode: metric.labels.match(/(?:^|,)\s*mode="([a-z_]+)"/)?.[1],
+    seconds: metric.value,
+  })).sort((left, right) => `${left.cpu}/${left.mode}`.localeCompare(`${right.cpu}/${right.mode}`));
+  const cpuKeys = cpuSeconds.map(metric => `${metric.cpu}/${metric.mode}`);
+  const validCpu = cpuSeconds.length > 0 && cpuSeconds.every(metric => metric.cpu && metric.mode
+    && Number.isFinite(metric.seconds) && metric.seconds >= 0) && new Set(cpuKeys).size === cpuKeys.length;
+  const completeCpu = validCpu && cpuSeconds.every(metric => CPU_MODES.every(mode => cpuKeys.includes(`${metric.cpu}/${mode}`)));
+  const totalCpuSeconds = completeCpu ? cpuSeconds.filter(metric => !['guest', 'guest_nice'].includes(metric.mode))
+    .reduce((total, metric) => total + metric.seconds, 0) : 0;
+  const ioWaitSeconds = cpuSeconds.filter(metric => metric.mode === 'iowait')
+    .reduce((total, metric) => total + metric.seconds, 0);
   return {
+    hostBootTimeSeconds: gauge('node_boot_time_seconds'),
+    postgresProcessStartTimeSeconds: gauge('process_start_time_seconds', labels => /(?:^|,)\s*service_type="postgresql"(?:,|$)/.test(labels)),
+    cpuSeconds: validCpu ? cpuSeconds : null,
     memoryBytes: gauge('node_memory_MemTotal_bytes'),
     availableMemoryBytes: gauge('node_memory_MemAvailable_bytes'),
-    swapUsedBytes: swapTotal === null || swapFree === null ? null : swapTotal - swapFree,
+    swapUsedBytes: swapTotal === null || swapFree === null || swapFree > swapTotal ? null : swapTotal - swapFree,
     lifetimeSwapInPages: gauge('node_vmstat_pswpin'),
     lifetimeSwapOutPages: gauge('node_vmstat_pswpout'),
     lifetimeIoWaitPercent: totalCpuSeconds > 0 ? ioWaitSeconds / totalCpuSeconds * 100 : null,
   };
+}
+
+/** Compare acquisition windows, not unrelated SQL or app-read completion times. */
+export function compareResourceReports(older, newer) {
+  const result = {
+    status: 'UNAVAILABLE', identitySource: null, intervalSeconds: null, intervalBoundsSeconds: null,
+    ioWaitPercent: null, swapInPagesPerSecond: null, swapOutPagesPerSecond: null, issues: [],
+  };
+  const first = older?.resources;
+  const last = newer?.resources;
+  const fail = message => { result.issues.push(message); return result; };
+  if (first?.status !== 'SUCCESS' || last?.status !== 'SUCCESS') return fail('Both host resource observations must be available.');
+  const before = first.data;
+  const after = last.data;
+  const counter = value => typeof value === 'number' && Number.isFinite(value) && value >= 0;
+  if (!before || !after) return fail('Host resource data is unavailable.');
+  if ([before.hostId, after.hostId].some(value => typeof value !== 'string' || !value.trim())) {
+    return fail('Host project identity is unavailable; counter continuity cannot be established.');
+  }
+  if (before.hostId !== after.hostId) return fail('Host project identity changed.');
+  const identity = counter(before.hostBootTimeSeconds) && counter(after.hostBootTimeSeconds)
+    ? 'hostBootTimeSeconds' : 'postgresProcessStartTimeSeconds';
+  result.identitySource = identity === 'hostBootTimeSeconds' ? 'HOST_BOOT_TIME' : 'POSTGRES_PROCESS_START_TIME';
+  if (!counter(before[identity]) || !counter(after[identity])) {
+    result.identitySource = null;
+    return fail('Host boot and PostgreSQL process-start continuity evidence are unavailable.');
+  }
+  if (before[identity] !== after[identity]) return fail(identity === 'hostBootTimeSeconds'
+    ? 'Host boot identity changed; the host restarted.'
+    : 'PostgreSQL process-start identity changed; process or host continuity cannot be established.');
+  const window = data => {
+    const start = typeof data.sampleStartedAt === 'string' ? Date.parse(data.sampleStartedAt) : NaN;
+    const end = typeof data.sampleCompletedAt === 'string' ? Date.parse(data.sampleCompletedAt) : NaN;
+    return Number.isFinite(start) && Number.isFinite(end) && end >= start ? { start, end } : null;
+  };
+  const a = window(before);
+  const b = window(after);
+  if (!a || !b || b.start <= a.end) return fail('Resource acquisition windows are missing, overlap, or are not in increasing order.');
+  result.intervalSeconds = ((b.start + b.end) - (a.start + a.end)) / 2000;
+  result.intervalBoundsSeconds = { minimum: (b.start - a.end) / 1000, maximum: (b.end - a.start) / 1000 };
+
+  const cpuMap = series => {
+    if (!Array.isArray(series) || series.length === 0) return null;
+    const map = new Map();
+    for (const row of series) {
+      if (!row || typeof row.cpu !== 'string' || !/^\d+$/.test(row.cpu)
+        || typeof row.mode !== 'string' || !/^[a-z_]+$/.test(row.mode) || !counter(row.seconds)) return null;
+      const key = `${row.cpu}/${row.mode}`;
+      if (map.has(key)) return null;
+      map.set(key, row);
+    }
+    return map;
+  };
+  const cpuBefore = cpuMap(before.cpuSeconds);
+  const cpuAfter = cpuMap(after.cpuSeconds);
+  if (!cpuBefore || !cpuAfter) result.issues.push('CPU counters are missing or malformed.');
+  else if (cpuBefore.size !== cpuAfter.size || [...cpuBefore.keys()].some(key => !cpuAfter.has(key))) {
+    result.issues.push('CPU counter series changed between observations.');
+  } else if ([...cpuBefore].some(([key, row]) => cpuAfter.get(key).seconds < row.seconds)) {
+    result.issues.push('CPU counters decreased; the interval cannot be compared.');
+  } else if ([...cpuBefore.values()].some(row => CPU_MODES
+    .some(mode => !cpuBefore.has(`${row.cpu}/${mode}`)))) {
+    result.issues.push('CPU mode counters are missing for one or more CPUs.');
+  } else {
+    let total = 0;
+    let waiting = 0;
+    for (const [key, row] of cpuBefore) {
+      // Linux includes guest CPU time in user/nice; including it again distorts the ratio.
+      if (row.mode === 'guest' || row.mode === 'guest_nice') continue;
+      const delta = cpuAfter.get(key).seconds - row.seconds;
+      total += delta;
+      if (row.mode === 'iowait') waiting += delta;
+    }
+    if (total > 0) result.ioWaitPercent = waiting / total * 100;
+    else result.issues.push('CPU counters did not advance during the interval.');
+  }
+  for (const [source, target] of [['lifetimeSwapInPages', 'swapInPagesPerSecond'], ['lifetimeSwapOutPages', 'swapOutPagesPerSecond']]) {
+    if (!counter(before[source]) || !counter(after[source])) result.issues.push(`${source} is unavailable.`);
+    else if (after[source] < before[source]) result.issues.push(`${source} decreased; the counter cannot be compared.`);
+    else result[target] = (after[source] - before[source]) / result.intervalSeconds;
+  }
+  const available = [result.ioWaitPercent, result.swapInPagesPerSecond, result.swapOutPagesPerSecond].filter(value => value !== null).length;
+  result.status = available === 3 ? 'SUCCESS' : available > 0 ? 'DEGRADED' : 'UNAVAILABLE';
+  return result;
 }
 
 /** Preserve degraded evidence instead of turning missing metrics or failed probes into healthy state. */
@@ -97,9 +198,11 @@ export async function collectHealthReport() {
       return health;
     }),
     observe('Host resources', async () => {
+      const sampleStartedAt = new Date().toISOString();
       const metrics = parseResourceMetrics(await request(`${managementUrl}/analytics/endpoints/metrics`, { headers: authorization }));
+      const sampleCompletedAt = new Date().toISOString();
       if (metrics.memoryBytes === null) throw new Error('Host memory metrics are unavailable.');
-      return metrics;
+      return { ...metrics, hostId: projectRef, sampleStartedAt, sampleCompletedAt };
     }),
     ...APP_READS.map(({ relation, query, requiresRows }) => observe(relation, async () => {
       const url = new URL(`/rest/v1/${relation}?${query}`, apiUrl);
@@ -137,14 +240,44 @@ export function formatHealthReport(report) {
     lines.push('Swap and disk-wait counters are cumulative. High swap alone does not establish current memory pressure.');
   } else lines.push(`Host resources: ${report.resources.error}`);
   lines.push(`Recent history: ${report.historyStatus}`);
+  if (report.resourceInterval) {
+    const interval = report.resourceInterval;
+    lines.push(`Host interval: ${interval.status}`);
+    if (interval.identitySource) lines.push(`Counter continuity identity: ${interval.identitySource === 'HOST_BOOT_TIME' ? 'host boot time' : 'PostgreSQL process start time'}`);
+    if (interval.intervalSeconds !== null) {
+      lines.push(`Resource acquisition interval: ${interval.intervalSeconds.toFixed(1)} s (window bounds ${interval.intervalBoundsSeconds.minimum.toFixed(1)}–${interval.intervalBoundsSeconds.maximum.toFixed(1)} s; rates use acquisition midpoints)`);
+      const rate = value => value === null ? 'unavailable' : value.toFixed(2);
+      lines.push(`Interval disk wait: ${rate(interval.ioWaitPercent)}% CPU time; swap in ${rate(interval.swapInPagesPerSecond)} pages/s, out ${rate(interval.swapOutPagesPerSecond)} pages/s`);
+      lines.push('Acquisition windows bound client request timing; exporter sample age is unknown. Interval activity alone does not establish an outage cause.');
+    }
+    for (const issue of interval.issues) lines.push(`Interval evidence: ${issue}`);
+  }
   return lines.join('\n');
+}
+
+export async function runHealthCli(args, { collect = collectHealthReport, read = file => readFile(file, 'utf8') } = {}) {
+  const json = args.includes('--json');
+  const options = args.filter(arg => arg !== '--json');
+  if (options.length && (options[0] !== '--compare' || options.length < 2 || options.length > 3
+    || options.slice(1).some(arg => arg.startsWith('--')))) {
+    throw new Error('Usage: db:health [--json] [--compare <older.json> [<newer.json>]]');
+  }
+  const older = options.length ? JSON.parse(await read(options[1])) : null;
+  const report = options.length === 3 ? JSON.parse(await read(options[2])) : await collect();
+  if (!report || !report.database || !report.resources || !Array.isArray(report.reads)
+    || !['REACHABLE', 'DEGRADED'].includes(report.currentStatus)) throw new Error('Invalid health report.');
+  const output = options.length ? { ...report, resourceInterval: compareResourceReports(older, report) } : report;
+  return {
+    output: json ? JSON.stringify(output, null, 2) : formatHealthReport(output),
+    exitCode: report.currentStatus === 'DEGRADED' || (output.resourceInterval && output.resourceInterval.status !== 'SUCCESS') ? 1 : 0,
+  };
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   try {
-    const report = await collectHealthReport();
-    console.log(process.argv.includes('--json') ? JSON.stringify(report, null, 2) : formatHealthReport(report));
-    if (report.currentStatus === 'DEGRADED') process.exitCode = 1;
+    const result = await runHealthCli(process.argv.slice(2));
+    console.log(result.output);
+    process.exitCode = result.exitCode;
   } catch (error) {
     console.error(error instanceof Error ? error.message : 'Database diagnostics failed');
     process.exitCode = 1;

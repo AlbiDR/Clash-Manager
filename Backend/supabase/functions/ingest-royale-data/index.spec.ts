@@ -75,7 +75,13 @@ beforeAll(async () => {
 
 beforeEach(() => {
     mockExecutePipeline.mockReset();
-    mockExecutePipeline.mockResolvedValue({ diagnostics: { clan_tag: "#DEFAULTCLAN", duration_ms: 1 } });
+    mockExecutePipeline.mockResolvedValue({
+        profile: { success: true },
+        members: { success: true },
+        race: { success: true },
+        warlog: { success: true },
+        diagnostics: { clan_tag: "#DEFAULTCLAN", duration_ms: 1 },
+    });
 });
 
 describe("ingest-royale-data Edge Function", () => {
@@ -134,6 +140,27 @@ describe("ingest-royale-data Edge Function", () => {
         const response = await requestHandler(req);
         expect(response.status).toBe(200);
         expect(mockExecutePipeline.mock.calls[0][0]).toBe("#2PP0LQQ");
+    });
+
+    it("fails closed when a required completion result is missing", async () => {
+        mockExecutePipeline.mockResolvedValue({
+            profile: { success: true },
+            members: { success: true },
+            race: { success: true },
+            diagnostics: { clan_tag: "#DEFAULTCLAN", duration_ms: 1 },
+        });
+
+        const req = new Request("https://test.co/ingest-royale-data", {
+            method: "POST",
+            headers: { "Authorization": "Bearer internal-bearer", "Content-Type": "application/json" },
+            body: JSON.stringify({}),
+        });
+        const response = await requestHandler(req);
+        const body = await response.json();
+
+        expect(response.status).toBe(500);
+        expect(body).toMatchObject({ code: "INTERNAL_ERROR", error: "Internal Server Error" });
+        expect(JSON.stringify(body)).not.toContain("warlog");
     });
 
     it("degrades to a classified 500 INTERNAL_ERROR when executePipeline throws", async () => {

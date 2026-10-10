@@ -1236,6 +1236,14 @@ export type Database = {
         Returns: undefined
       }
       purge_recruits: { Args: { p_tags: string[] }; Returns: undefined }
+      report_anchor_yield: {
+        Args: {
+          p_keyword: string
+          p_was_rate_limited?: boolean
+          p_yield: number
+        }
+        Returns: undefined
+      }
       report_dead_recruit: {
         Args: { p_player_tag: string }
         Returns: undefined
