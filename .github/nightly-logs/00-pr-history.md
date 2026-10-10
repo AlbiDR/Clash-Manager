@@ -16,6 +16,15 @@ LAST_AGED:   2026-10-09
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-10] PR #2150 [Stage 6]: Harden useBenchmarking TSDoc interface contracts for ScoreExplanationData
+**Domain:** documentation | **Commit:** 4854e05d6 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2150)
+**Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, .github/nightly-logs/06-documentation-tsdoc-pr-body.md, Frontend-PWA/src/core/services/useBenchmarking.ts
+**Why:** Resolve doc debt from recent score explanation feature additions
+**Change:** Harden useBenchmarking TSDoc interface contracts for ScoreExplanationData
+**Result:** Passed vue-tsc type-check
+**Nudges:** 0
+
+
 ### [2026-10-10] PR #2149 [Stage 5]: Audited 4 doc-debt files against headhunter-scanner and _shared READMEs; confirmed prose accuracy
 **Domain:** documentation | **Commit:** 42ab5366e | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2149)
 **Files:** .github/nightly-logs/05-documentation-readme-coverage.log, .github/nightly-logs/05-documentation-readme-pr-body.md
