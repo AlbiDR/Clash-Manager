@@ -16,6 +16,15 @@ LAST_AGED:   2026-10-10
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-11] PR #2162 [Stage 5]: Reconcile _shared README with abortSignal.ts PostgREST query builder cancellation helper
+**Domain:** documentation | **Commit:** 12efc3aba | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2162)
+**Files:** .github/nightly-logs/05-documentation-readme-coverage.log, .github/nightly-logs/05-documentation-readme-pr-body.md, Backend/supabase/functions/_shared/README.md
+**Why:** abortSignal.ts was recently updated/tested in PR #2159 but was absent from Backend/supabase/functions/_shared/README.md Contents table
+**Change:** Reconcile _shared README with abortSignal.ts PostgREST query builder cancellation helper
+**Result:** PASSED git diff --check
+**Nudges:** 0
+
+
 ### [2026-10-11] PR #2161 [Stage 4]: Inspected 83 changed files and Edge Functions for SQL view substrate hygiene; zero structural rot or unreferenced views found.
 **Domain:** optimization | **Commit:** 0703b5cdd | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2161)
 **Files:** .github/nightly-logs/04-optimization-coverage.log, .github/nightly-logs/04-optimization-pr-body.md
