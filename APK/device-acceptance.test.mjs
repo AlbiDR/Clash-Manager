@@ -2,6 +2,7 @@
 // Copyright (C) 2026 AlbiDR
 
 import assert from "node:assert/strict";
+import { createSnapshotResponseTracker } from "./webview-network.mjs";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import test from "node:test";
@@ -18,6 +19,47 @@ import {
   routeHash,
   shouldExerciseDisplay,
 } from "./device-acceptance.mjs";
+
+function observeResponse(tracker, relation, { id = relation, method = "GET", host = "project.supabase.co", status = 200, finished = true } = {}) {
+  tracker.observe({ method: "Network.requestWillBeSent", params: {
+    requestId: id, request: { method, url: `https://${host}/rest/v1/${relation}` },
+  } });
+  tracker.observe({ method: "Network.responseReceived", params: { requestId: id, response: { status } } });
+  if (finished) tracker.observe({ method: "Network.loadingFinished", params: { requestId: id } });
+}
+
+test("legacy WebView evidence requires completed responses for all three app snapshots", () => {
+  const tracker = createSnapshotResponseTracker();
+  observeResponse(tracker, "roster_materialized");
+  observeResponse(tracker, "headhunter_materialized");
+  observeResponse(tracker, "pipeline_heartbeat_view");
+  assert.equal(tracker.snapshot().ready, false);
+  observeResponse(tracker, "recruit_blacklist_view", { finished: false });
+  assert.equal(tracker.snapshot().ready, false, "200 headers do not prove a complete body");
+  tracker.observe({ method: "Network.loadingFinished", params: { requestId: "recruit_blacklist_view" } });
+  assert.equal(tracker.snapshot().ready, true);
+  assert.deepEqual(tracker.snapshot().supabase, { total: 3, successful: 3, failed: 0, unknown: 0 });
+});
+
+test("preflights, other hosts and redirected requests cannot vouch for Supabase reads", () => {
+  const tracker = createSnapshotResponseTracker();
+  observeResponse(tracker, "roster_materialized", { method: "OPTIONS" });
+  observeResponse(tracker, "roster_materialized", { host: "project.supabase.co.example.com" });
+  observeResponse(tracker, "roster_materialized", { id: "redirected", finished: false });
+  observeResponse(tracker, "roster_materialized", { id: "redirected", host: "example.com" });
+  assert.equal(tracker.snapshot().ready, false);
+  assert.equal(tracker.snapshot().supabase.successful, 0);
+});
+
+test("HTTP errors, transport failures and malformed statuses remain failed or unknown evidence", () => {
+  const tracker = createSnapshotResponseTracker();
+  observeResponse(tracker, "roster_materialized", { status: 503 });
+  observeResponse(tracker, "headhunter_materialized", { finished: false });
+  tracker.observe({ method: "Network.loadingFailed", params: { requestId: "headhunter_materialized" } });
+  observeResponse(tracker, "recruit_blacklist_view", { status: "200" });
+  assert.equal(tracker.snapshot().ready, false);
+  assert.deepEqual(tracker.snapshot().supabase, { total: 3, successful: 0, failed: 2, unknown: 1 });
+});
 
 function populationSnapshot(overrides = {}) {
   return {

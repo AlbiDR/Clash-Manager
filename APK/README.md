@@ -107,6 +107,37 @@ for those temporary display checks. It never force-stops CM Dev, opens Clash
 Royale, starts Blitz, or changes accessibility, overlay, or install permissions.
 The script is deliberately opt-in and is not a CI/emulator requirement.
 
+### BlueStacks Air: testing with the actual game
+
+BlueStacks Air provides a second test environment for CM Dev and Clash Royale
+together. Keep the pinned Android 16 emulator for phone-platform checks:
+the verified BlueStacks Air 5.21.790 instance runs Android 13 (API 33).
+
+Use `adb devices -l`, then set `ANDROID_SERIAL` explicitly before running the
+existing `apk-dev.mjs` commands or `pnpm apk:device`. The verified instance is
+`127.0.0.1:5555`; discover the address on each machine rather than assuming it.
+BlueStacks can also appear as `emulator-5554`, so that alias alone does not
+identify the pinned Android 16 emulator. Compare the Android version and
+`ro.serialno` when two device entries may refer to the same instance.
+
+A person enables CM Dev's accessibility and overlay permissions in Android
+Settings. The first game integration check should use the bridge's
+`openProfiles(tagsJson, delayMs)` with two current roster members: it opens
+their real game profiles without sending invitations. Start the waiting
+overlay once the game is ready, observe both profiles, then check
+`AndroidBridge.getLastBlitzRun()` for `outcome: "completed"`, `opened: 2`,
+`invites: 0`, `inviting: false` and `rehearsal: false`. Return to CM Dev with
+`apk-dev.mjs start`; never force-stop it. Sending invitations is a separate
+test requiring explicitly authorized recipients.
+
+In the verified instance, ADB, screenshots and CM Dev's WebView inspection
+remained available while Clash Royale was foregrounded. Check this per runtime;
+it does not establish the same behavior on the owner's phone. Older WebViews
+may lack `PerformanceResourceTiming.responseStatus`; `apk:device` then observes
+the app's three actual snapshot requests through CDP during a normal reload.
+It requires successful, fully received responses and preserves app storage.
+The smoke script itself never opens the game or runs Blitz.
+
 ## Guardrails
 
 | Check | Command / trigger | What it protects |
