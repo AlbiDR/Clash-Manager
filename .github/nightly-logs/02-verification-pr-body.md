@@ -4,23 +4,23 @@
 
 In plain terms: this adds 1 test file in the verification area. No product code changed, so the app behaves exactly as it did before.
 
-**What changed:** Added unit test suite for ScannerWorkBudget in work-budget.spec.ts
+**What changed:** Expanded abortSignal.spec.ts unit test coverage for undefined signal, missing method, and fallback DOMException edge cases.
 
-**Why:** Closed zero-coverage gap in headhunter scanner work-budget utility module.
+**Why:** Closed partial coverage gap in shared AbortSignal utility helpers.
 
-**Result:** Added 9 unit tests in work-budget.spec.ts covering error formatting, signal initialization, admission cutoff timers, total budget expiration, throwIfStopped order, and dispose cleanup. Verified non-trivial mutation proof: commenting out throwIfExpired() inside throwIfStopped() in work-budget.ts caused 2 tests in work-budget.spec.ts and scanner.spec.ts to fail with AssertionError as expected.
+**Result:** Added 5 edge case unit test assertions in Backend/supabase/functions/_shared/shared-tests/abortSignal.spec.ts. Mutation proofing confirmed that invalid signals and missing abortSignal functions are properly caught.
 
-**Files changed:** .github/nightly-logs/02-verification-coverage.log, Backend/supabase/functions/headhunter-scanner/work-budget.spec.ts
+**Files changed:** .github/nightly-logs/02-verification-coverage.log, Backend/supabase/functions/_shared/shared-tests/abortSignal.spec.ts
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: verification
-  Cycle: nightly-cycle/2026-10-10
+  Cycle: nightly-cycle/2026-10-11
   Contract: b2e927ebff4e2ca5a343609133745d050f07d22fd9bf3e42481440c1d14079f0
-  Why: Closed zero-coverage gap in headhunter scanner work-budget utility module.
-  Change: Added unit test suite for ScannerWorkBudget in work-budget.spec.ts
-  Result: Added 9 unit tests in work-budget.spec.ts covering error formatting, signal initialization, admission cutoff timers, total budget expiration, throwIfStopped order, and dispose cleanup. Verified non-trivial mutation proof: commenting out throwIfExpired() inside throwIfStopped() in work-budget.ts caused 2 tests in work-budget.spec.ts and scanner.spec.ts to fail with AssertionError as expected.
-  Files: .github/nightly-logs/02-verification-coverage.log, Backend/supabase/functions/headhunter-scanner/work-budget.spec.ts
+  Why: Closed partial coverage gap in shared AbortSignal utility helpers.
+  Change: Expanded abortSignal.spec.ts unit test coverage for undefined signal, missing method, and fallback DOMException edge cases.
+  Result: Added 5 edge case unit test assertions in Backend/supabase/functions/_shared/shared-tests/abortSignal.spec.ts. Mutation proofing confirmed that invalid signals and missing abortSignal functions are properly caught.
+  Files: .github/nightly-logs/02-verification-coverage.log, Backend/supabase/functions/_shared/shared-tests/abortSignal.spec.ts
   Nudges: 0
-  Execution: 2411d83cb4e93e7fb86aaf06fee58762bdd6128a
+  Execution: 0e0b7aba58365dfd21dafa3ebf84c68c8d768e2c
 -->
