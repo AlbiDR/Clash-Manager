@@ -461,6 +461,33 @@ describe("RecruitClient", () => {
       expect(onResync).toHaveBeenCalledOnce();
     });
 
+    it.each(["TIMED_OUT", "CLOSED", "CHANNEL_ERROR"])("resyncs after %s without an error payload", (status) => {
+      const onError = vi.fn();
+      const onResync = vi.fn();
+      subscribeToBlacklistForTest(vi.fn(), vi.fn(), onError, onResync);
+      const subscriptionStatusHandler = vi.mocked(mockChannel.subscribe).mock.calls[0]![0];
+
+      subscriptionStatusHandler("SUBSCRIBED");
+      subscriptionStatusHandler(status);
+      subscriptionStatusHandler(status);
+      subscriptionStatusHandler("SUBSCRIBED");
+      subscriptionStatusHandler("SUBSCRIBED");
+
+      expect(onError).not.toHaveBeenCalled();
+      expect(onResync).toHaveBeenCalledOnce();
+    });
+
+    it("reconciles missed events after a refused channel eventually joins", () => {
+      const onError = vi.fn();
+      const onResync = vi.fn();
+      subscribeToBlacklistForTest(vi.fn(), vi.fn(), onError, onResync);
+      const status = vi.mocked(mockChannel.subscribe).mock.calls[0]![0];
+      status("CHANNEL_ERROR", new Error("join refused"));
+      status("SUBSCRIBED");
+      expect(onError).toHaveBeenCalledOnce();
+      expect(onResync).toHaveBeenCalledOnce();
+    });
+
     it("reports a failed resync through the error channel", async () => {
       const onError = vi.fn();
       const resyncFailure = new Error("refresh failed");

@@ -12,7 +12,7 @@
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { effectScope, nextTick, ref, type Ref } from "vue";
-import { useClashSync } from "../useClashSync";
+import { useClashSync as createClashSync } from "../useClashSync";
 import { SYNC_REQUEST_TIMEOUT_MS } from "../useClashSyncUtils";
 
 import { fetchRemote, lastSyncStatus } from "../../api/SupabaseClient";
@@ -81,6 +81,12 @@ vi.mock("../../utils/mockData", () => ({
 
 describe("useClashSync", () => {
   let data: Ref<WebAppData | null>;
+  const syncScopes: ReturnType<typeof effectScope>[] = [];
+  function useClashSync(value: Ref<WebAppData | null>) {
+    const scope = effectScope();
+    syncScopes.push(scope);
+    return scope.run(() => createClashSync(value))!;
+  }
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -96,6 +102,7 @@ describe("useClashSync", () => {
   });
 
   afterEach(() => {
+    for (const scope of syncScopes.splice(0)) scope.stop();
     vi.unstubAllGlobals();
     vi.useRealTimers();
   });
@@ -611,6 +618,86 @@ describe("useClashSync", () => {
       expect(sync.syncError.value).toBe("The server took too long to answer");
       expect(lastSyncStatus.value).toBe("TIMEOUT");
       expect(requestSignal?.aborted).toBe(true);
+    });
+  });
+
+  describe("foreground recovery", () => {
+    function createVisibilityDocument() {
+      const target = new EventTarget();
+      let visibility = "visible";
+      Object.defineProperty(target, "visibilityState", { get: () => visibility });
+      vi.stubGlobal("document", target);
+      return (nextVisibility: string) => {
+        visibility = nextVisibility;
+        target.dispatchEvent(new Event("visibilitychange"));
+      };
+    }
+
+    it("preserves cache through a statement timeout and recovers once on a short game return", async () => {
+      const setVisibility = createVisibilityDocument();
+      const cached: WebAppData = { lb: [CACHED_MEMBER], hh: [], timestamp: 100, blacklist: [] };
+      data.value = cached;
+      let resolveRecovery: (payload: WebAppData) => void = () => {};
+      vi.mocked(fetchRemote)
+        .mockRejectedValueOnce(new Error("canceling statement due to statement timeout"))
+        .mockReturnValueOnce(new Promise<WebAppData>((resolve) => { resolveRecovery = resolve; }));
+      const scope = effectScope();
+      const sync = scope.run(() => useClashSync(data))!;
+      await sync.refreshFromSupabase();
+      expect(data.value).toEqual(cached);
+      expect(sync.loading.value).toBe(false);
+      expect(saveCache).not.toHaveBeenCalled();
+
+      setVisibility("hidden");
+      expect(fetchRemote).toHaveBeenCalledTimes(1);
+      // Returning is a user interaction, including on a Battery Saver device.
+      mockPowerSaving.isPowerSaving.value = true;
+      setVisibility("visible");
+      setVisibility("visible");
+      await sync.startBackgroundSync();
+      // The ordinary background call above is declined by backoff while the
+      // event's forced read remains pending, so it cannot start a third pass.
+      expect(fetchRemote).toHaveBeenCalledTimes(2);
+      expect(data.value).toEqual(cached);
+      resolveRecovery({ ...cached, timestamp: 200 });
+      await vi.waitFor(() => expect(sync.syncError.value).toBeNull());
+      expect(lastSyncStatus.value).toBe("SUCCESS");
+      expect(saveCache).toHaveBeenCalledOnce();
+
+      setVisibility("hidden");
+      setVisibility("visible");
+      expect(fetchRemote).toHaveBeenCalledTimes(2);
+      scope.stop();
+    });
+
+    it.each(["401 Unauthorized", "Remote data validation failed"])("does not repeat %s on return", async (failure) => {
+      const setVisibility = createVisibilityDocument();
+      vi.mocked(fetchRemote).mockRejectedValueOnce(new Error(failure));
+      const scope = effectScope();
+      const sync = scope.run(() => useClashSync(data))!;
+      await sync.refreshFromSupabase();
+      setVisibility("hidden");
+      setVisibility("visible");
+      expect(fetchRemote).toHaveBeenCalledOnce();
+      scope.stop();
+    });
+
+    it("recovers on a visible reconnect and removes the visibility listener on disposal", async () => {
+      const setVisibility = createVisibilityDocument();
+      vi.mocked(fetchRemote).mockRejectedValue(new Error("Failed to fetch"));
+      const scope = effectScope();
+      const sync = scope.run(() => useClashSync(data))!;
+      await sync.refreshFromSupabase();
+      mockConnectionStatus.isOnline.value = false;
+      await nextTick();
+      mockConnectionStatus.isOnline.value = true;
+      await nextTick();
+      await vi.waitFor(() => expect(sync.loading.value).toBe(false));
+      expect(fetchRemote).toHaveBeenCalledTimes(2);
+      scope.stop();
+      setVisibility("hidden");
+      setVisibility("visible");
+      expect(fetchRemote).toHaveBeenCalledTimes(2);
     });
   });
 
