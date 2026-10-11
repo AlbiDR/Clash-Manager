@@ -82,6 +82,26 @@ describe("AppSchemas", () => {
       expect(result.lb).toHaveLength(1);
     });
 
+    it("accepts optional per-snapshot publication freshness for old caches and unknown markers", () => {
+      expect(v.parse(WebAppDataSchema, validAppData).rosterSnapshotRefreshedAt).toBeUndefined();
+      expect(v.parse(WebAppDataSchema, {
+        ...validAppData,
+        rosterSnapshotRefreshedAt: 123,
+        headhunterSnapshotRefreshedAt: null,
+      })).toMatchObject({
+        rosterSnapshotRefreshedAt: 123,
+        headhunterSnapshotRefreshedAt: null,
+      });
+    });
+
+    it("rejects malformed per-snapshot publication timestamps", () => {
+      const result = v.safeParse(WebAppDataSchema, {
+        ...validAppData,
+        rosterSnapshotRefreshedAt: "not-a-timestamp",
+      });
+      expect(result.success).toBe(false);
+    });
+
     it("should fail for missing required fields (Validation Boundary)", () => {
       const invalidAppData = { ...validAppData };
       delete (invalidAppData as any).timestamp;

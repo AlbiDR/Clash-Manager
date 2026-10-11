@@ -201,7 +201,12 @@ export interface WebAppData {
   readonly lb: readonly LeaderboardMember[];
   readonly hh: readonly Recruit[];
   readonly playerTag?: string; // Player tag without # to highlight
+  /** Conservative snapshot publication time, or zero when either view is unverified. */
   readonly timestamp: number;
+  /** Server publication time for the roster snapshot, or null when unverified. */
+  readonly rosterSnapshotRefreshedAt?: number | null;
+  /** Server publication time for the headhunter snapshot, or null when unverified. */
+  readonly headhunterSnapshotRefreshedAt?: number | null;
   readonly dataSource?: "SUPABASE";
   readonly remoteTimestamp?: number;
   readonly lastCompiled?: number;

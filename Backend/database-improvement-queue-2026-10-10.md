@@ -63,9 +63,10 @@ The post-APK PWA publication succeeded in
 SyncBranches and its separately dispatched children require coordinator
 verification; workflow dispatch alone never establishes completion.
 
-Preserve the unrelated dirty
-`.github/nightly-logs/10-apk-integrity-coverage.log`; exclude it from this
-checkpoint. Do not stash, reset or overwrite unfinished worker changes.
+The unrelated Stage 10 failed-startup log entry was inspected on 11 October,
+preserved at `/private/tmp/cm-stale-stage10-2026-10-10.patch`, and removed rather
+than published. The official Nightly log arrived through synchronization. Do
+not stash, reset or overwrite unfinished worker changes.
 Recurring outage root cause, sustained recovery and Android-visible fresh
 data remain unverified.
 
@@ -94,16 +95,91 @@ data remain unverified.
 
 ## Next owned actions
 
-1. **07**, with **04** providing snapshot semantics: implement and verify per-
-   snapshot publication freshness; heartbeat health must not substitute for
-   an unchanged or unknown snapshot timestamp. Assign explicit frontend files
-   before starting the writer. This is the next correctness checkpoint.
+1. **02/09**, with live probes owned by **01**: make recurring outages the next
+   availability checkpoint. Capture comparable incident and healthy intervals,
+   app-read failures and provider evidence before attributing the cause. A
+   preview sync timed out during the freshness checkpoint; later live app reads
+   succeeded. Neither observation proves sustained recovery.
 2. **06**, coordinated with **09**: establish the live epoch retry baseline,
    then consider event gating and in-flight suppression with retry/idempotence
    coverage. The declared idle cadence is 288/day; actual avoided work is not
    yet measured.
-3. **02/09**, with live probes owned by **01**: capture comparable incident and
-   healthy intervals plus provider evidence. **03** uses that bounded baseline
-   to rank expensive queries and plans before proposing indexes.
-4. **10/11**: review each concrete change and relevant deployed artifacts;
-   **12** checks architecture when the proposed scope warrants it.
+3. **03**: use the bounded workload baseline to rank expensive queries and
+   execution plans before proposing indexes.
+4. **07/04**: the per-snapshot publication freshness correction is implemented
+   and reviewed. Voyage reconnect recovery remains a separate follow-up.
+5. **10/11**: review concrete changes and relevant deployed artifacts; **12**
+   checks architecture when the scope warrants it.
+
+## Published freshness checkpoint — 11 October 2026
+
+The coordinator completed canonical SyncBranches run 38148686337 and its
+Supabase deployment child 38148991442 before starting this checkpoint. Beta,
+Stable and Nightly had identical tracked content at 14.53.0; local Beta was
+clean. APK/PWA deploy jobs were correctly skipped for that synchronization.
+
+| Owner | State | Checkout / scope | Evidence and next step |
+| --- | --- | --- | --- |
+| 07 | Published in 14.53.1 | Shared Beta checkout; frontend API, payload schema/types, sync/store, directly associated specs and frontend/API README | Implemented per-view markers, bounded consistency verification, legacy-cache normalization and blacklist-safe reconciliation; 181 focused tests, lint/type checking passed. Source and version publication verified. |
+| 04 | Queued; execution not yet observed | Read-only marker migration and frontend contract | Coordinator confirmed atomic marker/refresh transaction, seeded-null behavior and bounded public API availability while awaiting the specialist response. |
+| 10 | Verified; independent review complete | Read-only final frontend diff | Both initial blockers corrected. Independently passed 181 tests across five focused specs; no remaining blocking findings. |
+| 01 | Release verified; final synchronization pending | Queue, integration, release/version and centralized runtime verification | Preserve ownership; verify app behavior in CM Dev, publish coherent changes and verify workflows/artifacts. |
+| 11 | Verified; final synchronization review pending | Read-only release verification | Source/version deployment families, actual APK checkout and published APK hash independently confirmed; verify final SyncBranches children next. |
+
+Other DB work remains queued. Voyage reconnect changes are a separate item;
+no database migration or outage-cause claim is part of this freshness change.
+
+Verification before this checkpoint's publication: the production PWA build
+passed. CM Dev on Android 16 rendered the same roster rows under four controlled
+publication-date scenarios: fresh → DB; one stale snapshot → STALE; missing
+freshness → UNVERIFIED; legacy payload → UNVERIFIED. The initial live sync during
+preview setup timed out; controlled cases prove presentation and data retention,
+not sustained backend recovery. Bounded public marker and heartbeat reads had
+returned HTTP 200 earlier at 17:04:50 Europe/Rome. No production writes or
+failure injection were performed.
+
+Request-count evidence from the reviewed implementation and focused tests:
+unchanged verified memory snapshots use two reads (marker and blacklist),
+versus three before (which included heartbeat). Cold verified snapshots use
+five reads, the same count as before: the removed heartbeat is replaced with
+a bounded post-read marker check. This is a request-count reduction in the
+warm-cache path, not a measured CPU, latency or availability improvement.
+
+Rollback is a normal frontend revert/redeployment; no database schema change
+is included. Per-snapshot fields are optional for older cached payloads. The
+coordinator owns patch version 14.53.1 publication and its verification.
+
+
+Published source commit `f0a58424b6126d759a3ac9b67bf4aded0e118c1b` and
+version commit `3bb98fa8a77841017fbafff13459e4635232d937` passed the full
+push gates: 382 backend and 2,330 frontend tests, lint, type checking and
+architecture dependency checks. The initial push was stopped locally by an
+outdated transport request-count assertion; that expectation was corrected
+and its 11 focused tests passed before publication. Tag `v14.53.1` resolves
+to the version commit. Source and version PWA/Supabase/native/attribution
+workflows completed successfully, independently checked by 11.
+
+APK run [38151775631](https://github.com/AlbiDR/Clash-Manager/actions/runs/38151775631)
+built the actual Beta version commit and published `14.53.1+490` in
+`4b9e3997117cf612219d8b0243b05de0be7a3a99`. Its replacement PWA deployment
+[38151868393](https://github.com/AlbiDR/Clash-Manager/actions/runs/38151868393)
+completed successfully. At 17:40:42 Europe/Rome, the served PWA, metadata and
+APK returned HTTP 200; the downloaded APK matched the tracked metadata:
+3,982,503 bytes, SHA-256
+`6a1916e6b198a5492d72735082cbe2b40676e9d0486635ad49609b18d32ce349`.
+
+CM Dev verified live PWA and native version 14.53.1 at 17:36:26 Europe/Rome,
+with successful reads displaying 45 roster members and 250 recruits. Both
+publication times were known and the combined time equalled their older
+value. One observed warm refresh at 17:32:37 made exactly two REST reads
+(marker and blacklist). This sample of one confirms that request path only;
+it does not establish sustained availability or resource savings. Detailed
+screenshots and structured evidence are retained in the coordinator's
+`freshness-checkpoint` artifact directory.
+
+The final canonical SyncBranches and separately dispatched deployments remain
+the coordinator's publication completion gate. Their final run IDs, branch
+content parity and served artifact verification will be retained in the
+coordinator's final publication evidence, avoiding another release solely
+for recording workflow completion. The additional 04 read-only request was
+not observed executing; it is not counted as a completed specialist review.

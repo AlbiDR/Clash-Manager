@@ -14,6 +14,7 @@ import { getRetryDelayMs } from "../api/SupabaseTransport";
 import { usePowerSaving } from "./usePowerSaving";
 import { MemberSchema } from "../api/MemberSchemas";
 import { WebAppDataSchema } from "../api/AppSchemas";
+import { cleanTag } from "../utils/text";
 import type { WebAppData } from "../types";
 import {
   classifySyncFailure,
@@ -32,6 +33,90 @@ type SyncAttemptResult =
   | { success: true }
   | { success: false; error: Error; failureCount: number };
 
+type SnapshotFreshnessKey = "rosterSnapshotRefreshedAt" | "headhunterSnapshotRefreshedAt";
+
+function getSnapshotFreshnessTimestamp(dataSnapshot: WebAppData, key: SnapshotFreshnessKey): number | null {
+  const timestamp = dataSnapshot[key];
+  return typeof timestamp === "number" && Number.isFinite(timestamp) && timestamp > 0
+    ? timestamp
+    : null;
+}
+
+function getCombinedSnapshotTimestamp(dataSnapshot: WebAppData): number {
+  if (dataSnapshot.dataSource !== "SUPABASE") return dataSnapshot.timestamp;
+  const rosterTimestamp = getSnapshotFreshnessTimestamp(dataSnapshot, "rosterSnapshotRefreshedAt");
+  const headhunterTimestamp = getSnapshotFreshnessTimestamp(dataSnapshot, "headhunterSnapshotRefreshedAt");
+  return rosterTimestamp !== null && headhunterTimestamp !== null
+    ? Math.min(rosterTimestamp, headhunterTimestamp)
+    : 0;
+}
+
+function normalizeSnapshotFreshness(dataSnapshot: WebAppData): WebAppData {
+  if (dataSnapshot.dataSource !== "SUPABASE") return dataSnapshot;
+  const timestamp = getCombinedSnapshotTimestamp(dataSnapshot);
+  const {
+    remoteTimestamp: _legacyRemoteTimestamp,
+    lastCompiled: _legacyLastCompiled,
+    ...snapshotWithoutLegacyFreshness
+  } = dataSnapshot;
+  return {
+    ...snapshotWithoutLegacyFreshness,
+    timestamp,
+    ...(timestamp > 0 ? { remoteTimestamp: timestamp } : {}),
+  };
+}
+
+function preserveNewerSnapshotData(
+  currentData: WebAppData,
+  incomingData: WebAppData,
+  acceptUnknownIncoming = false,
+): WebAppData {
+  if (currentData.dataSource !== "SUPABASE" && incomingData.dataSource === "SUPABASE") {
+    return incomingData;
+  }
+  if (currentData.dataSource !== "SUPABASE" || incomingData.dataSource !== "SUPABASE") {
+    return incomingData.timestamp < currentData.timestamp
+      ? { ...currentData, lastFetched: incomingData.lastFetched ?? Date.now() }
+      : incomingData;
+  }
+
+  const preserveRoster = (() => {
+    const currentTimestamp = getSnapshotFreshnessTimestamp(currentData, "rosterSnapshotRefreshedAt");
+    const incomingTimestamp = getSnapshotFreshnessTimestamp(incomingData, "rosterSnapshotRefreshedAt");
+    return currentTimestamp !== null && (incomingTimestamp !== null
+      ? incomingTimestamp < currentTimestamp
+      : !acceptUnknownIncoming);
+  })();
+  const preserveHeadhunter = (() => {
+    const currentTimestamp = getSnapshotFreshnessTimestamp(currentData, "headhunterSnapshotRefreshedAt");
+    const incomingTimestamp = getSnapshotFreshnessTimestamp(incomingData, "headhunterSnapshotRefreshedAt");
+    return currentTimestamp !== null && (incomingTimestamp !== null
+      ? incomingTimestamp < currentTimestamp
+      : !acceptUnknownIncoming);
+  })();
+
+  if (!preserveRoster && !preserveHeadhunter) return incomingData;
+
+  const incomingBlacklist = new Set((incomingData.blacklist ?? []).map(cleanTag));
+  const preservedHeadhunter = preserveHeadhunter
+    ? currentData.hh.filter((recruit) => !incomingBlacklist.has(cleanTag(recruit.id)))
+    : undefined;
+
+  const mergedData: WebAppData = {
+    ...incomingData,
+    ...(preserveRoster && {
+      lb: currentData.lb,
+      rosterSnapshotRefreshedAt: currentData.rosterSnapshotRefreshedAt,
+    }),
+    ...(preserveHeadhunter && {
+      hh: preservedHeadhunter,
+      headhunterSnapshotRefreshedAt: currentData.headhunterSnapshotRefreshedAt,
+    }),
+  };
+  const timestamp = getCombinedSnapshotTimestamp(mergedData);
+  return { ...mergedData, timestamp, remoteTimestamp: timestamp };
+}
+
 /**
  * CLASH SYNC SERVICE (Layer 1)
  *
@@ -46,12 +131,12 @@ type SyncAttemptResult =
  *
  * @returns
  * - `loading`: Reactive flag to prevent concurrent synchronization cycles.
- * - `lastSync`: Unix timestamp (ms) representing the authoritative age of the local data.
+ * - `lastSync`: Conservative publication time across both Supabase snapshots, or zero when unknown.
  * - `syncError`: Stores the most recent sync error message.
  * - `dataSource`: Indicates the provenance of the dataset (SUPABASE).
- * - `remoteTimestamp`: Authoritative timestamp from the last successful Supabase fetch.
+ * - `remoteTimestamp`: Conservative publication time from the remote snapshots.
  * - `syncStatus`: Authoritative diagnosis state from the last Supabase sync attempt.
- * - `lastCompiled`: Server-side compilation marker.
+ * - `lastCompiled`: Legacy server marker from older cached records, cleared for Supabase data.
  * - `lastFetched`: Raw API fetch marker.
  * - `loadLocal`: Hydrates the service state from the local IndexedDB cache.
  * - `updateLocalData`: Manually updates the service state with an external payload.
@@ -65,7 +150,7 @@ export function useClashSync(data: Ref<WebAppData | null>) {
   /** Reactive flag to prevent concurrent synchronization cycles. */
   const loading = ref(false);
 
-  /** Unix timestamp (ms) representing the authoritative age of the local data. */
+  /** Conservative publication time across both Supabase snapshots, or zero when unknown. */
   const lastSync = ref<number>(0);
 
   /** Stores the most recent sync error message. */
@@ -100,10 +185,10 @@ export function useClashSync(data: Ref<WebAppData | null>) {
   /** Authoritative diagnosis state from the last Supabase sync attempt. */
   const syncStatus = lastSyncStatus;
 
-  /** Authoritative timestamp from the last successful Supabase fetch. */
+  /** Conservative publication time from both remote snapshots, or null when unknown. */
   const remoteTimestamp = ref<number | null>(null);
 
-  /** Server-side compilation marker. */
+  /** Legacy server compilation marker, absent from current per-snapshot payloads. */
   const lastCompiled = ref<number | null>(null);
 
   /** Raw API fetch marker. */
@@ -195,25 +280,25 @@ export function useClashSync(data: Ref<WebAppData | null>) {
     const { skipSave = false, remoteSuccess = false } = commitOptions;
 
     // A reachable backend can still return an older snapshot during replica
-    // lag, rollback, or a delayed request. Preserve monotonic source data while
-    // retaining the new client-fetch timestamp as evidence of connectivity.
+    // lag, rollback, or a delayed request. Preserve each dataset independently
+    // while retaining the new client-fetch timestamp as evidence of connectivity.
     if (
       remoteSuccess
       && webAppDataSnapshot
       && data.value
-      && webAppDataSnapshot.timestamp < data.value.timestamp
     ) {
-      console.warn("[Sync] Ignored remote snapshot older than the current dataset.");
-      webAppDataSnapshot = {
-        ...data.value,
-        lastFetched: webAppDataSnapshot.lastFetched ?? Date.now(),
-      };
+      const reconciledData = preserveNewerSnapshotData(data.value, webAppDataSnapshot, remoteSuccess);
+      if (reconciledData !== webAppDataSnapshot) {
+        console.warn("[Sync] Preserved snapshot data with newer or verified publication evidence.");
+      }
+      webAppDataSnapshot = reconciledData;
     }
 
+    if (webAppDataSnapshot) webAppDataSnapshot = normalizeSnapshotFreshness(webAppDataSnapshot);
     data.value = webAppDataSnapshot;
 
     if (webAppDataSnapshot) {
-      lastSync.value = webAppDataSnapshot.timestamp;
+      lastSync.value = getCombinedSnapshotTimestamp(webAppDataSnapshot);
       dataSource.value = webAppDataSnapshot.dataSource || null;
       remoteTimestamp.value = webAppDataSnapshot.remoteTimestamp || null;
       lastCompiled.value = webAppDataSnapshot.lastCompiled || null;
@@ -290,12 +375,20 @@ export function useClashSync(data: Ref<WebAppData | null>) {
       // [DECISION LOG] Enforce strict validation boundary via WebAppDataSchema.
       const webAppDataValidation = v.safeParse(WebAppDataSchema, cachedWebAppData);
       if (webAppDataValidation.success) {
-        if (data.value && data.value.timestamp >= webAppDataValidation.output.timestamp) {
-          console.debug("[Sync] Local cache is older than already hydrated live data, skipping.");
-          return;
-        }
+        const validatedCachedData = normalizeSnapshotFreshness({
+          ...webAppDataValidation.output,
+          dataSource: typeof cachedWebAppData === "object"
+            && cachedWebAppData !== null
+            && "dataSource" in cachedWebAppData
+            && cachedWebAppData.dataSource === "SUPABASE"
+            ? "SUPABASE"
+            : webAppDataValidation.output.dataSource,
+        });
         console.debug("[Sync] Local cache hydrated successfully.");
-        await commitSyncResult(webAppDataValidation.output, { skipSave: true });
+        const cacheOrLiveData = data.value
+          ? preserveNewerSnapshotData(data.value, validatedCachedData)
+          : validatedCachedData;
+        await commitSyncResult(cacheOrLiveData, { skipSave: true });
       } else {
         console.warn("[Sync] Local cache validation failed:", webAppDataValidation.issues);
         if (!data.value) await commitSyncResult(createEmptyWebAppData(), { skipSave: true });
@@ -392,13 +485,19 @@ export function useClashSync(data: Ref<WebAppData | null>) {
         // has members, so an empty roster over a populated one means the read
         // lost its rows (a revoked grant, an unpopulated snapshot), not that the
         // clan emptied. Committing it would wipe the cache and show a green pill.
+        const reconciledRemoteData = data.value
+          ? preserveNewerSnapshotData(data.value, remoteDataValidation.output, true)
+          : remoteDataValidation.output;
+        if (reconciledRemoteData !== remoteDataValidation.output) {
+          console.warn("[Sync] Preserved snapshot data with newer or verified publication evidence.");
+        }
         const cachedMemberCount = data.value?.lb.length ?? 0;
-        if (remoteDataValidation.output.lb.length === 0 && cachedMemberCount > 0) {
+        if (reconciledRemoteData.lb.length === 0 && cachedMemberCount > 0) {
           throw new Error(`Roster validation failed: the server returned no members over ${cachedMemberCount} cached`);
         }
 
         await yieldToInteractionFrame();
-        await commitSyncResult(remoteDataValidation.output, { remoteSuccess: true });
+        await commitSyncResult(reconciledRemoteData, { remoteSuccess: true });
         lastSyncStatus.value = "SUCCESS";
         return { success: true };
       } catch (syncFailure: unknown) {
