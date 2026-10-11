@@ -101,6 +101,15 @@ test("population acceptance requires rendered roster and a Supabase-backed clien
   })).status, "FAIL");
 });
 
+test("healthy rows and responses cannot pass acceptance for an older or unidentified web app", () => {
+  const healthy = populationSnapshot({ appVersion: "2.0.0" });
+  assert.equal(assessPopulationSnapshot(healthy, "2.0.0").status, "PASS");
+  const stale = assessPopulationSnapshot(healthy, "2.0.1");
+  assert.equal(stale.status, "FAIL");
+  assert.match(stale.message, /version is 2\.0\.0, expected 2\.0\.1/);
+  assert.equal(assessPopulationSnapshot(populationSnapshot(), "2.0.1").status, "FAIL");
+});
+
 test("population acceptance allows genuinely empty recruitment and the documented top-50 window", () => {
   const cache = populationSnapshot().cache;
   const empty = assessPopulationSnapshot(populationSnapshot({

@@ -136,6 +136,8 @@ it does not establish the same behavior on the owner's phone. Older WebViews
 may lack `PerformanceResourceTiming.responseStatus`; `apk:device` then observes
 the app's three actual snapshot requests through CDP during a normal reload.
 It requires successful, fully received responses and preserves app storage.
+It also requires the running web app to match the workspace's package version,
+so populated lists from an older cached app cannot count as acceptance of a new release.
 The smoke script itself never opens the game or runs Blitz.
 
 ## Guardrails
