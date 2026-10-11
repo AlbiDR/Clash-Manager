@@ -36,6 +36,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { DEV_PACKAGE } from "./make-dev-variant.mjs";
+import { observeSnapshotResponses } from "./webview-network.mjs";
 
 const APK_DIR = path.dirname(fileURLToPath(import.meta.url));
 const REPOSITORY_DIR = path.resolve(APK_DIR, "..");
@@ -182,8 +183,8 @@ const BRIDGE_SNAPSHOT_EXPRESSION = `(() => {
 // Read the already-existing IndexedDB database only. The databases() guard is
 // deliberate: opening an absent database would create it and turn an empty
 // cache into misleading evidence. No record is written or deleted.
-function populationSnapshotExpression(route) {
-  return `(${async function populationSnapshot(route, timeoutMs, intervalMs, dbName, storeName, cacheKey) {
+function populationSnapshotExpression(route, networkEvidence = null) {
+  return `(${async function populationSnapshot(route, timeoutMs, intervalMs, dbName, storeName, cacheKey, networkEvidence) {
   const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
   const deadline = Date.now() + timeoutMs;
   let latest = null;
@@ -202,7 +203,7 @@ function populationSnapshotExpression(route) {
           : [];
       } catch (_) { return []; }
     });
-    const supabase = {
+    const supabase = networkEvidence ?? {
       total: matchingRequests.length,
       successful: matchingRequests.filter((request) => request.status >= 200 && request.status < 300).length,
       failed: matchingRequests.filter((request) => request.status !== null && request.status >= 400).length,
@@ -272,7 +273,7 @@ function populationSnapshotExpression(route) {
     await sleep(intervalMs);
   }
   return latest ?? { route, routeReady: false, cache: { status: "UNOBSERVED" }, supabase: { total: 0, successful: 0, failed: 0, unknown: 0 }, visibleCards: 0 };
-}.toString()})(${JSON.stringify(route)}, ${POPULATION_TIMEOUT_MS}, ${POLL_INTERVAL_MS}, ${JSON.stringify(POPULATION_DB_NAME)}, ${JSON.stringify(POPULATION_STORE_NAME)}, ${JSON.stringify(POPULATION_CACHE_KEY)})`;
+}.toString()})(${JSON.stringify(route)}, ${POPULATION_TIMEOUT_MS}, ${POLL_INTERVAL_MS}, ${JSON.stringify(POPULATION_DB_NAME)}, ${JSON.stringify(POPULATION_STORE_NAME)}, ${JSON.stringify(POPULATION_CACHE_KEY)}, ${JSON.stringify(networkEvidence)})`;
 }
 
 export function usage() {
@@ -510,6 +511,20 @@ function pageEval(expression) {
 
 function pageSnapshot() {
   return pageEval(PAGE_SNAPSHOT_EXPRESSION);
+}
+
+async function observeLegacyWebViewNetwork() {
+  const port = adb(["forward", "tcp:0", `localabstract:webview_devtools_remote_${currentPid()}`]).trim();
+  try {
+    const targets = await (await fetch(`http://127.0.0.1:${port}/json/list`, {
+      signal: AbortSignal.timeout(PAGE_TIMEOUT_MS),
+    })).json();
+    const page = targets.find(target => target.type === "page");
+    assert(page?.webSocketDebuggerUrl, "CM Dev has no inspectable page for network observation");
+    return await observeSnapshotResponses(page.webSocketDebuggerUrl, POPULATION_TIMEOUT_MS);
+  } finally {
+    adb(["forward", "--remove", `tcp:${port}`]);
+  }
 }
 
 async function waitForSnapshot(predicate, description, timeout = PAGE_TIMEOUT_MS) {
@@ -868,19 +883,28 @@ async function run(options, output) {
     });
     if (!bridgeResult.ok) return report;
 
+    let networkEvidence = null;
+    if (!pageEval('"responseStatus" in PerformanceResourceTiming.prototype')) {
+      const observation = await attempt(report, "legacy WebView snapshot network responses", observeLegacyWebViewNetwork);
+      if (!observation.ok) return report;
+      networkEvidence = observation.details.supabase;
+      await waitForSnapshot(candidate => candidate.bridgePresent && candidate.readyState === "complete", "CM Dev after network observation reload");
+    }
+
     for (const route of ROUTES) {
       const routeResult = await attempt(report, `route: ${route.path}`, () => navigateTo(route));
       if (routeResult.ok) {
         await attempt(report, `screenshot: ${route.path}`, () => takeScreenshot(report, output, route.path.slice(1)));
         if (route.path === "/roster" || route.path === "/headhunter") {
           await attempt(report, `populated Supabase client data: ${route.path}`, () => {
-            const snapshot = pageEval(populationSnapshotExpression(route.path));
+            const snapshot = pageEval(populationSnapshotExpression(route.path, networkEvidence));
             const assessment = assessPopulationSnapshot(snapshot);
             if (assessment.status !== "PASS") {
               throw new Error(`${assessment.message}; observed ${JSON.stringify(assessment)}`);
             }
             return {
               ...assessment,
+              networkObservation: networkEvidence ? "CDP" : "PerformanceResourceTiming",
               cacheStatus: snapshot.cache?.status ?? null,
               routeReady: snapshot.routeReady === true,
               supabaseFailedResponses: snapshot.supabase?.failed ?? 0,

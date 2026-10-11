@@ -42,7 +42,9 @@ double-click on `APK/Start Emulator.command`. If it is already running,
   person switches them on in the device's Settings; never do it for them, on
   the phone or the emulator. Ask, and say why.
 - **Clash Royale switches USB debugging off while it is open.** Real-game runs
-  cannot be watched; use rehearsals, and read `adb logcat` afterwards.
+  on the owner's phone cannot be watched; use rehearsals, and read `adb logcat`
+  afterwards. BlueStacks Air retained ADB during the verified real-game run;
+  check the runtime explicitly and follow the BlueStacks procedure in `APK/README.md`.
 - **The emulator must draw with the GPU** (`gpu: host` in
   `APK/toolchain.json`). On `auto` it fell back to the CPU and was unusable.
 - **A phone check comes before any rebuilt `classes.dex` is pushed.** The
