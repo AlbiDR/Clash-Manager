@@ -306,7 +306,7 @@ public class MainActivity extends Activity {
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
         // Web SQL defaults off, and form-data persistence has been a no-op
-        // since API 26. CM's minSdk is 34, so their deprecated setters only
+        // since API 26. CM's minSdk is 33, so their deprecated setters only
         // created false assurance and compiler debt.
         settings.setSupportZoom(false);
         settings.setBuiltInZoomControls(false);
