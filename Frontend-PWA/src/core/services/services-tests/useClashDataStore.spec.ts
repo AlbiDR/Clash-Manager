@@ -137,7 +137,7 @@ describe("useClashDataStore", () => {
       await store.loadLocal();
 
       expect(store.data).toEqual(mockCachedData);
-      expect(store.lastSync).toBeGreaterThan(0);
+      expect(store.lastSync).toBe(mockCachedData.timestamp);
       expect(store.members).toHaveLength(1);
       expect(store.members[0].id).toBe("TAG1");
       expect(store.lastUpdated).toBe(mockCachedData.timestamp);
@@ -294,8 +294,11 @@ describe("useClashDataStore", () => {
       const mockRemoteData = {
         lb: [],
         hh: [],
-        timestamp: Date.now(),
+        timestamp: 1000,
         dataSource: "SUPABASE",
+        rosterSnapshotRefreshedAt: 1000,
+        headhunterSnapshotRefreshedAt: 1000,
+        remoteTimestamp: 1000,
         blacklist: []
       };
       vi.mocked(fetchRemote).mockResolvedValue(mockRemoteData);

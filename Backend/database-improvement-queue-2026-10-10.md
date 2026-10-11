@@ -63,9 +63,10 @@ The post-APK PWA publication succeeded in
 SyncBranches and its separately dispatched children require coordinator
 verification; workflow dispatch alone never establishes completion.
 
-Preserve the unrelated dirty
-`.github/nightly-logs/10-apk-integrity-coverage.log`; exclude it from this
-checkpoint. Do not stash, reset or overwrite unfinished worker changes.
+The unrelated Stage 10 failed-startup log entry was inspected on 11 October,
+preserved at `/private/tmp/cm-stale-stage10-2026-10-10.patch`, and removed rather
+than published. The official Nightly log arrived through synchronization. Do
+not stash, reset or overwrite unfinished worker changes.
 Recurring outage root cause, sustained recovery and Android-visible fresh
 data remain unverified.
 
@@ -107,3 +108,41 @@ data remain unverified.
    to rank expensive queries and plans before proposing indexes.
 4. **10/11**: review each concrete change and relevant deployed artifacts;
    **12** checks architecture when the proposed scope warrants it.
+
+## Next checkpoint — 11 October 2026
+
+The coordinator completed canonical SyncBranches run 38148686337 and its
+Supabase deployment child 38148991442 before starting this checkpoint. Beta,
+Stable and Nightly had identical tracked content at 14.53.0; local Beta was
+clean. APK/PWA deploy jobs were correctly skipped for that synchronization.
+
+| Owner | State | Checkout / scope | Evidence and next step |
+| --- | --- | --- | --- |
+| 07 | Verified; source frozen | Shared Beta checkout; frontend API, payload schema/types, sync/store, directly associated specs and frontend/API README | Implemented per-view markers, bounded consistency verification, legacy-cache normalization and blacklist-safe reconciliation; 181 focused tests, lint/type checking passed. Coordinator publishes. |
+| 04 | Queued; execution not yet observed | Read-only marker migration and frontend contract | Coordinator confirmed atomic marker/refresh transaction, seeded-null behavior and bounded public API availability while awaiting the specialist response. |
+| 10 | Verified; independent review complete | Read-only final frontend diff | Both initial blockers corrected. Independently passed 181 tests across five focused specs; no remaining blocking findings. |
+| 01 | Running | Queue, integration, release/version and centralized runtime verification | Preserve ownership; verify app behavior in CM Dev, publish coherent changes and verify workflows/artifacts. |
+| 11 | Queued | Read-only release verification after publication | Check actual deployment completion and relevant artifact provenance. |
+
+Other DB work remains queued. Voyage reconnect changes are a separate item;
+no database migration or outage-cause claim is part of this freshness change.
+
+Verification before this checkpoint's publication: the production PWA build
+passed. CM Dev on Android 16 rendered the same roster rows under four controlled
+publication-date scenarios: fresh → DB; one stale snapshot → STALE; missing
+freshness → UNVERIFIED; legacy payload → UNVERIFIED. The initial live sync during
+preview setup timed out; controlled cases prove presentation and data retention,
+not sustained backend recovery. Bounded public marker and heartbeat reads had
+returned HTTP 200 earlier at 17:04:50 Europe/Rome. No production writes or
+failure injection were performed.
+
+Request-count evidence from the reviewed implementation and focused tests:
+unchanged verified memory snapshots use two reads (marker and blacklist),
+versus three before (which included heartbeat). Cold verified snapshots use
+five reads, the same count as before: the removed heartbeat is replaced with
+a bounded post-read marker check. This is a request-count reduction in the
+warm-cache path, not a measured CPU, latency or availability improvement.
+
+Rollback is a normal frontend revert/redeployment; no database schema change
+is included. Per-snapshot fields are optional for older cached payloads. The
+coordinator owns patch version 14.53.1 publication and its verification.

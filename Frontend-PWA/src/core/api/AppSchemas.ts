@@ -24,7 +24,7 @@ import { RecruitSchema } from "./RecruitSchemas";
  * - 'lb' and 'hh' are validated against their respective sub-schemas
  *   to ensure deep structural integrity.
  * - 'playerTag' is optional but piped to ensure consistent formatting.
- * - 'timestamp' is mandatory as the authoritative age of the dataset.
+ * - 'timestamp' is the conservative publication age of the combined snapshots.
  */
 export const WebAppDataSchema = v.object({
   /** Authoritative roster dataset (Leaderboard). */
@@ -33,13 +33,17 @@ export const WebAppDataSchema = v.object({
   hh: v.array(RecruitSchema),
   /** The tag of the authenticated/primary player. */
   playerTag: v.optional(SafeStringPipe),
-  /** The unix timestamp of the data ingestion. */
+  /** Conservative publication time for both snapshots, or zero when either is unknown. */
   timestamp: SafeNumberPipe,
+  /** Server publication time for the roster snapshot; absent or null means unknown. */
+  rosterSnapshotRefreshedAt: v.optional(v.nullable(v.number())),
+  /** Server publication time for the headhunter snapshot; absent or null means unknown. */
+  headhunterSnapshotRefreshedAt: v.optional(v.nullable(v.number())),
   /** The source of the data (currently restricted to 'SUPABASE'). */
   dataSource: v.optional(v.picklist(["SUPABASE"])),
-  /** The timestamp when the data was last synchronized with the remote. */
+  /** Legacy aggregate remote publication timestamp retained for compatibility. */
   remoteTimestamp: v.optional(LaxNumberPipe),
-  /** The timestamp when the data was last compiled into a bundle. */
+  /** Legacy compilation timestamp retained when hydrating older cached records. */
   lastCompiled: v.optional(LaxNumberPipe),
   /** The timestamp when the data was last fetched from the API. */
   lastFetched: v.optional(LaxNumberPipe),

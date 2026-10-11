@@ -131,8 +131,10 @@ describe("useClashSync", () => {
       const sync = useClashSync(data);
       await sync.loadLocal();
 
-      expect(data.value).toEqual(mockCached);
-      expect(sync.lastSync.value).toBe(1000);
+      expect(data.value).toMatchObject({ ...mockCached, timestamp: 0 });
+      expect(data.value?.remoteTimestamp).toBeUndefined();
+      expect(data.value?.lastCompiled).toBeUndefined();
+      expect(sync.lastSync.value).toBe(0);
     });
 
     it("should hydrate an empty ready state when no local cache exists", async () => {
@@ -153,19 +155,20 @@ describe("useClashSync", () => {
 
     it("should skip cache if currently held data is newer", async () => {
       const existingData: WebAppData = {
-        lb: [], hh: [], timestamp: 2000, blacklist: []
+        lb: [], hh: [], timestamp: 8000, dataSource: "SUPABASE",
+        rosterSnapshotRefreshedAt: 8000, headhunterSnapshotRefreshedAt: 8000, blacklist: [],
       };
       data.value = existingData;
 
       const mockCached: WebAppData = {
-        lb: [], hh: [], timestamp: 1000, blacklist: []
+        lb: [], hh: [], timestamp: 9000, dataSource: "SUPABASE", blacklist: [],
       };
       vi.mocked(loadCache).mockResolvedValue(mockCached);
 
       const sync = useClashSync(data);
       await sync.loadLocal();
 
-      expect(data.value).toEqual(existingData);
+      expect(data.value).toEqual({ ...existingData, remoteTimestamp: 8000 });
     });
 
     it("should handle validation failure", async () => {
@@ -206,7 +209,8 @@ describe("useClashSync", () => {
         rejectCache = reject;
       }));
       const remotePayload: WebAppData = {
-        lb: [], hh: [], timestamp: 5000, dataSource: "SUPABASE", blacklist: [],
+        lb: [], hh: [], timestamp: 5000, dataSource: "SUPABASE",
+        rosterSnapshotRefreshedAt: 5000, headhunterSnapshotRefreshedAt: 5000, remoteTimestamp: 5000, blacklist: [],
       };
       vi.mocked(fetchRemote).mockResolvedValue(remotePayload);
       const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
@@ -245,7 +249,7 @@ describe("useClashSync", () => {
 
   describe("refreshFromSupabase", () => {
     it("should sync successfully on happy path", async () => {
-      const remotePayload: WebAppData = { lb: [], hh: [], timestamp: 4000, dataSource: "SUPABASE", blacklist: [] };
+      const remotePayload: WebAppData = { lb: [], hh: [], timestamp: 4000, dataSource: "SUPABASE", rosterSnapshotRefreshedAt: 4000, headhunterSnapshotRefreshedAt: 4000, remoteTimestamp: 4000, blacklist: [] };
       vi.mocked(fetchRemote).mockResolvedValue(remotePayload);
 
       const sync = useClashSync(data);
@@ -257,10 +261,12 @@ describe("useClashSync", () => {
 
     it("does not roll a newer dataset back when the backend response is older", async () => {
       const currentPayload: WebAppData = {
-        lb: [], hh: [], timestamp: 5000, dataSource: "SUPABASE", lastFetched: 5001, blacklist: [],
+        lb: [], hh: [], timestamp: 5000, dataSource: "SUPABASE", lastFetched: 5001,
+        rosterSnapshotRefreshedAt: 5000, headhunterSnapshotRefreshedAt: 5000, blacklist: [],
       };
       const olderRemotePayload: WebAppData = {
-        lb: [], hh: [], timestamp: 4000, dataSource: "SUPABASE", lastFetched: 6000, blacklist: [],
+        lb: [], hh: [], timestamp: 4000, dataSource: "SUPABASE", lastFetched: 6000,
+        rosterSnapshotRefreshedAt: 4000, headhunterSnapshotRefreshedAt: 4000, blacklist: [],
       };
       data.value = currentPayload;
       vi.mocked(fetchRemote).mockResolvedValue(olderRemotePayload);
@@ -275,8 +281,129 @@ describe("useClashSync", () => {
         timestamp: 5000,
         lastFetched: 6000,
       }));
-      expect(consoleSpy).toHaveBeenCalledWith("[Sync] Ignored remote snapshot older than the current dataset.");
+      expect(consoleSpy).toHaveBeenCalledWith("[Sync] Preserved snapshot data with newer or verified publication evidence.");
       expect(lastSyncStatus.value).toBe("SUCCESS");
+    });
+
+    it("preserves only the per-view snapshot that has newer publication evidence", async () => {
+      const currentPayload: WebAppData = {
+        lb: [CACHED_MEMBER], hh: [], timestamp: 3000, dataSource: "SUPABASE", lastFetched: 3001,
+        rosterSnapshotRefreshedAt: 5000, headhunterSnapshotRefreshedAt: 3000, blacklist: [],
+      };
+      const newerHeadhunterPayload: WebAppData = {
+        lb: [], hh: [{ id: "NEW", n: "Recruit", t: 0, potentialScore: 0, potentialRawScore: 0, longevity: 0, longevityLabel: "", d: { don: 0, war: 0, ago: "" } }],
+        timestamp: 4000, dataSource: "SUPABASE", lastFetched: 6000,
+        rosterSnapshotRefreshedAt: 4000, headhunterSnapshotRefreshedAt: 6000, blacklist: [],
+      };
+      data.value = currentPayload;
+      vi.mocked(fetchRemote).mockResolvedValue(newerHeadhunterPayload);
+      const sync = useClashSync(data);
+
+      await sync.refreshFromSupabase();
+
+      expect(data.value?.lb).toEqual(currentPayload.lb);
+      expect(data.value?.rosterSnapshotRefreshedAt).toBe(5000);
+      expect(data.value?.hh).toMatchObject(newerHeadhunterPayload.hh);
+      expect(data.value?.headhunterSnapshotRefreshedAt).toBe(6000);
+      expect(data.value?.timestamp).toBe(5000);
+      expect(data.value?.lastFetched).toBe(6000);
+    });
+
+    it("filters dismissed recruits from a retained newer headhunter snapshot", async () => {
+      const retainedRecruit = {
+        id: "DISMISSED", n: "Recently dismissed", t: 0, potentialScore: 0, potentialRawScore: 0,
+        longevity: 0, longevityLabel: "", d: { don: 0, war: 0, ago: "" },
+      };
+      data.value = {
+        lb: [CACHED_MEMBER], hh: [retainedRecruit], timestamp: 5000, dataSource: "SUPABASE",
+        rosterSnapshotRefreshedAt: 5000, headhunterSnapshotRefreshedAt: 5000, blacklist: [],
+      };
+      vi.mocked(fetchRemote).mockResolvedValue({
+        lb: [{ ...CACHED_MEMBER, n: "New roster generation" }], hh: [], timestamp: 4000, dataSource: "SUPABASE",
+        rosterSnapshotRefreshedAt: 6000, headhunterSnapshotRefreshedAt: 4000,
+        blacklist: ["#dismissed"],
+      });
+      const sync = useClashSync(data);
+
+      await sync.refreshFromSupabase();
+
+      expect(data.value?.lb[0]?.n).toBe("New roster generation");
+      expect(data.value?.headhunterSnapshotRefreshedAt).toBe(5000);
+      expect(data.value?.blacklist).toEqual(["#dismissed"]);
+      expect(data.value?.hh).toEqual([]);
+    });
+
+    it("keeps an old cached Supabase payload visible but unverified until markers arrive", async () => {
+      const oldCachedPayload: WebAppData = {
+        lb: [CACHED_MEMBER], hh: [], timestamp: 9000, dataSource: "SUPABASE", blacklist: [],
+      };
+      vi.mocked(loadCache).mockResolvedValue(oldCachedPayload);
+      const sync = useClashSync(data);
+
+      await sync.loadLocal();
+
+      expect(data.value).toMatchObject({ ...oldCachedPayload, timestamp: 0 });
+      expect(sync.lastSync.value).toBe(0);
+
+      const fetchedWithoutMarkers: WebAppData = {
+        lb: [CACHED_MEMBER], hh: [], timestamp: 0, dataSource: "SUPABASE", lastFetched: 10000,
+        rosterSnapshotRefreshedAt: null, headhunterSnapshotRefreshedAt: null, blacklist: [],
+      };
+      vi.mocked(fetchRemote).mockResolvedValue(fetchedWithoutMarkers);
+      await sync.refreshFromSupabase();
+
+      expect(sync.syncStatus.value).toBe("SUCCESS");
+      expect(data.value?.lastFetched).toBe(10000);
+      expect(sync.lastSync.value).toBe(0);
+      expect(data.value?.lb).toHaveLength(1);
+    });
+
+    it("accepts verified remote rows when a legacy heartbeat cache timestamp is newer than publication", async () => {
+      const oldCachedPayload: WebAppData = {
+        lb: [CACHED_MEMBER], hh: [], timestamp: 9000, dataSource: "SUPABASE", lastCompiled: 9000, blacklist: [],
+      };
+      vi.mocked(loadCache).mockResolvedValue(oldCachedPayload);
+      const sync = useClashSync(data);
+      await sync.loadLocal();
+
+      const correctedRemote: WebAppData = {
+        lb: [{ ...CACHED_MEMBER, n: "Verified remote roster" }],
+        hh: [],
+        timestamp: 4000,
+        dataSource: "SUPABASE",
+        rosterSnapshotRefreshedAt: 4000,
+        headhunterSnapshotRefreshedAt: 5000,
+        lastFetched: 10000,
+        blacklist: [],
+      };
+      vi.mocked(fetchRemote).mockResolvedValue(correctedRemote);
+      await sync.refreshFromSupabase();
+
+      expect(data.value?.lb[0]?.n).toBe("Verified remote roster");
+      expect(data.value?.lastCompiled).toBeUndefined();
+      expect(data.value?.timestamp).toBe(4000);
+      expect(sync.lastSync.value).toBe(4000);
+      expect(sync.syncStatus.value).toBe("SUCCESS");
+    });
+
+    it("accepts unknown-marker remote rows over verified cache but keeps freshness unverified", async () => {
+      data.value = {
+        lb: [CACHED_MEMBER], hh: [], timestamp: 4000, dataSource: "SUPABASE",
+        rosterSnapshotRefreshedAt: 4000, headhunterSnapshotRefreshedAt: 4000, blacklist: [],
+      };
+      const sync = useClashSync(data);
+      vi.mocked(fetchRemote).mockResolvedValue({
+        lb: [{ ...CACHED_MEMBER, n: "Unverified remote roster" }],
+        hh: [], timestamp: 0, dataSource: "SUPABASE",
+        rosterSnapshotRefreshedAt: null, headhunterSnapshotRefreshedAt: null, lastFetched: 12000, blacklist: [],
+      });
+
+      await sync.refreshFromSupabase();
+
+      expect(data.value?.lb[0]?.n).toBe("Unverified remote roster");
+      expect(data.value?.lastFetched).toBe(12000);
+      expect(sync.lastSync.value).toBe(0);
+      expect(sync.syncStatus.value).toBe("SUCCESS");
     });
 
     it("should coalesce concurrent callers into one remote attempt", async () => {
@@ -318,7 +445,7 @@ describe("useClashSync", () => {
     it("treats an empty roster over a populated cache as a failed sync", async () => {
       const cachedDataset: WebAppData = { lb: [CACHED_MEMBER] as any, hh: [], timestamp: 1000, dataSource: "SUPABASE", blacklist: [] };
       data.value = cachedDataset;
-      vi.mocked(fetchRemote).mockResolvedValue({ lb: [], hh: [], timestamp: 2000, dataSource: "SUPABASE", blacklist: [] });
+      vi.mocked(fetchRemote).mockResolvedValue({ lb: [], hh: [], timestamp: 2000, dataSource: "SUPABASE", rosterSnapshotRefreshedAt: 2000, headhunterSnapshotRefreshedAt: 2000, blacklist: [] });
       const sync = useClashSync(data);
 
       await sync.refreshFromSupabase();
@@ -330,7 +457,7 @@ describe("useClashSync", () => {
     });
 
     it("commits an empty roster when there is no cached roster to lose", async () => {
-      vi.mocked(fetchRemote).mockResolvedValue({ lb: [], hh: [], timestamp: 2000, dataSource: "SUPABASE", blacklist: [] });
+      vi.mocked(fetchRemote).mockResolvedValue({ lb: [], hh: [], timestamp: 2000, dataSource: "SUPABASE", rosterSnapshotRefreshedAt: 2000, headhunterSnapshotRefreshedAt: 2000, blacklist: [] });
       const sync = useClashSync(data);
 
       await sync.refreshFromSupabase();
@@ -423,7 +550,7 @@ describe("useClashSync", () => {
 
     it("recovers on the next refresh after a transport failure", async () => {
       const remotePayload: WebAppData = {
-        lb: [], hh: [], timestamp: 4600, dataSource: "SUPABASE", blacklist: [],
+        lb: [], hh: [], timestamp: 4600, dataSource: "SUPABASE", rosterSnapshotRefreshedAt: 4600, headhunterSnapshotRefreshedAt: 4600, remoteTimestamp: 4600, blacklist: [],
       };
       vi.mocked(fetchRemote)
         .mockRejectedValueOnce(new TypeError("Failed to fetch"))
@@ -442,7 +569,7 @@ describe("useClashSync", () => {
       // A cold client reports exhausted HTTP retries and clears that diagnosis
       // only after a subsequent remote read succeeds.
       const remotePayload: WebAppData = {
-        lb: [], hh: [], timestamp: 4600, dataSource: "SUPABASE", blacklist: [],
+        lb: [], hh: [], timestamp: 4600, dataSource: "SUPABASE", rosterSnapshotRefreshedAt: 4600, headhunterSnapshotRefreshedAt: 4600, remoteTimestamp: 4600, blacklist: [],
       };
       vi.mocked(fetchRemote)
         .mockRejectedValueOnce(new Error("Roster Fetch Error: canceling statement due to statement timeout"))
@@ -498,7 +625,7 @@ describe("useClashSync", () => {
           id: "TAG1", n: "Recovered Member", t: 1200, performanceScore: 45, performanceRawScore: 50,
           d: { role: "member", days: 12, avg: 30, hist: "W", winRate: 50 },
         }],
-        hh: [], timestamp: 200, dataSource: "SUPABASE", blacklist: [],
+        hh: [], timestamp: 200, dataSource: "SUPABASE", rosterSnapshotRefreshedAt: 200, headhunterSnapshotRefreshedAt: 200, remoteTimestamp: 200, blacklist: [],
       };
       let resolveRecovery: (payload: WebAppData) => void = () => {};
       vi.mocked(fetchRemote)
@@ -555,10 +682,10 @@ describe("useClashSync", () => {
       vi.stubGlobal("document", { visibilityState: "visible" });
       vi.spyOn(Math, "random").mockReturnValue(0.5);
       const cached: WebAppData = {
-        lb: [CACHED_MEMBER], hh: [], timestamp: 100, dataSource: "SUPABASE", blacklist: [],
+        lb: [CACHED_MEMBER], hh: [], timestamp: 100, dataSource: "SUPABASE", rosterSnapshotRefreshedAt: 100, headhunterSnapshotRefreshedAt: 100, blacklist: [],
       };
       const recovered: WebAppData = {
-        lb: [CACHED_MEMBER], hh: [], timestamp: 200, dataSource: "SUPABASE", blacklist: [],
+        lb: [CACHED_MEMBER], hh: [], timestamp: 200, dataSource: "SUPABASE", rosterSnapshotRefreshedAt: 200, headhunterSnapshotRefreshedAt: 200, remoteTimestamp: 200, blacklist: [],
       };
       data.value = cached;
       vi.mocked(fetchRemote)
@@ -711,13 +838,15 @@ describe("useClashSync", () => {
 
     it("runs one fresh trailing pass for invalidations received during an active sync", async () => {
       const stalePayload: WebAppData = {
-        lb: [], hh: [], timestamp: 4200, dataSource: "SUPABASE", blacklist: ["#R1"],
+        lb: [], hh: [], timestamp: 4200, dataSource: "SUPABASE", rosterSnapshotRefreshedAt: 4200, headhunterSnapshotRefreshedAt: 4200, blacklist: ["#R1"],
       };
       const freshPayload: WebAppData = {
         lb: [],
         hh: [{ id: "R1", n: "Restored recruit", t: 4000, d: { don: 10, war: 1, ago: "2026-10-08", cards: 0 } }],
         timestamp: 4300,
         dataSource: "SUPABASE",
+        rosterSnapshotRefreshedAt: 4300,
+        headhunterSnapshotRefreshedAt: 4300,
         blacklist: [],
       };
       let resolveStale: (value: WebAppData) => void = () => {};
@@ -743,9 +872,9 @@ describe("useClashSync", () => {
 
     it("queues a new trailing pass for invalidation during the follow-up without extending prior callers", async () => {
       const payloads: WebAppData[] = [
-        { lb: [], hh: [], timestamp: 4200, blacklist: ["#R1"] },
-        { lb: [], hh: [], timestamp: 4300, blacklist: [] },
-        { lb: [], hh: [], timestamp: 4400, blacklist: ["#R2"] },
+        { lb: [], hh: [], timestamp: 4200, dataSource: "SUPABASE", rosterSnapshotRefreshedAt: 4200, headhunterSnapshotRefreshedAt: 4200, blacklist: ["#R1"] },
+        { lb: [], hh: [], timestamp: 4300, dataSource: "SUPABASE", rosterSnapshotRefreshedAt: 4300, headhunterSnapshotRefreshedAt: 4300, blacklist: [] },
+        { lb: [], hh: [], timestamp: 4400, dataSource: "SUPABASE", rosterSnapshotRefreshedAt: 4400, headhunterSnapshotRefreshedAt: 4400, blacklist: ["#R2"] },
       ];
       const resolvers: Array<(value: WebAppData) => void> = [];
       vi.mocked(fetchRemote).mockImplementation(() => new Promise((resolve) => {
@@ -774,16 +903,18 @@ describe("useClashSync", () => {
 
     it("keeps an invalidation behind queued abort recovery as its own forced pass", async () => {
       const stalePayload: WebAppData = {
-        lb: [], hh: [], timestamp: 4200, dataSource: "SUPABASE", blacklist: ["#R1"],
+        lb: [], hh: [], timestamp: 4200, dataSource: "SUPABASE", rosterSnapshotRefreshedAt: 4200, headhunterSnapshotRefreshedAt: 4200, blacklist: ["#R1"],
       };
       const recoveryPayload: WebAppData = {
-        lb: [], hh: [], timestamp: 4300, dataSource: "SUPABASE", blacklist: ["#R1"],
+        lb: [], hh: [], timestamp: 4300, dataSource: "SUPABASE", rosterSnapshotRefreshedAt: 4300, headhunterSnapshotRefreshedAt: 4300, blacklist: ["#R1"],
       };
       const freshPayload: WebAppData = {
         lb: [],
         hh: [{ id: "R1", n: "Restored recruit", t: 4000, d: { don: 10, war: 1, ago: "2026-10-08", cards: 0 } }],
         timestamp: 4400,
         dataSource: "SUPABASE",
+        rosterSnapshotRefreshedAt: 4400,
+        headhunterSnapshotRefreshedAt: 4400,
         blacklist: [],
       };
       const requests: Array<{
@@ -829,7 +960,7 @@ describe("useClashSync", () => {
 
     it("aborts a doomed request and starts a fresh sync after reconnect", async () => {
       const recoveredPayload: WebAppData = {
-        lb: [], hh: [], timestamp: 4300, dataSource: "SUPABASE", blacklist: [],
+        lb: [], hh: [], timestamp: 4300, dataSource: "SUPABASE", rosterSnapshotRefreshedAt: 4300, headhunterSnapshotRefreshedAt: 4300, remoteTimestamp: 4300, blacklist: [],
       };
       vi.mocked(fetchRemote)
         .mockImplementationOnce(({ signal }) => new Promise((_, reject) => {
@@ -993,7 +1124,7 @@ describe("useClashSync", () => {
 
   describe("commitSyncResult persistence errors", () => {
     it("should log error gracefully and preserve memory state if cache persistence rejects during commit", async () => {
-      const remotePayload: WebAppData = { lb: [], hh: [], timestamp: 4000, dataSource: "SUPABASE", blacklist: [] };
+      const remotePayload: WebAppData = { lb: [], hh: [], timestamp: 4000, dataSource: "SUPABASE", rosterSnapshotRefreshedAt: 4000, headhunterSnapshotRefreshedAt: 4000, remoteTimestamp: 4000, blacklist: [] };
       vi.mocked(fetchRemote).mockResolvedValue(remotePayload);
       vi.mocked(saveCache).mockRejectedValueOnce(new Error("IDB Error"));
       const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});

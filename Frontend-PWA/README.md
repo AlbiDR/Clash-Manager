@@ -58,7 +58,7 @@ Dependencies point inward only: a feature never imports another feature, and onl
 
 ## Platform capabilities
 
-- **Offline-first shell.** The service worker precaches the app and serves it cache-first for a sub-second start. Clan data uses stale-while-revalidate: cached data shows instantly, then a background refresh updates it. (There is no runtime SWR on arbitrary network requests; the shell is precached.)
+- **Offline-first shell.** The service worker precaches the app and serves it cache-first for a sub-second start. Clan data uses stale-while-revalidate: cached data shows instantly, then a background refresh updates it. Roster and headhunter publication freshness are tracked independently from the ingestion heartbeat and from the time the client fetched or rendered cached data. If either snapshot marker is unavailable, cached or fetched rows remain usable but publication freshness is reported as unverified. (There is no runtime SWR on arbitrary network requests; the shell is precached.)
 - **Local persistence.** IndexedDB via `StorageService`, with a transparent in-memory fallback for restricted environments.
 - **Realtime and cross-tab.** Supabase realtime (recruit dismissals, Voyage) plus `BroadcastChannel` keep state consistent across devices and tabs.
 - **OS integration.** Installable, with app shortcuts, a Web Share target for player tags, a `web+clash` protocol handler, desktop side-panel support, app badges, and haptics.
