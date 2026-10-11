@@ -55,12 +55,10 @@ export const lastSyncStatus = ref<"TIMEOUT" | "AUTH" | "VALIDATION" | "OFFLINE" 
 export const OPTIONAL_METADATA_TIMEOUT_MS = 3_000;
 
 /**
- * The pipeline component whose last_success_at dates the game data on screen.
+ * Pipeline component shown by the independent backend health diagnostic.
  *
  * @remarks
- * Nightly maintenance also refreshes the roster snapshot when it completes, but
- * it fetches no game data (it purges, folds and rotates), so counting its stamp
- * would make a stalled ingestor read as fresh after every nightly run.
+ * This health timestamp is not used to date either materialized snapshot.
  */
 const FRESHNESS_SOURCE = "ROYALE_DATA_INGESTOR";
 
@@ -191,11 +189,11 @@ type OptionalQueryResponse = {
 };
 
 /**
- * Runs a non-essential query with its own cancellation scope. The roster and
- * headhunter snapshots stay strict. The heartbeat may degrade because roster
- * timestamps can stand in for it; the blacklist is read through here only while
- * a last known blacklist can stand in for it (see getDismissedTags), because the
- * snapshot no longer filters dismissals server-side.
+ * Runs an optional marker or blacklist query with its own cancellation scope.
+ * A missing marker degrades publication freshness to unknown without discarding
+ * valid rows. The blacklist may degrade only while a last known copy can stand
+ * in for it (see getDismissedTags), because snapshots no longer filter
+ * dismissals server-side.
  *
  * @param label - Diagnostic string identifier for telemetry and logging.
  * @param parentSignal - AbortSignal from the parent fetch context.
@@ -250,22 +248,24 @@ const BlacklistRowsSchema = v.array(v.object({
   player_tag: v.string(),
 }));
 
-const SyncSnapshotMarkerRowsSchema = v.array(v.object({
+const SyncSnapshotMarkerRowsSchema = v.array(v.unknown());
+const SyncSnapshotMarkerRowSchema = v.object({
   snapshot_name: v.picklist(["roster", "headhunter"]),
   generation: v.union([v.string(), v.number()]),
   refreshed_at: v.nullable(v.string()),
-}));
+});
 
 type SnapshotMarkerName = "roster" | "headhunter";
 type SnapshotRefreshMarker = { generation: string; refreshedAt: string };
-type SnapshotMarkers = Record<SnapshotMarkerName, SnapshotRefreshMarker>;
-type SnapshotRows<T> = { marker: SnapshotRefreshMarker; rows: T[] };
+type SnapshotMarkers = Partial<Record<SnapshotMarkerName, SnapshotRefreshMarker>>;
+type SnapshotRows<T> = { marker: SnapshotRefreshMarker | null; rows: T[]; readFromSource: boolean };
+type CachedSnapshotRows<T> = { marker: SnapshotRefreshMarker; rows: T[] };
 type RosterSnapshotRow = v.InferOutput<typeof SbRosterRowSchema>;
 type HeadhunterSnapshotRow = v.InferOutput<typeof SbHeadhunterRowSchema>;
 
 // In-memory only: a cold start always obtains snapshots once before it can skip reads.
-let rosterSnapshotCache: SnapshotRows<RosterSnapshotRow> | null = null;
-let headhunterSnapshotCache: SnapshotRows<HeadhunterSnapshotRow> | null = null;
+let rosterSnapshotCache: CachedSnapshotRows<RosterSnapshotRow> | null = null;
+let headhunterSnapshotCache: CachedSnapshotRows<HeadhunterSnapshotRow> | null = null;
 
 function normalizeSnapshotGeneration(generation: string | number): string | null {
   if (typeof generation === "number") {
@@ -277,19 +277,32 @@ function normalizeSnapshotGeneration(generation: string | number): string | null
 function parseSnapshotMarkers(response: OptionalQueryResponse | null): SnapshotMarkers | null {
   if (!response || response.error) return null;
   const validation = v.safeParse(SyncSnapshotMarkerRowsSchema, response.data);
-  if (!validation.success || validation.output.length !== 2) return null;
+  if (!validation.success) return null;
 
-  const markers: Partial<SnapshotMarkers> = {};
-  for (const row of validation.output) {
-    const generation = normalizeSnapshotGeneration(row.generation);
-    if (!generation || !row.refreshed_at || parseTimestamp(row.refreshed_at) === null || markers[row.snapshot_name]) {
-      return null;
+  const markers: SnapshotMarkers = {};
+  const seenMarkers = new Set<SnapshotMarkerName>();
+  const invalidMarkers = new Set<SnapshotMarkerName>();
+  for (const rawRow of validation.output) {
+    const rawName = typeof rawRow === "object" && rawRow !== null && "snapshot_name" in rawRow
+      ? rawRow.snapshot_name
+      : null;
+    if (rawName !== "roster" && rawName !== "headhunter") continue;
+    if (seenMarkers.has(rawName)) {
+      delete markers[rawName];
+      invalidMarkers.add(rawName);
+      continue;
     }
+    seenMarkers.add(rawName);
+    if (invalidMarkers.has(rawName)) continue;
+    const rowValidation = v.safeParse(SyncSnapshotMarkerRowSchema, rawRow);
+    if (!rowValidation.success) continue;
+    const row = rowValidation.output;
+    const generation = normalizeSnapshotGeneration(row.generation);
+    if (!generation || !row.refreshed_at || parseTimestamp(row.refreshed_at) === null) continue;
     markers[row.snapshot_name] = { generation, refreshedAt: row.refreshed_at };
   }
 
-  if (!markers.roster || !markers.headhunter) return null;
-  return { roster: markers.roster, headhunter: markers.headhunter };
+  return markers;
 }
 
 function markersMatch(left: SnapshotRefreshMarker, right: SnapshotRefreshMarker): boolean {
@@ -309,9 +322,9 @@ async function fetchRosterSnapshot(
   supabase: ReturnType<typeof createSupabaseClient>,
   signal: AbortSignal,
   marker: SnapshotRefreshMarker | null,
-): Promise<RosterSnapshotRow[]> {
+): Promise<SnapshotRows<RosterSnapshotRow>> {
   if (marker && rosterSnapshotCache && markersMatch(rosterSnapshotCache.marker, marker)) {
-    return rosterSnapshotCache.rows;
+    return { ...rosterSnapshotCache, readFromSource: false };
   }
 
   const response = await supabase.schema("features").from("roster_materialized").select("*")
@@ -330,8 +343,8 @@ async function fetchRosterSnapshot(
   if (rejectedRows > 0) console.warn(`[Sync] Dropped ${rejectedRows} invalid roster row(s).`);
   if (rawData.length > 0 && rows.length === 0) throw new Error("Roster validation failed for every row");
 
-  if (marker && rows.length > 0) rosterSnapshotCache = { marker, rows };
-  return rows;
+  const snapshot = { marker, rows, readFromSource: true };
+  return snapshot;
 }
 
 /**
@@ -347,9 +360,9 @@ async function fetchHeadhunterSnapshot(
   supabase: ReturnType<typeof createSupabaseClient>,
   signal: AbortSignal,
   marker: SnapshotRefreshMarker | null,
-): Promise<HeadhunterSnapshotRow[]> {
+): Promise<SnapshotRows<HeadhunterSnapshotRow>> {
   if (marker && headhunterSnapshotCache && markersMatch(headhunterSnapshotCache.marker, marker)) {
-    return headhunterSnapshotCache.rows;
+    return { ...headhunterSnapshotCache, readFromSource: false };
   }
 
   const response = await supabase.schema("features").from("headhunter_materialized").select("*")
@@ -367,8 +380,15 @@ async function fetchHeadhunterSnapshot(
   if (rejectedRows > 0) console.warn(`[Sync] Dropped ${rejectedRows} invalid headhunter row(s).`);
   if (rawData.length > 0 && rows.length === 0) throw new Error("Headhunter validation failed for every row");
 
-  if (marker) headhunterSnapshotCache = { marker, rows };
-  return rows;
+  const snapshot = { marker, rows, readFromSource: true };
+  return snapshot;
+}
+
+function isSameSnapshotMarker(
+  before: SnapshotRefreshMarker | null,
+  after: SnapshotRefreshMarker | null,
+): before is SnapshotRefreshMarker {
+  return before !== null && after !== null && markersMatch(before, after);
 }
 
 /**
@@ -434,7 +454,7 @@ export async function fetchPipelineHealth(): Promise<PipelineHealth | null> {
       .schema("features")
       .from("pipeline_heartbeat_view")
       .select("status,last_success_at,last_triggered_at,last_failure_at")
-      .eq("component_id", "ROYALE_DATA_INGESTOR")
+      .eq("component_id", FRESHNESS_SOURCE)
       .single() as unknown as {
         abortSignal: (signal: AbortSignal) => PromiseLike<{
           data: {
@@ -599,9 +619,9 @@ export async function ping(options?: { signal?: AbortSignal; force?: boolean }):
  * Valibot schema validation on all inbound data.
  *
  * [DECISION LOG] FRESHNESS EVIDENCE RESOLUTION
- * The ingestor heartbeat's last_success_at is the freshness of the payload.
- * Roster row timestamps are only a lower bound, used when the heartbeat
- * cannot be read.
+ * Per-view publication markers date the roster and headhunter snapshots.
+ * Ingestion heartbeat, client fetch time, and cache hydration remain separate
+ * signals and never substitute for missing snapshot publication evidence.
  *
  * @param options - Fetch configuration including AbortSignal.
  * @param options.knownBlacklist - Blacklist committed by the last successful sync;
@@ -623,23 +643,10 @@ export async function fetchRemote(options?: {
   const signal = options?.signal || new AbortController().signal;
   signal.throwIfAborted();
 
-  // [FIX] SCHEMA REACHABILITY: this previously addressed `substrate.pipeline_heartbeat`
-  // directly. The remote Data API exposes only public/storage/graphql_public/features,
-  // so PostgREST rejected every call with PGRST106 and the error was discarded below,
-  // leaving the freshness stamp permanently null. Reads now go through the granted
-  // `features.pipeline_heartbeat_view` projection.
-  const fetchHeartbeats = (heartbeatSignal: AbortSignal) =>
-    supabase.schema('features').from('pipeline_heartbeat_view')
-      .select('component_id,last_success_at')
-      .eq('component_id', FRESHNESS_SOURCE)
-      .abortSignal(heartbeatSignal);
-
   // [ADR] Direct View Access: Bypassing the minimal SW-oriented get_pwa_data RPC
   // to fetch high-fidelity datasets directly from the feature schema.
   // Roster and headhunter are the product payload and stay fail-closed. The
-  // heartbeat is enrichment: a single slow optional projection must not make an
-  // otherwise complete refresh look offline. The blacklist is optional only
-  // while a last known copy exists (see below).
+  // blacklist is optional only while a last known copy exists (see below).
   // [DECISION LOG] SNAPSHOTS, NOT LIVE VIEWS: roster_view and headhunter_view
   // are computed on demand and cost about a second of server time per read,
   // which under load outran the server's 6 s read timeout and left a cold
@@ -666,22 +673,55 @@ export async function fetchRemote(options?: {
   const snapshotMarkers = parseSnapshotMarkers(markerResponse);
   const rosterRequest = fetchRosterSnapshot(supabase, signal, snapshotMarkers?.roster ?? null);
   const headhunterRequest = fetchHeadhunterSnapshot(supabase, signal, snapshotMarkers?.headhunter ?? null);
-  const heartbeatRequest = resolveOptionalQuery("Pipeline heartbeat", signal, fetchHeartbeats);
   const blacklistRequest = options?.knownBlacklist
     ? resolveOptionalQuery("Recruit blacklist", signal, fetchBlacklist)
     : fetchBlacklist(signal);
 
-  const [snapshotResults, heartbeatResponse, blacklistResponse] = await Promise.all([
+  const [snapshotResults, blacklistResponse] = await Promise.all([
     Promise.allSettled([rosterRequest, headhunterRequest]),
-    heartbeatRequest,
     blacklistRequest,
   ]);
   const rosterResult = snapshotResults[0];
   const headhunterResult = snapshotResults[1];
   if (rosterResult.status === "rejected") throw rosterResult.reason;
   if (headhunterResult.status === "rejected") throw headhunterResult.reason;
-  const rosterData = rosterResult.value;
-  const headhunterData = headhunterResult.value;
+  const shouldVerifyMarkers = (rosterResult.value.readFromSource && snapshotMarkers?.roster !== undefined)
+    || (headhunterResult.value.readFromSource && snapshotMarkers?.headhunter !== undefined);
+  // A refresh can commit between the initial marker RPC and either row read.
+  // Recheck only the cheap marker RPC, never repeat the potentially expensive
+  // materialized-view reads. Rows from a changing or unverifiable generation
+  // remain usable, but cannot be labeled fresh or cached under the old marker.
+  const finalMarkerResponse = shouldVerifyMarkers
+    ? await resolveOptionalQuery(
+      "Snapshot marker verification",
+      signal,
+      (markerSignal) => supabase.schema('features')
+        .rpc('sync_snapshot_marker', undefined, { get: true }).abortSignal(markerSignal),
+    )
+    : null;
+  const finalSnapshotMarkers = shouldVerifyMarkers ? parseSnapshotMarkers(finalMarkerResponse) : null;
+  const rosterStable = !rosterResult.value.readFromSource
+    || isSameSnapshotMarker(snapshotMarkers?.roster ?? null, finalSnapshotMarkers?.roster ?? null);
+  const headhunterStable = !headhunterResult.value.readFromSource
+    || isSameSnapshotMarker(snapshotMarkers?.headhunter ?? null, finalSnapshotMarkers?.headhunter ?? null);
+  const rosterSnapshot = {
+    rows: rosterResult.value.rows,
+    marker: rosterStable ? rosterResult.value.marker : null,
+  };
+  const headhunterSnapshot = {
+    rows: headhunterResult.value.rows,
+    marker: headhunterStable ? headhunterResult.value.marker : null,
+  };
+  const rosterMarker = snapshotMarkers?.roster;
+  const headhunterMarker = snapshotMarkers?.headhunter;
+  if (rosterResult.value.readFromSource && rosterStable && rosterMarker && rosterSnapshot.rows.length > 0) {
+    rosterSnapshotCache = { marker: rosterMarker, rows: rosterSnapshot.rows };
+  }
+  if (headhunterResult.value.readFromSource && headhunterStable && headhunterMarker) {
+    headhunterSnapshotCache = { marker: headhunterMarker, rows: headhunterSnapshot.rows };
+  }
+  const rosterData = rosterSnapshot.rows;
+  const headhunterData = headhunterSnapshot.rows;
 
   const blacklistTags = getDismissedTags(blacklistResponse, options?.knownBlacklist);
   const dismissedRecruitIds = new Set(blacklistTags.map(cleanTag));
@@ -693,41 +733,18 @@ export async function fetchRemote(options?: {
   // SSOT: vars.PLAYER_TAG is injected by deploy-pwa.yml as VITE_PLAYER_TAG at build time.
   const playerTag: string = import.meta.env.VITE_PLAYER_TAG || "";
   
-  // [DECISION LOG] THE HEARTBEAT IS THE FRESHNESS SIGNAL
-  // The roster is a snapshot refreshed by the same COMPLETED heartbeat write that
-  // stamps the ingestor's `last_success_at`, so that stamp is how fresh the game
-  // data on screen is. Nightly maintenance also refreshes the snapshot, but only
-  // the ingestor's last_success_at dates the game data (see FRESHNESS_SOURCE).
-  // Row timestamps were combined with it (newest wins) because a run could commit
-  // rows and then report FAILED; such rows now never reach the snapshot, which
-  // refreshes only on COMPLETED. Row timestamps also stop meaning "last ingested"
-  // once unchanged rows are no longer rewritten: a quiet clan would read as stale
-  // and an old member edit would vouch for a stalled pipeline. They remain only a
-  // lower bound for a sync whose heartbeat read failed.
-  const HeartbeatRowsSchema = v.array(v.object({
-    last_success_at: v.nullable(v.string()),
-  }));
-  const heartbeatValidation = heartbeatResponse?.error || !heartbeatResponse?.data
-    ? null
-    : v.safeParse(HeartbeatRowsSchema, heartbeatResponse.data);
-  if (!heartbeatResponse || heartbeatResponse.error || (heartbeatValidation && !heartbeatValidation.success)) {
-    console.warn("[Sync] Pipeline heartbeat unavailable; using roster timestamps as a lower bound on freshness.");
-  }
-  const heartbeatTimestamps = heartbeatValidation?.success
-    ? heartbeatValidation.output
-      .map((heartbeatRow) => parseTimestamp(heartbeatRow.last_success_at))
-      .filter((heartbeatStamp): heartbeatStamp is number => heartbeatStamp !== null)
-    : [];
-  const heartbeatTimestamp = heartbeatTimestamps.length > 0 ? Math.max(...heartbeatTimestamps) : null;
-  const rosterTimestamps = rosterData
-    .map((rosterRow) => parseTimestamp(rosterRow.last_ingested_at))
-    .filter((rosterTimestamp): rosterTimestamp is number => rosterTimestamp !== null);
-  const rosterTimestamp = rosterTimestamps.length > 0 ? Math.max(...rosterTimestamps) : null;
-
-  // [DECISION LOG] NO FORGED FRESHNESS
-  // Never replace unknown freshness with the client's current clock, as doing so
-  // makes arbitrarily old source data appear freshly ingested.
-  const timestamp = heartbeatTimestamp ?? rosterTimestamp ?? 0;
+  const rosterSnapshotRefreshedAt = rosterSnapshot.marker
+    ? parseTimestamp(rosterSnapshot.marker.refreshedAt)
+    : null;
+  const headhunterSnapshotRefreshedAt = headhunterSnapshot.marker
+    ? parseTimestamp(headhunterSnapshot.marker.refreshedAt)
+    : null;
+  // The combined payload is only as fresh as its older view. If either
+  // publication marker is unavailable, its age is unknown, so the legacy
+  // aggregate timestamp remains zero and the UI reports unverified freshness.
+  const timestamp = rosterSnapshotRefreshedAt !== null && headhunterSnapshotRefreshedAt !== null
+    ? Math.min(rosterSnapshotRefreshedAt, headhunterSnapshotRefreshedAt)
+    : 0;
   signal.throwIfAborted();
   
   const webAppData: WebAppData = {
@@ -735,16 +752,11 @@ export async function fetchRemote(options?: {
     hh: headhunterRecruits,
     playerTag,
     timestamp,
+    rosterSnapshotRefreshedAt,
+    headhunterSnapshotRefreshedAt,
     dataSource: "SUPABASE",
     remoteTimestamp: timestamp,
-    lastCompiled: timestamp,
-    // [DECISION LOG] WHEN WE FETCHED, NOT WHEN THE SOURCE LAST RAN:
-    // All three of these carried the ingestor's heartbeat, so the app held one
-    // number under three names and could not tell "this client has not synced
-    // in a while" from "the client is syncing fine and the upstream pipeline is
-    // behind". Those are opposite faults with opposite remedies, and the status
-    // pill reported both of them as STALE, which reads to an operator as the app
-    // having failed. This is the client's own clock.
+    // No single compilation time is claimed for independently refreshed views.
     lastFetched: Date.now(),
     blacklist: blacklistTags,
   };
