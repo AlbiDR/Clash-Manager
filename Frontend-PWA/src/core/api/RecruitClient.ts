@@ -399,6 +399,12 @@ export function subscribeToBlacklist(
           }
           return;
         }
+        // A timeout or close can arrive without an Error (SDK join timeout does
+        // exactly this). Every interruption can lose blacklist events, even
+        // when the socket stays connected; reconcile once the channel rejoins.
+        if (status === "TIMED_OUT" || status === "CLOSED" || status === "CHANNEL_ERROR") {
+          wasInterrupted = true;
+        }
         if (!realtimeSubscriptionError) return;
         if (!client.realtime.isConnected()) {
           wasInterrupted = true;

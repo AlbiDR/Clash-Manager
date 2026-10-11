@@ -119,7 +119,10 @@ export const getSupabaseKey = (): string => import.meta.env.VITE_SUPABASE_PUBLIS
 
 function buildSupabaseClient() {
     return createClient(getSupabaseUrl(), getSupabaseKey(), {
-        db: { schema: 'features' },
+        // The transport owns the retry budget and SQLSTATE exclusions. The
+        // SDK's default retry layer would replay an exhausted read, including
+        // statement timeouts that fetchSupabaseFresh deliberately does not retry.
+        db: { schema: 'features', retry: false },
         // This application has no user sessions. Skip GoTrue initialization
         // entirely so every REST/RPC read cannot wait behind a browser auth
         // storage lock held by a suspended tab. The SDK still sends the public

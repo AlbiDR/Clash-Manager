@@ -207,10 +207,39 @@ export function useClashSync(data: Ref<WebAppData | null>) {
     }
   }
 
+  // Healthy short app switches retain the normal freshness threshold. A
+  // failed read instead needs one new chance on a real foreground/reconnect
+  // transition, not the next backed-off poll several minutes later.
+  function handleConnectionRecovery() {
+    if (
+      disposed
+      || !isOnline.value
+      || typeof document === "undefined"
+      || document.visibilityState !== "visible"
+      || consecutiveSyncFailures.value === 0
+      || (lastSyncStatus.value !== "TIMEOUT" && lastSyncStatus.value !== "OFFLINE")
+    ) return;
+
+    clearRecoveryTimer();
+    recoveryAttempted = true;
+    void startBackgroundSync(true);
+  }
+
+  const visibilityDocument = typeof document !== "undefined" ? document : null;
+  let previousVisibility = visibilityDocument?.visibilityState;
+  function handleVisibilityRecovery() {
+    const visibility = visibilityDocument?.visibilityState;
+    const returnedToForeground = visibility === "visible" && previousVisibility === "hidden";
+    previousVisibility = visibility;
+    if (returnedToForeground) handleConnectionRecovery();
+  }
+  visibilityDocument?.addEventListener?.("visibilitychange", handleVisibilityRecovery);
+
   if (getCurrentScope()) {
     onScopeDispose(() => {
       disposed = true;
       clearRecoveryTimer();
+      visibilityDocument?.removeEventListener?.("visibilitychange", handleVisibilityRecovery);
     });
   }
 
@@ -259,6 +288,7 @@ export function useClashSync(data: Ref<WebAppData | null>) {
     if (!online && activeSyncController && !activeSyncController.signal.aborted) {
       activeSyncController.abort(new Error("Network connection lost"));
     }
+    if (online) handleConnectionRecovery();
   });
 
   // --- ACTIONS ---
