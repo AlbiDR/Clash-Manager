@@ -16,6 +16,15 @@ LAST_AGED:   2026-10-10
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-11] PR #2159 [Stage 2]: Expanded abortSignal.spec.ts unit test coverage for undefined signal, missing method, and fallback DOMException edge cases.
+**Domain:** verification | **Commit:** 151b60a46 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2159)
+**Files:** .github/nightly-logs/02-verification-coverage.log, .github/nightly-logs/02-verification-pr-body.md, Backend/supabase/functions/_shared/shared-tests/abortSignal.spec.ts
+**Why:** Closed partial coverage gap in shared AbortSignal utility helpers.
+**Change:** Expanded abortSignal.spec.ts unit test coverage for undefined signal, missing method, and fallback DOMException edge cases.
+**Result:** Added 5 edge case unit test assertions in Backend/supabase/functions/_shared/shared-tests/abortSignal.spec.ts. Mutation proofing confirmed that invalid signals and missing abortSignal functions are properly caught.
+**Nudges:** 0
+
+
 ### [2026-10-10] PR #2158 [Stage 1]: Audited Edge Function endpoints, in-memory state variables, Valibot boundary schemas, and cross-layer architectural isolations across 83 changed files and Edge Functions; zero threat vectors found
 **Domain:** hardening | **Commit:** e9691e6c4 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2158)
 **Files:** .github/nightly-logs/00-pr-history.md, .github/nightly-logs/01-hardening-coverage.log, .github/nightly-logs/01-hardening-pr-body.md
