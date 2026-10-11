@@ -49,6 +49,7 @@ To enforce strict schema boundaries at the L5 control surface (ADR Section III),
 | :--- | :--- |
 | `protocol.ts` | The shared request handler (`clinicalServe`): CORS, bearer auth, Valibot validation, and telemetry around every function. |
 | `errors.ts` | Typed Protocol Errors: `ProtocolError` class, error mappings, stable classifications, and client-safe serialization. |
+| `abortSignal.ts` | PostgREST query builder cancellation signal attachment (`withAbortSignal`) and cancellation error assertion (`throwIfAborted`). |
 | `muscle.ts` | Clash Royale API access: `fetchWithRotation` (random-start key rotation + exponential backoff) and `processBatch` (concurrency-limited fan-out via `p-limit`). |
 | `vault.ts` | Loads secrets from Supabase Vault into `Deno.env` at function start (`get_vault_secret` RPC, with an env fallback). |
 | `utils.ts` | Shared helpers: `normalizeTag`, `normalizeRarity`, and `calculateRpos` (the raw recruit potential score). |
