@@ -10,7 +10,7 @@ import {
   SUPABASE_READ_RETRY_LIMIT,
   SUPABASE_READ_TIMEOUT_MS,
 } from "../SupabaseTransport";
-import { fetchRemote } from "../SupabaseClient";
+import { createSupabaseClient, fetchRemote } from "../SupabaseClient";
 
 const ROSTER_URL = "https://test.supabase.co/rest/v1/roster_view";
 const RECRUITS_URL = "https://test.supabase.co/rest/v1/headhunter_view";
@@ -152,14 +152,14 @@ describe("Supabase read transport", () => {
 });
 
 describe("Requests issued per failed sync", () => {
-  it("issues one request per read when the database cancels every read for its statement timeout", async () => {
+  it.each([500, 503, 504])("issues one request per read for statement timeouts returned as HTTP %i", async (status) => {
     vi.stubEnv("VITE_SUPABASE_URL", "https://test.supabase.co");
     vi.stubEnv("VITE_SUPABASE_PUBLISHABLE_KEY", "test-key");
     /** Marker RPC, roster, headhunter and blacklist; failed rows stop verification. */
     const READS_PER_SYNC = 4;
     const fetchMock = vi.fn((request: Request) => {
       const endpoint = new URL(request.url).pathname;
-      return Promise.resolve(Response.json({ ...STATEMENT_TIMEOUT_BODY, message: `cancelled ${endpoint}` }, { status: 500 }));
+      return Promise.resolve(Response.json({ ...STATEMENT_TIMEOUT_BODY, message: `cancelled ${endpoint}` }, { status }));
     });
     vi.stubGlobal("fetch", fetchMock);
     vi.useFakeTimers();
@@ -180,5 +180,20 @@ describe("Requests issued per failed sync", () => {
       new URL(request.url).pathname === "/rest/v1/rpc/sync_snapshot_marker",
     )?.[0];
     expect(markerRequest?.method).toBe("GET");
+  });
+
+  it("does not multiply the transport retry budget through the real SDK", async () => {
+    vi.stubEnv("VITE_SUPABASE_URL", "https://test.supabase.co");
+    vi.stubEnv("VITE_SUPABASE_PUBLISHABLE_KEY", "test-key");
+    vi.useFakeTimers();
+    const fetchMock = vi.fn(() => Promise.resolve(Response.json({ code: "PGRST000" }, { status: 503 })));
+    vi.stubGlobal("fetch", fetchMock);
+    const read = Promise.resolve(createSupabaseClient().from("roster_materialized").select("*"));
+
+    await vi.advanceTimersByTimeAsync(60_000);
+
+    expect((await read).error?.code).toBe("PGRST000");
+    expect(fetchMock).toHaveBeenCalledTimes(SUPABASE_READ_RETRY_LIMIT + 1);
+    expect(vi.getTimerCount()).toBe(0);
   });
 });
