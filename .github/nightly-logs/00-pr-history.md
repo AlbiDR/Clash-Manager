@@ -16,6 +16,15 @@ LAST_AGED:   2026-10-10
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-11] PR #2160 [Stage 3]: Migration 20260915190011_backend_health_and_safe_maintenance.sql blocked by static view history audit violation on pipeline_heartbeat_view expansion.
+**Domain:** database | **Commit:** a38bbca63 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2160)
+**Files:** .github/nightly-logs/03-baseline-consolidation-coverage.log, .github/nightly-logs/03-baseline-consolidation-pr-body.md
+**Why:** Folding pipeline_heartbeat_view column expansion into baseline caused pnpm audit:migrations to fail due to historical migration column signature mismatch. Restored baseline checkpoint.
+**Change:** Migration 20260915190011_backend_health_and_safe_maintenance.sql blocked by static view history audit violation on pipeline_heartbeat_view expansion.
+**Result:** PARTIAL-RUN: 30 migrations remaining; 20260915190011_backend_health_and_safe_maintenance.sql blocked by pnpm audit:migrations view history check.
+**Nudges:** 0
+
+
 ### [2026-10-11] PR #2159 [Stage 2]: Expanded abortSignal.spec.ts unit test coverage for undefined signal, missing method, and fallback DOMException edge cases.
 **Domain:** verification | **Commit:** 151b60a46 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2159)
 **Files:** .github/nightly-logs/02-verification-coverage.log, .github/nightly-logs/02-verification-pr-body.md, Backend/supabase/functions/_shared/shared-tests/abortSignal.spec.ts
