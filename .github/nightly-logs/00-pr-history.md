@@ -16,6 +16,15 @@ LAST_AGED:   2026-10-10
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-11] PR #2161 [Stage 4]: Inspected 83 changed files and Edge Functions for SQL view substrate hygiene; zero structural rot or unreferenced views found.
+**Domain:** optimization | **Commit:** 0703b5cdd | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2161)
+**Files:** .github/nightly-logs/04-optimization-coverage.log, .github/nightly-logs/04-optimization-pr-body.md
+**Why:** Systematic source-level audit verified view references across Edge Functions and PWA, finding all 9 views referenced and zero dead js files or structural rot.
+**Change:** Inspected 83 changed files and Edge Functions for SQL view substrate hygiene; zero structural rot or unreferenced views found.
+**Result:** PASSED (pnpm test 219 files, 2318 tests)
+**Nudges:** 0
+
+
 ### [2026-10-11] PR #2160 [Stage 3]: Migration 20260915190011_backend_health_and_safe_maintenance.sql blocked by static view history audit violation on pipeline_heartbeat_view expansion.
 **Domain:** database | **Commit:** a38bbca63 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2160)
 **Files:** .github/nightly-logs/03-baseline-consolidation-coverage.log, .github/nightly-logs/03-baseline-consolidation-pr-body.md
