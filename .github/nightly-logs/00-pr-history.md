@@ -16,6 +16,15 @@ LAST_AGED:   2026-10-10
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-11] PR #2167 [Stage 10]: Verified wrapper invariants: asset links, manifest parity, version code/name sync, release metadata, and security policy via pnpm audit:apk and pnpm apk:verify:source.
+**Domain:** apk | **Commit:** c8348dfb4 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2167)
+**Files:** .github/nightly-logs/10-apk-integrity-coverage.log, .github/nightly-logs/10-apk-integrity-pr-body.md
+**Why:** No wrapper or manifest mismatches were detected during the nightly audit.
+**Change:** Verified wrapper invariants: asset links, manifest parity, version code/name sync, release metadata, and security policy via pnpm audit:apk and pnpm apk:verify:source.
+**Result:** pnpm audit:apk, pnpm apk:verify:source, and pnpm test:apk-release passed with zero errors.
+**Nudges:** 0
+
+
 ### [2026-10-11] PR #2166 [Stage 9]: CLEAN: 83 files, 0 dep-viols, knip: 11 files, 1 dep (@formkit/auto-animate), 0 exports. streak:1. Modules: useClashSync.ts, useProgressiveList.ts. Closest: useClashSync.ts (single-flight lock). Hunt: useProgressiveList.ts timer race passed.
 **Domain:** architecture | **Commit:** 3d57f5d2c | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2166)
 **Files:** .github/nightly-logs/09-refactor-proposals-coverage.log, .github/nightly-logs/09-refactor-proposals-pr-body.md
