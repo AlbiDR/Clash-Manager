@@ -31,7 +31,7 @@
  */
 
 import { execFileSync } from "node:child_process";
-import { existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -259,6 +259,7 @@ function populationSnapshotExpression(route, networkEvidence = null) {
       routeHeading,
       sourceStatus,
       visibleCards,
+      appVersion: localStorage.getItem("app_version"),
       cache,
       supabase,
     };
@@ -353,7 +354,7 @@ export function routeHash(route) {
 }
 
 /** Judge UI population against the read-only client cache and observed Supabase responses. */
-export function assessPopulationSnapshot(snapshot) {
+export function assessPopulationSnapshot(snapshot, expectedVersion = null) {
   const route = snapshot?.route;
   const roster = route === "/roster";
   const headhunter = route === "/headhunter";
@@ -364,6 +365,7 @@ export function assessPopulationSnapshot(snapshot) {
   let message = null;
 
   if (!roster && !headhunter) message = `unsupported population route ${String(route)}`;
+  else if (expectedVersion && snapshot?.appVersion !== expectedVersion) message = `WebView app version is ${String(snapshot?.appVersion ?? "missing")}, expected ${expectedVersion}`;
   else if (!snapshot?.routeReady) message = `${route} route did not become ready`;
   else if (snapshot?.routeHeading !== (roster ? "Roster" : "Headhunter")) message = `${route} rendered ${String(snapshot?.routeHeading ?? "no route heading")}`;
   else if (snapshot?.sourceStatus !== "DB") message = `${route} status pill is ${String(snapshot?.sourceStatus ?? "missing")}, expected DB`;
@@ -384,6 +386,7 @@ export function assessPopulationSnapshot(snapshot) {
     status: message ? "FAIL" : "PASS",
     message,
     route,
+    appVersion: snapshot?.appVersion ?? null,
     datasetSource: cache?.dataSource ?? null,
     sourceStatus: snapshot?.sourceStatus ?? null,
     cachedRows: Number.isInteger(rowCount) ? rowCount : null,
@@ -823,6 +826,8 @@ async function exerciseDisplay(report, options, device, output) {
 
 async function run(options, output) {
   const report = createReport(output);
+  const expectedVersion = JSON.parse(readFileSync(path.join(REPOSITORY_DIR, "package.json"), "utf8")).version;
+  report.app.expectedWebVersion = expectedVersion;
   let device = null;
 
   try {
@@ -898,7 +903,7 @@ async function run(options, output) {
         if (route.path === "/roster" || route.path === "/headhunter") {
           await attempt(report, `populated Supabase client data: ${route.path}`, () => {
             const snapshot = pageEval(populationSnapshotExpression(route.path, networkEvidence));
-            const assessment = assessPopulationSnapshot(snapshot);
+            const assessment = assessPopulationSnapshot(snapshot, expectedVersion);
             if (assessment.status !== "PASS") {
               throw new Error(`${assessment.message}; observed ${JSON.stringify(assessment)}`);
             }

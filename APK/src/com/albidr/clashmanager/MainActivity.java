@@ -318,7 +318,10 @@ public class MainActivity extends Activity {
         settings.setMediaPlaybackRequiresUserGesture(false);
         settings.setOffscreenPreRaster(true);
         settings.setSafeBrowsingEnabled(true);
-        settings.setCacheMode(WebSettings.LOAD_CACHE_ELSE_NETWORK);
+        // Honor HTTP freshness instead of keeping an expired app shell forever.
+        // The PWA service worker owns offline asset caching; the native cache
+        // must not resurrect an older index or worker during an update/reload.
+        settings.setCacheMode(WebSettings.LOAD_DEFAULT);
         // The manifest already forbids cleartext traffic app-wide; ALWAYS_ALLOW here
         // actively fought that by letting an https page embed http subresources.
         settings.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
