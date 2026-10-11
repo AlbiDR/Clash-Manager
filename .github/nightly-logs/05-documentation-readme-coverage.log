@@ -195,3 +195,4 @@
 * [2026-10-08] [Stage 5] [03:15Z-03:21Z 7m] [checks doc-debt=OK] CLEAN: Codebase -- Audited 8 doc-debt source files and verified adjacent Edge Function READMEs
 * [2026-10-09] [Stage 5] [03:22Z-03:28Z 5m] [checks doc-debt=OK] CHANGED: Frontend-PWA/src/shared/ui/README.md -- Reconcile StatusPill, BaseSelect, and ConfirmDialog documentation with useDismissOnBack integration
 * [2026-10-10] [Stage 5] [03:27Z-03:30Z 3m] [checks doc-debt=OK] CLEAN: Codebase -- Audited 4 doc-debt files against headhunter-scanner and _shared READMEs; confirmed prose accuracy
+* [2026-10-11] [Stage 5] [03:08Z-03:10Z 3m] [checks doc-debt=OK] CHANGED: Backend/supabase/functions/_shared/README.md -- Reconcile _shared README with abortSignal.ts PostgREST query builder cancellation helper

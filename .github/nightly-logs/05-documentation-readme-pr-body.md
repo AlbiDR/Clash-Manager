@@ -1,29 +1,26 @@
 ### Nightly Stage 5: Documentation README - Architecture Truth Architect
 
-**Status:** CLEAN
+**Status:** CHANGED
 
-In plain terms: nothing needed fixing. This run checked the documentation README area and found it already correct, so the only file here is the log recording that the check happened.
+In plain terms: this is a documentation change to 1 file in the documentation README area. Nothing about how the app runs is affected.
 
-**What was checked:** Audited 4 doc-debt files against headhunter-scanner and _shared READMEs; confirmed prose accuracy
+**What changed:** Reconcile _shared README with abortSignal.ts PostgREST query builder cancellation helper
 
-**Why:** Scanner timeout and profiler error-handling changes did not invalidate high-level architectural README prose
+**Why:** abortSignal.ts was recently updated/tested in PR #2159 but was absent from Backend/supabase/functions/_shared/README.md Contents table
 
-**Result:** Audit completed with no source change required.
+**Result:** PASSED git diff --check
 
-**Files changed:** .github/nightly-logs/05-documentation-readme-coverage.log
-
-**Verified accurate:** Backend/supabase/functions/_shared/config.ts, Backend/supabase/functions/headhunter-scanner/scanner.ts, Backend/supabase/functions/headhunter-scanner/stages/profiler.ts, Backend/supabase/functions/headhunter-scanner/scanner.spec.ts
+**Files changed:** .github/nightly-logs/05-documentation-readme-coverage.log, Backend/supabase/functions/_shared/README.md
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: documentation
-  Cycle: nightly-cycle/2026-10-10
+  Cycle: nightly-cycle/2026-10-11
   Contract: cea68a5bbba1bd2cbc6d3bdfe2639f37f3935b571beab59f5da1501b1180b22d
-  Why: Scanner timeout and profiler error-handling changes did not invalidate high-level architectural README prose
-  Change: Audited 4 doc-debt files against headhunter-scanner and _shared READMEs; confirmed prose accuracy
-  Result: Audit completed with no source change required.
-  Files: .github/nightly-logs/05-documentation-readme-coverage.log
-  Verified: Backend/supabase/functions/_shared/config.ts, Backend/supabase/functions/headhunter-scanner/scanner.ts, Backend/supabase/functions/headhunter-scanner/stages/profiler.ts, Backend/supabase/functions/headhunter-scanner/scanner.spec.ts
-  Nudges: 1
-  Execution: fef859720d4be2b47b2c307a4446f9f9c00bb2ce
+  Why: abortSignal.ts was recently updated/tested in PR #2159 but was absent from Backend/supabase/functions/_shared/README.md Contents table
+  Change: Reconcile _shared README with abortSignal.ts PostgREST query builder cancellation helper
+  Result: PASSED git diff --check
+  Files: .github/nightly-logs/05-documentation-readme-coverage.log, Backend/supabase/functions/_shared/README.md
+  Nudges: 0
+  Execution: 2148568a5876f4929a24b65e8b7002e6070c069d
 -->
