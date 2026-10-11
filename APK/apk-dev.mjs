@@ -95,6 +95,7 @@ function ensureAvd(sdk, avdHome, emulator) {
   ].join("\n"));
   writeFileSync(path.join(avdDir, "config.ini"), [
     `AvdId=${emulator.avd}`, `avd.ini.displayname=Clash Manager ${platform}`, "avd.ini.encoding=UTF-8",
+    `PlayStore.enabled=${tag === "google_apis_playstore" ? "true" : "false"}`,
     `abi.type=${abi}`, `hw.cpu.arch=${abi.startsWith("arm64") ? "arm64" : abi}`, "hw.cpu.ncore=4", "hw.ramSize=4096",
     "disk.dataPartition.size=6G", `image.sysdir.1=${imageDir}`, `tag.id=${tag}`, `target=${platform}`,
     `hw.lcd.width=${emulator.screen.width}`, `hw.lcd.height=${emulator.screen.height}`, `hw.lcd.density=${emulator.screen.density}`,

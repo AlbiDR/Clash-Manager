@@ -7,6 +7,8 @@
 
 This is a hand-written WebView app scaffolded on a Bubblewrap/TWA base. The Trusted Web Activity plumbing is left in place but dormant; the app actually launches through a custom `MainActivity` WebView so it can expose a native bridge and run background automation the browser cannot. The source of truth is the Java in [`src/`](src); the shipped binary is `android/classes.dex`.
 
+The minimum supported version is Android 13 (API 33), configured in `android/apktool.yml`. The target and compile SDK remain Android 16 (API 36), so supporting older devices preserves the current platform behavior on newer Android versions. The build reads the minimum SDK from that same configuration for DEX desugaring.
+
 ## Blitz Mode
 
 The headline native feature. When you multi-select recruits in the app and hit Blitz, the wrapper:
@@ -92,7 +94,7 @@ Reuse `node APK/apk-dev.mjs start`; never force-stop CM Dev (`am start -S`, `am 
 
 `node APK/apk-dev.mjs` drives it over adb: `install`, `start` (`--rehearsal` runs Blitz without opening Clash Royale, which switches USB debugging off while it is open), `shot`, `ui`, `logs`, `eval "<js>"` inside the WebView, and `emulator`.
 
-`node APK/apk-dev.mjs emulator` creates (once) and boots the virtual phone pinned in `toolchain.json` (Android 16 at the owner's Pixel 10 screen size) and prints its serial; with a phone also attached, set `ANDROID_SERIAL` to choose. It draws with the Mac's GPU, at the Pixel 10's exact layout size but a lower pixel density, without sound or cameras; `pnpm apk:emulator:app` builds **Android Emulator.app** in `/Applications`, which starts it from Finder or the Dock with no terminal or agent (rebuild it after moving the repository). `node APK/apk-dev.mjs debloat` disables the preinstalled Google apps that sync in the background (listed in `toolchain.json`, undone with `adb shell pm enable <package>`). It needs the SDK's `emulator` package and that system image installed. Clash Royale does not run there, so real-game checks stay on a phone; rehearsals cover the rest. Accessibility is a security setting and is switched on by a person, once per install.
+`node APK/apk-dev.mjs emulator` creates (once) and boots the virtual phone pinned in `toolchain.json` (Android 16 with Google Play Store at the owner's Pixel 10 screen size) and prints its serial; with a phone also attached, set `ANDROID_SERIAL` to choose. It draws with the Mac's GPU, at the Pixel 10's exact layout size but a lower pixel density, without sound or cameras; `pnpm apk:emulator:app` builds **Android Emulator.app** in `/Applications`, which starts it from Finder or the Dock with no terminal or agent (rebuild it after moving the repository). `node APK/apk-dev.mjs debloat` disables the preinstalled Google apps that sync in the background (listed in `toolchain.json`, undone with `adb shell pm enable <package>`). It needs the SDK's `emulator` package and that system image installed. Clash Royale does not run there, so real-game checks stay on a phone; rehearsals cover the rest. Accessibility is a security setting and is switched on by a person, once per install.
 
 After installing CM Dev, run `pnpm apk:device` for the opt-in
 wrapper smoke run. It starts the already-installed app safely, verifies the
