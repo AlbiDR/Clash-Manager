@@ -923,6 +923,25 @@ describe("useClashSync", () => {
       expect(data.value).toEqual(remotePayload);
     });
 
+    it("shares one read between listeners notified by the same invalidation", async () => {
+      let resolveRemote: (value: WebAppData) => void = () => {};
+      const payload: WebAppData = { lb: [], hh: [], timestamp: 4200, blacklist: [] };
+      vi.mocked(fetchRemote).mockReturnValue(new Promise((resolve) => {
+        resolveRemote = resolve;
+      }));
+      const sync = useClashSync(data);
+
+      const appListener = sync.refreshAfterInvalidation();
+      const recruiterListener = sync.refreshAfterInvalidation();
+      expect(appListener).toBe(recruiterListener);
+      await Promise.resolve();
+      expect(fetchRemote).toHaveBeenCalledTimes(1);
+      resolveRemote(payload);
+      await Promise.all([appListener, recruiterListener]);
+      expect(fetchRemote).toHaveBeenCalledTimes(1);
+      expect(data.value).toEqual(payload);
+    });
+
     it("runs one fresh trailing pass for invalidations received during an active sync", async () => {
       const stalePayload: WebAppData = {
         lb: [], hh: [], timestamp: 4200, dataSource: "SUPABASE", rosterSnapshotRefreshedAt: 4200, headhunterSnapshotRefreshedAt: 4200, blacklist: ["#R1"],

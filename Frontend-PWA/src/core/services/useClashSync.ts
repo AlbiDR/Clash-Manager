@@ -174,6 +174,9 @@ export function useClashSync(data: Ref<WebAppData | null>) {
   /** One invalidation refresh queued behind the current pass, if any. */
   let queuedInvalidationPromise: Promise<SyncAttemptResult> | null = null;
 
+  /** Coalesces synchronous listeners notified by the same server event. */
+  let invalidationBatchPromise: Promise<void> | null = null;
+
   /** One automatic foreground recovery attempt after a transient timeout. */
   let recoveryTimer: ReturnType<typeof setTimeout> | null = null;
   let recoveryAttempted = false;
@@ -612,8 +615,14 @@ export function useClashSync(data: Ref<WebAppData | null>) {
    * Refreshes after a server invalidation, queuing one pass behind an active sync.
    * Invalidation callers share a queued pass and resolve when that pass finishes.
    */
-  async function refreshAfterInvalidation(): Promise<void> {
-    await runSync("manual", true, true);
+  function refreshAfterInvalidation(): Promise<void> {
+    if (invalidationBatchPromise) return invalidationBatchPromise;
+    invalidationBatchPromise = Promise.resolve().then(() => {
+      // Release before the read starts: a later event must still queue a fresh pass.
+      invalidationBatchPromise = null;
+      return runSync("manual", true, true);
+    });
+    return invalidationBatchPromise;
   }
 
   /**
