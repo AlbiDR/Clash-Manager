@@ -16,6 +16,15 @@ LAST_AGED:   2026-10-10
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-12] PR #2176 [Stage 6]: docs(tsdoc): harden useClashSync TSDoc interface contracts and inline logic annotations
+**Domain:** documentation | **Commit:** a4003a56e | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2176)
+**Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, .github/nightly-logs/06-documentation-tsdoc-pr-body.md, Frontend-PWA/src/core/services/useClashSync.ts
+**Why:** Hardened interface contracts and added decision logs and threat tags to useClashSync helper functions and recovery logic.
+**Change:** docs(tsdoc): harden useClashSync TSDoc interface contracts and inline logic annotations
+**Result:** PASSED (78/78 tests passed)
+**Nudges:** 0
+
+
 ### [2026-10-12] PR #2175 [Stage 5]: Verified SupabaseClient.ts documentation accuracy in Frontend-PWA/src/core/api/README.md
 **Domain:** documentation | **Commit:** 08b090b98 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2175)
 **Files:** .github/nightly-logs/05-documentation-readme-coverage.log, .github/nightly-logs/05-documentation-readme-pr-body.md
