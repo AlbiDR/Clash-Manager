@@ -35,6 +35,13 @@ type SyncAttemptResult =
 
 type SnapshotFreshnessKey = "rosterSnapshotRefreshedAt" | "headhunterSnapshotRefreshedAt";
 
+/**
+ * Extracts a verified positive numeric freshness timestamp from a WebAppData snapshot key.
+ *
+ * @param dataSnapshot - The WebAppData snapshot object.
+ * @param key - Specific snapshot freshness property key.
+ * @returns Positive numeric timestamp or null if invalid/missing.
+ */
 function getSnapshotFreshnessTimestamp(dataSnapshot: WebAppData, key: SnapshotFreshnessKey): number | null {
   const timestamp = dataSnapshot[key];
   return typeof timestamp === "number" && Number.isFinite(timestamp) && timestamp > 0
@@ -42,6 +49,16 @@ function getSnapshotFreshnessTimestamp(dataSnapshot: WebAppData, key: SnapshotFr
     : null;
 }
 
+/**
+ * Computes conservative publication timestamp across all active Supabase snapshot streams.
+ *
+ * @remarks
+ * [DECISION LOG] Freshness is conservative across all sub-domains: the combined timestamp
+ * is the minimum of both roster and headhunter snapshot times to prevent premature staleness clearance.
+ *
+ * @param dataSnapshot - The WebAppData snapshot object.
+ * @returns Minimum snapshot timestamp or zero if unknown or non-Supabase source.
+ */
 function getCombinedSnapshotTimestamp(dataSnapshot: WebAppData): number {
   if (dataSnapshot.dataSource !== "SUPABASE") return dataSnapshot.timestamp;
   const rosterTimestamp = getSnapshotFreshnessTimestamp(dataSnapshot, "rosterSnapshotRefreshedAt");
@@ -51,6 +68,12 @@ function getCombinedSnapshotTimestamp(dataSnapshot: WebAppData): number {
     : 0;
 }
 
+/**
+ * Normalizes legacy compilation markers into authoritative snapshot freshness timestamps.
+ *
+ * @param dataSnapshot - The incoming WebAppData snapshot object.
+ * @returns Normalized WebAppData object with legacy properties stripped and timestamp synchronized.
+ */
 function normalizeSnapshotFreshness(dataSnapshot: WebAppData): WebAppData {
   if (dataSnapshot.dataSource !== "SUPABASE") return dataSnapshot;
   const timestamp = getCombinedSnapshotTimestamp(dataSnapshot);
@@ -66,6 +89,18 @@ function normalizeSnapshotFreshness(dataSnapshot: WebAppData): WebAppData {
   };
 }
 
+/**
+ * Reconciles incoming remote snapshot data against current local state, preserving newer sub-domain snapshots.
+ *
+ * @remarks
+ * [THREAT:] Replica lag or delayed transport responses can return stale sub-domain snapshots.
+ * Reconciling roster and headhunter sub-domains independently prevents state regressions.
+ *
+ * @param currentData - Active in-memory WebAppData state.
+ * @param incomingData - Freshly fetched or cached WebAppData payload.
+ * @param acceptUnknownIncoming - Whether to accept incoming data when its timestamp is unknown/null.
+ * @returns Reconciled WebAppData object combining the newest roster and headhunter snapshots.
+ */
 function preserveNewerSnapshotData(
   currentData: WebAppData,
   incomingData: WebAppData,
@@ -141,6 +176,7 @@ function preserveNewerSnapshotData(
  * - `loadLocal`: Hydrates the service state from the local IndexedDB cache.
  * - `updateLocalData`: Manually updates the service state with an external payload.
  * - `refreshFromSupabase`: Triggers a high-priority foreground synchronization from Supabase.
+ * - `refreshAfterInvalidation`: Refreshes after server invalidation, coalescing concurrent listeners.
  * - `startBackgroundSync`: Executes a non-blocking background synchronization.
  * - `updatePlayerLocally`: Patches a specific player's data in the local state.
  */
@@ -203,6 +239,7 @@ export function useClashSync(data: Ref<WebAppData | null>) {
   const { apiStatus } = useApiState();
   const { isPowerSaving } = usePowerSaving();
 
+  /** Clears any active foreground recovery timer. */
   function clearRecoveryTimer() {
     if (recoveryTimer !== null) {
       clearTimeout(recoveryTimer);
@@ -210,9 +247,13 @@ export function useClashSync(data: Ref<WebAppData | null>) {
     }
   }
 
-  // Healthy short app switches retain the normal freshness threshold. A
-  // failed read instead needs one new chance on a real foreground/reconnect
-  // transition, not the next backed-off poll several minutes later.
+  /**
+   * Triggers immediate background sync recovery when connection or visibility is restored following a failure.
+   *
+   * @remarks
+   * [DECISION LOG] Healthy short app switches retain normal freshness thresholds;
+   * a failed read needs one immediate recovery attempt on foreground/reconnect transition.
+   */
   function handleConnectionRecovery() {
     if (
       disposed
@@ -230,6 +271,10 @@ export function useClashSync(data: Ref<WebAppData | null>) {
 
   const visibilityDocument = typeof document !== "undefined" ? document : null;
   let previousVisibility = visibilityDocument?.visibilityState;
+
+  /**
+   * Monitors document visibility transitions to invoke recovery when returning from hidden state.
+   */
   function handleVisibilityRecovery() {
     const visibility = visibilityDocument?.visibilityState;
     const returnedToForeground = visibility === "visible" && previousVisibility === "hidden";
@@ -246,6 +291,11 @@ export function useClashSync(data: Ref<WebAppData | null>) {
     });
   }
 
+  /**
+   * Assesses whether the application environment is currently eligible for foreground recovery.
+   *
+   * @returns Boolean indicating foreground recovery eligibility.
+   */
   function canRecoverInForeground(): boolean {
     return !disposed
       && isOnline.value
@@ -254,6 +304,15 @@ export function useClashSync(data: Ref<WebAppData | null>) {
       && document.visibilityState === "visible";
   }
 
+  /**
+   * Schedules an automatic backoff recovery timer following a transient read timeout.
+   *
+   * @remarks
+   * [THREAT:] Immediate retries on database statement timeouts exacerbate server load under DB pressure.
+   * Statement timeouts (57014) bypass automatic retry scheduling to prevent cascading load.
+   *
+   * @param error - The transport or server error raised during sync.
+   */
   function scheduleTimeoutRecovery(error: Error) {
     // A server statement timeout is evidence of DB pressure, not a transient
     // client deadline; immediately repeating the complete read set would add load.
@@ -613,7 +672,12 @@ export function useClashSync(data: Ref<WebAppData | null>) {
 
   /**
    * Refreshes after a server invalidation, queuing one pass behind an active sync.
-   * Invalidation callers share a queued pass and resolve when that pass finishes.
+   *
+   * @remarks
+   * [DECISION LOG] COALESCE INVALIDATION LISTENERS: Synchronous listeners triggered by the same
+   * invalidation event share a single batched Promise to prevent redundant network bursts.
+   *
+   * @returns Promise that resolves when the invalidation sync completes.
    */
   function refreshAfterInvalidation(): Promise<void> {
     if (invalidationBatchPromise) return invalidationBatchPromise;

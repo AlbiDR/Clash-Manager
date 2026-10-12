@@ -1,29 +1,26 @@
 ### Nightly Stage 6: Documentation TSDoc - Interface Contract Architect
 
-**Status:** CLEAN
+**Status:** CHANGED
 
-In plain terms: nothing needed fixing. This run checked the documentation TSDoc area and found it already correct, so the only file here is the log recording that the check happened.
+In plain terms: this changes 1 code file, so the app's behaviour may be affected. No tests were added or changed alongside it.
 
-**What was checked:** audited useBlitzMode and ghostBenchmarkState documentation debt items; confirmed comments and interface contracts strictly match code logic
+**What changed:** docs(tsdoc): harden useClashSync TSDoc interface contracts and inline logic annotations
 
-**Why:** All identified doc debt targets are fully synchronized with code logic and no source edits were required
+**Why:** Hardened interface contracts and added decision logs and threat tags to useClashSync helper functions and recovery logic.
 
-**Result:** PASSED (type-check and vitest clean)
+**Result:** PASSED (78/78 tests passed)
 
-**Files changed:** .github/nightly-logs/06-documentation-tsdoc-coverage.log
-
-**Verified accurate:** Frontend-PWA/src/core/services/useBlitzMode.ts, Frontend-PWA/src/shared/directives/ghostBenchmarkState.ts
+**Files changed:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, Frontend-PWA/src/core/services/useClashSync.ts
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: documentation
-  Cycle: nightly-cycle/2026-10-11
+  Cycle: nightly-cycle/2026-10-12
   Contract: a9f522cc73babe487aa3df1b083524daba64c0dd03c9e1b446dd4bd70c376bae
-  Why: All identified doc debt targets are fully synchronized with code logic and no source edits were required
-  Change: audited useBlitzMode and ghostBenchmarkState documentation debt items; confirmed comments and interface contracts strictly match code logic
-  Result: PASSED (type-check and vitest clean)
-  Files: .github/nightly-logs/06-documentation-tsdoc-coverage.log
-  Verified: Frontend-PWA/src/core/services/useBlitzMode.ts, Frontend-PWA/src/shared/directives/ghostBenchmarkState.ts
+  Why: Hardened interface contracts and added decision logs and threat tags to useClashSync helper functions and recovery logic.
+  Change: docs(tsdoc): harden useClashSync TSDoc interface contracts and inline logic annotations
+  Result: PASSED (78/78 tests passed)
+  Files: .github/nightly-logs/06-documentation-tsdoc-coverage.log, Frontend-PWA/src/core/services/useClashSync.ts
   Nudges: 0
-  Execution: 05cf636e898a17a905cb0f75c3534d069f9e9e2c
+  Execution: c199226d527fbe5b99cdb581801ec4a1e7959c81
 -->
