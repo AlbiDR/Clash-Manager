@@ -930,7 +930,7 @@ PR draft: false
 
 A published Pull Request is the required outcome of this session, not an optional next step. If any distinct action, tool, or control is available to you to submit, complete, or hand off the session, separate from simply writing a message, invoke it now, because Jules' native scheduled-task publisher only creates the pull request once the session has actually, fully ended. Do not run code review, memory, reflection, git commit, or git push.
 
-YOUR FINAL MESSAGE: return the exact contents of ${bodyPath}, and nothing else. Read that file and reproduce it verbatim. Do not summarize it, quote it, wrap it in anything, describe it, or add a single word before or after it. Do not return any part of THIS file: what you return becomes the pull request description, and this file is instructions, so returning it publishes the instructions instead of the description.
+TERMINAL CHECKPOINT: this command has finished the stage. The next action must be to read ${bodyPath}; the next and final assistant message must be that file's exact contents and nothing else. Do not run another command or send commentary after reading this handoff. What you return becomes the pull request description, so do not return any part of THIS file.
 `;
 }
 
@@ -1602,8 +1602,16 @@ function validateBootstrap(repoRoot, registry) {
   invariant(content.includes("clean-calibration.json"), "Bootstrap setup must seed CLEAN calibration status.");
   invariant(!content.includes("### Termination Contract"), "Bootstrap still contains the obsolete termination contract.");
   invariant(
+    !content.includes("nothing after the handoff content"),
+    "Bootstrap must require the PR body, not the handoff, as the terminal message.",
+  );
+  invariant(
     (content.match(/^### Completion Contract$/gm) || []).length === registry.stages.length,
     "Bootstrap must contain one completion contract per stage.",
+  );
+  invariant(
+    (content.match(/Return the PR body as the final message/g) || []).length === registry.stages.length,
+    "Bootstrap must give every stage the unambiguous PR-body terminal sequence.",
   );
 
   const setupScript = content.match(/```bash\n([\s\S]*?)\n```/);

@@ -225,27 +225,21 @@ validation result, and the changed files. `NIGHTLY_PR_METADATA` remains the
 machine-readable copy of the same facts for merge history, not the only place
 where the explanation lives.
 
-Read the handoff for the suggested publication data, then return the exact
-contents of `/tmp/nightly/pr-body.md`, verbatim and alone, as your final
-message. The handoff is instructions addressed to you and the body file is the
-description: returning any part of the handoff publishes the instructions. On
-2026-09-03 five of thirteen published bodies were wrong this way, one of them
-reading only "Nightly Stage 8 finalized with status CHANGED" for a run that had
-bumped a dependency. A published Pull Request is the required outcome of
-this session, not an optional next step someone else may or may not take.
-Completing the audit, writing the log, and running finalize only exist to
-produce that Pull Request; a run that ends without one has failed regardless
-of how much correct work preceded it.
+After `finalize` succeeds, publication has exactly one terminal sequence:
 
-If any distinct action, tool, or control is available to you to submit,
-complete, or hand off the session, separate from simply writing a message,
-invoke it now. Do not assume the handoff text alone is sufficient to trigger
-publication. Your final message must contain nothing after the handoff
-content: no summary, no offer to do more, no question, no sign-off. The
-native scheduled-task publisher creates the single non-draft PR targeting
-`Nightly` only once the session has actually, fully ended; the GitHub merge
-coordinator owns everything after that boundary. Ending the session cleanly
-is part of the task, not a formality that follows it.
+1. Read `/tmp/nightly/final-handoff.txt` for publication data.
+2. If a distinct submit, complete, or hand-off control is available, invoke it
+   before replying.
+3. Read `/tmp/nightly/pr-body.md` and use its exact contents, verbatim and
+   alone, as the final message. Do not return any part of the handoff: it is
+   operational instruction, not the Pull Request description.
+4. End the session immediately. Do not run another command, add commentary,
+   offer more work, ask a question, or send any message after the PR body.
+
+The native scheduled-task publisher creates the non-draft Pull Request only
+when that final message ends the session. Completing the audit, writing the
+log, and running `finalize` do not complete the stage until publication has
+been handed off.
 
 If the lifecycle helper fails, attempt it only once. Manually replace the
 sentinel with a `PARTIAL-RUN` record, ensure the diff is log-only, return a final
