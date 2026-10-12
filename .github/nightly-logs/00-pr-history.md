@@ -16,6 +16,15 @@ LAST_AGED:   2026-10-10
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-12] PR #2175 [Stage 5]: Verified SupabaseClient.ts documentation accuracy in Frontend-PWA/src/core/api/README.md
+**Domain:** documentation | **Commit:** 08b090b98 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2175)
+**Files:** .github/nightly-logs/05-documentation-readme-coverage.log, .github/nightly-logs/05-documentation-readme-pr-body.md
+**Why:** Documentation accurately reflects current SupabaseClient implementation and caching logic
+**Change:** Verified SupabaseClient.ts documentation accuracy in Frontend-PWA/src/core/api/README.md
+**Result:** Audit completed with no source change required.
+**Nudges:** 1
+
+
 ### [2026-10-12] PR #2174 [Stage 4]: Inspected 81 changed files and Edge Functions for SQL view substrate hygiene; zero structural rot or unreferenced views found.
 **Domain:** optimization | **Commit:** 9fd137367 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2174)
 **Files:** .github/nightly-logs/04-optimization-coverage.log, .github/nightly-logs/04-optimization-pr-body.md
