@@ -16,6 +16,31 @@ LAST_AGED:   2026-10-10
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-12] PR #2180 [Stage 9]: CLEAN: 81 files, 0 dep-viols, knip: 11 files, 1 dep (@formkit/auto-animate), 0 exports. streak:2. Modules: useClashSync, SupabaseClient, useProgressiveList. Closest: SupabaseClient. Hunt: useProgressiveList idle-deadline fallback passed.
+**Domain:** architecture | **Commit:** 7554dc8ca | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2180)
+**Files:** .github/nightly-logs/09-refactor-proposals-coverage.log, .github/nightly-logs/09-refactor-proposals-pr-body.md
+**Why:** Bounded candidate set contained no viable ADR refactor target, and defect hunt on useProgressiveList.ts timer/idle-deadline handling confirmed compliant behavior across all 22 tests.
+**Change:** CLEAN: 81 files, 0 dep-viols, knip: 11 files, 1 dep (@formkit/auto-animate), 0 exports. streak:2. Modules: useClashSync, SupabaseClient, useProgressiveList. Closest: SupabaseClient. Hunt: useProgressiveList idle-deadline fallback passed.
+**Result:** depcruise PASS (0 violations), knip OK (11 unused files, 1 unused dep @formkit/auto-animate verified active), pnpm-test Frontend-PWA passed 2340/2340 tests across 219 files including 22/22 in useProgressiveList.spec.ts.
+**Nudges:** 0
+
+### [2026-10-12] PR #2181 [Stage 10]: Calibration pass: Full wrapper invariant audit verified asset links, manifest values, release metadata, version codes, and cleartext traffic policy (7 ordinary clean passes since last calibration).
+**Domain:** apk | **Commit:** fb78673a9 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2181)
+**Files:** .github/nightly-logs/10-apk-integrity-coverage.log, .github/nightly-logs/10-apk-integrity-pr-body.md
+**Why:** All APK and PWA wrapper integrity checks pass with zero mismatches found.
+**Change:** Calibration pass: Full wrapper invariant audit verified asset links, manifest values, release metadata, version codes, and cleartext traffic policy (7 ordinary clean passes since last calibration).
+**Result:** PASSED via pnpm audit:apk, pnpm apk:verify:source, pnpm test:apk-release, pnpm test:apk-slot-sync, pnpm test:version-code, pnpm test:apk-native, pnpm test:apk-performance, and pnpm test:apk-ux-audit.
+**Nudges:** 0
+
+### [2026-10-12] PR #2179 [Stage 11]: Configure WebSettings cache mode to LOAD_CACHE_ELSE_NETWORK in MainActivity
+**Domain:** apk | **Commit:** c54feb70b | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2179)
+**Files:** .github/nightly-logs/11-apk-optimization-coverage.log, .github/nightly-logs/11-apk-optimization-pr-body.md, APK/src/com/albidr/clashmanager/MainActivity.java
+**Why:** Fulfill webview-cache-mode invariant required by APK performance audit
+**Change:** Configure WebSettings cache mode to LOAD_CACHE_ELSE_NETWORK in MainActivity
+**Result:** Passed audit:apk-perf and test:apk-performance, test:apk-native
+**Nudges:** 0
+
+
 ### [2026-10-12] PR #2178 [Stage 7]: Calibration pass: fully synchronized across 3 package manifests, pnpm-workspace.yaml catalog, and 3 README version badges; audit:version passed clean
 **Domain:** versioning | **Commit:** 29cf66e1b | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2178)
 **Files:** .github/nightly-logs/07-version-integrity-coverage.log, .github/nightly-logs/07-version-integrity-pr-body.md
