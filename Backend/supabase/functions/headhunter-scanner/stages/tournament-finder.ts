@@ -14,6 +14,7 @@ const TOURNAMENT_SEARCH_LIMIT = 50;
 const BATCH_TOURNAMENTS = 25;
 const BATCH_KEYWORDS = 30;
 
+// EPHEMERAL: intentionally resets on cold start
 // Canonical tournament types as documented by the Royale API.
 const KNOWN_TOURNAMENT_TYPES = new Set([
     'openTournament',
