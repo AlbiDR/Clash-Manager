@@ -29775,7 +29775,7 @@
         "cycleId": "nightly-cycle/2026-10-12",
         "expectedAfterUtc": null,
         "deadlineUtc": null,
-        "state": "NO_OUTPUT",
+        "state": "BLOCKED",
         "evidence": {
           "coverageLog": ".github/nightly-logs/01-hardening-coverage.log",
           "julesSession": {
@@ -29801,13 +29801,17 @@
             "verdict": "HEALTHY",
             "currentStreak": 1,
             "reason": "no adverse trend"
-          }
+          },
+          "prNumber": 2173,
+          "prUrl": "https://github.com/AlbiDR/Clash-Manager/pull/2173",
+          "headRef": "nightly/stage-1-hardening-f616014c-12489495064110284364",
+          "reason": "PR #2173 head changed from ce9e78edbf2229f1cd4fccacfd3b37edf7d7907e to fe2edabff5439b8322abe2893ac9f39569f38130; refusing stale merge."
         },
         "dispatchAttempts": 0,
         "interventionAttempts": 1,
         "attempts": 0,
-        "lastObservedAt": "2026-10-12T01:25:09.947Z",
-        "failureClass": "JULES_SESSION_EMPTY"
+        "lastObservedAt": "2026-10-12T01:36:22.076Z",
+        "failureClass": "MERGE_COORDINATOR"
       },
       "2": {
         "date": "2026-10-12",
@@ -225696,6 +225700,65 @@
         }
       },
       "eventId": "866d4253149fd3a9763099f019352ff78fe7896f57f14017833576dea9cb9ab2"
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 3554,
+      "previousEventId": "866d4253149fd3a9763099f019352ff78fe7896f57f14017833576dea9cb9ab2",
+      "cycleId": "nightly-cycle/2026-10-12",
+      "date": "2026-10-12",
+      "stage": 1,
+      "type": "STAGE_ENTRY_UPDATED",
+      "source": "merge-nightly-core",
+      "recordedAt": "2026-10-12T01:36:22.076Z",
+      "contractFingerprint": "b8cc17977cd40f02490c220999b57dcbf99eb8b7a2175f40feb87a2655548621",
+      "payload": {
+        "after": {
+          "attempts": 0,
+          "dispatchAttempts": 0,
+          "failureClass": "MERGE_COORDINATOR",
+          "interventionAttempts": 1,
+          "state": "BLOCKED"
+        },
+        "before": {
+          "attempts": 0,
+          "dispatchAttempts": 0,
+          "failureClass": "JULES_SESSION_EMPTY",
+          "interventionAttempts": 1,
+          "state": "NO_OUTPUT"
+        },
+        "requested": {
+          "evidence": {
+            "removed": [],
+            "set": {
+              "headRef": "nightly/stage-1-hardening-f616014c-12489495064110284364",
+              "prNumber": 2173,
+              "prUrl": "https://github.com/AlbiDR/Clash-Manager/pull/2173",
+              "reason": "PR #2173 head changed from ce9e78edbf2229f1cd4fccacfd3b37edf7d7907e to fe2edabff5439b8322abe2893ac9f39569f38130; refusing stale merge."
+            }
+          },
+          "failureClass": "MERGE_COORDINATOR",
+          "state": "BLOCKED"
+        },
+        "rules": [
+          {
+            "failureClassGuarded": false,
+            "id": "TAGGED_MERGE_IS_DURABLE",
+            "outcome": "NOT_APPLICABLE",
+            "stateGuarded": false
+          },
+          {
+            "id": "EVIDENCE_ACCUMULATES",
+            "outcome": "APPLIED"
+          }
+        ],
+        "transition": {
+          "from": "NO_OUTPUT",
+          "name": "FAILURE_OBSERVED",
+          "to": "BLOCKED"
+        }
+      },
+      "eventId": "65ddaee108574509884452e93a759e94b276c2642106e6ae5c9915d6fda8e205"
     }
   ],
   "cycles": {
@@ -235096,6 +235159,6 @@
       }
     }
   },
-  "eventCount": 3553,
-  "eventHead": "866d4253149fd3a9763099f019352ff78fe7896f57f14017833576dea9cb9ab2"
+  "eventCount": 3554,
+  "eventHead": "65ddaee108574509884452e93a759e94b276c2642106e6ae5c9915d6fda8e205"
 }

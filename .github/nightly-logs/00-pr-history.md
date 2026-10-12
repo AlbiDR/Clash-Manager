@@ -16,6 +16,29 @@ LAST_AGED:   2026-10-10
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-12] PR #2172 [Stage 3]: Blocked on 20260915190011_backend_health_and_safe_maintenance.sql; 30 migrations remaining pending.
+**Domain:** database | **Commit:** a4ba97c69 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2172)
+**Files:** .github/nightly-logs/03-baseline-consolidation-coverage.log, .github/nightly-logs/03-baseline-consolidation-pr-body.md
+**Why:** Folding 5-column view definition for pipeline_heartbeat_view into baseline causes static audit failure due to column reduction conflict with immutable historical migration 20260817000000_expose_pwa_client_surfaces.sql.
+**Change:** Blocked on 20260915190011_backend_health_and_safe_maintenance.sql; 30 migrations remaining pending.
+**Result:** Static migration audit PASS; fold-state PENDING; database verification DB-UNAVAILABLE.
+**Nudges:** 0
+
+### [2026-10-11] PR #2173 [Stage 1]: Audited Edge Function endpoints, in-memory state variables, Valibot boundary schemas, and cross-layer architectural isolations across 81 changed files; zero threat vectors found
+**Domain:** hardening | **Commit:** c31ea9241 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2173)
+**Files:** .github/nightly-logs/01-hardening-coverage.log, .github/nightly-logs/01-hardening-pr-body.md
+**Why:** All priority targets validated cleanly with zero actionable threats
+**Change:** Audited Edge Function endpoints, in-memory state variables, Valibot boundary schemas, and cross-layer architectural isolations across 81 changed files; zero threat vectors found
+**Result:** Monorepo tests passed cleanly (219 test files, 2340 tests passed)
+**Nudges:** 0
+
+
+## [2026-10-12] MERGE FAILED: PR #2173: Stage 1: Hardening - Runtime Integrity Auditor
+> [!CAUTION]
+> **Status**: Auto-merge aborted.
+> **Error**: `PR #2173 head changed from ce9e78edbf2229f1cd4fccacfd3b37edf7d7907e to fe2edabff5439b8322abe2893ac9f39569f38130; refusing stale merge.`
+> **PR Link**: [Link](https://github.com/AlbiDR/Clash-Manager/pull/2173)
+
 ### [2026-10-12] PR #2171 [Stage 2]: Added unit test suite for Backend shared config kernel (config.ts)
 **Domain:** verification | **Commit:** f4aeaa8a9 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2171)
 **Files:** .github/nightly-logs/02-verification-coverage.log, .github/nightly-logs/02-verification-pr-body.md, Backend/supabase/functions/_shared/shared-tests/config.spec.ts
