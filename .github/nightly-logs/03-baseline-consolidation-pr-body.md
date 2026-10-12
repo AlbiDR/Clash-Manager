@@ -4,23 +4,23 @@
 
 In plain terms: no change was made to the project. This run ended as PARTIAL-RUN and the only file here is the log recording that.
 
-**What was checked:** Migration 20260915190011_backend_health_and_safe_maintenance.sql blocked by static view history audit violation on pipeline_heartbeat_view expansion.
+**What was checked:** Blocked on 20260915190011_backend_health_and_safe_maintenance.sql; 30 migrations remaining pending.
 
-**Why:** Folding pipeline_heartbeat_view column expansion into baseline caused pnpm audit:migrations to fail due to historical migration column signature mismatch. Restored baseline checkpoint.
+**Why:** Folding 5-column view definition for pipeline_heartbeat_view into baseline causes static audit failure due to column reduction conflict with immutable historical migration 20260817000000_expose_pwa_client_surfaces.sql.
 
-**Result:** PARTIAL-RUN: 30 migrations remaining; 20260915190011_backend_health_and_safe_maintenance.sql blocked by pnpm audit:migrations view history check.
+**Result:** Static migration audit PASS; fold-state PENDING; database verification DB-UNAVAILABLE.
 
 **Files changed:** .github/nightly-logs/03-baseline-consolidation-coverage.log
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: database
-  Cycle: nightly-cycle/2026-10-11
+  Cycle: nightly-cycle/2026-10-12
   Contract: 8c32444005e6edf746eda3ca4e7e0dbe86a11a195765389a2f7db2cce85373e0
-  Why: Folding pipeline_heartbeat_view column expansion into baseline caused pnpm audit:migrations to fail due to historical migration column signature mismatch. Restored baseline checkpoint.
-  Change: Migration 20260915190011_backend_health_and_safe_maintenance.sql blocked by static view history audit violation on pipeline_heartbeat_view expansion.
-  Result: PARTIAL-RUN: 30 migrations remaining; 20260915190011_backend_health_and_safe_maintenance.sql blocked by pnpm audit:migrations view history check.
+  Why: Folding 5-column view definition for pipeline_heartbeat_view into baseline causes static audit failure due to column reduction conflict with immutable historical migration 20260817000000_expose_pwa_client_surfaces.sql.
+  Change: Blocked on 20260915190011_backend_health_and_safe_maintenance.sql; 30 migrations remaining pending.
+  Result: Static migration audit PASS; fold-state PENDING; database verification DB-UNAVAILABLE.
   Files: .github/nightly-logs/03-baseline-consolidation-coverage.log
   Nudges: 0
-  Execution: 0893719c511aab06e633f0ac00c4de9ecdab5985
+  Execution: 9eb60b957eabb3de784515d788e2d13e16423642
 -->
