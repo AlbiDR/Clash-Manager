@@ -16,6 +16,15 @@ LAST_AGED:   2026-10-10
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-12] PR #2182 [Stage 12]: Global APK UX audit passed with 0 violations across 77 files
+**Domain:** ux | **Commit:** ff78f38ce | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2182)
+**Files:** .github/nightly-logs/12-apk-ux-coverage.log, .github/nightly-logs/12-apk-ux-pr-body.md
+**Why:** Bounded candidate review and structured APK UX audit found no UI violations or raw native controls
+**Change:** Global APK UX audit passed with 0 violations across 77 files
+**Result:** apk-ux-audit-status.txt: PASS; apk-ux-audit.json: 0 candidate files reviewed; UX categories 1-10 checked
+**Nudges:** 0
+
+
 ### [2026-10-12] PR #2180 [Stage 9]: CLEAN: 81 files, 0 dep-viols, knip: 11 files, 1 dep (@formkit/auto-animate), 0 exports. streak:2. Modules: useClashSync, SupabaseClient, useProgressiveList. Closest: SupabaseClient. Hunt: useProgressiveList idle-deadline fallback passed.
 **Domain:** architecture | **Commit:** 7554dc8ca | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2180)
 **Files:** .github/nightly-logs/09-refactor-proposals-coverage.log, .github/nightly-logs/09-refactor-proposals-pr-body.md
