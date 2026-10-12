@@ -4,9 +4,9 @@
 
 In plain terms: nothing needed fixing. This run checked the APK UX area and found it already correct, so the only file here is the log recording that the check happened.
 
-**What was checked:** No APK UX issues identified in frontend sweep
+**What was checked:** Global APK UX audit passed with 0 violations across 77 files
 
-**Why:** Audit status is PASS with 0 candidate files remaining
+**Why:** Bounded candidate review and structured APK UX audit found no UI violations or raw native controls
 
 **Result:** apk-ux-audit-status.txt: PASS; apk-ux-audit.json: 0 candidate files reviewed; UX categories 1-10 checked
 
@@ -15,12 +15,12 @@ In plain terms: nothing needed fixing. This run checked the APK UX area and foun
 <!--
 NIGHTLY_PR_METADATA:
   Domain: ux
-  Cycle: nightly-cycle/2026-10-11
+  Cycle: nightly-cycle/2026-10-12
   Contract: f279dcd9fa3e895a0f76426a8bcab2381910b64ed4f8694d2c16ab7f8ec4ce04
-  Why: Audit status is PASS with 0 candidate files remaining
-  Change: No APK UX issues identified in frontend sweep
+  Why: Bounded candidate review and structured APK UX audit found no UI violations or raw native controls
+  Change: Global APK UX audit passed with 0 violations across 77 files
   Result: apk-ux-audit-status.txt: PASS; apk-ux-audit.json: 0 candidate files reviewed; UX categories 1-10 checked
   Files: .github/nightly-logs/12-apk-ux-coverage.log
   Nudges: 0
-  Execution: 2215e4341ed69e098f295b825466de0c06e95458
+  Execution: a5d8be2ff42aa1f243e057cc44ffc9a4441aa6c8
 -->
