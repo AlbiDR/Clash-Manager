@@ -1,26 +1,26 @@
 ### Nightly Stage 11: APK Optimization - Native Wrapper Performance Engineer
 
-**Status:** CLEAN
+**Status:** CHANGED
 
-In plain terms: nothing needed fixing. This run checked the APK optimization area and found it already correct, so the only file here is the log recording that the check happened.
+In plain terms: this changes 1 code file, so the app's behaviour may be affected. No tests were added or changed alongside it.
 
-**What was checked:** Audited native WebView settings, Service Worker caching, Vite bundle chunking, and asset precache footprint; zero source changes required.
+**What changed:** Configure WebSettings cache mode to LOAD_CACHE_ELSE_NETWORK in MainActivity
 
-**Why:** All 9 wrapper/caching invariants present and static public precache footprint (15 files, 67.6 KB) well within limits.
+**Why:** Fulfill webview-cache-mode invariant required by APK performance audit
 
-**Result:** PASS (pnpm audit:apk-perf)
+**Result:** Passed audit:apk-perf and test:apk-performance, test:apk-native
 
-**Files changed:** .github/nightly-logs/11-apk-optimization-coverage.log
+**Files changed:** .github/nightly-logs/11-apk-optimization-coverage.log, APK/src/com/albidr/clashmanager/MainActivity.java
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: apk
-  Cycle: nightly-cycle/2026-10-11
+  Cycle: nightly-cycle/2026-10-12
   Contract: 63c0229fe16cf4c98e352282307edbee4830cff68ea2d93c5c967a1f5cbd30ea
-  Why: All 9 wrapper/caching invariants present and static public precache footprint (15 files, 67.6 KB) well within limits.
-  Change: Audited native WebView settings, Service Worker caching, Vite bundle chunking, and asset precache footprint; zero source changes required.
-  Result: PASS (pnpm audit:apk-perf)
-  Files: .github/nightly-logs/11-apk-optimization-coverage.log
+  Why: Fulfill webview-cache-mode invariant required by APK performance audit
+  Change: Configure WebSettings cache mode to LOAD_CACHE_ELSE_NETWORK in MainActivity
+  Result: Passed audit:apk-perf and test:apk-performance, test:apk-native
+  Files: .github/nightly-logs/11-apk-optimization-coverage.log, APK/src/com/albidr/clashmanager/MainActivity.java
   Nudges: 0
-  Execution: ca9b66aee9d718e8d5d753b3be05908d5a073e9d
+  Execution: d3a28a49fa1c2e1c4509930fd85b44824133260c
 -->
