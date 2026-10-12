@@ -16,6 +16,15 @@ LAST_AGED:   2026-10-10
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-12] PR #2171 [Stage 2]: Added unit test suite for Backend shared config kernel (config.ts)
+**Domain:** verification | **Commit:** f4aeaa8a9 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2171)
+**Files:** .github/nightly-logs/02-verification-coverage.log, .github/nightly-logs/02-verification-pr-body.md, Backend/supabase/functions/_shared/shared-tests/config.spec.ts
+**Why:** Closed zero-coverage gap in recently updated Backend L1 Core shared config kernel
+**Change:** Added unit test suite for Backend shared config kernel (config.ts)
+**Result:** 10/10 unit tests passed; mutation testing verified failure on getAllowedOrigins return logic
+**Nudges:** 0
+
+
 ### [2026-10-11] PR #2170 [Stage 13]: Updated self-healing protocol log with 2026-10-11 pipeline findings, zero-intervention rate record, and Stage 3 view audit PARTIAL-RUN
 **Domain:** pipeline | **Commit:** 7b24ec1a0 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2170)
 **Files:** .github/nightly-logs/13-self-healing-protocol-coverage.log, .github/nightly-logs/13-self-healing-protocol-pr-body.md, .github/nightly-logs/13-self-healing-protocol.md
