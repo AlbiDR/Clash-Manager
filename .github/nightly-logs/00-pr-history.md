@@ -16,6 +16,23 @@ LAST_AGED:   2026-10-10
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-12] PR #2178 [Stage 7]: Calibration pass: fully synchronized across 3 package manifests, pnpm-workspace.yaml catalog, and 3 README version badges; audit:version passed clean
+**Domain:** versioning | **Commit:** 29cf66e1b | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2178)
+**Files:** .github/nightly-logs/07-version-integrity-coverage.log, .github/nightly-logs/07-version-integrity-pr-body.md
+**Why:** Calibration due; verified catalog usage and ground truth version 14.54.4 across root package.json, Frontend-PWA/package.json, Backend/package.json, pnpm-workspace.yaml, and README.md with zero drift reported
+**Change:** Calibration pass: fully synchronized across 3 package manifests, pnpm-workspace.yaml catalog, and 3 README version badges; audit:version passed clean
+**Result:** CI=true DEBIAN_FRONTEND=noninteractive pnpm audit:version passed with exit code 0
+**Nudges:** 0
+
+### [2026-10-12] PR #2177 [Stage 8]: Bumped dependency-cruiser to ^18.6.0 in monorepo catalogs
+**Domain:** dependencies | **Commit:** 3fc3fbd92 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2177)
+**Files:** .github/nightly-logs/08-dependency-audit-coverage.log, .github/nightly-logs/08-dependency-audit-pr-body.md, package.json, pnpm-lock.yaml, pnpm-workspace.yaml
+**Why:** Safe Tier 1 patch update for dependency auditor and graph enforcer
+**Change:** Bumped dependency-cruiser to ^18.6.0 in monorepo catalogs
+**Result:** Vitest 219 test files passed 2340 tests, depcruise 0 violations across 532 modules
+**Nudges:** 0
+
+
 ### [2026-10-12] PR #2176 [Stage 6]: docs(tsdoc): harden useClashSync TSDoc interface contracts and inline logic annotations
 **Domain:** documentation | **Commit:** a4003a56e | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2176)
 **Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, .github/nightly-logs/06-documentation-tsdoc-pr-body.md, Frontend-PWA/src/core/services/useClashSync.ts
