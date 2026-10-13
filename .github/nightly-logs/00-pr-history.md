@@ -16,6 +16,15 @@ LAST_AGED:   2026-10-12
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-13] PR #2188 [Stage 5]: Verified SupabaseClient.ts documentation accuracy in Frontend-PWA/src/core/api/README.md
+**Domain:** documentation | **Commit:** 84d3a9010 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2188)
+**Files:** .github/nightly-logs/05-documentation-readme-coverage.log, .github/nightly-logs/05-documentation-readme-pr-body.md
+**Why:** Audit confirmed README prose accurately describes current SupabaseClient.ts behavior
+**Change:** Verified SupabaseClient.ts documentation accuracy in Frontend-PWA/src/core/api/README.md
+**Result:** Audit completed with no source change required.
+**Nudges:** 1
+
+
 ### [2026-10-13] PR #2187 [Stage 4]: Standardized variable naming in SupabaseClient.ts and audited substrate views
 **Domain:** optimization | **Commit:** bfaf1bd95 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2187)
 **Files:** .github/nightly-logs/04-optimization-coverage.log, .github/nightly-logs/04-optimization-pr-body.md, Frontend-PWA/src/core/api/SupabaseClient.ts
