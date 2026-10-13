@@ -16,6 +16,15 @@ LAST_AGED:   2026-10-12
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-13] PR #2186 [Stage 3]: Folded 2 migrations (20260915190011, 20260915192014) into master baseline
+**Domain:** database | **Commit:** 4aa605ce4 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2186)
+**Files:** .github/nightly-logs/03-baseline-consolidation-coverage.log, .github/nightly-logs/03-baseline-consolidation-pr-body.md, Backend/supabase/migrations/20260531232406_master_migration.sql
+**Why:** Consolidates pipeline_heartbeat_view, search_path isolation, RLS drop policies, and process_queue permissions
+**Change:** Folded 2 migrations (20260915190011, 20260915192014) into master baseline
+**Result:** Static fold-state passed; 28 pending migrations remaining
+**Nudges:** 0
+
+
 ### [2026-10-13] PR #2185 [Stage 2]: Frontend-PWA/src/core/api/api-tests/ApiErrors.spec.ts -- Closed zero-coverage gap in L1 Core ApiErrors network error class with saturating unit/boundary tests.
 **Domain:** verification | **Commit:** 57cb655e0 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2185)
 **Files:** .github/nightly-logs/02-verification-coverage.log, .github/nightly-logs/02-verification-pr-body.md, Frontend-PWA/src/core/api/api-tests/ApiErrors.spec.ts
