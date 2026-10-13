@@ -16,6 +16,15 @@ LAST_AGED:   2026-10-12
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-13] PR #2194 [Stage 10]: PWA wrapper integrity audit completed with no mismatches found across asset links, manifest parity, version code/name sync, release metadata, and security policy invariants.
+**Domain:** apk | **Commit:** 0cc6d01b4 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2194)
+**Files:** .github/nightly-logs/10-apk-integrity-coverage.log, .github/nightly-logs/10-apk-integrity-pr-body.md
+**Why:** All web application PWA properties and Android compilation wrapper configurations are fully aligned and meet security standards.
+**Change:** PWA wrapper integrity audit completed with no mismatches found across asset links, manifest parity, version code/name sync, release metadata, and security policy invariants.
+**Result:** Checked via pnpm audit:apk, pnpm apk:verify:source, and native APK test suites (test:apk-native, test:apk-release, test:apk-performance, test:apk-ux-audit, test:apk-slot-sync, test:version-code).
+**Nudges:** 0
+
+
 ### [2026-10-13] PR #2193 [Stage 11]: Audited native WebView settings, Service Worker caching strategies, and precache footprint; zero source changes required
 **Domain:** apk | **Commit:** a7d62c2bc | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2193)
 **Files:** .github/nightly-logs/11-apk-optimization-coverage.log, .github/nightly-logs/11-apk-optimization-pr-body.md
