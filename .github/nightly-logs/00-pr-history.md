@@ -16,6 +16,15 @@ LAST_AGED:   2026-10-12
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-13] PR #2187 [Stage 4]: Standardized variable naming in SupabaseClient.ts and audited substrate views
+**Domain:** optimization | **Commit:** bfaf1bd95 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2187)
+**Files:** .github/nightly-logs/04-optimization-coverage.log, .github/nightly-logs/04-optimization-pr-body.md, Frontend-PWA/src/core/api/SupabaseClient.ts
+**Why:** Eliminated anemic variable pathogens (row -> snapshotMarkerRow, rosterRowCandidate, headhunterRowCandidate) to satisfy CleanStack ADR Section VII and re-verified database view substrate hygiene
+**Change:** Standardized variable naming in SupabaseClient.ts and audited substrate views
+**Result:** Vitest SupabaseClient.spec.ts passed 51/51 tests and vue-tsc type-check passed 0 errors
+**Nudges:** 0
+
+
 ### [2026-10-13] PR #2186 [Stage 3]: Folded 2 migrations (20260915190011, 20260915192014) into master baseline
 **Domain:** database | **Commit:** 4aa605ce4 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2186)
 **Files:** .github/nightly-logs/03-baseline-consolidation-coverage.log, .github/nightly-logs/03-baseline-consolidation-pr-body.md, Backend/supabase/migrations/20260531232406_master_migration.sql
