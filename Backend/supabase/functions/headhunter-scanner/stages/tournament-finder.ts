@@ -31,7 +31,29 @@ const runtimeTypeRegistry = new Set(KNOWN_TOURNAMENT_TYPES);
 
 /**
  * Stage: Tournament Discovery
- * Scans active tournaments for un-clanned players meeting the trophy threshold.
+ *
+ * Scans active Clash Royale tournaments via keyword anchors to identify prospective, un-clanned recruits.
+ *
+ * @remarks
+ * Discovers public tournaments using database-backed keywords or fallback character grids, fetches
+ * tournament rosters, filters out blacklisted or clanned players, and populates candidate maps for profiling.
+ * Enforces Valibot schema validation on RPC/API responses to preserve validation boundaries.
+ * Satisfies ADR Section III: Validation Boundaries and ADR Section IV: Fail-Closed Isolation.
+ *
+ * @param candidates - In-out map tracking discovered player tags and their discovery source.
+ * @param exclusionSet - Set of player tags to ignore (e.g. current clan members or hard exclusions).
+ * @param requiredTrophies - Minimum ladder trophy threshold required for recruit consideration.
+ * @param stats - Shared telemetry object tracking discovery yields and error logs.
+ * @param logAudit - Structured audit logging function for clinical event tracking.
+ * @param signal - Optional AbortSignal for task cancellation during shutdown or timeout.
+ * @param admissionSignal - Optional AbortSignal dedicated to upstream rate-limiting/admission gates.
+ *
+ * @throws Error if a fatal pipeline exception occurs during discovery orchestrations.
+ *
+ * @sideeffects
+ * - Mutates `candidates` Map with newly discovered recruit tags.
+ * - Mutates `stats` telemetry numbers and error logs.
+ * - Performs Supabase RPC calls to update discovery cache and report keyword yields.
  */
 export async function runTournamentDiscovery(
     candidates: Map<string, RecruitSource>,
