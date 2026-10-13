@@ -16,6 +16,15 @@ LAST_AGED:   2026-10-12
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-13] PR #2185 [Stage 2]: Frontend-PWA/src/core/api/api-tests/ApiErrors.spec.ts -- Closed zero-coverage gap in L1 Core ApiErrors network error class with saturating unit/boundary tests.
+**Domain:** verification | **Commit:** 57cb655e0 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2185)
+**Files:** .github/nightly-logs/02-verification-coverage.log, .github/nightly-logs/02-verification-pr-body.md, Frontend-PWA/src/core/api/api-tests/ApiErrors.spec.ts
+**Why:** Zero Coverage gap closed for L1 Core network error class ApiErrors.ts to prevent uncaught network transport failure regressions.
+**Change:** Frontend-PWA/src/core/api/api-tests/ApiErrors.spec.ts -- Closed zero-coverage gap in L1 Core ApiErrors network error class with saturating unit/boundary tests.
+**Result:** Added 3 unit tests in ApiErrors.spec.ts covering error message formatting, error name, prototype inheritance (instanceof NetworkError & Error), and stack trace generation. Verified mutation proof by temporarily changing this.name = 'MutatedError' in ApiErrors.ts (caught by expect(error.name).toBe('NetworkError')) and immediately restoring source file.
+**Nudges:** 0
+
+
 ### [2026-10-12] PR #2184 [Stage 1]: Annotated in-memory Set in headhunter-scanner tournament discovery with explicit EPHEMERAL comment
 **Domain:** hardening | **Commit:** d77928f94 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2184)
 **Files:** .github/nightly-logs/00-pr-history.md, .github/nightly-logs/01-hardening-coverage.log, .github/nightly-logs/01-hardening-pr-body.md, Backend/supabase/functions/headhunter-scanner/stages/tournament-finder.ts
