@@ -15,6 +15,15 @@ LAST_AGED:   2026-10-12
 ---
 
 ## T1 -- Active (last 7 days)
+
+### [2026-10-12] PR #2184 [Stage 1]: Annotated in-memory Set in headhunter-scanner tournament discovery with explicit EPHEMERAL comment
+**Domain:** hardening | **Commit:** d77928f94 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2184)
+**Files:** .github/nightly-logs/00-pr-history.md, .github/nightly-logs/01-hardening-coverage.log, .github/nightly-logs/01-hardening-pr-body.md, Backend/supabase/functions/headhunter-scanner/stages/tournament-finder.ts
+**Why:** Satisfied Target A state lifecycle requirements by documenting transient module-level state
+**Change:** Annotated in-memory Set in headhunter-scanner tournament discovery with explicit EPHEMERAL comment
+**Result:** Vitest backend suite passed 30 test files and 392 tests cleanly
+**Nudges:** 0
+
 ### [2026-10-12] PR #2183 [Stage 13]: Documented 2026-10-12 watchdog nudge recoveries for Stages 1, 7, 9, 10 (33.3% intervention rate) and updated Section 3 metrics across Stages 1-13
 **Domain:** pipeline | **Commit:** b5d1311e1 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2183)
 **Files:** .github/nightly-logs/13-self-healing-protocol-coverage.log, .github/nightly-logs/13-self-healing-protocol-pr-body.md, .github/nightly-logs/13-self-healing-protocol.md
