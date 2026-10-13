@@ -16,6 +16,15 @@ LAST_AGED:   2026-10-12
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-13] PR #2193 [Stage 11]: Audited native WebView settings, Service Worker caching strategies, and precache footprint; zero source changes required
+**Domain:** apk | **Commit:** a7d62c2bc | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2193)
+**Files:** .github/nightly-logs/11-apk-optimization-coverage.log, .github/nightly-logs/11-apk-optimization-pr-body.md
+**Why:** All 9 native WebView and SW caching invariants are PRESENT and static precache footprint (15 files, 67.6 KB) is well within limits
+**Change:** Audited native WebView settings, Service Worker caching strategies, and precache footprint; zero source changes required
+**Result:** pnpm audit:apk-perf PASSED with 0 violations
+**Nudges:** 0
+
+
 ### [2026-10-13] PR #2192 [Stage 9]: CLEAN: 50 files, 0 dep-viols, knip: 11 files, 1 dep (@formkit/auto-animate), 0 exports. streak:3. Modules: useClashSync, SupabaseClient, useProgressiveList. Closest: SupabaseClient. Hunt: useProgressiveList idle-deadline fallback passed.
 **Domain:** architecture | **Commit:** d20202462 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2192)
 **Files:** .github/nightly-logs/09-refactor-proposals-coverage.log, .github/nightly-logs/09-refactor-proposals-pr-body.md
