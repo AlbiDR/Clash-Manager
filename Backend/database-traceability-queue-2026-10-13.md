@@ -15,10 +15,10 @@ settings are preserved.
 
 | Owner | State | Allowed files / scope | Dependencies / stopping point |
 | --- | --- | --- | --- |
-| 09 | Verified; ready for publication | Canonical db-health script/SQL/tests; new db-observe script/tests; Backend/DB-OBSERVABILITY.md | Two bounded samples >=120 seconds apart, provenance, freshness, unavailable states and safe diagnostics. Fixture verification; no live probes. |
-| 05 | Verified; ready for publication | Shared transport tracing module/tests, protocol/tests/README; Edge client.ts wiring | Failed/slow RPC logs with safe response request IDs; no body/key logging, new DB writes or retries. Meaningful transport/concurrency tests and Deno graph check. |
+| 09 | Published on Beta in 14.55.0 | Canonical db-health script/SQL/tests; new db-observe script/tests; Backend/DB-OBSERVABILITY.md | Two bounded samples >=120 seconds apart, provenance, freshness, unavailable states and safe diagnostics. Fixture verification; no live probes. |
+| 05 | Published on Beta in 14.55.0 | Shared transport tracing module/tests, protocol/tests/README; Edge client.ts wiring | Failed/slow RPC logs with safe response request IDs; no body/key logging, new DB writes or retries. Meaningful transport/concurrency tests and Deno graph check. |
 | 12 | Verified: architecture review complete | Read-only architecture review; artifact handoff only | Check ownership/privacy/monitoring load and completion criteria; stop before workflow work begins. |
-| 11 | Verified; ready for publication | New scheduled observer workflow and associated workflow tests; exact APK failure diagnosis | Wait for collector CLI; preserve pipeline ownership/concurrency and upload failure evidence. Coordinator owns APK binary regeneration. |
+| 11 | Published on Beta in 14.55.0 | New scheduled observer workflow and associated workflow tests; exact APK failure diagnosis | Wait for collector CLI; preserve pipeline ownership/concurrency and upload failure evidence. Coordinator owns APK binary regeneration. |
 | 10 | Verified; independent review complete | Independent read-only review of final implementation | Privacy, false-success handling, CI behavior, regression and rollback review proportional to scope. |
 | 01 | Running | This queue, integration, package commands, release/version, centralized verification, generated APK Dex if required | Publish one verified checkpoint at a time; verify observation artifact, backend trace log and actual live app path. |
 
@@ -104,3 +104,38 @@ compare equivalent intervals in several days; 03/05 use correlated failure
 IDs to scope recruitment lock ordering, nested rotation and discovery-cache
 timeouts; 06 measures background overlap/cadence; 10/08/12 review concrete
 changes proportionally. No outage-root-cause resolution is claimed here.
+
+
+## Published Beta evidence — 13 October
+
+Source `2928124019ab81a68c2a43bbdc645b7746afa697` and version
+`45e78044de93e6dbb19293c217ab76069a0b465a` are pushed. Full push gates passed
+398 backend and 2,342 frontend tests. Source deployment 38470670754 passed;
+version Supabase 38471312810, Auto Tag 38471312705, native integrity 38471313024
+and attribution 38471312844 passed. Tag v14.55.0 resolves to the version commit.
+APK 38471509475 passed and published commit
+`eecf8cba7319f44a1b2d05102c66cf1c777eea83`; its replacement PWA
+38471666354 passed after the earlier PWA was superseded.
+
+The served 14.55.0+504 APK matched metadata at 23:43:49 Europe/Rome:
+3,982,503 bytes, SHA-256
+`795689d286899516104d3ea41eceddc8d50d16181067e45d6ef97e534a10ffbe`.
+CM Dev loaded live PWA 14.55.0 with successful Supabase reads, 45 members,
+250 recruits and the DB indicator. Its combined publication time equalled the
+older of the two known snapshot times. Earlier transient 44-member rendering
+with unknown publication metadata is retained separately; it is not presented
+as a fresh-data success.
+
+Live console traces were observed during the ordinary 23:30 Rome jobs.
+Two response request IDs matched exact gateway log entries for approximately
+seven-second successful initialization reads. This proves deployed correlation;
+it does not prove an outage cause. 05/03 should investigate initialization
+lookup cost as well as recruitment/discovery failures after comparable data
+accumulates, preserving credential rotation and access boundaries.
+
+The final canonical SyncBranches and child deployments, and the first actual
+Stable observer artifact, are still publication completion gates. Their run IDs,
+branch parity, coverage and artifact contents will be retained in coordinator
+final-publication.json rather than triggering another release only to record
+workflow completion. Collection begins when Stable receives this workflow;
+three days of coverage are a follow-up measurement, not a claim made today.
