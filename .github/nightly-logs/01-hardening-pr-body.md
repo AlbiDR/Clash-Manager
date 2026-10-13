@@ -1,26 +1,26 @@
 ### Nightly Stage 1: Hardening - Runtime Integrity Auditor
 
-**Status:** CLEAN
+**Status:** CHANGED
 
-In plain terms: nothing needed fixing. This run checked the hardening area and found it already correct, so the only file here is the log recording that the check happened.
+In plain terms: this changes 1 code file, so the app's behaviour may be affected. No tests were added or changed alongside it.
 
-**What was checked:** Audited Edge Function endpoints, in-memory state variables, Valibot boundary schemas, and cross-layer architectural isolations across 81 changed files; zero threat vectors found
+**What changed:** Annotated in-memory Set in headhunter-scanner tournament discovery with explicit EPHEMERAL comment
 
-**Why:** All priority targets validated cleanly with zero actionable threats
+**Why:** Satisfied Target A state lifecycle requirements by documenting transient module-level state
 
-**Result:** Monorepo tests passed cleanly (219 test files, 2340 tests passed)
+**Result:** Vitest backend suite passed 30 test files and 392 tests cleanly
 
-**Files changed:** .github/nightly-logs/00-pr-history.md, .github/nightly-logs/01-hardening-coverage.log
+**Files changed:** .github/nightly-logs/00-pr-history.md, .github/nightly-logs/01-hardening-coverage.log, Backend/supabase/functions/headhunter-scanner/stages/tournament-finder.ts
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: hardening
-  Cycle: nightly-cycle/2026-10-12
+  Cycle: nightly-cycle/2026-10-13
   Contract: b8cc17977cd40f02490c220999b57dcbf99eb8b7a2175f40feb87a2655548621
-  Why: All priority targets validated cleanly with zero actionable threats
-  Change: Audited Edge Function endpoints, in-memory state variables, Valibot boundary schemas, and cross-layer architectural isolations across 81 changed files; zero threat vectors found
-  Result: Monorepo tests passed cleanly (219 test files, 2340 tests passed)
-  Files: .github/nightly-logs/00-pr-history.md, .github/nightly-logs/01-hardening-coverage.log
+  Why: Satisfied Target A state lifecycle requirements by documenting transient module-level state
+  Change: Annotated in-memory Set in headhunter-scanner tournament discovery with explicit EPHEMERAL comment
+  Result: Vitest backend suite passed 30 test files and 392 tests cleanly
+  Files: .github/nightly-logs/00-pr-history.md, .github/nightly-logs/01-hardening-coverage.log, Backend/supabase/functions/headhunter-scanner/stages/tournament-finder.ts
   Nudges: 0
-  Execution: e453b4a45c0f70eafba479bf5f9333c272fd8eae
+  Execution: 2aaeafb15ea5a280935624a6832977b5b3468301
 -->

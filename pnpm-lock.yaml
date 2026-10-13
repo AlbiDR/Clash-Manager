@@ -22,8 +22,8 @@ catalogs:
       specifier: ^2.0.0
       version: 2.0.0
     '@vitejs/plugin-vue':
-      specifier: ^6.0.8
-      version: 6.0.8
+      specifier: ^6.0.10
+      version: 6.0.10
     '@vitest/coverage-v8':
       specifier: ^4.1.11
       version: 4.1.11
@@ -197,7 +197,7 @@ importers:
         version: 2.0.0(@types/node@26.6.5)
       '@vitejs/plugin-vue':
         specifier: 'catalog:'
-        version: 6.0.8(vite@8.3.2(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))(vue@3.5.43(typescript@5.9.3))
+        version: 6.0.10(vite@8.3.2(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))(vue@3.5.43(typescript@5.9.3))
       '@vitest/coverage-v8':
         specifier: 'catalog:'
         version: 4.1.11(vitest@4.1.11)
@@ -2020,12 +2020,12 @@ packages:
     engines: {node: '>=20.19.0'}
     hasBin: true
 
-  '@vitejs/plugin-vue@6.0.8':
-    resolution: {integrity: sha512-0ZjgOg7oO6farnNGup7yvoM/YXZV84OZxHAwtflItNa/6zzQyVb5LNxyea3FEKEX2XlagIKzrlH7wwxkKgtiew==}
+  '@vitejs/plugin-vue@6.0.10':
+    resolution: {integrity: sha512-b80aUQh3n+qEzzZm5oQp3rT2QImeCx58K6eFl/RkJ3d65KW0kTuv5lNsLRVAjbW9YRUpo/wzmvzMgV34bTAItA==}
     engines: {node: ^20.19.0 || >=22.12.0}
     peerDependencies:
       vite: ^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0
-      vue: ^3.2.25
+      vue: ^3.2.25 || ^3.6.0-rc.10
 
   '@vitest/coverage-v8@4.1.11':
     resolution: {integrity: sha512-8MVGEFnJIcdGjcbfKmeq8z0pZHH0JlVtoVZH9Q/qwUp6wyFnEJUBMrw9DCaj+ra3vShGmhavjalMIhPNxZAUcw==}
@@ -5859,7 +5859,7 @@ snapshots:
     transitivePeerDependencies:
       - '@types/node'
 
-  '@vitejs/plugin-vue@6.0.8(vite@8.3.2(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))(vue@3.5.43(typescript@5.9.3))':
+  '@vitejs/plugin-vue@6.0.10(vite@8.3.2(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))(vue@3.5.43(typescript@5.9.3))':
     dependencies:
       '@rolldown/pluginutils': 1.0.1
       vite: 8.3.2(@types/node@26.6.5)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1)
@@ -7917,7 +7917,7 @@ snapshots:
   terser@5.51.2:
     dependencies:
       '@jridgewell/source-map': 0.3.11
-      acorn: 8.18.0
+      acorn: 8.19.0
       commander: 2.20.3
       source-map-support: 0.5.21
 

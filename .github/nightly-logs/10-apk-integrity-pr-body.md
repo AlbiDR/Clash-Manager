@@ -4,23 +4,23 @@
 
 In plain terms: nothing needed fixing. This run checked the APK integrity area and found it already correct, so the only file here is the log recording that the check happened.
 
-**What was checked:** Calibration pass: Full wrapper invariant audit verified asset links, manifest values, release metadata, version codes, and cleartext traffic policy (7 ordinary clean passes since last calibration).
+**What was checked:** PWA wrapper integrity audit completed with no mismatches found across asset links, manifest parity, version code/name sync, release metadata, and security policy invariants.
 
-**Why:** All APK and PWA wrapper integrity checks pass with zero mismatches found.
+**Why:** All web application PWA properties and Android compilation wrapper configurations are fully aligned and meet security standards.
 
-**Result:** PASSED via pnpm audit:apk, pnpm apk:verify:source, pnpm test:apk-release, pnpm test:apk-slot-sync, pnpm test:version-code, pnpm test:apk-native, pnpm test:apk-performance, and pnpm test:apk-ux-audit.
+**Result:** Checked via pnpm audit:apk, pnpm apk:verify:source, and native APK test suites (test:apk-native, test:apk-release, test:apk-performance, test:apk-ux-audit, test:apk-slot-sync, test:version-code).
 
 **Files changed:** .github/nightly-logs/10-apk-integrity-coverage.log
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: apk
-  Cycle: nightly-cycle/2026-10-12
+  Cycle: nightly-cycle/2026-10-13
   Contract: 4f9b40864d05ffea731090b36800572dd7affedd8532fcd17c8ded8c9e2fbc12
-  Why: All APK and PWA wrapper integrity checks pass with zero mismatches found.
-  Change: Calibration pass: Full wrapper invariant audit verified asset links, manifest values, release metadata, version codes, and cleartext traffic policy (7 ordinary clean passes since last calibration).
-  Result: PASSED via pnpm audit:apk, pnpm apk:verify:source, pnpm test:apk-release, pnpm test:apk-slot-sync, pnpm test:version-code, pnpm test:apk-native, pnpm test:apk-performance, and pnpm test:apk-ux-audit.
+  Why: All web application PWA properties and Android compilation wrapper configurations are fully aligned and meet security standards.
+  Change: PWA wrapper integrity audit completed with no mismatches found across asset links, manifest parity, version code/name sync, release metadata, and security policy invariants.
+  Result: Checked via pnpm audit:apk, pnpm apk:verify:source, and native APK test suites (test:apk-native, test:apk-release, test:apk-performance, test:apk-ux-audit, test:apk-slot-sync, test:version-code).
   Files: .github/nightly-logs/10-apk-integrity-coverage.log
   Nudges: 0
-  Execution: d3a28a49fa1c2e1c4509930fd85b44824133260c
+  Execution: d30b7c31763bff97a489f58a05319db13b359ebc
 -->

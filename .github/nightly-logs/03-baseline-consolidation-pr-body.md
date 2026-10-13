@@ -1,26 +1,26 @@
 ### Nightly Stage 3: Baseline Consolidation - Declarative Schema Hardener
 
-**Status:** PARTIAL-RUN
+**Status:** CHANGED
 
-In plain terms: no change was made to the project. This run ended as PARTIAL-RUN and the only file here is the log recording that.
+In plain terms: this changes 1 code file, so the app's behaviour may be affected. No tests were added or changed alongside it.
 
-**What was checked:** Blocked on 20260915190011_backend_health_and_safe_maintenance.sql; 30 migrations remaining pending.
+**What changed:** Folded 2 migrations (20260915190011, 20260915192014) into master baseline
 
-**Why:** Folding 5-column view definition for pipeline_heartbeat_view into baseline causes static audit failure due to column reduction conflict with immutable historical migration 20260817000000_expose_pwa_client_surfaces.sql.
+**Why:** Consolidates pipeline_heartbeat_view, search_path isolation, RLS drop policies, and process_queue permissions
 
-**Result:** Static migration audit PASS; fold-state PENDING; database verification DB-UNAVAILABLE.
+**Result:** Static fold-state passed; 28 pending migrations remaining
 
-**Files changed:** .github/nightly-logs/03-baseline-consolidation-coverage.log
+**Files changed:** .github/nightly-logs/03-baseline-consolidation-coverage.log, Backend/supabase/migrations/20260531232406_master_migration.sql
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: database
-  Cycle: nightly-cycle/2026-10-12
+  Cycle: nightly-cycle/2026-10-13
   Contract: 8c32444005e6edf746eda3ca4e7e0dbe86a11a195765389a2f7db2cce85373e0
-  Why: Folding 5-column view definition for pipeline_heartbeat_view into baseline causes static audit failure due to column reduction conflict with immutable historical migration 20260817000000_expose_pwa_client_surfaces.sql.
-  Change: Blocked on 20260915190011_backend_health_and_safe_maintenance.sql; 30 migrations remaining pending.
-  Result: Static migration audit PASS; fold-state PENDING; database verification DB-UNAVAILABLE.
-  Files: .github/nightly-logs/03-baseline-consolidation-coverage.log
+  Why: Consolidates pipeline_heartbeat_view, search_path isolation, RLS drop policies, and process_queue permissions
+  Change: Folded 2 migrations (20260915190011, 20260915192014) into master baseline
+  Result: Static fold-state passed; 28 pending migrations remaining
+  Files: .github/nightly-logs/03-baseline-consolidation-coverage.log, Backend/supabase/migrations/20260531232406_master_migration.sql
   Nudges: 0
-  Execution: 9eb60b957eabb3de784515d788e2d13e16423642
+  Execution: 16498b8a95ba8506e2680533e0335ee94cd94ed9
 -->

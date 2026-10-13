@@ -16,7 +16,7 @@ catalogs:
     "@supabase/supabase-js": "^2.117.3"
     "@types/node": "^26.6.5"
     "@vite-pwa/assets-generator": "^2.0.0"
-    "@vitejs/plugin-vue": "^6.0.8"
+    "@vitejs/plugin-vue": "^6.0.10"
     "@vitest/coverage-v8": "^4.1.11"
     "@vue/eslint-config-typescript": "^14.9.0"
     "@vue/test-utils": "^2.5.0"

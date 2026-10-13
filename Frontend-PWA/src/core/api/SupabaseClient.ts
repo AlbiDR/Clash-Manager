@@ -299,10 +299,10 @@ function parseSnapshotMarkers(response: OptionalQueryResponse | null): SnapshotM
     if (invalidMarkers.has(rawName)) continue;
     const rowValidation = v.safeParse(SyncSnapshotMarkerRowSchema, rawRow);
     if (!rowValidation.success) continue;
-    const row = rowValidation.output;
-    const generation = normalizeSnapshotGeneration(row.generation);
-    if (!generation || !row.refreshed_at || parseTimestamp(row.refreshed_at) === null) continue;
-    markers[row.snapshot_name] = { generation, refreshedAt: row.refreshed_at };
+    const snapshotMarkerRow = rowValidation.output;
+    const generation = normalizeSnapshotGeneration(snapshotMarkerRow.generation);
+    if (!generation || !snapshotMarkerRow.refreshed_at || parseTimestamp(snapshotMarkerRow.refreshed_at) === null) continue;
+    markers[snapshotMarkerRow.snapshot_name] = { generation, refreshedAt: snapshotMarkerRow.refreshed_at };
   }
 
   return markers;
@@ -338,8 +338,8 @@ async function fetchRosterSnapshot(
 
   const rawData: unknown = response.data ?? [];
   if (!Array.isArray(rawData)) throw new Error("Roster payload was not an array");
-  const rows = rawData.flatMap((row: unknown) => {
-    const validation = v.safeParse(SbRosterRowSchema, row);
+  const rows = rawData.flatMap((rosterRowCandidate: unknown) => {
+    const validation = v.safeParse(SbRosterRowSchema, rosterRowCandidate);
     return validation.success ? [validation.output] : [];
   });
   const rejectedRows = rawData.length - rows.length;
@@ -375,8 +375,8 @@ async function fetchHeadhunterSnapshot(
 
   const rawData: unknown = response.data ?? [];
   if (!Array.isArray(rawData)) throw new Error("Headhunter payload was not an array");
-  const rows = rawData.flatMap((row: unknown) => {
-    const validation = v.safeParse(SbHeadhunterRowSchema, row);
+  const rows = rawData.flatMap((headhunterRowCandidate: unknown) => {
+    const validation = v.safeParse(SbHeadhunterRowSchema, headhunterRowCandidate);
     return validation.success ? [validation.output] : [];
   });
   const rejectedRows = rawData.length - rows.length;
