@@ -152,6 +152,7 @@ describe("clinicalServe", () => {
           args.some((arg) => typeof arg === "string" && arg.includes("Heartbeat write FAILED")),
         );
         expect(loggedHeartbeatFailure).toBe(true);
+        expect(consoleErrorSpy.mock.calls.flat().join(" ")).not.toContain("column \"metadata\" does not exist");
       } finally {
         consoleErrorSpy.mockRestore();
       }
@@ -160,6 +161,7 @@ describe("clinicalServe", () => {
 
   describe("F3: telemetry terminal state", () => {
     it("drives the telemetry row to FAILED when the handler throws", async () => {
+      const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
       const { supabase, calls } = makeSupabaseMock(async (fn) => {
         if (fn === "report_telemetry") return { data: { id: "tid-123" }, error: null };
         return { data: null, error: null };
@@ -182,6 +184,8 @@ describe("clinicalServe", () => {
       expect(body.code).toBe("INTERNAL_ERROR");
       // [ASSERT] The raw handler message must never reach the response body.
       expect(JSON.stringify(body)).not.toContain("handler exploded");
+      expect(consoleErrorSpy.mock.calls.flat().join(" ")).not.toContain("handler exploded");
+      consoleErrorSpy.mockRestore();
 
       const updateCalls = calls.filter((c) => c.fn === "update_telemetry");
       expect(updateCalls.length).toBeGreaterThan(0);

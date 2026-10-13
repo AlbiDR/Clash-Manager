@@ -1,6 +1,6 @@
 {
   "name": "clash-manager-monorepo",
-  "version": "14.54.4",
+  "version": "14.55.0",
   "license": "GPL-3.0-only",
   "private": true,
   "scripts": {
@@ -28,6 +28,9 @@
     "audit:version:fix": "tsx .github/scripts/project/validate-project.ts --fix",
     "audit:db-drift": "node .github/scripts/database/audit-db-drift.mjs",
     "db:health": "node .github/scripts/database/db-health.mjs",
+    "db:observe": "node .github/scripts/database/db-observe.mjs",
+    "db:observe:report": "node .github/scripts/database/db-observe-report.mjs",
+    "test:db-observe": "node --test .github/scripts/database/db-observe*.test.mjs .github/scripts/database/db-health.test.mjs",
     "test:db-health": "node --test .github/scripts/database/db-health.test.mjs",
     "db:audit": "node .github/scripts/database/db-architecture.mjs",
     "test:db-architecture": "node --test .github/scripts/database/db-architecture.test.mjs",
