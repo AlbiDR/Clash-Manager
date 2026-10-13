@@ -16,6 +16,15 @@ LAST_AGED:   2026-10-12
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-13] PR #2191 [Stage 8]: package.json -- Bumped @vitejs/plugin-vue catalog entry from ^6.0.8 to ^6.0.10 and refreshed lockfile
+**Domain:** dependencies | **Commit:** 63dadd27e | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2191)
+**Files:** .github/nightly-logs/08-dependency-audit-coverage.log, .github/nightly-logs/08-dependency-audit-pr-body.md, package.json, pnpm-lock.yaml, pnpm-workspace.yaml
+**Why:** Safe Tier 1 patch update for @vitejs/plugin-vue
+**Change:** package.json -- Bumped @vitejs/plugin-vue catalog entry from ^6.0.8 to ^6.0.10 and refreshed lockfile
+**Result:** pnpm test passed 220 test files (2343 passed) and pnpm test:nightly-control-plane passed all 12 sub-suites
+**Nudges:** 1
+
+
 ### [2026-10-13] PR #2190 [Stage 6]: docs(tsdoc): harden runTournamentDiscovery TSDoc interface contract and logic annotations
 **Domain:** documentation | **Commit:** 5e502cd11 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2190)
 **Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, .github/nightly-logs/06-documentation-tsdoc-pr-body.md, Backend/supabase/functions/headhunter-scanner/stages/tournament-finder.ts
