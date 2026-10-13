@@ -578,6 +578,15 @@
   - Recurrence check: Stage 9 exhibits recurring watchdog intervention dispatches (`[RECURRING]`, nudged on 2026-10-03 and 2026-10-12), rated `DEGRADING` in health verdict; Stage 10 nudged on 2026-10-07, 2026-10-09, and 2026-10-12.
   - Resolution Details: Watchdog nudges successfully recovered all 4 sessions (`ok: true`). Stage 1 merged PR #2173 (CLEAN), Stage 7 published PR #2178 (CLEAN calibration pass), Stage 9 published PR #2180 (CLEAN), and Stage 10 published PR #2181 (CLEAN calibration pass). Pipeline intervention rate for 2026-10-12: 4/12 merged stages (33.3%).
 
+* Watchdog Recovery Nudge Interventions on 2026-10-13:
+  - Stages: Stage 6 (TSDoc) and Stage 10 (APK Integrity)
+  - State: [RESCUED - monitor] for Stage 6 / [RESCUED - RECURRING] for Stage 10 (2026-10-13)
+  - Sessions: Stage 6 (`sessions/11007077988971604794`), Stage 10 (`sessions/6507260232354379764`)
+  - Symptom: Stage 6 and Stage 10 sessions required watchdog recovery nudge dispatches (`nudgedAt: 2026-10-13T05:10:49.317Z` for Stage 6; `2026-10-13T09:19:52.264Z` for Stage 10) due to stalling during post-execution reserve or PR finalization.
+  - Root Cause: Prolonged post-execution reserve / PR finalization processing reaching watchdog recovery thresholds prior to publication.
+  - Recurrence check: Stage 10 exhibits recurring watchdog intervention dispatches (`[RECURRING]`, nudged on 2026-10-07, 2026-10-09, 2026-10-12, and 2026-10-13), rated `DEGRADING` in health verdict ("intervention rate rose from 13% to 17%"). Stage 6 nudged on 2026-10-01, 2026-10-03, 2026-10-08, and 2026-10-13 (`[RESCUED - monitor]`).
+  - Resolution Details: Watchdog nudges successfully recovered both sessions (`ok: true`). Stage 6 published PR #2190 (CHANGED) and Stage 10 published PR #2194 (CLEAN). Pipeline intervention rate for 2026-10-13: 2/12 merged stages (16.7%).
+
 ## Section 2: Cross-Stage Coherence Bugs (Priority 2)
 
 * Duplicate Merge Failure Blocks in 00-pr-history.md:
@@ -635,62 +644,62 @@
 
 * Static View History Audit Violation on Migration Baseline Consolidation (Stage 3, 2026-10-11):
   - Stage: Stage 3 (Baseline Consolidation)
-  - State: [ACTIVE - monitor] (2026-10-11)
-  - PR: PR #2160
+  - State: [RESOLVED] (2026-10-13)
+  - PR: PR #2160 (blocked), resolved in PR #2186 (2026-10-13)
   - Symptom: Stage 3 completed with status `PARTIAL-RUN` (`[checks database-verification=DB-UNAVAILABLE fold-state=PENDING migration-quality=PASS]`). Folding unit `20260915190011_backend_health_and_safe_maintenance.sql` into baseline was blocked by static view history audit violation on `pipeline_heartbeat_view` expansion.
   - Root Cause: Static view history audit check flagged modified view dependency order or structural mismatch in `pipeline_heartbeat_view` during baseline folding attempt.
-  - Recommended Fix: Audit `pipeline_heartbeat_view` dependency definition in `20260915190011_backend_health_and_safe_maintenance.sql` against the baseline schema view history before re-attempting baseline consolidation.
+  - Resolution Details: Resolved on October 13, 2026, via PR #2186. Stage 3 successfully folded 2 pending migrations (`20260915190011_backend_health_and_safe_maintenance.sql` and `20260915192014_headhunter_historical_tournament_cache.sql`) into `20260531232406_master_migration.sql` with clean migration quality verification.
 
 ## Section 3: No-Diff and Low-Value Audit (Priority 3)
 
 * Stage 1 (Harden):
-  - Consecutive No-Diff Days: 4 (CLEAN logged on 2026-10-12, PR #2173; Stage 1 UTC boundary check; audit duration: 5m, median 6m)
-  - Analysis: Audited Edge Function endpoints, in-memory state variables, Valibot boundary schemas, and cross-layer architectural isolations across 81 changed files; zero threat vectors found.
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-10-13 in tournament-finder.ts, PR #2184; audit duration: 8m, median 6m)
+  - Analysis: Annotated in-memory Set in headhunter-scanner tournament discovery with explicit EPHEMERAL comment to ensure lifetime safety (PR #2184).
 
 * Stage 2 (Verify):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-10-12 in config.spec.ts, PR #2171; audit duration: 7m, median 14m)
-  - Analysis: Added unit test suite for Backend shared config kernel (config.ts) in Backend/supabase/functions/_shared/shared-tests/config.spec.ts (PR #2171).
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-10-13 in ApiErrors.spec.ts, PR #2185; audit duration: 11m, median 13.5m)
+  - Analysis: Closed zero-coverage gap in L1 Core ApiErrors network error class with saturating unit/boundary tests (PR #2185).
 
 * Stage 3 (Baseline Consolidation):
-  - Consecutive No-Diff Days: 0 (PARTIAL-RUN logged on 2026-10-12 in PR #2172; audit duration: 5m, median 3m)
-  - Analysis: Attempted baseline consolidation of migration 20260915190011_backend_health_and_safe_maintenance.sql (PR #2172); blocked by view column expansion conflict on pipeline_heartbeat_view with immutable historical migration.
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-10-13 in master_migration.sql, PR #2186; audit duration: 7m, median 3m)
+  - Analysis: Successfully folded 2 pending migrations (20260915190011, 20260915192014) into master baseline schema (PR #2186).
 
 * Stage 4 (Optimization):
-  - Consecutive No-Diff Days: 28 (CLEAN logged on 2026-10-12, PR #2174; audit duration: 6m, median 5m)
-  - Analysis: Inspected 81 changed files and Edge Functions for SQL view substrate hygiene; zero structural rot or unreferenced views found.
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-10-13 in SupabaseClient.ts, PR #2187; audit duration: 3m, median 5m)
+  - Analysis: Standardized variable naming in SupabaseClient.ts and audited substrate views (PR #2187).
 
 * Stage 5 (README):
-  - Consecutive No-Diff Days: 1 (CLEAN logged on 2026-10-12, PR #2175; audit duration: 6m, median 4m)
-  - Analysis: Verified SupabaseClient.ts documentation accuracy in Frontend-PWA/src/core/api/README.md (PR #2175).
+  - Consecutive No-Diff Days: 2 (CLEAN logged on 2026-10-13, PR #2188; audit duration: 10m, median 4m)
+  - Analysis: Verified SupabaseClient.ts documentation accuracy in Frontend-PWA/src/core/api/README.md (PR #2188).
 
 * Stage 6 (TSDoc):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-10-12 in useClashSync.ts, PR #2176; audit duration: 5m, median 6m)
-  - Analysis: Hardened useClashSync TSDoc interface contracts and inline logic annotations in Frontend-PWA/src/core/services/useClashSync.ts (PR #2176).
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-10-13 in tournament-finder.ts, PR #2190; audit duration: 7m, median 6m)
+  - Analysis: Hardened runTournamentDiscovery TSDoc interface contract and logic annotations in tournament-finder.ts (PR #2190).
 
 * Stage 7 (Version Integrity):
-  - Consecutive No-Diff Days: 162 (CLEAN calibration pass logged on 2026-10-12, PR #2178; audit duration: 5m, median 3m)
-  - Analysis: Calibration pass fully synchronized ground truth version 14.54.4 across package manifests, workspace catalog, and README version badges with zero drift (PR #2178).
+  - Consecutive No-Diff Days: 163 (CLEAN logged on 2026-10-13, PR #2189; audit duration: 5m, median 3m)
+  - Analysis: Audited monorepo package versions, catalog declarations, and derived declarations; verified version alignment across monorepo package manifests (PR #2189).
 
 * Stage 8 (Dependency Audit):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-10-12 in package.json, PR #2177; audit duration: 8m, median 7m)
-  - Analysis: Bumped dependency-cruiser to ^18.6.0 in monorepo catalogs, updated pnpm-lock.yaml, and re-verified dependency graph (PR #2177).
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-10-13 in package.json, PR #2191; audit duration: 6m, median 7m)
+  - Analysis: Bumped @vitejs/plugin-vue catalog entry from ^6.0.8 to ^6.0.10 and refreshed lockfile (PR #2191).
 
 * Stage 9 (Refactor):
-  - Consecutive No-Diff Days: 3 (CLEAN logged on 2026-10-12, PR #2180; audit duration: 7m, median 6.5m)
-  - Analysis: Audited 81 changed files, 0 dep violations, 11 knip unused files, 1 knip unused dep (@formkit/auto-animate); modules useClashSync, SupabaseClient, and useProgressiveList audited clean (PR #2180).
+  - Consecutive No-Diff Days: 4 (CLEAN logged on 2026-10-13, PR #2192; audit duration: 12m, median 7m)
+  - Analysis: Audited 50 changed files, 0 dep violations, 11 knip unused files, 1 knip unused dep (@formkit/auto-animate); modules useClashSync, SupabaseClient, and useProgressiveList audited clean (PR #2192).
 
 * Stage 10 (APK-Integrity):
-  - Consecutive No-Diff Days: 95 (CLEAN calibration pass logged on 2026-10-12, PR #2181; audit duration: 3m, median 3m)
-  - Analysis: Full wrapper invariant audit verified asset links, manifest values, release metadata, version codes, and cleartext traffic policy (PR #2181).
+  - Consecutive No-Diff Days: 96 (CLEAN logged on 2026-10-13, PR #2194; audit duration: 3m, median 3m)
+  - Analysis: PWA wrapper integrity audit completed with no mismatches found across asset links, manifest parity, version code/name sync, release metadata, and security policy invariants (PR #2194).
 
 * Stage 11 (APK-Optimization):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-10-12 in MainActivity.java, PR #2179; audit duration: 4m, median 3m)
-  - Analysis: Configured WebSettings cache mode to LOAD_CACHE_ELSE_NETWORK in APK/src/com/albidr/clashmanager/MainActivity.java (PR #2179).
+  - Consecutive No-Diff Days: 1 (CLEAN logged on 2026-10-13, PR #2193; audit duration: 3m, median 3m)
+  - Analysis: Audited native WebView settings, Service Worker caching strategies, and precache footprint; zero source changes required (PR #2193).
 
 * Stage 12 (APK-UX):
-  - Consecutive No-Diff Days: 14 (CLEAN logged on 2026-10-12, PR #2182; audit duration: 2m, median 4m)
-  - Analysis: Global APK UX audit passed with 0 violations across 77 files examined in frontend sweep (PR #2182).
+  - Consecutive No-Diff Days: 15 (CLEAN logged on 2026-10-13, PR #2195; audit duration: 4m, median 4m)
+  - Analysis: Global APK UX audit passed with 0 violations across 77 files examined in frontend sweep (PR #2195).
 
 * Stage 13 (Self-Healing):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-10-12; audit duration: 5m median)
-  - Analysis: Completed daily self-healing audit pass for 2026-10-12: documented 33.3% intervention rate (4 watchdog nudges across 12 merged stages: S01, S07, S09, S10), noted Stage 9 DEGRADING health status, and updated Section 3 metrics across Stages 1-13.
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-10-13; audit duration: 5m median)
+  - Analysis: Completed daily self-healing audit pass for 2026-10-13: documented 16.7% intervention rate (2 watchdog nudges across 12 merged stages: S06, S10), noted Stage 10 DEGRADING health status ([RECURRING]), documented resolution of Stage 3 baseline migration view conflict in Section 2, and updated Section 3 metrics across Stages 1-13.
