@@ -16,6 +16,23 @@ LAST_AGED:   2026-10-12
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-13] PR #2190 [Stage 6]: docs(tsdoc): harden runTournamentDiscovery TSDoc interface contract and logic annotations
+**Domain:** documentation | **Commit:** 5e502cd11 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2190)
+**Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, .github/nightly-logs/06-documentation-tsdoc-pr-body.md, Backend/supabase/functions/headhunter-scanner/stages/tournament-finder.ts
+**Why:** Hardened runTournamentDiscovery TSDoc specifications, parameter descriptions, ADR Section III/IV links, and side-effect annotations to ensure strict contract synchronization with implementation truth.
+**Change:** docs(tsdoc): harden runTournamentDiscovery TSDoc interface contract and logic annotations
+**Result:** Type check and monorepo test suite passed cleanly.
+**Nudges:** 0
+
+### [2026-10-13] PR #2189 [Stage 7]: Codebase -- Audited monorepo package versions, catalog declarations, and derived declarations
+**Domain:** versioning | **Commit:** 5d11ff078 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2189)
+**Files:** .github/nightly-logs/07-version-integrity-coverage.log, .github/nightly-logs/07-version-integrity-pr-body.md
+**Why:** Ensure version integrity and catalog adherence across monorepo
+**Change:** Codebase -- Audited monorepo package versions, catalog declarations, and derived declarations
+**Result:** Catalog scan of Frontend-PWA and Backend package.json, package version check against ground truth 14.54.4 across 3 manifests, and pnpm audit:version passed with 0 drift lines
+**Nudges:** 0
+
+
 ### [2026-10-13] PR #2188 [Stage 5]: Verified SupabaseClient.ts documentation accuracy in Frontend-PWA/src/core/api/README.md
 **Domain:** documentation | **Commit:** 84d3a9010 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2188)
 **Files:** .github/nightly-logs/05-documentation-readme-coverage.log, .github/nightly-logs/05-documentation-readme-pr-body.md
