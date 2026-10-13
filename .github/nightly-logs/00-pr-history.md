@@ -16,6 +16,15 @@ LAST_AGED:   2026-10-12
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-13] PR #2195 [Stage 12]: Completed APK UX audit sweep with 0 violations across 77 files examined.
+**Domain:** ux | **Commit:** c72c5b806 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2195)
+**Files:** .github/nightly-logs/12-apk-ux-coverage.log, .github/nightly-logs/12-apk-ux-pr-body.md
+**Why:** Audit status is PASS with no candidate files requiring modifications.
+**Change:** Completed APK UX audit sweep with 0 violations across 77 files examined.
+**Result:** apk-ux-audit-status.txt: PASS; apk-ux-audit.json: 0 candidate files reviewed; UX categories 1-10 checked
+**Nudges:** 0
+
+
 ### [2026-10-13] PR #2194 [Stage 10]: PWA wrapper integrity audit completed with no mismatches found across asset links, manifest parity, version code/name sync, release metadata, and security policy invariants.
 **Domain:** apk | **Commit:** 0cc6d01b4 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2194)
 **Files:** .github/nightly-logs/10-apk-integrity-coverage.log, .github/nightly-logs/10-apk-integrity-pr-body.md
