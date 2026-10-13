@@ -439,10 +439,9 @@ async function reportHeartbeat(
     const { error: heartbeatError } = await supabase.rpc('report_heartbeat', payload);
 
     if (heartbeatError) {
-        console.error(
-            `[Protocol] Heartbeat write FAILED for ${payload.p_component_id} (${payload.p_status}):`,
-            heartbeatError.message ?? heartbeatError,
-        );
+        // The Supabase error object can carry its raw response body. Transport detail
+        // is emitted by requestTrace.ts with a safe route and response request ID.
+        console.error(`[Protocol] Heartbeat write FAILED for ${payload.p_component_id} (${payload.p_status}).`);
         return false;
     }
 
@@ -970,7 +969,7 @@ export async function clinicalServe<T>(options: ProtocolOptions<T>) {
             // supabase.rpc() resolves with { error } rather than throwing; an unlogged failure
             // here would leave the row IN_PROGRESS with nothing saying why.
             if (telemetryCloseError) {
-                console.error(`[Protocol] Final telemetry write FAILED for ${componentId}: ${telemetryCloseError.message}`);
+                console.error(`[Protocol] Final telemetry write FAILED for ${componentId}.`);
             }
         }
 
@@ -989,7 +988,7 @@ export async function clinicalServe<T>(options: ProtocolOptions<T>) {
 
         return new Response(JSON.stringify({
             success: true,
-            version: '14.54.4',
+            version: '14.55.0',
             data: results,
             duration_ms: Temporal.Now.instant().since(startInstant).total('milliseconds'),
             timestamp: Temporal.Now.instant().toString()
@@ -1006,7 +1005,7 @@ export async function clinicalServe<T>(options: ProtocolOptions<T>) {
         // stay server-side. Anything not already a `ProtocolError` degrades to
         // `INTERNAL_ERROR`, which leaks nothing regardless of what the original throw said.
         const { code, internalDetail } = classifyThrown(protocolError);
-        console.error(`[CRITICAL] Protocol Violation in ${componentId} [${code}]: ${internalDetail}`);
+        console.error(`[CRITICAL] Protocol Violation in ${componentId} [${code}].`);
         logAudit('FATAL_ERROR', 'error', { code, message: internalDetail });
 
         // [DECISION LOG] Drive the telemetry row to a terminal FAILED state ONLY when a row
@@ -1036,15 +1035,10 @@ export async function clinicalServe<T>(options: ProtocolOptions<T>) {
                     }
                 });
                 if (failedTelemetryError) {
-                    console.error(
-                        `[Protocol] Failed to persist terminal FAILED telemetry state for ${componentId}: ${failedTelemetryError.message}`
-                    );
+                    console.error(`[Protocol] Failed to persist terminal FAILED telemetry state for ${componentId}.`);
                 }
             } catch (telemetryCloseError: unknown) {
-                console.error(
-                    `[Protocol] Failed to persist terminal FAILED telemetry state for ${componentId}: ` +
-                    `${telemetryCloseError instanceof Error ? telemetryCloseError.message : String(telemetryCloseError)}`
-                );
+                console.error(`[Protocol] Failed to persist terminal FAILED telemetry state for ${componentId}.`);
             }
         }
 
@@ -1066,10 +1060,7 @@ export async function clinicalServe<T>(options: ProtocolOptions<T>) {
                     }
                 });
             } catch (heartbeatError: unknown) {
-                console.error(
-                    `[Protocol] Failed to report FAILED heartbeat for ${componentId}: ` +
-                    `${heartbeatError instanceof Error ? heartbeatError.message : String(heartbeatError)}`
-                );
+                console.error(`[Protocol] Failed to report FAILED heartbeat for ${componentId}.`);
             }
         }
 

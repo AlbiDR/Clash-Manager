@@ -1,0 +1,57 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 AlbiDR
+
+name: Read-only Database Observer
+
+on:
+  schedule:
+    # Run away from the hour boundary so the small observer stays easy to separate from deploys.
+    - cron: "17 * * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: db-observe-stable
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  observe:
+    name: Capture two read-only database health samples
+    if: github.ref == 'refs/heads/Stable'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout Stable
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.sha }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - name: Verify observation collectors
+        run: node --test .github/scripts/database/db-observe*.test.mjs .github/scripts/database/db-health.test.mjs
+
+      - name: Set application version for evidence provenance
+        run: node -e "console.log('RELEASE_VERSION='+require('./package.json').version)" >> "$GITHUB_ENV"
+
+      - name: Collect two samples 120 seconds apart
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF: ${{ vars.SUPABASE_PROJECT_ID }}
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
+        run: node .github/scripts/database/db-observe.mjs --output "$RUNNER_TEMP/db-observation.json" --interval-seconds 120
+
+      - name: Upload database observation evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: db-observation-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/db-observation.json
+          if-no-files-found: warn
+          retention-days: 30

@@ -4,23 +4,23 @@
 
 In plain terms: this changes 1 code file, so the app's behaviour may be affected. No tests were added or changed alongside it.
 
-**What changed:** docs(tsdoc): harden useClashSync TSDoc interface contracts and inline logic annotations
+**What changed:** docs(tsdoc): harden runTournamentDiscovery TSDoc interface contract and logic annotations
 
-**Why:** Hardened interface contracts and added decision logs and threat tags to useClashSync helper functions and recovery logic.
+**Why:** Hardened runTournamentDiscovery TSDoc specifications, parameter descriptions, ADR Section III/IV links, and side-effect annotations to ensure strict contract synchronization with implementation truth.
 
-**Result:** PASSED (78/78 tests passed)
+**Result:** Type check and monorepo test suite passed cleanly.
 
-**Files changed:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, Frontend-PWA/src/core/services/useClashSync.ts
+**Files changed:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, Backend/supabase/functions/headhunter-scanner/stages/tournament-finder.ts
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: documentation
-  Cycle: nightly-cycle/2026-10-12
+  Cycle: nightly-cycle/2026-10-13
   Contract: a9f522cc73babe487aa3df1b083524daba64c0dd03c9e1b446dd4bd70c376bae
-  Why: Hardened interface contracts and added decision logs and threat tags to useClashSync helper functions and recovery logic.
-  Change: docs(tsdoc): harden useClashSync TSDoc interface contracts and inline logic annotations
-  Result: PASSED (78/78 tests passed)
-  Files: .github/nightly-logs/06-documentation-tsdoc-coverage.log, Frontend-PWA/src/core/services/useClashSync.ts
+  Why: Hardened runTournamentDiscovery TSDoc specifications, parameter descriptions, ADR Section III/IV links, and side-effect annotations to ensure strict contract synchronization with implementation truth.
+  Change: docs(tsdoc): harden runTournamentDiscovery TSDoc interface contract and logic annotations
+  Result: Type check and monorepo test suite passed cleanly.
+  Files: .github/nightly-logs/06-documentation-tsdoc-coverage.log, Backend/supabase/functions/headhunter-scanner/stages/tournament-finder.ts
   Nudges: 0
-  Execution: c199226d527fbe5b99cdb581801ec4a1e7959c81
+  Execution: eee49bcc2f16c5d8c90913e8952f7a5179f2152a
 -->

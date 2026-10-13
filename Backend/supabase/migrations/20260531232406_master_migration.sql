@@ -3333,6 +3333,9 @@ BEGIN
 END;
 $function$;
 
+REVOKE ALL ON FUNCTION features.process_queue(jsonb) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION features.process_queue(jsonb) TO service_role;
+
 CREATE OR REPLACE FUNCTION features.undismiss_recruits(player_tags text[])
  RETURNS jsonb
  LANGUAGE plpgsql
@@ -4729,12 +4732,16 @@ GRANT SELECT ON features.voyage_summary TO authenticated, anon, service_role;
 CREATE OR REPLACE VIEW features.pipeline_heartbeat_view AS
   SELECT
     ph.component_id,
-    ph.last_success_at
+    ph.last_success_at,
+    ph.status,
+    ph.last_triggered_at,
+    ph.last_failure_at
   FROM substrate.pipeline_heartbeat ph;
 
 COMMENT ON VIEW features.pipeline_heartbeat_view IS
-  'Historical two-column PWA heartbeat projection. Later immutable migrations
-   expand this view to the current public-safe five-column projection.';
+  'Anon-readable, public-safe pipeline status projection for the PWA. Exposes
+   completion timing and status only; private operational messages remain in
+   substrate.pipeline_heartbeat.';
 
 GRANT SELECT ON features.pipeline_heartbeat_view TO authenticated, anon, service_role;
 

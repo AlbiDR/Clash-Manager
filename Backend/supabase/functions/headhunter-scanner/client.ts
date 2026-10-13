@@ -4,6 +4,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2.117.0";
 import { loadConfig } from "../_shared/vault.ts";
 import { setKeys } from "../_shared/muscle.ts";
+import { withSupabaseRequestTracing } from "../_shared/requestTrace.ts";
 
 /**
  * L1 Core: Client & Environment Broker
@@ -18,7 +19,8 @@ export const CONFIG = {
 
 export const supabase = createClient(
   CONFIG.SUPABASE_URL,
-  CONFIG.SUPABASE_SERVICE_ROLE_KEY
+  CONFIG.SUPABASE_SERVICE_ROLE_KEY,
+  { global: { fetch: withSupabaseRequestTracing() } }
 );
 
 /**

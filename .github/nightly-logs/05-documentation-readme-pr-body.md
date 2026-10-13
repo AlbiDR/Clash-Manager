@@ -6,7 +6,7 @@ In plain terms: nothing needed fixing. This run checked the documentation README
 
 **What was checked:** Verified SupabaseClient.ts documentation accuracy in Frontend-PWA/src/core/api/README.md
 
-**Why:** Documentation accurately reflects current SupabaseClient implementation and caching logic
+**Why:** Audit confirmed README prose accurately describes current SupabaseClient.ts behavior
 
 **Result:** Audit completed with no source change required.
 
@@ -17,13 +17,13 @@ In plain terms: nothing needed fixing. This run checked the documentation README
 <!--
 NIGHTLY_PR_METADATA:
   Domain: documentation
-  Cycle: nightly-cycle/2026-10-12
+  Cycle: nightly-cycle/2026-10-13
   Contract: cea68a5bbba1bd2cbc6d3bdfe2639f37f3935b571beab59f5da1501b1180b22d
-  Why: Documentation accurately reflects current SupabaseClient implementation and caching logic
+  Why: Audit confirmed README prose accurately describes current SupabaseClient.ts behavior
   Change: Verified SupabaseClient.ts documentation accuracy in Frontend-PWA/src/core/api/README.md
   Result: Audit completed with no source change required.
   Files: .github/nightly-logs/05-documentation-readme-coverage.log
   Verified: Frontend-PWA/src/core/api/SupabaseClient.ts
   Nudges: 1
-  Execution: 53edd323bc5ac740a82a0c066e6b42c21e75aae4
+  Execution: c9cde9e72a9a4f75799633270100ba555a6ab584
 -->

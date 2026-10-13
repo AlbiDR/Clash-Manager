@@ -4,23 +4,23 @@
 
 In plain terms: this adds 1 test file in the verification area. No product code changed, so the app behaves exactly as it did before.
 
-**What changed:** Added unit test suite for Backend shared config kernel (config.ts)
+**What changed:** Frontend-PWA/src/core/api/api-tests/ApiErrors.spec.ts -- Closed zero-coverage gap in L1 Core ApiErrors network error class with saturating unit/boundary tests.
 
-**Why:** Closed zero-coverage gap in recently updated Backend L1 Core shared config kernel
+**Why:** Zero Coverage gap closed for L1 Core network error class ApiErrors.ts to prevent uncaught network transport failure regressions.
 
-**Result:** 10/10 unit tests passed; mutation testing verified failure on getAllowedOrigins return logic
+**Result:** Added 3 unit tests in ApiErrors.spec.ts covering error message formatting, error name, prototype inheritance (instanceof NetworkError & Error), and stack trace generation. Verified mutation proof by temporarily changing this.name = 'MutatedError' in ApiErrors.ts (caught by expect(error.name).toBe('NetworkError')) and immediately restoring source file.
 
-**Files changed:** .github/nightly-logs/02-verification-coverage.log, Backend/supabase/functions/_shared/shared-tests/config.spec.ts
+**Files changed:** .github/nightly-logs/02-verification-coverage.log, Frontend-PWA/src/core/api/api-tests/ApiErrors.spec.ts
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: verification
-  Cycle: nightly-cycle/2026-10-12
+  Cycle: nightly-cycle/2026-10-13
   Contract: b2e927ebff4e2ca5a343609133745d050f07d22fd9bf3e42481440c1d14079f0
-  Why: Closed zero-coverage gap in recently updated Backend L1 Core shared config kernel
-  Change: Added unit test suite for Backend shared config kernel (config.ts)
-  Result: 10/10 unit tests passed; mutation testing verified failure on getAllowedOrigins return logic
-  Files: .github/nightly-logs/02-verification-coverage.log, Backend/supabase/functions/_shared/shared-tests/config.spec.ts
+  Why: Zero Coverage gap closed for L1 Core network error class ApiErrors.ts to prevent uncaught network transport failure regressions.
+  Change: Frontend-PWA/src/core/api/api-tests/ApiErrors.spec.ts -- Closed zero-coverage gap in L1 Core ApiErrors network error class with saturating unit/boundary tests.
+  Result: Added 3 unit tests in ApiErrors.spec.ts covering error message formatting, error name, prototype inheritance (instanceof NetworkError & Error), and stack trace generation. Verified mutation proof by temporarily changing this.name = 'MutatedError' in ApiErrors.ts (caught by expect(error.name).toBe('NetworkError')) and immediately restoring source file.
+  Files: .github/nightly-logs/02-verification-coverage.log, Frontend-PWA/src/core/api/api-tests/ApiErrors.spec.ts
   Nudges: 0
-  Execution: e453b4a45c0f70eafba479bf5f9333c272fd8eae
+  Execution: 2aaeafb15ea5a280935624a6832977b5b3468301
 -->
