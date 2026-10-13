@@ -13,6 +13,7 @@
 - Call the Clash Royale API through a rotating pool of keys, with backoff and concurrency limits.
 - Load secrets from Supabase Vault into the environment at startup.
 - Define the Valibot schemas that guard every payload.
+- Trace failed and slow Supabase RPC transport calls without recording request or response data.
 
 ## Security Boundaries & Throttling Protocol
 
@@ -53,7 +54,8 @@ To enforce strict schema boundaries at the L5 control surface (ADR Section III),
 | `muscle.ts` | Clash Royale API access: `fetchWithRotation` (random-start key rotation + exponential backoff) and `processBatch` (concurrency-limited fan-out via `p-limit`). |
 | `vault.ts` | Loads secrets from Supabase Vault into `Deno.env` at function start (`get_vault_secret` RPC, with an env fallback). |
 | `utils.ts` | Shared helpers: `normalizeTag`, `normalizeRarity`, and `calculateRpos` (the raw recruit potential score). |
-| `config.ts` | Tunable thresholds, batch limits, and discovery keywords. No inline magic numbers elsewhere. |
+| `config.ts` | Tunable function thresholds, batch limits, and discovery keywords. |
+| `requestTrace.ts` | Custom Supabase fetch wrapper that emits structured logs for RPC network/HTTP failures and slow successes. Logs contain only a static RPC route, method, status, duration, and validated response request ID. |
 | `schemas.ts` | Barrel that re-exports the three schema modules below. |
 | `royaleSchemas.ts` | Valibot schemas for Clash Royale API responses. |
 | `rpcSchemas.ts` | Valibot schemas for database RPC payloads (`PlayerSyncPayloadSchema` tag validation matching `RoyaleTagSchema`, `IngestionTargetsSchema` transforming `"drivers.*"` keys to bare `members`/`recruits`, `ShadowTargetSchema`, `StaleRecruitSchema`, `HeadhunterContextSchema`, `DiscoveryAnchorSchema`, `DiscoveryCacheItemSchema`, `RecruitFateSchema`). |
@@ -64,6 +66,7 @@ To enforce strict schema boundaries at the L5 control surface (ADR Section III),
 
 - This is Layer 1: keep it stateless and free of feature-specific logic.
 - No data may enter a function without passing a schema defined here.
+- Supabase clients wire `requestTrace.ts` through `global.fetch`; the wrapper does not read request/response bodies or log headers, URL queries, error messages, or identities. Supabase Edge attaches its native `execution_id` to function log metadata, so no invocation ID is generated in application code.
 
 ## See also
 
