@@ -161,4 +161,62 @@ describe("withSupabaseRequestTracing", () => {
 
     await expect(fetcher(RPC_URL)).resolves.toBe(response);
   });
+
+  it("normalizes HTTP method casing, handles non-standard verbs, and extracts method from Request object", async () => {
+    const errorLog = vi.spyOn(console, "error").mockImplementation(() => {});
+    const response = new Response("error", { status: 500 });
+    const baseFetch = vi.fn(async () => response);
+    const fetcher = withSupabaseRequestTracing(baseFetch);
+
+    await fetcher(RPC_URL, { method: "post" });
+    await fetcher(RPC_URL, { method: "TRACE" });
+    await fetcher(new Request(RPC_URL, { method: "DELETE" }));
+
+    const events = loggedEvents(errorLog);
+    expect(events).toHaveLength(3);
+    expect(events[0].method).toBe("POST");
+    expect(events[1].method).toBe("OTHER");
+    expect(events[2].method).toBe("DELETE");
+  });
+
+  it("ignores non-UUID sb-request-id header values and omits request_id from log event", async () => {
+    const errorLog = vi.spyOn(console, "error").mockImplementation(() => {});
+    const response = new Response("error", {
+      status: 500,
+      headers: { "sb-request-id": "not-a-valid-uuid" },
+    });
+    const fetcher = withSupabaseRequestTracing(async () => response);
+
+    await fetcher(RPC_URL);
+
+    const [event] = loggedEvents(errorLog);
+    expect(event.status).toBe(500);
+    expect(event).not.toHaveProperty("request_id");
+  });
+
+  it("handles malformed URL inputs gracefully without throwing or tracing", async () => {
+    const errorLog = vi.spyOn(console, "error").mockImplementation(() => {});
+    const response = new Response("ok", { status: 200 });
+    const baseFetch = vi.fn(async () => response);
+    const fetcher = withSupabaseRequestTracing(baseFetch);
+
+    await expect(fetcher("not-a-valid-url")).resolves.toBe(response);
+    expect(baseFetch).toHaveBeenCalledWith("not-a-valid-url", undefined);
+    expect(errorLog).not.toHaveBeenCalled();
+  });
+
+  it("correctly identifies RPC routes with a trailing slash", async () => {
+    const errorLog = vi.spyOn(console, "error").mockImplementation(() => {});
+    const response = new Response("error", { status: 400 });
+    const fetcher = withSupabaseRequestTracing(async () => response);
+    const trailingSlashUrl = "https://project.supabase.co/rest/v1/rpc/sync_recruits/";
+
+    await fetcher(trailingSlashUrl);
+
+    const [event] = loggedEvents(errorLog);
+    expect(event).toMatchObject({
+      route: "/rest/v1/rpc/sync_recruits",
+      status: 400,
+    });
+  });
 });
