@@ -16,6 +16,15 @@ LAST_AGED:   2026-10-13
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-14] PR #2206 [Stage 9]: CLEAN: 71 files, 0 dep-viols, knip: 11 files, 1 dep (@formkit/auto-animate). streak:4. Modules: useClashSync, SupabaseClient, useProgressiveList. Closest: SupabaseClient. Hunt: useProgressiveList idle-deadline fallback passed.
+**Domain:** architecture | **Commit:** 4baa96cc9 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2206)
+**Files:** .github/nightly-logs/09-refactor-proposals-coverage.log, .github/nightly-logs/09-refactor-proposals-pr-body.md
+**Why:** Substrate compliant; 0 depcruise violations. Knip items verified active or entrypoints. Defect hunt in useProgressiveList passed 24/24 tests.
+**Change:** CLEAN: 71 files, 0 dep-viols, knip: 11 files, 1 dep (@formkit/auto-animate). streak:4. Modules: useClashSync, SupabaseClient, useProgressiveList. Closest: SupabaseClient. Hunt: useProgressiveList idle-deadline fallback passed.
+**Result:** depcruise PASS, knip OK, pnpm-test Frontend-PWA 153/153 tests passed.
+**Nudges:** 0
+
+
 ### [2026-10-14] PR #2205 [Stage 8]: Bumped vue to ^3.5.44 in catalogs and refreshed lockfile
 **Domain:** dependencies | **Commit:** ba1bad9f4 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2205)
 **Files:** .github/nightly-logs/08-dependency-audit-coverage.log, .github/nightly-logs/08-dependency-audit-pr-body.md, package.json, pnpm-lock.yaml, pnpm-workspace.yaml
