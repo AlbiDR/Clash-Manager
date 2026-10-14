@@ -4,23 +4,23 @@
 
 In plain terms: nothing needed fixing. This run checked the refactor area and found it already correct, so the only file here is the log recording that the check happened.
 
-**What was checked:** CLEAN: 50 files, 0 dep-viols, knip: 11 files, 1 dep (@formkit/auto-animate), 0 exports. streak:3. Modules: useClashSync, SupabaseClient, useProgressiveList. Closest: SupabaseClient. Hunt: useProgressiveList idle-deadline fallback passed.
+**What was checked:** CLEAN: 71 files, 0 dep-viols, knip: 11 files, 1 dep (@formkit/auto-animate). streak:4. Modules: useClashSync, SupabaseClient, useProgressiveList. Closest: SupabaseClient. Hunt: useProgressiveList idle-deadline fallback passed.
 
-**Why:** Bounded structural scan confirmed substrate compliance across bounded candidates with 0 dep-cruiser violations and 0 unused/duplicate exports. Defect hunt on useProgressiveList found no reproducible bugs.
+**Why:** Substrate compliant; 0 depcruise violations. Knip items verified active or entrypoints. Defect hunt in useProgressiveList passed 24/24 tests.
 
-**Result:** depcruise PASS (0 violations), knip OK (11 unused files, 1 unused dep @formkit/auto-animate verified active), pnpm-test Frontend-PWA passed 153/153 tests across 3 files including 24/24 in useProgressiveList.spec.ts.
+**Result:** depcruise PASS, knip OK, pnpm-test Frontend-PWA 153/153 tests passed.
 
 **Files changed:** .github/nightly-logs/09-refactor-proposals-coverage.log
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: architecture
-  Cycle: nightly-cycle/2026-10-13
+  Cycle: nightly-cycle/2026-10-14
   Contract: 401ccac4d9a8ca083bc5492dd8958aca42a02d1f4857914b074fb6ad6b2e53f1
-  Why: Bounded structural scan confirmed substrate compliance across bounded candidates with 0 dep-cruiser violations and 0 unused/duplicate exports. Defect hunt on useProgressiveList found no reproducible bugs.
-  Change: CLEAN: 50 files, 0 dep-viols, knip: 11 files, 1 dep (@formkit/auto-animate), 0 exports. streak:3. Modules: useClashSync, SupabaseClient, useProgressiveList. Closest: SupabaseClient. Hunt: useProgressiveList idle-deadline fallback passed.
-  Result: depcruise PASS (0 violations), knip OK (11 unused files, 1 unused dep @formkit/auto-animate verified active), pnpm-test Frontend-PWA passed 153/153 tests across 3 files including 24/24 in useProgressiveList.spec.ts.
+  Why: Substrate compliant; 0 depcruise violations. Knip items verified active or entrypoints. Defect hunt in useProgressiveList passed 24/24 tests.
+  Change: CLEAN: 71 files, 0 dep-viols, knip: 11 files, 1 dep (@formkit/auto-animate). streak:4. Modules: useClashSync, SupabaseClient, useProgressiveList. Closest: SupabaseClient. Hunt: useProgressiveList idle-deadline fallback passed.
+  Result: depcruise PASS, knip OK, pnpm-test Frontend-PWA 153/153 tests passed.
   Files: .github/nightly-logs/09-refactor-proposals-coverage.log
   Nudges: 0
-  Execution: b3962188429be2c9f10c3a32c83c6107d0f5b8fb
+  Execution: ce2bb8b8214b8d05692fabce8f8090a298efd068
 -->
