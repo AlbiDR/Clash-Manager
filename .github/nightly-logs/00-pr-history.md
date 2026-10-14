@@ -16,6 +16,15 @@ LAST_AGED:   2026-10-13
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-14] PR #2210 [Stage 13]: Mapped October 14 stage executions, recorded Stage 2 and Stage 11 watchdog recovery nudges (16.7% intervention rate), and updated Section 3 stage metrics
+**Domain:** pipeline | **Commit:** 3af3c265f | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2210)
+**Files:** .github/nightly-logs/13-self-healing-protocol-coverage.log, .github/nightly-logs/13-self-healing-protocol-pr-body.md, .github/nightly-logs/13-self-healing-protocol.md
+**Why:** Documented daily pipeline resilience audit findings for 2026-10-14
+**Change:** Mapped October 14 stage executions, recorded Stage 2 and Stage 11 watchdog recovery nudges (16.7% intervention rate), and updated Section 3 stage metrics
+**Result:** git diff --check confirmed valid protocol edits across 13 stage sections
+**Nudges:** 1
+
+
 ### [2026-10-14] PR #2209 [Stage 11]: Audited native WebView performance settings, Service Worker caching, Vite Rolldown code splitting, and static public asset footprint.
 **Domain:** apk | **Commit:** a098be462 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2209)
 **Files:** .github/nightly-logs/11-apk-optimization-coverage.log, .github/nightly-logs/11-apk-optimization-pr-body.md
