@@ -3,12 +3,16 @@
 
 import routeCatalog from "./requestTraceRoutes.json" with { type: "json" };
 
+// EPHEMERAL: intentionally resets on cold start
+// [THREAT:] Module-level route lookup Set initializes at load time and resets across worker isolate cold starts.
 const SAFE_ROUTES = new Set(routeCatalog.routes);
 
 /** A 1-second successful RPC is slow enough to warrant an invocation log. */
 export const SLOW_SUPABASE_RPC_MS = 1_000;
 
 const RPC_PATH = /^\/rest\/v1\/rpc\/([A-Za-z0-9_]+)\/?$/;
+// EPHEMERAL: intentionally resets on cold start
+// [THREAT:] Module-level HTTP method lookup Set initializes at load time and resets across worker isolate cold starts.
 const SAFE_METHODS = new Set(["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]);
 const UUID_REQUEST_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const TRACE_EVENT = "supabase_rpc_trace";
