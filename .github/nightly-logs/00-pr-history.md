@@ -16,6 +16,15 @@ LAST_AGED:   2026-10-13
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-14] PR #2204 [Stage 7]: Catalog and package versions audited across 3 package.json manifests and all derived targets; 0 drift found.
+**Domain:** versioning | **Commit:** 4881c3096 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2204)
+**Files:** .github/nightly-logs/07-version-integrity-coverage.log, .github/nightly-logs/07-version-integrity-pr-body.md
+**Why:** Ground truth version 14.55.0 and pnpm catalog usage are fully synchronized across monorepo and derived artifacts.
+**Change:** Catalog and package versions audited across 3 package.json manifests and all derived targets; 0 drift found.
+**Result:** pnpm audit:version passed with 0 drift or catalog violations detected; catalog scan confirmed catalog: protocol adherence across Frontend-PWA and Backend.
+**Nudges:** 0
+
+
 ### [2026-10-14] PR #2203 [Stage 6]: docs(tsdoc): harden requestTrace interface contracts and inline decision annotations
 **Domain:** documentation | **Commit:** a886bf8a2 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2203)
 **Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, .github/nightly-logs/06-documentation-tsdoc-pr-body.md, Backend/supabase/functions/_shared/requestTrace.ts
