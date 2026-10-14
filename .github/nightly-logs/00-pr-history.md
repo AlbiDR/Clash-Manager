@@ -16,6 +16,15 @@ LAST_AGED:   2026-10-13
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-14] PR #2207 [Stage 10]: Verified asset links, manifest parity, version code/name sync (v14.55.0 / 14055000), release metadata (APK/release/latest.json), and cleartext traffic security policy with pnpm audit:apk, pnpm test:apk-native, and pnpm test:apk-release.
+**Domain:** apk | **Commit:** 883b7693e | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2207)
+**Files:** .github/nightly-logs/10-apk-integrity-coverage.log, .github/nightly-logs/10-apk-integrity-pr-body.md
+**Why:** No configuration mismatches or security profile drifts found across PWA and Android packaging configurations.
+**Change:** Verified asset links, manifest parity, version code/name sync (v14.55.0 / 14055000), release metadata (APK/release/latest.json), and cleartext traffic security policy with pnpm audit:apk, pnpm test:apk-native, and pnpm test:apk-release.
+**Result:** All wrapper invariants verified: digital asset links SHA-256 fingerprints, web manifest/TWA properties, version code/name alignment (v14.55.0 / 14055000), release binary pointer (APK/release/latest.json), and cleartext HTTP prohibitions passed via pnpm audit:apk, pnpm test:apk-native, and pnpm test:apk-release.
+**Nudges:** 0
+
+
 ### [2026-10-14] PR #2206 [Stage 9]: CLEAN: 71 files, 0 dep-viols, knip: 11 files, 1 dep (@formkit/auto-animate). streak:4. Modules: useClashSync, SupabaseClient, useProgressiveList. Closest: SupabaseClient. Hunt: useProgressiveList idle-deadline fallback passed.
 **Domain:** architecture | **Commit:** 4baa96cc9 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2206)
 **Files:** .github/nightly-logs/09-refactor-proposals-coverage.log, .github/nightly-logs/09-refactor-proposals-pr-body.md
