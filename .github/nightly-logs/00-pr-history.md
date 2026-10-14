@@ -15,6 +15,38 @@ LAST_AGED:   2026-10-13
 ---
 
 ## T1 -- Active (last 7 days)
+
+### [2026-10-14] PR #2199 [Stage 1]: Annotated in-memory Set variables in Backend/supabase/functions/_shared/requestTrace.ts with explicit EPHEMERAL comments
+**Domain:** fallback-publish | **Commit:** 3d3a5470c | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2199)
+**Files:** .github/nightly-logs/00-pr-history.md, .github/nightly-logs/01-hardening-coverage.log, .github/nightly-logs/01-hardening-pr-body.md, Backend/supabase/functions/_shared/requestTrace.ts
+**Why:** The Jules session finalized successfully, but its native publisher never opened a pull request and watchdog nudges did not recover publication.
+**Change:** Annotated in-memory Set variables in Backend/supabase/functions/_shared/requestTrace.ts with explicit EPHEMERAL comments
+**Result:** The recovered patch was applied unmodified and validated against the stage write-boundary rules used by normal finalization.
+
+### [2026-10-14] PR #2200 [Stage 2]: Expanded Backend requestTrace.spec.ts unit test suite with edge cases
+**Domain:** verification | **Commit:** 9e33ad101 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2200)
+**Files:** .github/nightly-logs/02-verification-coverage.log, .github/nightly-logs/02-verification-pr-body.md, Backend/supabase/functions/_shared/shared-tests/requestTrace.spec.ts
+**Why:** Close edge case coverage gaps in request tracing utility
+**Change:** Expanded Backend requestTrace.spec.ts unit test suite with edge cases
+**Result:** Added 4 unit tests covering method normalization, non-UUID request IDs, malformed URLs, and trailing slash RPC routes. Proven with getMethod mutation.
+**Nudges:** 0
+
+### [2026-10-14] PR #2198 [Stage 3]: Folded unit 20260916205030 and aligned baseline view projection
+**Domain:** database | **Commit:** 76fadcf17 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2198)
+**Files:** .github/nightly-logs/03-baseline-consolidation-coverage.log, .github/nightly-logs/03-baseline-consolidation-pr-body.md, Backend/supabase/migrations/20260531232406_master_migration.sql
+**Why:** Folded 1 migration into master migration baseline and corrected pipeline_heartbeat_view view projection history compatibility
+**Change:** Folded unit 20260916205030 and aligned baseline view projection
+**Result:** Static audit PASS, fold-state unit resolved, database verification DB-UNAVAILABLE
+**Nudges:** 0
+
+### [2026-10-13] PR #2197 [Stage 1]: Annotated in-memory Set variables in Backend/supabase/functions/_shared/requestTrace.ts with explicit EPHEMERAL comments
+**Domain:** hardening | **Commit:** e9d9c6a66 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2197)
+**Files:** .github/nightly-logs/00-pr-history.md, .github/nightly-logs/01-hardening-coverage.log, .github/nightly-logs/01-hardening-pr-body.md, Backend/supabase/functions/_shared/requestTrace.ts
+**Why:** Satisfied Target A state lifecycle requirements by documenting transient module-level lookup state
+**Change:** Annotated in-memory Set variables in Backend/supabase/functions/_shared/requestTrace.ts with explicit EPHEMERAL comments
+**Result:** Vitest backend suite requestTrace.spec.ts passed cleanly
+**Nudges:** 0
+
 ### [2026-10-13] PR #2196 [Stage 13]: Documented 2026-10-13 watchdog recovery interventions for S06 and S10, resolved S03 migration baseline view conflict, and updated Section 3 metrics across Stages 1-13
 **Domain:** pipeline | **Commit:** c7cf86ce2 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2196)
 **Files:** .github/nightly-logs/13-self-healing-protocol-coverage.log, .github/nightly-logs/13-self-healing-protocol-pr-body.md, .github/nightly-logs/13-self-healing-protocol.md
