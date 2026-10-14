@@ -16,6 +16,15 @@ LAST_AGED:   2026-10-13
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-14] PR #2203 [Stage 6]: docs(tsdoc): harden requestTrace interface contracts and inline decision annotations
+**Domain:** documentation | **Commit:** a886bf8a2 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2203)
+**Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, .github/nightly-logs/06-documentation-tsdoc-pr-body.md, Backend/supabase/functions/_shared/requestTrace.ts
+**Why:** Synchronized Backend requestTrace TSDoc contracts, ADR Section III/VII mappings, and threat tags with implementation
+**Change:** docs(tsdoc): harden requestTrace interface contracts and inline decision annotations
+**Result:** Vitest backend suite passed 31 test files (402 tests) cleanly
+**Nudges:** 0
+
+
 ### [2026-10-14] PR #2202 [Stage 5]: Codebase -- Audited Backend requestTrace.ts against Backend/supabase/functions/_shared/README.md; verified accuracy and zero drift present
 **Domain:** documentation | **Commit:** 3273768ef | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2202)
 **Files:** .github/nightly-logs/05-documentation-readme-coverage.log, .github/nightly-logs/05-documentation-readme-pr-body.md
