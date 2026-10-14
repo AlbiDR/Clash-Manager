@@ -16,6 +16,23 @@ LAST_AGED:   2026-10-13
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-14] PR #2209 [Stage 11]: Audited native WebView performance settings, Service Worker caching, Vite Rolldown code splitting, and static public asset footprint.
+**Domain:** apk | **Commit:** a098be462 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2209)
+**Files:** .github/nightly-logs/11-apk-optimization-coverage.log, .github/nightly-logs/11-apk-optimization-pr-body.md
+**Why:** All 9 native wrapper and Service Worker performance invariants pass without violation and all precached public assets remain within declared size limits.
+**Change:** Audited native WebView performance settings, Service Worker caching, Vite Rolldown code splitting, and static public asset footprint.
+**Result:** PASS: pnpm audit:apk-perf and node APK/device-acceptance.test.mjs (17/17 pass)
+**Nudges:** 0
+
+### [2026-10-14] PR #2208 [Stage 12]: Calibration pass: 7 ordinary clean runs since last calibration; verified 77 files examined in apk-ux-audit.json across all 10 UX categories
+**Domain:** ux | **Commit:** c18bf0649 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2208)
+**Files:** .github/nightly-logs/12-apk-ux-coverage.log, .github/nightly-logs/12-apk-ux-pr-body.md
+**Why:** Structured APK UX audit status is PASS with 0 violations and 0 candidates found
+**Change:** Calibration pass: 7 ordinary clean runs since last calibration; verified 77 files examined in apk-ux-audit.json across all 10 UX categories
+**Result:** apk-ux-audit-status.txt: PASS; apk-ux-audit.json: 77 candidate files reviewed; UX categories 1-10 checked
+**Nudges:** 0
+
+
 ### [2026-10-14] PR #2207 [Stage 10]: Verified asset links, manifest parity, version code/name sync (v14.55.0 / 14055000), release metadata (APK/release/latest.json), and cleartext traffic security policy with pnpm audit:apk, pnpm test:apk-native, and pnpm test:apk-release.
 **Domain:** apk | **Commit:** 883b7693e | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2207)
 **Files:** .github/nightly-logs/10-apk-integrity-coverage.log, .github/nightly-logs/10-apk-integrity-pr-body.md
