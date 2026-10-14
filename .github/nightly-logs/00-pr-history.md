@@ -16,6 +16,15 @@ LAST_AGED:   2026-10-13
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-14] PR #2205 [Stage 8]: Bumped vue to ^3.5.44 in catalogs and refreshed lockfile
+**Domain:** dependencies | **Commit:** ba1bad9f4 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2205)
+**Files:** .github/nightly-logs/08-dependency-audit-coverage.log, .github/nightly-logs/08-dependency-audit-pr-body.md, package.json, pnpm-lock.yaml, pnpm-workspace.yaml
+**Why:** Safe Tier 1 patch bump for vue within current major
+**Change:** Bumped vue to ^3.5.44 in catalogs and refreshed lockfile
+**Result:** pnpm -r test passed 2343 tests across 220 test files, 0 failures
+**Nudges:** 1
+
+
 ### [2026-10-14] PR #2204 [Stage 7]: Catalog and package versions audited across 3 package.json manifests and all derived targets; 0 drift found.
 **Domain:** versioning | **Commit:** 4881c3096 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2204)
 **Files:** .github/nightly-logs/07-version-integrity-coverage.log, .github/nightly-logs/07-version-integrity-pr-body.md
