@@ -115,5 +115,77 @@ describe("AppSchemas", () => {
       const result = v.safeParse(WebAppDataSchema, invalidAppData);
       expect(result.success).toBe(false);
     });
+
+    it("rejects invalid dataSource picklist values", () => {
+      const invalidSource = { ...validAppData, dataSource: "UNSUPPORTED_PROVIDER" };
+      const result = v.safeParse(WebAppDataSchema, invalidSource);
+      expect(result.success).toBe(false);
+    });
+
+    it("defaults blacklist to empty array when omitted and accepts string arrays", () => {
+      const withoutBlacklist = v.parse(WebAppDataSchema, validAppData);
+      expect(withoutBlacklist.blacklist).toEqual([]);
+
+      const withBlacklist = v.parse(WebAppDataSchema, {
+        ...validAppData,
+        blacklist: ["#TAG1", "#TAG2"],
+      });
+      expect(withBlacklist.blacklist).toEqual(["#TAG1", "#TAG2"]);
+    });
+
+    it("rejects non-string items or non-array types in blacklist", () => {
+      const nonArrayBlacklist = v.safeParse(WebAppDataSchema, {
+        ...validAppData,
+        blacklist: "NOT_AN_ARRAY",
+      });
+      expect(nonArrayBlacklist.success).toBe(false);
+
+      const invalidItemsBlacklist = v.safeParse(WebAppDataSchema, {
+        ...validAppData,
+        blacklist: ["#TAG1", 12345],
+      });
+      expect(invalidItemsBlacklist.success).toBe(false);
+    });
+
+    it("coerces numeric playerTag via SafeStringPipe and handles optional/absent playerTag", () => {
+      const parsedWithTag = v.parse(WebAppDataSchema, {
+        ...validAppData,
+        playerTag: "#2p099v2q",
+      });
+      expect(parsedWithTag.playerTag).toBe("#2p099v2q");
+
+      const parsedNumericTag = v.parse(WebAppDataSchema, {
+        ...validAppData,
+        playerTag: 12345678,
+      });
+      expect(parsedNumericTag.playerTag).toBe("12345678");
+
+      const parsedWithoutTag = { ...validAppData };
+      delete (parsedWithoutTag as any).playerTag;
+      const resultWithoutTag = v.parse(WebAppDataSchema, parsedWithoutTag);
+      expect(resultWithoutTag.playerTag).toBeUndefined();
+    });
+
+    it("accepts empty lb and hh arrays, but rejects malformed member/recruit entries", () => {
+      const emptyLists = v.parse(WebAppDataSchema, {
+        ...validAppData,
+        lb: [],
+        hh: [],
+      });
+      expect(emptyLists.lb).toEqual([]);
+      expect(emptyLists.hh).toEqual([]);
+
+      const malformedMember = v.safeParse(WebAppDataSchema, {
+        ...validAppData,
+        lb: [{ invalidMemberKey: true }],
+      });
+      expect(malformedMember.success).toBe(false);
+
+      const malformedRecruit = v.safeParse(WebAppDataSchema, {
+        ...validAppData,
+        hh: [{ invalidRecruitKey: true }],
+      });
+      expect(malformedRecruit.success).toBe(false);
+    });
   });
 });
