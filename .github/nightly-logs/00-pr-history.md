@@ -16,6 +16,15 @@ LAST_AGED:   2026-10-13
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-15] PR #2218 [Stage 9]: Backend/supabase/functions/_shared/requestTrace.ts -- Unexported unused internal types TraceOutcome and TraceEvent
+**Domain:** architecture | **Commit:** 81de2c952 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2218)
+**Files:** .github/nightly-logs/09-refactor-proposals-coverage.log, .github/nightly-logs/09-refactor-proposals-pr-body.md, Backend/supabase/functions/_shared/requestTrace.ts
+**Why:** Target B dead-export removal identified by knip static scan; unexported TraceOutcome and TraceEvent in requestTrace.ts to eliminate dead exported types
+**Change:** Backend/supabase/functions/_shared/requestTrace.ts -- Unexported unused internal types TraceOutcome and TraceEvent
+**Result:** Vitest Backend test suite (402 passed) and depcruise passed cleanly; knip unused exported types reduced from 2 to 0
+**Nudges:** 0
+
+
 ### [2026-10-15] PR #2217 [Stage 8]: Bumped supabase devDependency from ^2.120.0 to ^2.121.0 in catalogs and updated pnpm-lock.yaml
 **Domain:** dependencies | **Commit:** 5d79cc064 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2217)
 **Files:** .github/nightly-logs/08-dependency-audit-coverage.log, .github/nightly-logs/08-dependency-audit-pr-body.md, package.json, pnpm-lock.yaml, pnpm-workspace.yaml
