@@ -5,13 +5,14 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { ScannerStats, AuditEntry } from "../../../_shared/types.ts";
 
 /**
- * Coverage for the F4 fix in `tournament-finder.ts`: `upsert_discovery_cache`
+ * Coverage for the discovery-cache RPC in `tournament-finder.ts`:
+ * `upsert_discovery_cache_batch`
  * resolves with `{ error }` instead of throwing. Before the fix an unchecked
  * call would leave the discovery cache silently un-populated on failure while
  * the pipeline moved on as if the tournament had been recorded, causing the
  * same tournament to be re-fetched (and its members re-added as candidates)
  * on every subsequent run. These tests prove:
- *   (a) a failed `upsert_discovery_cache` is recorded in `stats.errors` and
+ *   (a) a failed `upsert_discovery_cache_batch` is recorded in `stats.errors` and
  *       logged, but does NOT corrupt the `candidates` map -- the discovered
  *       candidate is still added regardless of the cache-write outcome,
  *       since discovery and cache-bookkeeping are independent concerns;
@@ -108,8 +109,8 @@ beforeEach(() => {
 });
 
 describe("runTournamentDiscovery failed-write gating (F4)", () => {
-    it("still adds the discovered candidate when upsert_discovery_cache fails, but records the error", async () => {
-        rpcResponses.upsert_discovery_cache = { data: null, error: { message: "cache write failed" } };
+    it("still adds the discovered candidate when the cache batch fails, but records the error", async () => {
+        rpcResponses.upsert_discovery_cache_batch = { data: null, error: { message: "cache write failed" } };
         mockRoyaleRoutes();
 
         const candidates = new Map<string, string>();
@@ -122,14 +123,25 @@ describe("runTournamentDiscovery failed-write gating (F4)", () => {
         expect(stats.discovery_targets).toBe(1);
 
         expect(stats.errors.some((e) => e.includes("cache write failed"))).toBe(true);
-        const failureEntry = entries.find(
-            (entry) => entry.action === "error" && JSON.stringify(entry.details).includes("Discovery cache upsert failed"),
-        );
+        const failureEntry = entries.find((entry) => entry.action === "error" && JSON.stringify(entry.details).includes("Discovery cache batch failed"));
         expect(failureEntry).toBeDefined();
+        expect(mockSupabase.rpc.mock.calls.filter(([name]: [string]) => name === "upsert_discovery_cache_batch")).toHaveLength(1);
+        expect(mockSupabase.rpc.mock.calls.some(([name]: [string]) => name === "upsert_discovery_cache")).toBe(false);
+
+        // No per-tag fallback or same-pass retry: a later invocation can retry
+        // because the failed batch did not appear in the next cache snapshot.
+        const firstPassDetailCalls = mockFetchWithRotation.mock.calls.filter(([endpoint]: [string]) => endpoint.startsWith("/tournaments/"));
+        expect(firstPassDetailCalls).toHaveLength(1);
+        mockSupabase.rpc.mockClear();
+        mockFetchWithRotation.mockClear();
+        const nextPassCandidates = new Map<string, string>();
+        await runTournamentDiscovery(nextPassCandidates, new Set(), 5000, freshStats(), makeAuditCollector().logAudit);
+        expect(mockFetchWithRotation.mock.calls.filter(([endpoint]: [string]) => endpoint.startsWith("/tournaments/"))).toHaveLength(1);
+        expect(mockSupabase.rpc.mock.calls.filter(([name]: [string]) => name === "upsert_discovery_cache_batch")).toHaveLength(1);
     });
 
-    it("records no error and populates the cache write when upsert_discovery_cache succeeds", async () => {
-        rpcResponses.upsert_discovery_cache = { data: null, error: null };
+    it("records no error and sends a bounded batch when the cache write succeeds", async () => {
+        rpcResponses.upsert_discovery_cache_batch = { data: null, error: null };
         mockRoyaleRoutes();
 
         const candidates = new Map<string, string>();
@@ -138,14 +150,14 @@ describe("runTournamentDiscovery failed-write gating (F4)", () => {
 
         await runTournamentDiscovery(candidates, new Set(), 5000, stats, logAudit);
 
-        const cacheCall = mockSupabase.rpc.mock.calls.find(([name]: [string]) => name === "upsert_discovery_cache");
+        const cacheCall = mockSupabase.rpc.mock.calls.find(([name]: [string]) => name === "upsert_discovery_cache_batch");
         expect(cacheCall).toBeDefined();
-        expect(cacheCall![1]).toEqual({ p_tag: "#TOURNEY1", p_type: "TOURNAMENT" });
+        expect(cacheCall![1]).toEqual({ p_tags: ["#TOURNEY1"], p_type: "TOURNAMENT" });
         expect(stats.errors).toHaveLength(0);
     });
 
     it("records an error but does not throw or drop discovered candidates when report_anchor_yield fails", async () => {
-        rpcResponses.upsert_discovery_cache = { data: null, error: null };
+        rpcResponses.upsert_discovery_cache_batch = { data: null, error: null };
         rpcResponses.report_anchor_yield = { data: null, error: { message: "anchor yield write failed" } };
         mockRoyaleRoutes();
 
@@ -166,7 +178,7 @@ describe("runTournamentDiscovery failed-write gating (F4)", () => {
 
     it("does not add an already-cached (blacklisted) tournament's members as candidates", async () => {
         rpcResponses.get_discovery_cache = { data: [{ player_tag: "#TOURNEY1" }], error: null };
-        rpcResponses.upsert_discovery_cache = { data: null, error: null };
+        rpcResponses.upsert_discovery_cache_batch = { data: null, error: null };
         mockRoyaleRoutes();
 
         const candidates = new Map<string, string>();
@@ -179,7 +191,91 @@ describe("runTournamentDiscovery failed-write gating (F4)", () => {
         expect(stats.discovery_targets).toBe(0);
         // A blacklisted tournament's details are never re-fetched, so the cache
         // RPC (which only fires after a details fetch) is never called either.
-        expect(mockSupabase.rpc.mock.calls.find(([name]: [string]) => name === "upsert_discovery_cache")).toBeUndefined();
+        expect(mockSupabase.rpc.mock.calls.find(([name]: [string]) => name === "upsert_discovery_cache_batch")).toBeUndefined();
+    });
+});
+
+describe("runTournamentDiscovery per-keyword cache batches", () => {
+    it("deduplicates tags within each keyword and preserves candidates and keyword yields", async () => {
+        rpcResponses.get_active_discovery_anchors = {
+            data: [{ keyword: "alpha" }, { keyword: "beta" }],
+            error: null,
+        };
+        rpcResponses.upsert_discovery_cache_batch = { data: null, error: null };
+        const listByKeyword: Record<string, unknown[]> = {
+            alpha: ["#T1", "#T2", "#T1", "#TFAIL", "#TTHROW"],
+            beta: ["#T2", "#T3"],
+        };
+        const detailByTag: Record<string, unknown> = {
+            "#T1": { tag: "#T1", type: "openTournament", membersList: [{ tag: "#R1", name: "One", trophies: 5000, clan: null }] },
+            "#T2": { tag: "#T2", type: "openTournament", membersList: [{ tag: "#R2", name: "Two", trophies: 5000, clan: null }] },
+            // HTTP-successful, decoded but schema-invalid detail bodies were
+            // cached by the old per-tag call and remain in the batch.
+            "#T3": { tag: "#T3", type: "openTournament", membersList: "invalid" },
+        };
+        mockFetchWithRotation.mockImplementation(async (endpoint: string) => {
+            if (endpoint.startsWith("/tournaments?name=")) {
+                const keyword = new URL(`https://example.test${endpoint}`).searchParams.get("name") ?? "";
+                return {
+                    ok: true,
+                    status: 200,
+                    json: async () => ({
+                        items: (listByKeyword[keyword] ?? []).map((tag) => ({ tag, type: "openTournament", capacity: 10, maxCapacity: 50 })),
+                    }),
+                };
+            }
+            if (endpoint.startsWith("/tournaments/")) {
+                const tag = decodeURIComponent(endpoint.slice("/tournaments/".length));
+                if (tag === "#TFAIL") return { ok: false, status: 503, json: async () => ({}) };
+                if (tag === "#TTHROW") throw new Error("temporary Royale failure");
+                return { ok: true, status: 200, json: async () => detailByTag[tag] };
+            }
+            throw new Error(`unexpected endpoint in test: ${endpoint}`);
+        });
+
+        const candidates = new Map<string, string>();
+        const stats = freshStats();
+        const { logAudit } = makeAuditCollector();
+        await runTournamentDiscovery(candidates, new Set(), 5000, stats, logAudit);
+
+        expect(candidates).toEqual(new Map([["#R1", "TOURNAMENT"], ["#R2", "TOURNAMENT"]]));
+        expect(stats.discovery_targets).toBe(4);
+        const batchCalls = mockSupabase.rpc.mock.calls.filter(([name]: [string]) => name === "upsert_discovery_cache_batch");
+        expect(batchCalls.map(([, args]) => args)).toEqual([
+            { p_tags: ["#T1", "#T2"], p_type: "TOURNAMENT" },
+            { p_tags: ["#T2", "#T3"], p_type: "TOURNAMENT" },
+        ]);
+        expect(mockSupabase.rpc.mock.calls.some(([name]: [string]) => name === "upsert_discovery_cache")).toBe(false);
+        expect(mockSupabase.rpc.mock.calls.filter(([name]: [string]) => name === "report_anchor_yield").map(([, args]) => args)).toEqual([
+            { p_keyword: "alpha", p_yield: 3 },
+            { p_keyword: "beta", p_yield: 1 },
+        ]);
+    });
+
+    it("skips persistence rather than exceeding the 50-tag batch bound", async () => {
+        rpcResponses.get_active_discovery_anchors = { data: [{ keyword: "large" }], error: null };
+        const tags = Array.from({ length: 51 }, (_, index) => `#T${index}`);
+        mockFetchWithRotation.mockImplementation(async (endpoint: string) => {
+            if (endpoint.startsWith("/tournaments?name=")) {
+                return {
+                    ok: true,
+                    status: 200,
+                    json: async () => ({ items: tags.map((tag) => ({ tag, type: "openTournament", capacity: 10, maxCapacity: 50 })) }),
+                };
+            }
+            if (endpoint.startsWith("/tournaments/")) {
+                const tag = decodeURIComponent(endpoint.slice("/tournaments/".length));
+                return { ok: true, status: 200, json: async () => ({ tag, type: "openTournament", membersList: [] }) };
+            }
+            throw new Error(`unexpected endpoint in test: ${endpoint}`);
+        });
+        const stats = freshStats();
+
+        await runTournamentDiscovery(new Map(), new Set(), 5000, stats, makeAuditCollector().logAudit);
+
+        expect(mockSupabase.rpc.mock.calls.filter(([name]: [string]) => name === "upsert_discovery_cache_batch")).toHaveLength(0);
+        expect(mockSupabase.rpc.mock.calls.filter(([name]: [string]) => name === "report_anchor_yield")).toHaveLength(1);
+        expect(stats.errors.some((error) => error.includes("more successful tournament details than the batch limit"))).toBe(true);
     });
 });
 
@@ -200,7 +296,7 @@ describe("integrity_checked entries satisfy the schema protocol.ts validates aga
         const v = await import("valibot");
         const { IntegrityCheckDetailsSchema } = await import("../../../_shared/schemas.ts");
 
-        rpcResponses.upsert_discovery_cache = { data: null, error: null };
+        rpcResponses.upsert_discovery_cache_batch = { data: null, error: null };
         mockRoyaleRoutes();
 
         const candidates = new Map<string, string>();
@@ -241,7 +337,7 @@ describe("runTournamentDiscovery skips the cycle when a gating read fails", () =
 
     function validateSkippedCycle(result: Awaited<ReturnType<typeof fetchDiscoveryOutcome>>, reasonFragment: string) {
         expect(mockFetchWithRotation).not.toHaveBeenCalled();
-        expect(getRpcInvocation("upsert_discovery_cache")).toBe(false);
+        expect(getRpcInvocation("upsert_discovery_cache_batch")).toBe(false);
         expect(getRpcInvocation("report_anchor_yield")).toBe(false);
         expect(result.candidates.size).toBe(0);
         expect(result.stats.errors.some((error) => error.includes(reasonFragment))).toBe(true);
@@ -286,7 +382,7 @@ describe("runTournamentDiscovery skips the cycle when a gating read fails", () =
 
     it("still searches the fallback keywords when the anchor read answers with no anchors", async () => {
         rpcResponses.get_active_discovery_anchors = { data: [], error: null };
-        rpcResponses.upsert_discovery_cache = { data: null, error: null };
+        rpcResponses.upsert_discovery_cache_batch = { data: null, error: null };
         mockRoyaleRoutes();
 
         const result = await fetchDiscoveryOutcome();
@@ -320,7 +416,7 @@ describe("runTournamentDiscovery skips the cycle when a gating read fails", () =
     });
 
     it("marks the Top 50 count unknown when a tournament detail fetch throws", async () => {
-        rpcResponses.upsert_discovery_cache = { data: null, error: null };
+        rpcResponses.upsert_discovery_cache_batch = { data: null, error: null };
         mockRoyaleRoutes();
         const routed = mockFetchWithRotation.getMockImplementation()!;
         mockFetchWithRotation.mockImplementation(async (endpoint: string) => {

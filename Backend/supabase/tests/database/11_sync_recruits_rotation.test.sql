@@ -3,7 +3,7 @@
 
 BEGIN;
 CREATE EXTENSION IF NOT EXISTS pgtap;
-SELECT plan(17);
+SELECT plan(27);
 
 SELECT ok(
   (SELECT relrowsecurity FROM pg_class
@@ -15,6 +15,22 @@ SELECT ok(
   AND NOT has_table_privilege('authenticated', 'substrate.recruit_sync_rotation_guard', 'INSERT')
   AND NOT has_table_privilege('service_role', 'substrate.recruit_sync_rotation_guard', 'INSERT'),
   'the transaction guard is private and unavailable to API roles'
+);
+
+SELECT ok(
+  NOT has_function_privilege('anon', 'public.sync_recruits(jsonb)', 'EXECUTE')
+  AND NOT has_function_privilege('authenticated', 'public.sync_recruits(jsonb)', 'EXECUTE')
+  AND has_function_privilege('service_role', 'public.sync_recruits(jsonb)', 'EXECUTE'),
+  'the recruit synchronization RPC remains restricted to service_role'
+);
+SELECT ok(
+  (SELECT prosecdef FROM pg_proc WHERE oid = 'public.sync_recruits(jsonb)'::regprocedure)
+  AND NOT (SELECT prosecdef FROM pg_proc WHERE oid = 'substrate.rotate_recruits()'::regprocedure)
+  AND (SELECT pg_get_userbyid(proowner) = 'postgres'
+       FROM pg_proc WHERE oid = 'public.sync_recruits(jsonb)'::regprocedure)
+  AND (SELECT pg_get_userbyid(proowner) = 'postgres'
+       FROM pg_proc WHERE oid = 'substrate.rotate_recruits()'::regprocedure),
+  'sync remains postgres-owned SECURITY DEFINER while rotation remains postgres-owned SECURITY INVOKER'
 );
 
 CREATE TEMP TABLE r3_rotation_events (event_id bigint GENERATED ALWAYS AS IDENTITY);
@@ -191,6 +207,69 @@ SELECT ok(
   NOT EXISTS (SELECT 1 FROM substrate.recruit_sync_rotation_guard
               WHERE backend_pid = pg_backend_pid() AND transaction_id = pg_current_xact_id()),
   'normal and failed calls leave no stale guard after prior scope cleanup'
+);
+
+UPDATE r3_rotation_marker
+SET generation = (SELECT generation FROM substrate.sync_snapshot_state WHERE snapshot_name = 'headhunter'),
+    rotations = (SELECT count(*) FROM r3_rotation_events);
+CREATE TEMP TABLE elite_tags (player_tag text PRIMARY KEY);
+INSERT INTO elite_tags VALUES ('#2R9C2R9Y');
+SELECT lives_ok(
+  $$ SELECT substrate.rotate_recruits(); SELECT substrate.rotate_recruits(); $$,
+  'two repeated rotations complete in the same session without temp-table churn'
+);
+SELECT ok(
+  (SELECT generation FROM substrate.sync_snapshot_state WHERE snapshot_name = 'headhunter')
+    - (SELECT generation FROM r3_rotation_marker) = 2
+  AND (SELECT count(*) FROM r3_rotation_events) - (SELECT rotations FROM r3_rotation_marker) = 2,
+  'each repeated rotation records one completion and one snapshot refresh'
+);
+SELECT ok(
+  EXISTS (SELECT 1 FROM pg_temp.elite_tags WHERE player_tag = '#2R9C2R9Y'),
+  'repeated rotation preserves a caller-owned temp table named elite_tags and its contents'
+);
+
+UPDATE substrate.config SET value = '250' WHERE key = 'MAX_ACTIVE_RECRUITS';
+SELECT lives_ok(
+  $$ SELECT substrate.rotate_recruits() $$,
+  'rotation accepts the configured 250-recruit limit'
+);
+UPDATE substrate.config SET value = '0' WHERE key = 'MAX_ACTIVE_RECRUITS';
+SELECT lives_ok(
+  $$ SELECT substrate.rotate_recruits() $$,
+  'rotation accepts zero as a valid configured limit'
+);
+
+DELETE FROM substrate.config WHERE key = 'MAX_ACTIVE_RECRUITS';
+SELECT throws_ok(
+  $$ SELECT substrate.rotate_recruits() $$,
+  '22023', 'MAX_ACTIVE_RECRUITS must be configured as a non-negative integer',
+  'rotation fails clearly when its required limit configuration is missing'
+);
+INSERT INTO substrate.config (key, value)
+VALUES ('MAX_ACTIVE_RECRUITS', '-1');
+SELECT throws_ok(
+  $$ SELECT substrate.rotate_recruits() $$,
+  '22023', 'MAX_ACTIVE_RECRUITS must be configured as a non-negative integer',
+  'rotation rejects a negative configured limit before ranking candidates'
+);
+UPDATE substrate.config SET value = '2' WHERE key = 'MAX_ACTIVE_RECRUITS';
+
+INSERT INTO drivers.players (player_tag, player_name)
+VALUES ('#2R9C2R9V', 'ranking high'), ('#2R9C2R9U', 'ranking next'),
+       ('#2R9C2R9Y', 'ranking null'), ('#2R9C2R9Q', 'ranking archived')
+ON CONFLICT (player_tag) DO NOTHING;
+INSERT INTO drivers.recruits (player_tag, player_name, source, status, raw_potential_score)
+VALUES ('#2R9C2R9V', 'ranking high', 'MANUAL', 'QUEUE', 999999999),
+       ('#2R9C2R9U', 'ranking next', 'MANUAL', 'QUEUE', 999999998),
+       ('#2R9C2R9Y', 'ranking null', 'MANUAL', 'ACTIVE', NULL),
+       ('#2R9C2R9Q', 'ranking archived', 'MANUAL', 'ARCHIVED', 1000000000);
+SELECT ok(
+  (SELECT status = 'ACTIVE' FROM drivers.recruits WHERE player_tag = '#2R9C2R9V')
+  AND (SELECT status = 'ACTIVE' FROM drivers.recruits WHERE player_tag = '#2R9C2R9U')
+  AND (SELECT status = 'BENCHED' FROM drivers.recruits WHERE player_tag = '#2R9C2R9Y')
+  AND (SELECT status = 'ARCHIVED' FROM drivers.recruits WHERE player_tag = '#2R9C2R9Q'),
+  'the configured top-two boundary excludes null-score and archived recruits'
 );
 
 SELECT * FROM finish();

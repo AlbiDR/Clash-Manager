@@ -3,16 +3,24 @@
 
 import * as v from "valibot";
 
-/** One stalled read must leave time for another attempt within the sync's 25s budget. */
+/**
+ * Maximum duration allowed for a single HTTP REST read before timing out.
+ * One stalled read must leave time for another attempt within the sync's 25s budget.
+ */
 export const SUPABASE_READ_TIMEOUT_MS = 8_000;
 
-/** Retries after a read's first attempt: the length of the fixed schedule this replaced. */
+/**
+ * Maximum number of retry attempts permitted for transient REST read failures.
+ * Retries after a read's first attempt: the length of the fixed schedule this replaced.
+ */
 export const SUPABASE_READ_RETRY_LIMIT = 3;
 
 /**
- * Upper bound of the first retry's wait.
+ * Upper bound of the first retry's wait window in milliseconds.
  *
  * @remarks
+ * Satisfies ADR Section V: Infrastructure & Network Reliability.
+ *
  * [DECISION LOG] JITTERED EXPONENTIAL BACKOFF, SCALED TO THE READ TIMEOUT
  * The fixed 400/2000/5000 ms schedule sent every client that failed together
  * back at the same instant, which is the moment a recovering database can least
@@ -35,9 +43,16 @@ export const SUPABASE_READ_BACKOFF_BASE_MS = SUPABASE_READ_TIMEOUT_MS / 2 ** SUP
  */
 const STATEMENT_TIMEOUT_SQLSTATE = "57014";
 
+/** HTTP status codes eligible for automatic transport retry. */
 const RETRYABLE_READ_STATUS = new Set([408, 429, 500, 502, 503, 504]);
+
+/** HTTP status codes that indicate empty response bodies. */
 const BODYLESS_STATUS = new Set([204, 205, 304]);
+
+/** Regex pattern matching transient transport and network error messages. */
 const TRANSIENT_TRANSPORT_FAILURE = /failed to fetch|fetch failed|network|load failed|timed out/i;
+
+/** Schema for validating PostgREST JSON error responses. */
 const PostgrestErrorSchema = v.object({ code: v.string() });
 
 /**
@@ -45,6 +60,11 @@ const PostgrestErrorSchema = v.object({ code: v.string() });
  *
  * @param retryIndex - Zero-based index of the retry about to be made.
  * @returns Milliseconds to wait, in [0, SUPABASE_READ_BACKOFF_BASE_MS * 2^retryIndex).
+ *
+ * @remarks
+ * [DECISION LOG]
+ * Full jitter prevents thundering herd synchronization when multiple clients
+ * or concurrent fetches encounter network or database drops at the same time.
  */
 export function getRetryDelayMs(retryIndex: number): number {
   return Math.random() * SUPABASE_READ_BACKOFF_BASE_MS * 2 ** retryIndex;
@@ -61,10 +81,21 @@ async function getPostgrestErrorCode(response: Response): Promise<string | null>
     const errorValidation = v.safeParse(PostgrestErrorSchema, await response.clone().json());
     return errorValidation.success ? errorValidation.output.code : null;
   } catch {
+    // Return null on JSON parse failure or non-PostgREST response payload
     return null;
   }
 }
 
+/**
+ * Suspends execution until the retry delay elapses or the signal aborts.
+ *
+ * @param signal - Optional AbortSignal from caller request.
+ * @param delayMs - Delay in milliseconds to wait before retrying.
+ *
+ * @remarks
+ * [DECISION LOG]
+ * Immediate listener cleanup avoids memory leaks during high-frequency sync loops.
+ */
 async function waitForReadRetry(signal: AbortSignal | null, delayMs: number): Promise<void> {
   signal?.throwIfAborted();
   await new Promise<void>((resolve, reject) => {
@@ -82,7 +113,19 @@ async function waitForReadRetry(signal: AbortSignal | null, delayMs: number): Pr
   });
 }
 
-/** Bound each HTTP read, including its body, and immediately respect caller cancellation. */
+/**
+ * Bounds each HTTP read, including its body download, within the configured timeout
+ * and immediately respects caller cancellation signals.
+ *
+ * @param request - The inbound HTTP fetch Request object.
+ * @returns The buffered HTTP Response object.
+ *
+ * @remarks
+ * Satisfies ADR Section V: Infrastructure & Network Reliability.
+ *
+ * [THREAT:] Unbounded response body streaming or stalled PostgREST sockets can exhaust
+ * the client sync budget (25s) or leave hanging promises. Promise.race enforces hard cutoff.
+ */
 async function fetchBoundedRead(request: Request): Promise<Response> {
   const controller = new AbortController();
   let timer: ReturnType<typeof setTimeout> | undefined;
@@ -122,10 +165,24 @@ async function fetchBoundedRead(request: Request): Promise<Response> {
 }
 
 /**
- * Fresh Supabase transport. Retry individual idempotent REST reads so a failing
- * roster does not repeatedly download healthy recruits and metadata. Mutations
- * are never replayed: losing their response does not mean the write failed,
- * and neither are reads the server cancelled for its statement timeout.
+ * Fresh Supabase transport handler.
+ * Retry individual idempotent REST reads so a failing roster fetch does not
+ * repeatedly re-download healthy recruits and metadata. Mutations (POST/PUT/DELETE)
+ * and SQL statement_timeouts (57014) are never replayed.
+ *
+ * @param input - The fetch input parameter (URL or RequestInfo).
+ * @param init - Optional fetch request initialization options.
+ * @returns A promise resolving to the HTTP Response.
+ *
+ * @remarks
+ * Satisfies ADR Section III: Validation Boundaries and Section V: Infrastructure.
+ *
+ * [THREAT:] Thundering herd problem on database recovery when multiple network requests fail simultaneously.
+ * Full jittered exponential backoff prevents synchronized retries.
+ *
+ * [DECISION LOG]
+ * - Non-GET requests and non-REST endpoints bypass retry loop to prevent replaying mutations.
+ * - Cache-Control headers force cache bypass ('no-store', 'no-cache').
  */
 export async function fetchSupabaseFresh(
   input: RequestInfo | URL,
@@ -135,6 +192,7 @@ export async function fetchSupabaseFresh(
   request.headers.set("Cache-Control", "no-cache");
   request.headers.set("Pragma", "no-cache");
 
+  // Only GET requests targeting PostgREST (/rest/v1/) are eligible for retry
   if (request.method !== "GET" || !new URL(request.url).pathname.startsWith("/rest/v1/")) {
     return fetch(request);
   }
@@ -144,9 +202,11 @@ export async function fetchSupabaseFresh(
     const retriesRemain = retryIndex < SUPABASE_READ_RETRY_LIMIT;
     try {
       const response = await fetchBoundedRead(request);
+      // Stop retrying if retry limit reached, non-retryable status, or statement timeout
       if (!retriesRemain || !RETRYABLE_READ_STATUS.has(response.status)
         || await getPostgrestErrorCode(response) === STATEMENT_TIMEOUT_SQLSTATE) return response;
     } catch (failure) {
+      // Re-throw if request aborted, retries exhausted, or non-transient error
       if (request.signal.aborted || !retriesRemain
         || !(failure instanceof Error) || !TRANSIENT_TRANSPORT_FAILURE.test(failure.message)) throw failure;
     }
