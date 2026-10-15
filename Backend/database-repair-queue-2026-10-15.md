@@ -16,11 +16,11 @@ never stage, stash, restore or overwrite them as part of this checkpoint.
 | Job | Owner | State | Scope / stopping point |
 | --- | --- | --- | --- |
 | Lock/query analysis | 03 | Verified | Read-only source and saved evidence; recommend a minimal repair, including other writers and rotation behavior. |
-| Recruit SQL repair | 08 | Published on Beta | One new CLI-created migration, related behavioral/concurrency tests and repair runbook. No direct production changes; stop ready for review. |
-| Discovery batching implementation | 05 | Published on Beta | Bounded service-only RPC, per-keyword stage batching, route/types, SQL and stage tests; writer finished. |
+| Recruit SQL repair | 08 | Published on all three branches | One new CLI-created migration, related behavioral/concurrency tests and repair runbook. No direct production changes; stop ready for review. |
+| Discovery batching implementation | 05 | Published on all three branches | Bounded service-only RPC, per-keyword stage batching, route/types, SQL and stage tests; writer finished. |
 | Independent release review | 10 | Verified | Review the finished migration, evidence, security, rollback and remaining risks. |
-| Deployment verification | 11 | Verified source / release artifacts | Verify exact published revision, migrations and workflow outcomes; coordinator owns actual live DB/app probes. |
-| Integration / live evidence | 01 | Beta published; final promotion tracked externally | This queue, before/after evidence, targeted tests, publication and app verification. |
+| Deployment verification | 11 | Verified source, artifacts and branch contents | Verify exact published revision, migrations and workflow outcomes; coordinator owns actual live DB/app probes. |
+| Integration / live evidence | 01 | Source published; live checks verified | This queue, before/after evidence, targeted tests, publication and app verification. |
 
 ## Baseline
 
@@ -148,11 +148,46 @@ continuous availability. Push gates passed 404 backend and 2,350 frontend tests.
   stage integrity remain distinct; external/schema failures are not cured by
   cache batching alone.
 - 11: resolve the observer's hourly schedule gaps; retain missing evidence.
-- The independent Nightly-maintenance chat owns its unpublished promotion
-  verification fix in `/private/tmp/cm-nightly-promotion-20261015` on branch
-  `ADR/nightly-promotion-identity`. It is held outside this publication slot;
-  preserve it and release the slot after this DB checkpoint closes.
+- Automation repair is complete: `107a157b6` refreshes promotion references
+  and verifies actual branch contents. Its owner also published patch provenance
+  tracking (`5604ea22b`, `de53ee910`) and release **14.55.4** (`24d04b9e2`).
+  The temporary automation worktree and branch were removed after verification.
 
 No paid upgrade, database restart, statistics reset or production failure
 injection was used. Local PostgreSQL test resources belong to the coordinator
 and are removed after verification; test evidence remains outside git.
+
+## Final verified release — 14.55.4
+
+The first promotion exposed a false-green result: application code was aligned,
+but the automated run ledger differed. The prepared automation repair was
+independently reviewed, published and verified. Corrected Sync 38808196635
+passed its new content gate; after the live tracking check added ledger events,
+Sync 38809155082 carried those records across all three branches. Beta, Stable
+and Nightly then shared commit `92bd2123408b8512647f158d1f8362ff8a32bc10`
+and tree `19b897383aaa7f492fd796cbe17ffcef5b40f094`.
+
+The served Android **14.55.4+511** download matched its metadata and checkout:
+3,982,503 bytes, SHA-256
+`eeb1165e38460ce36c22d777d9c9f8f1d4dea5287aec90ab65a38a77f7a0d7e5`.
+The served web module matched the module loaded in CM Dev. At 21:21:32 UTC,
+a foreground Supabase refresh advanced the client fetch time, loaded 44 members
+and 250 recruits in 1,903 ms, and rendered in 1,942 ms. The recruit view displayed
+its normal 50-row projection. The combined data timestamp matched the older
+server publication, rather than the new client fetch time. This is one warm
+refresh, not a cold-start benchmark or continuous availability measurement.
+
+A separate 20-minute provider-log window (20:50:58–21:10:59 UTC) recorded 45
+successful cache-batch writes and five successful recruit updates, with no
+failed calls on those two routes in that capture. No daily percentage saving
+is claimed. The 21:20 health capture returned all three app reads successfully
+and recorded 553 cron runs with zero failures in its rolling 24-hour window.
+Scanner integrity still reported failed SHADOW_SCOUT and TOURNAMENT_DISCOVERY
+checks; completing the scanner is separate from all its work being complete.
+
+The coordinator's disposable local PostgreSQL cluster has been stopped and
+removed; all test evidence is retained. This final note is a documentation-only
+companion to the existing release. Its last synchronization, current branch
+hashes and final evidence inventory are stored in the coordinator archive's
+`publication.json` and `checkpoint-report.md`. No new application version or
+production deployment is required for the note.
