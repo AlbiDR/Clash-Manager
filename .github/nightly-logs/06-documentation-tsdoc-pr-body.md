@@ -4,26 +4,26 @@
 
 In plain terms: this changes 1 code file, so the app's behaviour may be affected. No tests were added or changed alongside it.
 
-**What changed:** docs(tsdoc): harden requestTrace interface contracts and inline decision annotations
+**What changed:** docs(tsdoc): harden SupabaseTransport TSDoc interface contracts and inline decision annotations
 
-**Why:** Synchronized Backend requestTrace TSDoc contracts, ADR Section III/VII mappings, and threat tags with implementation
+**Why:** Documented transport retries, full jitter backoff, and statement timeouts
 
-**Result:** Vitest backend suite passed 31 test files (402 tests) cleanly
+**Result:** Passed type-check and tests
 
-**Files changed:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, Backend/supabase/functions/_shared/requestTrace.ts
+**Files changed:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, Frontend-PWA/src/core/api/SupabaseTransport.ts
 
-**Verified accurate:** Backend/supabase/functions/_shared/requestTrace.ts
+**Verified accurate:** Frontend-PWA/src/core/api/SupabaseTransport.ts
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: documentation
-  Cycle: nightly-cycle/2026-10-14
+  Cycle: nightly-cycle/2026-10-15
   Contract: a9f522cc73babe487aa3df1b083524daba64c0dd03c9e1b446dd4bd70c376bae
-  Why: Synchronized Backend requestTrace TSDoc contracts, ADR Section III/VII mappings, and threat tags with implementation
-  Change: docs(tsdoc): harden requestTrace interface contracts and inline decision annotations
-  Result: Vitest backend suite passed 31 test files (402 tests) cleanly
-  Files: .github/nightly-logs/06-documentation-tsdoc-coverage.log, Backend/supabase/functions/_shared/requestTrace.ts
-  Verified: Backend/supabase/functions/_shared/requestTrace.ts
+  Why: Documented transport retries, full jitter backoff, and statement timeouts
+  Change: docs(tsdoc): harden SupabaseTransport TSDoc interface contracts and inline decision annotations
+  Result: Passed type-check and tests
+  Files: .github/nightly-logs/06-documentation-tsdoc-coverage.log, Frontend-PWA/src/core/api/SupabaseTransport.ts
+  Verified: Frontend-PWA/src/core/api/SupabaseTransport.ts
   Nudges: 0
-  Execution: 95d35264c3c7c673cd73d972d81a0a61a8e812ab
+  Execution: 79b8c1172105bfeab6dc7feabcd935abc74af62d
 -->
