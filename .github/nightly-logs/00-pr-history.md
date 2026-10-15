@@ -16,6 +16,15 @@ LAST_AGED:   2026-10-13
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-15] PR #2211 [Stage 2]: Expanded AppSchemas WebAppDataSchema unit test validation boundaries
+**Domain:** verification | **Commit:** b6f334f0d | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2211)
+**Files:** .github/nightly-logs/02-verification-coverage.log, .github/nightly-logs/02-verification-pr-body.md, Frontend-PWA/src/core/api/api-tests/AppSchemas.spec.ts
+**Why:** Close validation boundary gaps for data source, blacklist, playerTag, and array structure validation in WebAppDataSchema
+**Change:** Expanded AppSchemas WebAppDataSchema unit test validation boundaries
+**Result:** All 220 test files passed (2348 tests). Proved new tests catch regressions by mutating dataSource picklist in AppSchemas.ts and observing test failure in AppSchemas.spec.ts
+**Nudges:** 0
+
+
 ### [2026-10-14] PR #2210 [Stage 13]: Mapped October 14 stage executions, recorded Stage 2 and Stage 11 watchdog recovery nudges (16.7% intervention rate), and updated Section 3 stage metrics
 **Domain:** pipeline | **Commit:** 3af3c265f | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2210)
 **Files:** .github/nightly-logs/13-self-healing-protocol-coverage.log, .github/nightly-logs/13-self-healing-protocol-pr-body.md, .github/nightly-logs/13-self-healing-protocol.md
