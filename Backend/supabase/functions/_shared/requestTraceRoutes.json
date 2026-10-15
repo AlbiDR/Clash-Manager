@@ -33,6 +33,7 @@
     "/rest/v1/rpc/touch_recruits",
     "/rest/v1/rpc/update_epoch_state",
     "/rest/v1/rpc/update_telemetry",
-    "/rest/v1/rpc/upsert_discovery_cache"
+    "/rest/v1/rpc/upsert_discovery_cache",
+    "/rest/v1/rpc/upsert_discovery_cache_batch"
   ]
 }

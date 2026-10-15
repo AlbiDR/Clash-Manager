@@ -38,8 +38,13 @@ Via the Key Farm proxy: `/tournaments*`, `/players/{tag}`, and `/players/{tag}/b
 
 - Tournament discovery only runs when the payload contains the `"AUTO"` sentinel; it never takes tournament tags from the request body.
 - Keyword feedback uses `public.report_anchor_yield`, a service-role-only bridge to the private `substrate` accounting routine. Keep the optional rate-limit flag and private-schema boundary intact when changing this call; yield and scan history drive adaptive keyword selection.
+- Tournament discovery writes successful detail tags through `public.upsert_discovery_cache_batch`, once per keyword and with at most 50 unique tags. The batch is best-effort: on failure, candidate and yield collection continue, and the next run can retry tags absent from the five-minute cache snapshot. Keep the existing single-row `public.upsert_discovery_cache` RPC for compatibility; the batch RPC is separately service-role-only.
 - Trophy gating is deferred to the profiler (S3), which has the full ladder profile; earlier stages filter only on clan status and the exclusion set.
 - **Logging & Telemetry Hygiene:** Profiling telemetry and post-ingestion fate-check status traces are logged strictly using `console.log` to prevent polluting cloud logging streams with false-positive alerts, reserving `console.error` exclusively for actual database, validation, or fatal execution errors.
+
+## Discovery cache batch rollout
+
+Apply the additive `upsert_discovery_cache_batch` migration before deploying this function revision. Roll back by restoring the prior function revision first; only then may a follow-up migration revoke and drop the batch RPC. Keep `upsert_discovery_cache` intact throughout, since it remains the compatibility path for other callers.
 
 ## See also
 
