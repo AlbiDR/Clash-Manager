@@ -16,6 +16,15 @@ LAST_AGED:   2026-10-13
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-15] PR #2214 [Stage 6]: docs(tsdoc): harden SupabaseTransport TSDoc interface contracts and inline decision annotations
+**Domain:** documentation | **Commit:** d07c787bd | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2214)
+**Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, .github/nightly-logs/06-documentation-tsdoc-pr-body.md, Frontend-PWA/src/core/api/SupabaseTransport.ts
+**Why:** Documented transport retries, full jitter backoff, and statement timeouts
+**Change:** docs(tsdoc): harden SupabaseTransport TSDoc interface contracts and inline decision annotations
+**Result:** Passed type-check and tests
+**Nudges:** 0
+
+
 ### [2026-10-15] PR #2213 [Stage 4]: Audited 71 changed files and Edge Functions/Frontend view references via source-level grep
 **Domain:** optimization | **Commit:** 15ab54b13 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2213)
 **Files:** .github/nightly-logs/04-optimization-coverage.log, .github/nightly-logs/04-optimization-pr-body.md
