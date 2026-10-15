@@ -34,6 +34,7 @@
 // with the first; reusing the same function means it cannot.
 
 import { spawnSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import { RESULT_LABEL, WHY_LABEL, changeLabel } from "./nightly-prose.mjs";
 import { validateChangedPaths } from "./nightly-stage.mjs";
 
@@ -55,23 +56,49 @@ import { getCycleDate, getCycleId } from "./nightly-events.mjs";
 
 const DIFF_HEADER = /^diff --git a\/(\S+) b\/(\S+)$/gm;
 
-/** The finished unified diff a completed session is holding, or null. */
-export function extractSessionPatch(session) {
+/** Select the patch and its provenance together so evidence cannot name another diff. */
+function selectSessionPatch(session) {
   // Jules documents code changes on activity artifacts; session outputs may
   // contain only a PR URL. Prefer the latest activity snapshot, never join diffs.
   const activities = [...(session?.activities || [])]
     .sort((a, b) => String(b.createTime || "").localeCompare(String(a.createTime || "")));
   for (const activity of activities) {
-    for (const artifact of activity.artifacts || []) {
-      const patch = artifact?.changeSet?.gitPatch?.unidiffPatch;
-      if (typeof patch === "string" && patch.trim()) return patch;
+    for (const [artifactIndex, artifact] of (activity.artifacts || []).entries()) {
+      const gitPatch = artifact?.changeSet?.gitPatch;
+      const patch = gitPatch?.unidiffPatch;
+      if (typeof patch === "string" && patch.trim()) return {
+        patch,
+        evidence: {
+          source: "activity-artifact",
+          activity: activity.name || activity.id || null,
+          activityTime: activity.createTime || null,
+          artifactIndex,
+          baseCommitId: gitPatch.baseCommitId || null,
+        },
+      };
     }
   }
-  for (const output of session?.outputs || []) {
-    const patch = output?.changeSet?.gitPatch?.unidiffPatch;
-    if (typeof patch === "string" && patch.trim()) return patch;
+  for (const [outputIndex, output] of (session?.outputs || []).entries()) {
+    const gitPatch = output?.changeSet?.gitPatch;
+    const patch = gitPatch?.unidiffPatch;
+    if (typeof patch === "string" && patch.trim()) return {
+      patch,
+      evidence: { source: "session-output", outputIndex, baseCommitId: gitPatch.baseCommitId || null },
+    };
   }
   return null;
+}
+
+/** The finished unified diff a completed session is holding, or null. */
+export function extractSessionPatch(session) {
+  return selectSessionPatch(session)?.patch || null;
+}
+
+/** Persist provenance and a fingerprint, never a second copy of the source patch. */
+export function describeSessionPatch(session) {
+  const selected = selectSessionPatch(session);
+  if (!selected) return null;
+  return { ...selected.evidence, sha256: createHash("sha256").update(selected.patch).digest("hex") };
 }
 
 /** Repository paths a unified diff touches. */
@@ -159,6 +186,7 @@ export function buildFallbackPlan({ stage, session, date }) {
     cycleId: getCycleId(getCycleDate(stage.number, outcome.date)),
     branch: fallbackBranchName(stage, session),
     patch,
+    patchEvidence: describeSessionPatch(session),
     paths,
     status: outcome.status,
     summary: outcome.summary,
