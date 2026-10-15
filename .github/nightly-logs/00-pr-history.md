@@ -16,6 +16,15 @@ LAST_AGED:   2026-10-13
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-15] PR #2219 [Stage 10]: Completed APK integrity and PWA wrapper audit; all invariants verified cleanly
+**Domain:** apk | **Commit:** 539a32bf0 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2219)
+**Files:** .github/nightly-logs/10-apk-integrity-coverage.log, .github/nightly-logs/10-apk-integrity-pr-body.md
+**Why:** PWA manifest parity, Asset Links fingerprint/host, version codes/names sync, release binary metadata, and Android cleartext traffic security policy match specifications without requiring source modifications.
+**Change:** Completed APK integrity and PWA wrapper audit; all invariants verified cleanly
+**Result:** PASSED (pnpm audit:apk, pnpm apk:verify:source, pnpm test:apk-native, pnpm test:apk-release)
+**Nudges:** 0
+
+
 ### [2026-10-15] PR #2218 [Stage 9]: Backend/supabase/functions/_shared/requestTrace.ts -- Unexported unused internal types TraceOutcome and TraceEvent
 **Domain:** architecture | **Commit:** 81de2c952 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2218)
 **Files:** .github/nightly-logs/09-refactor-proposals-coverage.log, .github/nightly-logs/09-refactor-proposals-pr-body.md, Backend/supabase/functions/_shared/requestTrace.ts
