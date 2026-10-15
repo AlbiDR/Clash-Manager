@@ -16,6 +16,23 @@ LAST_AGED:   2026-10-13
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-15] PR #2215 [Stage 5]: docs(readme): Reconcile core/api README with WebAppDataSchema validation boundaries
+**Domain:** documentation | **Commit:** 9fcf6633a | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2215)
+**Files:** .github/nightly-logs/05-documentation-readme-coverage.log, .github/nightly-logs/05-documentation-readme-pr-body.md, Frontend-PWA/src/core/api/README.md
+**Why:** Reconciled Frontend-PWA/src/core/api/README.md to document WebAppDataSchema validation boundaries, deep structural parsing, and snapshot publication freshness markers.
+**Change:** docs(readme): Reconcile core/api README with WebAppDataSchema validation boundaries
+**Result:** PASSED git diff --check and Vitest AppSchemas.spec.ts
+**Nudges:** 0
+
+### [2026-10-15] PR #2216 [Stage 7]: Audit complete: zero version drift or catalog violations across monorepo manifests and derived declarations.
+**Domain:** versioning | **Commit:** ced657bc0 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2216)
+**Files:** .github/nightly-logs/07-version-integrity-coverage.log, .github/nightly-logs/07-version-integrity-pr-body.md
+**Why:** Root package.json, Frontend-PWA/package.json, and Backend/package.json agree on 14.55.0; PNPM catalog protocol adherence verified; pnpm audit:version passed across all monitored files.
+**Change:** Audit complete: zero version drift or catalog violations across monorepo manifests and derived declarations.
+**Result:** PASSED (pnpm audit:version zero drift, pnpm test 220 files passed)
+**Nudges:** 0
+
+
 ### [2026-10-15] PR #2214 [Stage 6]: docs(tsdoc): harden SupabaseTransport TSDoc interface contracts and inline decision annotations
 **Domain:** documentation | **Commit:** d07c787bd | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2214)
 **Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, .github/nightly-logs/06-documentation-tsdoc-pr-body.md, Frontend-PWA/src/core/api/SupabaseTransport.ts
