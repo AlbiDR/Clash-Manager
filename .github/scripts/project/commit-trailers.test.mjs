@@ -231,6 +231,9 @@ test("the author allowlist covers the identities the pipeline actually commits a
   assert.ok(isAllowedAuthor({ name: "AlbiDR", email: "aalbi97@gmail.com" }, policy));
   assert.ok(isAllowedAuthor({ name: "google-labs-jules[bot]", email: "161369871+google-labs-jules[bot]@users.noreply.github.com" }, policy));
   assert.ok(isAllowedAuthor({ name: "github-actions[bot]", email: "github-actions[bot]@users.noreply.github.com" }, policy));
+  assert.ok(isAllowedAuthor({ name: "github-actions[bot]", email: "41898282+github-actions[bot]@users.noreply.github.com" }, policy), "GitHub's verified Actions account also uses its numeric noreply identity");
+  assert.equal(isAllowedAuthor({ name: "github-actions[bot]", email: "123+github-actions[bot]@users.noreply.github.com" }, policy), false, "an arbitrary numeric identity is not GitHub Actions");
+  assert.equal(isAllowedAuthor({ name: "github-actions[bot]", email: "41898282+github-actions[bot]@attacker.example" }, policy), false);
   assert.ok(isAllowedAuthor({ name: "GitHub", email: "noreply@github.com" }, policy), "squash and merge commits are authored by web-flow");
 });
 
