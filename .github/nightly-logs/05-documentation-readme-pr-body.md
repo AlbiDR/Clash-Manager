@@ -1,29 +1,26 @@
 ### Nightly Stage 5: Documentation README - Architecture Truth Architect
 
-**Status:** CLEAN
+**Status:** CHANGED
 
-In plain terms: nothing needed fixing. This run checked the documentation README area and found it already correct, so the only file here is the log recording that the check happened.
+In plain terms: this is a documentation change to 1 file in the documentation README area. Nothing about how the app runs is affected.
 
-**What was checked:** Codebase -- Audited Backend requestTrace.ts against Backend/supabase/functions/_shared/README.md; verified accuracy and zero drift present
+**What changed:** docs(readme): Reconcile core/api README with WebAppDataSchema validation boundaries
 
-**Why:** Verified that Backend/supabase/functions/_shared/README.md accurately documents requestTrace.ts behavior and shared infrastructure
+**Why:** Reconciled Frontend-PWA/src/core/api/README.md to document WebAppDataSchema validation boundaries, deep structural parsing, and snapshot publication freshness markers.
 
-**Result:** Audit CLEAN: git diff --check and pnpm --dir Backend test passed cleanly with 0 failures across 31 test files and 402 tests
+**Result:** PASSED git diff --check and Vitest AppSchemas.spec.ts
 
-**Files changed:** .github/nightly-logs/05-documentation-readme-coverage.log
-
-**Verified accurate:** Backend/supabase/functions/_shared/requestTrace.ts
+**Files changed:** .github/nightly-logs/05-documentation-readme-coverage.log, Frontend-PWA/src/core/api/README.md
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: documentation
-  Cycle: nightly-cycle/2026-10-14
+  Cycle: nightly-cycle/2026-10-15
   Contract: cea68a5bbba1bd2cbc6d3bdfe2639f37f3935b571beab59f5da1501b1180b22d
-  Why: Verified that Backend/supabase/functions/_shared/README.md accurately documents requestTrace.ts behavior and shared infrastructure
-  Change: Codebase -- Audited Backend requestTrace.ts against Backend/supabase/functions/_shared/README.md; verified accuracy and zero drift present
-  Result: Audit CLEAN: git diff --check and pnpm --dir Backend test passed cleanly with 0 failures across 31 test files and 402 tests
-  Files: .github/nightly-logs/05-documentation-readme-coverage.log
-  Verified: Backend/supabase/functions/_shared/requestTrace.ts
+  Why: Reconciled Frontend-PWA/src/core/api/README.md to document WebAppDataSchema validation boundaries, deep structural parsing, and snapshot publication freshness markers.
+  Change: docs(readme): Reconcile core/api README with WebAppDataSchema validation boundaries
+  Result: PASSED git diff --check and Vitest AppSchemas.spec.ts
+  Files: .github/nightly-logs/05-documentation-readme-coverage.log, Frontend-PWA/src/core/api/README.md
   Nudges: 0
-  Execution: 16f566f7a94007dafd570129c3d200d2bcc9dc24
+  Execution: 79b8c1172105bfeab6dc7feabcd935abc74af62d
 -->
