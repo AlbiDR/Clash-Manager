@@ -27,10 +27,14 @@
 | `DataMappers.ts` | Raw Supabase rows to domain models (Voyage history, heritage tenure, score fallbacks). |
 | `*Schemas.ts` | Valibot schemas per domain (`Base`, `Member`, `Recruit`, `Profile`, `Score`, `Voyage`, `App`, `Offline`, `Maintenance`), aggregated by `DataSchemas.ts`. |
 
-## Realtime Subscription & Validation Boundaries
+## Realtime Subscription & WebAppData Validation Boundaries
 
-Realtime event consumption is a critical boundary where malformed payloads could degrade system stability. To mitigate this threat:
-- **Strict Realtime Validation:** The `subscribeToBlacklist` method on `RecruitClient.ts` intercepts all insertion/deletion events and subjects them to strict schema parsing using the `BlacklistEventSchema`.
+Inbound data processing (REST responses, Realtime subscriptions, and IndexedDB cache hydration) represents a critical trust boundary where malformed or drifted payloads could degrade client stability:
+- **Authoritative WebAppData Boundary:** `WebAppDataSchema` (`AppSchemas.ts`) serves as the authoritative Valibot validation boundary for the full application state singleton (`WebAppData`). It validates incoming remote snapshots and cached IndexedDB payloads prior to state hydration.
+- **Deep Structural Parsing:** Validates `lb` against `MemberSchema` and `hh` against `RecruitSchema` to enforce item-level integrity across roster and recruit datasets, safeguarding UI components from null/undefined property deadlocks.
+- **Per-View Publication Freshness:** Validates individual view publication markers (`rosterSnapshotRefreshedAt` and `headhunterSnapshotRefreshedAt`) alongside the conservative aggregate dataset `timestamp`, while preserving backward compatibility for legacy metadata (`remoteTimestamp`, `lastCompiled`, `lastFetched`).
+- **Identity & Blacklist Boundaries:** Enforces string pipe formatting on optional player identity (`playerTag`) and validates recruit dismissal filter arrays (`blacklist`).
+- **Strict Realtime Validation:** The `subscribeToBlacklist` method on `RecruitClient.ts` intercepts all insertion/deletion events and subjects them to strict schema parsing using `BlacklistEventSchema`.
 - **Descriptive Error Naming:** All realtime callback execution errors must conform to CleanStack naming rules and are explicitly bound to the `realtimeSubscriptionError` parameter to avoid ambiguous or anemic names (such as `err`).
 - **Resource Lifecycle Management:** Realtime subscriptions must return a clean, synchronous unsubscribe handler function that should be invoked on caller unmount to prevent lingering connection memory leaks.
 - **Missed-Event Recovery:** Any interrupted blacklist subscription is reconciled once it rejoins, including timeout/close statuses without an error payload. Connected refusals still produce a typed error; transient socket drops do not produce a failure toast.

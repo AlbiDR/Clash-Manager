@@ -155,6 +155,8 @@ CREATE TABLE IF NOT EXISTS substrate.config (
 ALTER TABLE substrate.config ENABLE ROW LEVEL SECURITY;
 
 INSERT INTO substrate.config (key, value, description) VALUES
+    ('GOVERNANCE_TELEMETRY_KEEP_DAYS', '7', 'Days of governance_telemetry retained before purge. Every purge/maintenance job logs into this table, so it is the primary driver of its size.'),
+    ('MEMBER_SNAPSHOTS_KEEP_DAYS', '90', 'Days of drivers.member_snapshots (daily per-member telemetry) retained before purge. Previously had no retention and grew unbounded.'),
     (
         'EPOCH_MAX_RETRIES',
         '3',
@@ -801,12 +803,42 @@ $function$;
 CREATE OR REPLACE FUNCTION substrate.purge_governance_telemetry()
  RETURNS void
  LANGUAGE plpgsql
+ SET search_path TO 'public', 'features', 'drivers', 'substrate', 'pg_temp'
+AS $function$
+DECLARE
+    v_keep_days integer;
+BEGIN
+    v_keep_days := COALESCE(substrate.config_int('GOVERNANCE_TELEMETRY_KEEP_DAYS'), 7);
+    DELETE FROM substrate.governance_telemetry
+    WHERE created_at < (now() - (v_keep_days || ' days')::interval);
+END;
+$function$;
+
+CREATE OR REPLACE FUNCTION substrate.purge_stale_member_snapshots()
+ RETURNS integer
+ LANGUAGE plpgsql
  SECURITY DEFINER
  SET search_path TO 'public', 'features', 'drivers', 'substrate', 'pg_temp'
 AS $function$
+DECLARE
+    v_keep_days integer;
+    v_count integer;
 BEGIN
-    DELETE FROM substrate.governance_telemetry WHERE created_at < (now() - interval '30 days');
-END; $function$;
+    v_keep_days := COALESCE(substrate.config_int('MEMBER_SNAPSHOTS_KEEP_DAYS'), 90);
+
+    DELETE FROM drivers.member_snapshots
+    WHERE snapshot_date < (now() - (v_keep_days || ' days')::interval)::date;
+
+    GET DIAGNOSTICS v_count = ROW_COUNT;
+
+    IF v_count > 0 THEN
+        INSERT INTO substrate.governance_telemetry (event_type, status, message)
+        VALUES ('MAINTENANCE_PURGE', 'INFO', 'Pruned ' || v_count || ' stale member snapshots (' || v_keep_days || '-day threshold).');
+    END IF;
+
+    RETURN v_count;
+END;
+$function$;
 
 CREATE OR REPLACE FUNCTION substrate.handle_heritage_snapshot()
  RETURNS trigger
@@ -1632,27 +1664,27 @@ BEGIN
     DELETE FROM drivers.recruits
     WHERE raw_potential_score = 0
       AND found_date < NOW() - INTERVAL '12 hours';
-    
+
     GET DIAGNOSTICS v_count = ROW_COUNT;
 
     -- Second, enforce the 500-recruit cap by score, excluding protected statuses
     WITH to_delete AS (
-        SELECT player_tag 
+        SELECT player_tag
         FROM drivers.recruits
         WHERE status NOT IN ('INVITED', 'ACTIVE') -- Protect high-value leads
-        ORDER BY raw_potential_score ASC NULLS FIRST
+        ORDER BY raw_potential_score DESC NULLS LAST
         OFFSET 500 -- Keep top 500
     )
     DELETE FROM drivers.recruits
     WHERE player_tag IN (SELECT player_tag FROM to_delete);
-    
+
     DECLARE
         v_cap_count INTEGER;
     BEGIN
         GET DIAGNOSTICS v_cap_count = ROW_COUNT;
         v_count := v_count + v_cap_count;
     END;
-    
+
     -- Cleanup orphaned ledger entries
     DELETE FROM drivers.recruit_ledger
     WHERE player_tag NOT IN (SELECT player_tag FROM drivers.recruits)
@@ -1660,7 +1692,7 @@ BEGIN
 
     IF v_count > 0 THEN
         INSERT INTO substrate.governance_telemetry (event_type, status, message)
-        VALUES ('MAINTENANCE_PURGE', 'INFO', 'Purged ' || v_count || ' drivers.recruits (corrupted or low-score) to maintain pipeline health.');
+        VALUES ('MAINTENANCE_PURGE', 'INFO', 'Purged ' || v_count || ' recruits (corrupted or low-score) to maintain pipeline health.');
     END IF;
 
     RETURN v_count;
@@ -2221,6 +2253,7 @@ BEGIN
     PERFORM drivers.purge_expired_blacklist();
     PERFORM substrate.purge_inactive_members();
     PERFORM substrate.purge_stale_battles();
+    PERFORM substrate.purge_stale_member_snapshots();
     PERFORM substrate.purge_worst_recruits();
     PERFORM substrate.purge_orphan_players();
 
@@ -2245,7 +2278,7 @@ BEGIN
     UPDATE substrate.pipeline_heartbeat
     SET status          = 'COMPLETED',
         last_success_at = NOW(),
-        last_message    = 'Maintenance complete. Raw logs, ledgers, stale battles, orphans, voyage and cron history pruned. Voyages finalized.',
+        last_message    = 'Maintenance complete. Raw logs, ledgers, stale battles, snapshots, orphans, voyage and cron history pruned. Voyages finalized.',
         updated_at      = NOW()
     WHERE component_id = 'NIGHTLY_MAINTENANCE';
 
@@ -4732,10 +4765,7 @@ GRANT SELECT ON features.voyage_summary TO authenticated, anon, service_role;
 CREATE OR REPLACE VIEW features.pipeline_heartbeat_view AS
   SELECT
     ph.component_id,
-    ph.last_success_at,
-    ph.status,
-    ph.last_triggered_at,
-    ph.last_failure_at
+    ph.last_success_at
   FROM substrate.pipeline_heartbeat ph;
 
 COMMENT ON VIEW features.pipeline_heartbeat_view IS

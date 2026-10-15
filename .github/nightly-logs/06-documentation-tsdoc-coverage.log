@@ -149,3 +149,5 @@
 * [2026-10-11] [Stage 6] [04:16Z-04:21Z 5m] [checks doc-debt=OK] CLEAN: Codebase -- audited useBlitzMode and ghostBenchmarkState documentation debt items; confirmed comments and interface contracts strictly match code logic
 * [2026-10-12] [Stage 6] [04:22Z-04:27Z 5m] [checks doc-debt=OK] CHANGED: Frontend-PWA/src/core/services/useClashSync.ts -- docs(tsdoc): harden useClashSync TSDoc interface contracts and inline logic annotations
 * [2026-10-13] [Stage 6] [04:03Z-04:10Z 7m] [checks doc-debt=OK] CHANGED: Backend/supabase/functions/headhunter-scanner/stages/tournament-finder.ts -- docs(tsdoc): harden runTournamentDiscovery TSDoc interface contract and logic annotations
+* [2026-10-14] [Stage 6] [04:24Z-04:28Z 3m] [checks doc-debt=OK] CHANGED: Backend/supabase/functions/_shared/requestTrace.ts -- docs(tsdoc): harden requestTrace interface contracts and inline decision annotations
+* [2026-10-15] [Stage 6] [04:14Z-04:20Z 6m] [checks doc-debt=OK] CHANGED: Frontend-PWA/src/core/api/SupabaseTransport.ts -- docs(tsdoc): harden SupabaseTransport TSDoc interface contracts and inline decision annotations
