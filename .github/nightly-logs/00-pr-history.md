@@ -16,6 +16,15 @@ LAST_AGED:   2026-10-13
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-15] PR #2212 [Stage 3]: Migration 20260915190011_backend_health_and_safe_maintenance.sql blocked by static view history audit violation on pipeline_heartbeat_view expansion
+**Domain:** database | **Commit:** cb3a3c79d | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2212)
+**Files:** .github/nightly-logs/03-baseline-consolidation-coverage.log, .github/nightly-logs/03-baseline-consolidation-pr-body.md
+**Why:** Folding pipeline_heartbeat_view column expansion into baseline caused pnpm audit:migrations to fail due to historical migration column signature mismatch. Restored baseline checkpoint.
+**Change:** Migration 20260915190011_backend_health_and_safe_maintenance.sql blocked by static view history audit violation on pipeline_heartbeat_view expansion
+**Result:** PARTIAL-RUN: 28 migrations remaining; 20260915190011_backend_health_and_safe_maintenance.sql blocked by pnpm audit:migrations view history check.
+**Nudges:** 0
+
+
 ### [2026-10-15] PR #2211 [Stage 2]: Expanded AppSchemas WebAppDataSchema unit test validation boundaries
 **Domain:** verification | **Commit:** b6f334f0d | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2211)
 **Files:** .github/nightly-logs/02-verification-coverage.log, .github/nightly-logs/02-verification-pr-body.md, Frontend-PWA/src/core/api/api-tests/AppSchemas.spec.ts
