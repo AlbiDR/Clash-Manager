@@ -31828,7 +31828,15 @@
             "state": "COMPLETED",
             "createTime": "2026-10-14T23:02:21.959044162Z",
             "updateTime": "2026-10-14T23:38:52.175683Z",
-            "lifetimeMinutes": 36.5
+            "lifetimeMinutes": 36.5,
+            "patchEvidence": {
+              "source": "activity-artifact",
+              "activity": "sessions/13060530244118830934/activities/30a85cdcda86475aaee71de408869608",
+              "activityTime": "2026-10-14T23:34:00.472189Z",
+              "artifactIndex": 0,
+              "baseCommitId": "bf663aa602db27fdc87406ceaf64b7b6c4d06e2f",
+              "sha256": "8535460524e1d0103b0fc3630a6383e07fc6873bdcad6c473f5a3041f2728b84"
+            }
           },
           "run": null,
           "body": {
@@ -31846,7 +31854,7 @@
         "dispatchAttempts": 0,
         "interventionAttempts": 0,
         "attempts": 0,
-        "lastObservedAt": "2026-10-15T20:42:59.280Z",
+        "lastObservedAt": "2026-10-15T21:20:35.704Z",
         "failureClass": null
       },
       "2": {
@@ -31865,7 +31873,13 @@
             "state": "COMPLETED",
             "createTime": "2026-10-15T00:04:21.931969962Z",
             "updateTime": "2026-10-15T00:29:52.358607Z",
-            "lifetimeMinutes": 25.5
+            "lifetimeMinutes": 25.5,
+            "patchEvidence": {
+              "source": "session-output",
+              "outputIndex": 0,
+              "baseCommitId": "0c4acd142747c6be3ce279395bd8567778695ee5",
+              "sha256": "3752b74c6b04dff5b29f6396c9f02ca6846779ade7575d628b2ae09e8f403e10"
+            }
           },
           "run": {
             "started": "2026-10-15T00:08:00Z",
@@ -31891,7 +31905,7 @@
         "dispatchAttempts": 0,
         "interventionAttempts": 0,
         "attempts": 0,
-        "lastObservedAt": "2026-10-15T20:42:59.354Z",
+        "lastObservedAt": "2026-10-15T21:20:35.760Z",
         "failureClass": null
       },
       "3": {
@@ -31910,7 +31924,13 @@
             "state": "COMPLETED",
             "createTime": "2026-10-15T01:11:42.572980053Z",
             "updateTime": "2026-10-15T01:28:59.671012Z",
-            "lifetimeMinutes": 17.3
+            "lifetimeMinutes": 17.3,
+            "patchEvidence": {
+              "source": "session-output",
+              "outputIndex": 0,
+              "baseCommitId": "b5ec55988549dd5059a90b8c194452ad8b69967e",
+              "sha256": "c84a92ffe5ad72a172f4f3104377f2e472b3b5408f5f2ad69ef8a6ec274df6de"
+            }
           },
           "run": {
             "started": "2026-10-15T01:15:00Z",
@@ -31944,7 +31964,7 @@
         "dispatchAttempts": 0,
         "interventionAttempts": 0,
         "attempts": 0,
-        "lastObservedAt": "2026-10-15T20:42:59.433Z",
+        "lastObservedAt": "2026-10-15T21:20:35.821Z",
         "failureClass": null
       },
       "4": {
@@ -31971,7 +31991,13 @@
             "state": "COMPLETED",
             "createTime": "2026-10-15T02:10:35.132649352Z",
             "updateTime": "2026-10-15T02:18:40.306332Z",
-            "lifetimeMinutes": 8.1
+            "lifetimeMinutes": 8.1,
+            "patchEvidence": {
+              "source": "session-output",
+              "outputIndex": 0,
+              "baseCommitId": "60932a3df9e38d721a5039c39985b8e0ecaf16d1",
+              "sha256": "21953c2333865b5454027ac7cc233d79a653cf596db24de9bd5dcc407b6b1347"
+            }
           },
           "run": {
             "started": "2026-10-15T02:13:00Z",
@@ -31992,7 +32018,7 @@
         "dispatchAttempts": 0,
         "interventionAttempts": 0,
         "attempts": 0,
-        "lastObservedAt": "2026-10-15T20:42:59.512Z",
+        "lastObservedAt": "2026-10-15T21:20:35.881Z",
         "failureClass": null
       },
       "5": {
@@ -32023,7 +32049,13 @@
             "state": "COMPLETED",
             "createTime": "2026-10-15T03:22:36.057918159Z",
             "updateTime": "2026-10-15T05:10:59.696151Z",
-            "lifetimeMinutes": 108.4
+            "lifetimeMinutes": 108.4,
+            "patchEvidence": {
+              "source": "session-output",
+              "outputIndex": 0,
+              "baseCommitId": "79b8c1172105bfeab6dc7feabcd935abc74af62d",
+              "sha256": "d03180a28c759586ddb5f933abf019f1bb14dfb241c290c274cec72d83c5c782"
+            }
           },
           "recovery": {
             "nudgedAt": "2026-10-15T05:07:56.135Z",
@@ -32054,7 +32086,7 @@
         "dispatchAttempts": 0,
         "interventionAttempts": 1,
         "attempts": 0,
-        "lastObservedAt": "2026-10-15T20:42:59.591Z",
+        "lastObservedAt": "2026-10-15T21:20:35.940Z",
         "failureClass": null
       },
       "6": {
@@ -32081,7 +32113,13 @@
             "state": "COMPLETED",
             "createTime": "2026-10-15T04:11:00.866138487Z",
             "updateTime": "2026-10-15T04:23:07.802535Z",
-            "lifetimeMinutes": 12.1
+            "lifetimeMinutes": 12.1,
+            "patchEvidence": {
+              "source": "session-output",
+              "outputIndex": 0,
+              "baseCommitId": "79b8c1172105bfeab6dc7feabcd935abc74af62d",
+              "sha256": "9e050553d60914bd16cf17adcadf995a6a687d1c4a4d52bf0a1fa50e3bdb59e3"
+            }
           },
           "run": {
             "started": "2026-10-15T04:14:00Z",
@@ -32102,7 +32140,7 @@
         "dispatchAttempts": 0,
         "interventionAttempts": 0,
         "attempts": 0,
-        "lastObservedAt": "2026-10-15T20:42:59.671Z",
+        "lastObservedAt": "2026-10-15T21:20:36.000Z",
         "failureClass": null
       },
       "7": {
@@ -32132,7 +32170,13 @@
             "state": "COMPLETED",
             "createTime": "2026-10-15T05:05:03.721733450Z",
             "updateTime": "2026-10-15T05:14:09.595110Z",
-            "lifetimeMinutes": 9.1
+            "lifetimeMinutes": 9.1,
+            "patchEvidence": {
+              "source": "session-output",
+              "outputIndex": 0,
+              "baseCommitId": "014bb24761f8d3ea9821daaacf16690bd950ffd4",
+              "sha256": "0a413af29eb98391e4cf16566b31aaa9784ae44486a41e27d02252fd090f58bf"
+            }
           },
           "prNumber": 2216,
           "prUrl": "https://github.com/AlbiDR/Clash-Manager/pull/2216",
@@ -32157,7 +32201,7 @@
         "dispatchAttempts": 0,
         "interventionAttempts": 0,
         "attempts": 0,
-        "lastObservedAt": "2026-10-15T20:42:59.750Z",
+        "lastObservedAt": "2026-10-15T21:20:36.060Z",
         "failureClass": null
       },
       "8": {
@@ -32184,7 +32228,13 @@
             "state": "COMPLETED",
             "createTime": "2026-10-15T06:09:59.629591911Z",
             "updateTime": "2026-10-15T06:22:11.428275Z",
-            "lifetimeMinutes": 12.2
+            "lifetimeMinutes": 12.2,
+            "patchEvidence": {
+              "source": "session-output",
+              "outputIndex": 0,
+              "baseCommitId": "b58b6d36cc51de923ac137900357707bf905e5fe",
+              "sha256": "fe3342deb844714157f097803b7b209b817203a52e67fc848ce39221c7497505"
+            }
           },
           "run": {
             "started": "2026-10-15T06:13:00Z",
@@ -32205,7 +32255,7 @@
         "dispatchAttempts": 0,
         "interventionAttempts": 0,
         "attempts": 0,
-        "lastObservedAt": "2026-10-15T20:42:59.829Z",
+        "lastObservedAt": "2026-10-15T21:20:36.121Z",
         "failureClass": null
       },
       "9": {
@@ -32235,7 +32285,13 @@
             "state": "COMPLETED",
             "createTime": "2026-10-15T07:29:11.813861550Z",
             "updateTime": "2026-10-15T07:38:17.935994Z",
-            "lifetimeMinutes": 9.1
+            "lifetimeMinutes": 9.1,
+            "patchEvidence": {
+              "source": "session-output",
+              "outputIndex": 0,
+              "baseCommitId": "3d0f64c2d2563c38b571c5b12876a4c990261f18",
+              "sha256": "0154a998195007cc56503d9cbcb9d76da056f567365e5dea50910e7aa3d5a429"
+            }
           },
           "run": {
             "started": "2026-10-15T07:32:00Z",
@@ -32256,7 +32312,7 @@
         "dispatchAttempts": 0,
         "interventionAttempts": 0,
         "attempts": 0,
-        "lastObservedAt": "2026-10-15T20:42:59.909Z",
+        "lastObservedAt": "2026-10-15T21:20:36.176Z",
         "failureClass": null
       },
       "10": {
@@ -32286,7 +32342,13 @@
             "state": "COMPLETED",
             "createTime": "2026-10-15T08:25:26.872119043Z",
             "updateTime": "2026-10-15T08:32:31.624106Z",
-            "lifetimeMinutes": 7.1
+            "lifetimeMinutes": 7.1,
+            "patchEvidence": {
+              "source": "session-output",
+              "outputIndex": 0,
+              "baseCommitId": "de86286f8b40a126396b4c963aa0b6eef6153aca",
+              "sha256": "08032d0e543bccfc514dbc2e3eb6de924e338ca8e5c2e62a9ea4e96b429e0c72"
+            }
           },
           "run": {
             "started": "2026-10-15T08:28:00Z",
@@ -32307,7 +32369,7 @@
         "dispatchAttempts": 0,
         "interventionAttempts": 0,
         "attempts": 0,
-        "lastObservedAt": "2026-10-15T20:42:59.988Z",
+        "lastObservedAt": "2026-10-15T21:20:36.232Z",
         "failureClass": null
       },
       "11": {
@@ -32337,7 +32399,13 @@
             "state": "COMPLETED",
             "createTime": "2026-10-15T09:19:48.250622748Z",
             "updateTime": "2026-10-15T09:27:54.246947Z",
-            "lifetimeMinutes": 8.1
+            "lifetimeMinutes": 8.1,
+            "patchEvidence": {
+              "source": "session-output",
+              "outputIndex": 0,
+              "baseCommitId": "2ed0b18ff3deb9bf8124ada3ebcdf83f7fac74bd",
+              "sha256": "f8ee86c50ea28974aaa9a32911075bf1e6c33b45683497626366602c689278dc"
+            }
           },
           "run": {
             "started": "2026-10-15T09:23:00Z",
@@ -32358,7 +32426,7 @@
         "dispatchAttempts": 0,
         "interventionAttempts": 0,
         "attempts": 0,
-        "lastObservedAt": "2026-10-15T20:43:00.068Z",
+        "lastObservedAt": "2026-10-15T21:20:36.287Z",
         "failureClass": null
       },
       "12": {
@@ -32389,7 +32457,13 @@
             "state": "COMPLETED",
             "createTime": "2026-10-15T10:05:49.273304843Z",
             "updateTime": "2026-10-15T11:37:17.738120Z",
-            "lifetimeMinutes": 91.5
+            "lifetimeMinutes": 91.5,
+            "patchEvidence": {
+              "source": "session-output",
+              "outputIndex": 0,
+              "baseCommitId": "6881d9f6019e79c005c0622aa54c70749b53e947",
+              "sha256": "45f5eeba5b63fc7ef563cf67b5022b2084494aa940208a750f598a2ed8e9c210"
+            }
           },
           "recovery": {
             "nudgedAt": "2026-10-15T11:35:15.013Z",
@@ -32419,7 +32493,7 @@
         "dispatchAttempts": 0,
         "interventionAttempts": 1,
         "attempts": 0,
-        "lastObservedAt": "2026-10-15T20:43:00.148Z",
+        "lastObservedAt": "2026-10-15T21:20:36.343Z",
         "failureClass": null
       },
       "13": {
@@ -32446,7 +32520,13 @@
             "state": "COMPLETED",
             "createTime": "2026-10-15T11:11:51.712238247Z",
             "updateTime": "2026-10-15T11:22:58.343154Z",
-            "lifetimeMinutes": 11.1
+            "lifetimeMinutes": 11.1,
+            "patchEvidence": {
+              "source": "session-output",
+              "outputIndex": 0,
+              "baseCommitId": "f720adb1bbed2e07ea984df37f7480392b330dd7",
+              "sha256": "cfae5cc83415c42a87d86c0060c53422a4404b997b5d7a0deef91aa460331996"
+            }
           },
           "run": {
             "started": "2026-10-15T11:15:00Z",
@@ -32467,7 +32547,7 @@
         "dispatchAttempts": 0,
         "interventionAttempts": 0,
         "attempts": 0,
-        "lastObservedAt": "2026-10-15T20:43:00.227Z",
+        "lastObservedAt": "2026-10-15T21:20:36.399Z",
         "failureClass": null
       }
     }
@@ -251782,6 +251862,919 @@
         }
       },
       "eventId": "22ca3fe6aebb0d7c2b76ca882be3ed5832e456c027a0e458406377b5f39dd53a"
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 3977,
+      "previousEventId": "22ca3fe6aebb0d7c2b76ca882be3ed5832e456c027a0e458406377b5f39dd53a",
+      "cycleId": "nightly-cycle/2026-10-15",
+      "date": "2026-10-15",
+      "stage": 0,
+      "type": "CYCLE_EXECUTION_RECORDED",
+      "source": "nightly-watchdog/observer",
+      "recordedAt": "2026-10-15T21:19:33.413Z",
+      "contractFingerprint": null,
+      "payload": {
+        "execution": {
+          "checkout": {
+            "branch": "Nightly",
+            "sha": "1d7d6c19a3924742ad914b9424e3f3b3bace457d"
+          },
+          "controlPlane": {
+            "registryDigest": "f28c46cb5ffe27c89e2fdd3ded80a710b466823dce96edb297a4caef9dd9c4a7",
+            "workflowDigest": "91cf12e7a4b54fded370a7d2963a662a5b7ca014c795fa9fc9a150e34732dbd8"
+          },
+          "executionId": ".github/workflows/nightly-watchdog.yml:38808947448:1",
+          "runtime": {
+            "arch": "x64",
+            "node": "v22.23.3",
+            "platform": "linux",
+            "runnerImage": "ubuntu24",
+            "runnerOs": "Linux"
+          },
+          "schemaVersion": 1,
+          "workflow": {
+            "attempt": 1,
+            "name": "Nightly Watchdog",
+            "path": ".github/workflows/nightly-watchdog.yml",
+            "runId": "38808947448"
+          }
+        }
+      },
+      "eventId": "0c950c8240351afaa840001cf6b54ef1c7ab2af95ca77f52dd04dfbaee33ff13"
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 3978,
+      "previousEventId": "0c950c8240351afaa840001cf6b54ef1c7ab2af95ca77f52dd04dfbaee33ff13",
+      "cycleId": "nightly-cycle/2026-10-15",
+      "date": "2026-10-15",
+      "stage": 1,
+      "type": "STAGE_ENTRY_UPDATED",
+      "source": "nightly-watchdog/observer",
+      "recordedAt": "2026-10-15T21:20:34.344Z",
+      "contractFingerprint": "b8cc17977cd40f02490c220999b57dcbf99eb8b7a2175f40feb87a2655548621",
+      "payload": {
+        "after": {
+          "attempts": 0,
+          "dispatchAttempts": 0,
+          "failureClass": null,
+          "interventionAttempts": 0,
+          "state": "MERGED"
+        },
+        "before": {
+          "attempts": 0,
+          "dispatchAttempts": 0,
+          "failureClass": null,
+          "interventionAttempts": 0,
+          "state": "MERGED"
+        },
+        "requested": {
+          "evidence": {
+            "removed": [],
+            "set": {
+              "session": {
+                "createTime": "2026-10-14T23:02:21.959044162Z",
+                "id": "13060530244118830934",
+                "lifetimeMinutes": 36.5,
+                "name": "sessions/13060530244118830934",
+                "patchEvidence": {
+                  "activity": "sessions/13060530244118830934/activities/30a85cdcda86475aaee71de408869608",
+                  "activityTime": "2026-10-14T23:34:00.472189Z",
+                  "artifactIndex": 0,
+                  "baseCommitId": "bf663aa602db27fdc87406ceaf64b7b6c4d06e2f",
+                  "sha256": "8535460524e1d0103b0fc3630a6383e07fc6873bdcad6c473f5a3041f2728b84",
+                  "source": "activity-artifact"
+                },
+                "state": "COMPLETED",
+                "updateTime": "2026-10-14T23:38:52.175683Z"
+              }
+            }
+          }
+        },
+        "rules": [
+          {
+            "failureClassGuarded": false,
+            "id": "TAGGED_MERGE_IS_DURABLE",
+            "outcome": "NOT_APPLICABLE",
+            "stateGuarded": false
+          },
+          {
+            "id": "EVIDENCE_ACCUMULATES",
+            "outcome": "APPLIED"
+          }
+        ],
+        "transition": {
+          "from": "MERGED",
+          "name": "MERGE_CONFIRMED",
+          "to": "MERGED"
+        }
+      },
+      "eventId": "d4cb4d009d44ee149a3c85e3884ddd2e45bcf32ed47b678e53eddbfc419f0f3e"
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 3979,
+      "previousEventId": "d4cb4d009d44ee149a3c85e3884ddd2e45bcf32ed47b678e53eddbfc419f0f3e",
+      "cycleId": "nightly-cycle/2026-10-15",
+      "date": "2026-10-15",
+      "stage": 2,
+      "type": "STAGE_ENTRY_UPDATED",
+      "source": "nightly-watchdog/observer",
+      "recordedAt": "2026-10-15T21:20:34.471Z",
+      "contractFingerprint": "b2e927ebff4e2ca5a343609133745d050f07d22fd9bf3e42481440c1d14079f0",
+      "payload": {
+        "after": {
+          "attempts": 0,
+          "dispatchAttempts": 0,
+          "failureClass": null,
+          "interventionAttempts": 0,
+          "state": "MERGED"
+        },
+        "before": {
+          "attempts": 0,
+          "dispatchAttempts": 0,
+          "failureClass": null,
+          "interventionAttempts": 0,
+          "state": "MERGED"
+        },
+        "requested": {
+          "evidence": {
+            "removed": [],
+            "set": {
+              "session": {
+                "createTime": "2026-10-15T00:04:21.931969962Z",
+                "id": "3266747905674366639",
+                "lifetimeMinutes": 25.5,
+                "name": "sessions/3266747905674366639",
+                "patchEvidence": {
+                  "baseCommitId": "0c4acd142747c6be3ce279395bd8567778695ee5",
+                  "outputIndex": 0,
+                  "sha256": "3752b74c6b04dff5b29f6396c9f02ca6846779ade7575d628b2ae09e8f403e10",
+                  "source": "session-output"
+                },
+                "state": "COMPLETED",
+                "updateTime": "2026-10-15T00:29:52.358607Z"
+              }
+            }
+          }
+        },
+        "rules": [
+          {
+            "failureClassGuarded": false,
+            "id": "TAGGED_MERGE_IS_DURABLE",
+            "outcome": "NOT_APPLICABLE",
+            "stateGuarded": false
+          },
+          {
+            "id": "EVIDENCE_ACCUMULATES",
+            "outcome": "APPLIED"
+          }
+        ],
+        "transition": {
+          "from": "MERGED",
+          "name": "MERGE_CONFIRMED",
+          "to": "MERGED"
+        }
+      },
+      "eventId": "8945a9992eef21420cdd410234e8b7ece0f7f5edec6875ab4902699a1d7db033"
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 3980,
+      "previousEventId": "8945a9992eef21420cdd410234e8b7ece0f7f5edec6875ab4902699a1d7db033",
+      "cycleId": "nightly-cycle/2026-10-15",
+      "date": "2026-10-15",
+      "stage": 3,
+      "type": "STAGE_ENTRY_UPDATED",
+      "source": "nightly-watchdog/observer",
+      "recordedAt": "2026-10-15T21:20:34.578Z",
+      "contractFingerprint": "8c32444005e6edf746eda3ca4e7e0dbe86a11a195765389a2f7db2cce85373e0",
+      "payload": {
+        "after": {
+          "attempts": 0,
+          "dispatchAttempts": 0,
+          "failureClass": null,
+          "interventionAttempts": 0,
+          "state": "MERGED"
+        },
+        "before": {
+          "attempts": 0,
+          "dispatchAttempts": 0,
+          "failureClass": null,
+          "interventionAttempts": 0,
+          "state": "MERGED"
+        },
+        "requested": {
+          "evidence": {
+            "removed": [],
+            "set": {
+              "session": {
+                "createTime": "2026-10-15T01:11:42.572980053Z",
+                "id": "16307077817923350414",
+                "lifetimeMinutes": 17.3,
+                "name": "sessions/16307077817923350414",
+                "patchEvidence": {
+                  "baseCommitId": "b5ec55988549dd5059a90b8c194452ad8b69967e",
+                  "outputIndex": 0,
+                  "sha256": "c84a92ffe5ad72a172f4f3104377f2e472b3b5408f5f2ad69ef8a6ec274df6de",
+                  "source": "session-output"
+                },
+                "state": "COMPLETED",
+                "updateTime": "2026-10-15T01:28:59.671012Z"
+              }
+            }
+          }
+        },
+        "rules": [
+          {
+            "failureClassGuarded": false,
+            "id": "TAGGED_MERGE_IS_DURABLE",
+            "outcome": "NOT_APPLICABLE",
+            "stateGuarded": false
+          },
+          {
+            "id": "EVIDENCE_ACCUMULATES",
+            "outcome": "APPLIED"
+          }
+        ],
+        "transition": {
+          "from": "MERGED",
+          "name": "MERGE_CONFIRMED",
+          "to": "MERGED"
+        }
+      },
+      "eventId": "4c38cab3f2cf4cac19c492b5907cdab4b751804488a0c0a3ce4abcc68df996c5"
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 3981,
+      "previousEventId": "4c38cab3f2cf4cac19c492b5907cdab4b751804488a0c0a3ce4abcc68df996c5",
+      "cycleId": "nightly-cycle/2026-10-15",
+      "date": "2026-10-15",
+      "stage": 4,
+      "type": "STAGE_ENTRY_UPDATED",
+      "source": "nightly-watchdog/observer",
+      "recordedAt": "2026-10-15T21:20:34.683Z",
+      "contractFingerprint": "aa2c8988d1392624d60bb5e0229636b4e4503d27fc3a61008485cb2452cde7f5",
+      "payload": {
+        "after": {
+          "attempts": 0,
+          "dispatchAttempts": 0,
+          "failureClass": null,
+          "interventionAttempts": 0,
+          "state": "MERGED"
+        },
+        "before": {
+          "attempts": 0,
+          "dispatchAttempts": 0,
+          "failureClass": null,
+          "interventionAttempts": 0,
+          "state": "MERGED"
+        },
+        "requested": {
+          "evidence": {
+            "removed": [],
+            "set": {
+              "session": {
+                "createTime": "2026-10-15T02:10:35.132649352Z",
+                "id": "3491728445268867680",
+                "lifetimeMinutes": 8.1,
+                "name": "sessions/3491728445268867680",
+                "patchEvidence": {
+                  "baseCommitId": "60932a3df9e38d721a5039c39985b8e0ecaf16d1",
+                  "outputIndex": 0,
+                  "sha256": "21953c2333865b5454027ac7cc233d79a653cf596db24de9bd5dcc407b6b1347",
+                  "source": "session-output"
+                },
+                "state": "COMPLETED",
+                "updateTime": "2026-10-15T02:18:40.306332Z"
+              }
+            }
+          }
+        },
+        "rules": [
+          {
+            "failureClassGuarded": false,
+            "id": "TAGGED_MERGE_IS_DURABLE",
+            "outcome": "NOT_APPLICABLE",
+            "stateGuarded": false
+          },
+          {
+            "id": "EVIDENCE_ACCUMULATES",
+            "outcome": "APPLIED"
+          }
+        ],
+        "transition": {
+          "from": "MERGED",
+          "name": "MERGE_CONFIRMED",
+          "to": "MERGED"
+        }
+      },
+      "eventId": "7b48a5f5f036529a020b05cf73d8ce42da36a5f5225da6be39ecde5d779a6d13"
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 3982,
+      "previousEventId": "7b48a5f5f036529a020b05cf73d8ce42da36a5f5225da6be39ecde5d779a6d13",
+      "cycleId": "nightly-cycle/2026-10-15",
+      "date": "2026-10-15",
+      "stage": 5,
+      "type": "STAGE_ENTRY_UPDATED",
+      "source": "nightly-watchdog/observer",
+      "recordedAt": "2026-10-15T21:20:34.784Z",
+      "contractFingerprint": "cea68a5bbba1bd2cbc6d3bdfe2639f37f3935b571beab59f5da1501b1180b22d",
+      "payload": {
+        "after": {
+          "attempts": 0,
+          "dispatchAttempts": 0,
+          "failureClass": null,
+          "interventionAttempts": 1,
+          "state": "MERGED"
+        },
+        "before": {
+          "attempts": 0,
+          "dispatchAttempts": 0,
+          "failureClass": null,
+          "interventionAttempts": 1,
+          "state": "MERGED"
+        },
+        "requested": {
+          "evidence": {
+            "removed": [],
+            "set": {
+              "session": {
+                "createTime": "2026-10-15T03:22:36.057918159Z",
+                "id": "3135569472339430412",
+                "lifetimeMinutes": 108.4,
+                "name": "sessions/3135569472339430412",
+                "patchEvidence": {
+                  "baseCommitId": "79b8c1172105bfeab6dc7feabcd935abc74af62d",
+                  "outputIndex": 0,
+                  "sha256": "d03180a28c759586ddb5f933abf019f1bb14dfb241c290c274cec72d83c5c782",
+                  "source": "session-output"
+                },
+                "state": "COMPLETED",
+                "updateTime": "2026-10-15T05:10:59.696151Z"
+              }
+            }
+          }
+        },
+        "rules": [
+          {
+            "failureClassGuarded": false,
+            "id": "TAGGED_MERGE_IS_DURABLE",
+            "outcome": "NOT_APPLICABLE",
+            "stateGuarded": false
+          },
+          {
+            "id": "EVIDENCE_ACCUMULATES",
+            "outcome": "APPLIED"
+          }
+        ],
+        "transition": {
+          "from": "MERGED",
+          "name": "MERGE_CONFIRMED",
+          "to": "MERGED"
+        }
+      },
+      "eventId": "d496b6e3ec549300fd33f78201e674432d6200ffd21e08a58b48871558be26ea"
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 3983,
+      "previousEventId": "d496b6e3ec549300fd33f78201e674432d6200ffd21e08a58b48871558be26ea",
+      "cycleId": "nightly-cycle/2026-10-15",
+      "date": "2026-10-15",
+      "stage": 6,
+      "type": "STAGE_ENTRY_UPDATED",
+      "source": "nightly-watchdog/observer",
+      "recordedAt": "2026-10-15T21:20:34.885Z",
+      "contractFingerprint": "a9f522cc73babe487aa3df1b083524daba64c0dd03c9e1b446dd4bd70c376bae",
+      "payload": {
+        "after": {
+          "attempts": 0,
+          "dispatchAttempts": 0,
+          "failureClass": null,
+          "interventionAttempts": 0,
+          "state": "MERGED"
+        },
+        "before": {
+          "attempts": 0,
+          "dispatchAttempts": 0,
+          "failureClass": null,
+          "interventionAttempts": 0,
+          "state": "MERGED"
+        },
+        "requested": {
+          "evidence": {
+            "removed": [],
+            "set": {
+              "session": {
+                "createTime": "2026-10-15T04:11:00.866138487Z",
+                "id": "9273293072670502442",
+                "lifetimeMinutes": 12.1,
+                "name": "sessions/9273293072670502442",
+                "patchEvidence": {
+                  "baseCommitId": "79b8c1172105bfeab6dc7feabcd935abc74af62d",
+                  "outputIndex": 0,
+                  "sha256": "9e050553d60914bd16cf17adcadf995a6a687d1c4a4d52bf0a1fa50e3bdb59e3",
+                  "source": "session-output"
+                },
+                "state": "COMPLETED",
+                "updateTime": "2026-10-15T04:23:07.802535Z"
+              }
+            }
+          }
+        },
+        "rules": [
+          {
+            "failureClassGuarded": false,
+            "id": "TAGGED_MERGE_IS_DURABLE",
+            "outcome": "NOT_APPLICABLE",
+            "stateGuarded": false
+          },
+          {
+            "id": "EVIDENCE_ACCUMULATES",
+            "outcome": "APPLIED"
+          }
+        ],
+        "transition": {
+          "from": "MERGED",
+          "name": "MERGE_CONFIRMED",
+          "to": "MERGED"
+        }
+      },
+      "eventId": "d7d03d9044243fca6250348a8a6a9cf688be0878b2045f1ca2796a2be57fb046"
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 3984,
+      "previousEventId": "d7d03d9044243fca6250348a8a6a9cf688be0878b2045f1ca2796a2be57fb046",
+      "cycleId": "nightly-cycle/2026-10-15",
+      "date": "2026-10-15",
+      "stage": 7,
+      "type": "STAGE_ENTRY_UPDATED",
+      "source": "nightly-watchdog/observer",
+      "recordedAt": "2026-10-15T21:20:34.986Z",
+      "contractFingerprint": "294f64f1358ef17af7639062d355427eaf3ce873f96ed18c821b7f7412d9219a",
+      "payload": {
+        "after": {
+          "attempts": 0,
+          "dispatchAttempts": 0,
+          "failureClass": null,
+          "interventionAttempts": 0,
+          "state": "MERGED"
+        },
+        "before": {
+          "attempts": 0,
+          "dispatchAttempts": 0,
+          "failureClass": null,
+          "interventionAttempts": 0,
+          "state": "MERGED"
+        },
+        "requested": {
+          "evidence": {
+            "removed": [],
+            "set": {
+              "session": {
+                "createTime": "2026-10-15T05:05:03.721733450Z",
+                "id": "17064005938550186318",
+                "lifetimeMinutes": 9.1,
+                "name": "sessions/17064005938550186318",
+                "patchEvidence": {
+                  "baseCommitId": "014bb24761f8d3ea9821daaacf16690bd950ffd4",
+                  "outputIndex": 0,
+                  "sha256": "0a413af29eb98391e4cf16566b31aaa9784ae44486a41e27d02252fd090f58bf",
+                  "source": "session-output"
+                },
+                "state": "COMPLETED",
+                "updateTime": "2026-10-15T05:14:09.595110Z"
+              }
+            }
+          }
+        },
+        "rules": [
+          {
+            "failureClassGuarded": false,
+            "id": "TAGGED_MERGE_IS_DURABLE",
+            "outcome": "NOT_APPLICABLE",
+            "stateGuarded": false
+          },
+          {
+            "id": "EVIDENCE_ACCUMULATES",
+            "outcome": "APPLIED"
+          }
+        ],
+        "transition": {
+          "from": "MERGED",
+          "name": "MERGE_CONFIRMED",
+          "to": "MERGED"
+        }
+      },
+      "eventId": "1706e1fb3d382f7f85d9b7c1bb61c2ec21584f981bd69d8372822cde9b07e60b"
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 3985,
+      "previousEventId": "1706e1fb3d382f7f85d9b7c1bb61c2ec21584f981bd69d8372822cde9b07e60b",
+      "cycleId": "nightly-cycle/2026-10-15",
+      "date": "2026-10-15",
+      "stage": 8,
+      "type": "STAGE_ENTRY_UPDATED",
+      "source": "nightly-watchdog/observer",
+      "recordedAt": "2026-10-15T21:20:35.088Z",
+      "contractFingerprint": "b865578f1a0b5d4e90f264b4dbb792c4d309c9bbea08fd314cf47cef940ff9b8",
+      "payload": {
+        "after": {
+          "attempts": 0,
+          "dispatchAttempts": 0,
+          "failureClass": null,
+          "interventionAttempts": 0,
+          "state": "MERGED"
+        },
+        "before": {
+          "attempts": 0,
+          "dispatchAttempts": 0,
+          "failureClass": null,
+          "interventionAttempts": 0,
+          "state": "MERGED"
+        },
+        "requested": {
+          "evidence": {
+            "removed": [],
+            "set": {
+              "session": {
+                "createTime": "2026-10-15T06:09:59.629591911Z",
+                "id": "14457277283048651497",
+                "lifetimeMinutes": 12.2,
+                "name": "sessions/14457277283048651497",
+                "patchEvidence": {
+                  "baseCommitId": "b58b6d36cc51de923ac137900357707bf905e5fe",
+                  "outputIndex": 0,
+                  "sha256": "fe3342deb844714157f097803b7b209b817203a52e67fc848ce39221c7497505",
+                  "source": "session-output"
+                },
+                "state": "COMPLETED",
+                "updateTime": "2026-10-15T06:22:11.428275Z"
+              }
+            }
+          }
+        },
+        "rules": [
+          {
+            "failureClassGuarded": false,
+            "id": "TAGGED_MERGE_IS_DURABLE",
+            "outcome": "NOT_APPLICABLE",
+            "stateGuarded": false
+          },
+          {
+            "id": "EVIDENCE_ACCUMULATES",
+            "outcome": "APPLIED"
+          }
+        ],
+        "transition": {
+          "from": "MERGED",
+          "name": "MERGE_CONFIRMED",
+          "to": "MERGED"
+        }
+      },
+      "eventId": "57d26b5b83ec553173acb1d69ca68226240f0d15fa75d5ae4512ecf32957d2e4"
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 3986,
+      "previousEventId": "57d26b5b83ec553173acb1d69ca68226240f0d15fa75d5ae4512ecf32957d2e4",
+      "cycleId": "nightly-cycle/2026-10-15",
+      "date": "2026-10-15",
+      "stage": 9,
+      "type": "STAGE_ENTRY_UPDATED",
+      "source": "nightly-watchdog/observer",
+      "recordedAt": "2026-10-15T21:20:35.189Z",
+      "contractFingerprint": "401ccac4d9a8ca083bc5492dd8958aca42a02d1f4857914b074fb6ad6b2e53f1",
+      "payload": {
+        "after": {
+          "attempts": 0,
+          "dispatchAttempts": 0,
+          "failureClass": null,
+          "interventionAttempts": 0,
+          "state": "MERGED"
+        },
+        "before": {
+          "attempts": 0,
+          "dispatchAttempts": 0,
+          "failureClass": null,
+          "interventionAttempts": 0,
+          "state": "MERGED"
+        },
+        "requested": {
+          "evidence": {
+            "removed": [],
+            "set": {
+              "session": {
+                "createTime": "2026-10-15T07:29:11.813861550Z",
+                "id": "11903015279191207952",
+                "lifetimeMinutes": 9.1,
+                "name": "sessions/11903015279191207952",
+                "patchEvidence": {
+                  "baseCommitId": "3d0f64c2d2563c38b571c5b12876a4c990261f18",
+                  "outputIndex": 0,
+                  "sha256": "0154a998195007cc56503d9cbcb9d76da056f567365e5dea50910e7aa3d5a429",
+                  "source": "session-output"
+                },
+                "state": "COMPLETED",
+                "updateTime": "2026-10-15T07:38:17.935994Z"
+              }
+            }
+          }
+        },
+        "rules": [
+          {
+            "failureClassGuarded": false,
+            "id": "TAGGED_MERGE_IS_DURABLE",
+            "outcome": "NOT_APPLICABLE",
+            "stateGuarded": false
+          },
+          {
+            "id": "EVIDENCE_ACCUMULATES",
+            "outcome": "APPLIED"
+          }
+        ],
+        "transition": {
+          "from": "MERGED",
+          "name": "MERGE_CONFIRMED",
+          "to": "MERGED"
+        }
+      },
+      "eventId": "623a8b634fe06b61543e0309f3701040f3c027f27e619845717ad7bc8718b925"
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 3987,
+      "previousEventId": "623a8b634fe06b61543e0309f3701040f3c027f27e619845717ad7bc8718b925",
+      "cycleId": "nightly-cycle/2026-10-15",
+      "date": "2026-10-15",
+      "stage": 10,
+      "type": "STAGE_ENTRY_UPDATED",
+      "source": "nightly-watchdog/observer",
+      "recordedAt": "2026-10-15T21:20:35.290Z",
+      "contractFingerprint": "4f9b40864d05ffea731090b36800572dd7affedd8532fcd17c8ded8c9e2fbc12",
+      "payload": {
+        "after": {
+          "attempts": 0,
+          "dispatchAttempts": 0,
+          "failureClass": null,
+          "interventionAttempts": 0,
+          "state": "MERGED"
+        },
+        "before": {
+          "attempts": 0,
+          "dispatchAttempts": 0,
+          "failureClass": null,
+          "interventionAttempts": 0,
+          "state": "MERGED"
+        },
+        "requested": {
+          "evidence": {
+            "removed": [],
+            "set": {
+              "session": {
+                "createTime": "2026-10-15T08:25:26.872119043Z",
+                "id": "3392091161040317053",
+                "lifetimeMinutes": 7.1,
+                "name": "sessions/3392091161040317053",
+                "patchEvidence": {
+                  "baseCommitId": "de86286f8b40a126396b4c963aa0b6eef6153aca",
+                  "outputIndex": 0,
+                  "sha256": "08032d0e543bccfc514dbc2e3eb6de924e338ca8e5c2e62a9ea4e96b429e0c72",
+                  "source": "session-output"
+                },
+                "state": "COMPLETED",
+                "updateTime": "2026-10-15T08:32:31.624106Z"
+              }
+            }
+          }
+        },
+        "rules": [
+          {
+            "failureClassGuarded": false,
+            "id": "TAGGED_MERGE_IS_DURABLE",
+            "outcome": "NOT_APPLICABLE",
+            "stateGuarded": false
+          },
+          {
+            "id": "EVIDENCE_ACCUMULATES",
+            "outcome": "APPLIED"
+          }
+        ],
+        "transition": {
+          "from": "MERGED",
+          "name": "MERGE_CONFIRMED",
+          "to": "MERGED"
+        }
+      },
+      "eventId": "e4f094bd4d814c414a2929fb78ede9683481fab108a01c4ae9b18a81ad49bcd6"
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 3988,
+      "previousEventId": "e4f094bd4d814c414a2929fb78ede9683481fab108a01c4ae9b18a81ad49bcd6",
+      "cycleId": "nightly-cycle/2026-10-15",
+      "date": "2026-10-15",
+      "stage": 11,
+      "type": "STAGE_ENTRY_UPDATED",
+      "source": "nightly-watchdog/observer",
+      "recordedAt": "2026-10-15T21:20:35.391Z",
+      "contractFingerprint": "63c0229fe16cf4c98e352282307edbee4830cff68ea2d93c5c967a1f5cbd30ea",
+      "payload": {
+        "after": {
+          "attempts": 0,
+          "dispatchAttempts": 0,
+          "failureClass": null,
+          "interventionAttempts": 0,
+          "state": "MERGED"
+        },
+        "before": {
+          "attempts": 0,
+          "dispatchAttempts": 0,
+          "failureClass": null,
+          "interventionAttempts": 0,
+          "state": "MERGED"
+        },
+        "requested": {
+          "evidence": {
+            "removed": [],
+            "set": {
+              "session": {
+                "createTime": "2026-10-15T09:19:48.250622748Z",
+                "id": "4412415441969736001",
+                "lifetimeMinutes": 8.1,
+                "name": "sessions/4412415441969736001",
+                "patchEvidence": {
+                  "baseCommitId": "2ed0b18ff3deb9bf8124ada3ebcdf83f7fac74bd",
+                  "outputIndex": 0,
+                  "sha256": "f8ee86c50ea28974aaa9a32911075bf1e6c33b45683497626366602c689278dc",
+                  "source": "session-output"
+                },
+                "state": "COMPLETED",
+                "updateTime": "2026-10-15T09:27:54.246947Z"
+              }
+            }
+          }
+        },
+        "rules": [
+          {
+            "failureClassGuarded": false,
+            "id": "TAGGED_MERGE_IS_DURABLE",
+            "outcome": "NOT_APPLICABLE",
+            "stateGuarded": false
+          },
+          {
+            "id": "EVIDENCE_ACCUMULATES",
+            "outcome": "APPLIED"
+          }
+        ],
+        "transition": {
+          "from": "MERGED",
+          "name": "MERGE_CONFIRMED",
+          "to": "MERGED"
+        }
+      },
+      "eventId": "a1024949ec44734b8aa7c0bd12a2e28926923069725ce0090a0f4019e445cd22"
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 3989,
+      "previousEventId": "a1024949ec44734b8aa7c0bd12a2e28926923069725ce0090a0f4019e445cd22",
+      "cycleId": "nightly-cycle/2026-10-15",
+      "date": "2026-10-15",
+      "stage": 12,
+      "type": "STAGE_ENTRY_UPDATED",
+      "source": "nightly-watchdog/observer",
+      "recordedAt": "2026-10-15T21:20:35.492Z",
+      "contractFingerprint": "f279dcd9fa3e895a0f76426a8bcab2381910b64ed4f8694d2c16ab7f8ec4ce04",
+      "payload": {
+        "after": {
+          "attempts": 0,
+          "dispatchAttempts": 0,
+          "failureClass": null,
+          "interventionAttempts": 1,
+          "state": "MERGED"
+        },
+        "before": {
+          "attempts": 0,
+          "dispatchAttempts": 0,
+          "failureClass": null,
+          "interventionAttempts": 1,
+          "state": "MERGED"
+        },
+        "requested": {
+          "evidence": {
+            "removed": [],
+            "set": {
+              "session": {
+                "createTime": "2026-10-15T10:05:49.273304843Z",
+                "id": "16036053441445264010",
+                "lifetimeMinutes": 91.5,
+                "name": "sessions/16036053441445264010",
+                "patchEvidence": {
+                  "baseCommitId": "6881d9f6019e79c005c0622aa54c70749b53e947",
+                  "outputIndex": 0,
+                  "sha256": "45f5eeba5b63fc7ef563cf67b5022b2084494aa940208a750f598a2ed8e9c210",
+                  "source": "session-output"
+                },
+                "state": "COMPLETED",
+                "updateTime": "2026-10-15T11:37:17.738120Z"
+              }
+            }
+          }
+        },
+        "rules": [
+          {
+            "failureClassGuarded": false,
+            "id": "TAGGED_MERGE_IS_DURABLE",
+            "outcome": "NOT_APPLICABLE",
+            "stateGuarded": false
+          },
+          {
+            "id": "EVIDENCE_ACCUMULATES",
+            "outcome": "APPLIED"
+          }
+        ],
+        "transition": {
+          "from": "MERGED",
+          "name": "MERGE_CONFIRMED",
+          "to": "MERGED"
+        }
+      },
+      "eventId": "bdefe4a3fc24be919aa6264dcfa525458e306aef78e6705f59e5f450b54b4a04"
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 3990,
+      "previousEventId": "bdefe4a3fc24be919aa6264dcfa525458e306aef78e6705f59e5f450b54b4a04",
+      "cycleId": "nightly-cycle/2026-10-15",
+      "date": "2026-10-15",
+      "stage": 13,
+      "type": "STAGE_ENTRY_UPDATED",
+      "source": "nightly-watchdog/observer",
+      "recordedAt": "2026-10-15T21:20:35.593Z",
+      "contractFingerprint": "df81a67e6d78a129caa22f2d9d3499a9aaf33de1a9f9c7718ff860013b7a86e1",
+      "payload": {
+        "after": {
+          "attempts": 0,
+          "dispatchAttempts": 0,
+          "failureClass": null,
+          "interventionAttempts": 0,
+          "state": "MERGED"
+        },
+        "before": {
+          "attempts": 0,
+          "dispatchAttempts": 0,
+          "failureClass": null,
+          "interventionAttempts": 0,
+          "state": "MERGED"
+        },
+        "requested": {
+          "evidence": {
+            "removed": [],
+            "set": {
+              "session": {
+                "createTime": "2026-10-15T11:11:51.712238247Z",
+                "id": "16111312575900011012",
+                "lifetimeMinutes": 11.1,
+                "name": "sessions/16111312575900011012",
+                "patchEvidence": {
+                  "baseCommitId": "f720adb1bbed2e07ea984df37f7480392b330dd7",
+                  "outputIndex": 0,
+                  "sha256": "cfae5cc83415c42a87d86c0060c53422a4404b997b5d7a0deef91aa460331996",
+                  "source": "session-output"
+                },
+                "state": "COMPLETED",
+                "updateTime": "2026-10-15T11:22:58.343154Z"
+              }
+            }
+          }
+        },
+        "rules": [
+          {
+            "failureClassGuarded": false,
+            "id": "TAGGED_MERGE_IS_DURABLE",
+            "outcome": "NOT_APPLICABLE",
+            "stateGuarded": false
+          },
+          {
+            "id": "EVIDENCE_ACCUMULATES",
+            "outcome": "APPLIED"
+          }
+        ],
+        "transition": {
+          "from": "MERGED",
+          "name": "MERGE_CONFIRMED",
+          "to": "MERGED"
+        }
+      },
+      "eventId": "aec7dd4e55818e91fa2fd94d5d8185bf492bf66c3102970d0c0508063059ec11"
     }
   ],
   "cycles": {
@@ -262299,10 +263292,35 @@
             "registryDigest": "f28c46cb5ffe27c89e2fdd3ded80a710b466823dce96edb297a4caef9dd9c4a7",
             "workflowDigest": "91cf12e7a4b54fded370a7d2963a662a5b7ca014c795fa9fc9a150e34732dbd8"
           }
+        },
+        ".github/workflows/nightly-watchdog.yml:38808947448:1": {
+          "schemaVersion": 1,
+          "executionId": ".github/workflows/nightly-watchdog.yml:38808947448:1",
+          "workflow": {
+            "name": "Nightly Watchdog",
+            "path": ".github/workflows/nightly-watchdog.yml",
+            "runId": "38808947448",
+            "attempt": 1
+          },
+          "checkout": {
+            "branch": "Nightly",
+            "sha": "1d7d6c19a3924742ad914b9424e3f3b3bace457d"
+          },
+          "runtime": {
+            "node": "v22.23.3",
+            "platform": "linux",
+            "arch": "x64",
+            "runnerOs": "Linux",
+            "runnerImage": "ubuntu24"
+          },
+          "controlPlane": {
+            "registryDigest": "f28c46cb5ffe27c89e2fdd3ded80a710b466823dce96edb297a4caef9dd9c4a7",
+            "workflowDigest": "91cf12e7a4b54fded370a7d2963a662a5b7ca014c795fa9fc9a150e34732dbd8"
+          }
         }
       }
     }
   },
-  "eventCount": 3976,
-  "eventHead": "22ca3fe6aebb0d7c2b76ca882be3ed5832e456c027a0e458406377b5f39dd53a"
+  "eventCount": 3990,
+  "eventHead": "aec7dd4e55818e91fa2fd94d5d8185bf492bf66c3102970d0c0508063059ec11"
 }
