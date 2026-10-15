@@ -16,11 +16,11 @@ never stage, stash, restore or overwrite them as part of this checkpoint.
 | Job | Owner | State | Scope / stopping point |
 | --- | --- | --- | --- |
 | Lock/query analysis | 03 | Verified | Read-only source and saved evidence; recommend a minimal repair, including other writers and rotation behavior. |
-| Recruit SQL repair | 08 | Ready for review | One new CLI-created migration, related behavioral/concurrency tests and repair runbook. No direct production changes; stop ready for review. |
-| Discovery batching implementation | 05 | Ready for review | Bounded service-only RPC, per-keyword stage batching, route/types, SQL and stage tests; writer finished. |
+| Recruit SQL repair | 08 | Published on Beta | One new CLI-created migration, related behavioral/concurrency tests and repair runbook. No direct production changes; stop ready for review. |
+| Discovery batching implementation | 05 | Published on Beta | Bounded service-only RPC, per-keyword stage batching, route/types, SQL and stage tests; writer finished. |
 | Independent release review | 10 | Verified | Review the finished migration, evidence, security, rollback and remaining risks. |
-| Deployment verification | 11 | Queued (publication slot) | Verify exact published revision, migrations and workflow outcomes; coordinator owns actual live DB/app probes. |
-| Integration / live evidence | 01 | Running | This queue, before/after evidence, targeted tests, publication and app verification. |
+| Deployment verification | 11 | Verified source / release artifacts | Verify exact published revision, migrations and workflow outcomes; coordinator owns actual live DB/app probes. |
+| Integration / live evidence | 01 | Beta published; final promotion tracked externally | This queue, before/after evidence, targeted tests, publication and app verification. |
 
 ## Baseline
 
@@ -113,3 +113,46 @@ implementation detail of existing discovery work; this checkpoint corrects
 locking and lowers its request count without adding a user capability or
 changing a public client contract. Version is read from the current package
 manifest at publication; no tag-history inference is used.
+
+## Published Beta checkpoint
+
+Source `7008c540260b2ae49f4bf3b01fc21f5634cebd5a` and version
+`eabb8c7284d3ecaf465218aaebc23c8d4aea28ef` are pushed. Version is **14.55.3**.
+Source Supabase run 38804548685, control-plane 38804548692 and attribution
+38804548775 passed. Both new migration timestamps were applied in that run.
+The live catalog matches all three reviewed function bodies, preserves both
+existing function ACLs and owners, and retains rotation as invoker-security.
+
+Version Supabase 38805178986, Auto Tag 38805179326, native integrity
+38805179393 and attribution 38805179258 passed. Signed Android build
+38805493020 published `14.55.3+509`, 3,982,503 bytes, SHA-256
+`4a841e7815f45c5786e4978009b5ec4dd02924d9ea48fad4f04493e3101dc090`.
+The post-APK PWA deployment is 38805651702. Final workflow, served artifact,
+branch-content and Android checks are recorded in the coordinator's external
+`recruit-repair-checkpoint/publication.json` and final report; a dispatched
+promotion alone is not success.
+
+During natural traffic from 20:49:13 to 20:50:58 UTC, provider logs recorded
+16 successful batch RPCs, 30 successful keyword-yield reports and one successful
+recruit sync, with no old single-row cache calls in that captured window.
+This is early runtime evidence, not a daily savings percentage or proof of
+continuous availability. Push gates passed 404 backend and 2,350 frontend tests.
+
+## Owned follow-ups beyond this checkpoint
+
+- 02/03: observe recruit failures and investigate other writers, rotation row
+  contention and materialized-refresh timeouts if they recur. Sorted sync input
+  is a targeted mitigation, not a universal locking protocol.
+- 05/09: compare complete, similarly loaded 24-hour windows for old/new cache
+  requests, failures, freshness and resource pressure. Scanner completion and
+  stage integrity remain distinct; external/schema failures are not cured by
+  cache batching alone.
+- 11: resolve the observer's hourly schedule gaps; retain missing evidence.
+- The independent Nightly-maintenance chat owns its unpublished promotion
+  verification fix in `/private/tmp/cm-nightly-promotion-20261015` on branch
+  `ADR/nightly-promotion-identity`. It is held outside this publication slot;
+  preserve it and release the slot after this DB checkpoint closes.
+
+No paid upgrade, database restart, statistics reset or production failure
+injection was used. Local PostgreSQL test resources belong to the coordinator
+and are removed after verification; test evidence remains outside git.

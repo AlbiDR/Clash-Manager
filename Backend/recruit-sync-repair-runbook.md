@@ -40,11 +40,12 @@ rows.
 
 ## Verification
 
-Run the focused pgTAP file against the coordinator's disposable local database
-after applying the tracked migration sequence, including the new migration:
+Run the focused pgTAP file against a disposable local database after applying
+the tracked migration sequence, including the new migration. Set
+`LOCAL_DATABASE_URL` to that local fixture; never use linked project credentials:
 
 ```sh
-/opt/homebrew/opt/postgresql@17/bin/psql 'postgresql://postgres@127.0.0.1:55438/recruit_verified' \
+psql "$LOCAL_DATABASE_URL" \
   -X -v ON_ERROR_STOP=1 \
   -f Backend/supabase/tests/database/11_sync_recruits_rotation.test.sql
 ```
@@ -96,7 +97,7 @@ must update both player rows and upsert valid recruit records:
 
 ```sh
 set +e
-/opt/homebrew/opt/postgresql@17/bin/psql 'postgresql://postgres@127.0.0.1:55438/recruit_verified' \
+psql "$LOCAL_DATABASE_URL" \
   -X -v ON_ERROR_STOP=1 > /tmp/recruit-sync-ascending.log 2>&1 <<'SQL' &
 SET ROLE service_role;
 SET statement_timeout = '60s';
@@ -108,7 +109,7 @@ SELECT public.sync_recruits('[
 SQL
 ascending_pid=$!
 
-/opt/homebrew/opt/postgresql@17/bin/psql 'postgresql://postgres@127.0.0.1:55438/recruit_verified' \
+psql "$LOCAL_DATABASE_URL" \
   -X -v ON_ERROR_STOP=1 > /tmp/recruit-sync-descending.log 2>&1 <<'SQL' &
 SET ROLE service_role;
 SET statement_timeout = '60s';
