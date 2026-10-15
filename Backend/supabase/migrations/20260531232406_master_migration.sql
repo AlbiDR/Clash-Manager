@@ -4769,9 +4769,10 @@ CREATE OR REPLACE VIEW features.pipeline_heartbeat_view AS
   FROM substrate.pipeline_heartbeat ph;
 
 COMMENT ON VIEW features.pipeline_heartbeat_view IS
-  'Anon-readable, public-safe pipeline status projection for the PWA. Exposes
-   completion timing and status only; private operational messages remain in
-   substrate.pipeline_heartbeat.';
+  'Anon-readable projection of substrate.pipeline_heartbeat, limited to the
+   component identity and its last success timestamp. Backs the PWA "last
+   synced" indicator. Before this view the PWA queried substrate directly and
+   PostgREST rejected it with PGRST106, so the indicator always read null.';
 
 GRANT SELECT ON features.pipeline_heartbeat_view TO authenticated, anon, service_role;
 

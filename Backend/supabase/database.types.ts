@@ -1279,6 +1279,10 @@ export type Database = {
         Args: { p_tag: string; p_type: string }
         Returns: undefined
       }
+      upsert_discovery_cache_batch: {
+        Args: { p_tags: string[]; p_type: string }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

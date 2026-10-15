@@ -150,6 +150,7 @@ export async function runTournamentDiscovery(
             logAudit('TOURNAMENT_DISCOVERY', 'called', { keyword });
             console.log(`[TOURNAMENT_DISCOVERY] Starting search for keyword: '${keyword}'`);
             let keywordYield = 0;
+            const discoveryCacheTags = new Set<string>();
             try {
                 // [THREAT:] fetchWithRotation handles API key rotation to prevent IP/Token banning.
                 const tournamentListApiResponse = await fetchWithRotation(`/tournaments?name=${keyword}&limit=${TOURNAMENT_SEARCH_LIMIT}`, undefined, admissionSignal ?? signal);
@@ -279,23 +280,9 @@ export async function runTournamentDiscovery(
                                     details: 'Malformed tournament details'
                                 });
                             }
-                            // [THREAT:] supabase.rpc() resolves with { error } instead of throwing. An
-                            // unchecked failure here never populates the discovery cache, so the
-                            // blacklist stays empty and every tournament detail is re-fetched on every
-                            // run - pure Royale API quota amplification with zero added signal.
-                            const { error: discoveryCacheUpsertError } = await withAbortSignal(
-                                supabase.rpc('upsert_discovery_cache', { p_tag: tournamentTargetCandidate.tag, p_type: 'TOURNAMENT' }),
-                                signal,
-                            );
-                            if (discoveryCacheUpsertError) {
-                                stats.errors.push(`DiscoveryCache(${tournamentTargetCandidate.tag}): ${discoveryCacheUpsertError.message}`);
-                                logAudit('TOURNAMENT_DISCOVERY', 'error', {
-                                    tournament: tournamentTargetCandidate.tag,
-                                    message: 'Discovery cache upsert failed - tournament will be re-fetched next run',
-                                    details: discoveryCacheUpsertError
-                                });
-                                console.error(`[TOURNAMENT_DISCOVERY] Discovery cache upsert failed for ${tournamentTargetCandidate.tag}: ${discoveryCacheUpsertError.message}`);
-                            }
+                            // Preserve the prior rule: any HTTP-successful and decoded detail
+                            // response is cached, including a decoded body that failed schema validation.
+                            discoveryCacheTags.add(tournamentTargetCandidate.tag);
                         } else {
                             upstreamFailures++;
                             console.error(`[TOURNAMENT_DISCOVERY] Fetching details for tournament ${tournamentTargetCandidate.tag} failed with HTTP ${tournamentDetailApiResponse.status}`);
@@ -307,6 +294,43 @@ export async function runTournamentDiscovery(
                     }
                 });
                 await processBatch(tournamentDetailTasks, BATCH_TOURNAMENTS, admissionSignal ?? signal);
+
+                // One bounded cache request per keyword limits API fanout while keeping cache
+                // bookkeeping independent from candidate and yield collection.
+                if (discoveryCacheTags.size > TOURNAMENT_SEARCH_LIMIT) {
+                    const message = `DiscoveryCacheBatch(${keyword}): more successful tournament details than the batch limit`;
+                    stats.errors.push(message);
+                    logAudit('TOURNAMENT_DISCOVERY', 'error', {
+                        keyword,
+                        message: 'Discovery cache batch skipped because its item limit was exceeded',
+                        item_count: discoveryCacheTags.size,
+                    });
+                    console.error(`[TOURNAMENT_DISCOVERY] ${message}`);
+                } else if (discoveryCacheTags.size > 0) {
+                    try {
+                        const { error: discoveryCacheBatchError } = await withAbortSignal(
+                            supabase.rpc('upsert_discovery_cache_batch', {
+                                p_tags: [...discoveryCacheTags],
+                                p_type: 'TOURNAMENT',
+                            }),
+                            signal,
+                        );
+                        if (discoveryCacheBatchError) throw discoveryCacheBatchError;
+                    } catch (discoveryCacheBatchFailure: unknown) {
+                        const errorMessage = discoveryCacheBatchFailure instanceof Error
+                            ? discoveryCacheBatchFailure.message
+                            : typeof discoveryCacheBatchFailure === 'object' && discoveryCacheBatchFailure !== null && 'message' in discoveryCacheBatchFailure
+                                ? String(discoveryCacheBatchFailure.message)
+                                : String(discoveryCacheBatchFailure);
+                        stats.errors.push(`DiscoveryCacheBatch(${keyword}): ${errorMessage}`);
+                        logAudit('TOURNAMENT_DISCOVERY', 'error', {
+                            keyword,
+                            message: 'Discovery cache batch failed - tournaments will be eligible again next run',
+                            details: discoveryCacheBatchFailure,
+                        });
+                        console.error(`[TOURNAMENT_DISCOVERY] Discovery cache batch failed for '${keyword}': ${errorMessage}`);
+                    }
+                }
 
                 // 2. Report yield for autonomy
                 // [DECISION LOG] Reporting yield allows the system to prioritize keywords that produce more recruits.
