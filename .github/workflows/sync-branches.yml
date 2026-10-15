@@ -567,10 +567,14 @@ jobs:
       - name: Merge Beta into Stable
         id: merge
         run: |
+          # checkout can pin origin/Beta back to the workflow's starting SHA.
+          # Refresh after checkout so this job sees the preceding job's push.
+          git fetch origin
           git checkout Stable
           git pull origin Stable
 
           BEFORE_SHA=$(git rev-parse HEAD)
+          echo "SYNC_SOURCE source=Beta commit=$(git rev-parse origin/Beta) target=Stable commit=$BEFORE_SHA"
           # apk-release.yml commits a signed APK to Beta and to Stable
           # separately, renaming the one file in APK/release/ each time, so the
           # two slots drift apart and the merge becomes a rename/rename that
@@ -680,10 +684,13 @@ jobs:
       - name: Merge Stable into Beta
         id: merge
         run: |
+          # Refresh both source and target after the preceding promotion.
+          git fetch origin
           git checkout Beta
           git pull origin Beta
 
           BEFORE_SHA=$(git rev-parse HEAD)
+          echo "SYNC_SOURCE source=Stable commit=$(git rev-parse origin/Stable) target=Beta commit=$BEFORE_SHA"
           # Same slot alignment as the Beta -> Stable job, in the other
           # direction: Beta's newer build is put back after the merge.
           APK_SLOT_BACKUP="$RUNNER_TEMP/apk-slot-before-merge"
@@ -840,3 +847,37 @@ jobs:
         run: |
           echo "Triggering APK Release Build (System: Nominal)..."
           gh workflow run apk-release.yml --ref Stable -R ${{ github.repository }}
+
+  verify-sync:
+    name: "Verify branch contents"
+    needs: [nightly-to-beta, beta-to-stable, stable-to-beta, beta-to-nightly]
+    if: always() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: Beta
+          fetch-depth: 0
+
+      - name: Verify synchronized branch trees
+        run: |
+          git fetch origin
+          echo '| Branch | Commit | Tree |' >> "${GITHUB_STEP_SUMMARY:-/dev/null}"
+          echo '| --- | --- | --- |' >> "${GITHUB_STEP_SUMMARY:-/dev/null}"
+          for SYNC_BRANCH in Beta Stable Nightly; do
+            BRANCH_COMMIT=$(git rev-parse "origin/${SYNC_BRANCH}")
+            BRANCH_TREE=$(git rev-parse "origin/${SYNC_BRANCH}^{tree}")
+            echo "SYNC_SNAPSHOT branch=$SYNC_BRANCH commit=$BRANCH_COMMIT tree=$BRANCH_TREE"
+            echo "| $SYNC_BRANCH | $BRANCH_COMMIT | $BRANCH_TREE |" >> "${GITHUB_STEP_SUMMARY:-/dev/null}"
+          done
+          BETA_TREE=$(git rev-parse 'origin/Beta^{tree}')
+          for SYNC_BRANCH in Stable Nightly; do
+            BRANCH_TREE=$(git rev-parse "origin/${SYNC_BRANCH}^{tree}")
+            if [ "$BETA_TREE" != "$BRANCH_TREE" ]; then
+              echo "::error::${SYNC_BRANCH} still differs from Beta after synchronization."
+              git diff --stat origin/Beta "origin/${SYNC_BRANCH}"
+              exit 1
+            fi
+          done
+          echo "Beta, Stable, and Nightly contain identical files."
