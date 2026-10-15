@@ -5,7 +5,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 
-import { parseStageBranch } from "./merge-nightly-core.mjs";
+import { extractMetadata, parseStageBranch, stageTagDate } from "./merge-nightly-core.mjs";
 import {
   buildFallbackPlan,
   extractSessionPatch,
@@ -42,6 +42,32 @@ test("patchTouchedPaths lists every path a patch can write", () => {
   assert.deepEqual(patchTouchedPaths(patch).sort(), ["one.md", "two.ts"]);
   assert.deepEqual(patchTouchedPaths(""), []);
   assert.deepEqual(patchTouchedPaths(null), []);
+});
+
+test("activity artifacts recover a finalized patch when session outputs contain none", () => {
+  const stage = stageOf(5);
+  const patch = patchFor([stage.coverageLog], coverageLine(5, "CLEAN"));
+  const session = { name: "sessions/123", outputs: [], activities: [
+    { createTime: "2026-08-27T02:00:00Z", artifacts: [{ changeSet: { gitPatch: { unidiffPatch: patch } } }] },
+    { createTime: "2026-08-27T01:00:00Z", artifacts: [{ changeSet: { gitPatch: { unidiffPatch: "obsolete patch" } } }] },
+  ] };
+  assert.equal(extractSessionPatch(session), patch);
+  const plan = buildFallbackPlan({ stage, session, date: DATE });
+  assert.equal(plan.ok, true);
+  assert.deepEqual(plan.paths, [stage.coverageLog]);
+});
+
+test("recovered Stage 1 keeps its cycle when publication crosses midnight", () => {
+  const stage = stageOf(1);
+  const plan = buildFallbackPlan({ stage, date: "2026-10-13", session: sessionWith(
+    patchFor([stage.coverageLog], coverageLine(1, "CLEAN", "2026-10-13")),
+  ) });
+  assert.equal(plan.ok, true);
+  const metadata = extractMetadata({ body: renderFallbackPrBody(plan) });
+  assert.equal(metadata.cycle, "nightly-cycle/2026-10-14");
+  assert.deepEqual(stageTagDate(1, metadata.cycle, new Date("2026-10-14T01:24:00Z")), {
+    date: "2026-10-13", source: "cycle",
+  });
 });
 
 test("parseCoverageOutcome recovers the stage's own declared status and summary", () => {

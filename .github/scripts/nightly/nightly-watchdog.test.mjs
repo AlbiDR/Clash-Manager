@@ -23,6 +23,8 @@ import {
   evaluateStaleStagePrs,
   expectedEvidenceDate,
   fetchJulesSessions,
+  fetchJulesSessionActivities,
+  hydrateJulesSessionPatches,
   hasDanglingSentinel,
   julesSessionPath,
   matchJulesSession,
@@ -577,6 +579,97 @@ test("recoverStuckStages does not spend the attempt budget on a failed nudge del
   });
   assert.equal(ledger.runs[date]["3"].interventionAttempts, 0);
   assert.deepEqual(selectRecoveryCandidates(entries, ledger, date).map(entry => entry.stage), [3]);
+});
+
+test("activity pagination reads the final patch beyond the first page", async () => {
+  const calls = [];
+  const activities = await fetchJulesSessionActivities({ name: "sessions/123" }, { julesApiKey: "test" }, async url => {
+    const parsed = new URL(url);
+    calls.push(parsed);
+    return { ok: true, json: async () => parsed.searchParams.has("pageToken")
+      ? { activities: [{ artifacts: [{ changeSet: { gitPatch: { unidiffPatch: "final patch" } } }] }] }
+      : { activities: [{ description: "work started" }], nextPageToken: "next" } };
+  });
+  assert.equal(calls.length, 2);
+  assert.equal(calls[0].pathname, "/v1alpha/sessions/123/activities");
+  assert.equal(activities[1].artifacts[0].changeSet.gitPatch.unidiffPatch, "final patch");
+});
+
+test("activity reads retry transient failure but reject malformed and looping responses", async () => {
+  let requests = 0;
+  const activities = await fetchJulesSessionActivities({ id: "123" }, { julesApiKey: "test" }, async () => {
+    requests += 1;
+    return requests === 1 ? { ok: false, status: 503, statusText: "Unavailable" }
+      : { ok: true, json: async () => ({ activities: [] }) };
+  }, { sleepImpl: async () => {} });
+  assert.deepEqual(activities, []);
+  assert.equal(requests, 2);
+  await assert.rejects(fetchJulesSessionActivities({ id: "123" }, { julesApiKey: "test" }, async () => ({
+    ok: true, json: async () => ({}),
+  })), /no activities array/);
+  await assert.rejects(fetchJulesSessionActivities({ id: "123" }, { julesApiKey: "test" }, async () => ({
+    ok: true, json: async () => ({ activities: [], nextPageToken: "same" }),
+  })), /repeated a pagination token/);
+});
+
+test("stranded activity patches enter the existing validated publication plan", async () => {
+  const date = "2026-10-15";
+  const stage = registry.stages.find(s => s.number === 5);
+  const session = { ...strandedSession(stage, "CLEAN", date), outputs: [] };
+  const activities = [{ createTime: `${date}T03:00:00Z`, artifacts: [
+    { changeSet: { gitPatch: { unidiffPatch: fallbackPatch(stage, "CLEAN", date) } } },
+  ] }];
+  let reads = 0;
+  await hydrateJulesSessionPatches({ registry, date, sessions: [session], fetchActivities: async () => {
+    reads += 1;
+    return activities;
+  } });
+  const rehearsal = rehearseFallbackPublisher({ registry, date, observed: { julesSessions: [session] } });
+  assert.equal(reads, 1);
+  assert.equal(rehearsal.ready, 1);
+  assert.deepEqual(rehearsal.unrehearsable, []);
+});
+
+test("activity lookup skips published, running, previous-run and patch-bearing sessions", async () => {
+  const date = "2026-10-15";
+  const stage = registry.stages.find(s => s.number === 5);
+  const base = strandedSession(stage, "CLEAN", date);
+  for (const session of [base, { ...base, outputs: [], state: "IN_PROGRESS" },
+    { ...base, outputs: [{ pullRequest: { url: "https://github.com/owner/repo/pull/1" } }] },
+    { ...base, outputs: [], createTime: "2026-10-14T02:00:00Z" }]) {
+    await hydrateJulesSessionPatches({ registry, date, sessions: [session], fetchActivities: async () => {
+      assert.fail("unnecessary activity read");
+    } });
+    assert.equal(session.activityReadError, undefined);
+  }
+});
+
+test("failed activity reads remain unavailable evidence rather than a claim of lost work", async () => {
+  const date = "2026-10-15";
+  const stage = registry.stages.find(s => s.number === 5);
+  const session = { ...strandedSession(stage, "CLEAN", date), outputs: [] };
+  await hydrateJulesSessionPatches({ registry, date, sessions: [session], fetchActivities: async () => {
+    throw new Error("Jules API 503 Unavailable");
+  } });
+  const rehearsal = rehearseFallbackPublisher({ registry, date, observed: { julesSessions: [session] } });
+  assert.deepEqual(rehearsal.unrehearsable, []);
+  assert.equal(rehearsal.unavailable[0].stage, 5);
+  assert.match(renderRehearsalReport(rehearsal), /Stage 5: activity evidence UNAVAILABLE: Jules API 503/);
+  assert.doesNotMatch(renderRehearsalReport(rehearsal), /Jules-side loss/);
+  assert.equal(sessionTelemetry(session).activityReadError, "Jules API 503 Unavailable");
+});
+
+test("activity lookup follows the ledger's pinned replacement across midnight", async () => {
+  const date = "2026-10-15";
+  const stage = registry.stages.find(s => s.number === 5);
+  const session = { ...strandedSession(stage, "CLEAN", date), createTime: "2026-10-16T00:01:00Z", outputs: [] };
+  const ledger = { runs: { [date]: { "5": { evidence: { redispatch: { sessionName: session.name } } } } } };
+  let reads = 0;
+  await hydrateJulesSessionPatches({ registry, date, sessions: [session], ledger, fetchActivities: async () => {
+    reads += 1;
+    return [];
+  } });
+  assert.equal(reads, 1);
 });
 
 test("fetchJulesSessions follows nextPageToken instead of returning only the first page", async () => {
