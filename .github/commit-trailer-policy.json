@@ -42,7 +42,7 @@
     {
       "label": "GitHub Actions - authors the pipeline's own ledger, merge and sync commits. Removing this would break the nightly pipeline, not improve attribution.",
       "namePattern": "^github-actions",
-      "emailPattern": "^github-actions\\[bot\\]@users\\.noreply\\.github\\.com$"
+      "emailPattern": "^(?:41898282\\+)?github-actions\\[bot\\]@users\\.noreply\\.github\\.com$"
     },
     {
       "label": "GitHub's own merge/web-flow identity for squash and merge commits. Name is pinned too: a bare email condition would let anything calling itself noreply@github.com be credited, and that address is trivially self-assigned.",
