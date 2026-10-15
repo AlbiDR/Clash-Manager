@@ -8,6 +8,7 @@ import test from "node:test";
 import { extractMetadata, parseStageBranch, stageTagDate } from "./merge-nightly-core.mjs";
 import {
   buildFallbackPlan,
+  describeSessionPatch,
   extractSessionPatch,
   fallbackBranchName,
   findExistingFallbackPullRequest,
@@ -35,6 +36,24 @@ test("extractSessionPatch finds the change set and tolerates empty outputs", () 
   assert.equal(extractSessionPatch({ outputs: [{ changeSet: {} }] }), null);
   assert.equal(extractSessionPatch({}), null);
   assert.equal(extractSessionPatch(null), null);
+});
+
+test("patch provenance identifies the exact selected activity without duplicating its contents", () => {
+  const session = { ...sessionWith("old output"), activities: [
+    { name: "sessions/123/activities/old", createTime: "2026-10-15T01:00:00Z", artifacts: [{ changeSet: { gitPatch: { unidiffPatch: "old activity" } } }] },
+    { name: "sessions/123/activities/final", createTime: "2026-10-15T02:00:00Z", artifacts: [
+      { description: "not a patch" },
+      { changeSet: { gitPatch: { baseCommitId: "a".repeat(40), unidiffPatch: "abc" } } },
+    ] },
+  ] };
+  assert.equal(extractSessionPatch(session), "abc");
+  assert.deepEqual(describeSessionPatch(session), {
+    source: "activity-artifact", activity: "sessions/123/activities/final",
+    activityTime: "2026-10-15T02:00:00Z", artifactIndex: 1, baseCommitId: "a".repeat(40),
+    sha256: "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
+  });
+  assert.equal(describeSessionPatch(sessionWith("abc")).source, "session-output");
+  assert.equal(describeSessionPatch(null), null);
 });
 
 test("patchTouchedPaths lists every path a patch can write", () => {

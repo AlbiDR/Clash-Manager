@@ -7,7 +7,7 @@ import { classifyNightlyPr, CONFIG, extractMetadata, selectNewestGateRun } from 
 import { DATABASE_VERIFICATION } from "./nightly-blind-spots.mjs";
 import { FAILURE_CLASSES, ensureRunEntries, loadLedger, prNumberFromTag, recordCycleExecution, saveLedger, stageEntry, upsertStageEntry } from "./nightly-ledger.mjs";
 import { createRedactor, redactDeep } from "./nightly-redact.mjs";
-import { buildFallbackPlan, extractSessionPatch, publishFallback } from "./nightly-publish-fallback.mjs";
+import { buildFallbackPlan, describeSessionPatch, extractSessionPatch, publishFallback } from "./nightly-publish-fallback.mjs";
 import { HEALTH, evaluatePipelineHealth, renderHealthReport } from "./nightly-health.mjs";
 import { getInterventionAttemptCount, REDISPATCH_NOT_SENT_MARKER } from "./nightly-intervention.mjs";
 import { NIGHTLY_EVENT_SOURCES, getCycleDate, getCycleId, getEvidenceDate } from "./nightly-events.mjs";
@@ -935,6 +935,7 @@ function normalizePr(pr) {
 // coarse signal, and named so nobody mistakes it for something it is not.
 export function sessionTelemetry(session) {
   if (!session) return null;
+  const patchEvidence = describeSessionPatch(session);
   const createTime = session.createTime || null;
   const updateTime = session.updateTime || null;
   const span = createTime && updateTime ? (Date.parse(updateTime) - Date.parse(createTime)) / 60000 : null;
@@ -946,6 +947,7 @@ export function sessionTelemetry(session) {
     updateTime,
     lifetimeMinutes: Number.isFinite(span) ? Math.round(span * 10) / 10 : null,
     ...(session.activityReadError ? { activityReadError: session.activityReadError } : {}),
+    ...(patchEvidence ? { patchEvidence } : {}),
   };
 }
 
@@ -2028,6 +2030,7 @@ export async function publishStrandedWork({
               at: new Date().toISOString(),
               sessionName: plan.sessionName,
               status: plan.status,
+              patchEvidence: plan.patchEvidence,
               ...(result.alreadyPublished ? { reused: true } : {}),
             },
           },
