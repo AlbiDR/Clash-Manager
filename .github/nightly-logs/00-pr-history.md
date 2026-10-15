@@ -16,6 +16,15 @@ LAST_AGED:   2026-10-13
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-15] PR #2217 [Stage 8]: Bumped supabase devDependency from ^2.120.0 to ^2.121.0 in catalogs and updated pnpm-lock.yaml
+**Domain:** dependencies | **Commit:** 5d79cc064 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2217)
+**Files:** .github/nightly-logs/08-dependency-audit-coverage.log, .github/nightly-logs/08-dependency-audit-pr-body.md, package.json, pnpm-lock.yaml, pnpm-workspace.yaml
+**Why:** Apply safe Tier 1 patch bump
+**Change:** Bumped supabase devDependency from ^2.120.0 to ^2.121.0 in catalogs and updated pnpm-lock.yaml
+**Result:** pnpm audit:version passed 0 drift lines, pnpm test passed
+**Nudges:** 0
+
+
 ### [2026-10-15] PR #2215 [Stage 5]: docs(readme): Reconcile core/api README with WebAppDataSchema validation boundaries
 **Domain:** documentation | **Commit:** 9fcf6633a | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2215)
 **Files:** .github/nightly-logs/05-documentation-readme-coverage.log, .github/nightly-logs/05-documentation-readme-pr-body.md, Frontend-PWA/src/core/api/README.md
