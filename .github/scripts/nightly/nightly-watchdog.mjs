@@ -259,6 +259,28 @@ function retryDelayFromResponse(response, fallback) {
   return Number.isFinite(seconds) && seconds >= 0 ? seconds * 1_000 : fallback;
 }
 
+async function fetchJulesPage(url, config, fetchImpl, sleepImpl, retryDelaysMs) {
+  let res;
+  let attempt = 0;
+  while (true) {
+    try {
+      res = await fetchImpl(url.toString(), {
+        headers: { "X-Goog-Api-Key": config.julesApiKey },
+      });
+    } catch (error) {
+      if (attempt >= retryDelaysMs.length) throw error;
+      await sleepImpl(retryDelaysMs[attempt]);
+      attempt += 1;
+      continue;
+    }
+    if (res.ok || !isRetryableJulesStatus(res.status) || attempt >= retryDelaysMs.length) break;
+    await sleepImpl(retryDelayFromResponse(res, retryDelaysMs[attempt]));
+    attempt += 1;
+  }
+  if (!res.ok) throw new Error(`Jules API ${res.status} ${res.statusText}${attempt > 0 ? ` after ${attempt + 1} attempts` : ""}`);
+  return res.json();
+}
+
 export async function fetchJulesSessions(
   config = CONFIG,
   fetchImpl = fetch,
@@ -280,29 +302,7 @@ export async function fetchJulesSessions(
       const url = new URL(`${JULES_API_BASE}/sessions`);
       url.searchParams.set("pageSize", "100");
       if (pageToken) url.searchParams.set("pageToken", pageToken);
-      let res;
-      let attempt = 0;
-      while (true) {
-        try {
-          res = await fetchImpl(url.toString(), {
-            headers: { "X-Goog-Api-Key": config.julesApiKey },
-          });
-        } catch (error) {
-          if (attempt >= retryDelaysMs.length) throw error;
-          await sleepImpl(retryDelaysMs[attempt]);
-          attempt += 1;
-          continue;
-        }
-        if (res.ok || !isRetryableJulesStatus(res.status) || attempt >= retryDelaysMs.length) break;
-        await sleepImpl(retryDelayFromResponse(res, retryDelaysMs[attempt]));
-        attempt += 1;
-      }
-      if (!res.ok) {
-        const error = `Jules API ${res.status} ${res.statusText}${attempt > 0 ? ` after ${attempt + 1} attempts` : ""}`;
-        errorLine(`${error}; session evidence is unavailable for this run.`);
-        return { sessions: [], available: false, error };
-      }
-      const body = await res.json();
+      const body = await fetchJulesPage(url, config, fetchImpl, sleepImpl, retryDelaysMs);
       if (Array.isArray(body.sessions)) sessions.push(...body.sessions);
       pageToken = body.nextPageToken || "";
     } while (pageToken);
@@ -310,6 +310,47 @@ export async function fetchJulesSessions(
   } catch (error) {
     errorLine(`Jules API request failed: ${error.message}; session evidence is unavailable for this run.`);
     return { sessions: [], available: false, error: error.message };
+  }
+}
+
+/** Read every activity page before selecting a patch; a partial read is not evidence. */
+export async function fetchJulesSessionActivities(session, config = CONFIG, fetchImpl = fetch, {
+  sleepImpl = ms => new Promise(resolve => setTimeout(resolve, ms)),
+  retryDelaysMs = JULES_LIST_RETRY_DELAYS_MS,
+} = {}) {
+  const sessionPath = julesSessionPath(session);
+  invariant(/^sessions\/[^/]+$/.test(sessionPath || ""), "Invalid Jules session resource name.");
+  invariant(config.julesApiKey, "JULES_API_KEY is not configured.");
+  const activities = [];
+  const seenPageTokens = new Set();
+  let pageToken = "";
+  do {
+    invariant(!seenPageTokens.has(pageToken), "Jules activities repeated a pagination token.");
+    seenPageTokens.add(pageToken);
+    const url = new URL(`${JULES_API_BASE}/${sessionPath}/activities`);
+    url.searchParams.set("pageSize", "100");
+    if (pageToken) url.searchParams.set("pageToken", pageToken);
+    const body = await fetchJulesPage(url, config, fetchImpl, sleepImpl, retryDelaysMs);
+    invariant(Array.isArray(body.activities), "Jules activities response has no activities array.");
+    activities.push(...body.activities);
+    pageToken = body.nextPageToken || "";
+  } while (pageToken);
+  return activities;
+}
+
+/** Only inspect completed sessions from this run that do not already expose a patch. */
+export async function hydrateJulesSessionPatches({ registry, date, sessions, ledger = null, config = CONFIG, fetchActivities = fetchJulesSessionActivities }) {
+  for (const stage of registry.stages) {
+    const session = matchJulesSession(sessions, stage, date, trackedSessionName(ledger, date, stage.number));
+    if (!session || session.state !== "COMPLETED" || extractSessionPatch(session)) continue;
+    if (session.outputs?.some(output => output.pullRequest?.url)) continue;
+    try {
+      session.activities = await fetchActivities(session, config);
+    } catch (error) {
+      // Keep the session available for a nudge, but never call a failed read empty.
+      session.activityReadError = redact(error.message || String(error));
+      errorLine(`Stage ${stage.number}: activity evidence unavailable: ${session.activityReadError}`);
+    }
   }
 }
 
@@ -638,7 +679,7 @@ async function observeDatabaseVerification(registry, date, tags, prs, config = C
   return observed;
 }
 
-async function collectObservedState(registry, date, config = CONFIG) {
+async function collectObservedState(registry, date, config = CONFIG, ledger = null) {
   runGit(["fetch", "--tags", "origin", config.targetBranch]);
   try {
     runGit(["fetch", "origin", PROMOTION_BRANCH]);
@@ -706,6 +747,7 @@ async function collectObservedState(registry, date, config = CONFIG) {
   }
 
   const jules = await fetchJulesSessions(config);
+  await hydrateJulesSessionPatches({ registry, date, sessions: jules.sessions, ledger, config });
   const promotion = measurePromotionStaleness(config.targetBranch);
   const databaseVerification = await observeDatabaseVerification(registry, date, tags, prs, config);
 
@@ -903,6 +945,7 @@ export function sessionTelemetry(session) {
     createTime,
     updateTime,
     lifetimeMinutes: Number.isFinite(span) ? Math.round(span * 10) / 10 : null,
+    ...(session.activityReadError ? { activityReadError: session.activityReadError } : {}),
   };
 }
 
@@ -1826,6 +1869,7 @@ export function rehearseFallbackPublisher({ registry, date, observed, ledger = n
   // rehearsal that night saw 8 finished, 7 rehearsed, and reported capable with
   // no mention of the eighth, which was the only stage that actually lost work.
   const unrehearsable = [];
+  const unavailable = [];
   for (const stage of registry.stages) {
     const session = matchJulesSession(
       observed?.julesSessions,
@@ -1834,8 +1878,13 @@ export function rehearseFallbackPublisher({ registry, date, observed, ledger = n
       trackedSessionName(ledger, date, stage.number),
     );
     if (!session) continue;
+    if (!extractSessionPatch(session) && session.outputs?.some(output => output.pullRequest?.url)) continue;
     const finished = String(session.state || "").toUpperCase() === "COMPLETED";
     if (finished) finishedSessions += 1;
+    if (session.activityReadError) {
+      unavailable.push({ stage: stage.number, error: session.activityReadError });
+      continue;
+    }
     if (!extractSessionPatch(session)) {
       // Only a FINISHED session proves an absence. An in-flight one legitimately
       // holds nothing yet, which is the same distinction extractionBroken makes.
@@ -1856,6 +1905,7 @@ export function rehearseFallbackPublisher({ registry, date, observed, ledger = n
     failed,
     finishedSessions,
     unrehearsable,
+    unavailable,
     extractionBroken,
     // Only a total failure is a capability claim. One stage refusing can be a
     // legitimate write-boundary rejection for that stage's own patch; every
@@ -1885,11 +1935,13 @@ export function rehearseFallbackPublisher({ registry, date, observed, ledger = n
  */
 function unrehearsableLines(rehearsal) {
   const stages = rehearsal?.unrehearsable || [];
-  if (stages.length === 0) return [];
+  const unavailable = (rehearsal?.unavailable || []).map(item => `- Stage ${item.stage}: activity evidence UNAVAILABLE: ${item.error}`);
+  if (stages.length === 0) return unavailable;
   return [
     `- ${stages.length} finished session(s) held no change set at all: ${stages.map(n => `Stage ${n}`).join(", ")}.`,
     "  Their work cannot be recovered by the fallback publisher, which needs a change set to apply.",
     "  This is a Jules-side loss rather than a publisher fault, and it is invisible in the counts above.",
+    ...unavailable,
   ];
 }
 
@@ -1900,6 +1952,7 @@ export function renderRehearsalReport(rehearsal) {
       `Fallback publisher: CANNOT BE REHEARSED. ${rehearsal.finishedSessions} session(s) finished and not one held a change set.`,
       "A finished session always holds its change set, so this is the extraction failing rather than a quiet",
       "night. Until it is fixed the publisher cannot be exercised OR trusted, and nothing else is watching it.",
+      ...unrehearsableLines(rehearsal),
       "",
     ].join("\n");
   }
@@ -2186,7 +2239,7 @@ export async function runCli(argv = process.argv.slice(2), config = CONFIG) {
   // outcomes this collects, and a block-scoped const would not survive to it.
   let observed = null;
   try {
-    observed = await collectObservedState(registry, date, config);
+    observed = await collectObservedState(registry, date, config, ledger);
     promotion = observed.promotion;
     // Captured for the readiness report and the exit code. A run where every
     // stage merged but the credential is dead is NOT a healthy run.

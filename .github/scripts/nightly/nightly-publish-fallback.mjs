@@ -12,18 +12,17 @@
 // what took the pipeline from 4 of 13 to 13 of 13. But a nudge is a request to
 // someone else's publisher, so when it does not work there is nothing left.
 //
-// The Jules API returns the finished change set directly, as
-// `outputs[].changeSet.gitPatch.unidiffPatch`. So the work never actually
+// The Jules API exposes change sets on activity artifacts; legacy responses
+// may also carry them on session outputs. The watchdog loads activity evidence
+// for stranded completed sessions before this module validates it. The work never
 // depended on Jules' publisher; only its delivery did. This module applies that
 // patch and opens the pull request itself, which turns the failure from
 // "usually recovered, sometimes lost for a day" into "structurally cannot be
 // lost".
 //
 // DELIBERATELY A FALLBACK, NOT A REPLACEMENT
-// The happy path is untouched. This runs only after the nudge path has been
-// exhausted for a stage on a given date, so on every night the pipeline behaves
-// as it does today. It changes only the outcome of runs that are currently
-// total losses for that stage.
+// The happy path is untouched. After the native publisher's settle window,
+// the watchdog tries the validated patch before nudging the session again.
 //
 // WHY THIS CANNOT WRITE WHEREVER IT LIKES
 // Every patch is validated with `validateChangedPaths` from nightly-stage.mjs,
@@ -39,6 +38,7 @@ import { RESULT_LABEL, WHY_LABEL, changeLabel } from "./nightly-prose.mjs";
 import { validateChangedPaths } from "./nightly-stage.mjs";
 
 import { parseCoverageLine } from "./coverage-log-line.mjs";
+import { getCycleDate, getCycleId } from "./nightly-events.mjs";
 
 // The coverage-log line format lives in coverage-log-line.mjs. It used to be a
 // private regex here, and the 2026-09-03 run-window field stopped it matching
@@ -57,6 +57,16 @@ const DIFF_HEADER = /^diff --git a\/(\S+) b\/(\S+)$/gm;
 
 /** The finished unified diff a completed session is holding, or null. */
 export function extractSessionPatch(session) {
+  // Jules documents code changes on activity artifacts; session outputs may
+  // contain only a PR URL. Prefer the latest activity snapshot, never join diffs.
+  const activities = [...(session?.activities || [])]
+    .sort((a, b) => String(b.createTime || "").localeCompare(String(a.createTime || "")));
+  for (const activity of activities) {
+    for (const artifact of activity.artifacts || []) {
+      const patch = artifact?.changeSet?.gitPatch?.unidiffPatch;
+      if (typeof patch === "string" && patch.trim()) return patch;
+    }
+  }
   for (const output of session?.outputs || []) {
     const patch = output?.changeSet?.gitPatch?.unidiffPatch;
     if (typeof patch === "string" && patch.trim()) return patch;
@@ -146,6 +156,7 @@ export function buildFallbackPlan({ stage, session, date }) {
   return {
     ok: true,
     stage: stage.number,
+    cycleId: getCycleId(getCycleDate(stage.number, outcome.date)),
     branch: fallbackBranchName(stage, session),
     patch,
     paths,
@@ -159,7 +170,7 @@ export function buildFallbackPlan({ stage, session, date }) {
 
 export function renderFallbackPrBody(plan) {
   const files = plan.paths.join(", ") || "codebase";
-  const why = "The Jules session finalized successfully, but its native publisher never opened a pull request and watchdog nudges did not recover publication.";
+  const why = "The Jules session finalized successfully, but its native publisher never opened a pull request within the publication settle window.";
   const result = "The recovered patch was applied unmodified and validated against the stage write-boundary rules used by normal finalization.";
   const overview = [
     `This recovered Stage ${plan.stage} run publishes the finalized nightly work: ${plan.summary}.`,
@@ -187,6 +198,7 @@ export function renderFallbackPrBody(plan) {
     "<!--",
     "NIGHTLY_PR_METADATA:",
     "  Domain: fallback-publish",
+    `  Cycle: ${plan.cycleId}`,
     `  Why: ${why}`,
     `  Change: ${plan.summary}`,
     `  Result: ${result}`,
