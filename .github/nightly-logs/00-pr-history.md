@@ -16,6 +16,15 @@ LAST_AGED:   2026-10-13
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-15] PR #2221 [Stage 13]: Updated self-healing protocol log with 2026-10-15 pipeline findings, 10.0% watchdog recovery intervention rate, and Stage 3 view expansion PARTIAL-RUN
+**Domain:** pipeline | **Commit:** 495fbbd26 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2221)
+**Files:** .github/nightly-logs/13-self-healing-protocol-coverage.log, .github/nightly-logs/13-self-healing-protocol-pr-body.md, .github/nightly-logs/13-self-healing-protocol.md
+**Why:** Audit completed with new findings: recorded Stage 5 watchdog nudge recovery intervention (PR #2215) and Stage 3 static view history audit violation on pipeline_heartbeat_view baseline consolidation
+**Change:** Updated self-healing protocol log with 2026-10-15 pipeline findings, 10.0% watchdog recovery intervention rate, and Stage 3 view expansion PARTIAL-RUN
+**Result:** pnpm audit:version reported 0 drift lines; git diff --check clean
+**Nudges:** 0
+
+
 ### [2026-10-15] PR #2220 [Stage 11]: Audited native WebView performance settings, Service Worker caching strategies, Vite code splitting, and static precache footprint; zero source changes required
 **Domain:** apk | **Commit:** 66494d293 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2220)
 **Files:** .github/nightly-logs/11-apk-optimization-coverage.log, .github/nightly-logs/11-apk-optimization-pr-body.md
