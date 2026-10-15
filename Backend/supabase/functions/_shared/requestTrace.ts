@@ -28,7 +28,7 @@ const TRACE_EVENT = "supabase_rpc_trace";
  * - `http_error`: The fetch call completed but returned a non-2xx HTTP status code (`!response.ok`).
  * - `slow_success`: The fetch call returned HTTP 2xx, but execution duration exceeded `SLOW_SUPABASE_RPC_MS`.
  */
-export type TraceOutcome = "network_error" | "http_error" | "slow_success";
+type TraceOutcome = "network_error" | "http_error" | "slow_success";
 
 /**
  * Serialized telemetry event payload emitted for anomalous or slow Supabase RPC calls.
@@ -36,7 +36,7 @@ export type TraceOutcome = "network_error" | "http_error" | "slow_success";
  * @remarks Satisfies CleanStack ADR Section III: Security & Telemetry Standards.
  * Filters out sensitive query strings, payload body data, and dynamic parameters.
  */
-export interface TraceEvent {
+interface TraceEvent {
   /** Static trace event type tag. */
   event: typeof TRACE_EVENT;
   /** Sanitized RPC procedure route path (e.g. `/rest/v1/rpc/purge_recruits` or fallback `/rest/v1/rpc/OTHER_RPC`). */
