@@ -1250,6 +1250,8 @@ test("a stage the nudge could not rescue is published from the session's own pat
     assert.equal(entry.failureClass, "RECOVERED_BY_FALLBACK_PUBLISH");
     assert.equal(entry.evidence.prNumber, 4242);
     assert.equal(entry.evidence.fallbackPublish.status, "CLEAN");
+    assert.equal(entry.evidence.fallbackPublish.patchEvidence.source, "session-output");
+    assert.match(entry.evidence.fallbackPublish.patchEvidence.sha256, /^[a-f0-9]{64}$/);
   });
 });
 
@@ -1358,6 +1360,10 @@ test("session telemetry is recorded for stages that merged, not only for failure
     createTime: `${expectedEvidenceDate(stage.number, date)}T02:00:00Z`,
     updateTime: `${expectedEvidenceDate(stage.number, date)}T02:30:00Z`,
     prompt: `# [Stage ${stage.number}] x`,
+    activities: stage.number === 6 ? [{
+      name: "sessions/s6/activities/final", createTime: `${date}T02:29:00Z`,
+      artifacts: [{ changeSet: { gitPatch: { baseCommitId: "b".repeat(40), unidiffPatch: "abc" } } }],
+    }] : [],
   }));
 
   const entries = evaluateNightlyRun({ registry, date, observed, previousLedger: createEmptyLedger() });
@@ -1365,6 +1371,9 @@ test("session telemetry is recorded for stages that merged, not only for failure
   assert.equal(stage6.state, "MERGED");
   assert.equal(stage6.evidence.session.createTime, `${date}T02:00:00Z`);
   assert.equal(stage6.evidence.session.lifetimeMinutes, 30);
+  assert.equal(stage6.evidence.session.patchEvidence.activity, "sessions/s6/activities/final");
+  assert.equal(stage6.evidence.session.patchEvidence.baseCommitId, "b".repeat(40));
+  assert.equal(stage6.evidence.session.patchEvidence.sha256, "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad");
 });
 
 test("sessionTelemetry degrades to nulls rather than inventing numbers", () => {

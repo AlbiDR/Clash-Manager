@@ -2,7 +2,10 @@
 // Copyright (C) 2026 AlbiDR
 
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
+import os from 'node:os';
+import path from 'node:path';
 import test from 'node:test';
 
 const WORKFLOW = readFileSync('.github/workflows/sync-branches.yml', 'utf8');
@@ -57,6 +60,92 @@ test('the APK release slot repair is still wired into the Nightly to Beta merge'
 function steps() {
   return WORKFLOW.split(/\n(?=      - name: )/).map(text => ({ name: (/- name: (.*)/.exec(text) || [])[1] || '', text }));
 }
+
+test('Stable promotion jobs refresh source refs pinned to the workflow starting commit', () => {
+  for (const [source, target] of [['Beta', 'Stable'], ['Stable', 'Beta']]) {
+    const temp = mkdtempSync(path.join(os.tmpdir(), 'sync-source-ref-'));
+    const remote = path.join(temp, 'remote.git');
+    const seed = path.join(temp, 'seed');
+    const runner = path.join(temp, 'runner');
+    const git = (cwd, ...args) => execFileSync('git', args, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
+    try {
+      git(temp, 'init', '--bare', remote);
+      git(temp, 'init', '-b', 'Beta', seed);
+      git(seed, 'config', 'user.name', 'Test Owner');
+      git(seed, 'config', 'user.email', 'test@example.com');
+      writeFileSync(path.join(seed, 'content.txt'), 'before nightly promotion\n');
+      git(seed, 'add', '.');
+      git(seed, 'commit', '-m', 'initial');
+      git(seed, 'branch', 'Stable');
+      git(seed, 'remote', 'add', 'origin', remote);
+      git(seed, 'push', 'origin', 'Beta', 'Stable');
+      git(temp, 'clone', '--branch', 'Beta', remote, runner);
+      const oldSource = git(runner, 'rev-parse', `origin/${source}`);
+      git(seed, 'checkout', source);
+      writeFileSync(path.join(seed, 'content.txt'), 'completed upstream promotion\n');
+      git(seed, 'commit', '-am', 'upstream job finished');
+      git(seed, 'push', 'origin', source);
+      // actions/checkout pins the triggering branch ref to github.sha, even
+      // after its full-history fetch has seen the preceding job's newer push.
+      git(runner, 'fetch', 'origin');
+      git(runner, 'update-ref', `refs/remotes/origin/${source}`, oldSource);
+      const step = steps().find(item => item.name === `Merge ${source} into ${target}`);
+      assert.ok(step, `missing ${source} -> ${target} step`);
+      const preamble = step.text.split('run: |\n')[1].split('BEFORE_SHA=')[0];
+      execFileSync('bash', ['-e', '-c', preamble], { cwd: runner, stdio: ['ignore', 'pipe', 'pipe'] });
+      git(runner, 'merge', `origin/${source}`, '--no-edit');
+      assert.equal(readFileSync(path.join(runner, 'content.txt'), 'utf8'), 'completed upstream promotion\n', `${source} -> ${target} must promote the preceding job's latest content`);
+    } finally {
+      rmSync(temp, { recursive: true, force: true });
+    }
+  }
+});
+
+test('the final sync check rejects diverged contents even when merge jobs succeeded', () => {
+  const temp = mkdtempSync(path.join(os.tmpdir(), 'sync-final-tree-'));
+  const seed = path.join(temp, 'seed');
+  const runner = path.join(temp, 'runner');
+  const remote = path.join(temp, 'remote.git');
+  const git = (cwd, ...args) => execFileSync('git', args, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+  try {
+    git(temp, 'init', '--bare', remote);
+    git(temp, 'init', '-b', 'Beta', seed);
+    git(seed, 'config', 'user.name', 'Test Owner');
+    git(seed, 'config', 'user.email', 'test@example.com');
+    writeFileSync(path.join(seed, 'content.txt'), 'aligned\n');
+    git(seed, 'add', '.');
+    git(seed, 'commit', '-m', 'initial');
+    git(seed, 'branch', 'Stable');
+    git(seed, 'branch', 'Nightly');
+    git(seed, 'remote', 'add', 'origin', remote);
+    git(seed, 'push', 'origin', 'Beta', 'Stable', 'Nightly');
+    git(temp, 'clone', '--branch', 'Beta', remote, runner);
+    const step = steps().find(item => item.name === 'Verify synchronized branch trees');
+    assert.ok(step, 'successful merge jobs must still prove their final contents');
+    const script = step.text.split('run: |\n')[1];
+    const summary = path.join(temp, 'summary.md');
+    const verify = () => execFileSync('bash', ['-e', '-c', script], { cwd: runner, encoding: 'utf8', env: { ...process.env, GITHUB_STEP_SUMMARY: summary }, stdio: ['ignore', 'pipe', 'pipe'] });
+    const aligned = verify();
+    assert.match(aligned, /contain identical files/);
+    const initialCommit = git(seed, 'rev-parse', 'HEAD').trim();
+    const initialTree = git(seed, 'rev-parse', 'HEAD^{tree}').trim();
+    for (const branch of ['Beta', 'Stable', 'Nightly']) {
+      assert.ok(aligned.includes(`SYNC_SNAPSHOT branch=${branch} commit=${initialCommit} tree=${initialTree}`));
+      assert.ok(readFileSync(summary, 'utf8').includes(`| ${branch} | ${initialCommit} | ${initialTree} |`));
+    }
+    git(seed, 'checkout', 'Stable');
+    writeFileSync(path.join(seed, 'content.txt'), 'diverged\n');
+    git(seed, 'commit', '-am', 'Stable differs');
+    git(seed, 'push', 'origin', 'Stable');
+    assert.throws(verify, error => error.status === 1 && error.stdout.includes('Stable still differs from Beta') && error.stdout.includes('SYNC_SNAPSHOT branch=Nightly'));
+    git(seed, 'branch', '-f', 'Beta', 'HEAD');
+    git(seed, 'branch', '-f', 'Nightly', 'HEAD');
+    git(seed, 'push', 'origin', 'Beta', 'Nightly');
+    assert.match(verify(), /contain identical files/);
+  } finally {
+    rmSync(temp, { recursive: true, force: true });
+  }
+});
 
 /** Each `git merge ... -X theirs` in the workflow, with the step it sits in. */
 function theirsMerges() {

@@ -37,6 +37,26 @@ function execution() {
   };
 }
 
+test("explain exposes recorded patch provenance without inventing it for older runs", () => {
+  const ledger = createEmptyLedger();
+  const patchEvidence = {
+    source: "activity-artifact", activity: "sessions/five/activities/final",
+    baseCommitId: "a".repeat(40), sha256: "b".repeat(64),
+  };
+  upsertStageEntry(ledger, registry, DATE, 5, {
+    state: "MERGED", evidence: { session: { patchEvidence }, tag: `nightly/${DATE}/stage-5/pr-500` },
+  });
+  const explanation = buildStageExplanation(inputsFor(ledger), 5);
+  assert.deepEqual(explanation.patchEvidence, patchEvidence);
+  const report = renderStageExplanation(explanation);
+  assert.match(report, /Patch activity: sessions\/five\/activities\/final/);
+  assert.ok(report.includes(`Patch base SHA: ${patchEvidence.baseCommitId}`));
+  assert.ok(report.includes(`Patch SHA-256: ${patchEvidence.sha256}`));
+  const older = buildStageExplanation(inputsFor(createEmptyLedger()), 5);
+  assert.equal(older.patchEvidence, null);
+  assert.match(renderStageExplanation(older), /Patch SHA-256: unrecorded/);
+});
+
 test("explain traces an accepted intervention without delivery to STUCK", () => {
   const ledger = createEmptyLedger();
   upsertStageEntry(ledger, registry, DATE, 1, {
