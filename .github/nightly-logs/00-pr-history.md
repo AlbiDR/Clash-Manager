@@ -16,6 +16,23 @@ LAST_AGED:   2026-10-15
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-16] PR #2230 [Stage 6]: docs(tsdoc): harden classifySyncFailure interface contracts and inline annotations
+**Domain:** documentation | **Commit:** 9338edc95 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2230)
+**Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, .github/nightly-logs/06-documentation-tsdoc-pr-body.md, Frontend-PWA/src/core/services/useClashSyncUtils.ts
+**Why:** Documented classifySyncFailure TSDoc parameters, return types, ADR Section IV links, decision logs, and threat annotations
+**Change:** docs(tsdoc): harden classifySyncFailure interface contracts and inline annotations
+**Result:** Passed type-check and Vitest useClashSyncUtils unit tests (15/15)
+**Nudges:** 0
+
+### [2026-10-16] PR #2229 [Stage 7]: Audit complete: catalog scan (Frontend-PWA, Backend) and package-version scan (root, Frontend-PWA, Backend) verified at 14.55.4 with pnpm audit:version passing cleanly.
+**Domain:** versioning | **Commit:** 2c7444a77 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2229)
+**Files:** .github/nightly-logs/07-version-integrity-coverage.log, .github/nightly-logs/07-version-integrity-pr-body.md
+**Why:** No version drift or catalog protocol violations detected across all manifests and derived declarations.
+**Change:** Audit complete: catalog scan (Frontend-PWA, Backend) and package-version scan (root, Frontend-PWA, Backend) verified at 14.55.4 with pnpm audit:version passing cleanly.
+**Result:** pnpm audit:version PASSED
+**Nudges:** 0
+
+
 ### [2026-10-16] PR #2228 [Stage 5]: Audited requestTrace.ts and tournament-finder.ts from doc-debt, verified zero README drift
 **Domain:** documentation | **Commit:** a95b2db5a | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2228)
 **Files:** .github/nightly-logs/05-documentation-readme-coverage.log, .github/nightly-logs/05-documentation-readme-pr-body.md
