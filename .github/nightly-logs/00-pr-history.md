@@ -16,6 +16,15 @@ LAST_AGED:   2026-10-15
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-16] PR #2231 [Stage 8]: Bumped @supabase/supabase-js catalog entry from ^2.117.3 to ^2.118.0 in package.json and pnpm-workspace.yaml
+**Domain:** dependencies | **Commit:** 2a5e9a422 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2231)
+**Files:** .github/nightly-logs/08-dependency-audit-coverage.log, .github/nightly-logs/08-dependency-audit-pr-body.md, package.json, pnpm-lock.yaml, pnpm-workspace.yaml
+**Why:** Applied Tier 1 minor version maintenance bump
+**Change:** Bumped @supabase/supabase-js catalog entry from ^2.117.3 to ^2.118.0 in package.json and pnpm-workspace.yaml
+**Result:** pnpm-test Frontend-PWA passed 2351 of 2353 tests, pnpm audit:version reported 0 drift lines
+**Nudges:** 0
+
+
 ### [2026-10-16] PR #2230 [Stage 6]: docs(tsdoc): harden classifySyncFailure interface contracts and inline annotations
 **Domain:** documentation | **Commit:** 9338edc95 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2230)
 **Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, .github/nightly-logs/06-documentation-tsdoc-pr-body.md, Frontend-PWA/src/core/services/useClashSyncUtils.ts
