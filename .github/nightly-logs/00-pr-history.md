@@ -16,6 +16,15 @@ LAST_AGED:   2026-10-15
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-16] PR #2226 [Stage 3]: Blocked folding 20260915190011_backend_health_and_safe_maintenance.sql due to historical view projection audit restriction
+**Domain:** database | **Commit:** 485c11db3 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2226)
+**Files:** .github/nightly-logs/03-baseline-consolidation-coverage.log, .github/nightly-logs/03-baseline-consolidation-pr-body.md
+**Why:** Folding updated pipeline_heartbeat_view into baseline violates audit:migrations view output column retention check against retained migration 20260817000000_expose_pwa_client_surfaces.sql
+**Change:** Blocked folding 20260915190011_backend_health_and_safe_maintenance.sql due to historical view projection audit restriction
+**Result:** BLOCKED: pnpm audit:migrations failed on viewHistoryViolations
+**Nudges:** 0
+
+
 ### [2026-10-16] PR #2224 [Stage 2]: Frontend-PWA/src/core/api/api-tests/SupabaseTransport.spec.ts -- Expanded unit tests for SupabaseTransport thrown transient and non-transient error handling.
 **Domain:** verification | **Commit:** 73341ac3d | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2224)
 **Files:** .github/nightly-logs/02-verification-coverage.log, .github/nightly-logs/02-verification-pr-body.md, Frontend-PWA/src/core/api/api-tests/SupabaseTransport.spec.ts
