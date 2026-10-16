@@ -16,6 +16,15 @@ LAST_AGED:   2026-10-15
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-16] PR #2228 [Stage 5]: Audited requestTrace.ts and tournament-finder.ts from doc-debt, verified zero README drift
+**Domain:** documentation | **Commit:** a95b2db5a | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2228)
+**Files:** .github/nightly-logs/05-documentation-readme-coverage.log, .github/nightly-logs/05-documentation-readme-pr-body.md
+**Why:** Doc-debt files audited and confirmed accurate; no documentation drift present across target modules
+**Change:** Audited requestTrace.ts and tournament-finder.ts from doc-debt, verified zero README drift
+**Result:** VERIFIED_CLEAN
+**Nudges:** 0
+
+
 ### [2026-10-16] PR #2227 [Stage 4]: Audited 71 changed files and Edge Functions/Frontend view references via source-level grep
 **Domain:** optimization | **Commit:** c4020ea34 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2227)
 **Files:** .github/nightly-logs/04-optimization-coverage.log, .github/nightly-logs/04-optimization-pr-body.md
