@@ -4,23 +4,23 @@
 
 In plain terms: nothing needed fixing. This run checked the APK optimization area and found it already correct, so the only file here is the log recording that the check happened.
 
-**What was checked:** Audited native WebView performance settings, Service Worker caching strategies, Vite code splitting, and static precache footprint; zero source changes required
+**What was checked:** Audited WebView cache mode, hardware acceleration, SW precache routes, Vite chunking, and public asset footprint; 9/9 invariants pass with zero source changes required
 
-**Why:** All 9 native WebView and SW caching invariants are PRESENT and static precache footprint (15 files, 67.6 KB) is well within declared limits
+**Why:** All native wrapper settings, caching rules, and asset bounds are fully optimized
 
-**Result:** PASS: pnpm audit:apk-perf and pnpm test:apk-performance (10/10) and device-acceptance.test.mjs (17/17)
+**Result:** pnpm audit:apk-perf passed 9/9 invariants, static precache footprint verified at 15 files / 67.6 KB
 
 **Files changed:** .github/nightly-logs/11-apk-optimization-coverage.log
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: apk
-  Cycle: nightly-cycle/2026-10-15
+  Cycle: nightly-cycle/2026-10-16
   Contract: 63c0229fe16cf4c98e352282307edbee4830cff68ea2d93c5c967a1f5cbd30ea
-  Why: All 9 native WebView and SW caching invariants are PRESENT and static precache footprint (15 files, 67.6 KB) is well within declared limits
-  Change: Audited native WebView performance settings, Service Worker caching strategies, Vite code splitting, and static precache footprint; zero source changes required
-  Result: PASS: pnpm audit:apk-perf and pnpm test:apk-performance (10/10) and device-acceptance.test.mjs (17/17)
+  Why: All native wrapper settings, caching rules, and asset bounds are fully optimized
+  Change: Audited WebView cache mode, hardware acceleration, SW precache routes, Vite chunking, and public asset footprint; 9/9 invariants pass with zero source changes required
+  Result: pnpm audit:apk-perf passed 9/9 invariants, static precache footprint verified at 15 files / 67.6 KB
   Files: .github/nightly-logs/11-apk-optimization-coverage.log
   Nudges: 0
-  Execution: 2ed0b18ff3deb9bf8124ada3ebcdf83f7fac74bd
+  Execution: c28ead1edfd4133b8c57484f58fe6e1e425dc3d1
 -->
