@@ -43,9 +43,13 @@ export const SUPABASE_READ_BACKOFF_BASE_MS = SUPABASE_READ_TIMEOUT_MS / 2 ** SUP
  */
 const STATEMENT_TIMEOUT_SQLSTATE = "57014";
 
+// EPHEMERAL: intentionally resets on cold start
+// [THREAT:] Transient retry status set resets on page reload / worker cold start; immutable transport status map.
 /** HTTP status codes eligible for automatic transport retry. */
 const RETRYABLE_READ_STATUS = new Set([408, 429, 500, 502, 503, 504]);
 
+// EPHEMERAL: intentionally resets on cold start
+// [THREAT:] Bodyless status lookup set resets on page reload / worker cold start; immutable transport status map.
 /** HTTP status codes that indicate empty response bodies. */
 const BODYLESS_STATUS = new Set([204, 205, 304]);
 
