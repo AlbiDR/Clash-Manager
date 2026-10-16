@@ -4,23 +4,23 @@
 
 In plain terms: this adds 1 test file in the verification area. No product code changed, so the app behaves exactly as it did before.
 
-**What changed:** Expanded AppSchemas WebAppDataSchema unit test validation boundaries
+**What changed:** Frontend-PWA/src/core/api/api-tests/SupabaseTransport.spec.ts -- Expanded unit tests for SupabaseTransport thrown transient and non-transient error handling.
 
-**Why:** Close validation boundary gaps for data source, blacklist, playerTag, and array structure validation in WebAppDataSchema
+**Why:** Closed partial coverage gap in SupabaseTransport.ts for thrown transport error classification and retry boundaries.
 
-**Result:** All 220 test files passed (2348 tests). Proved new tests catch regressions by mutating dataSource picklist in AppSchemas.ts and observing test failure in AppSchemas.spec.ts
+**Result:** Vitest SupabaseTransport.spec.ts passed 14 of 14 tests (suite 2351 passed across 220 files). Proved mutation failure by changing TRANSIENT_TRANSPORT_FAILURE regex in SupabaseTransport.ts and observing test failure.
 
-**Files changed:** .github/nightly-logs/02-verification-coverage.log, Frontend-PWA/src/core/api/api-tests/AppSchemas.spec.ts
+**Files changed:** .github/nightly-logs/02-verification-coverage.log, Frontend-PWA/src/core/api/api-tests/SupabaseTransport.spec.ts
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: verification
-  Cycle: nightly-cycle/2026-10-15
+  Cycle: nightly-cycle/2026-10-16
   Contract: b2e927ebff4e2ca5a343609133745d050f07d22fd9bf3e42481440c1d14079f0
-  Why: Close validation boundary gaps for data source, blacklist, playerTag, and array structure validation in WebAppDataSchema
-  Change: Expanded AppSchemas WebAppDataSchema unit test validation boundaries
-  Result: All 220 test files passed (2348 tests). Proved new tests catch regressions by mutating dataSource picklist in AppSchemas.ts and observing test failure in AppSchemas.spec.ts
-  Files: .github/nightly-logs/02-verification-coverage.log, Frontend-PWA/src/core/api/api-tests/AppSchemas.spec.ts
+  Why: Closed partial coverage gap in SupabaseTransport.ts for thrown transport error classification and retry boundaries.
+  Change: Frontend-PWA/src/core/api/api-tests/SupabaseTransport.spec.ts -- Expanded unit tests for SupabaseTransport thrown transient and non-transient error handling.
+  Result: Vitest SupabaseTransport.spec.ts passed 14 of 14 tests (suite 2351 passed across 220 files). Proved mutation failure by changing TRANSIENT_TRANSPORT_FAILURE regex in SupabaseTransport.ts and observing test failure.
+  Files: .github/nightly-logs/02-verification-coverage.log, Frontend-PWA/src/core/api/api-tests/SupabaseTransport.spec.ts
   Nudges: 0
-  Execution: 0c4acd142747c6be3ce279395bd8567778695ee5
+  Execution: 60cb748027ac88ccb4e814d3f3e6f8abb5cc70a8
 -->
