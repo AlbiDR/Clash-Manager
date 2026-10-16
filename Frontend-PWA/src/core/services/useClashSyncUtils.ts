@@ -175,6 +175,25 @@ export function describeSyncFailure(error: Error): string {
     ?? SYNC_FAILURE_FALLBACK;
 }
 
+/**
+ * Classifies a raw transport or application error into an authoritative sync failure status category.
+ *
+ * @param error - The Error object raised during a synchronization cycle.
+ * @param online - Current reactive network connectivity flag (`isOnline`).
+ * @returns Categorized sync status indicator: "OFFLINE", "TIMEOUT", "AUTH", or "VALIDATION".
+ *
+ * @remarks
+ * **Architectural Context:**
+ * - **Layer:** Layer 1 Core Service Utility (@core).
+ * - **Satisfaction:** ADR Section IV (Resilience). Provides standardized error taxonomy for transport diagnosis.
+ *
+ * [THREAT:] Unclassified errors or unhandled status categories can cause ambiguous UI status pill feedback
+ * or improper automatic recovery scheduling. Regex pattern matching normalizes heterogeneous failure shapes.
+ *
+ * [DECISION LOG]
+ * - Offline status takes precedence whenever `online` is false or network transport drop patterns match.
+ * - Order of evaluation evaluates transport drops, deadlines, credentials, and payload schemas deterministically.
+ */
 export function classifySyncFailure(error: Error, online: boolean) {
   const rawFailure = `${error.name} ${error.message}`;
   if (!online || /offline|network connection lost|failed to fetch|fetch failed|network\s*error|load failed/i.test(rawFailure)) {
