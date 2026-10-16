@@ -16,6 +16,15 @@ LAST_AGED:   2026-10-15
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-16] PR #2236 [Stage 12]: No APK UX issues found in audit scan
+**Domain:** ux | **Commit:** 31e43872b | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2236)
+**Files:** .github/nightly-logs/12-apk-ux-coverage.log, .github/nightly-logs/12-apk-ux-pr-body.md
+**Why:** Automated audit scanned 77 files with 0 violations and 0 candidate files remaining
+**Change:** No APK UX issues found in audit scan
+**Result:** apk-ux-audit-status.txt: PASS; apk-ux-audit.json: 0 candidate files reviewed; UX categories 1-10 checked
+**Nudges:** 0
+
+
 ### [2026-10-16] PR #2235 [Stage 13]: Documented 2026-10-16 pipeline self-healing findings, 4 fallback publish recoveries, and Stage 10 DEGRADING health status
 **Domain:** pipeline | **Commit:** 6712135b9 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2235)
 **Files:** .github/nightly-logs/13-self-healing-protocol-coverage.log, .github/nightly-logs/13-self-healing-protocol-pr-body.md, .github/nightly-logs/13-self-healing-protocol.md
