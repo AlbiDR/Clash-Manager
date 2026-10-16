@@ -4,23 +4,23 @@
 
 In plain terms: no change was made to the project. This run ended as PARTIAL-RUN and the only file here is the log recording that.
 
-**What was checked:** Migration 20260915190011_backend_health_and_safe_maintenance.sql blocked by static view history audit violation on pipeline_heartbeat_view expansion
+**What was checked:** Blocked folding 20260915190011_backend_health_and_safe_maintenance.sql due to historical view projection audit restriction
 
-**Why:** Folding pipeline_heartbeat_view column expansion into baseline caused pnpm audit:migrations to fail due to historical migration column signature mismatch. Restored baseline checkpoint.
+**Why:** Folding updated pipeline_heartbeat_view into baseline violates audit:migrations view output column retention check against retained migration 20260817000000_expose_pwa_client_surfaces.sql
 
-**Result:** PARTIAL-RUN: 28 migrations remaining; 20260915190011_backend_health_and_safe_maintenance.sql blocked by pnpm audit:migrations view history check.
+**Result:** BLOCKED: pnpm audit:migrations failed on viewHistoryViolations
 
 **Files changed:** .github/nightly-logs/03-baseline-consolidation-coverage.log
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: database
-  Cycle: nightly-cycle/2026-10-15
+  Cycle: nightly-cycle/2026-10-16
   Contract: 8c32444005e6edf746eda3ca4e7e0dbe86a11a195765389a2f7db2cce85373e0
-  Why: Folding pipeline_heartbeat_view column expansion into baseline caused pnpm audit:migrations to fail due to historical migration column signature mismatch. Restored baseline checkpoint.
-  Change: Migration 20260915190011_backend_health_and_safe_maintenance.sql blocked by static view history audit violation on pipeline_heartbeat_view expansion
-  Result: PARTIAL-RUN: 28 migrations remaining; 20260915190011_backend_health_and_safe_maintenance.sql blocked by pnpm audit:migrations view history check.
+  Why: Folding updated pipeline_heartbeat_view into baseline violates audit:migrations view output column retention check against retained migration 20260817000000_expose_pwa_client_surfaces.sql
+  Change: Blocked folding 20260915190011_backend_health_and_safe_maintenance.sql due to historical view projection audit restriction
+  Result: BLOCKED: pnpm audit:migrations failed on viewHistoryViolations
   Files: .github/nightly-logs/03-baseline-consolidation-coverage.log
   Nudges: 0
-  Execution: b5ec55988549dd5059a90b8c194452ad8b69967e
+  Execution: 1e3f3e3ea7b0335f906f162a3ed099eddfae5b25
 -->
