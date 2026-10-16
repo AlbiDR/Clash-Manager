@@ -16,6 +16,15 @@ LAST_AGED:   2026-10-15
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-16] PR #2235 [Stage 13]: Documented 2026-10-16 pipeline self-healing findings, 4 fallback publish recoveries, and Stage 10 DEGRADING health status
+**Domain:** pipeline | **Commit:** 6712135b9 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2235)
+**Files:** .github/nightly-logs/13-self-healing-protocol-coverage.log, .github/nightly-logs/13-self-healing-protocol-pr-body.md, .github/nightly-logs/13-self-healing-protocol.md
+**Why:** Documented 36.4% pipeline intervention rate, watchdog fallback recoveries, and updated Stage 1-13 Section 3 metrics
+**Change:** Documented 2026-10-16 pipeline self-healing findings, 4 fallback publish recoveries, and Stage 10 DEGRADING health status
+**Result:** Required stage validation completed.
+**Nudges:** 1
+
+
 ### [2026-10-16] PR #2233 [Stage 10]: Verified PWA assetlinks, manifest parity, package name, version codes/names sync, and cleartext traffic policy
 **Domain:** apk | **Commit:** 8614b1d43 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2233)
 **Files:** .github/nightly-logs/10-apk-integrity-coverage.log, .github/nightly-logs/10-apk-integrity-pr-body.md
