@@ -15,6 +15,30 @@ LAST_AGED:   2026-10-15
 ---
 
 ## T1 -- Active (last 7 days)
+
+### [2026-10-16] PR #2224 [Stage 2]: Frontend-PWA/src/core/api/api-tests/SupabaseTransport.spec.ts -- Expanded unit tests for SupabaseTransport thrown transient and non-transient error handling.
+**Domain:** verification | **Commit:** 73341ac3d | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2224)
+**Files:** .github/nightly-logs/02-verification-coverage.log, .github/nightly-logs/02-verification-pr-body.md, Frontend-PWA/src/core/api/api-tests/SupabaseTransport.spec.ts
+**Why:** Closed partial coverage gap in SupabaseTransport.ts for thrown transport error classification and retry boundaries.
+**Change:** Frontend-PWA/src/core/api/api-tests/SupabaseTransport.spec.ts -- Expanded unit tests for SupabaseTransport thrown transient and non-transient error handling.
+**Result:** Vitest SupabaseTransport.spec.ts passed 14 of 14 tests (suite 2351 passed across 220 files). Proved mutation failure by changing TRANSIENT_TRANSPORT_FAILURE regex in SupabaseTransport.ts and observing test failure.
+**Nudges:** 0
+
+### [2026-10-15] PR #2223 [Stage 1]: Annotated in-memory Set variables in Frontend-PWA/src/core/api/SupabaseTransport.ts with explicit EPHEMERAL comments
+**Domain:** hardening | **Commit:** 0617fcaa7 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2223)
+**Files:** .github/nightly-logs/00-pr-history.md, .github/nightly-logs/01-hardening-coverage.log, .github/nightly-logs/01-hardening-pr-body.md, Frontend-PWA/src/core/api/SupabaseTransport.ts
+**Why:** Satisfied Target A state lifecycle requirements by documenting transient module-level lookup state
+**Change:** Annotated in-memory Set variables in Frontend-PWA/src/core/api/SupabaseTransport.ts with explicit EPHEMERAL comments
+**Result:** Vitest transport suite SupabaseTransport.spec.ts passed cleanly
+**Nudges:** 0
+
+### [2026-10-15] PR #2225 [Stage 1]: Annotated in-memory Set variables in Frontend-PWA/src/core/api/SupabaseTransport.ts with explicit EPHEMERAL comments
+**Domain:** fallback-publish | **Commit:** e08a03c6e | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2225)
+**Files:** .github/nightly-logs/00-pr-history.md, .github/nightly-logs/01-hardening-coverage.log, .github/nightly-logs/01-hardening-pr-body.md, Frontend-PWA/src/core/api/SupabaseTransport.ts
+**Why:** The Jules session finalized successfully, but its native publisher never opened a pull request within the publication settle window.
+**Change:** Annotated in-memory Set variables in Frontend-PWA/src/core/api/SupabaseTransport.ts with explicit EPHEMERAL comments
+**Result:** The recovered patch was applied unmodified and validated against the stage write-boundary rules used by normal finalization.
+
 ### [2026-10-15] PR #2222 [Stage 12]: No APK UX issues found across 77 frontend files
 **Domain:** ux | **Commit:** d4e9e96b2 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2222)
 **Files:** .github/nightly-logs/12-apk-ux-coverage.log, .github/nightly-logs/12-apk-ux-pr-body.md
