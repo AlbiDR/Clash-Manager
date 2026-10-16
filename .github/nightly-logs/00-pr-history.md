@@ -16,6 +16,15 @@ LAST_AGED:   2026-10-15
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-16] PR #2232 [Stage 9]: CLEAN: 71 files, 0 dep-viols, knip: 11 files, 1 dep (@formkit/auto-animate), 0 exp. streak:0. Modules: useClashSync, SupabaseClient, useProgressiveList. Closest: SupabaseClient. Hunt: useProgressiveList idle-deadline fallback passed.
+**Domain:** architecture | **Commit:** d45ebf229 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2232)
+**Files:** .github/nightly-logs/09-refactor-proposals-coverage.log, .github/nightly-logs/09-refactor-proposals-pr-body.md
+**Why:** Bounded structural scan confirmed substrate compliance across bounded candidates with 0 dep-cruiser violations and 0 unused/duplicate exports. Defect hunt on useProgressiveList found no reproducible bugs.
+**Change:** CLEAN: 71 files, 0 dep-viols, knip: 11 files, 1 dep (@formkit/auto-animate), 0 exp. streak:0. Modules: useClashSync, SupabaseClient, useProgressiveList. Closest: SupabaseClient. Hunt: useProgressiveList idle-deadline fallback passed.
+**Result:** depcruise PASS (0 violations), knip OK (11 unused files, 1 unused dep @formkit/auto-animate verified active), pnpm-test Frontend-PWA passed 2351/2351 tests across 220 files including 24/24 in useProgressiveList.spec.ts.
+**Nudges:** 0
+
+
 ### [2026-10-16] PR #2231 [Stage 8]: Bumped @supabase/supabase-js catalog entry from ^2.117.3 to ^2.118.0 in package.json and pnpm-workspace.yaml
 **Domain:** dependencies | **Commit:** 2a5e9a422 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2231)
 **Files:** .github/nightly-logs/08-dependency-audit-coverage.log, .github/nightly-logs/08-dependency-audit-pr-body.md, package.json, pnpm-lock.yaml, pnpm-workspace.yaml
