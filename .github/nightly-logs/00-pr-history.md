@@ -16,6 +16,23 @@ LAST_AGED:   2026-10-15
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-16] PR #2233 [Stage 10]: Verified PWA assetlinks, manifest parity, package name, version codes/names sync, and cleartext traffic policy
+**Domain:** apk | **Commit:** 8614b1d43 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2233)
+**Files:** .github/nightly-logs/10-apk-integrity-coverage.log, .github/nightly-logs/10-apk-integrity-pr-body.md
+**Why:** All APK and PWA wrapper integrity checks and test suites passed cleanly with no source mismatches found
+**Change:** Verified PWA assetlinks, manifest parity, package name, version codes/names sync, and cleartext traffic policy
+**Result:** pnpm audit:apk and pnpm apk:verify:source passed cleanly alongside native test suites (test:apk-native, test:apk-release, test:apk-ux-audit, test:apk-performance, test:apk-slot-sync)
+**Nudges:** 0
+
+### [2026-10-16] PR #2234 [Stage 11]: Audited WebView cache mode, hardware acceleration, SW precache routes, Vite chunking, and public asset footprint; 9/9 invariants pass with zero source changes required
+**Domain:** apk | **Commit:** 3f6647bd6 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2234)
+**Files:** .github/nightly-logs/11-apk-optimization-coverage.log, .github/nightly-logs/11-apk-optimization-pr-body.md
+**Why:** All native wrapper settings, caching rules, and asset bounds are fully optimized
+**Change:** Audited WebView cache mode, hardware acceleration, SW precache routes, Vite chunking, and public asset footprint; 9/9 invariants pass with zero source changes required
+**Result:** pnpm audit:apk-perf passed 9/9 invariants, static precache footprint verified at 15 files / 67.6 KB
+**Nudges:** 0
+
+
 ### [2026-10-16] PR #2232 [Stage 9]: CLEAN: 71 files, 0 dep-viols, knip: 11 files, 1 dep (@formkit/auto-animate), 0 exp. streak:0. Modules: useClashSync, SupabaseClient, useProgressiveList. Closest: SupabaseClient. Hunt: useProgressiveList idle-deadline fallback passed.
 **Domain:** architecture | **Commit:** d45ebf229 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2232)
 **Files:** .github/nightly-logs/09-refactor-proposals-coverage.log, .github/nightly-logs/09-refactor-proposals-pr-body.md
