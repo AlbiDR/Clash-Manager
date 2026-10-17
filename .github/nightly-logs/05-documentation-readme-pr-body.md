@@ -4,26 +4,23 @@
 
 In plain terms: nothing needed fixing. This run checked the documentation README area and found it already correct, so the only file here is the log recording that the check happened.
 
-**What was checked:** Audited requestTrace.ts and tournament-finder.ts from doc-debt, verified zero README drift
+**What was checked:** Audited codebase README files against implementation truth; verified zero documentation drift
 
-**Why:** Doc-debt files audited and confirmed accurate; no documentation drift present across target modules
+**Why:** All priority targets, API shapes, and architectural boundaries match codebase implementations
 
 **Result:** VERIFIED_CLEAN
 
 **Files changed:** .github/nightly-logs/05-documentation-readme-coverage.log
 
-**Verified accurate:** Backend/supabase/functions/_shared/requestTrace.ts, Backend/supabase/functions/headhunter-scanner/stages/tournament-finder.ts
-
 <!--
 NIGHTLY_PR_METADATA:
   Domain: documentation
-  Cycle: nightly-cycle/2026-10-16
+  Cycle: nightly-cycle/2026-10-17
   Contract: cea68a5bbba1bd2cbc6d3bdfe2639f37f3935b571beab59f5da1501b1180b22d
-  Why: Doc-debt files audited and confirmed accurate; no documentation drift present across target modules
-  Change: Audited requestTrace.ts and tournament-finder.ts from doc-debt, verified zero README drift
+  Why: All priority targets, API shapes, and architectural boundaries match codebase implementations
+  Change: Audited codebase README files against implementation truth; verified zero documentation drift
   Result: VERIFIED_CLEAN
   Files: .github/nightly-logs/05-documentation-readme-coverage.log
-  Verified: Backend/supabase/functions/_shared/requestTrace.ts, Backend/supabase/functions/headhunter-scanner/stages/tournament-finder.ts
   Nudges: 0
-  Execution: be35b8cd033ac91c2e993e5485b34e0976bc5562
+  Execution: caee6bc055fd31d3b83d2ab3bccb9deda98c8c14
 -->
