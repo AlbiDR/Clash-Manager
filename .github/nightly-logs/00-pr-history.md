@@ -16,6 +16,15 @@ LAST_AGED:   2026-10-15
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-17] PR #2237 [Stage 2]: Frontend-PWA/src/core/services/services-tests/useProgressiveList.spec.ts -- Expanded useProgressiveList unit test suite with tests for minor refresh list expansion and chunking calculation on large datasets >100 items.
+**Domain:** verification | **Commit:** 958caee32 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2237)
+**Files:** .github/nightly-logs/02-verification-coverage.log, .github/nightly-logs/02-verification-pr-body.md, Frontend-PWA/src/core/services/services-tests/useProgressiveList.spec.ts
+**Why:** Closed coverage gap in L1 Core useProgressiveList composable.
+**Change:** Frontend-PWA/src/core/services/services-tests/useProgressiveList.spec.ts -- Expanded useProgressiveList unit test suite with tests for minor refresh list expansion and chunking calculation on large datasets >100 items.
+**Result:** PASSED: All 220 PWA test files and 2,353 unit tests passed. Proven via mutation: chunkSize mutation broke large dataset test as expected.
+**Nudges:** 0
+
+
 ### [2026-10-16] PR #2236 [Stage 12]: No APK UX issues found in audit scan
 **Domain:** ux | **Commit:** 31e43872b | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2236)
 **Files:** .github/nightly-logs/12-apk-ux-coverage.log, .github/nightly-logs/12-apk-ux-pr-body.md
