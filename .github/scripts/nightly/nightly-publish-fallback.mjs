@@ -38,7 +38,9 @@ import { createHash } from "node:crypto";
 import { RESULT_LABEL, WHY_LABEL, changeLabel } from "./nightly-prose.mjs";
 import { validateChangedPaths } from "./nightly-stage.mjs";
 
-import { parseCoverageLine } from "./coverage-log-line.mjs";
+import { extractMetadata } from "./merge-nightly-core.mjs";
+import { isolateStagePatch } from "./nightly-patch-base.mjs";
+import { coverageRunWindow, parseCoverageLine } from "./coverage-log-line.mjs";
 import { getCycleDate, getCycleId } from "./nightly-events.mjs";
 
 // The coverage-log line format lives in coverage-log-line.mjs. It used to be a
@@ -134,7 +136,9 @@ export function parseCoverageOutcome(patch, stage, date) {
     // Coverage lines read "TARGET -- summary"; the summary is the half a human
     // reads, and it becomes the commit subject. With no separator the shared
     // parser repeats the payload into both, which preserves the old fallback.
-    return { status: record.status, summary: record.summary || record.target, date: record.date };
+    return { status: record.status, summary: record.summary || record.target, date: record.date,
+      ...(record.window ? { run: coverageRunWindow(record) } : {}),
+    };
   }
   return null;
 }
@@ -157,11 +161,10 @@ export function fallbackBranchName(stage, session) {
  * Every refusal is a deliberate stop rather than a silent skip, because a
  * publisher that quietly declines is indistinguishable from one that is broken.
  */
-export function buildFallbackPlan({ stage, session, date }) {
+export function buildFallbackPlan({ stage, session, date, patch = extractSessionPatch(session), patchEvidence = describeSessionPatch(session) }) {
   if (!stage) return { ok: false, reason: "no stage supplied" };
   if (!session) return { ok: false, reason: `Stage ${stage.number}: no Jules session to recover` };
 
-  const patch = extractSessionPatch(session);
   if (!patch) return { ok: false, reason: `Stage ${stage.number}: session holds no change set to publish` };
 
   const outcome = parseCoverageOutcome(patch, stage, date);
@@ -186,9 +189,10 @@ export function buildFallbackPlan({ stage, session, date }) {
     cycleId: getCycleId(getCycleDate(stage.number, outcome.date)),
     branch: fallbackBranchName(stage, session),
     patch,
-    patchEvidence: describeSessionPatch(session),
+    patchEvidence,
     paths,
     status: outcome.status,
+    ...(outcome.run ? { run: outcome.run } : {}),
     summary: outcome.summary,
     sessionName: session.name || session.id,
     commitMessage: `chore(${stage.commitScope}): ${outcome.summary}`,
@@ -196,10 +200,25 @@ export function buildFallbackPlan({ stage, session, date }) {
   };
 }
 
+/** Retry only a boundary refusal against the stage's proven execution base. */
+export function prepareFallbackPlan({ stage, session, date, targetRef = "origin/Nightly", cwd }) {
+  const plan = buildFallbackPlan({ stage, session, date });
+  if (plan.ok || !plan.reason.includes("write boundary")) return plan;
+  try {
+    const originalEvidence = describeSessionPatch(session);
+    const isolated = isolateStagePatch({ patch: extractSessionPatch(session), baseCommitId: originalEvidence?.baseCommitId, stage, date, targetRef, cwd, parseMetadata: extractMetadata });
+    return buildFallbackPlan({ stage, session, date, patch: isolated.patch, patchEvidence: { ...originalEvidence, normalization: isolated.normalization } });
+  } catch (error) {
+    return { ...plan, baseVerification: error.message };
+  }
+}
+
 export function renderFallbackPrBody(plan) {
   const files = plan.paths.join(", ") || "codebase";
   const why = "The Jules session finalized successfully, but its native publisher never opened a pull request within the publication settle window.";
-  const result = "The recovered patch was applied unmodified and validated against the stage write-boundary rules used by normal finalization.";
+  const result = plan.patchEvidence?.normalization
+    ? "The stage delta was reconstructed against its verified execution revision, excluding inherited upstream commits, and validated against the normal stage write-boundary rules."
+    : "The recovered patch was applied unmodified and validated against the stage write-boundary rules used by normal finalization.";
   const overview = [
     `This recovered Stage ${plan.stage} run publishes the finalized nightly work: ${plan.summary}.`,
     `${why} The fallback publisher opened this PR so the completed run is not lost.`,

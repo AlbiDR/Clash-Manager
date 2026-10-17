@@ -2,7 +2,10 @@
 // Copyright (C) 2026 AlbiDR
 
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { readFileSync, mkdtempSync, mkdirSync, writeFileSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import path from "node:path";
+import { spawnSync } from "node:child_process";
 import test from "node:test";
 
 import { extractMetadata, parseStageBranch, stageTagDate } from "./merge-nightly-core.mjs";
@@ -15,6 +18,7 @@ import {
   parseCoverageOutcome,
   patchTouchedPaths,
   publishFallback,
+  prepareFallbackPlan,
   renderFallbackPrBody,
 } from "./nightly-publish-fallback.mjs";
 
@@ -427,4 +431,56 @@ test("a full plan builds from a modern patch, window and all", () => {
   assert.equal(plan.ok, true, plan.reason);
   assert.equal(plan.status, "CLEAN");
   assert.equal(plan.summary, "Audited native WebView settings");
+});
+
+
+test("snapshot-based Jules patches exclude verified pulled commits, never stage edits outside its lane", () => {
+  const cwd = mkdtempSync(path.join(tmpdir(), "nightly-base-test-"));
+  const git = (...args) => {
+    const result = spawnSync("git", args, { cwd, encoding: "utf8" });
+    assert.equal(result.status, 0, result.stderr);
+    return result.stdout.trim();
+  };
+  const write = (name, contents) => { mkdirSync(path.dirname(path.join(cwd, name)), { recursive: true }); writeFileSync(path.join(cwd, name), contents); };
+  try {
+    git("init", "-q");
+    git("config", "user.name", "Fixture"); git("config", "user.email", "fixture@example.test");
+    const stage = stageOf(1), otherLog = stageOf(2).coverageLog;
+    write(stage.coverageLog, "initial\n"); write(otherLog, "other initial\n");
+    git("add", "."); git("commit", "-qm", "snapshot");
+    const baseCommitId = git("rev-parse", "HEAD");
+    write(otherLog, "other initial\nupstream audit\n");
+    git("add", "."); git("commit", "-qm", "upstream stage");
+    const execution = git("rev-parse", "HEAD");
+    git("update-ref", "refs/remotes/origin/Nightly", execution);
+    const sidecar = stage.coverageLog.replace(/-coverage\.log$/, "-pr-body.md");
+    write(stage.coverageLog, `initial\n* [2026-10-16] [Stage 1] CLEAN: Codebase -- inspected runtime input validation\n`);
+    write(sidecar, `<!--\nNIGHTLY_PR_METADATA:\n  Cycle: nightly-cycle/2026-10-17\n  Execution: ${execution}\n-->\n`);
+    git("add", ".");
+    const session = { ...sessionWith(git("diff", "--cached", baseCommitId) + "\n") };
+    session.outputs[0].changeSet.gitPatch.baseCommitId = baseCommitId;
+    assert.match(buildFallbackPlan({ stage, session, date: "2026-10-16" }).reason, /another stage/);
+    const plan = prepareFallbackPlan({ stage, session, date: "2026-10-16", cwd });
+    assert.equal(plan.ok, true, JSON.stringify(plan));
+    assert.deepEqual(plan.paths.sort(), [stage.coverageLog, sidecar].sort());
+    assert.equal(plan.patchEvidence.normalization.executionRevision, execution);
+    assert.ok(plan.patchEvidence.normalization.inheritedPaths.includes(otherLog));
+    assert.notEqual(plan.patchEvidence.sha256, plan.patchEvidence.normalization.sha256);
+    assert.match(renderFallbackPrBody(plan), /excluding inherited upstream commits/);
+    // Applying the isolated patch succeeds on the actual latest upstream.
+    git("reset", "--hard", execution);
+    const applied = spawnSync("git", ["apply", "--check", "-"], { cwd, input: plan.patch, encoding: "utf8" });
+    assert.equal(applied.status, 0, applied.stderr);
+    // The same inherited file plus a NEW edit by this session must be refused.
+    write(otherLog, "other initial\nupstream audit\nunauthorized session edit\n");
+    write(stage.coverageLog, `initial\n* [2026-10-16] [Stage 1] CLEAN: Codebase -- inspected runtime input validation\n`);
+    write(sidecar, `<!--\nNIGHTLY_PR_METADATA:\n  Cycle: nightly-cycle/2026-10-17\n  Execution: ${execution}\n-->\n`);
+    git("add", ".");
+    session.outputs[0].changeSet.gitPatch.unidiffPatch = git("diff", "--cached", baseCommitId) + "\n";
+    assert.equal(prepareFallbackPlan({ stage, session, date: "2026-10-16", cwd }).ok, false);
+    // A stale sidecar from another cycle cannot authorize normalization.
+    write(sidecar, `<!--\nNIGHTLY_PR_METADATA:\n  Cycle: nightly-cycle/2026-10-16\n  Execution: ${execution}\n-->\n`);
+    git("add", "."); session.outputs[0].changeSet.gitPatch.unidiffPatch = git("diff", "--cached", baseCommitId) + "\n";
+    assert.match(prepareFallbackPlan({ stage, session, date: "2026-10-16", cwd }).baseVerification, /this cycle/);
+  } finally { rmSync(cwd, { recursive: true, force: true }); }
 });

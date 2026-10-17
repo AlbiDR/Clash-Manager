@@ -24,7 +24,9 @@ import { spawnSync } from "child_process";
 import { FAILURE_CLASSES, loadLedger, saveLedger, upsertStageEntry } from "./nightly-ledger.mjs";
 import { NIGHTLY_EVENT_SOURCES, getEvidenceDate, parseCycleId } from "./nightly-events.mjs";
 import { METADATA_PLACEHOLDERS, TAG_PLACEHOLDERS, isPlaceholderField } from "./nightly-prose.mjs";
-import { prBodySidecarPath } from "./nightly-stage.mjs";
+import { isolateStagePatch } from "./nightly-patch-base.mjs";
+import { parseCoverageLog } from "./coverage-log-line.mjs";
+import { prBodySidecarPath, validateChangedPaths } from "./nightly-stage.mjs";
 
 export const CONFIG = {
   owner: process.env.GITHUB_REPOSITORY?.split("/")[0] ?? "",
@@ -84,7 +86,7 @@ export function runCmd(args, options = {}) {
 
   return {
     ok: res.status === 0,
-    stdout: (res.stdout || "").trim(),
+    stdout: options.preserveWhitespace ? (res.stdout || "") : (res.stdout || "").trim(),
     stderr: (res.stderr || "").trim(),
     status: res.status ?? 1,
   };
@@ -1065,17 +1067,25 @@ async function resolveConflictsAndRebase(pr, config = CONFIG, stageOverride = nu
   configureGitActor();
   runCmd(["fetch", "origin", `${branch}:${branch}`]);
 
+  const observedHead = gitStdout(["rev-parse", branch]);
   const mergeBase = gitStdout(["merge-base", branch, config.targetBranch]);
-  const changedFiles = gitStdout(["diff", "--name-only", mergeBase, branch]).split("\n").filter(Boolean);
+  let changedFiles = gitStdout(["diff", "--name-only", mergeBase, branch]).split("\n").filter(Boolean);
   log(`Changed files in PR: ${changedFiles.join(", ")}`);
 
-  const sourcePatchPath = path.join(os.tmpdir(), `nightly-source-${process.pid}.patch`);
-  try {
-    const sourceDiff = gitStdout(["diff", "--binary", mergeBase, branch, "--", ".", ":!.github/nightly-logs/*"], { allowFailure: true });
-    if (sourceDiff) fs.writeFileSync(sourcePatchPath, sourceDiff, "utf8");
-  } catch (error) {
-    log(`Failed to create source diff patch: ${error.message}`, "warn");
-  }
+  const registryStage = registryStageFor(stageOverride || parseStageBranch(branch)?.stage, config);
+  if (!registryStage) throw new Error("Cannot resolve a conflict without a registered stage.");
+  const date = getEvidenceDate(registryStage.number, stageCycleDate(pr));
+  const fullPatch = gitStdout(["diff", "--binary", mergeBase, branch], { preserveWhitespace: true });
+  const delta = isolateStagePatch({ patch: fullPatch, baseCommitId: mergeBase, stage: registryStage, date,
+    targetRef: config.targetBranch, parseMetadata: extractMetadata, allowSameBase: true });
+  const deltaBase = delta.normalization.executionRevision;
+  changedFiles = gitStdout(["diff", "--name-only", deltaBase, branch]).split("\n").filter(Boolean);
+  const record = parseCoverageLog(readFileFromRef(branch, registryStage.coverageLog), registryStage.number).find(line => line.date === date);
+  if (!record) throw new Error("Cannot resolve a conflict without this cycle's finalized coverage.");
+  validateChangedPaths(registryStage, record.status, changedFiles);
+  log(`Verified stage delta against ${deltaBase}; ${changedFiles.length} stage-owned paths.`);
+
+  const sourceDiff = gitStdout(["diff", "--binary", deltaBase, branch, "--", ".", ":!.github/nightly-logs/*"], { preserveWhitespace: true });
 
   const coverageLogs = {};
   for (const file of changedFiles) {
@@ -1105,9 +1115,10 @@ async function resolveConflictsAndRebase(pr, config = CONFIG, stageOverride = nu
   runCmd(["checkout", branch]);
   runCmd(["reset", "--hard", config.targetBranch]);
 
-  if (fs.existsSync(sourcePatchPath) && fs.readFileSync(sourcePatchPath, "utf8").trim()) {
-    log("Applying source code patch...");
-    runCmd(["apply", sourcePatchPath]);
+  if (sourceDiff) {
+    log("Applying verified stage source patch...");
+    const applied = spawnSync("git", ["apply", "-"], { input: sourceDiff, encoding: "utf8" });
+    if (applied.status !== 0) throw new Error(`Verified stage patch no longer applies: ${String(applied.stderr || "").trim()}`);
   }
 
   for (const [file, lines] of Object.entries(coverageLogs)) {
@@ -1125,16 +1136,13 @@ async function resolveConflictsAndRebase(pr, config = CONFIG, stageOverride = nu
   const status = gitStdout(["status", "--porcelain"]);
   if (status) {
     runCmd(["commit", "-m", pr.title]);
-    runCmd(["push", buildRepoUrl(config), `HEAD:${branch}`, "--force"]);
+    runCmd(["push", buildRepoUrl(config), `HEAD:${branch}`, `--force-with-lease=refs/heads/${branch}:${observedHead}`]);
     log(`Successfully force-pushed resolved branch ${branch} to origin.`, "success");
   } else {
     log("No changes detected after rebase. Branch is identical to Nightly.");
   }
 
   runCmd(["checkout", config.targetBranch]);
-  try {
-    fs.unlinkSync(sourcePatchPath);
-  } catch (_) {}
 }
 
 // The check that must not be red. Named rather than inferred so a renamed
@@ -1301,7 +1309,7 @@ async function readGateRun(sha, config = CONFIG) {
   if (checkRun) return { found: "check", run: checkRun };
 
   const workflows = await githubApi(
-    `/repos/${config.owner}/${config.repo}/actions/runs?head_sha=${sha}&event=pull_request&per_page=100`,
+    `/repos/${config.owner}/${config.repo}/actions/runs?head_sha=${sha}&per_page=100`,
     "GET", null, false, config,
   );
   const workflowRun = selectNewestGateRun(workflows?.workflow_runs, REGRESSION_GATE_WORKFLOW);
@@ -1339,18 +1347,33 @@ async function readGateRun(sha, config = CONFIG) {
  * failure is not evidence of a failing gate either, and refusing every merge
  * because GitHub's API hiccuped would be its own outage. Both proceed.
  */
+export function requiresRecoveryGate(pr) {
+  return /^nightly\/stage-\d+-.*fallback-/.test(pr?.head?.ref || "")
+    && Boolean(pr.fileFetchError || !pr.files?.length || pr.files.some(file => !String(typeof file === "string" ? file : file.filename || file.path || "").startsWith(".github/nightly-logs/")));
+}
+
+export function judgeRecoveryGate(pr, run) {
+  const judged = judgeGateRun(run);
+  if (!requiresRecoveryGate(pr)) return judged;
+  if (!run) return { verdict: GATE_VERDICT.DEFER, reason: "waiting for explicitly dispatched recovery verification", warn: true };
+  if (judged.verdict === GATE_VERDICT.PROCEED && run.conclusion !== "success") {
+    return { verdict: GATE_VERDICT.BLOCK, reason: "recovered source requires a successful regression verdict", warn: true };
+  }
+  return judged;
+}
+
 export async function regressionGateVerdict(pr, config = CONFIG, sha = pr?.head?.sha) {
   let read;
   try {
     read = await readGateRun(sha, config);
   } catch (error) {
     return {
-      verdict: GATE_VERDICT.PROCEED,
-      reason: `could not read ${REGRESSION_GATE_CHECK} for PR #${pr.number} (${error.message}), so it merges without a verdict`,
+      verdict: requiresRecoveryGate(pr) ? GATE_VERDICT.DEFER : GATE_VERDICT.PROCEED,
+      reason: `could not read ${REGRESSION_GATE_CHECK} for PR #${pr.number} (${error.message}); ${requiresRecoveryGate(pr) ? "recovered source remains deferred" : "it merges without a verdict"}`,
       warn: true,
     };
   }
-  const judged = judgeGateRun(read.run);
+  const judged = judgeRecoveryGate(pr, read.run);
   if (read.found === "workflow" && judged.verdict === GATE_VERDICT.DEFER) {
     return { ...judged, reason: `${judged.reason}; its check has not appeared yet` };
   }

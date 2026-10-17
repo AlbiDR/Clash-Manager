@@ -4,10 +4,11 @@
 import fs from "node:fs";
 import { spawnSync } from "node:child_process";
 import { classifyNightlyPr, CONFIG, extractMetadata, selectNewestGateRun } from "./merge-nightly-core.mjs";
+import { coverageRunWindow, parseCoverageLine } from "./coverage-log-line.mjs";
 import { DATABASE_VERIFICATION } from "./nightly-blind-spots.mjs";
 import { FAILURE_CLASSES, ensureRunEntries, loadLedger, prNumberFromTag, recordCycleExecution, saveLedger, stageEntry, upsertStageEntry } from "./nightly-ledger.mjs";
 import { createRedactor, redactDeep } from "./nightly-redact.mjs";
-import { buildFallbackPlan, describeSessionPatch, extractSessionPatch, publishFallback } from "./nightly-publish-fallback.mjs";
+import { describeSessionPatch, extractSessionPatch, patchTouchedPaths, prepareFallbackPlan, publishFallback, renderFallbackPrBody } from "./nightly-publish-fallback.mjs";
 import { HEALTH, evaluatePipelineHealth, renderHealthReport } from "./nightly-health.mjs";
 import { getInterventionAttemptCount, REDISPATCH_NOT_SENT_MARKER } from "./nightly-intervention.mjs";
 import { NIGHTLY_EVENT_SOURCES, getCycleDate, getCycleId, getEvidenceDate } from "./nightly-events.mjs";
@@ -206,13 +207,13 @@ async function githubApi(endpoint, config = CONFIG, method = "GET", body = null)
     const text = await res.text();
     throw new Error(`GitHub API ${res.status} ${res.statusText}: ${text}`);
   }
-  return res.json();
+  return res.status === 204 ? null : res.json();
 }
 
 async function fetchRecentPullRequests(config = CONFIG) {
   const prs = [];
   let page = 1;
-  while (true) {
+  while (prs.length < 150) {
     const pagePrs = await githubApi(
       `/repos/${config.owner}/${config.repo}/pulls?state=all&base=${config.targetBranch}&per_page=100&page=${page}`,
       config,
@@ -493,9 +494,7 @@ export function parseRunWindow(content, stageNumber, date) {
     .split("\n")
     .find(l => l.trim().startsWith(`* [${date}] [Stage ${stageNumber}] [`));
   if (!line) return null;
-  const m = /\[(\d{2}:\d{2})Z-(\d{2}:\d{2})Z (\d+)m\]/.exec(line);
-  if (!m) return null;
-  return { started: `${date}T${m[1]}:00Z`, terminated: `${date}T${m[2]}:00Z`, durationMinutes: Number(m[3]) };
+  return coverageRunWindow(parseCoverageLine(line));
 }
 
 /**
@@ -687,8 +686,7 @@ async function collectObservedState(registry, date, config = CONFIG, ledger = nu
     errorLine(`Could not fetch origin/${PROMOTION_BRANCH}: ${error.message}`);
   }
   const prs = await fetchRecentPullRequests(config);
-  const candidateDates = new Set(registry.stages.map(stage => expectedEvidenceDate(stage.number, date)));
-  for (const pr of prs.filter(pr => candidateDates.has(String(pr.created_at || "").slice(0, 10)))) {
+  for (const pr of prs.filter(pr => registry.stages.some(stage => prDateMatchesStage(pr, stage.number, date)))) {
     pr.files = await fetchPullRequestFiles(pr.number, config);
   }
 
@@ -904,6 +902,8 @@ export function renderStaleStagePrReport(stale, maxAgeHours = STALE_STAGE_PR_HOU
 }
 
 function prDateMatchesStage(pr, stageNumber, date) {
+  const cycle = extractMetadata(pr).cycle;
+  if (cycle) return cycle === getCycleId(date);
   const expectedDate = expectedEvidenceDate(stageNumber, date);
   return String(pr.created_at || pr.createdAt || "").startsWith(expectedDate);
 }
@@ -1032,9 +1032,9 @@ export function evaluateNightlyRun({ registry, date, observed, previousLedger, f
             trackedSessionName(previousLedger, date, stage.number),
           )),
           // The stage's own clock, not Jules'. See parseRunWindow.
-          run: observed.runWindows?.get(stage.number) || null,
+          run: observed.runWindows?.get(stage.number) || stageEntry(previousLedger, date, stage.number)?.evidence?.run || null,
           // Observation only, never a failure. See classifyPrBody.
-          body: describePublishedBody(matchingTags[0], observed.prs),
+          body: describePublishedBody(matchingTags[0], observed.prs) || stageEntry(previousLedger, date, stage.number)?.evidence?.body || null,
           // The revision Jules checked out after its own Nightly fast-forward,
           // not the later merge commit or the watchdog's observer checkout.
           stageExecution: describeStageExecution(matchingTags[0], observed.prs),
@@ -1833,7 +1833,8 @@ async function safePullRequestFiles(number, config = CONFIG, filesImpl = fetchPu
  * HOW IT REHEARSES WITHOUT SIDE EFFECTS
  * The half that rots is the decision half, because it parses a format another
  * file owns. The publishing half talks to git and the GitHub API, which do not
- * drift. So this exercises buildFallbackPlan only, and it does it against the
+ * drift. This rehearses the same plan and verified execution-base isolation
+ * as publication, using a temporary index without modifying the checkout, on the
  * real change sets of the sessions that succeeded tonight: every stage that
  * published normally is a free, fully realistic fixture. Nothing is written,
  * nothing is pushed, no pull request is opened.
@@ -1893,7 +1894,7 @@ export function rehearseFallbackPublisher({ registry, date, observed, ledger = n
       if (finished) unrehearsable.push(stage.number);
       continue;
     }
-    const plan = buildFallbackPlan({ stage, session, date: expectedEvidenceDate(stage.number, date) });
+    const plan = prepareFallbackPlan({ stage, session, date: expectedEvidenceDate(stage.number, date) });
     results.push({ stage: stage.number, ok: plan.ok, reason: plan.ok ? null : plan.reason });
   }
 
@@ -1984,6 +1985,24 @@ export function renderRehearsalReport(rehearsal) {
   ].join("\n");
 }
 
+/** Run recovery verification through dispatch, which does not need PR-event approval. */
+export async function dispatchFallbackChecks(plan, result, config = CONFIG, api = githubApi) {
+  const pr = await api(`/repos/${config.owner}/${config.repo}/pulls/${result.prNumber}`, config);
+  invariant(pr.head?.ref === plan.branch && pr.head?.repo?.full_name === `${config.owner}/${config.repo}` && pr.base?.ref === config.targetBranch,
+    "Recovery verification requires the exact same-repository stage pull request.");
+  const dispatched = [];
+  if (plan.paths.some(file => !file.startsWith(".github/nightly-logs/"))) {
+    await api(`/repos/${config.owner}/${config.repo}/actions/workflows/nightly-pr-regression-gate.yml/dispatches`, config, "POST", {
+      ref: plan.branch,
+      inputs: { pr_number: String(result.prNumber), head_sha: pr.head.sha, base_sha: pr.base.sha },
+    });
+    dispatched.push("nightly-pr-regression-gate.yml");
+  }
+  await api(`/repos/${config.owner}/${config.repo}/actions/workflows/control-plane-guard.yml/dispatches`, config, "POST", { ref: config.targetBranch });
+  dispatched.push("control-plane-guard.yml");
+  return { status: "DISPATCHED", headSha: pr.head.sha, workflows: dispatched };
+}
+
 export async function publishStrandedWork({
   unrecovered = [],
   julesSessions = [],
@@ -1993,6 +2012,7 @@ export async function publishStrandedWork({
   config = CONFIG,
   dryRun = false,
   publish = publishFallback,
+  dispatchChecks = null,
 } = {}) {
   const published = [];
   const refused = [];
@@ -2008,11 +2028,20 @@ export async function publishStrandedWork({
       date,
       trackedSessionName(ledger, date, entry.stage),
     );
-    const plan = buildFallbackPlan({ stage, session, date: expectedEvidenceDate(entry.stage, date) });
+    const plan = prepareFallbackPlan({ stage, session, date: expectedEvidenceDate(entry.stage, date), targetRef: `origin/${config.targetBranch}` });
 
     if (!plan.ok) {
       errorLine(`Fallback publish declined. ${plan.reason}`);
       refused.push({ stage: entry.stage, reason: plan.reason });
+      upsertStageEntry(ledger, registry, date, entry.stage, {
+        evidence: { fallbackRefusal: redactDeep({
+          reason: plan.reason,
+          baseVerification: plan.baseVerification || null,
+          paths: patchTouchedPaths(extractSessionPatch(session)),
+          patchEvidence: describeSessionPatch(session),
+          sessionName: session?.name || session?.id || null,
+        }, redact) },
+      }, { source: NIGHTLY_EVENT_SOURCES.WATCHDOG_FALLBACK });
       continue;
     }
 
@@ -2026,6 +2055,8 @@ export async function publishStrandedWork({
             prNumber: result.prNumber,
             prUrl: result.prUrl,
             headRef: result.branch,
+            ...(plan.run ? { run: plan.run } : {}),
+            body: { pr: result.prNumber, verdict: classifyPrBody(renderFallbackPrBody(plan)), ok: classifyPrBody(renderFallbackPrBody(plan)) === "OK", source: "fallback-publication" },
             fallbackPublish: {
               at: new Date().toISOString(),
               sessionName: plan.sessionName,
@@ -2035,11 +2066,20 @@ export async function publishStrandedWork({
             },
           },
         }, { source: NIGHTLY_EVENT_SOURCES.WATCHDOG_FALLBACK });
+        if (dispatchChecks) {
+          let verificationDispatch;
+          try { verificationDispatch = await dispatchChecks(plan, result, config); }
+          catch (error) { verificationDispatch = { status: "FAILED", error: redact(error.message) }; errorLine(`Stage ${entry.stage}: recovery verification dispatch failed: ${verificationDispatch.error}`); }
+          upsertStageEntry(ledger, registry, date, entry.stage, { evidence: { verificationDispatch } }, { source: NIGHTLY_EVENT_SOURCES.WATCHDOG_FALLBACK });
+        }
         published.push({ stage: entry.stage, prNumber: result.prNumber });
       }
     } catch (error) {
       errorLine(`Stage ${entry.stage}: fallback publish failed. ${error.message}`);
       refused.push({ stage: entry.stage, reason: error.message });
+      upsertStageEntry(ledger, registry, date, entry.stage, {
+        evidence: { fallbackRefusal: redactDeep({ reason: error.message, paths: plan.paths, patchEvidence: plan.patchEvidence, sessionName: plan.sessionName }, redact) },
+      }, { source: NIGHTLY_EVENT_SOURCES.WATCHDOG_FALLBACK });
     }
   }
 
@@ -2317,6 +2357,7 @@ export async function runCli(argv = process.argv.slice(2), config = CONFIG) {
           registry,
           date,
           config,
+          dispatchChecks: dispatchFallbackChecks,
         });
         publishedByFallback = fallback.published.length;
       }
@@ -2331,6 +2372,7 @@ export async function runCli(argv = process.argv.slice(2), config = CONFIG) {
           registry,
           date,
           config,
+          dispatchChecks: dispatchFallbackChecks,
         });
         publishedByFallback += fallback.published.length;
       }

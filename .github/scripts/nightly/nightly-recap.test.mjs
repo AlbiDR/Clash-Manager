@@ -387,7 +387,7 @@ test("a whole recap is assembled and rendered from evidence alone", () => {
     // merely terse.
     "Published descriptions: not checked on this run, so nothing here says whether any arrived damaged. The watchdog records that observation, and no stage carries one.",
     "",
-    "Detail aged out: 13 of 13 merged stages no longer have an entry in the pull request history, so no Why or Result survives for them. Stage 1's aging pass prunes older entries; the run itself is unaffected.",
+    "Detail unavailable: 13 of 13 merged stages no longer have an entry in the pull request history, so no Why or Result survives for them. Neither the available history nor merge evidence supplies the missing detail; the run itself is unaffected.",
     "",
     // A run predating the refusal count says so out loud rather than staying
     // silent. Silence here would read exactly like a run where the guard never
@@ -572,7 +572,7 @@ test("an absent field is not counted as a placeholder, unlike an empty one", () 
     summary: "18 candidate files, 0 dep-violations",
   }));
   assert.doesNotMatch(absent, /^Thin evidence:/m, "no history entry is not a placeholder");
-  assert.match(absent, /^Detail aged out: 1 of 1 merged stages/m, "it is reported as a lost record instead");
+  assert.match(absent, /^Detail unavailable: 1 of 1 merged stages/m, "it is reported as a lost record instead");
 
   // And the predicate itself keeps the semantics the coordinator needs.
   assert.ok(isPlaceholderField("why", null), "empty is a placeholder for the writer's caller");
@@ -728,7 +728,7 @@ test("a run whose history has been pruned says so, instead of just looking terse
     summary: "nothing to do",
   }));
 
-  assert.match(text, /^Detail aged out: 1 of 1 merged stages no longer have an entry in the pull request history/m);
+  assert.match(text, /^Detail unavailable: 1 of 1 merged stages no longer have an entry in the pull request history/m);
   assert.match(text, /the run itself is unaffected/);
   // An absent field is not a placeholder: claiming the stage left one would
   // report a defect this run did not have.
@@ -744,7 +744,7 @@ test("a merged stage with no known pull request is not blamed on the aging pass"
     summary: "Audited 42 files; zero threat vectors found",
   }));
 
-  assert.doesNotMatch(text, /^Detail aged out:/m);
+  assert.doesNotMatch(text, /^Detail unavailable:/m);
   assert.match(text, /^Evidence not filed: S01 merged, but no merge tag or history entry is filed under this run's date/m);
   assert.match(text, /This is not aging/);
 });
@@ -757,7 +757,7 @@ test("aged and unfiled stages are told apart in the same run", () => {
       { stage: 2, slug: "verification", outcome: "CLEAN", merged: true, prNumber: 1500, summary: "s" },
     ],
   }));
-  assert.match(text, /^Detail aged out: 1 of 2 merged stages/m);
+  assert.match(text, /^Detail unavailable: 1 of 2 merged stages/m);
   assert.match(text, /^Evidence not filed: S01 merged/m);
 });
 
@@ -769,7 +769,7 @@ test("a stage that never merged is not reported as having lost its history", () 
     failureClass: "JULES_SESSION_STUCK",
   }, { merged: 0, clean: 0, stuck: 1, grade: 7, rationale: "Partial block: one stage failed or got stuck." }));
 
-  assert.doesNotMatch(text, /^Detail aged out:/m);
+  assert.doesNotMatch(text, /^Detail unavailable:/m);
 });
 
 test("every failure class the ledger has actually recorded has a phrase", () => {
@@ -1848,4 +1848,17 @@ test("a restarted session that then needed a nudge says both", () => {
   const text = renderRecap(singleStage(result, { rescued: 1, grade: 9, rationale: "Minor issues: every stage completed. One stage needed the watchdog." }));
   assert.match(text, /Its first Jules session failed outright, so the watchdog started a fresh one automatically\./);
   assert.match(text, /The watchdog nudged it automatically/);
+});
+
+
+test("immutable merge annotations restore missing history without accepting a different PR", async () => {
+  const { restoreHistoryFromEvidence, parsePrHistoryEntry } = await import("./nightly-recap.mjs");
+  const tag = "nightly/2026-10-17/stage-13/pr-2249";
+  const restored = restoreHistoryFromEvidence("", [tag], () => "PR: #2249\nDomain: pipeline\nFiles: protocol.md\nWhy: Inspect recovery failures\nChange: Record the blocked stage\nResult: audit-duration verified all stages\nNudges: 0");
+  const entry = parsePrHistoryEntry(restored, 13, "2026-10-17", 2249);
+  assert.equal(entry.why, "Inspect recovery failures");
+  assert.equal(entry.result, "audit-duration verified all stages");
+  assert.equal(entry.nudges, 0);
+  assert.equal(restoreHistoryFromEvidence("", [tag], () => "PR: #2248\nWhy: wrong run"), "");
+  assert.equal(restoreHistoryFromEvidence(restored, [tag], () => { throw new Error("already recorded"); }), restored);
 });

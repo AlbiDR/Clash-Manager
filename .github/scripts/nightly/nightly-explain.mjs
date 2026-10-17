@@ -260,6 +260,7 @@ export function buildStageExplanation(inputs, stageNumber) {
     executionBranch: latestExecution?.checkout?.branch || null,
     executionSha: latestExecution?.checkout?.sha || null,
     stageExecutionRevision: entry?.evidence?.stageExecution?.revision || null,
+    fallbackRefusal: entry?.evidence?.fallbackRefusal || null,
     patchEvidence: entry?.evidence?.session?.patchEvidence || entry?.evidence?.fallbackPublish?.patchEvidence || null,
   };
   const projection = {
@@ -342,6 +343,9 @@ export function renderStageExplanation(explanation) {
     `  Executed branch: ${explanation.executionBranch || "unrecorded"}`,
     `  Executed SHA: ${explanation.executionSha || "unrecorded"}`,
     `  Jules checkout SHA: ${explanation.stageExecutionRevision || "unrecorded"}`,
+    `  Fallback refusal: ${explanation.fallbackRefusal?.reason || "none recorded"}`,
+    `  Patch base verification: ${explanation.fallbackRefusal?.baseVerification || "none recorded"}`,
+    `  Fallback paths: ${(explanation.fallbackRefusal?.paths || []).join(", ") || "unrecorded"}`,
     `  Patch source: ${explanation.patchEvidence?.source || "unrecorded"}`,
     `  Patch activity: ${explanation.patchEvidence?.activity || "unrecorded"}`,
     `  Patch base SHA: ${explanation.patchEvidence?.baseCommitId || "unrecorded"}`,

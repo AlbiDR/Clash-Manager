@@ -67,6 +67,7 @@ import { INTERVENTION_OUTCOMES, classifyIntervention } from "./nightly-intervent
 // The same classifier finalize uses to write each pull request's own
 // plain-language line. Imported rather than reimplemented so the recap and the
 // bodies can never disagree about what kind of night it was.
+import { parseTagContent, renderHistoryBlock } from "./merge-nightly-core.mjs";
 import { classifyChangedPaths } from "./nightly-stage.mjs";
 import { prNumberFromTag } from "./nightly-ledger.mjs";
 import { getEvidenceDate } from "./nightly-events.mjs";
@@ -1591,8 +1592,8 @@ function thinEvidenceSection(recap) {
   }
   if (agedOut.length > 0) {
     lines.push(
-      `Detail aged out: ${agedOut.length} of ${recap.total} merged stages no longer have an entry in the pull request history, so no Why or Result survives for them.`
-      + ` Stage 1's aging pass prunes older entries; the run itself is unaffected.`,
+      `Detail unavailable: ${agedOut.length} of ${recap.total} merged stages no longer have an entry in the pull request history, so no Why or Result survives for them.`
+      + ` Neither the available history nor merge evidence supplies the missing detail; the run itself is unaffected.`,
     );
   }
   if (unfiled.length > 0) {
@@ -2101,6 +2102,25 @@ export function evidenceRefNames(tagList, archiveList) {
   return [...names];
 }
 
+/** Restore rich evidence from its immutable annotation when the context cache lost it. */
+export function restoreHistoryFromEvidence(prHistory, tags, readAnnotation) {
+  const blocks = [prHistory];
+  for (const tag of tags) {
+    const match = /^nightly\/(\d{4}-\d{2}-\d{2})\/stage-(\d+)\/pr-(\d+)$/.exec(tag);
+    if (!match) continue;
+    const [, date, stage, number] = match;
+    if (parsePrHistoryEntry(prHistory, Number(stage), date, Number(number))) continue;
+    const annotation = readAnnotation(tag);
+    if (!annotation) continue;
+    const meta = parseTagContent(annotation);
+    if (String(meta.prNum).replace(/^#/, "") !== number) continue;
+    blocks.push(renderHistoryBlock({ date, stage, prNum: `#${number}`, domain: meta.domain,
+      commitSha: tag, prUrl: `https://github.com/AlbiDR/Clash-Manager/pull/${number}`,
+      files: meta.files, why: meta.why, change: meta.change, result: meta.result, nudges: meta.nudges }));
+  }
+  return blocks.join("\n\n");
+}
+
 export function loadRecapInputs(date, ref = SOURCE_REF) {
   const ledger = JSON.parse(readAtRef(LEDGER, ref) || "{}");
   const registry = JSON.parse(readAtRef(REGISTRY, ref) || "{}");
@@ -2115,7 +2135,12 @@ export function loadRecapInputs(date, ref = SOURCE_REF) {
     git(["tag", "-l", "nightly/*"]),
     git(["for-each-ref", "--format=%(refname)", `${ARCHIVE_NAMESPACE}/`]),
   );
-  return { ledger, registry, date: runDate, coverageByStage, prHistory: readAtRef(PR_HISTORY, ref) || "", tags };
+  const dates = new Set(registry.stages.map(stage => evidenceDateFor(stage.number, runDate)));
+  const prHistory = restoreHistoryFromEvidence(readAtRef(PR_HISTORY, ref) || "", tags.filter(tag => dates.has(tag.split("/")[1])), tag => {
+    const current = git(["for-each-ref", "--format=%(contents)", `refs/tags/${tag}`]);
+    return current || git(["for-each-ref", "--format=%(contents)", `${ARCHIVE_NAMESPACE}/${tag.slice("nightly/".length)}`]);
+  });
+  return { ledger, registry, date: runDate, coverageByStage, prHistory, tags };
 }
 
 export function runCli(argv = process.argv.slice(2)) {

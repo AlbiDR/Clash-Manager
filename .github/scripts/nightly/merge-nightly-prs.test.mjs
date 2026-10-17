@@ -1237,3 +1237,15 @@ test("a failed archive push leaves the evidence tag exactly where it was", () =>
   assert.ok(!calls.some(call => call.includes(`:refs/tags/${AGED_TAG}`)), "the remote tag was deleted despite a failed archive push");
   assert.ok(!calls.some(call => call.startsWith("tag -d")), "the local tag was deleted despite a failed archive push");
 });
+
+
+test("fallback source cannot merge before its explicitly dispatched gate judges it", async () => {
+  const { judgeRecoveryGate, GATE_VERDICT } = await import("./merge-nightly-core.mjs");
+  const pr = { head: { ref: "nightly/stage-2-verification-fallback-123" }, files: ["Frontend-PWA/x.spec.ts"] };
+  assert.equal(judgeRecoveryGate(pr, null).verdict, GATE_VERDICT.DEFER);
+  assert.equal(judgeRecoveryGate(pr, { status: "in_progress" }).verdict, GATE_VERDICT.DEFER);
+  assert.equal(judgeRecoveryGate(pr, { status: "completed", conclusion: "cancelled" }).verdict, GATE_VERDICT.BLOCK);
+  assert.equal(judgeRecoveryGate(pr, { status: "completed", conclusion: "success" }).verdict, GATE_VERDICT.PROCEED);
+  pr.files = [".github/nightly-logs/coverage.log"];
+  assert.equal(judgeRecoveryGate(pr, null).verdict, GATE_VERDICT.PROCEED);
+});

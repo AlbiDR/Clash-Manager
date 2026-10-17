@@ -16,6 +16,7 @@ import fs from "node:fs";
 export const CONTROL_PLANE_FILES = [
   ".github/workflows/nightly-watchdog.yml",
   ".github/workflows/merge-nightly-prs.yml",
+  ".github/workflows/nightly-pr-regression-gate.yml",
   ".github/workflows/sync-branches.yml",
   ".github/scripts/nightly/nightly-watchdog.mjs",
   ".github/scripts/nightly/nightly-ledger.mjs",
@@ -27,6 +28,7 @@ export const CONTROL_PLANE_FILES = [
   ".github/scripts/nightly/merge-nightly-core.mjs",
   ".github/scripts/nightly/nightly-stage.mjs",
   ".github/scripts/nightly/nightly-publish-fallback.mjs",
+  ".github/scripts/nightly/nightly-patch-base.mjs",
   ".github/scripts/nightly/nightly-health.mjs",
   ".github/scripts/nightly/nightly-recap.mjs",
   // Imported by the recap, which the watchdog imports, so it has to reach

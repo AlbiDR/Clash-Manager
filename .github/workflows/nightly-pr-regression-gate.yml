@@ -62,6 +62,19 @@
 name: Nightly PR Regression Gate
 
 on:
+  # GITHUB_TOKEN-created PR events require human approval. Recovery dispatches
+  # this same read-only gate explicitly, pinned to the verified same-repo head.
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        required: true
+        type: string
+      head_sha:
+        required: true
+        type: string
+      base_sha:
+        required: true
+        type: string
   pull_request:
     branches:
       - Nightly
@@ -69,7 +82,7 @@ on:
       - ".github/nightly-logs/**"
 
 concurrency:
-  group: nightly-pr-gate-${{ github.event.pull_request.number }}
+  group: nightly-pr-gate-${{ inputs.pr_number || github.event.pull_request.number }}
   cancel-in-progress: true
 
 permissions:
@@ -80,11 +93,29 @@ jobs:
     name: "Suite must not regress"
     runs-on: ubuntu-latest
     steps:
+      - name: Validate recovery dispatch identity
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ inputs.pr_number }}
+          HEAD_SHA: ${{ inputs.head_sha }}
+          BASE_SHA: ${{ inputs.base_sha }}
+        run: |
+          set -euo pipefail
+          [[ "$PR_NUMBER" =~ ^[0-9]+$ && "$HEAD_SHA" =~ ^[a-f0-9]{40}$ && "$BASE_SHA" =~ ^[a-f0-9]{40}$ ]]
+          gh api "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER" > "$RUNNER_TEMP/recovery-pr.json"
+          jq -e --arg repo "$GITHUB_REPOSITORY" --arg head "$HEAD_SHA" --arg base "$BASE_SHA" '
+            .state == "open" and .base.ref == "Nightly" and .head.repo.full_name == $repo
+            and .head.sha == $head and .base.sha == $base
+            and (.head.ref | test("^nightly/stage-[0-9]+-"))
+          ' "$RUNNER_TEMP/recovery-pr.json"
+
       - name: Checkout the pull request head
         uses: actions/checkout@v4
         with:
           # Both ends of the comparison must exist locally.
           fetch-depth: 0
+          ref: ${{ inputs.head_sha || github.sha }}
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
@@ -108,7 +139,7 @@ jobs:
 
       - name: Decide, comparing against the merge base
         env:
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          BASE_SHA: ${{ inputs.base_sha || github.event.pull_request.base.sha }}
           HEAD_RESULT: ${{ steps.head.outcome }}
         run: |
           set -uo pipefail

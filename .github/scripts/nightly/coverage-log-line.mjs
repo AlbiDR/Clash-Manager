@@ -138,3 +138,11 @@ export function parseCoverageLog(content, stageNumber = null) {
     .filter(Boolean)
     .filter(record => stageNumber === null || record.stage === Number(stageNumber));
 }
+
+
+/** Convert the recorded duration to UTC instants, including a midnight crossing. */
+export function coverageRunWindow(record) {
+  if (!record?.window) return null;
+  const started = `${record.date}T${record.window.start}:00Z`;
+  return { started, terminated: new Date(Date.parse(started) + record.window.minutes * 60_000).toISOString().replace(".000Z", "Z"), durationMinutes: record.window.minutes };
+}

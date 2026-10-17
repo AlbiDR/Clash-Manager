@@ -30,6 +30,7 @@ import {
   matchJulesSession,
   nudgeJulesSession,
   publishStrandedWork,
+  dispatchFallbackChecks,
   recoverStuckStages,
   selectFallbackCandidates,
   renderRecoveryReadiness,
@@ -2913,4 +2914,67 @@ test("a restarted stage says so on every later line of the run summary", () => {
       ? { ...entry, evidence: { ...entry.evidence, redispatch: { failedSessionName: FAILED_SESSION, sessionName: "sessions/9990001", ok: true } } }
       : entry);
   assert.match(renderSummary(date, entries), /Stage 3: NO_OUTPUT \(restarted after sessions\/17685247323826051852 FAILED, now sessions\/9990001\)/);
+});
+
+
+test("a delayed Stage 1 PR belongs to its declared cycle rather than its publication date", () => {
+  const date = "2026-10-17";
+  const observed = mergedObserved(date);
+  observed.tags.delete("nightly/2026-10-16/stage-1/pr-1401");
+  observed.coverageStages.delete(1);
+  const pr = { number: 2240, state: "OPEN", created_at: "2026-10-17T02:25:54Z",
+    user: { login: "google-labs-jules[bot]" }, base: { ref: "Nightly" },
+    head: { ref: "nightly/stage-1-hardening-session" },
+    body: "<!--\nNIGHTLY_PR_METADATA:\n  Cycle: nightly-cycle/2026-10-17\n-->", files: [registry.stages[0].coverageLog] };
+  observed.prs.push(pr);
+  const one = () => evaluateNightlyRun({ registry, date, observed, previousLedger: createEmptyLedger() }).find(e => e.stage === 1);
+  assert.equal(one().state, "RECOVERABLE"); assert.equal(one().evidence.prNumber, 2240);
+  pr.body = "<!--\nNIGHTLY_PR_METADATA:\n  Cycle: nightly-cycle/2026-10-18\n-->";
+  assert.notEqual(one().evidence.prNumber, 2240, "a different cycle must not match just because its date does");
+});
+
+test("refused fallback patches leave an explainable durable record without claiming recovery", async () => {
+  const date = "2026-08-20", stage = registry.stages[1];
+  const session = strandedSession(stage, "CHANGED", date);
+  session.outputs[0].changeSet.gitPatch.unidiffPatch += "diff --git a/.github/workflows/x.yml b/.github/workflows/x.yml\n+untrusted\n";
+  const ledger = createEmptyLedger(); ensureRunEntries(ledger, registry, date);
+  await publishStrandedWork({ unrecovered: [{ stage: 2 }], julesSessions: [session], ledger, registry, date, config: CONFIG,
+    publish: async () => { throw new Error("unsafe publisher reached"); } });
+  const entry = stageEntry(ledger, date, 2);
+  assert.match(entry.evidence.fallbackRefusal.reason, /write boundary/);
+  assert.ok(entry.evidence.fallbackRefusal.paths.includes(".github/workflows/x.yml"));
+  assert.match(entry.evidence.fallbackRefusal.patchEvidence.sha256, /^[a-f0-9]{64}$/);
+  assert.ok(ledger.events.some(e => e.payload?.requested?.evidence?.set?.fallbackRefusal));
+});
+
+test("fallback records the stage clock and description check before the final observer exits", async () => {
+  const date = "2026-08-20", stage = registry.stages[12];
+  const session = strandedSession(stage, "CLEAN", date);
+  session.outputs[0].changeSet.gitPatch.unidiffPatch = fallbackPatch(stage, "CLEAN", date).replace("[Stage 13] CLEAN:", "[Stage 13] [23:58Z-00:02Z 4m] CLEAN:");
+  const ledger = createEmptyLedger(); ensureRunEntries(ledger, registry, date);
+  await publishStrandedWork({ unrecovered: [{ stage: 13 }], julesSessions: [session], ledger, registry, date, config: CONFIG,
+    publish: async plan => ({ published: true, prNumber: 2249, branch: plan.branch }) });
+  const entry = stageEntry(ledger, date, 13);
+  assert.equal(entry.evidence.run.durationMinutes, 4);
+  assert.equal(entry.evidence.run.terminated, "2026-08-21T00:02:00Z");
+  assert.equal(entry.evidence.body.ok, true);
+  assert.equal(entry.evidence.body.pr, 2249);
+});
+
+
+test("recovered source explicitly dispatches the gate at its exact same-repository head", async () => {
+  const config = { ...CONFIG, owner: "owner", repo: "repo", targetBranch: "Nightly" };
+  const plan = { branch: "nightly/stage-2-verification-fallback-123", paths: ["Frontend-PWA/x.spec.ts"] };
+  const calls = [];
+  const pr = { head: { ref: plan.branch, sha: "a".repeat(40), repo: { full_name: "owner/repo" } }, base: { ref: "Nightly", sha: "b".repeat(40) } };
+  const api = async (endpoint, config, method, body) => { calls.push({ endpoint, method, body }); return pr; };
+  const result = await dispatchFallbackChecks(plan, { prNumber: 2250 }, config, api);
+  assert.equal(result.status, "DISPATCHED");
+  assert.equal(calls[1].body.ref, plan.branch);
+  assert.equal(calls[1].body.inputs.head_sha, pr.head.sha);
+  assert.equal(calls[1].body.inputs.base_sha, pr.base.sha);
+  assert.equal(calls[1].body.inputs.pr_number, "2250");
+  pr.head.repo.full_name = "outsider/fork";
+  await assert.rejects(dispatchFallbackChecks(plan, { prNumber: 2250 }, config, api), /same-repository/);
+  assert.equal(calls.length, 4, "the foreign PR never reaches a dispatch");
 });
