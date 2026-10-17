@@ -4,9 +4,9 @@
 
 In plain terms: no change was made to the project. This run ended as CHANGED and the only file here is the log recording that.
 
-**What changed:** Documented 2026-10-16 pipeline self-healing findings, 4 fallback publish recoveries, and Stage 10 DEGRADING health status
+**What changed:** Documented Stage 1 JULES_SESSION_STUCK failure and updated Section 3 metrics for 2026-10-17
 
-**Why:** Documented 36.4% pipeline intervention rate, watchdog fallback recoveries, and updated Stage 1-13 Section 3 metrics
+**Why:** Documented 2026-10-17 pipeline evidence and updated consecutive no-diff days and audit duration metrics across all 13 stages
 
 **Result:** Required stage validation completed.
 
@@ -15,12 +15,12 @@ In plain terms: no change was made to the project. This run ended as CHANGED and
 <!--
 NIGHTLY_PR_METADATA:
   Domain: pipeline
-  Cycle: nightly-cycle/2026-10-16
+  Cycle: nightly-cycle/2026-10-17
   Contract: df81a67e6d78a129caa22f2d9d3499a9aaf33de1a9f9c7718ff860013b7a86e1
-  Why: Documented 36.4% pipeline intervention rate, watchdog fallback recoveries, and updated Stage 1-13 Section 3 metrics
-  Change: Documented 2026-10-16 pipeline self-healing findings, 4 fallback publish recoveries, and Stage 10 DEGRADING health status
+  Why: Documented 2026-10-17 pipeline evidence and updated consecutive no-diff days and audit duration metrics across all 13 stages
+  Change: Documented Stage 1 JULES_SESSION_STUCK failure and updated Section 3 metrics for 2026-10-17
   Result: Required stage validation completed.
   Files: .github/nightly-logs/13-self-healing-protocol-coverage.log, .github/nightly-logs/13-self-healing-protocol.md
   Nudges: 1
-  Execution: 9858782e26f4a704e0529095c92b45c85b4c8d1f
+  Execution: b314a389fb26c9f38afdbd816fed2953bee08422
 -->
