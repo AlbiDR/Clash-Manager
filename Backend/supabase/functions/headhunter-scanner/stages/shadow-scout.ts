@@ -72,7 +72,7 @@ export async function runShadowScout(
             logAudit('SHADOW_SCOUT', 'integrity_checked', { 
                 passed: shadowTargetsIntegrity.success,
                 details: shadowTargetsIntegrity.success ? 'Data shape validated (ShadowTarget array)' : 'Unexpected RPC data shape',
-                issues: shadowTargetsIntegrity.success ? null : shadowTargetsIntegrity.issues
+                ...(shadowTargetsIntegrity.success ? {} : { issues: shadowTargetsIntegrity.issues })
             });
 
             if (shadowTargetsIntegrity.success) {

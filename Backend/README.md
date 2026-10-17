@@ -3,7 +3,7 @@
 
 # Clash Manager Backend
 
-[![Backend](https://img.shields.io/badge/Backend-v14.55.5-3ECF8E?style=flat-square&logo=supabase&logoColor=white)](README.md)
+[![Backend](https://img.shields.io/badge/Backend-v14.55.6-3ECF8E?style=flat-square&logo=supabase&logoColor=white)](README.md)
 [![Deno](https://img.shields.io/badge/Edge-Deno-000000?style=flat-square&logo=deno&logoColor=white)](supabase/functions)
 [![Postgres 17](https://img.shields.io/badge/Postgres-17-4169E1?style=flat-square&logo=postgresql&logoColor=white)](supabase/migrations)
 
@@ -109,6 +109,27 @@ The report keeps the last 24 hours of cron failures visible after recovery;
 successful SQL access alone does not prove the app can populate. Resource
 counters describe host lifetime, and high swap usage alone does not prove
 current memory pressure.
+
+The read-only Database Observer workflow takes two host/app-read samples 120
+seconds apart and collects the preceding complete UTC hour of provider logs.
+Scheduled runs also read up to three previous observation artifacts using
+read-only GitHub Actions access. A rolling `logArchive` carries distinct log
+acquisitions, deduplicates successful hours for planning, and catches up at
+most six additional missing hours per run, oldest first. Catch-up queries cover
+only completed UTC hours whose start remains within the previous 24 hours;
+each query spans one hour. This bounds load and leaves time inside the existing
+ten-minute workflow limit. It does not add database health probes.
+
+The archive retains degraded acquisitions separately from subsequent successful
+retakes while they remain inside that horizon. It is capped at 256 attempts
+and 3 MiB, with truncation and unavailable artifact history reported explicitly.
+The original per-run artifacts remain available for 30 days. Hours older than
+the catch-up horizon, gaps exceeding the per-run recovery budget, and artifact
+failures remain missing evidence. `pnpm db:observe:report` distinguishes saved
+host/app-read samples from provider-log hour coverage; neither successful log
+collection nor a green collector workflow means continuous uptime, fresh
+snapshots, or complete ingestion. Provider disk credits and exporter sample age
+remain unavailable to this collector.
 
 The October 5, 2026 investigation is recorded in
 [`sync-outage-2026-10-05.md`](sync-outage-2026-10-05.md). The project stays on
