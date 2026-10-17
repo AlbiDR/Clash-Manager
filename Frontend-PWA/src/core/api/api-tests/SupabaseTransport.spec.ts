@@ -149,6 +149,44 @@ describe("Supabase read transport", () => {
   it("keeps every backoff wait together shorter than one read timeout", () => {
     expect(ALL_BACKOFF_WINDOWS_MS).toBeLessThan(SUPABASE_READ_TIMEOUT_MS);
   });
+
+  it("retries thrown transient network errors and succeeds when network recovers", async () => {
+    vi.useFakeTimers();
+    const transientError = new TypeError("Failed to fetch");
+    const fetchMock = vi.fn()
+      .mockRejectedValueOnce(transientError)
+      .mockResolvedValueOnce(Response.json([{ player_tag: "#P0Y" }]));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = fetchSupabaseFresh(ROSTER_URL);
+    await vi.advanceTimersByTimeAsync(SUPABASE_READ_BACKOFF_BASE_MS);
+    const response = await result;
+
+    expect(response.status).toBe(200);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("immediately re-throws thrown non-transient errors without retrying", async () => {
+    const nonTransientError = new Error("Fatal authentication failure");
+    const fetchMock = vi.fn().mockRejectedValue(nonTransientError);
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(fetchSupabaseFresh(ROSTER_URL)).rejects.toThrow("Fatal authentication failure");
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("re-throws the final transient error when retries are exhausted", async () => {
+    vi.useFakeTimers();
+    const transientError = new TypeError("Failed to fetch");
+    const fetchMock = vi.fn().mockRejectedValue(transientError);
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = fetchSupabaseFresh(ROSTER_URL).catch(err => err);
+    await vi.advanceTimersByTimeAsync(ALL_BACKOFF_WINDOWS_MS);
+
+    expect(await result).toBe(transientError);
+    expect(fetchMock).toHaveBeenCalledTimes(SUPABASE_READ_RETRY_LIMIT + 1);
+  });
 });
 
 describe("Requests issued per failed sync", () => {

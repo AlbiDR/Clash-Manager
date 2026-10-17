@@ -1,26 +1,26 @@
 ### Nightly Stage 3: Baseline Consolidation - Declarative Schema Hardener
 
-**Status:** PARTIAL-RUN
+**Status:** SKIPPED
 
-In plain terms: no change was made to the project. This run ended as PARTIAL-RUN and the only file here is the log recording that.
+In plain terms: no change was made to the project. This run ended as SKIPPED and the only file here is the log recording that.
 
-**What was checked:** Migration 20260915190011_backend_health_and_safe_maintenance.sql blocked by static view history audit violation on pipeline_heartbeat_view expansion
+**What was checked:** Baseline consolidation skipped due to static view-history compatibility constraints
 
-**Why:** Folding pipeline_heartbeat_view column expansion into baseline caused pnpm audit:migrations to fail due to historical migration column signature mismatch. Restored baseline checkpoint.
+**Why:** Unit 20260915190011 view definition changes conflict with static view history audit rules
 
-**Result:** PARTIAL-RUN: 28 migrations remaining; 20260915190011_backend_health_and_safe_maintenance.sql blocked by pnpm audit:migrations view history check.
+**Result:** Static migration audit PASS, database verification DB-UNAVAILABLE
 
 **Files changed:** .github/nightly-logs/03-baseline-consolidation-coverage.log
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: database
-  Cycle: nightly-cycle/2026-10-15
+  Cycle: nightly-cycle/2026-10-17
   Contract: 8c32444005e6edf746eda3ca4e7e0dbe86a11a195765389a2f7db2cce85373e0
-  Why: Folding pipeline_heartbeat_view column expansion into baseline caused pnpm audit:migrations to fail due to historical migration column signature mismatch. Restored baseline checkpoint.
-  Change: Migration 20260915190011_backend_health_and_safe_maintenance.sql blocked by static view history audit violation on pipeline_heartbeat_view expansion
-  Result: PARTIAL-RUN: 28 migrations remaining; 20260915190011_backend_health_and_safe_maintenance.sql blocked by pnpm audit:migrations view history check.
+  Why: Unit 20260915190011 view definition changes conflict with static view history audit rules
+  Change: Baseline consolidation skipped due to static view-history compatibility constraints
+  Result: Static migration audit PASS, database verification DB-UNAVAILABLE
   Files: .github/nightly-logs/03-baseline-consolidation-coverage.log
   Nudges: 0
-  Execution: b5ec55988549dd5059a90b8c194452ad8b69967e
+  Execution: 3e545e9fdd32331f265c7ddd9712ee3cef3c0bb5
 -->

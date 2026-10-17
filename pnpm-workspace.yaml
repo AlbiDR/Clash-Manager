@@ -13,7 +13,7 @@ catalogs:
     # Infrastructure
     "@ast-grep/cli": "^0.45.3"
     "@formkit/auto-animate": "^0.10.0"
-    "@supabase/supabase-js": "^2.117.3"
+    "@supabase/supabase-js": "^2.118.0"
     "@types/node": "^26.6.5"
     "@vite-pwa/assets-generator": "^2.0.0"
     "@vitejs/plugin-vue": "^6.0.10"
@@ -44,6 +44,6 @@ catalogs:
     # Core Shared Dependencies (Consolidated)
     vue: "^3.5.44"
     vue-router: "^5.3.1"
-    vue-tsc: "^3.3.11"
+    vue-tsc: "^3.3.13"
     workbox-precaching: "^7.4.1"
     workbox-window: "^7.4.1"
