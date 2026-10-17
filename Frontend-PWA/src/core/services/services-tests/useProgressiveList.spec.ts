@@ -517,4 +517,47 @@ describe("useProgressiveList", () => {
     });
     scope.stop();
   });
+
+  it("handles minor refresh expansion when source exceeds current visible slice length", async () => {
+    const scope = effectScope();
+    await scope.run(async () => {
+      const source = ref(Array.from({ length: 20 }, (_, i) => i + 1));
+      const { visibleItems } = useProgressiveList(source, 10);
+
+      // Advance timers until fully rendered (20 items)
+      vi.advanceTimersByTime(1);
+      expect(visibleItems.value).toHaveLength(20);
+
+      // Minor refresh (+3 items, < 5 diff)
+      source.value = Array.from({ length: 23 }, (_, i) => i + 1);
+      await nextTick();
+
+      // Existing slice (20) preserved immediately
+      expect(visibleItems.value).toHaveLength(20);
+
+      // Next scheduled chunk completes rendering to 23
+      vi.advanceTimersByTime(1);
+      expect(visibleItems.value).toHaveLength(23);
+      expect(visibleItems.value[22]).toBe(23);
+    });
+    scope.stop();
+  });
+
+  it("calculates progressive chunking for large datasets exceeding 100 items", async () => {
+    const scope = effectScope();
+    await scope.run(async () => {
+      const source = ref(Array.from({ length: 125 }, (_, i) => i + 1));
+      const { visibleItems } = useProgressiveList(source, 10);
+
+      expect(visibleItems.value).toHaveLength(10);
+
+      // Chunk size is 20 for length > 100
+      vi.advanceTimersByTime(1); // 10 + 20 = 30
+      expect(visibleItems.value).toHaveLength(30);
+
+      vi.advanceTimersByTime(1); // 30 + 20 = 50
+      expect(visibleItems.value).toHaveLength(50);
+    });
+    scope.stop();
+  });
 });
