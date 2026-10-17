@@ -56,3 +56,9 @@ test('evidence uploads after failed collection and remains available for 30 days
   assert.match(upload, /if-no-files-found: warn/);
   assert.match(upload, /retention-days: 30/);
 });
+
+test('rolling log history uses only Actions read permission and the workflow token', () => {
+  assert.match(workflow, /permissions:\n\s+contents: read\n\s+actions: read/);
+  assert.match(stepBlock(workflow, 'Collect two samples 120 seconds apart'), /GH_TOKEN: \$\{\{ github.token \}\}/);
+  assert.doesNotMatch(workflow, /actions: write|contents: write/);
+});

@@ -159,3 +159,46 @@ test('missing resource captures are not normalized into zero pressure', () => {
   missing.resources.status = 'UNAVAILABLE';
   assert.equal(compareResourceReports(missing, fixture(200000, 10)).status, 'UNAVAILABLE');
 });
+
+test('scheduled observer fills bounded missing log hours without additional database probes and preserves degraded originals', async () => {
+  let clock = Date.parse('2026-10-17T12:17:00Z');
+  let healthCalls = 0;
+  const windows = [];
+  const oldWindow = { start: '2026-10-16T13:00:00.000Z', end: '2026-10-16T14:00:00.000Z' };
+  const previous = { provenance: { projectRef: 'abcdefghijklmnopqrst', workflow: { runId: 'old' } }, evidence: { status: 'DEGRADED', window: oldWindow } };
+  const result = await runObserver({ output: 'history.json', intervalSeconds: 120 }, {
+    now: () => clock, wait: async ms => { clock += ms; }, env: { GITHUB_ACTIONS: 'true', SUPABASE_PROJECT_REF: 'abcdefghijklmnopqrst' },
+    collect: async () => fixture(clock, healthCalls++ * 10),
+    collectLogs: async options => {
+      const window = options.window ?? { start: '2026-10-17T11:00:00.000Z', end: '2026-10-17T12:00:00.000Z' };
+      windows.push(window);
+      return { status: 'SUCCESS', window };
+    },
+    readHistory: async () => ({ status: 'SUCCESS', archives: [{ attempts: [previous, previous] }], unknowns: [] }),
+    save: async () => {},
+  });
+  assert.equal(healthCalls, 2);
+  assert.equal(windows.length, 7);
+  assert.equal(windows[1].start, oldWindow.start);
+  assert.equal(result.evidence.logArchive.additionalQueries, 6);
+  assert.equal(result.evidence.logArchive.attempts.filter(item => item.evidence.status === 'DEGRADED').length, 1);
+  assert.ok(result.evidence.logArchive.missingWindows.length > 0);
+  assert.equal(result.evidence.logArchive.status, 'DEGRADED');
+  assert.equal(result.exitCode, 0, 'collector success remains separate from archive/operational health');
+});
+
+test('missing history and catch-up errors stay explicit without erasing current host pair or prior failures', async () => {
+  let clock = Date.parse('2026-10-17T12:17:00Z');
+  let healthCalls = 0;
+  const result = await runObserver({ output: 'history.json', intervalSeconds: 120 }, {
+    now: () => clock, wait: async ms => { clock += ms; }, env: { GITHUB_ACTIONS: 'true', SUPABASE_PROJECT_REF: 'abcdefghijklmnopqrst' },
+    collect: async () => fixture(clock, healthCalls++ * 10),
+    collectLogs: async options => { if (options.window) throw new Error('secret=fixture');
+      return { status: 'SUCCESS', window: { start: '2026-10-17T11:00:00.000Z', end: '2026-10-17T12:00:00.000Z' } }; },
+    readHistory: async () => { throw new Error('secret=fixture'); }, save: async () => {},
+  });
+  assert.equal(result.evidence.logArchive.historyStatus, 'UNAVAILABLE');
+  assert.equal(result.evidence.logArchive.attempts.filter(item => item.evidence.status === 'UNAVAILABLE').length, 6);
+  assert.equal(result.evidence.samples.length, 2);
+  assert.doesNotMatch(JSON.stringify(result.evidence), /secret=fixture/);
+});

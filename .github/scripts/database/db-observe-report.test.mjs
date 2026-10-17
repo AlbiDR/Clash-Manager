@@ -45,3 +45,20 @@ test('declared provider window wins when setup crosses a UTC hour boundary', () 
   assert.equal(report.runs[0].slotBasis, 'declared_provider_window');
   assert.equal(report.runs[0].providerSourcesObserved, 0);
 });
+
+test('backfilled hours establish log collection only and deduplicate rolled archives while retaining failures', () => {
+  const first = entry('first');
+  first.value.samples[0].provenance.projectRef = 'project-one';
+  const provenance = first.value.samples[0].provenance;
+  const historical = { provenance, evidence: { status: 'SUCCESS',
+    window: { start: '2026-10-13T21:00:00Z', end: '2026-10-13T22:00:00Z' } } };
+  first.value.logArchive = { attempts: [historical, { ...historical, evidence: { ...historical.evidence, status: 'UNAVAILABLE' } },
+    { ...historical, provenance: { ...provenance, projectRef: 'different-project' } }] };
+  const second = structuredClone(first); second.file = 'rolled';
+  const result = summarizeObservations([first, second], from, to);
+  assert.equal(result.observedSlots, 1, 'backfilled hours cannot add host observations');
+  assert.equal(result.logCoverage[0].successfullyCollectedSlots, 1);
+  assert.equal(result.logCoverage[0].acquisitions.length, 2);
+  assert.ok(result.logCoverage[0].acquisitions.some(item => item.status === 'UNAVAILABLE'));
+  assert.equal(result.rejectedLogAcquisitions, 2);
+});

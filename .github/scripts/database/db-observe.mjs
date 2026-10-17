@@ -8,6 +8,7 @@ import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { collectHealthReport, compareDatabaseCounters, compareResourceReports } from './db-health.mjs';
 import { collectProjectLogEvidence, previousCompleteUtcHour } from './db-observe-logs.mjs';
+import { MAX_CATCHUP_HOURS, mergeLogAttempts, planLogCatchup, readObserverHistory } from './db-observe-history.mjs';
 
 const MAX_INTERVAL_SECONDS = 3600;
 const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
@@ -65,7 +66,7 @@ async function saveJson(outputPath, json, write = writeFile) {
 
 export async function runObserver({ output, intervalSeconds = 300 }, {
   collect = collectHealthReport, collectLogs = collectProjectLogEvidence, fetchImpl = fetch,
-  wait = pause, now = () => Date.now(), save = saveJson, env = process.env,
+  wait = pause, now = () => Date.now(), save = saveJson, env = process.env, readHistory = readObserverHistory,
 } = {}) {
   if (typeof output !== 'string' || !output || !Number.isInteger(intervalSeconds)
     || intervalSeconds < 120 || intervalSeconds > MAX_INTERVAL_SECONDS) throw new Error('Observer interval must be an integer from 120 to 3600 seconds and an output path is required.');
@@ -109,6 +110,51 @@ export async function runObserver({ output, intervalSeconds = 300 }, {
       rpcTraces: { limit: 50, records: [], truncated: false, malformedCount: 0 },
       unavailable: 'Analytics collector returned malformed evidence.', unknowns: ['Log evidence could not be acquired or interpreted.'] };
   }
+  // Artifact history stores log acquisitions only. It never turns historical
+  // log coverage into historical host metrics or continuous uptime.
+  let logArchive;
+  if (env.GITHUB_ACTIONS === 'true') {
+    const archiveNow = now();
+    let history;
+    try { history = await readHistory({ env }); }
+    catch { history = { status: 'UNAVAILABLE', archives: [], unknowns: ['Observer artifact history acquisition failed.'] }; }
+    const provenance = { ...samples[0]?.provenance, projectRef: samples[0]?.provenance?.projectRef ?? env.SUPABASE_PROJECT_REF ?? env.PROJECT_REF ?? null };
+    const current = { provenance, evidence: providerLogs };
+    const plan = planLogCatchup([...(history.archives ?? []), { attempts: [current] }], archiveNow, logWindow, provenance.projectRef);
+    const attempts = [...plan.attempts];
+    for (const window of plan.selected) {
+      let evidence;
+      try {
+        evidence = await collectLogs({ projectRef: provenance.projectRef ?? env.SUPABASE_PROJECT_REF ?? env.PROJECT_REF,
+          token: env.SUPABASE_ACCESS_TOKEN, pairStartedAt: archiveNow, window, fetchImpl });
+        if (!['SUCCESS', 'DEGRADED', 'UNAVAILABLE'].includes(evidence?.status)
+          || evidence?.window?.start !== window.start || evidence?.window?.end !== window.end) throw new Error('Malformed catch-up result');
+      } catch {
+        evidence = { status: 'UNAVAILABLE', window, unavailable: 'Catch-up analytics acquisition failed.',
+          acquisition: { startedAt: new Date(now()).toISOString(), completedAt: new Date(now()).toISOString() } };
+      }
+      attempts.push({ provenance, evidence });
+    }
+    const merged = mergeLogAttempts([{ attempts }], archiveNow, provenance.projectRef);
+    let omittedForSize = 0;
+    // The rolling archive must stay bounded even under repeated manual runs.
+    while (Buffer.byteLength(JSON.stringify(merged.attempts)) > 3 * 1024 * 1024) {
+      merged.attempts.shift(); omittedForSize++;
+    }
+    const remaining = planLogCatchup([{ attempts: merged.attempts }], archiveNow, logWindow).missing;
+    logArchive = { schemaVersion: 1, lookbackHours: 24, maximumAdditionalQueries: MAX_CATCHUP_HOURS,
+      historyStatus: history.status, historyUnknowns: [...(history.unknowns ?? []), ...(plan.projectMismatches
+        ? [`${plan.projectMismatches} historical acquisition(s) rejected because their project identity differs or is missing.`] : [])],
+      additionalQueries: plan.selected.length, invalidHistoryAttempts: plan.invalid, rejectedProjectAttempts: plan.projectMismatches,
+      historyTruncated: plan.truncated || merged.truncated || omittedForSize > 0,
+      attempts: merged.attempts, missingWindows: remaining,
+      status: remaining.length || history.status !== 'SUCCESS' || plan.invalid || plan.projectMismatches || plan.truncated || merged.truncated || omittedForSize
+        ? 'DEGRADED' : 'SUCCESS',
+      limitations: ['Only completed UTC hours starting within the last 24 hours are eligible.',
+        'Missing hours older than the retention horizon cannot be recovered here.',
+        'Original degraded acquisitions remain separate from later successful retries within the bounded archive.',
+        'Collection success does not mean the database or ingestion work was healthy.'] };
+  }
   const comparison = {
     resourceInterval: compareResourceReports(samples[0], samples[1]),
     databaseCounters: compareDatabaseCounters(samples[0], samples[1]),
@@ -129,6 +175,7 @@ export async function runObserver({ output, intervalSeconds = 300 }, {
       'Provider disk I/O budget and burst-credit metrics are not collected.',
     ],
     providerLogs,
+    ...(logArchive ? { logArchive } : {}),
   };
   await save(output, evidence);
   return { evidence, exitCode: samples.some(sample => sample.currentStatus !== 'REACHABLE')
