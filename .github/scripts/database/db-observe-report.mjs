@@ -20,6 +20,8 @@ export function summarizeObservations(entries, from, to) {
   const slots = new Map();
   const invalid = [];
   const runs = [];
+  const logAcquisitions = new Map();
+  let rejectedLogAcquisitions = 0;
   for (const { file, value } of entries) {
     if (value?.collector !== 'db-observe') {
       invalid.push(file);
@@ -41,6 +43,26 @@ export function summarizeObservations(entries, from, to) {
       continue;
     }
     const hour = logWindow ? logStart : Math.floor(acquired / HOUR_MS) * HOUR_MS - HOUR_MS;
+    // Backfilled log hours are not historical host/reachability samples.
+    const provenance = samples[0].provenance ?? {};
+    const logAttempts = [...(Array.isArray(value.logArchive?.attempts) ? value.logArchive.attempts : []),
+      ...(value.providerLogs?.window ? [{ provenance, evidence: value.providerLogs }] : [])];
+    for (const attempt of logAttempts) {
+      const evidence = attempt?.evidence;
+      const logFrom = Date.parse(evidence?.window?.start);
+      const logTo = Date.parse(evidence?.window?.end);
+      if (!Number.isFinite(logFrom) || logFrom % HOUR_MS || logTo - logFrom !== HOUR_MS
+        || !['SUCCESS', 'DEGRADED', 'UNAVAILABLE'].includes(evidence?.status)
+        || !provenance.projectRef || attempt?.provenance?.projectRef !== provenance.projectRef) {
+        rejectedLogAcquisitions++; continue;
+      }
+      if (logFrom < start || logFrom >= end) continue;
+      const key = JSON.stringify({ provenance: attempt.provenance, evidence });
+      logAcquisitions.set(key, { projectRef: provenance.projectRef, slot: new Date(logFrom).toISOString(),
+        status: evidence.status, acquisition: evidence.acquisition ?? null,
+        runId: attempt.provenance.workflow?.runId ?? null, checkout: attempt.provenance.checkout?.commit ?? null,
+        sourcesObserved: Object.values(evidence.sourceCoverage ?? {}).filter(status => status === 'EVENTS_OBSERVED').length });
+    }
     if (hour < start || hour >= end) continue;
     const slot = new Date(hour).toISOString();
     const run = {
@@ -62,9 +84,16 @@ export function summarizeObservations(entries, from, to) {
     expectedSlots: expected.length, observedSlots: slots.size,
     missingSlots: expected.filter(slot => !slots.has(slot)),
     duplicateSlots: [...slots].filter(([, records]) => records.length > 1).map(([slot, records]) => ({ slot, runs: records.length })),
+    logCoverage: [...new Set([...logAcquisitions.values()].map(item => item.projectRef))].map(projectRef => {
+      const acquisitions = [...logAcquisitions.values()].filter(item => item.projectRef === projectRef);
+      const successful = new Set(acquisitions.filter(item => item.status === 'SUCCESS').map(item => item.slot));
+      return { projectRef, expectedSlots: expected.length, successfullyCollectedSlots: successful.size,
+        missingOrDegradedSlots: expected.filter(slot => !successful.has(slot)), acquisitions };
+    }), rejectedLogAcquisitions,
     invalidFiles: invalid, runs: runs.sort((a, b) => a.slot.localeCompare(b.slot) || a.file.localeCompare(b.file)),
     limitations: [
       'Hourly reachability samples are not a continuous uptime measurement.',
+      'Backfilled log hours do not create historical host or app-read observations; successful log collection is not a health verdict.',
       'Missing slots and invalid files remain missing evidence; successful retakes do not erase degraded runs.',
       'Duplicate provider-log windows must not be summed; this report preserves runs separately.',
       'Each release and checkout remain attached to the run; changes across versions are not a controlled comparison.',
@@ -103,6 +132,8 @@ export async function reportCli(args) {
       `Observation window: ${result.from} to ${result.to} (end excluded)`,
       `Hourly coverage: ${result.observedSlots}/${result.expectedSlots} slots; ${result.missingSlots.length} missing`,
       `Saved runs: ${result.runs.length}; ${result.runs.filter(complete).length} with reachable reads, valid resource pairs and events observed from all four log sources`,
+      ...result.logCoverage.map(project => `Provider logs (${project.projectRef}): ${project.successfullyCollectedSlots}/${project.expectedSlots} hours successfully collected; ${project.missingOrDegradedSlots.length} missing/degraded; ${project.acquisitions.length} original acquisitions`),
+      `Rejected log acquisitions: ${result.rejectedLogAcquisitions}`,
       `Duplicate slots: ${result.duplicateSlots.length}; invalid files: ${result.invalidFiles.length}`,
       `Releases: ${[...new Set(result.runs.map(run => run.release ?? 'unknown'))].join(', ') || 'none'}`,
       ...result.limitations,

@@ -2,6 +2,8 @@
 // Copyright (C) 2026 AlbiDR
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import * as v from "npm:valibot@1.5.0";
+import { IntegrityCheckDetailsSchema } from "../../../_shared/substrateSchemas.ts";
 import type { ScannerStats, AuditEntry } from "../../../_shared/types.ts";
 
 /**
@@ -53,6 +55,26 @@ beforeEach(() => {
 });
 
 describe("runShadowScout", () => {
+    it.each([
+        { label: "empty", targets: [] },
+        { label: "nonempty", targets: [{ opponent_player_tag: "#SHADOW1" }] },
+    ])("emits a protocol-valid passed check for a valid $label target list", async ({ targets }) => {
+        rpcResponses.get_shadow_discovery_targets = { data: targets, error: null };
+        const { entries, logAudit } = makeAuditCollector();
+
+        await runShadowScout(new Map(), new Set(), freshStats(), logAudit);
+
+        const checks = entries.filter((entry) => entry.action === "integrity_checked");
+        expect(checks).toHaveLength(1);
+        // Use the same strict shared contract as protocol.ts: passed:true alone
+        // cannot make a malformed details object a successful integrity check.
+        const parsedCheck = v.safeParse(IntegrityCheckDetailsSchema, checks[0].details);
+        expect(parsedCheck.success).toBe(true);
+        if (!parsedCheck.success) throw new Error("Successful shadow check violates the protocol contract");
+        expect(parsedCheck.output.passed).toBe(true);
+        expect(checks[0].details).not.toHaveProperty("issues");
+    });
+
     it("does not populate candidates and logs the failure when the RPC errors", async () => {
         rpcResponses.get_shadow_discovery_targets = { data: null, error: { message: "shadow rpc failed" } };
 
@@ -67,6 +89,7 @@ describe("runShadowScout", () => {
             (entry) => entry.action === "integrity_checked" && JSON.stringify(entry.details).includes("shadow rpc failed"),
         );
         expect(failureEntry).toBeDefined();
+        expect(v.parse(IntegrityCheckDetailsSchema, failureEntry?.details).passed).toBe(false);
         // A failed read is a failure, not "no shadow targets": it must reach stats.errors
         // and keep this run's Top 50 count away from the epoch guard.
         expect(stats.errors.some((error) => error.includes("shadow rpc failed"))).toBe(true);
@@ -116,6 +139,9 @@ describe("runShadowScout", () => {
             (entry) => entry.action === "integrity_checked" && JSON.stringify(entry.details).includes("Unexpected RPC data shape"),
         );
         expect(failureEntry).toBeDefined();
+        const failedCheck = v.parse(IntegrityCheckDetailsSchema, failureEntry?.details);
+        expect(failedCheck.passed).toBe(false);
+        expect(failedCheck.issues?.length).toBeGreaterThan(0);
         expect(stats.top50_unknown_reasons).toContain("ShadowScout: shadow targets failed validation");
     });
 

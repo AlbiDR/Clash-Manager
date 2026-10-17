@@ -91,7 +91,7 @@ function safeHttp(response) {
 function failedEvidence(window, reason, http = null) {
   return {
     status: 'UNAVAILABLE', source: 'supabase-management-analytics-logs',
-    window: { ...window, basis: 'previous_complete_utc_hour_at_pair_start' },
+    window: { ...window, basis: window.basis ?? 'previous_complete_utc_hour_at_pair_start' },
     http, sourceCoverage: { edge_logs: 'UNAVAILABLE', postgrest_logs: 'UNAVAILABLE', postgres_logs: 'UNAVAILABLE', function_logs: 'UNAVAILABLE' },
     aggregates: null, failedDataApiRequests: { limit: DETAIL_LIMIT, records: [], truncated: false, malformedCount: 0 },
     rpcTraces: { limit: DETAIL_LIMIT, records: [], truncated: false, malformedCount: 0 },
@@ -249,7 +249,7 @@ export function normalizeProjectLogsResponse(payload, window, http = null) {
       ? 'DEGRADED' : 'SUCCESS',
     source: 'supabase-management-analytics-logs',
     queryStatus: 'SUCCESS',
-    window: { ...window, basis: 'previous_complete_utc_hour_at_pair_start' }, http,
+    window: { ...window, basis: window.basis ?? 'previous_complete_utc_hour_at_pair_start' }, http,
     sourceCoverage,
     aggregates: {
       apiGatewayEntries: counts.get('edge_total') ?? null,
@@ -273,8 +273,14 @@ export function normalizeProjectLogsResponse(payload, window, http = null) {
   };
 }
 
-export async function collectProjectLogEvidence({ projectRef, token, pairStartedAt = Date.now(), fetchImpl = fetch } = {}) {
-  const window = previousCompleteUtcHour(pairStartedAt);
+export async function collectProjectLogEvidence({ projectRef, token, pairStartedAt = Date.now(), window: requestedWindow, fetchImpl = fetch } = {}) {
+  const window = requestedWindow ?? previousCompleteUtcHour(pairStartedAt);
+  const start = Date.parse(window.start);
+  const end = Date.parse(window.end);
+  if (![start, end].every(Number.isFinite) || start % 3_600_000 || end - start !== 3_600_000
+    || end > Math.floor(pairStartedAt / 3_600_000) * 3_600_000 || start < pairStartedAt - 24 * 3_600_000) {
+    throw new Error('Log window must be a completed UTC hour within the previous 24 hours.');
+  }
   const acquisitionStartedAt = new Date().toISOString();
   const withAcquisition = evidence => ({ ...evidence,
     acquisition: { startedAt: acquisitionStartedAt, completedAt: new Date().toISOString() } });
