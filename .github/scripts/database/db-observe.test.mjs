@@ -69,6 +69,7 @@ test('two samples are spaced by the requested bounded interval and use canonical
   let count = 0;
   let saved;
   const result = await runObserver({ output: 'capture.json', intervalSeconds: 120 }, {
+    env: {},
     now: () => clock,
     wait: async ms => { clock += ms; },
     collect: async () => { const report = fixture(clock, count++ ? 10 : 0); clock += 1000; return report; },
@@ -135,6 +136,7 @@ test('one unavailable pair-level logs result is saved without aborting health ca
   let logCalls = 0;
   let saved;
   const result = await runObserver({ output: 'pair.json', intervalSeconds: 120 }, {
+    env: {},
     now: () => clock, wait: async ms => { clock += ms; },
     collect: async () => { const report = fixture(clock, healthCalls ? 10 : 0); healthCalls += 1; clock += 1000; return report; },
     collectLogs: async () => { logCalls += 1; return { status: 'UNAVAILABLE', unavailable: 'API HTTP 200 query error' }; },
