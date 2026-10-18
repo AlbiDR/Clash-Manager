@@ -266,7 +266,9 @@ type CachedSnapshotRows<T> = { marker: SnapshotRefreshMarker; rows: T[] };
 type RosterSnapshotRow = v.InferOutput<typeof SbRosterRowSchema>;
 type HeadhunterSnapshotRow = v.InferOutput<typeof SbHeadhunterRowSchema>;
 
-// In-memory only: a cold start always obtains snapshots once before it can skip reads.
+// EPHEMERAL: intentionally resets on cold start
+// [THREAT:] In-memory snapshot row caches reset on cold start or module re-load;
+// fresh snapshot reads are re-validated via sync_snapshot_marker on app start.
 let rosterSnapshotCache: CachedSnapshotRows<RosterSnapshotRow> | null = null;
 let headhunterSnapshotCache: CachedSnapshotRows<HeadhunterSnapshotRow> | null = null;
 
