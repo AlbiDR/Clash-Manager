@@ -4,23 +4,23 @@
 
 In plain terms: nothing needed fixing. This run checked the APK integrity area and found it already correct, so the only file here is the log recording that the check happened.
 
-**What was checked:** Verified APK and PWA wrapper invariants across asset links, manifest parity, version code/name sync, release metadata, and security policy using pnpm audit:apk, pnpm apk:verify, and pnpm apk:verify:source.
+**What was checked:** No wrapper configuration changes required; checked manifest parity, asset links, version codes, release metadata, and security profile
 
-**Why:** No configuration mismatches, version drift, or security policy violations were found in recent changes or current wrapper definitions.
+**Why:** All wrapper configurations, manifest parameters, asset links fingerprints, version codes, release pointers, and network security policies are aligned
 
-**Result:** Passed all wrapper integrity and native invariant test suites: pnpm audit:apk, pnpm apk:verify, pnpm apk:verify:source, pnpm test:apk-native, pnpm test:version-code, and pnpm test:apk-release.
+**Result:** Passed pnpm audit:apk, pnpm test:apk-native, pnpm test:apk-release, and pnpm test:apk-slot-sync
 
 **Files changed:** .github/nightly-logs/10-apk-integrity-coverage.log
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: apk
-  Cycle: nightly-cycle/2026-10-17
+  Cycle: nightly-cycle/2026-10-18
   Contract: 4f9b40864d05ffea731090b36800572dd7affedd8532fcd17c8ded8c9e2fbc12
-  Why: No configuration mismatches, version drift, or security policy violations were found in recent changes or current wrapper definitions.
-  Change: Verified APK and PWA wrapper invariants across asset links, manifest parity, version code/name sync, release metadata, and security policy using pnpm audit:apk, pnpm apk:verify, and pnpm apk:verify:source.
-  Result: Passed all wrapper integrity and native invariant test suites: pnpm audit:apk, pnpm apk:verify, pnpm apk:verify:source, pnpm test:apk-native, pnpm test:version-code, and pnpm test:apk-release.
+  Why: All wrapper configurations, manifest parameters, asset links fingerprints, version codes, release pointers, and network security policies are aligned
+  Change: No wrapper configuration changes required; checked manifest parity, asset links, version codes, release metadata, and security profile
+  Result: Passed pnpm audit:apk, pnpm test:apk-native, pnpm test:apk-release, and pnpm test:apk-slot-sync
   Files: .github/nightly-logs/10-apk-integrity-coverage.log
   Nudges: 0
-  Execution: f692d8e6dd29d0bbcbb7931d2d3a3c5a9a6efeda
+  Execution: 25550adf5f28cc77e6255d6e8bf8a3fa4b4d26cf
 -->
