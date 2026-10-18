@@ -254,6 +254,13 @@ describe("RecruitClient", () => {
       const items = [{ id: 'ABC', score: 80 }];
       await expect(RecruitClient.dismissRecruits(items)).rejects.toThrow();
     });
+
+    it("undismissRecruits throws Valibot error on malformed RPC response", async () => {
+      vi.mocked(mockClient.rpc).mockResolvedValue({ data: { count: 5 }, error: null });
+
+      const ids = ['ABC'];
+      await expect(RecruitClient.undismissRecruits(ids)).rejects.toThrow();
+    });
   });
 
   describe("Realtime", () => {
@@ -309,6 +316,15 @@ describe("RecruitClient", () => {
 
       expect(onError).toHaveBeenCalledWith(expect.any(RecruitClient.BlacklistSubscriptionError));
       expect(onError.mock.calls[0]![0].message).toBe("Invalid blacklist insert event");
+
+      onError.mockClear();
+      const deleteHandler = vi.mocked(mockChannel.on).mock.calls.find(
+        call => call[1].event === "DELETE"
+      )![2];
+      deleteHandler({ old: { invalid: true } });
+
+      expect(onError).toHaveBeenCalledWith(expect.any(RecruitClient.BlacklistSubscriptionError));
+      expect(onError.mock.calls[0]![0].message).toBe("Invalid blacklist delete event");
     });
 
     it("onDelete callback is triggered on DELETE event with valid payload", () => {
@@ -388,6 +404,29 @@ describe("RecruitClient", () => {
       expect(firstOnError).toHaveBeenCalledWith(expect.any(RecruitClient.BlacklistSubscriptionError));
       expect(firstOnError.mock.calls[0]![0].cause).toBe(subscriberFailure);
       expect(secondOnInsert).toHaveBeenCalledWith("#SHARED");
+    });
+
+    it("isolates a failing onDelete subscriber and propagates its error for both sync and async failures", async () => {
+      const syncFailure = new Error("onDelete sync error");
+      const asyncFailure = new Error("onDelete async error");
+      const onErrorSync = vi.fn();
+      const onErrorAsync = vi.fn();
+
+      subscribeToBlacklistForTest(vi.fn(), () => { throw syncFailure; }, onErrorSync);
+      subscribeToBlacklistForTest(vi.fn(), () => Promise.reject(asyncFailure), onErrorAsync);
+
+      const deleteHandler = vi.mocked(mockChannel.on).mock.calls.find(
+        call => call[1].event === "DELETE"
+      )![2];
+      deleteHandler({ old: { player_tag: "#DEL" } });
+
+      expect(onErrorSync).toHaveBeenCalledWith(expect.any(RecruitClient.BlacklistSubscriptionError));
+      expect(onErrorSync.mock.calls[0]![0].message).toBe("Blacklist delete handler failed");
+      expect(onErrorSync.mock.calls[0]![0].cause).toBe(syncFailure);
+
+      await vi.waitFor(() => expect(onErrorAsync).toHaveBeenCalledOnce());
+      expect(onErrorAsync.mock.calls[0]![0].message).toBe("Blacklist delete handler failed");
+      expect(onErrorAsync.mock.calls[0]![0].cause).toBe(asyncFailure);
     });
 
     it("propagates an asynchronously rejected subscriber callback", async () => {
@@ -488,10 +527,15 @@ describe("RecruitClient", () => {
       expect(onResync).toHaveBeenCalledOnce();
     });
 
-    it("reports a failed resync through the error channel", async () => {
-      const onError = vi.fn();
-      const resyncFailure = new Error("refresh failed");
-      subscribeToBlacklistForTest(vi.fn(), vi.fn(), onError, () => Promise.reject(resyncFailure));
+    it("reports a failed resync through the error channel for sync and async throws", async () => {
+      const onErrorAsync = vi.fn();
+      const asyncFailure = new Error("refresh failed async");
+      subscribeToBlacklistForTest(vi.fn(), vi.fn(), onErrorAsync, () => Promise.reject(asyncFailure));
+
+      const onErrorSync = vi.fn();
+      const syncFailure = new Error("refresh failed sync");
+      subscribeToBlacklistForTest(vi.fn(), vi.fn(), onErrorSync, () => { throw syncFailure; });
+
       const subscriptionStatusHandler = vi.mocked(mockChannel.subscribe).mock.calls[0]![0];
 
       mockClient.realtime.isConnected.mockReturnValue(false);
@@ -499,8 +543,12 @@ describe("RecruitClient", () => {
       mockClient.realtime.isConnected.mockReturnValue(true);
       subscriptionStatusHandler("SUBSCRIBED");
 
-      await vi.waitFor(() => expect(onError).toHaveBeenCalledOnce());
-      expect(onError.mock.calls[0]![0].cause).toBe(resyncFailure);
+      expect(onErrorSync).toHaveBeenCalledWith(expect.any(RecruitClient.BlacklistSubscriptionError));
+      expect(onErrorSync.mock.calls[0]![0].message).toBe("Blacklist resync failed");
+      expect(onErrorSync.mock.calls[0]![0].cause).toBe(syncFailure);
+
+      await vi.waitFor(() => expect(onErrorAsync).toHaveBeenCalledOnce());
+      expect(onErrorAsync.mock.calls[0]![0].cause).toBe(asyncFailure);
     });
 
     it("does not report successful channel subscription statuses", () => {
