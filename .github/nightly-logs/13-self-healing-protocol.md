@@ -692,56 +692,71 @@
   - Root Cause: Static view history audit check flagged view dependency order or projection structural mismatch on `pipeline_heartbeat_view` during baseline consolidation attempt.
   - Recommended Fix: Reconcile `pipeline_heartbeat_view` definition in baseline schema against unit migration alterations.
 
+* Incremental Migration Quality Audit Failure on Expose PWA Client Surfaces (Stage 3, 2026-10-18):
+  - Stage: Stage 3 (Baseline Consolidation)
+  - State: [ACTIVE - monitor] (2026-10-18)
+  - PR: PR #2253 (PARTIAL-RUN)
+  - Symptom: Stage 3 completed with status `PARTIAL-RUN` (`[checks database-verification=DB-UNAVAILABLE fold-state=PENDING migration-quality=PASS]`). Incremental migration quality audit failed on `20260817000000_expose_pwa_client_surfaces.sql`.
+  - Root Cause: Validation script `migration-quality.mjs` flagged structural or syntax issues on `20260817000000_expose_pwa_client_surfaces.sql` during incremental migration audit pass.
+  - Recommended Fix: Reconcile `20260817000000_expose_pwa_client_surfaces.sql` against migration quality invariants.
+
+* Pipeline Degrading Health Warning on Stages 1 & 12 (2026-10-18):
+  - Stages: Stage 1 (Hardening) and Stage 12 (APK UX)
+  - State: [ACTIVE - monitor] (2026-10-18)
+  - Symptom: Health verdicts in control plane ledger reported `DEGRADING` status for Stage 1 (streak 3, intervention rate rose to 18%) and Stage 12 (streak 1, intervention rate rose to 21%).
+  - Root Cause: Historical watchdog recovery nudge interventions over recent execution cycles elevated intervention rates above health thresholds despite successful merges.
+  - Recommended Fix: Audit stage execution duration and watchdog dispatch timing parameters for Stage 1 and Stage 12 to reduce required recovery nudges.
+
 ## Section 3: No-Diff and Low-Value Audit (Priority 3)
 
 * Stage 1 (Harden):
-  - Consecutive No-Diff Days: 1 (Session stalled / missing output on 2026-10-17; audit duration: 6m, median 6m)
-  - Analysis: Session stalled (`JULES_SESSION_STUCK`, 201.5m lifetime); no output published for 2026-10-17.
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-10-18 in SupabaseClient.ts, PR #2250; audit duration: 5m, median 6m)
+  - Analysis: Annotated in-memory snapshot caches in SupabaseClient.ts with explicit EPHEMERAL comments (PR #2250). Health status DEGRADING (streak 3).
 
 * Stage 2 (Verify):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-10-17 in useProgressiveList.spec.ts, PR #2238; audit duration: 13m, median 13m)
-  - Analysis: Expanded useProgressiveList unit test suite with tests for minor refresh list expansion and chunking calculation on large datasets >100 items (PR #2238).
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-10-18 in RecruitClient.spec.ts, PR #2251; audit duration: 11m, median 13m)
+  - Analysis: Expanded RecruitClient.ts unit test suite in RecruitClient.spec.ts (PR #2251).
 
 * Stage 3 (Baseline Consolidation):
-  - Consecutive No-Diff Days: 1 (SKIPPED logged on 2026-10-17, PR #2239; audit duration: 0m, median 3m)
-  - Analysis: Baseline consolidation skipped due to static view-history compatibility constraints on pipeline_heartbeat_view (PR #2239).
+  - Consecutive No-Diff Days: 2 (PARTIAL-RUN logged on 2026-10-18, PR #2253; audit duration: 3m, median 3m)
+  - Analysis: Migration quality audit failed on incremental migration 20260817000000_expose_pwa_client_surfaces.sql (PR #2253).
 
 * Stage 4 (Optimization):
-  - Consecutive No-Diff Days: 4 (CLEAN logged on 2026-10-17, PR #2240; audit duration: 4m, median 5m)
-  - Analysis: Audited 74 changed files and Edge Functions/Frontend view references via source-level grep; 0 performance bottlenecks found (PR #2240).
+  - Consecutive No-Diff Days: 5 (CLEAN logged on 2026-10-18, PR #2254; audit duration: 5m, median 5m)
+  - Analysis: Audited 88 changed files and Edge Functions/Frontend view references via source-level grep; zero performance bottlenecks found (PR #2254).
 
 * Stage 5 (README):
-  - Consecutive No-Diff Days: 2 (CLEAN logged on 2026-10-17, PR #2241; audit duration: 2m, median 4m)
-  - Analysis: Audited codebase README files against implementation truth; verified zero documentation drift (PR #2241).
+  - Consecutive No-Diff Days: 3 (CLEAN logged on 2026-10-18, PR #2255; audit duration: 4m, median 4m)
+  - Analysis: Audited codebase README files against implementation truth; verified zero documentation drift (PR #2255).
 
 * Stage 6 (TSDoc):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-10-17 in apkManagerUtils.ts, PR #2242; audit duration: 7m, median 6m)
-  - Analysis: Hardened apkManagerUtils interface contracts and inline decision annotations in Frontend-PWA (PR #2242).
+  - Consecutive No-Diff Days: 1 (CLEAN logged on 2026-10-18, PR #2256; audit duration: 3m, median 6m)
+  - Analysis: Verified doc debt files SupabaseClient.ts and useClashSync.ts documentation accuracy (PR #2256).
 
 * Stage 7 (Version Integrity):
-  - Consecutive No-Diff Days: 167 (CLEAN logged on 2026-10-17, PR #2243; audit duration: 5m, median 3m)
-  - Analysis: Catalog scan and package-version scan verified at 14.55.4 with pnpm audit:version passing cleanly (PR #2243).
+  - Consecutive No-Diff Days: 168 (CLEAN logged on 2026-10-18, PR #2258; audit duration: 3m, median 3m)
+  - Analysis: Catalog scan and package-version scan across 3 package.json files and pnpm audit:version verified ground truth at 14.55.6 (PR #2258).
 
 * Stage 8 (Dependency Audit):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-10-17 in pnpm-lock.yaml, PR #2244; audit duration: 5m, median 7m)
-  - Analysis: Bumped vue-tsc from ^3.3.11 to ^3.3.13 in workspace catalog (PR #2244).
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-10-18 in package.json/pnpm-lock.yaml, PR #2257; audit duration: 6m, median 6.5m)
+  - Analysis: Bumped vite to ^8.3.4 in catalogs and pnpm-lock.yaml (PR #2257).
 
 * Stage 9 (Refactor):
-  - Consecutive No-Diff Days: 2 (CLEAN logged on 2026-10-17, PR #2245; audit duration: 3m, median 6m)
-  - Analysis: Audited 59 files, 0 dep-violations, knip 11 files; streak 1 (PR #2245).
+  - Consecutive No-Diff Days: 3 (CLEAN logged on 2026-10-18, PR #2259; audit duration: 5m, median 6m)
+  - Analysis: Audited 88 files, 0 dep-violations, knip 11 files; streak 2 (PR #2259).
 
 * Stage 10 (APK-Integrity):
-  - Consecutive No-Diff Days: 100 (CLEAN logged on 2026-10-17, PR #2246; audit duration: 2m, median 3m)
-  - Analysis: Verified APK and PWA wrapper invariants across asset links, manifest parity, version code/name sync, release metadata, and security policy (PR #2246).
+  - Consecutive No-Diff Days: 101 (CLEAN logged on 2026-10-18, PR #2260; audit duration: 2m, median 3m)
+  - Analysis: Verified manifest parity, asset links, version codes, release metadata, and security profile; zero wrapper configuration changes required (PR #2260).
 
 * Stage 11 (APK-Optimization):
-  - Consecutive No-Diff Days: 5 (CLEAN logged on 2026-10-17, PR #2247; audit duration: 9m, median 3m)
-  - Analysis: Audited WebView configurations, Android manifest, SW routes, Vite chunking, and static precache footprint; 9/9 performance invariants pass (PR #2247).
+  - Consecutive No-Diff Days: 6 (CLEAN logged on 2026-10-18, PR #2261; audit duration: 2m, median 3m)
+  - Analysis: Audited WebView performance settings, Service Worker routes, Vite code splitting, and static precache footprint; zero source changes required (PR #2261).
 
 * Stage 12 (APK-UX):
-  - Consecutive No-Diff Days: 19 (CLEAN logged on 2026-10-17, PR #2248; audit duration: 7m, median 4m)
-  - Analysis: Completed APK UX audit with zero candidate issues identified across frontend files (PR #2248).
+  - Consecutive No-Diff Days: 20 (CLEAN logged on 2026-10-18, PR #2262; audit duration: 1m, median 4m)
+  - Analysis: Completed APK UX audit across 77 files examined with zero UX issues found (PR #2262). Health status DEGRADING (streak 1).
 
 * Stage 13 (Self-Healing):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-10-17; audit duration: 8m)
-  - Analysis: Completed daily self-healing audit pass for 2026-10-17: documented Stage 1 session failure (`JULES_SESSION_STUCK`) in Section 1 and updated Section 3 metrics across Stages 1-13.
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-10-18; audit duration: 4m)
+  - Analysis: Completed daily self-healing audit pass for 2026-10-18: documented Stage 3 PARTIAL-RUN and Stage 1/12 DEGRADING health alerts in Section 1, and updated Section 3 metrics across Stages 1-13.
