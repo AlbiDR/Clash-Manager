@@ -1,29 +1,29 @@
 ### Nightly Stage 6: Documentation TSDoc - Interface Contract Architect
 
-**Status:** CHANGED
+**Status:** CLEAN
 
-In plain terms: this changes 1 code file, so the app's behaviour may be affected. No tests were added or changed alongside it.
+In plain terms: nothing needed fixing. This run checked the documentation TSDoc area and found it already correct, so the only file here is the log recording that the check happened.
 
-**What changed:** docs(tsdoc): harden apkManagerUtils interface contracts and inline decision annotations
+**What was checked:** Verified doc debt files SupabaseClient.ts and useClashSync.ts documentation accuracy
 
-**Why:** Documented Layer 1 APK manager utility interface contracts, ADR Section I/III/IV links, decision logs, threat tags, and inline logic annotations.
+**Why:** Doc debt items audited and verified accurate against code reality
 
-**Result:** PASSED type-check and Vitest apkManagerUtils unit tests (7/7)
+**Result:** Clean audit, 0 source changes required
 
-**Files changed:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, Frontend-PWA/src/core/services/apkManagerUtils.ts
+**Files changed:** .github/nightly-logs/06-documentation-tsdoc-coverage.log
 
-**Verified accurate:** Frontend-PWA/src/core/services/apkManagerUtils.ts
+**Verified accurate:** Frontend-PWA/src/core/api/SupabaseClient.ts, Frontend-PWA/src/core/services/useClashSync.ts
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: documentation
-  Cycle: nightly-cycle/2026-10-17
+  Cycle: nightly-cycle/2026-10-18
   Contract: a9f522cc73babe487aa3df1b083524daba64c0dd03c9e1b446dd4bd70c376bae
-  Why: Documented Layer 1 APK manager utility interface contracts, ADR Section I/III/IV links, decision logs, threat tags, and inline logic annotations.
-  Change: docs(tsdoc): harden apkManagerUtils interface contracts and inline decision annotations
-  Result: PASSED type-check and Vitest apkManagerUtils unit tests (7/7)
-  Files: .github/nightly-logs/06-documentation-tsdoc-coverage.log, Frontend-PWA/src/core/services/apkManagerUtils.ts
-  Verified: Frontend-PWA/src/core/services/apkManagerUtils.ts
+  Why: Doc debt items audited and verified accurate against code reality
+  Change: Verified doc debt files SupabaseClient.ts and useClashSync.ts documentation accuracy
+  Result: Clean audit, 0 source changes required
+  Files: .github/nightly-logs/06-documentation-tsdoc-coverage.log
+  Verified: Frontend-PWA/src/core/api/SupabaseClient.ts, Frontend-PWA/src/core/services/useClashSync.ts
   Nudges: 0
-  Execution: 2d20b553230f4a957d00e14b0065141cffcf42ff
+  Execution: ec7c9fd5c30166170e70c1ef2ad2c91b24a54878
 -->
