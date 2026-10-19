@@ -7,6 +7,7 @@ import * as ProfileClient from "../ProfileClient";
 // Named Constants for compliance with "No Hardcoded Numbers" policy
 const HTTP_STATUS_BAD_REQUEST = 400;
 const HTTP_STATUS_NOT_FOUND = 404;
+const HTTP_STATUS_INTERNAL_SERVER_ERROR = 500;
 
 const MOCK_KING_LEVEL_FOURTEEN = 14;
 const MOCK_XP_INTO_LEVEL_ZERO = 0;
@@ -94,6 +95,18 @@ describe("ProfileClient", () => {
       await expect(ProfileClient.getPlayerProfile('MISSING')).rejects.toThrow('Profile not found');
     });
 
+    it("getPlayerProfile falls back to HTTP status error message if response JSON parsing fails", async () => {
+      vi.mocked(global.fetch).mockResolvedValue({
+        ok: false,
+        status: HTTP_STATUS_INTERNAL_SERVER_ERROR,
+        json: async () => {
+          throw new SyntaxError('Unexpected token < in JSON at position 0');
+        },
+      } as any);
+
+      await expect(ProfileClient.getPlayerProfile('FAIL')).rejects.toThrow('HTTP 500');
+    });
+
     it("getPlayerProfile throws if validation fails", async () => {
       vi.mocked(global.fetch).mockResolvedValue({
         ok: false,
@@ -142,16 +155,30 @@ describe("ProfileClient", () => {
       expect(result.inventory.gold).toBe(MOCK_GOLD_VALUE);
       expect(result.inventory.gems).toBe(MOCK_GEMS_VALUE);
     });
+
+    it("getPlayerProfile handles missing cards and towerTroops arrays cleanly", async () => {
+      vi.mocked(global.fetch).mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          profile: { tag: '#TAG123', name: 'Tester' }
+        }),
+      } as any);
+
+      const result = await ProfileClient.getPlayerProfile('#TAG123') as any;
+      expect(result.cards).toEqual([]);
+      expect(result.profile.name).toBe('Tester');
+    });
   });
 
-  describe("Caching", () => {
+  describe("Caching and Lifecycle", () => {
     it("getPlayerProfile throws fetch errors if no cache available", async () => {
       vi.mocked(global.fetch).mockRejectedValue(new TypeError('Failed to fetch'));
 
       await expect(ProfileClient.getPlayerProfile('MYTAG')).rejects.toThrow('Failed to fetch');
     });
 
-    it("passes an abort signal to the profile sync request", async () => {
+    it("passes an abort signal to the profile sync request and clears timer", async () => {
+      const clearTimeoutSpy = vi.spyOn(globalThis, 'clearTimeout');
       vi.mocked(global.fetch).mockResolvedValue({
         ok: true,
         json: async () => ({}),
@@ -163,6 +190,7 @@ describe("ProfileClient", () => {
         expect.stringContaining("/functions/v1/sync-player-cards"),
         expect.objectContaining({ signal: expect.any(AbortSignal) }),
       );
+      expect(clearTimeoutSpy).toHaveBeenCalled();
     });
   });
 });
