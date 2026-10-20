@@ -628,6 +628,14 @@
   - Root Cause: Unfinalized session sentinel or delayed PR publication triggered fallback publish mechanism in nightly watchdog.
   - Resolution Details: Fallback publish mechanism successfully published staged patch (PR #2272). Pipeline intervention rate for 2026-10-19: 1/12 published stages (8.3%).
 
+* Watchdog Recovery Nudge Intervention and Health Degradation on 2026-10-20:
+  - Stage: Stage 1 (Hardening)
+  - State: [RESCUED - monitor] (2026-10-20)
+  - Session: sessions/8095961746710415777
+  - Symptom: Stage 1 session required a watchdog recovery nudge dispatch (`nudgedAt: 2026-10-20T01:42:22.026Z`) due to stalling during session finalization reserve. Health verdict degraded to `DEGRADING` (reason: "intervention rate rose from 15% to 21%").
+  - Root Cause: Prolonged post-execution reserve / PR finalization processing reaching watchdog recovery thresholds prior to publication.
+  - Resolution Details: Watchdog nudge successfully recovered the session (`ok: true`). Stage 1 completed and merged PR #2280 (CHANGED coverage log entry) for 2026-10-20. Pipeline intervention rate for 2026-10-20: 1/12 merged stages (8.3%).
+
 ## Section 2: Cross-Stage Coherence Bugs (Priority 2)
 
 * Duplicate Merge Failure Blocks in 00-pr-history.md:
@@ -723,56 +731,64 @@
   - Root Cause: Static view history audit check flagged view dependency order or projection structural mismatch on `pipeline_heartbeat_view` during baseline consolidation attempt.
   - Recommended Fix: Reconcile `pipeline_heartbeat_view` definition in baseline schema against unit migration alterations.
 
+* Static View History Audit Constraint on Migration Baseline Consolidation (Stage 3, 2026-10-20):
+  - Stage: Stage 3 (Baseline Consolidation)
+  - State: [ACTIVE - monitor] (2026-10-20)
+  - PR: PR #2278 (PARTIAL-RUN)
+  - Symptom: Stage 3 completed with status `PARTIAL-RUN` (`[checks database-verification=DB-UNAVAILABLE fold-state=PENDING migration-quality=PASS]`). Stopped folding at `20260915190011_backend_health_and_safe_maintenance.sql` due to view history audit constraint on `pipeline_heartbeat_view`.
+  - Root Cause: Static view history audit check flagged view dependency order or projection structural mismatch on `pipeline_heartbeat_view` during baseline consolidation attempt.
+  - Recommended Fix: Reconcile `pipeline_heartbeat_view` definition in baseline schema against unit migration alterations.
+
 ## Section 3: No-Diff and Low-Value Audit (Priority 3)
 
 * Stage 1 (Harden):
-  - Consecutive No-Diff Days: 1 (CLEAN logged on 2026-10-19, PR #2264; audit duration: 9m, median 6m)
-  - Analysis: Audit 5 priority targets across 88 changed files; zero runtime or security threats found (PR #2264).
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-10-20 in useLeaderboard.ts, PR #2280; audit duration: 140m, median 6m)
+  - Analysis: Annotated in-memory session-scoped disclosure preference in useLeaderboard.ts with explicit EPHEMERAL comment (PR #2280, rescued via watchdog nudge). Health status DEGRADING.
 
 * Stage 2 (Verify):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-10-19 in ProfileClient.spec.ts, PR #2265; audit duration: 16m, median 13m)
-  - Analysis: Expanded ProfileClient spec to cover HTTP error body parsing fallbacks and array handling (PR #2265).
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-10-20 in client.spec.ts, PR #2277; audit duration: 6m, median 13m)
+  - Analysis: Closed zero-coverage gap in L1 Core client & environment broker in client.spec.ts (PR #2277).
 
 * Stage 3 (Baseline Consolidation):
-  - Consecutive No-Diff Days: 3 (PARTIAL-RUN logged on 2026-10-19, PR #2266; audit duration: 6m, median 3m)
-  - Analysis: 31 migrations pending; unit migration 20260915190011_backend_health_and_safe_maintenance.sql blocked by static view history audit violation on pipeline_heartbeat_view expansion (PR #2266).
+  - Consecutive No-Diff Days: 4 (PARTIAL-RUN logged on 2026-10-20, PR #2278; audit duration: 5m, median 3.5m)
+  - Analysis: Stopped folding at 20260915190011_backend_health_and_safe_maintenance.sql due to view history audit constraint on pipeline_heartbeat_view (PR #2278).
 
 * Stage 4 (Optimization):
-  - Consecutive No-Diff Days: 6 (CLEAN logged on 2026-10-19, PR #2267; audit duration: 4m, median 5m)
-  - Analysis: Audited 88 changed files and Edge Functions/Frontend view references via source-level grep; zero performance bottlenecks found (PR #2267).
+  - Consecutive No-Diff Days: 7 (CLEAN logged on 2026-10-20, PR #2279; audit duration: 3m, median 5m)
+  - Analysis: Audited 76 changed files and Edge Functions/Frontend view references via source-level grep; zero performance bottlenecks found (PR #2279).
 
 * Stage 5 (README):
-  - Consecutive No-Diff Days: 4 (CLEAN logged on 2026-10-19, PR #2268; audit duration: 3m, median 4m)
-  - Analysis: Audited codebase README files against implementation truth; verified zero documentation drift (PR #2268).
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-10-20 in README.md, PR #2281; audit duration: 3m, median 4m)
+  - Analysis: Reconciled sync-player-cards README with client.ts vault environment broker role (PR #2281).
 
 * Stage 6 (TSDoc):
-  - Consecutive No-Diff Days: 2 (CLEAN logged on 2026-10-19, PR #2269; audit duration: 5m, median 6m)
-  - Analysis: Verified SupabaseTransport TSDoc interface contracts and decision annotations (PR #2269).
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-10-20 in ApiErrors.ts, PR #2282; audit duration: 4m, median 6m)
+  - Analysis: Hardened ApiErrors interface contracts and inline decision annotations in Frontend-PWA/src/core/api/ApiErrors.ts (PR #2282).
 
 * Stage 7 (Version Integrity):
-  - Consecutive No-Diff Days: 169 (CLEAN logged on 2026-10-19, PR #2272; audit duration: 4m, median 3m)
-  - Analysis: Catalog and version ground truth 14.55.6 verified across package.json manifests and derived files via pnpm audit:version (PR #2272, recovered via fallback publish).
+  - Consecutive No-Diff Days: 170 (CLEAN logged on 2026-10-20, PR #2283; audit duration: 2m, median 3m)
+  - Analysis: Calibration pass: Monorepo-wide version consistency audit verified ground truth v14.55.6 across root, Frontend-PWA, Backend manifests, catalog protocol, and 10 derived targets with zero drift (PR #2283).
 
 * Stage 8 (Dependency Audit):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-10-19 in package.json/pnpm-lock.yaml, PR #2270; audit duration: 5m, median 6m)
-  - Analysis: Bumped knip from ^6.41.0 to ^6.42.0 in monorepo catalogs (PR #2270).
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-10-20 in package.json/pnpm-lock.yaml, PR #2284; audit duration: 9m, median 6.5m)
+  - Analysis: Bumped knip devDependency from ^6.42.0 to ^6.42.1 in monorepo catalogs (PR #2284).
 
 * Stage 9 (Refactor):
-  - Consecutive No-Diff Days: 4 (CLEAN logged on 2026-10-19, PR #2271; audit duration: 5m, median 6m)
-  - Analysis: Audited 76 files, 0 dep-violations, knip 11 files; streak 3 (PR #2271).
+  - Consecutive No-Diff Days: 5 (CLEAN logged on 2026-10-20, PR #2285; audit duration: 3m, median 6m)
+  - Analysis: Audited 76 files, 0 dep-violations, knip 11 files; streak 4 (PR #2285).
 
 * Stage 10 (APK-Integrity):
-  - Consecutive No-Diff Days: 102 (CLEAN logged on 2026-10-19, PR #2273; audit duration: 2m, median 3m)
-  - Analysis: Verified asset links, manifest parity, version code/name sync (14.55.6 / 14055006), release metadata, and security policy via pnpm audit:apk and pnpm apk:verify:source (PR #2273).
+  - Consecutive No-Diff Days: 103 (CLEAN logged on 2026-10-20, PR #2286; audit duration: 2m, median 3m)
+  - Analysis: Calibration pass: verified asset links, manifest parity, version code/name sync, release metadata, and security policy across 8 ordinary CLEAN runs (PR #2286).
 
 * Stage 11 (APK-Optimization):
-  - Consecutive No-Diff Days: 7 (CLEAN logged on 2026-10-19, PR #2274; audit duration: 4m, median 3m)
-  - Analysis: Audited native WebView performance settings, Android manifest, SW routes, Vite chunking, and static precache footprint; all 9 performance invariants pass with zero source changes required (PR #2274).
+  - Consecutive No-Diff Days: 8 (CLEAN logged on 2026-10-20, PR #2287; audit duration: 2m, median 3m)
+  - Analysis: Calibration pass: verified WebView cache mode, acceleration settings, service worker routes, bundle chunking, and asset footprint (PR #2287).
 
 * Stage 12 (APK-UX):
-  - Consecutive No-Diff Days: 21 (CLEAN logged on 2026-10-19, PR #2275; audit duration: 4m, median 4m)
-  - Analysis: Automated APK UX audit verified no raw native dropdowns, hardcoded inset issues, or mobile viewport violations in Frontend-PWA/src (PR #2275). Health status DEGRADING (streak 1).
+  - Consecutive No-Diff Days: 22 (CLEAN logged on 2026-10-20, PR #2288; audit duration: 4m, median 4m)
+  - Analysis: Global APK UX audit passed with zero violations across 77 files (PR #2288).
 
 * Stage 13 (Self-Healing):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-10-19; audit duration: 4m)
-  - Analysis: Completed daily self-healing audit pass for 2026-10-19: documented Stage 7 RECOVERED_BY_FALLBACK_PUBLISH and Stage 3 PARTIAL-RUN static view history violation in Section 1 and Section 2, and updated Section 3 metrics across Stages 1-13.
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-10-20; audit duration: 5m)
+  - Analysis: Completed daily self-healing audit pass for 2026-10-20: documented Stage 1 watchdog nudge recovery and health degradation in Section 1, Stage 3 PARTIAL-RUN view history constraint in Section 2, and updated Section 3 metrics across Stages 1-13.
