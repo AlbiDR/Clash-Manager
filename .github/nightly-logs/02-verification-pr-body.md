@@ -4,23 +4,23 @@
 
 In plain terms: this adds 1 test file in the verification area. No product code changed, so the app behaves exactly as it did before.
 
-**What changed:** Expanded ProfileClient spec to cover HTTP error body parsing fallbacks and array handling
+**What changed:** Backend/supabase/functions/sync-player-cards/client.spec.ts -- Closed zero-coverage gap in L1 Core client & environment broker
 
-**Why:** Close validation boundary and sad path coverage gaps in L1 Core ProfileClient
+**Why:** Ensure CONFIG and syncVault vault synchronization contracts are verified under test
 
-**Result:** Added 3 unit tests in ProfileClient.spec.ts. Tested mutation on errorBody error fallback catching STATUS_FAILURE assertion failure.
+**Result:** All 410 unit tests passing; mutation proof verified test fails when vault update is inverted.
 
-**Files changed:** .github/nightly-logs/02-verification-coverage.log, Frontend-PWA/src/core/api/api-tests/ProfileClient.spec.ts
+**Files changed:** .github/nightly-logs/02-verification-coverage.log, Backend/supabase/functions/sync-player-cards/client.spec.ts
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: verification
-  Cycle: nightly-cycle/2026-10-19
+  Cycle: nightly-cycle/2026-10-20
   Contract: b2e927ebff4e2ca5a343609133745d050f07d22fd9bf3e42481440c1d14079f0
-  Why: Close validation boundary and sad path coverage gaps in L1 Core ProfileClient
-  Change: Expanded ProfileClient spec to cover HTTP error body parsing fallbacks and array handling
-  Result: Added 3 unit tests in ProfileClient.spec.ts. Tested mutation on errorBody error fallback catching STATUS_FAILURE assertion failure.
-  Files: .github/nightly-logs/02-verification-coverage.log, Frontend-PWA/src/core/api/api-tests/ProfileClient.spec.ts
+  Why: Ensure CONFIG and syncVault vault synchronization contracts are verified under test
+  Change: Backend/supabase/functions/sync-player-cards/client.spec.ts -- Closed zero-coverage gap in L1 Core client & environment broker
+  Result: All 410 unit tests passing; mutation proof verified test fails when vault update is inverted.
+  Files: .github/nightly-logs/02-verification-coverage.log, Backend/supabase/functions/sync-player-cards/client.spec.ts
   Nudges: 0
-  Execution: 30eacb6b1432ab85693af29b64c32f5ff8ac9129
+  Execution: 73ab9b297c7acc9c57aff5fa6e2948e0a9b6659b
 -->
