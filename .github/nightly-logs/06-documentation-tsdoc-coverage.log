@@ -155,3 +155,4 @@
 * [2026-10-17] [Stage 6] [04:31Z-04:38Z 7m] [checks doc-debt=OK] CHANGED: Frontend-PWA/src/core/services/apkManagerUtils.ts -- docs(tsdoc): harden apkManagerUtils interface contracts and inline decision annotations
 * [2026-10-18] [Stage 6] [04:21Z-04:24Z 3m] [checks doc-debt=OK] CLEAN: Codebase -- Verified doc debt files SupabaseClient.ts and useClashSync.ts documentation accuracy
 * [2026-10-19] [Stage 6] [04:19Z-04:24Z 5m] [checks doc-debt=OK] CLEAN: Codebase -- Verified SupabaseTransport TSDoc interface contracts and decision annotations
+* [2026-10-20] [Stage 6] [04:30Z-04:33Z 4m] [checks doc-debt=OK] CHANGED: Frontend-PWA/src/core/api/ApiErrors.ts -- docs(tsdoc): harden ApiErrors interface contracts and inline decision annotations
