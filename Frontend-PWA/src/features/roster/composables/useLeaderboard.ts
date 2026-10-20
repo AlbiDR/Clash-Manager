@@ -11,6 +11,7 @@ import { LEADERBOARD_SORT_OPTIONS } from "@core/utils/sortOptions";
 import { LeaderboardSort } from "@core/utils/sortStrategies";
 import type { ConsoleFabState, LeaderboardMember } from "@core/types";
 
+// EPHEMERAL: intentionally resets on cold start
 /**
  * Session-scoped disclosure preference shared by every roster card.
  *
