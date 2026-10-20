@@ -19,7 +19,7 @@
 | File | Role |
 | :--- | :--- |
 | `index.ts` | The four-step sync, behind the shared handler. |
-| `client.ts` | Supabase service client. |
+| `client.ts` | Supabase service client and vault environment broker (`syncVault`). |
 
 ## Gotchas
 
