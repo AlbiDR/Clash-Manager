@@ -52,8 +52,8 @@ catalogs:
       specifier: ^30.1.1
       version: 30.1.2
     knip:
-      specifier: ^6.42.0
-      version: 6.42.0
+      specifier: ^6.42.1
+      version: 6.42.1
     pinia:
       specifier: ^3.0.4
       version: 3.0.4
@@ -130,7 +130,7 @@ importers:
         version: 18.6.0
       knip:
         specifier: 'catalog:'
-        version: 6.42.0
+        version: 6.42.1
       p-limit:
         specifier: 7.3.3
         version: 7.3.3
@@ -3140,8 +3140,8 @@ packages:
     resolution: {integrity: sha512-eTIzlVOSUR+JxdDFepEYcBMtZ9Qqdef+rnzWdRZuMbOywu5tO2w2N7rqjoANZ5k9vywhL6Br1VRjUIgTQx4E8w==}
     engines: {node: '>=6'}
 
-  knip@6.42.0:
-    resolution: {integrity: sha512-lNypqHwi38RJQG8pVuItqzCDPMOfPbBExyFh8aM4yMJRHVU7t5OQAtEK4tDkaB3rLHetOcVMhRFAgv5Vn2CM0A==}
+  knip@6.42.1:
+    resolution: {integrity: sha512-gKJVsiT4LJQ0lfc8uSHOCzkOY8adAXNFGarIeODZbJOkBnQRVsG3e0UZFnO4LMwjA82A5tBWX/VgoeTYcjdKiQ==}
     engines: {node: ^20.19.0 || >=22.12.0}
     hasBin: true
 
@@ -7157,7 +7157,7 @@ snapshots:
 
   kleur@3.0.3: {}
 
-  knip@6.42.0:
+  knip@6.42.1:
     dependencies:
       formatly: 0.11.4
       get-tsconfig: 4.14.3
