@@ -4,9 +4,9 @@
 
 In plain terms: nothing needed fixing. This run checked the APK UX area and found it already correct, so the only file here is the log recording that the check happened.
 
-**What was checked:** Automated APK UX audit verified no raw native dropdowns, hardcoded inset issues, or mobile viewport violations in Frontend-PWA/src
+**What was checked:** Global APK UX audit passed with zero violations across 77 files
 
-**Why:** Audit status PASS with 0 candidate files requiring modification
+**Why:** Structured audit passed and candidate set is empty
 
 **Result:** apk-ux-audit-status.txt: PASS; apk-ux-audit.json: 0 candidate files reviewed; UX categories 1-10 checked
 
@@ -15,12 +15,12 @@ In plain terms: nothing needed fixing. This run checked the APK UX area and foun
 <!--
 NIGHTLY_PR_METADATA:
   Domain: ux
-  Cycle: nightly-cycle/2026-10-19
+  Cycle: nightly-cycle/2026-10-20
   Contract: f279dcd9fa3e895a0f76426a8bcab2381910b64ed4f8694d2c16ab7f8ec4ce04
-  Why: Audit status PASS with 0 candidate files requiring modification
-  Change: Automated APK UX audit verified no raw native dropdowns, hardcoded inset issues, or mobile viewport violations in Frontend-PWA/src
+  Why: Structured audit passed and candidate set is empty
+  Change: Global APK UX audit passed with zero violations across 77 files
   Result: apk-ux-audit-status.txt: PASS; apk-ux-audit.json: 0 candidate files reviewed; UX categories 1-10 checked
   Files: .github/nightly-logs/12-apk-ux-coverage.log
   Nudges: 0
-  Execution: edf8274353009763eafeb1a759e6dd36ba1f3e04
+  Execution: d6235b501deef840f1a921a796e5f72d00debf0a
 -->
