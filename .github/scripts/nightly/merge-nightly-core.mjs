@@ -17,12 +17,13 @@
  * ============================================================================
  */
 
+import { traceNightlyOperation } from "./nightly-trace.mjs";
 import fs from "fs";
 import path from "path";
 import os from "os";
 import { spawnSync } from "child_process";
 import { FAILURE_CLASSES, loadLedger, saveLedger, upsertStageEntry } from "./nightly-ledger.mjs";
-import { NIGHTLY_EVENT_SOURCES, getEvidenceDate, parseCycleId } from "./nightly-events.mjs";
+import { NIGHTLY_EVENT_SOURCES, getCycleId, getEvidenceDate, parseCycleId } from "./nightly-events.mjs";
 import { METADATA_PLACEHOLDERS, TAG_PLACEHOLDERS, isPlaceholderField } from "./nightly-prose.mjs";
 import { isolateStagePatch } from "./nightly-patch-base.mjs";
 import { parseCoverageLog } from "./coverage-log-line.mjs";
@@ -71,6 +72,7 @@ function redactCommand(args) {
 }
 
 export function runCmd(args, options = {}) {
+  return traceNightlyOperation("git.command", { argv: args }, () => {
   const { allowFailure = false, cwd = process.cwd() } = options;
   const res = spawnSync("git", args, {
     cwd,
@@ -90,6 +92,7 @@ export function runCmd(args, options = {}) {
     stderr: (res.stderr || "").trim(),
     status: res.status ?? 1,
   };
+  });
 }
 
 function gitStdout(args, options = {}) {
@@ -396,6 +399,7 @@ export function getRecentDateStrings(days, now = new Date()) {
 }
 
 async function githubApi(endpoint, method = "GET", body = null, isGraphQL = false, config = CONFIG) {
+  return traceNightlyOperation("github.request", { endpoint, method }, async () => {
   const url = isGraphQL ? "https://api.github.com/graphql" : `https://api.github.com${endpoint}`;
   const res = await fetch(url, {
     method,
@@ -418,6 +422,7 @@ async function githubApi(endpoint, method = "GET", body = null, isGraphQL = fals
   }
 
   return res.json();
+  });
 }
 
 async function markReadyForReview(nodeId, config = CONFIG) {
@@ -1028,7 +1033,7 @@ function compileHistoryFromTags(config = CONFIG) {
   // is about to be compiled. Anything older than that window is outside every
   // reader's reach, so archiving it cannot change what gets compiled below.
   try {
-    archiveAgedEvidenceTags({ config });
+    traceNightlyOperation("merge.archive-evidence", {}, () => archiveAgedEvidenceTags({ config }));
   } catch (error) {
     log(`Evidence archiving pass failed: ${error.message}`, "warn");
   }
@@ -1439,6 +1444,10 @@ async function deleteHeadBranch(pr, config = CONFIG, prefix = "") {
 export const PR_OUTCOME = Object.freeze({ MERGED: "merged", DEFERRED: "deferred" });
 
 export async function processPullRequest(pr, options, config = CONFIG) {
+  return traceNightlyOperation("merge.pull-request", {
+    prNumber: pr.number, stage: pr.nightlyClassification?.stage || parseStageBranch(pr.head?.ref)?.stage || null,
+    cycleId: getCycleId(stageCycleDate(pr)),
+  }, async () => {
   const prefix = options.label ? `[${options.label}] ` : "";
   const classification = pr.nightlyClassification || { stage: null };
   validateStageBranch(pr.head.ref, classification.stage);
@@ -1493,6 +1502,7 @@ export async function processPullRequest(pr, options, config = CONFIG) {
   syncTargetBranch(config);
   await deleteHeadBranch(pr, config, prefix);
   return PR_OUTCOME.MERGED;
+  });
 }
 
 export function renderFailureBlock({ date, pr, status, errorMessage }) {
@@ -1657,7 +1667,7 @@ export async function run(config = CONFIG) {
     }
   } finally {
     writeFailureBlocks(failures, config);
-    compileHistoryFromTags(config);
+    traceNightlyOperation("merge.compile-history", {}, () => compileHistoryFromTags(config));
     if (failures.length > 0) {
       try {
         const ledger = loadLedger(config.ledgerPath);

@@ -8,8 +8,8 @@
   <p>Stop guessing who to keep and who to recruit. Clash Manager scores your whole roster, scouts elite free players across the game, plans every card upgrade, and sends clan invites straight into Clash Royale, all from one installable app.</p>
 
   [![Live App](https://img.shields.io/badge/Live-albidr.github.io%2FClash--Manager-0061A4?style=flat-square&logo=pwa&logoColor=white)](https://albidr.github.io/Clash-Manager/)
-  [![Client](https://img.shields.io/badge/Client-v14.55.7-42b883?style=flat-square&logo=vue.js&logoColor=white)](Frontend-PWA/README.md)
-  [![Backend](https://img.shields.io/badge/Backend-v14.55.7-3ECF8E?style=flat-square&logo=supabase&logoColor=white)](Backend/README.md)
+  [![Client](https://img.shields.io/badge/Client-v14.55.8-42b883?style=flat-square&logo=vue.js&logoColor=white)](Frontend-PWA/README.md)
+  [![Backend](https://img.shields.io/badge/Backend-v14.55.8-3ECF8E?style=flat-square&logo=supabase&logoColor=white)](Backend/README.md)
   [![Android](https://img.shields.io/badge/Android-Wrapper-3DDC84?style=flat-square&logo=android&logoColor=white)](APK/README.md)
   [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue?style=flat-square)](LICENSE)
 
@@ -247,6 +247,8 @@ A Supabase project running six Deno Edge Functions: five game-data functions usi
 ## Autonomous nightly pipeline
 
 This repository maintains itself. Every night an external coding agent runs a **13-stage pipeline** that opens one pull request per stage against the `Nightly` branch: hardening runtime safety, running the test suite, consolidating database migrations, optimizing, refreshing documentation and TSDoc, reconciling versions, auditing dependencies, refactoring, checking the Android wrapper's integrity, optimization, and UX, and finally auditing its own health. Passing work is merged and promoted `Nightly` to `Beta` to `Stable` behind an automated test gate. The rules the agent operates under live in [AGENTS.md](AGENTS.md).
+
+For workflow traces, retry timing and failure diagnosis, see [Nightly diagnostics](.github/scripts/nightly/README.md).
 
 ---
 

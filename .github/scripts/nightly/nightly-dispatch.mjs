@@ -21,12 +21,13 @@
  * ============================================================================
  */
 
+import { traceNightlyOperation } from "./nightly-trace.mjs";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { validateRegistryData } from "./nightly-stage.mjs";
 import { loadLedger, recordCycleExecution, saveLedger, upsertStageEntry } from "./nightly-ledger.mjs";
-import { NIGHTLY_EVENT_SOURCES } from "./nightly-events.mjs";
+import { NIGHTLY_EVENT_SOURCES, getCycleId } from "./nightly-events.mjs";
 import { getExecutionProvenance } from "./nightly-provenance.mjs";
 import { stageTag } from "./nightly-prose.mjs";
 import { createRedactor } from "./nightly-redact.mjs";
@@ -94,7 +95,11 @@ export function stageSessionTitle(stage, date) {
 // against the wrong branch. `config` and `fetchImpl` are injectable for that
 // caller's tests in the same way nudgeJulesSession's are; with no options this
 // behaves exactly as it did for the dispatcher alone.
-export async function createJulesSession(stage, registry, date, redact, { config = CONFIG, fetchImpl = fetch } = {}) {
+export async function createJulesSession(stage, registry, date, redact, options = {}) {
+  return traceNightlyOperation("jules.create-session", { stage: stage.number, cycleId: getCycleId(date) }, () => executeJulesCreation(stage, registry, date, redact, options));
+}
+
+async function executeJulesCreation(stage, registry, date, redact, { config = CONFIG, fetchImpl = fetch } = {}) {
   invariant(config.julesApiKey, "JULES_API_KEY is missing.");
   invariant(config.owner && config.repo, "GITHUB_REPOSITORY is missing or malformed.");
 
@@ -182,7 +187,7 @@ async function main() {
 
 const isMain = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
 if (isMain) {
-  main().catch(error => {
+  traceNightlyOperation("dispatch.run", {}, () => main()).catch(error => {
     console.error(error.message || error);
     process.exit(1);
   });

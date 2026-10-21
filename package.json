@@ -1,6 +1,6 @@
 {
   "name": "clash-manager-monorepo",
-  "version": "14.55.7",
+  "version": "14.55.8",
   "license": "GPL-3.0-only",
   "private": true,
   "scripts": {
@@ -67,11 +67,12 @@
     "test:nightly-liveness": "node --test .github/scripts/nightly/nightly-liveness.test.mjs",
     "test:nightly-history": "node --test .github/scripts/nightly/age-pr-history.test.mts",
     "test:nightly-contract": "node --test .github/scripts/nightly/nightly-contract.test.mjs .github/scripts/nightly/nightly-intervention.test.mjs",
-    "test:nightly-events": "node --test .github/scripts/nightly/nightly-events.test.mjs .github/scripts/nightly/nightly-explain.test.mjs .github/scripts/nightly/nightly-provenance.test.mjs",
+    "test:nightly-events": "node --test .github/scripts/nightly/nightly-events.test.mjs .github/scripts/nightly/nightly-explain.test.mjs .github/scripts/nightly/nightly-provenance.test.mjs .github/scripts/nightly/nightly-trace.test.mjs",
     "nightly:deploy-check": "node .github/scripts/nightly/nightly-deploy-check.mjs",
     "nightly:recap": "node .github/scripts/nightly/nightly-recap.mjs",
     "nightly:inspect": "node .github/scripts/nightly/nightly-contract.mjs inspect",
     "nightly:capabilities": "node .github/scripts/nightly/nightly-contract.mjs capabilities",
+    "nightly:trace": "node .github/scripts/nightly/nightly-trace.mjs",
     "nightly:explain": "node .github/scripts/nightly/nightly-explain.mjs",
     "agents:link": "node .github/scripts/agents/link-agent-dirs.mjs",
     "agents:audit": "node .github/scripts/agents/agents-audit.mjs",
