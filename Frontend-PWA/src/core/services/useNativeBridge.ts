@@ -24,10 +24,14 @@ import { useToast } from "@core/services/useToast";
  * all hardware-level interactions and enforcing strict type boundaries.
  */
 
+// EPHEMERAL: intentionally resets on cold start
+// [THREAT:] System permission flags are polled at runtime and reset on cold start.
 const isAccessibilityAllowed = ref(false);
 const isOverlayAllowed = ref(false);
 const isPackageInstallAllowed = ref(false);
 
+// EPHEMERAL: intentionally resets on cold start
+// [THREAT:] Calibration coordinates reset to native defaults on cold start until hydrated.
 // Shown only until the shell answers getCoordinates(). They mirror the shell's
 // Calibration.DEFAULT (APK/src/.../Calibration.java) as percentages; inviteY and
 // closeY had drifted (72.14 and 20.44), placing the markers away from the taps.
