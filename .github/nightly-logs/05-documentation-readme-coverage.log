@@ -205,3 +205,4 @@
 * [2026-10-18] [Stage 5] [03:20Z-03:24Z 4m] [checks doc-debt=OK] CLEAN: Codebase -- Audited codebase README files against implementation truth; verified zero documentation drift
 * [2026-10-19] [Stage 5] [03:14Z-03:17Z 3m] [checks doc-debt=OK] CLEAN: Codebase -- Audited codebase README files against implementation truth; verified zero documentation drift
 * [2026-10-20] [Stage 5] [03:04Z-03:07Z 3m] [checks doc-debt=OK] CHANGED: Backend/supabase/functions/sync-player-cards/README.md -- docs(readme): Reconcile sync-player-cards README with client.ts vault environment broker role
+* [2026-10-21] [Stage 5] [03:32Z-03:35Z 4m] [checks doc-debt=OK] CHANGED: Frontend-PWA/src/core/services/README.md -- docs(readme): Reconcile core services README useProgressiveList churn prevention and timer handle cancellation
