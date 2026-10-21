@@ -4,23 +4,23 @@
 
 In plain terms: nothing needed fixing. This run checked the APK optimization area and found it already correct, so the only file here is the log recording that the check happened.
 
-**What was checked:** Calibration pass: verified WebView cache mode, acceleration settings, service worker routes, bundle chunking, and asset footprint (7 clean runs since last calibration)
+**What was checked:** Audited WebView performance settings, Service Worker routes, Vite chunking, and static asset precache footprint; zero source changes required
 
-**Why:** Full wrapper optimization set audit performed for calibration due gate; all 9 performance invariants intact and zero violations found
+**Why:** All 9 native wrapper, WebView, and Service Worker performance invariants are PRESENT with zero violations
 
-**Result:** pnpm audit:apk-perf PASS (9/9 invariants ok, 67.6 KB static precache footprint across 15 assets)
+**Result:** PASS (pnpm audit:apk-perf and pnpm test:apk-performance)
 
 **Files changed:** .github/nightly-logs/11-apk-optimization-coverage.log
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: apk
-  Cycle: nightly-cycle/2026-10-20
+  Cycle: nightly-cycle/2026-10-21
   Contract: 63c0229fe16cf4c98e352282307edbee4830cff68ea2d93c5c967a1f5cbd30ea
-  Why: Full wrapper optimization set audit performed for calibration due gate; all 9 performance invariants intact and zero violations found
-  Change: Calibration pass: verified WebView cache mode, acceleration settings, service worker routes, bundle chunking, and asset footprint (7 clean runs since last calibration)
-  Result: pnpm audit:apk-perf PASS (9/9 invariants ok, 67.6 KB static precache footprint across 15 assets)
+  Why: All 9 native wrapper, WebView, and Service Worker performance invariants are PRESENT with zero violations
+  Change: Audited WebView performance settings, Service Worker routes, Vite chunking, and static asset precache footprint; zero source changes required
+  Result: PASS (pnpm audit:apk-perf and pnpm test:apk-performance)
   Files: .github/nightly-logs/11-apk-optimization-coverage.log
   Nudges: 0
-  Execution: 0c5dfc6cb8ce1c884257c2c50ebf7a6e30202372
+  Execution: 1e0082faaec8f7166afe2b6f377717b6f93efdc7
 -->
