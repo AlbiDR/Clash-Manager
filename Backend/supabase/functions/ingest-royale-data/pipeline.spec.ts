@@ -72,7 +72,7 @@ describe("executePipeline orchestration", () => {
 
         const result = await executePipeline("#CLAN1", logAudit, heartbeat);
 
-        expect(callOrder).toEqual(["S1_DISCOVERY", "S2_S5_CLAN:#CLAN1", "S6_BATTLES"]);
+        expect(callOrder).toEqual(["S2_S5_CLAN:#CLAN1", "S6_BATTLES", "S1_DISCOVERY"]);
         expect(result.diagnostics.clan_tag).toBe("#CLAN1");
         expect(result.diagnostics.duration_ms).toBe(99);
         expect(heartbeat).toHaveBeenCalledTimes(3);

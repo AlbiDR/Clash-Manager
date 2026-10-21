@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
+import { withAbortSignal, throwIfAborted } from "../../_shared/abortSignal.ts";
+import { IngestionWorkBudget } from "../work-budget.ts";
 import { supabase } from "../client.ts";
 import { fetchWithRotation } from "../../_shared/muscle.ts";
 import { IngestionResult, AuditEntry } from "../../_shared/types.ts";
@@ -36,7 +38,8 @@ import {
 export async function runClanSync(
     clanTag: string,
     results: IngestionResult, 
-    logAudit: (stage: string, action: AuditEntry['action'], details?: unknown) => void
+    logAudit: (stage: string, action: AuditEntry['action'], details?: unknown) => void,
+    budget?: IngestionWorkBudget
 ) {
     const CLAN_PATH = `/clans/${encodeURIComponent(clanTag)}`;
 
@@ -56,12 +59,14 @@ export async function runClanSync(
     ] as const;
 
     for (const syncTask of syncTasks) {
+        throwIfAborted(budget?.admissionSignal);
+        budget?.throwIfExpired();
         const stageName = `S2_S5_${syncTask.key.toUpperCase()}`;
         logAudit(stageName, 'triggered');
 
         try {
             logAudit(stageName, 'called', { path: syncTask.path });
-            const apiResponse = await fetchWithRotation(syncTask.path);
+            const apiResponse = await fetchWithRotation(syncTask.path, undefined, budget?.admissionSignal);
             logAudit(stageName, 'run', { status: apiResponse.status });
 
             const stageIngestionResult = results[syncTask.key];
@@ -90,10 +95,10 @@ export async function runClanSync(
                                    'ingest_raw_war_log';
 
                     // [THREAT:] Database ingestion failures or RPC execution errors are caught and recorded in the audit log.
-                    const { error: databaseError } = await supabase.rpc(ingestionRpcName, {
+                    const { error: databaseError } = await withAbortSignal(supabase.rpc(ingestionRpcName, {
                         p_clan_tag: clanTag,
                         p_payload: validatedPayload
-                    });
+                    }), budget?.signal);
 
                     stageIngestionResult.success = !databaseError;
                     if (databaseError) {

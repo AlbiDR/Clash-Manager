@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
+import { withAbortSignal } from "../../_shared/abortSignal.ts";
+import { IngestionWorkBudget } from "../work-budget.ts";
+import { RecruitWriter } from "../recruit-writer.ts";
 import { supabase } from "../client.ts";
 import { fetchWithRotation, processBatch } from "../../_shared/muscle.ts";
-import { normalizeTag } from "../../_shared/utils.ts";
 import { IngestionResult, AuditEntry } from "../../_shared/types.ts";
 import {
     DISCOVERY_KEYWORDS,
@@ -22,19 +24,24 @@ import { RoyaleTournamentListSchema, RoyaleTournamentSchema } from "../../_share
  */
 export async function runDiscovery(
     results: IngestionResult, 
-    logAudit: (stage: string, action: AuditEntry['action'], details?: unknown) => void
+    logAudit: (stage: string, action: AuditEntry['action'], details?: unknown) => void,
+    budget?: IngestionWorkBudget
 ) {
     logAudit('S1_DISCOVERY', 'triggered');
     try {
         const discoveryKeywords = DISCOVERY_KEYWORDS;
+        let keywordsAttempted = 0;
+        let tournamentsAttempted = 0;
         // [DECISION LOG] EPHEMERAL: intentionally resets on cold start to maintain memory hygiene.
         // [THREAT:] Native Discovery depends on in-memory state during the harvest phase;
         // instance termination will lead to partial harvest loss if not synchronized to DB.
-        const globalNewRecruits = new Map<string, { name: string, trophies: number }>();
+        const writer = new RecruitWriter("TOURNAMENT_AUTO", budget);
         
         const discoveryTasks = discoveryKeywords.map(keyword => async () => {
             try {
-                const tournamentListApiResponse = await fetchWithRotation(`/tournaments?name=${keyword}&limit=10`);
+                if (budget && !budget.canAdmit()) return;
+                keywordsAttempted++;
+                const tournamentListApiResponse = await fetchWithRotation(`/tournaments?name=${keyword}&limit=10`, undefined, budget?.admissionSignal);
                 if (!tournamentListApiResponse.ok) return;
                 
                 const tournamentListRoyalePayload: unknown = await tournamentListApiResponse.json();
@@ -49,11 +56,13 @@ export async function runDiscovery(
                 }
 
                 const tournamentTasks = tournamentListValidation.output.items.map((tournamentTarget) => async () => {
+                    if (budget && !budget.canAdmit()) return;
                     // [DECISION LOG] Skip full tournaments to minimize unnecessary API detail calls.
                     if (tournamentTarget.capacity === tournamentTarget.maxCapacity) return;
 
                     try {
-                        const tournamentDetailsResponse = await fetchWithRotation(`/tournaments/${encodeURIComponent(tournamentTarget.tag)}`);
+                        tournamentsAttempted++;
+                        const tournamentDetailsResponse = await fetchWithRotation(`/tournaments/${encodeURIComponent(tournamentTarget.tag)}`, undefined, budget?.admissionSignal);
                         if (tournamentDetailsResponse.ok) {
                             const rawTournamentDetailData: unknown = await tournamentDetailsResponse.json();
 
@@ -65,19 +74,15 @@ export async function runDiscovery(
                             if (tournamentDetailValidation.success) {
                                 const tournamentDetails = tournamentDetailValidation.output;
                                 if (tournamentDetails.membersList.length > 0) {
-                                    tournamentDetails.membersList
-                                        .filter((tournamentMember) => !tournamentMember.clan?.tag)
-                                        .forEach((tournamentMember) => {
-                                            globalNewRecruits.set(tournamentMember.tag, {
-                                                name: tournamentMember.name,
-                                                trophies: tournamentMember.trophies || 0
-                                            });
-                                        });
+                                    await writer.add(tournamentDetails.membersList
+                                        .filter(member => !member.clan?.tag)
+                                        .map(member => ({ tag: member.tag, name: member.name, trophies: member.trophies || 0 })));
+
 
                                     // [THREAT:] supabase.rpc() resolves with { error } instead of
                                     // throwing, so an unchecked call loses the discovery record and
                                     // the same tournament is re-fetched on every subsequent run.
-                                    const { error: discoveryReportError } = await supabase.rpc('report_discovery', { p_player_tag: tournamentTarget.tag, p_type: 'TOURNAMENT' });
+                                    const { error: discoveryReportError } = await withAbortSignal(supabase.rpc('report_discovery', { p_player_tag: tournamentTarget.tag, p_type: 'TOURNAMENT' }), budget?.signal);
                                     if (discoveryReportError) {
                                         logAudit('S1_DISCOVERY', 'error', { tag: tournamentTarget.tag, message: 'Discovery report failed', details: discoveryReportError });
                                     }
@@ -89,7 +94,7 @@ export async function runDiscovery(
                     } catch (tournamentDiscoveryError: unknown) {
                         // Silent fail for individual tournament to maintain pipeline progress
                         const errorMessage = tournamentDiscoveryError instanceof Error ? tournamentDiscoveryError.message : String(tournamentDiscoveryError);
-                        console.warn(`[S1_DISCOVERY] Individual tournament discovery failure: ${errorMessage}`);
+                        if (!budget || budget.canAdmit()) console.warn(`[S1_DISCOVERY] Individual tournament discovery failure: ${errorMessage}`);
                     }
                 });
                 
@@ -97,50 +102,21 @@ export async function runDiscovery(
                 await processBatch(tournamentTasks, CONCURRENCY_DISCOVERY_TOURNAMENTS);
             } catch (keywordDiscoveryError: unknown) {
                 const errorMessage = keywordDiscoveryError instanceof Error ? keywordDiscoveryError.message : String(keywordDiscoveryError);
-                logAudit('S1_DISCOVERY', 'error', { keyword, message: errorMessage });
+                if (!budget || budget.canAdmit()) logAudit('S1_DISCOVERY', 'error', { keyword, message: errorMessage });
             }
         });
         
         // [DECISION LOG] Concurrency of 3 for keywords (total concurrency ~15) to ensure aggressive but safe harvest.
         await processBatch(discoveryTasks, CONCURRENCY_DISCOVERY_KEYWORDS);
 
-        // Batch synchronize all discovered recruits
-        // [THREAT:] Failure to synchronize the player registry before the recruitment registry
-        // results in foreign key violations and data loss in the recruitment substrate.
-        if (globalNewRecruits.size > 0) {
-            const playerRegistryPayload = Array.from(globalNewRecruits.entries()).map(([playerTag, playerInfo]) => ({
-                player_tag: normalizeTag(playerTag),
-                player_name: playerInfo.name
-            }));
-
-            const recruitRegistryPayload = Array.from(globalNewRecruits.entries()).map(([playerTag, playerInfo]) => ({
-                player_tag: normalizeTag(playerTag),
-                player_name: playerInfo.name,
-                trophies: playerInfo.trophies,
-                source: 'TOURNAMENT_AUTO',
-                status: 'ACTIVE'
-            }));
-
-            // [DECISION LOG] The two-phase write is NOT atomic, so phase 2 (sync_recruits) is
-            // gated on phase 1 (sync_players) succeeding. Running phase 2 against a registry that
-            // never received these tags is guaranteed to raise the foreign key violations
-            // described above and lose the whole harvest regardless.
-            const { error: playerRegistryError } = await supabase.rpc('sync_players', { p_players: playerRegistryPayload });
-            if (playerRegistryError) {
-                results.discovery.error = `Player Registry Batch Sync Failure: ${playerRegistryError.message}`;
-                logAudit('S1_DISCOVERY', 'error', { message: 'Player Registry Batch Sync Failure - skipping recruit sync to avoid foreign key violations', details: playerRegistryError });
-            } else {
-                const { error: recruitRegistryError } = await supabase.rpc('sync_recruits', { p_recruits: recruitRegistryPayload });
-
-                if (!recruitRegistryError) {
-                    results.discovery.harvested = globalNewRecruits.size;
-                } else {
-                    results.discovery.error = `Recruit Registry Batch Sync Failure: ${recruitRegistryError.message}`;
-                    logAudit('S1_DISCOVERY', 'error', { message: 'Recruit Registry Batch Sync Failure', details: recruitRegistryError });
-                }
-            }
+        await writer.finish();
+        Object.assign(results.discovery, { keywords_attempted: keywordsAttempted, tournaments_attempted: tournamentsAttempted, deferred: !!budget && !budget.canAdmit() });
+        results.discovery.harvested = writer.harvested;
+        results.discovery.duplicates = writer.duplicates;
+        if (writer.error) {
+            results.discovery.error = writer.error;
+            logAudit('S1_DISCOVERY', 'error', { message: writer.error });
         }
-
         logAudit('S1_DISCOVERY', 'terminated', { harvested: results.discovery.harvested });
     } catch (pipelineDiscoveryError: unknown) {
         const errorMessage = pipelineDiscoveryError instanceof Error ? pipelineDiscoveryError.message : String(pipelineDiscoveryError);

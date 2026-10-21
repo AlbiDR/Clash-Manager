@@ -183,74 +183,19 @@ describe("ingest-royale-data required-write completion", () => {
             .map(([, args]) => (args as { p_status: string }).p_status)).not.toContain("COMPLETED");
     });
 
-    it("fails closed when clan sync times out even if its late writes finish before pipeline return", async () => {
-        state.discovery.mockImplementation(async () => undefined);
-        let resolveProfileResponse: ((response: {
-            ok: boolean;
-            status: number;
-            json: () => Promise<unknown>;
-        }) => void) | undefined;
-        const pendingProfileResponse = new Promise<{
-            ok: boolean;
-            status: number;
-            json: () => Promise<unknown>;
-        }>((resolve) => { resolveProfileResponse = resolve; });
-        state.fetch.mockImplementation(async (path: string) => {
-            if (path === "/clans/%23CLAN1") return await pendingProfileResponse;
-            return {
-                ok: Object.hasOwn(VALID_API_RESPONSES, path),
-                status: Object.hasOwn(VALID_API_RESPONSES, path) ? 200 : 404,
-                json: async () => VALID_API_RESPONSES[path],
-            };
-        });
-
-        let markDeepDepthEntered: (() => void) | undefined;
-        const deepDepthEntered = new Promise<void>((resolve) => { markDeepDepthEntered = resolve; });
-        let releaseDeepDepth: (() => void) | undefined;
-        state.deepDepth.mockImplementation(async () => {
-            markDeepDepthEntered?.();
-            await new Promise<void>((resolve) => { releaseDeepDepth = resolve; });
-        });
-
-        const originalSetTimeout = globalThis.setTimeout;
-        let stageTimerCount = 0;
-        globalThis.setTimeout = ((handler: TimerHandler, _delay?: number, ...args: unknown[]) => {
-            stageTimerCount += 1;
-            // Discovery owns the first stage timer; expire the clan stage's timer.
-            // This keeps the real request/protocol event loop active without waiting ten minutes.
-            if (stageTimerCount === 2 && typeof handler === "function") {
-                queueMicrotask(() => handler(...args));
-            }
-            return stageTimerCount as unknown as ReturnType<typeof setTimeout>;
-        }) as typeof setTimeout;
+    it("fails closed when admission expires during a clan fetch and never starts optional work", async () => {
+        vi.useFakeTimers();
+        state.fetch.mockImplementation(async (_path: string, _retries: unknown, signal: AbortSignal) =>
+            await new Promise((_resolve, reject) => signal.addEventListener('abort', () => reject(signal.reason), { once: true })));
         try {
             const responsePromise = requestHandler(makeRequest());
-            await deepDepthEntered;
-            resolveProfileResponse?.({
-                ok: true,
-                status: 200,
-                json: async () => VALID_API_RESPONSES["/clans/%23CLAN1"],
-            });
-            await vi.waitFor(() => {
-                const calls = state.rpc.mock.calls as Array<[string, unknown]>;
-                expect(Object.values(REQUIRED_RPC_BY_STAGE).every((rpc) =>
-                    calls.some(([name]) => name === rpc),
-                )).toBe(true);
-            });
-            releaseDeepDepth?.();
-
+            await vi.advanceTimersByTimeAsync(90_000);
             const response = await responsePromise;
-            const body = await response.json();
-            const calls = state.rpc.mock.calls as Array<[string, unknown]>;
-
             expect(response.status).toBe(500);
-            expect(body.code).toBe("INTERNAL_ERROR");
-            expect(calls.some(([name, args]) => name === "update_telemetry" &&
-                (args as { p_status?: string }).p_status === "FAILED")).toBe(true);
-            expect(calls.filter(([name]) => name === "report_heartbeat")
-                .map(([, args]) => (args as { p_status: string }).p_status)).not.toContain("COMPLETED");
-        } finally {
-            globalThis.setTimeout = originalSetTimeout;
-        }
+            expect(state.deepDepth).not.toHaveBeenCalled();
+            expect(state.discovery).not.toHaveBeenCalled();
+            expect(state.rpc.mock.calls.some(([name]) => Object.values(REQUIRED_RPC_BY_STAGE).includes(name))).toBe(false);
+            expect(vi.getTimerCount()).toBe(0);
+        } finally { vi.useRealTimers(); }
     });
 });

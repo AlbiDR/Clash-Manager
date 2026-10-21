@@ -176,3 +176,37 @@ describe("ingest-royale-data Edge Function", () => {
         expect(body.code).toBe("INTERNAL_ERROR");
     });
 });
+
+
+describe('ingestion required progress persistence', () => {
+    it('rejects failed recruit poll acknowledgement despite successful clan writes', async () => {
+        mockExecutePipeline.mockResolvedValue({ profile: { success: true }, members: { success: true },
+            race: { success: true }, warlog: { success: true }, battles: { success: false, cursor_ack_failed: true } });
+        const response = await requestHandler(new Request('https://test.co/ingest-royale-data', {
+            method: 'POST', headers: { Authorization: 'Bearer internal-bearer' },
+        }));
+        expect(response.status).toBe(500);
+        expect(await response.json()).toMatchObject({ code: "INTERNAL_ERROR", error: "Internal Server Error" });
+    });
+    it('keeps scoped SDK clients and lifecycle signals isolated across concurrent invocations', async () => {
+        const client = await import('./client.ts');
+        const signals: AbortSignal[] = [];
+        const original = client.supabase.rpc.getMockImplementation();
+        const rpc = vi.spyOn(client.supabase, 'rpc').mockImplementation(() => {
+            const result = Promise.resolve({ data: null, error: null });
+            return Object.assign(result, { abortSignal(signal: AbortSignal) { signals.push(signal); return result; } });
+        });
+        const vault = vi.mocked(client.syncVault);
+        vault.mockImplementation(async scopedClient => { await scopedClient.rpc('setup-probe'); });
+        try {
+            const request = () => new Request('https://test.co/ingest-royale-data', {
+                method: 'POST', headers: { Authorization: 'Bearer internal-bearer' },
+            });
+            const responses = await Promise.all([requestHandler(request()), requestHandler(request())]);
+            expect(responses.map(response => response.status)).toEqual([200, 200]);
+            expect(signals[0]).not.toBe(signals[1]);
+            expect(new Set(signals).size).toBe(2);
+            expect(signals.every(signal => !signal.aborted)).toBe(true);
+        } finally { rpc.mockImplementation(original); vault.mockResolvedValue(undefined); }
+    });
+});

@@ -21,7 +21,8 @@
     "public.update_telemetry(uuid,text,jsonb)",
     "public.report_anchor_yield(text,integer,boolean)",
     "substrate.report_anchor_yield(text,integer,boolean)",
-    "public.upsert_discovery_cache_batch(text[],text)"
+    "public.upsert_discovery_cache_batch(text[],text)",
+    "public.record_recruit_battle_polls(text[])"
   ],
   "immutableFileHashes": {
     "Backend/supabase/migrations/20260614082900_add_trail_battle_type.sql": "8c94c134ce891e5a50d8d2fd25f78e904cbcecb01101e4ace3cd12dc70034ce2",
@@ -100,7 +101,8 @@
     "Backend/supabase/migrations/20261010153623_lock_down_report_anchor_yield_execute.sql": "ab5e5826a8874e567b62d389d20d26a53fa1e25cfc608907d824bd750a19777c",
     "Backend/supabase/migrations/20261015202644_upsert_discovery_cache_batch.sql": "4b628ec6d89cdf987b0fef38e81e595608dedc95ff3384aecfa4de28c9e3e394",
     "Backend/supabase/migrations/20261015202548_stabilize_recruit_sync_and_rotation.sql": "97bfcdca05c2ccabdbb51aa60c821041a79f963cef32c29f320837a3ca2aa3b6",
-    "Backend/supabase/migrations/20261017151347_skip_unchanged_exclusion_cache_updates.sql": "15b0351edc42c2379d63948bb2ca32c7a1fb5dd15c61fe6349c38067b566d389"
+    "Backend/supabase/migrations/20261017151347_skip_unchanged_exclusion_cache_updates.sql": "15b0351edc42c2379d63948bb2ca32c7a1fb5dd15c61fe6349c38067b566d389",
+    "Backend/supabase/migrations/20261021195547_bound_recruit_battle_poll_targets.sql": "fb68950309da2353a286cde72eee44115745b86d41ae7899c7e4d36b751bdbf2"
   },
   "exemptions": []
 }

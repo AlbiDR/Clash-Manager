@@ -52,6 +52,7 @@ vi.mock("../../../_shared/muscle.ts", () => ({
     processBatch: mockProcessBatch,
 }));
 
+import { IngestionWorkBudget } from "../../work-budget.ts";
 import { runDeepDepth, isAlreadyIngested } from "../deep-depth.ts";
 
 function freshResults(): IngestionResult {
@@ -204,6 +205,7 @@ describe("runDeepDepth shadow-lead registry write gating (F5)", () => {
 
         await expect(runDeepDepth(results, logAudit)).rejects.toThrow(/Failed to fetch ingestion targets/);
         expect(results.battles.error).toContain("Failed to fetch ingestion targets");
+        expect(results.battles).toMatchObject({ members_failed: 1 });
     });
 
     it("logs an RPC error for ingest_player_battles without aborting the shadow-lead harvest for other targets", async () => {
@@ -434,5 +436,48 @@ describe("isAlreadyIngested answers false whenever it cannot prove the log is st
         expect(isAlreadyIngested(log("20260725T093152Z"), "20260725T093152.000Z")).toBe(false);
         expect(isAlreadyIngested(log("20260725T093152.000Z"), "2026-07-25 09:31:52+00")).toBe(false);
         expect(isAlreadyIngested(log("20260725T093152.000Z", "INVALID_TIMESTAMP"), "20260725T093152.000Z")).toBe(false);
+    });
+});
+
+
+describe('bounded member-first polling and fair acknowledgements', () => {
+    it('fetches every member before optional recruits and acknowledges an overlapping selected recruit once', async () => {
+        rpcResponses.get_ingestion_targets = { data: { 'drivers.members': ['#MEMBER1', '#BOTH'], 'drivers.recruits': ['#RECRUIT1', '#BOTH'] }, error: null };
+        rpcResponses.get_latest_battle_times = { data: [], error: null };
+        mockFetchWithRotation.mockResolvedValue({ ok: true, status: 200, json: async () => [] });
+        const results = freshResults();
+        await runDeepDepth(results, makeAuditCollector().logAudit);
+        expect(mockFetchWithRotation.mock.calls.map(([path]) => path)).toEqual([
+            '/players/%23MEMBER1/battlelog', '/players/%23BOTH/battlelog', '/players/%23RECRUIT1/battlelog',
+        ]);
+        expect(mockSupabase.rpc.mock.calls.filter(([name]) => name === 'ingest_player_battles').map(([, args]) => args.p_tag))
+            .toEqual(['#MEMBER1', '#BOTH', '#RECRUIT1']);
+        expect(mockSupabase.rpc.mock.calls.find(([name]) => name === 'record_recruit_battle_polls')?.[1])
+            .toEqual({ p_player_tags: ['#BOTH', '#RECRUIT1'] });
+        expect(results.battles).toMatchObject({ members_attempted: 2, members_failed: 0, members_deferred: 0, recruits_attempted: 2 });
+    });
+    it('never fetches or acknowledges queued recruits after admission closes', async () => {
+        rpcResponses.get_ingestion_targets = { data: { 'drivers.members': ['#MEMBER1'], 'drivers.recruits': ['#RECRUIT1', '#RECRUIT2', '#RECRUIT3'] }, error: null };
+        rpcResponses.get_latest_battle_times = { data: [], error: null };
+        mockFetchWithRotation.mockResolvedValue({ ok: true, status: 200, json: async () => [] });
+        const budget = new IngestionWorkBudget();
+        vi.spyOn(budget, 'canAdmit').mockImplementation(() => mockFetchWithRotation.mock.calls.length < 2);
+        const results = freshResults();
+        try { await runDeepDepth(results, makeAuditCollector().logAudit, budget); }
+        finally { budget.dispose(); }
+        expect(mockFetchWithRotation).toHaveBeenCalledTimes(2);
+        expect(mockSupabase.rpc.mock.calls.find(([name]) => name === 'record_recruit_battle_polls')?.[1])
+            .toEqual({ p_player_tags: ['#RECRUIT1'] });
+        expect(results.battles).toMatchObject({ members_failed: 0, members_deferred: 0, recruits_attempted: 1, recruits_deferred: 2 });
+    });
+    it('marks a failed poll acknowledgement incomplete without claiming all writes succeeded', async () => {
+        rpcResponses.get_ingestion_targets = { data: { 'drivers.members': [], 'drivers.recruits': ['#RECRUIT1'] }, error: null };
+        rpcResponses.get_latest_battle_times = { data: [], error: null };
+        rpcResponses.record_recruit_battle_polls = { data: null, error: { message: 'unavailable' } };
+        mockFetchWithRotation.mockResolvedValue({ ok: false, status: 503 });
+        const results = freshResults();
+        await runDeepDepth(results, makeAuditCollector().logAudit);
+        expect(results.battles.success).toBe(false);
+        expect(results.battles.error).toContain('acknowledgement failed');
     });
 });

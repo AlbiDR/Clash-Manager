@@ -11,13 +11,15 @@
 
 The pipeline (`pipeline.ts`) runs three stages in order:
 
-1. **Discovery** (`stages/discovery.ts`) - harvests fresh recruit candidates from open tournaments before the clan sync begins.
-2. **Clan sync** (`stages/clan-sync.ts`) - fetches the clan profile, member list, current river race, and the last 12 war weeks, then upserts the clan, roster (including joins and leaves), weekly war activity, and permanent war history.
-3. **Deep depth** (`stages/deep-depth.ts`) - fetches battle logs for members whose poll interval has elapsed (or all members during an active Voyage) plus active recruits, and records them into the 100-battle rolling window. Bypasses redundant PostgREST RPC calls when recruit battle logs are unchanged (`isAlreadyIngested` via `get_latest_battle_times`), while continuing to harvest clanless opponents as shadow leads.
+1. **Clan sync** (`stages/clan-sync.ts`) - persists the clan profile, member roster, current river race and last 12 war weeks first.
+2. **Deep depth** (`stages/deep-depth.ts`) - polls all due members (all active members during a Voyage) before optional recruit battle logs. The target RPC selects at most 50 recruits, ordered by their durable last-poll timestamp and tag. Each actually attempted selected recruit is acknowledged through `record_recruit_battle_polls`, including failed or unchanged responses; an overlapping member/recruit is fetched once and acknowledged for both roles. Unstarted recruits remain eligible. Member writes still reschedule `next_poll_at`, including valid empty logs.
+3. **Discovery** (`stages/discovery.ts`) - uses any remaining admission budget to harvest tournament recruits. Failure or deferral of this optional work does not undo earlier required writes.
 
-Each stage runs under a 10-minute timeout and reports progress to the governance telemetry.
+One invocation budget starts before Vault setup: external admission closes at 90 seconds, stage writes stop at 120 seconds, and lifecycle RPCs (setup and final telemetry/heartbeat) stop at 145 seconds. The separate lifecycle signal leaves completion time after the work signal expires and a margin before the Free worker wall limit. Timers are disposed after the shared handler resolves. Fetches and PostgREST operations receive their respective signals; no stage races detached work against a timer. These are operational bounds, not guarantees of completed work during a provider stall. The shared incoming-body reader is unchanged; this checkpoint targets the authenticated scheduler's small JSON requests.
 
-The entry point reports a completed ingestion cycle only when the profile, member roster, river race, and war-log persistence results are all explicitly successful and clan sync has not timed out at the pipeline boundary. Missing result fields, failed writes, or a clan-sync timeout produce a sanitized protocol error, terminal FAILED telemetry, and a FAILED heartbeat. Discovery errors remain recorded without blocking this core-write completion gate. The battle-history stage still runs after clan sync and retains its own result and error reporting; this gate does not change that stage's execution.
+Required clan writes, member target acquisition/polls and attempted-recruit poll acknowledgements must succeed for the entry point to return a completed cycle. A failed or unstarted required member poll is explicit, and its polling timestamp is never advanced by the worker without a successful ingestion RPC. Optional recruitment work can be deferred without being treated as a required-write failure. Diagnostics retain stage durations, invocation elapsed time and attempted/failed/deferred polling counts. Successful dispatch or completed telemetry alone does not prove fresh snapshots or complete enrichment.
+
+`RecruitWriter` deduplicates accepted tags within the invocation and serializes registry-before-recruit writes in chunks of at most 50, ordered by tag. Successful chunks remain durable if a later chunk fails. It retains a bounded pending payload and the seen-tag set, rather than whole-run player and recruit payload arrays. Errors remain visible; it does not retry failed chunks within the same invocation.
 
 The four clan writes are separate RPC calls, not one transaction, so a failed cycle can leave earlier writes committed. A FAILED heartbeat preserves the previous `last_success_at`, and the app keeps showing the prior materialized snapshot because snapshots refresh on a COMPLETED heartbeat. That snapshot can therefore lag partial base-table writes until a later completed cycle. A successful heartbeat and its snapshot refresh are also not an atomic publication guarantee: snapshot refresh failures are recorded separately and can leave the snapshot marker unchanged.
 
@@ -27,7 +29,9 @@ The four clan writes are separate RPC calls, not one transaction, so a failed cy
 | :--- | :--- |
 | `index.ts` | Entry point; loads secrets and runs the pipeline behind the [shared handler](../_shared/README.md). |
 | `pipeline.ts` | Orchestrates the three stages. |
-| `client.ts` | Supabase service client for database calls. |
+| `client.ts` | Supabase service client and request-scoped Vault loading. |
+| `work-budget.ts` | Admission, work and lifecycle deadlines. |
+| `recruit-writer.ts` | Deduplicated bounded registry/recruit checkpoints. |
 | `stages/discovery.ts` | Recruit harvesting from tournaments. |
 | `stages/clan-sync.ts` | Clan, roster, river race, and war history sync. |
 | `stages/deep-depth.ts` | Per-player battle-log ingestion. |
