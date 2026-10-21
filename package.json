@@ -137,7 +137,7 @@
       "@vitejs/plugin-vue": "^6.0.10",
       "@vue/test-utils": "^2.5.0",
       "@vue/tsconfig": "^0.9.1",
-      "dependency-cruiser": "^18.6.0",
+      "dependency-cruiser": "^18.7.0",
       "jsdom": "^30.1.1",
       "knip": "^6.42.1",
       "simple-git-hooks": "^2.14.0",
