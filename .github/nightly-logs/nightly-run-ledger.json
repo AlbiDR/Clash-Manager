@@ -36453,7 +36453,7 @@
         "dispatchAttempts": 0,
         "interventionAttempts": 0,
         "attempts": 0,
-        "lastObservedAt": "2026-10-21T12:09:42.977Z",
+        "lastObservedAt": "2026-10-21T15:36:46.641Z",
         "failureClass": null
       },
       "2": {
@@ -36504,7 +36504,7 @@
         "dispatchAttempts": 0,
         "interventionAttempts": 0,
         "attempts": 0,
-        "lastObservedAt": "2026-10-21T12:09:43.033Z",
+        "lastObservedAt": "2026-10-21T15:36:46.692Z",
         "failureClass": null
       },
       "3": {
@@ -36589,7 +36589,7 @@
         "dispatchAttempts": 0,
         "interventionAttempts": 0,
         "attempts": 0,
-        "lastObservedAt": "2026-10-21T12:09:43.088Z",
+        "lastObservedAt": "2026-10-21T15:36:46.748Z",
         "failureClass": null
       },
       "4": {
@@ -36640,7 +36640,7 @@
         "dispatchAttempts": 0,
         "interventionAttempts": 0,
         "attempts": 0,
-        "lastObservedAt": "2026-10-21T12:09:43.144Z",
+        "lastObservedAt": "2026-10-21T15:36:46.800Z",
         "failureClass": null
       },
       "5": {
@@ -36694,7 +36694,7 @@
         "dispatchAttempts": 0,
         "interventionAttempts": 0,
         "attempts": 0,
-        "lastObservedAt": "2026-10-21T12:09:43.200Z",
+        "lastObservedAt": "2026-10-21T15:36:46.852Z",
         "failureClass": null
       },
       "6": {
@@ -36748,7 +36748,7 @@
         "dispatchAttempts": 0,
         "interventionAttempts": 0,
         "attempts": 0,
-        "lastObservedAt": "2026-10-21T12:09:43.255Z",
+        "lastObservedAt": "2026-10-21T15:36:46.905Z",
         "failureClass": null
       },
       "7": {
@@ -36809,7 +36809,7 @@
         "dispatchAttempts": 0,
         "interventionAttempts": 0,
         "attempts": 0,
-        "lastObservedAt": "2026-10-21T12:09:43.316Z",
+        "lastObservedAt": "2026-10-21T15:36:46.959Z",
         "failureClass": null
       },
       "8": {
@@ -36863,7 +36863,7 @@
         "dispatchAttempts": 0,
         "interventionAttempts": 0,
         "attempts": 0,
-        "lastObservedAt": "2026-10-21T12:09:43.372Z",
+        "lastObservedAt": "2026-10-21T15:36:47.012Z",
         "failureClass": null
       },
       "9": {
@@ -36920,7 +36920,7 @@
         "dispatchAttempts": 0,
         "interventionAttempts": 0,
         "attempts": 0,
-        "lastObservedAt": "2026-10-21T12:09:43.424Z",
+        "lastObservedAt": "2026-10-21T15:36:47.063Z",
         "failureClass": null
       },
       "10": {
@@ -36974,7 +36974,7 @@
         "dispatchAttempts": 0,
         "interventionAttempts": 0,
         "attempts": 0,
-        "lastObservedAt": "2026-10-21T12:09:43.478Z",
+        "lastObservedAt": "2026-10-21T15:36:47.116Z",
         "failureClass": null
       },
       "11": {
@@ -37054,7 +37054,7 @@
         "dispatchAttempts": 0,
         "interventionAttempts": 0,
         "attempts": 0,
-        "lastObservedAt": "2026-10-21T12:09:43.534Z",
+        "lastObservedAt": "2026-10-21T15:36:47.168Z",
         "failureClass": null
       },
       "12": {
@@ -37111,7 +37111,7 @@
         "dispatchAttempts": 0,
         "interventionAttempts": 0,
         "attempts": 0,
-        "lastObservedAt": "2026-10-21T12:09:43.588Z",
+        "lastObservedAt": "2026-10-21T15:36:47.221Z",
         "failureClass": null
       },
       "13": {
@@ -37165,7 +37165,7 @@
         "dispatchAttempts": 0,
         "interventionAttempts": 0,
         "attempts": 0,
-        "lastObservedAt": "2026-10-21T12:09:43.641Z",
+        "lastObservedAt": "2026-10-21T15:36:47.273Z",
         "failureClass": null
       }
     }
@@ -301110,6 +301110,46 @@
         }
       },
       "eventId": "2ed2466630a2713a7897f69ee8cc2ad3a8ac36389e422a53c80ea0ac3ebf8d6e"
+    },
+    {
+      "schemaVersion": 1,
+      "sequence": 4769,
+      "previousEventId": "2ed2466630a2713a7897f69ee8cc2ad3a8ac36389e422a53c80ea0ac3ebf8d6e",
+      "cycleId": "nightly-cycle/2026-10-21",
+      "date": "2026-10-21",
+      "stage": 0,
+      "type": "CYCLE_EXECUTION_RECORDED",
+      "source": "nightly-watchdog/observer",
+      "recordedAt": "2026-10-21T15:35:48.615Z",
+      "contractFingerprint": null,
+      "payload": {
+        "execution": {
+          "checkout": {
+            "branch": "Nightly",
+            "sha": "c5943f63d32a93cf99f92a8e995f269083673068"
+          },
+          "controlPlane": {
+            "registryDigest": "f28c46cb5ffe27c89e2fdd3ded80a710b466823dce96edb297a4caef9dd9c4a7",
+            "workflowDigest": "91cf12e7a4b54fded370a7d2963a662a5b7ca014c795fa9fc9a150e34732dbd8"
+          },
+          "executionId": ".github/workflows/nightly-watchdog.yml:39627051343:1",
+          "runtime": {
+            "arch": "x64",
+            "node": "v22.23.3",
+            "platform": "linux",
+            "runnerImage": "ubuntu24",
+            "runnerOs": "Linux"
+          },
+          "schemaVersion": 1,
+          "workflow": {
+            "attempt": 1,
+            "name": "Nightly Watchdog",
+            "path": ".github/workflows/nightly-watchdog.yml",
+            "runId": "39627051343"
+          }
+        }
+      },
+      "eventId": "d9ffc7afdc870242dd7f62e0577fe4b6eb689021392176140709108b0f0d8620"
     }
   ],
   "cycles": {
@@ -313519,10 +313559,35 @@
             "registryDigest": "f28c46cb5ffe27c89e2fdd3ded80a710b466823dce96edb297a4caef9dd9c4a7",
             "workflowDigest": "91cf12e7a4b54fded370a7d2963a662a5b7ca014c795fa9fc9a150e34732dbd8"
           }
+        },
+        ".github/workflows/nightly-watchdog.yml:39627051343:1": {
+          "schemaVersion": 1,
+          "executionId": ".github/workflows/nightly-watchdog.yml:39627051343:1",
+          "workflow": {
+            "name": "Nightly Watchdog",
+            "path": ".github/workflows/nightly-watchdog.yml",
+            "runId": "39627051343",
+            "attempt": 1
+          },
+          "checkout": {
+            "branch": "Nightly",
+            "sha": "c5943f63d32a93cf99f92a8e995f269083673068"
+          },
+          "runtime": {
+            "node": "v22.23.3",
+            "platform": "linux",
+            "arch": "x64",
+            "runnerOs": "Linux",
+            "runnerImage": "ubuntu24"
+          },
+          "controlPlane": {
+            "registryDigest": "f28c46cb5ffe27c89e2fdd3ded80a710b466823dce96edb297a4caef9dd9c4a7",
+            "workflowDigest": "91cf12e7a4b54fded370a7d2963a662a5b7ca014c795fa9fc9a150e34732dbd8"
+          }
         }
       }
     }
   },
-  "eventCount": 4768,
-  "eventHead": "2ed2466630a2713a7897f69ee8cc2ad3a8ac36389e422a53c80ea0ac3ebf8d6e"
+  "eventCount": 4769,
+  "eventHead": "d9ffc7afdc870242dd7f62e0577fe4b6eb689021392176140709108b0f0d8620"
 }
