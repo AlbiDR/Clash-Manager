@@ -70,6 +70,7 @@ jobs:
     timeout-minutes: 30
     steps:
       - name: Checkout repository
+        id: checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -80,10 +81,14 @@ jobs:
         continue-on-error: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NIGHTLY_EXECUTION_BRANCH: Nightly
+          NIGHTLY_EXECUTION_SHA: ${{ steps.checkout.outputs.commit }}
+          NIGHTLY_WORKFLOW_PATH: .github/workflows/merge-nightly-prs.yml
+          NIGHTLY_TRACE_PATH: ${{ runner.temp }}/nightly-trace.jsonl
         run: |
           for i in {1..3}; do
             echo "Attempt $i to run merge script..."
-            if node .github/scripts/nightly/merge-nightly-prs.mjs; then
+            if NIGHTLY_CONTROL_ATTEMPT="$i" node .github/scripts/nightly/merge-nightly-prs.mjs; then
               echo "Merge script completed successfully."
               break
             fi
@@ -97,6 +102,7 @@ jobs:
           done
 
       - name: Commit and Push Nightly Control Plane Updates with Retry
+        id: ledger
         run: |
           if [[ `git status --porcelain .github/nightly-logs/00-pr-history.md .github/nightly-logs/nightly-run-ledger.json` ]]; then
             git config --global user.name 'github-actions[bot]'
@@ -126,3 +132,24 @@ jobs:
       - name: Fail if Merge Script Failed
         if: steps.merge-script.outcome == 'failure'
         run: exit 1
+
+      - name: Write Nightly trace index
+        if: always()
+        continue-on-error: true
+        env:
+          NIGHTLY_EXECUTION_BRANCH: Nightly
+          NIGHTLY_EXECUTION_SHA: ${{ steps.checkout.outputs.commit }}
+          NIGHTLY_WORKFLOW_PATH: .github/workflows/merge-nightly-prs.yml
+          NIGHTLY_TRACE_PATH: ${{ runner.temp }}/nightly-trace.jsonl
+          NIGHTLY_TRACE_STEPS: >-
+            {"checkout":{"outcome":"${{ steps.checkout.outcome }}","conclusion":"${{ steps.checkout.conclusion }}"},"merge-script":{"outcome":"${{ steps.merge-script.outcome }}","conclusion":"${{ steps.merge-script.conclusion }}"},"ledger":{"outcome":"${{ steps.ledger.outcome }}","conclusion":"${{ steps.ledger.conclusion }}"}}
+          NIGHTLY_TRACE_JOB_STATUS: ${{ job.status }}
+        run: node .github/scripts/nightly/nightly-trace.mjs --finalize
+
+      - name: Preserve Nightly operation trace
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nightly-trace-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/nightly-trace.jsonl*
+          if-no-files-found: warn

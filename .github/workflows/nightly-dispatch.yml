@@ -55,6 +55,7 @@ jobs:
           NIGHTLY_EXECUTION_BRANCH: Nightly
           NIGHTLY_EXECUTION_SHA: ${{ steps.checkout.outputs.commit }}
           NIGHTLY_WORKFLOW_PATH: .github/workflows/nightly-dispatch.yml
+          NIGHTLY_TRACE_PATH: ${{ runner.temp }}/nightly-trace.jsonl
         id: dispatch
         continue-on-error: true
         run: |
@@ -70,6 +71,7 @@ jobs:
           fi
 
       - name: Commit and Push Ledger with Retry
+        id: ledger
         run: |
           if [[ `git status --porcelain .github/nightly-logs/nightly-run-ledger.json` ]]; then
             git config --global user.name 'github-actions[bot]'
@@ -99,3 +101,24 @@ jobs:
       - name: Fail if Jules dispatch failed
         if: steps.dispatch.outcome == 'failure'
         run: exit 1
+
+      - name: Write Nightly trace index
+        if: always()
+        continue-on-error: true
+        env:
+          NIGHTLY_EXECUTION_BRANCH: Nightly
+          NIGHTLY_EXECUTION_SHA: ${{ steps.checkout.outputs.commit }}
+          NIGHTLY_WORKFLOW_PATH: .github/workflows/nightly-dispatch.yml
+          NIGHTLY_TRACE_PATH: ${{ runner.temp }}/nightly-trace.jsonl
+          NIGHTLY_TRACE_STEPS: >-
+            {"checkout":{"outcome":"${{ steps.checkout.outcome }}","conclusion":"${{ steps.checkout.conclusion }}"},"dispatch":{"outcome":"${{ steps.dispatch.outcome }}","conclusion":"${{ steps.dispatch.conclusion }}"},"ledger":{"outcome":"${{ steps.ledger.outcome }}","conclusion":"${{ steps.ledger.conclusion }}"}}
+          NIGHTLY_TRACE_JOB_STATUS: ${{ job.status }}
+        run: node .github/scripts/nightly/nightly-trace.mjs --finalize
+
+      - name: Preserve Nightly operation trace
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nightly-trace-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/nightly-trace.jsonl*
+          if-no-files-found: warn

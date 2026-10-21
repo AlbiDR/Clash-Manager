@@ -6,9 +6,10 @@
  * Implementation and testable policy live in merge-nightly-core.mjs.
  */
 
+import { traceNightlyOperation } from "./nightly-trace.mjs";
 import { run } from "./merge-nightly-core.mjs";
 
-run().catch(error => {
+traceNightlyOperation("merge.run", {}, () => run()).catch(error => {
   console.error("CRITICAL:", error.message);
   process.exit(1);
 });

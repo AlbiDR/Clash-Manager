@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
+import { traceNightlyOperation } from "./nightly-trace.mjs";
 import fs from "node:fs";
 import { spawnSync } from "node:child_process";
 import { classifyNightlyPr, CONFIG, extractMetadata, selectNewestGateRun } from "./merge-nightly-core.mjs";
@@ -191,6 +192,7 @@ function runGit(args) {
 }
 
 async function githubApi(endpoint, config = CONFIG, method = "GET", body = null) {
+  return traceNightlyOperation("github.request", { endpoint, method }, async () => {
   invariant(config.token, "GITHUB_TOKEN is missing.");
   const res = await fetch(`https://api.github.com${endpoint}`, {
     method,
@@ -208,6 +210,7 @@ async function githubApi(endpoint, config = CONFIG, method = "GET", body = null)
     throw new Error(`GitHub API ${res.status} ${res.statusText}: ${text}`);
   }
   return res.status === 204 ? null : res.json();
+  });
 }
 
 async function fetchRecentPullRequests(config = CONFIG) {
@@ -265,9 +268,9 @@ async function fetchJulesPage(url, config, fetchImpl, sleepImpl, retryDelaysMs) 
   let attempt = 0;
   while (true) {
     try {
-      res = await fetchImpl(url.toString(), {
+      res = await traceNightlyOperation("jules.request", { kind: "http", endpoint: new URL(url).pathname, attempt: attempt + 1 }, () => fetchImpl(url.toString(), {
         headers: { "X-Goog-Api-Key": config.julesApiKey },
-      });
+      }));
     } catch (error) {
       if (attempt >= retryDelaysMs.length) throw error;
       await sleepImpl(retryDelaysMs[attempt]);
@@ -1297,7 +1300,11 @@ export function selectRecoveryCandidates(entries, ledger, date) {
 
 // Asks each stuck session to hand over the change set it already finalized,
 // then waits for the publisher to open the PR so the same run can merge it.
-export async function recoverStuckStages({
+export async function recoverStuckStages(options = {}) {
+  return traceNightlyOperation("watchdog.recovery", { cycleId: options.date ? getCycleId(options.date) : null }, () => executeRecoverStuckStages(options));
+}
+
+async function executeRecoverStuckStages({
   entries,
   ledger,
   registry,
@@ -1616,7 +1623,11 @@ export function planRedispatches({ entries, ledger, registry, date, julesSession
  * only means the new session starts as early as possible and its record is on
  * disk before the nudge pass spends up to its whole poll window waiting.
  */
-export async function redispatchFailedStages({
+export async function redispatchFailedStages(options = {}) {
+  return traceNightlyOperation("watchdog.redispatch", { cycleId: options.date ? getCycleId(options.date) : null }, () => executeRedispatchFailedStages(options));
+}
+
+async function executeRedispatchFailedStages({
   entries,
   ledger,
   registry,
@@ -2003,7 +2014,11 @@ export async function dispatchFallbackChecks(plan, result, config = CONFIG, api 
   return { status: "DISPATCHED", headSha: pr.head.sha, workflows: dispatched };
 }
 
-export async function publishStrandedWork({
+export async function publishStrandedWork(options = {}) {
+  return traceNightlyOperation("watchdog.fallback", { cycleId: options.date ? getCycleId(options.date) : null }, () => executePublishStrandedWork(options));
+}
+
+async function executePublishStrandedWork({
   unrecovered = [],
   julesSessions = [],
   ledger,
@@ -2282,7 +2297,7 @@ export async function runCli(argv = process.argv.slice(2), config = CONFIG) {
   // outcomes this collects, and a block-scoped const would not survive to it.
   let observed = null;
   try {
-    observed = await collectObservedState(registry, date, config, ledger);
+    observed = await traceNightlyOperation("watchdog.observe", { cycleId: getCycleId(date) }, () => collectObservedState(registry, date, config, ledger));
     promotion = observed.promotion;
     // Captured for the readiness report and the exit code. A run where every
     // stage merged but the credential is dead is NOT a healthy run.
@@ -2453,7 +2468,10 @@ export async function runCli(argv = process.argv.slice(2), config = CONFIG) {
 
 const isMain = process.argv[1] && process.argv[1].endsWith("nightly-watchdog.mjs");
 if (isMain) {
-  runCli().catch(error => {
+  traceNightlyOperation("watchdog.run", {}, async () => {
+    await runCli();
+    return { exitCode: process.exitCode || 0 };
+  }).catch(error => {
     errorLine(`Nightly watchdog error: ${error.message}`);
     process.exitCode = 1;
   });
