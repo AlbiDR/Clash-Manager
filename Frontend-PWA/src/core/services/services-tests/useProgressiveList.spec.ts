@@ -560,4 +560,56 @@ describe("useProgressiveList", () => {
     });
     scope.stop();
   });
+
+  it("enforces exact delta threshold boundaries for churn prevention (delta = 4 vs delta = 5)", async () => {
+    const scope = effectScope();
+    await scope.run(async () => {
+      const source = ref(Array.from({ length: 20 }, (_, i) => i + 1));
+      const { visibleItems } = useProgressiveList(source, 10);
+
+      // Fully load 20 items
+      vi.advanceTimersByTime(1);
+      expect(visibleItems.value).toHaveLength(20);
+
+      // Case 1: Delta = 4 (20 -> 24). Math.abs(24 - 20) = 4 < 5.
+      // Should preserve rendered length of 20 and schedule remaining chunk.
+      source.value = Array.from({ length: 24 }, (_, i) => i + 1);
+      await nextTick();
+
+      expect(visibleItems.value).toHaveLength(20);
+      vi.advanceTimersByTime(1);
+      expect(visibleItems.value).toHaveLength(24);
+
+      // Case 2: Delta = 5 (24 -> 29). Math.abs(29 - 24) = 5 (NOT < 5).
+      // Should reset visible items to initialSize (10) for fresh load.
+      source.value = Array.from({ length: 29 }, (_, i) => i + 100);
+      await nextTick();
+
+      expect(visibleItems.value).toHaveLength(10);
+      expect(visibleItems.value[0]).toBe(100);
+    });
+    scope.stop();
+  });
+
+  it("passes active timer ID to cancelAnimationFrame when cancelIdleCallback is absent on window", async () => {
+    const scope = effectScope();
+    const originalCIC = (window as any).cancelIdleCallback;
+    (window as any).cancelIdleCallback = undefined;
+
+    await scope.run(async () => {
+      const cancelSpy = vi.mocked(window.cancelAnimationFrame);
+      cancelSpy.mockClear();
+
+      const source = ref(Array.from({ length: 50 }, (_, i) => i + 1));
+      useProgressiveList(source, 10);
+
+      source.value = Array.from({ length: 10 }, (_, i) => i + 1);
+      await nextTick();
+
+      expect(cancelSpy).toHaveBeenCalledWith(expect.anything());
+    });
+
+    scope.stop();
+    (window as any).cancelIdleCallback = originalCIC;
+  });
 });
