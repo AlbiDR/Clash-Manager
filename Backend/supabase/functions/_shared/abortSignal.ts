@@ -26,3 +26,21 @@ export function throwIfAborted(signal?: AbortSignal): void {
         throw signal.reason ?? new DOMException('The operation was aborted.', 'AbortError');
     }
 }
+
+/** Wait between retries without keeping a cancelled invocation alive. */
+export async function waitWithAbort(delayMs: number, signal?: AbortSignal): Promise<void> {
+    throwIfAborted(signal);
+    await new Promise<void>((resolve, reject) => {
+        const onAbort = () => {
+            clearTimeout(timer);
+            signal?.removeEventListener('abort', onAbort);
+            reject(signal?.reason ?? new DOMException('The operation was aborted.', 'AbortError'));
+        };
+        const timer = setTimeout(() => {
+            signal?.removeEventListener('abort', onAbort);
+            resolve();
+        }, delayMs);
+        signal?.addEventListener('abort', onAbort, { once: true });
+        if (signal?.aborted) onAbort();
+    });
+}

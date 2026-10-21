@@ -226,3 +226,9 @@ export function getAllowedOrigins(): string[] {
     .map((origin) => origin.trim())
     .filter((origin) => origin.length > 0);
 }
+
+/** Operational ingestion bounds: stop work before the Free worker wall limit. */
+export const INGESTION_LIFECYCLE_BUDGET_MS = 145_000;
+export const INGESTION_WORK_BUDGET_MS = 120_000;
+export const INGESTION_CHECKPOINT_RESERVE_MS = 30_000;
+export const INGESTION_WRITE_BATCH_SIZE = 50;

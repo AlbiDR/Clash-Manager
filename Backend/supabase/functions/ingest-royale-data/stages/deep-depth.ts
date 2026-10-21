@@ -1,9 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
+import { withAbortSignal } from "../../_shared/abortSignal.ts";
+import { IngestionWorkBudget } from "../work-budget.ts";
+import { INGESTION_WRITE_BATCH_SIZE } from "../../_shared/config.ts";
+import { RecruitWriter } from "../recruit-writer.ts";
 import { supabase } from "../client.ts";
 import { fetchWithRotation, processBatch } from "../../_shared/muscle.ts";
-import { normalizeTag } from "../../_shared/utils.ts";
 import { IngestionResult, AuditEntry } from "../../_shared/types.ts";
 import * as v from "npm:valibot@1.5.0";
 import { RoyaleBattleLogSchema, IngestionTargetsSchema, LatestBattleTimesSchema } from "../../_shared/schemas.ts";
@@ -62,13 +65,14 @@ export function isAlreadyIngested(
  */
 async function fetchLatestBattleTimes(
     recruitTags: string[],
-    logAudit: (stage: string, action: AuditEntry['action'], details?: unknown) => void
+    logAudit: (stage: string, action: AuditEntry['action'], details?: unknown) => void,
+    budget?: IngestionWorkBudget
 ): Promise<Map<string, string> | null> {
     if (recruitTags.length === 0) return new Map();
 
-    const { data: rawLatest, error: latestError } = await supabase.rpc('get_latest_battle_times', {
+    const { data: rawLatest, error: latestError } = await withAbortSignal(supabase.rpc('get_latest_battle_times', {
         p_player_tags: recruitTags
-    });
+    }), budget?.signal);
 
     // [GUARD] VALIDATION BOUNDARY: Database ingress must pass through a Valibot schema.
     const latestValidation = v.safeParse(LatestBattleTimesSchema, rawLatest ?? []);
@@ -108,11 +112,12 @@ async function fetchLatestBattleTimes(
  */
 export async function runDeepDepth(
     results: IngestionResult, 
-    logAudit: (stage: string, action: AuditEntry['action'], details?: unknown) => void
+    logAudit: (stage: string, action: AuditEntry['action'], details?: unknown) => void,
+    budget?: IngestionWorkBudget
 ) {
     logAudit('S6_BATTLES', 'triggered');
     try {
-        const { data: rawTargets, error: targetsError } = await supabase.rpc('get_ingestion_targets');
+        const { data: rawTargets, error: targetsError } = await withAbortSignal(supabase.rpc('get_ingestion_targets'), budget?.signal);
 
         // [GUARD] VALIDATION BOUNDARY: Database ingress must pass through a Valibot schema.
         // [THREAT:] Prevents runtime crashes if the database schema drift or malformed data exists.
@@ -156,39 +161,26 @@ export async function runDeepDepth(
             // reschedules next_poll_at (their tiered polling), so skipping it would change
             // how often they are polled. A tag present in both lists is treated as a member.
             const memberTags = new Set(targetsSnapshot.members);
+            const selectedRecruitTags = new Set(targetsSnapshot.recruits);
             const skippableRecruits = Array.from(new Set(
                 targetsSnapshot.recruits.filter(tag => !memberTags.has(tag))
             ));
-            const latestBattleTimes = await fetchLatestBattleTimes(skippableRecruits, logAudit);
+            let latestBattleTimes: Map<string, string> | null = null;
+            const cycleTargets = [...targetsSnapshot.members, ...targetsSnapshot.recruits.filter(tag => !memberTags.has(tag))]
+                .filter((tag, index, tags) => tags.indexOf(tag) === index);
+            const attemptedRecruits = new Set<string>();
+            const attemptedMembers = new Set<string>();
+            let membersFailed = 0;
+            let targetsCompleted = 0;
+            const writer = new RecruitWriter("SHADOW", budget);
 
-            // [DECISION LOG] DEFER, DO NOT FLOOD: when the skip check could not be answered,
-            // this cycle ingests members only. Members never consult the check, so their
-            // polling is unchanged; the deferred recruits are retried on the next cycle.
-            // If the read can never answer (the RPC dropped by a bad deploy), recruits stay
-            // deferred, and that is accepted on purpose: every such cycle reports the stage
-            // failed with the count deferred, so the cause is visible in each run's telemetry
-            // instead of hidden behind a full re-ingest. Recruit battle logs are enrichment: the
-            // next answered read ingests each recruit's last 25 battles, losing only battles
-            // that scrolled out of that window while the read was failing.
-            const deferredRecruits = new Set(latestBattleTimes === null ? skippableRecruits : []);
-            recruitsDeferred = deferredRecruits.size;
-            if (recruitsDeferred > 0) {
-                logAudit('S6_BATTLES', 'error', {
-                    message: 'Latest battle times unavailable: recruit battle logs deferred to the next cycle',
-                    recruits_deferred: recruitsDeferred
-                });
-                console.warn(`[S6_BATTLES] Latest battle times unavailable: ${recruitsDeferred} recruit(s) deferred to the next cycle.`);
-            }
-            const cycleTargets = ingestionTargets.filter(targetTag => !deferredRecruits.has(targetTag));
-
-            // Shared map to collect shadow leads across all concurrent tasks
-            // EPHEMERAL: intentionally resets on cold start
-            // [DECISION LOG] Using Map<string, { name: string }> to fix type mismatch pathogen.
-            const globalShadowLeads = new Map<string, { name: string }>();
-
-            const battleTasks = cycleTargets.map(targetTag => async () => {
+            const makeBattleTask = (targetTag: string) => async () => {
+                if (budget && !budget.canAdmit()) return;
+                if (memberTags.has(targetTag)) attemptedMembers.add(targetTag);
+                if (selectedRecruitTags.has(targetTag)) attemptedRecruits.add(targetTag);
+                let memberPersisted = false;
                 try {
-                    const battleLogApiResponse = await fetchWithRotation(`/players/${encodeURIComponent(targetTag)}/battlelog`);
+                    const battleLogApiResponse = await fetchWithRotation(`/players/${encodeURIComponent(targetTag)}/battlelog`, undefined, budget?.admissionSignal);
                     if (battleLogApiResponse.ok) {
                         const battleLogRoyalePayload: unknown = await battleLogApiResponse.json();
                         
@@ -202,7 +194,8 @@ export async function runDeepDepth(
                             details: battleLogValidationResult.success ? 'Battle log validated via Valibot' : 'Malformed battle log payload'
                         });
 
-                        if (battleLogValidationResult.success && battleLogValidationResult.output.length > 0) {
+                        if (!battleLogValidationResult.success && memberTags.has(targetTag)) membersFailed++;
+                        if (battleLogValidationResult.success) {
                             const battleLog = battleLogValidationResult.output;
 
                             // [THREAT:] ~9 in 10 recruit ingests wrote nothing (measured 2026-09-26),
@@ -212,86 +205,88 @@ export async function runDeepDepth(
                             if (!memberTags.has(targetTag) && isAlreadyIngested(battleLog, latestBattleTimes?.get(targetTag))) {
                                 skippedUnchanged++;
                             } else {
-                                const { error: rpcIngestionError } = await supabase.rpc('ingest_player_battles', {
+                                const { error: rpcIngestionError } = await withAbortSignal(supabase.rpc('ingest_player_battles', {
                                     p_tag: targetTag,
                                     p_payload: battleLog
-                                });
+                                }), budget?.signal);
 
                                 if (rpcIngestionError) {
+                                    if (memberTags.has(targetTag)) membersFailed++;
                                     logAudit('S6_BATTLES', 'error', { tag: targetTag, message: 'RPC Failure', details: rpcIngestionError });
-                                }
+                                } else { memberPersisted = memberTags.has(targetTag); }
                             }
 
-                            // Extract potential recruits (leads) from opponents
-                            // [DECISION LOG] We harvest "Shadow Leads" from the battle history of existing players.
-                            battleLog.forEach((battle) => {
-                                battle.opponent?.forEach((opponent) => {
-                                    if (opponent.tag && !opponent.clan?.tag) {
-                                        globalShadowLeads.set(opponent.tag, { name: opponent.name || 'Unknown Recruit' });
-                                    }
-                                });
-                            });
+                            await writer.add(battleLog.flatMap(battle => battle.opponent ?? [])
+                                .filter(opponent => opponent.tag && !opponent.clan?.tag)
+                                .map(opponent => ({ tag: opponent.tag, name: opponent.name || 'Unknown Recruit', trophies: 0 })));
+
                         }
-                    } else if (battleLogApiResponse.status === 404) {
+                    } else if (battleLogApiResponse.status === 404 && !memberTags.has(targetTag)) {
                         // [THREAT:] supabase.rpc() resolves with { error } instead of throwing, so an
                         // unchecked call would log the ghost as purged even when the write failed,
                         // keeping the dead tag in the ingestion target set to burn API quota on a
                         // 404 every 30-minute cycle.
-                        const { error: deadRecruitReportError } = await supabase.rpc('report_dead_recruit', { p_player_tag: targetTag });
+                        const { error: deadRecruitReportError } = await withAbortSignal(supabase.rpc('report_dead_recruit', { p_player_tag: targetTag }), budget?.signal);
                         if (deadRecruitReportError) {
                             logAudit('S6_BATTLES', 'error', { tag: targetTag, message: 'Failed to report dead recruit', details: deadRecruitReportError });
                         } else {
                             logAudit('S6_BATTLES', 'called', { tag: targetTag, action: 'purged_ghost' });
                         }
+                    } else if (!battleLogApiResponse.ok && memberTags.has(targetTag)) {
+                        membersFailed++;
                     }
                 } catch (battleLogError: unknown) {
                     const errorMessage = battleLogError instanceof Error ? battleLogError.message : String(battleLogError);
+                    if (memberTags.has(targetTag) && !memberPersisted) membersFailed++;
                     logAudit('S6_BATTLES', 'error', { tag: targetTag, message: errorMessage });
                 }
-            });
-            
-            // Reduce concurrency to prevent Error 546 (Worker Resource Limit)
-            // [DECISION LOG] Concurrency 6 is chosen to balance throughput and resource exhaustion on Supabase Edge.
-            await processBatch(battleTasks, 6);
-
-            // Batch synchronize collected shadow leads
-            if (globalShadowLeads.size > 0) {
-                // [THREAT:] Standardizing leads payload to prevent 'undefined' pathogens in ingestion.
-                // [DECISION LOG] Renamed anemic variables 'tag' and 'data' to 'playerTag' and 'opponentMetadata'
-                // to satisfy domain-descriptive naming constraints in Layer 1.
-                const validLeads = Array.from(globalShadowLeads.entries()).map(([playerTag, opponentMetadata]) => ({
-                    player_tag: normalizeTag(playerTag),
-                    player_name: opponentMetadata.name,
-                    trophies: 0 // Battle logs do not provide ladder metrics.
-                }));
-
-                const recruits = validLeads.map(lead => ({
-                    ...lead,
-                    source: 'SHADOW',
-                    status: 'ACTIVE'
-                }));
-
-                // L2 Drivers: Sync to universal player registry first
-                // [THREAT:] This registry write is two-phase and NOT atomic. drivers.recruits
-                // carries a foreign key onto the player registry, so running sync_recruits after a
-                // failed sync_players raises FK violations and loses the entire harvest. The error
-                // must be captured because supabase.rpc() resolves with { error } and never throws.
-                // [DECISION LOG] Phase 2 is gated on phase 1 succeeding, and either failure is
-                // propagated to results.battles instead of being reported as a clean stage.
-                const { error: playerRegistryError } = await supabase.rpc('sync_players', { p_players: validLeads });
-                if (playerRegistryError) {
-                    shadowLeadWriteFailure = `Player Registry Sync Failure: ${playerRegistryError.message}`;
-                    logAudit('S6_BATTLES', 'error', { message: 'Player Registry Sync Failure - skipping recruit upsert to avoid foreign key violations', details: playerRegistryError });
-                } else {
-                    // L2 Drivers: Upsert to shadow recruitment queue
-                    const { error: leadErr } = await supabase.rpc('sync_recruits', { p_recruits: recruits });
-                    if (leadErr) {
-                        shadowLeadWriteFailure = `Shadow Lead Batch Upsert Failure: ${leadErr.message}`;
-                        logAudit('S6_BATTLES', 'error', { message: 'Shadow Lead Batch Upsert Failure', details: leadErr });
+                finally { targetsCompleted++; }
+            };
+            // Settle all member work before admitting any optional recruit work.
+            // Each group releases its fetched payloads before starting another.
+            for (const [phase, group] of [cycleTargets.filter(tag => memberTags.has(tag)), cycleTargets.filter(tag => !memberTags.has(tag))].entries()) {
+                if (phase === 1 && group.length && (!budget || budget.canAdmit())) {
+                    latestBattleTimes = await fetchLatestBattleTimes(skippableRecruits, logAudit, budget);
+                    if (latestBattleTimes === null) {
+                        recruitsDeferred = group.length;
+                        logAudit('S6_BATTLES', 'error', { message: 'Latest battle times unavailable: recruit battle logs deferred to the next cycle', recruits_deferred: recruitsDeferred });
+                        break;
                     }
                 }
+                for (let offset = 0; offset < group.length; offset += 6) {
+                    if (budget && !budget.canAdmit()) break;
+                    await processBatch(group.slice(offset, offset + 6).map(makeBattleTask), 6);
+                }
+            }
+            for (let offset = 0; offset < attemptedRecruits.size; offset += INGESTION_WRITE_BATCH_SIZE) {
+                const { error } = await withAbortSignal(supabase.rpc('record_recruit_battle_polls', {
+                    p_player_tags: [...attemptedRecruits].slice(offset, offset + INGESTION_WRITE_BATCH_SIZE),
+                }), budget?.signal);
+                if (error) {
+                    shadowLeadWriteFailure = 'Recruit poll acknowledgement failed';
+                    Object.assign(results.battles, { cursor_ack_failed: true });
+                    logAudit('S6_BATTLES', 'error', { message: shadowLeadWriteFailure });
+                }
+            }
+            const membersDeferred = memberTags.size - attemptedMembers.size;
+            Object.assign(results.battles, {
+                members_attempted: attemptedMembers.size, members_failed: membersFailed, members_deferred: membersDeferred,
+                recruits_attempted: attemptedRecruits.size,
+                recruits_deferred: selectedRecruitTags.size - attemptedRecruits.size,
+                targets_completed: targetsCompleted,
+            });
+            if (membersFailed || membersDeferred) {
+                shadowLeadWriteFailure = 'Required member battle polling incomplete';
+                logAudit('S6_BATTLES', 'error', { message: shadowLeadWriteFailure, members_failed: membersFailed, members_deferred: membersDeferred });
+            }
+
+            await writer.finish();
+            if (writer.error) {
+                shadowLeadWriteFailure = writer.error;
+                logAudit('S6_BATTLES', 'error', { message: writer.error });
             }
         }
+
         const deferralFailure = recruitsDeferred > 0
             ? `${recruitsDeferred} recruit(s) deferred: latest battle times unavailable`
             : null;
@@ -304,6 +299,7 @@ export async function runDeepDepth(
     } catch (battleLogError: unknown) {
         const errorMessage = battleLogError instanceof Error ? battleLogError.message : String(battleLogError);
         results.battles.error = errorMessage;
+        Object.assign(results.battles, { members_failed: 1 });
         logAudit('S6_BATTLES', 'error', { message: errorMessage });
         logAudit('S6_BATTLES', 'terminated', { error: true });
         throw battleLogError;

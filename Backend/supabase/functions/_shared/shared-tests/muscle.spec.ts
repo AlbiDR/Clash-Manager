@@ -93,6 +93,27 @@ describe("Native Muscle Engine (muscle.ts)", () => {
   });
 
   describe("fetchWithRotation HTTP execution and rotation", () => {
+    it.each(["server", "network"])("cancels %s retry backoff without another request", async (failure) => {
+      vi.useFakeTimers();
+      setKeys(["key-sole"]);
+      const controller = new AbortController();
+      const reason = new Error("invocation budget exhausted");
+      const mockFetch = failure === "server"
+        ? vi.fn().mockResolvedValue(new Response("Unavailable", { status: 503 }))
+        : vi.fn().mockRejectedValue(new Error("connection lost"));
+      globalThis.fetch = mockFetch;
+
+      const result = fetchWithRotation("/status", 2, controller.signal);
+      const rejected = expect(result).rejects.toBe(reason);
+      await vi.advanceTimersByTimeAsync(0);
+      expect(vi.getTimerCount()).toBe(1);
+      controller.abort(reason);
+      await rejected;
+      await vi.runAllTimersAsync();
+      expect(mockFetch).toHaveBeenCalledTimes(1);
+      expect(vi.getTimerCount()).toBe(0);
+    });
+
     it("returns successful 200 response on first attempt without rotating or retrying", async () => {
       setKeys(["key-sole"]);
       const mockFetch = vi.fn().mockResolvedValue(new Response(JSON.stringify({ tag: "#CLAN1" }), { status: 200 }));

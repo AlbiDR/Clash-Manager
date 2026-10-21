@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
-import { supabase, CONFIG } from "./client.ts";
+import { IngestionWorkBudget } from "./work-budget.ts";
 import { IngestionResult, AuditEntry } from "../_shared/types.ts";
 import { runDiscovery } from "./stages/discovery.ts";
 import { runClanSync } from "./stages/clan-sync.ts";
@@ -25,7 +25,8 @@ import { runDeepDepth } from "./stages/deep-depth.ts";
 export async function executePipeline(
     targetTag: string, 
     logAudit: (stage: string, action: AuditEntry['action'], details?: unknown) => void,
-    heartbeat: (stage: string) => Promise<void>
+    heartbeat: (stage: string) => Promise<void>,
+    invocationBudget?: IngestionWorkBudget
 ): Promise<IngestionResult> {
     const startInstant = Temporal.Now.instant();
     
@@ -42,62 +43,39 @@ export async function executePipeline(
         }
     };
 
-    // --- TIMEOUT HELPER ---
-    // [DECISION LOG] 10-minute ceiling per stage to prevent zombie execution
-    // in Edge Function environments where wall-clock time is billed.
-    const STAGE_TIMEOUT = 10 * 60 * 1000; // 10 minutes
-
-    /**
-     * Enforces a hard time boundary on stage execution.
-     * [THREAT:] Prevents a single hanging API call or logic block from
-     * exhausting the global function runtime limit (typically 15-30m).
-     */
-    const withTimeout = async (promise: Promise<void>, stageName: string) => {
-        const timeout = new Promise<void>((_, reject) => 
-            setTimeout(() => reject(new Error(`Stage ${stageName} timed out after 10m`)), STAGE_TIMEOUT)
-        );
-        return Promise.race([promise, timeout]);
-    };
-
-    // --- EXECUTION SEQUENCE ---
-    
-    // Stage 1: Discovery (Native Discovery via Tournaments)
-    // [DECISION LOG] Harvests fresh recruits from the tournament substrate
-    // before syncing the primary clan target.
-    // [THREAT:] Unhandled exceptions in individual stages must be trapped to prevent
-    // global pipeline collapse, ensuring diagnostic telemetry is persisted.
+    const budget = invocationBudget ?? new IngestionWorkBudget();
+    const stageTimings: Record<string, number> = {};
+    Object.assign(results.diagnostics, { stage_timings_ms: stageTimings });
+    const stages = [
+        { name: 'S2_S5_CLAN', run: () => runClanSync(targetTag, results, logAudit, budget) },
+        { name: 'S6_BATTLES', run: () => runDeepDepth(results, logAudit, budget) },
+        { name: 'S1_DISCOVERY', run: () => runDiscovery(results, logAudit, budget) },
+    ];
     try {
-        await withTimeout(runDiscovery(results, logAudit), 'S1_DISCOVERY');
-    } catch (stageIngestionError: unknown) {
-        const errorMessage = stageIngestionError instanceof Error ? stageIngestionError.message : String(stageIngestionError);
-        logAudit('S1_DISCOVERY', 'error', { message: errorMessage });
+        for (const stage of stages) {
+            if (!budget.canAdmit()) {
+                if (stage.name === 'S6_BATTLES') Object.assign(results.battles, { members_deferred: 1, error: 'Member polling was not started before admission closed' });
+                if (stage.name === 'S1_DISCOVERY') Object.assign(results.discovery, { deferred: true, reason: 'admission deadline' });
+                logAudit(stage.name, 'terminated', { deferred: true, reason: 'admission deadline' });
+                continue;
+            }
+            const startedAt = Date.now();
+            try { await stage.run(); }
+            catch (error: unknown) {
+                logAudit(stage.name === 'S2_S5_CLAN' ? 'CLAN_SYNC' : stage.name, 'error', {
+                    message: error instanceof Error ? error.message : String(error),
+                });
+            }
+            await heartbeat(stage.name);
+            stageTimings[stage.name] = Date.now() - startedAt;
+            logAudit(stage.name, 'terminated', { elapsed_ms: stageTimings[stage.name] });
+            budget.throwIfExpired();
+        }
+    } finally {
+        if (!invocationBudget) budget.dispose();
     }
-    await heartbeat('S1_DISCOVERY');
 
-    // Stages 2-5: Clan Synchronization (Profile, Members, Race, WarLog)
-    // [DECISION LOG] Unified stage for clan-specific domain synchronization.
-    // [THREAT:] Database ingestion or API failures during clan sync are non-fatal
-    // to the overall pipeline but are recorded for operational auditing.
-    try {
-        await withTimeout(runClanSync(targetTag, results, logAudit), 'S2_S5_CLAN');
-    } catch (stageIngestionError: unknown) {
-        const errorMessage = stageIngestionError instanceof Error ? stageIngestionError.message : String(stageIngestionError);
-        logAudit('CLAN_SYNC', 'error', { message: errorMessage });
-    }
-    await heartbeat('S2_S5_CLAN');
-
-    // Stage 6: Deep Depth (Battle Logs)
-    // [DECISION LOG] Final enrichment stage for competitive battle history.
-    // [THREAT:] Battle log ingestion is the most resource-intensive stage; failures
-    // here often indicate API rate-limiting or Edge Function memory constraints.
-    try {
-        await withTimeout(runDeepDepth(results, logAudit), 'S6_BATTLES');
-    } catch (stageIngestionError: unknown) {
-        const errorMessage = stageIngestionError instanceof Error ? stageIngestionError.message : String(stageIngestionError);
-        logAudit('DEEP_DEPTH', 'error', { message: errorMessage });
-    }
-    await heartbeat('S6_BATTLES');
-
+    Object.assign(results.diagnostics, { invocation_elapsed_ms: Date.now() - budget.startedAt });
     results.diagnostics.duration_ms = Temporal.Now.instant().since(startInstant).total('milliseconds');
     return results;
 }
