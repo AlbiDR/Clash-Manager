@@ -145,8 +145,8 @@ To support smooth 60FPS list interactions under heavy sorting and filtering oper
 - **Time-Sliced Frame Scheduling:** Breaks large datasets into manageable chunks (10–20 items) and schedules their injection during idle browser frames via `requestIdleCallback`, with fallback to `requestAnimationFrame`.
 - **Shallow Reactive Optimization (`shallowRef`):** Stores visible list slices in a `shallowRef` to prevent deep reactivity overhead across hundreds of array elements, drastically reducing CPU cycles during list expansion.
 - **Idle Budgeting & Deadline Feature Detection:** Evaluates `IdleDeadline` time remaining (`deadline.timeRemaining() > 1`) to process multiple chunks within a single idle frame. Implements explicit feature detection (`hasIdleDeadline`) before calling `timeRemaining()` to prevent runtime `TypeError` exceptions when falling back to `requestAnimationFrame` (which passes a numeric timestamp primitive).
-- **Minor Delta Churn Prevention:** Detects minor list size updates (< 5 items difference) and preserves the current rendered slice length while refreshing item content, preventing sudden scroll jumps or layout churn during background polling.
-- **Automated Timer Cleanup:** Implements `onScopeDispose` to automatically cancel scheduled idle callbacks or animation frame timers upon composable teardown, preventing memory leaks and race conditions.
+- **Minor Delta Churn Prevention:** Detects minor list size updates (strictly < 5 items difference) and preserves the current rendered slice length while slicing updated item content, preventing sudden scroll jumps or layout churn during background polling. Major structural shifts or size deltas >= 5 reset the visible window back to initial size for a fresh load.
+- **Automated Timer Cleanup:** Implements `onScopeDispose` and `clearTimer` to cancel scheduled frame timers upon composable teardown or rapid list source updates. Correctly passes the active timer handle ID to `cancelIdleCallback` or `cancelAnimationFrame` (when `cancelIdleCallback` is absent) to prevent memory leaks and race conditions.
 
 ### Connectivity & Health Orchestration (`useConnectivityManager.ts`)
 
