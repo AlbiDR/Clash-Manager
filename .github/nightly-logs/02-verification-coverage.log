@@ -92,3 +92,4 @@
 * [2026-10-18] [Stage 2] [00:12Z-00:23Z 11m] [checks baseline-tests=PASS] CHANGED: Frontend-PWA/src/core/api/api-tests/RecruitClient.spec.ts -- Expanded RecruitClient.ts test suite in RecruitClient.spec.ts
 * [2026-10-19] [Stage 2] [00:31Z-00:46Z 16m] [checks baseline-tests=PASS] CHANGED: Frontend-PWA/src/core/api/api-tests/ProfileClient.spec.ts -- Expanded ProfileClient spec to cover HTTP error body parsing fallbacks and array handling
 * [2026-10-20] [Stage 2] [00:32Z-00:38Z 6m] [checks baseline-tests=PASS] CHANGED: Backend/supabase/functions/sync-player-cards/client.spec.ts -- Backend/supabase/functions/sync-player-cards/client.spec.ts -- Closed zero-coverage gap in L1 Core client & environment broker
+* [2026-10-21] [Stage 2] [00:22Z-00:33Z 11m] [checks baseline-tests=PASS] CHANGED: Frontend-PWA/src/core/services/services-tests/useProgressiveList.spec.ts -- Added unit tests for useProgressiveList churn prevention delta threshold and timer cancellation
