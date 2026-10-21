@@ -22,6 +22,7 @@
     "/rest/v1/rpc/ingest_player_battles",
     "/rest/v1/rpc/ping",
     "/rest/v1/rpc/purge_recruits",
+    "/rest/v1/rpc/record_recruit_battle_polls",
     "/rest/v1/rpc/report_anchor_yield",
     "/rest/v1/rpc/report_dead_recruit",
     "/rest/v1/rpc/report_discovery",

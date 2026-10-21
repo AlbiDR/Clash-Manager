@@ -4,7 +4,7 @@
 import pLimit from "npm:p-limit@7.3.0";
 import * as v from "npm:valibot@1.5.0";
 import { KeyPoolSchema } from "./schemas.ts";
-import { throwIfAborted } from "./abortSignal.ts";
+import { throwIfAborted, waitWithAbort } from "./abortSignal.ts";
 
 /**
  * L1 Core: Native Muscle Engine
@@ -119,7 +119,7 @@ export async function fetchWithRotation(
           // [DECISION LOG] Exponential backoff (2^retryAttempt * 500ms) to allow Royale API
           // or proxy nodes time to recover from transient failures.
           const backoffMs = Math.pow(BACKOFF_EXPONENT_BASE, retryAttempt) * BACKOFF_MULTIPLIER_MS;
-          await new Promise(resolve => setTimeout(resolve, backoffMs));
+          await waitWithAbort(backoffMs, signal);
           continue;
         }
         
@@ -135,7 +135,7 @@ export async function fetchWithRotation(
         retryAttempt++;
         // [THREAT:] Prevents hammering the proxy/API during transient network failures.
         const backoffMs = Math.pow(BACKOFF_EXPONENT_BASE, retryAttempt) * BACKOFF_MULTIPLIER_MS;
-        await new Promise(resolve => setTimeout(resolve, backoffMs));
+        await waitWithAbort(backoffMs, signal);
       }
     }
   }

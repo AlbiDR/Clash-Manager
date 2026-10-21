@@ -29,8 +29,8 @@ export const supabase = createClient(
 /**
  * Clinical Hardening: Sync secrets from Vault
  */
-export async function syncVault() {
-  const vault = await loadConfig(supabase, ["CLAN_TAG", "PLAYER_TAG", "ROYALE_API_KEYS", "INTERNAL_BEARER_TOKEN"]);
+export async function syncVault(requestClient = supabase) {
+  const vault = await loadConfig(requestClient, ["CLAN_TAG", "PLAYER_TAG", "ROYALE_API_KEYS", "INTERNAL_BEARER_TOKEN"]);
   if (vault.CLAN_TAG) {
     CONFIG.CLAN_TAG = vault.CLAN_TAG;
   }

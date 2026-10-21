@@ -583,6 +583,7 @@ export type Database = {
           cards: number | null
           donations: number | null
           found_date: string | null
+          last_battle_poll_at: string | null
           last_scan: string | null
           player_name: string
           player_tag: string
@@ -600,6 +601,7 @@ export type Database = {
           cards?: number | null
           donations?: number | null
           found_date?: string | null
+          last_battle_poll_at?: string | null
           last_scan?: string | null
           player_name: string
           player_tag: string
@@ -617,6 +619,7 @@ export type Database = {
           cards?: number | null
           donations?: number | null
           found_date?: string | null
+          last_battle_poll_at?: string | null
           last_scan?: string | null
           player_name?: string
           player_tag?: string
@@ -1236,6 +1239,10 @@ export type Database = {
         Returns: undefined
       }
       purge_recruits: { Args: { p_tags: string[] }; Returns: undefined }
+      record_recruit_battle_polls: {
+        Args: { p_player_tags: string[] }
+        Returns: undefined
+      }
       report_anchor_yield: {
         Args: {
           p_keyword: string
