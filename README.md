@@ -248,6 +248,8 @@ A Supabase project running six Deno Edge Functions: five game-data functions usi
 
 This repository maintains itself. Every night an external coding agent runs a **13-stage pipeline** that opens one pull request per stage against the `Nightly` branch: hardening runtime safety, running the test suite, consolidating database migrations, optimizing, refreshing documentation and TSDoc, reconciling versions, auditing dependencies, refactoring, checking the Android wrapper's integrity, optimization, and UX, and finally auditing its own health. Passing work is merged and promoted `Nightly` to `Beta` to `Stable` behind an automated test gate. The rules the agent operates under live in [AGENTS.md](AGENTS.md).
 
+For workflow traces, retry timing and failure diagnosis, see [Nightly diagnostics](.github/scripts/nightly/README.md).
+
 ---
 
 ## Getting started
