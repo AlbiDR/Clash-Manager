@@ -4,23 +4,23 @@
 
 In plain terms: nothing needed fixing. This run checked the version integrity area and found it already correct, so the only file here is the log recording that the check happened.
 
-**What was checked:** Calibration pass: Monorepo-wide version consistency audit verified ground truth v14.55.6 across root, Frontend-PWA, Backend manifests, catalog protocol, and 10 derived targets with zero drift.
+**What was checked:** Audit pass: package manifests and derived version declarations fully synchronized across monorepo
 
-**Why:** calibration-due: YES, audit clean across all targets
+**Why:** No version drift or catalog violations detected by pnpm audit:version
 
-**Result:** PASSED: pnpm audit:version clean
+**Result:** Ground truth version 14.55.6 verified across root, Frontend-PWA, Backend, and derived locations; pnpm audit:version passed clean
 
 **Files changed:** .github/nightly-logs/07-version-integrity-coverage.log
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: versioning
-  Cycle: nightly-cycle/2026-10-20
+  Cycle: nightly-cycle/2026-10-21
   Contract: 294f64f1358ef17af7639062d355427eaf3ce873f96ed18c821b7f7412d9219a
-  Why: calibration-due: YES, audit clean across all targets
-  Change: Calibration pass: Monorepo-wide version consistency audit verified ground truth v14.55.6 across root, Frontend-PWA, Backend manifests, catalog protocol, and 10 derived targets with zero drift.
-  Result: PASSED: pnpm audit:version clean
+  Why: No version drift or catalog violations detected by pnpm audit:version
+  Change: Audit pass: package manifests and derived version declarations fully synchronized across monorepo
+  Result: Ground truth version 14.55.6 verified across root, Frontend-PWA, Backend, and derived locations; pnpm audit:version passed clean
   Files: .github/nightly-logs/07-version-integrity-coverage.log
   Nudges: 0
-  Execution: 3894395be1afe45c80010cc671fe095e73287b01
+  Execution: 2012117c2deaa007dbed2255f337e934f49f840c
 -->
