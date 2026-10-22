@@ -4,23 +4,23 @@
 
 In plain terms: nothing needed fixing. This run checked the version integrity area and found it already correct, so the only file here is the log recording that the check happened.
 
-**What was checked:** Audit pass: package manifests and derived version declarations fully synchronized across monorepo
+**What was checked:** Scanned catalog usage in Frontend-PWA/package.json and Backend/package.json, and version declarations across root package.json, Frontend-PWA/package.json, and Backend/package.json (14.55.8). No drift or catalog violations found.
 
-**Why:** No version drift or catalog violations detected by pnpm audit:version
+**Why:** All package manifests and derived version locations match ground truth version 14.55.8, and shared dependencies adhere to the catalog: protocol.
 
-**Result:** Ground truth version 14.55.6 verified across root, Frontend-PWA, Backend, and derived locations; pnpm audit:version passed clean
+**Result:** pnpm audit:version passed with zero version drift or catalog violations detected across 10 derived locations.
 
 **Files changed:** .github/nightly-logs/07-version-integrity-coverage.log
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: versioning
-  Cycle: nightly-cycle/2026-10-21
+  Cycle: nightly-cycle/2026-10-22
   Contract: 294f64f1358ef17af7639062d355427eaf3ce873f96ed18c821b7f7412d9219a
-  Why: No version drift or catalog violations detected by pnpm audit:version
-  Change: Audit pass: package manifests and derived version declarations fully synchronized across monorepo
-  Result: Ground truth version 14.55.6 verified across root, Frontend-PWA, Backend, and derived locations; pnpm audit:version passed clean
+  Why: All package manifests and derived version locations match ground truth version 14.55.8, and shared dependencies adhere to the catalog: protocol.
+  Change: Scanned catalog usage in Frontend-PWA/package.json and Backend/package.json, and version declarations across root package.json, Frontend-PWA/package.json, and Backend/package.json (14.55.8). No drift or catalog violations found.
+  Result: pnpm audit:version passed with zero version drift or catalog violations detected across 10 derived locations.
   Files: .github/nightly-logs/07-version-integrity-coverage.log
   Nudges: 0
-  Execution: 2012117c2deaa007dbed2255f337e934f49f840c
+  Execution: 9d36674a08f8bf04a61075b90a85b4227d57b662
 -->
