@@ -12,6 +12,15 @@ on:
         type: boolean
         default: false
 
+# Only one cross-branch promotion may mutate Beta, Stable, and Nightly at a
+# time. Queue pending dispatches instead of replacing one: their inputs are
+# operator choices (including skip_nightly_sync), not interchangeable requests.
+# GitHub permits up to 100 pending runs in a concurrency group.
+concurrency:
+  group: sync-branches-promotion
+  queue: max
+  cancel-in-progress: false
+
 permissions:
   contents: write
   actions: write
