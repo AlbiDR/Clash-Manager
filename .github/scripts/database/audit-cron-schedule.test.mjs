@@ -79,6 +79,7 @@ test('an uncountable cadence is reported as unknown, never silently counted as z
 test('runsPerDay understands the forms this project uses, and admits what it cannot count', () => {
   assert.equal(runsPerDay('* * * * *'), 1440);
   assert.equal(runsPerDay('*/15 * * * *'), 96);
+  assert.equal(runsPerDay('2,22,27,32,52,57 * * * *'), 144);
   assert.equal(runsPerDay('0,30 * * * *'), 48);
   assert.equal(runsPerDay('0 3 * * *'), 1);
   assert.equal(runsPerDay('0 3 * * 1'), null);
