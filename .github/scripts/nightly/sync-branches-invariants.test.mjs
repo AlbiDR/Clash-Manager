@@ -25,6 +25,20 @@ test('Sync Branches stays manual dispatch only', () => {
   }
 });
 
+test('manual cross-branch promotions serialize without replacing queued dispatch inputs', () => {
+  const concurrencyBlock = WORKFLOW.match(/^concurrency:\n((?:[ \t]+.*\n)+)/m)?.[0];
+  assert.equal(
+    concurrencyBlock,
+    'concurrency:\n  group: sync-branches-promotion\n  queue: max\n  cancel-in-progress: false\n',
+    'serialize promotions, retain pending dispatches, and never cancel the active promotion',
+  );
+  assert.match(
+    WORKFLOW,
+    /if: needs\.check-sync\.outputs\.nightly_beta_diff == 'true' && github\.event\.inputs\.skip_nightly_sync != 'true'/,
+    'each queued run must continue to apply its own skip_nightly_sync input to Nightly → Beta',
+  );
+});
+
 test('the APK release slot repair is still wired into the Nightly to Beta merge', () => {
   // Guards the 2026-09-10 regression: the pre-merge normalisation forces this
   // branch's slot to Nightly's to dodge an unresolvable rename/rename
