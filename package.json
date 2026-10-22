@@ -1,6 +1,6 @@
 {
   "name": "clash-manager-monorepo",
-  "version": "14.55.8",
+  "version": "14.55.9",
   "license": "GPL-3.0-only",
   "private": true,
   "scripts": {
@@ -153,7 +153,7 @@
       "vitest": "^4.1.11",
       "@vitest/coverage-v8": "^4.1.11",
       "vue": "^3.5.44",
-      "vue-router": "^5.3.1",
+      "vue-router": "^5.4.0",
       "vue-tsc": "^3.3.11",
       "workbox-precaching": "^7.4.1",
       "workbox-window": "^7.4.1"

@@ -4,23 +4,23 @@
 
 In plain terms: this adds 1 test file in the verification area. No product code changed, so the app behaves exactly as it did before.
 
-**What changed:** Added unit tests for useProgressiveList churn prevention delta threshold and timer cancellation
+**What changed:** Backend/supabase/functions/ingest-royale-data/work-budget.spec.ts -- Expanded IngestionWorkBudget unit test suite
 
-**Why:** Ensure progressive rendering handles exact list updates and cancelAnimationFrame fallbacks safely without regressions
+**Why:** Extended unit tests for IngestionWorkBudget covering clock-driven expiration, dynamic canAdmit evaluations, reserveMs bounds, dispose timer cancellations, and explicit signal abort reason messages.
 
-**Result:** All 28 specs in useProgressiveList.spec.ts passed; mutation (< 5 to < 4 in useProgressiveList.ts) caught by visibleItems length assertion.
+**Result:** Added 5 unit tests in work-budget.spec.ts (7 total tests passing). Proven via mutation testing on work-budget.ts throwIfExpired clock check.
 
-**Files changed:** .github/nightly-logs/02-verification-coverage.log, Frontend-PWA/src/core/services/services-tests/useProgressiveList.spec.ts
+**Files changed:** .github/nightly-logs/02-verification-coverage.log, Backend/supabase/functions/ingest-royale-data/work-budget.spec.ts
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: verification
-  Cycle: nightly-cycle/2026-10-21
+  Cycle: nightly-cycle/2026-10-22
   Contract: b2e927ebff4e2ca5a343609133745d050f07d22fd9bf3e42481440c1d14079f0
-  Why: Ensure progressive rendering handles exact list updates and cancelAnimationFrame fallbacks safely without regressions
-  Change: Added unit tests for useProgressiveList churn prevention delta threshold and timer cancellation
-  Result: All 28 specs in useProgressiveList.spec.ts passed; mutation (< 5 to < 4 in useProgressiveList.ts) caught by visibleItems length assertion.
-  Files: .github/nightly-logs/02-verification-coverage.log, Frontend-PWA/src/core/services/services-tests/useProgressiveList.spec.ts
+  Why: Extended unit tests for IngestionWorkBudget covering clock-driven expiration, dynamic canAdmit evaluations, reserveMs bounds, dispose timer cancellations, and explicit signal abort reason messages.
+  Change: Backend/supabase/functions/ingest-royale-data/work-budget.spec.ts -- Expanded IngestionWorkBudget unit test suite
+  Result: Added 5 unit tests in work-budget.spec.ts (7 total tests passing). Proven via mutation testing on work-budget.ts throwIfExpired clock check.
+  Files: .github/nightly-logs/02-verification-coverage.log, Backend/supabase/functions/ingest-royale-data/work-budget.spec.ts
   Nudges: 0
-  Execution: 9a2b191e423ddb3f496151b464ce897c9d79d6e4
+  Execution: bf8c179605f9fd977b4c347a4952b689cd0f9b74
 -->
