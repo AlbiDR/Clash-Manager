@@ -157,3 +157,4 @@
 * [2026-10-19] [Stage 6] [04:19Z-04:24Z 5m] [checks doc-debt=OK] CLEAN: Codebase -- Verified SupabaseTransport TSDoc interface contracts and decision annotations
 * [2026-10-20] [Stage 6] [04:30Z-04:33Z 4m] [checks doc-debt=OK] CHANGED: Frontend-PWA/src/core/api/ApiErrors.ts -- docs(tsdoc): harden ApiErrors interface contracts and inline decision annotations
 * [2026-10-21] [Stage 6] [04:12Z-04:17Z 5m] [checks doc-debt=OK] CHANGED: Frontend-PWA/src/core/services/usePowerSaving.ts -- docs(tsdoc): harden usePowerSaving interface contracts and inline decision annotations
+* [2026-10-22] [Stage 6] [04:30Z-04:37Z 7m] [checks doc-debt=OK] CHANGED: Backend/supabase/functions/_shared/abortSignal.ts -- Documented waitWithAbort and verified 17 doc-debt source files
