@@ -4,23 +4,23 @@
 
 In plain terms: no change was made to the project. This run ended as CHANGED and the only file here is the log recording that.
 
-**What changed:** Documented Stage 3 & 11 fallback publish recoveries, Stage 12 PR body repair, Stage 3 migration-quality failure, and updated Sections 1-3 metrics for 2026-10-21
+**What changed:** Documented Stage 5 & 6 fallback publish recoveries and Stage 3 PARTIAL-RUN migration constraint
 
-**Why:** Self-healing pipeline auditor pass over 2026-10-21 ledger events and coverage logs
+**Why:** Documented 2026-10-22 pipeline findings and updated Section 1, 2, and 3 protocol metrics
 
-**Result:** Verified git diff --check clean and 13-self-healing-protocol.md diff updated across Sections 1, 2, and 3
+**Result:** Verified git diff check and protocol metrics consistency across 13 stages
 
 **Files changed:** .github/nightly-logs/13-self-healing-protocol-coverage.log, .github/nightly-logs/13-self-healing-protocol.md
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: pipeline
-  Cycle: nightly-cycle/2026-10-21
+  Cycle: nightly-cycle/2026-10-22
   Contract: df81a67e6d78a129caa22f2d9d3499a9aaf33de1a9f9c7718ff860013b7a86e1
-  Why: Self-healing pipeline auditor pass over 2026-10-21 ledger events and coverage logs
-  Change: Documented Stage 3 & 11 fallback publish recoveries, Stage 12 PR body repair, Stage 3 migration-quality failure, and updated Sections 1-3 metrics for 2026-10-21
-  Result: Verified git diff --check clean and 13-self-healing-protocol.md diff updated across Sections 1, 2, and 3
+  Why: Documented 2026-10-22 pipeline findings and updated Section 1, 2, and 3 protocol metrics
+  Change: Documented Stage 5 & 6 fallback publish recoveries and Stage 3 PARTIAL-RUN migration constraint
+  Result: Verified git diff check and protocol metrics consistency across 13 stages
   Files: .github/nightly-logs/13-self-healing-protocol-coverage.log, .github/nightly-logs/13-self-healing-protocol.md
   Nudges: 0
-  Execution: 439fb7898e02f27f41a140eb9d1edc8193592709
+  Execution: d90f9cd349e0d8bcf89016ed4fe3a3b4ed16cc4e
 -->
