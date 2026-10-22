@@ -35,6 +35,8 @@ export type ApiStatus =
 
 
 // Global Shared State (Kernel Singletons)
+// EPHEMERAL: intentionally resets on cold start
+// [THREAT:] Global API connection lifecycle state is transient per application session.
 const apiUrl = ref("");
 const apiConfigured = ref(false);
 const apiStatus = ref<ApiStatus>("checking");

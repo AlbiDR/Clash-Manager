@@ -1,26 +1,26 @@
 ### Nightly Stage 1: Hardening - Runtime Integrity Auditor
 
-**Status:** CLEAN
+**Status:** CHANGED
 
-In plain terms: nothing needed fixing. This run checked the hardening area and found it already correct, so the only file here is the log recording that the check happened.
+In plain terms: this changes 2 code files, so the app's behaviour may be affected. No tests were added or changed alongside it.
 
-**What was checked:** Audited unauthenticated endpoints, in-memory state, Valibot boundaries, critical path dead code, and cross-layer violations across 42 changed files; zero viable threats found.
+**What changed:** Annotated in-memory singleton state in useApiState.ts and useNativeBridge.ts with explicit EPHEMERAL comments
 
-**Why:** Satisfied CLEAN evidence floor across all 5 priority targets with zero viable security or runtime integrity risks
+**Why:** Satisfied Target A state lifecycle requirements by documenting transient module-level lookup state
 
-**Result:** VERIFIED_CLEAN
+**Result:** Vitest suites useApiState.spec.ts and useNativeBridge.spec.ts passed cleanly (30/30 tests passed)
 
-**Files changed:** .github/nightly-logs/00-pr-history.md, .github/nightly-logs/01-hardening-coverage.log
+**Files changed:** .github/nightly-logs/00-pr-history.md, .github/nightly-logs/01-hardening-coverage.log, Frontend-PWA/src/core/api/useApiState.ts, Frontend-PWA/src/core/services/useNativeBridge.ts
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: hardening
-  Cycle: nightly-cycle/2026-10-21
+  Cycle: nightly-cycle/2026-10-22
   Contract: b8cc17977cd40f02490c220999b57dcbf99eb8b7a2175f40feb87a2655548621
-  Why: Satisfied CLEAN evidence floor across all 5 priority targets with zero viable security or runtime integrity risks
-  Change: Audited unauthenticated endpoints, in-memory state, Valibot boundaries, critical path dead code, and cross-layer violations across 42 changed files; zero viable threats found.
-  Result: VERIFIED_CLEAN
-  Files: .github/nightly-logs/00-pr-history.md, .github/nightly-logs/01-hardening-coverage.log
+  Why: Satisfied Target A state lifecycle requirements by documenting transient module-level lookup state
+  Change: Annotated in-memory singleton state in useApiState.ts and useNativeBridge.ts with explicit EPHEMERAL comments
+  Result: Vitest suites useApiState.spec.ts and useNativeBridge.spec.ts passed cleanly (30/30 tests passed)
+  Files: .github/nightly-logs/00-pr-history.md, .github/nightly-logs/01-hardening-coverage.log, Frontend-PWA/src/core/api/useApiState.ts, Frontend-PWA/src/core/services/useNativeBridge.ts
   Nudges: 0
-  Execution: 9a2b191e423ddb3f496151b464ce897c9d79d6e4
+  Execution: bf8c179605f9fd977b4c347a4952b689cd0f9b74
 -->
