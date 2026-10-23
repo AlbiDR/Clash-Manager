@@ -4,23 +4,23 @@
 
 In plain terms: this adds 1 test file in the verification area. No product code changed, so the app behaves exactly as it did before.
 
-**What changed:** Backend/supabase/functions/ingest-royale-data/work-budget.spec.ts -- Expanded IngestionWorkBudget unit test suite
+**What changed:** Backend/supabase/functions/ingest-royale-data/client.spec.ts -- Closed zero-coverage gap in L1 Core client & environment broker in ingest-royale-data.
 
-**Why:** Extended unit tests for IngestionWorkBudget covering clock-driven expiration, dynamic canAdmit evaluations, reserveMs bounds, dispose timer cancellations, and explicit signal abort reason messages.
+**Why:** Target A/1: Closed zero-coverage gap in recently changed client.ts under Backend/supabase/functions/ingest-royale-data/.
 
-**Result:** Added 5 unit tests in work-budget.spec.ts (7 total tests passing). Proven via mutation testing on work-budget.ts throwIfExpired clock check.
+**Result:** Added client.spec.ts with 5 unit tests covering Deno.env CONFIG initialization, syncVault secret propagation, empty secret resilience, custom client parameter delegation, and error handling. Verified test mutation in client.ts (commenting out CONFIG.CLAN_TAG assignment and setKeys call) failed as expected (caught by expect(CONFIG.CLAN_TAG).toBe("#NEWCLAN")). Source restored.
 
-**Files changed:** .github/nightly-logs/02-verification-coverage.log, Backend/supabase/functions/ingest-royale-data/work-budget.spec.ts
+**Files changed:** .github/nightly-logs/02-verification-coverage.log, Backend/supabase/functions/ingest-royale-data/client.spec.ts
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: verification
-  Cycle: nightly-cycle/2026-10-22
+  Cycle: nightly-cycle/2026-10-23
   Contract: b2e927ebff4e2ca5a343609133745d050f07d22fd9bf3e42481440c1d14079f0
-  Why: Extended unit tests for IngestionWorkBudget covering clock-driven expiration, dynamic canAdmit evaluations, reserveMs bounds, dispose timer cancellations, and explicit signal abort reason messages.
-  Change: Backend/supabase/functions/ingest-royale-data/work-budget.spec.ts -- Expanded IngestionWorkBudget unit test suite
-  Result: Added 5 unit tests in work-budget.spec.ts (7 total tests passing). Proven via mutation testing on work-budget.ts throwIfExpired clock check.
-  Files: .github/nightly-logs/02-verification-coverage.log, Backend/supabase/functions/ingest-royale-data/work-budget.spec.ts
+  Why: Target A/1: Closed zero-coverage gap in recently changed client.ts under Backend/supabase/functions/ingest-royale-data/.
+  Change: Backend/supabase/functions/ingest-royale-data/client.spec.ts -- Closed zero-coverage gap in L1 Core client & environment broker in ingest-royale-data.
+  Result: Added client.spec.ts with 5 unit tests covering Deno.env CONFIG initialization, syncVault secret propagation, empty secret resilience, custom client parameter delegation, and error handling. Verified test mutation in client.ts (commenting out CONFIG.CLAN_TAG assignment and setKeys call) failed as expected (caught by expect(CONFIG.CLAN_TAG).toBe("#NEWCLAN")). Source restored.
+  Files: .github/nightly-logs/02-verification-coverage.log, Backend/supabase/functions/ingest-royale-data/client.spec.ts
   Nudges: 0
-  Execution: bf8c179605f9fd977b4c347a4952b689cd0f9b74
+  Execution: a67f6642a9ebb83793c04ee633626bf176894b36
 -->
