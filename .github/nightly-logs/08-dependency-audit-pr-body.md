@@ -4,23 +4,23 @@
 
 In plain terms: this updates dependencies only. No project code was written or changed, though the app should be re-tested before release.
 
-**What changed:** Bumped vue-router to ^5.4.0 and updated major version watchlist
+**What changed:** Bumped @vue/test-utils to ^2.5.1 and updated major version watchlist
 
-**Why:** Routine dependency hygiene audit
+**Why:** Safe patch update for @vue/test-utils within Tier 1 scope
 
-**Result:** pnpm test passed 220 test files (2359 tests)
+**Result:** pnpm install and pnpm test passed (2359 passed)
 
 **Files changed:** .github/nightly-logs/08-dependency-audit-coverage.log, package.json, pnpm-lock.yaml, pnpm-workspace.yaml
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: dependencies
-  Cycle: nightly-cycle/2026-10-22
+  Cycle: nightly-cycle/2026-10-23
   Contract: b865578f1a0b5d4e90f264b4dbb792c4d309c9bbea08fd314cf47cef940ff9b8
-  Why: Routine dependency hygiene audit
-  Change: Bumped vue-router to ^5.4.0 and updated major version watchlist
-  Result: pnpm test passed 220 test files (2359 tests)
+  Why: Safe patch update for @vue/test-utils within Tier 1 scope
+  Change: Bumped @vue/test-utils to ^2.5.1 and updated major version watchlist
+  Result: pnpm install and pnpm test passed (2359 passed)
   Files: .github/nightly-logs/08-dependency-audit-coverage.log, package.json, pnpm-lock.yaml, pnpm-workspace.yaml
-  Nudges: 1
-  Execution: 7777ba328cd16dbfbd39f241eb26ba0979bcf171
+  Nudges: 0
+  Execution: 2b304c7d231c4f9b7faf5c914fc592a052e73c81
 -->
