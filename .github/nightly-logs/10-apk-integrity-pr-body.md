@@ -4,23 +4,23 @@
 
 In plain terms: nothing needed fixing. This run checked the APK integrity area and found it already correct, so the only file here is the log recording that the check happened.
 
-**What was checked:** Verified PWA/APK wrapper invariants: asset links, manifest parity, version code/name sync, release metadata, and cleartext traffic policy.
+**What was checked:** Verified wrapper invariants (asset links, manifest parity, version code/name sync, release metadata, cleartext security policy) with no mismatches found.
 
-**Why:** No wrapper mismatches or integrity issues were detected across recently modified configuration files.
+**Why:** Daily packaging integrity audit passed all checks across PWA manifest, TWA configs, and Android build settings without requiring source modifications.
 
-**Result:** Executed pnpm audit:apk, pnpm apk:verify:source, pnpm test:apk-native, pnpm test:apk-release, pnpm test:version-code, and pnpm test:apk-slot-sync with 100% pass.
+**Result:** Passed pnpm audit:apk, pnpm test:apk-release, and pnpm test:apk-native across all wrapper integrity and native contract invariants.
 
 **Files changed:** .github/nightly-logs/10-apk-integrity-coverage.log
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: apk
-  Cycle: nightly-cycle/2026-10-22
+  Cycle: nightly-cycle/2026-10-23
   Contract: 4f9b40864d05ffea731090b36800572dd7affedd8532fcd17c8ded8c9e2fbc12
-  Why: No wrapper mismatches or integrity issues were detected across recently modified configuration files.
-  Change: Verified PWA/APK wrapper invariants: asset links, manifest parity, version code/name sync, release metadata, and cleartext traffic policy.
-  Result: Executed pnpm audit:apk, pnpm apk:verify:source, pnpm test:apk-native, pnpm test:apk-release, pnpm test:version-code, and pnpm test:apk-slot-sync with 100% pass.
+  Why: Daily packaging integrity audit passed all checks across PWA manifest, TWA configs, and Android build settings without requiring source modifications.
+  Change: Verified wrapper invariants (asset links, manifest parity, version code/name sync, release metadata, cleartext security policy) with no mismatches found.
+  Result: Passed pnpm audit:apk, pnpm test:apk-release, and pnpm test:apk-native across all wrapper integrity and native contract invariants.
   Files: .github/nightly-logs/10-apk-integrity-coverage.log
   Nudges: 0
-  Execution: c899b4bf33a1a7362666cd8c025ce827f78dfda2
+  Execution: 699327f42bc9e27162bd77c7c216c21146f546e1
 -->
