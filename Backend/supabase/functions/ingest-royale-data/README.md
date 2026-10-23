@@ -29,7 +29,7 @@ The four clan writes are separate RPC calls, not one transaction, so a failed cy
 | :--- | :--- |
 | `index.ts` | Entry point; loads secrets and runs the pipeline behind the [shared handler](../_shared/README.md). |
 | `pipeline.ts` | Orchestrates the three stages. |
-| `client.ts` | Supabase service client and request-scoped Vault loading. |
+| `client.ts` | Supabase service client, request tracing wrapper, and Vault environment broker (`syncVault`). |
 | `work-budget.ts` | Admission, work and lifecycle deadlines. |
 | `recruit-writer.ts` | Deduplicated bounded registry/recruit checkpoints. |
 | `stages/discovery.ts` | Recruit harvesting from tournaments. |
