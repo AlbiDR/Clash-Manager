@@ -652,6 +652,14 @@
   - Root Cause: Unfinalized session sentinels or delayed PR publication trigger fallback publish mechanism in nightly watchdog.
   - Resolution Details: Watchdog fallback publish mechanism successfully published both staged patches (PR #2308 CLEAN, PR #2309 CHANGED). Overall pipeline intervention rate for 2026-10-22: 2/11 merged stages (18.2%).
 
+* Watchdog Fallback Publish Recovery on 2026-10-23:
+  - Stage: Stage 9 (Refactor Proposals)
+  - State: [RESCUED - monitor] (2026-10-23)
+  - Session: sessions/12035849067655959139
+  - Symptom: Stage 9 completed session execution but stalled during native PR finalization reserves without emitting terminal publication events (`failureClass: RECOVERED_BY_FALLBACK_PUBLISH`), requiring watchdog fallback publish recovery (PR #2325). Health verdict degraded to `DEGRADING` (reason: "intervention rate rose from 11% to 20%").
+  - Root Cause: Unfinalized session sentinels or delayed PR publication trigger fallback publish mechanism in nightly watchdog.
+  - Resolution Details: Watchdog fallback publish mechanism successfully published staged patch (PR #2325 CLEAN). Overall pipeline intervention rate for 2026-10-23: 1/12 merged stages (8.3%).
+
 ## Section 2: Cross-Stage Coherence Bugs (Priority 2)
 
 * Duplicate Merge Failure Blocks in 00-pr-history.md:
@@ -771,56 +779,64 @@
   - Root Cause: Static view history audit check flagged view dependency order or projection structural mismatch on `pipeline_heartbeat_view` expansion during baseline consolidation attempt.
   - Recommended Fix: Reconcile `pipeline_heartbeat_view` definition in baseline schema against unit migration alterations.
 
+* Unregistered Incremental Migration Audit Failure on Baseline Consolidation (Stage 3, 2026-10-23):
+  - Stage: Stage 3 (Baseline Consolidation)
+  - State: [ACTIVE - monitor] (2026-10-23)
+  - PR: PR #2319 (PARTIAL-RUN)
+  - Symptom: Stage 3 completed with status `PARTIAL-RUN` (`[checks database-verification=DB-UNAVAILABLE fold-state=PENDING migration-quality=FAIL]`). Migration quality check failed due to unregistered incremental migration `20261022183913_event_gate_headhunter_epoch_guard.sql`.
+  - Root Cause: Migration quality audit `migration-quality.mjs` detected an unregistered incremental migration file in `Backend/supabase/migrations/` that was not listed in the migration sequence register prior to folding.
+  - Recommended Fix: Register `20261022183913_event_gate_headhunter_epoch_guard.sql` in migration catalog or reconcile registration metadata.
+
 ## Section 3: No-Diff and Low-Value Audit (Priority 3)
 
 * Stage 1 (Harden):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-10-21 in useApiState.ts, PR #2303; audit duration: 5m, median 6m)
-  - Analysis: Annotated in-memory singleton state in useApiState.ts and useNativeBridge.ts with explicit EPHEMERAL comments (PR #2303).
+  - Consecutive No-Diff Days: 1 (CLEAN logged on 2026-10-22, PR #2316; audit duration: 7m, median 6m)
+  - Analysis: Audited 5 priority targets (auth gaps, in-memory state, Valibot boundaries, dead code, layer rules) across 51 changed files; clean audit pass (PR #2316).
 
 * Stage 2 (Verify):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-10-22 in work-budget.spec.ts, PR #2304; audit duration: 6m, median 13m)
-  - Analysis: Expanded IngestionWorkBudget unit test suite in Backend/supabase/functions/ingest-royale-data/work-budget.spec.ts (PR #2304).
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-10-23 in client.spec.ts, PR #2317; audit duration: 5m, median 12.5m)
+  - Analysis: Closed zero-coverage gap in L1 Core client & environment broker in ingest-royale-data in client.spec.ts (PR #2317).
 
 * Stage 3 (Baseline Consolidation):
-  - Consecutive No-Diff Days: 6 (PARTIAL-RUN logged on 2026-10-22, PR #2305; audit duration: 7m, median 4m)
-  - Analysis: Blocked folding unit 20260915190011_backend_health_and_safe_maintenance.sql due to audit:migrations view history check failure (PR #2305).
+  - Consecutive No-Diff Days: 7 (PARTIAL-RUN logged on 2026-10-23, PR #2319; audit duration: 7m, median 4m)
+  - Analysis: Blocked folding due to unregistered incremental migration 20261022183913_event_gate_headhunter_epoch_guard.sql (PR #2319).
 
 * Stage 4 (Optimization):
-  - Consecutive No-Diff Days: 9 (CLEAN logged on 2026-10-22, PR #2306; audit duration: 10m, median 5m)
-  - Analysis: Audited 46 changed files and Edge Functions/Frontend view references via source-level grep; clean audit pass (PR #2306).
+  - Consecutive No-Diff Days: 10 (CLEAN logged on 2026-10-23, PR #2318; audit duration: 3m, median 5m)
+  - Analysis: Audited 51 changed files and Edge Functions/Frontend view references via source-level grep; clean audit pass (PR #2318).
 
 * Stage 5 (README):
-  - Consecutive No-Diff Days: 1 (CLEAN logged on 2026-10-22, PR #2308; audit duration: 5m, median 4m)
-  - Analysis: Audited doc debt files and confirmed documentation accuracy across Edge Functions and Core services (PR #2308, rescued via watchdog fallback publish).
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-10-23 in ingest-royale-data/README.md, PR #2320; audit duration: 3m, median 4m)
+  - Analysis: Reconciled ingest-royale-data README with client.ts request tracing and Vault broker role (PR #2320).
 
 * Stage 6 (TSDoc):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-10-22 in abortSignal.ts, PR #2309; audit duration: 7m, median 6m)
-  - Analysis: Documented waitWithAbort and verified 17 doc-debt source files in Backend/supabase/functions/_shared/abortSignal.ts (PR #2309, rescued via watchdog fallback publish).
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-10-23 in ingest-royale-data/client.ts, PR #2321; audit duration: 4m, median 6m)
+  - Analysis: Hardened client interface contracts and inline decision annotations in ingest-royale-data/client.ts (PR #2321).
 
 * Stage 7 (Version Integrity):
-  - Consecutive No-Diff Days: 172 (CLEAN logged on 2026-10-22, PR #2307; audit duration: 2m, median 3m)
-  - Analysis: Scanned catalog usage in Frontend-PWA/package.json and Backend/package.json, and version declarations across root/Frontend-PWA/Backend package.json (14.55.8); zero drift (PR #2307).
+  - Consecutive No-Diff Days: 173 (CLEAN logged on 2026-10-23, PR #2322; audit duration: 4m, median 3m)
+  - Analysis: Monorepo version declarations and catalog protocol fully reconciled across root/Frontend-PWA/Backend package.json (PR #2322).
 
 * Stage 8 (Dependency Audit):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-10-22 in package.json/pnpm-lock.yaml, PR #2310; audit duration: 9m, median 6m)
-  - Analysis: Bumped vue-router to ^5.4.0 and updated major version watchlist in package.json/pnpm-lock.yaml (PR #2310).
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-10-23 in package.json/pnpm-lock.yaml, PR #2323; audit duration: 7m, median 7m)
+  - Analysis: Bumped @vue/test-utils to ^2.5.1 and updated major version watchlist in package.json/pnpm-lock.yaml (PR #2323).
 
 * Stage 9 (Refactor):
-  - Consecutive No-Diff Days: 7 (CLEAN logged on 2026-10-22, PR #2311; audit duration: 11m, median 6m)
-  - Analysis: Audited 46 files in changed-files; 0 dep-violations; knip 0 unused/dup exp; consecutive-clean: 6; closest useProgressiveList (SRP clean) (PR #2311).
+  - Consecutive No-Diff Days: 8 (CLEAN logged on 2026-10-23, PR #2325; audit duration: 6m, median 6m)
+  - Analysis: Calibration pass on 51 candidates (0 dep viols, 11 unused files, 1 dep). Inspected useLeaderboard.ts, useProgressiveList.ts, muscle.ts; clean streak: 7 (PR #2325, rescued via watchdog fallback publish).
 
 * Stage 10 (APK-Integrity):
-  - Consecutive No-Diff Days: 105 (CLEAN logged on 2026-10-22, PR #2312; audit duration: 2m, median 3m)
-  - Analysis: Verified PWA/APK wrapper invariants: asset links, manifest parity, version code/name sync (14055006/14.55.8), release metadata, and cleartext traffic policy (PR #2312).
+  - Consecutive No-Diff Days: 106 (CLEAN logged on 2026-10-23, PR #2324; audit duration: 2m, median 3m)
+  - Analysis: Verified wrapper invariants (asset links, manifest parity, version code/name sync, release metadata, cleartext security policy) with zero mismatches found (PR #2324).
 
 * Stage 11 (APK-Optimization):
-  - Consecutive No-Diff Days: 10 (CLEAN logged on 2026-10-22, PR #2313; audit duration: 2m, median 3m)
-  - Analysis: Scanned WebView settings, service worker routes, Vite chunking, and precache asset footprint (67.6 KB) (PR #2313).
+  - Consecutive No-Diff Days: 11 (CLEAN logged on 2026-10-23, PR #2326; audit duration: 4m, median 3m)
+  - Analysis: Audited native WebView performance settings, Service Worker caching, Vite Rolldown code-splitting groups, and public asset precache footprint (PR #2326).
 
 * Stage 12 (APK-UX):
-  - Consecutive No-Diff Days: 24 (Pending execution for 2026-10-22 cycle; prior CLEAN logged on 2026-10-21, PR #2300; median audit duration: 4m)
-  - Analysis: Stage 12 cycle pending; verified zero failures reported in control plane ledger.
+  - Consecutive No-Diff Days: 25 (CLEAN logged on 2026-10-23, PR #2327; audit duration: 1m, median 4m)
+  - Analysis: Completed APK UX audit pass: 0 violations across 77 files audited (PR #2327).
 
 * Stage 13 (Self-Healing):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-10-22; audit duration: 4m)
-  - Analysis: Completed daily self-healing audit pass for 2026-10-22: documented Stage 5 & 6 fallback publish recoveries in Section 1, Stage 3 PARTIAL-RUN migration constraint in Section 2, and updated Section 3 metrics across Stages 1-13.
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-10-23; audit duration: 4m, median 5m)
+  - Analysis: Completed daily self-healing audit pass for 2026-10-23: documented Stage 9 fallback publish recovery in Section 1, Stage 3 PARTIAL-RUN unregistered migration failure in Section 2, and updated Section 3 metrics across Stages 1-13.

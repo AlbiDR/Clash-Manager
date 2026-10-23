@@ -4,23 +4,23 @@
 
 In plain terms: no change was made to the project. This run ended as CHANGED and the only file here is the log recording that.
 
-**What changed:** Documented Stage 5 & 6 fallback publish recoveries and Stage 3 PARTIAL-RUN migration constraint
+**What changed:** Documented Stage 9 fallback publish recovery, Stage 3 unregistered migration failure, and updated Sections 1-3 metrics for 2026-10-23
 
-**Why:** Documented 2026-10-22 pipeline findings and updated Section 1, 2, and 3 protocol metrics
+**Why:** Self-healing protocol audit pass for 2026-10-23 cycle
 
-**Result:** Verified git diff check and protocol metrics consistency across 13 stages
+**Result:** Audit complete and protocol updated
 
 **Files changed:** .github/nightly-logs/13-self-healing-protocol-coverage.log, .github/nightly-logs/13-self-healing-protocol.md
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: pipeline
-  Cycle: nightly-cycle/2026-10-22
+  Cycle: nightly-cycle/2026-10-23
   Contract: df81a67e6d78a129caa22f2d9d3499a9aaf33de1a9f9c7718ff860013b7a86e1
-  Why: Documented 2026-10-22 pipeline findings and updated Section 1, 2, and 3 protocol metrics
-  Change: Documented Stage 5 & 6 fallback publish recoveries and Stage 3 PARTIAL-RUN migration constraint
-  Result: Verified git diff check and protocol metrics consistency across 13 stages
+  Why: Self-healing protocol audit pass for 2026-10-23 cycle
+  Change: Documented Stage 9 fallback publish recovery, Stage 3 unregistered migration failure, and updated Sections 1-3 metrics for 2026-10-23
+  Result: Audit complete and protocol updated
   Files: .github/nightly-logs/13-self-healing-protocol-coverage.log, .github/nightly-logs/13-self-healing-protocol.md
   Nudges: 0
-  Execution: d90f9cd349e0d8bcf89016ed4fe3a3b4ed16cc4e
+  Execution: 23da0ba2c9104c3225aac8abc917523add4d33d6
 -->
