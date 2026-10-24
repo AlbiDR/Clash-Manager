@@ -86,6 +86,7 @@ Treat schemas as declaration graphs. The master baseline (`20260531232406_master
 - **Scan execution:**
   - Require migration quality `PASS`. `FAIL` or `DEGRADED` cannot finalize `CLEAN`; do not edit incremental migrations.
   - Take the work list from `/tmp/nightly/pending-migrations.txt` only, in file order.
+  - A migration named in `retainedIncrementals` in `.github/nightly-config/migration-quality.json` is a decision, not pending work: fold-state reports its objects as `retained` and the list already omits it. Never fold a retained migration's objects into the baseline, and report the retained count in your result. If fold-state prints `STALE RETAINED`, say so; do not edit the policy yourself.
   - If `/tmp/nightly/pending-migrations.txt` is empty (no newer migrations exist):
     1. Perform a read-only audit of the existing master migration to verify Row Level Security (RLS) compliance, search_path isolation, and formatting conventions.
     2. Do not reformat or reorder a clean baseline merely to manufacture a diff.

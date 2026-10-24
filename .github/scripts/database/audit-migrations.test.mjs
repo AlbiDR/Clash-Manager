@@ -8,7 +8,7 @@ import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 
-import { auditMigrations } from './audit-migrations.mjs';
+import { auditMigrations, validatePolicy } from './audit-migrations.mjs';
 
 async function fixture({
   migrationComment = '-- concise',
@@ -276,4 +276,49 @@ test('rejects a privileged RPC left executable by PUBLIC', async t => {
   assert.equal(report.status, 'FAIL');
   assert.match(report.securityViolations.join(' '), /PUBLIC can execute/);
   assert.match(report.securityViolations.join(' '), /service_role cannot execute/);
+});
+
+
+const BASELINE_PATH = 'Backend/supabase/migrations/20260531232406_master_migration.sql';
+const RETAINED_PATH = 'Backend/supabase/migrations/20260915190011_widen.sql';
+const HASH = 'a'.repeat(64);
+
+function policyWith(retainedIncrementals, hashed = [RETAINED_PATH]) {
+  return {
+    version: 1,
+    baseline: BASELINE_PATH,
+    immutableFileHashes: Object.fromEntries(hashed.map(item => [item, HASH])),
+    retainedIncrementals,
+    exemptions: [],
+  };
+}
+
+const PATHS = new Set([BASELINE_PATH, RETAINED_PATH]);
+
+test('a well-formed retained incremental passes policy validation', () => {
+  assert.deepEqual(validatePolicy(policyWith([{ path: RETAINED_PATH, reason: 'widens a view past the baseline' }]), PATHS), []);
+});
+
+test('a retained incremental must name a registered, existing file and give a reason', () => {
+  const cases = [
+    [[{ path: RETAINED_PATH }], /needs a reason/],
+    [[{ path: RETAINED_PATH, reason: '   ' }], /needs a reason/],
+    [[{ reason: 'x' }], /needs a path/],
+    [[{ path: BASELINE_PATH, reason: 'x' }], /baseline cannot be a retained/],
+    [[{ path: RETAINED_PATH, reason: 'x' }, { path: RETAINED_PATH, reason: 'y' }], /listed twice/],
+  ];
+  for (const [entries, pattern] of cases) {
+    assert.match(validatePolicy(policyWith(entries), PATHS).join('\n'), pattern);
+  }
+  const unregistered = validatePolicy(policyWith([{ path: RETAINED_PATH, reason: 'x' }], []), PATHS).join('\n');
+  assert.match(unregistered, /retained incremental is not registered as immutable/);
+  const missing = 'Backend/supabase/migrations/29990101000000_absent.sql';
+  const absent = validatePolicy(policyWith([{ path: missing, reason: 'x' }], [missing]), PATHS).join('\n');
+  assert.match(absent, /retained incremental path does not exist/);
+});
+
+test('a policy with no retainedIncrementals key is still valid', () => {
+  const policy = policyWith([]);
+  delete policy.retainedIncrementals;
+  assert.deepEqual(validatePolicy(policy, PATHS), []);
 });

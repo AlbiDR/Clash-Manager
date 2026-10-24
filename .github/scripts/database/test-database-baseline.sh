@@ -12,10 +12,11 @@ if [[ -z "${BASELINE}" ]]; then
   exit 1
 fi
 FOLD_DECISION=$(node "${REPO_ROOT}/.github/scripts/database/baseline-completeness.mjs" "${SOURCE_SUPABASE}/migrations")
-read -r FOLD_STATUS PENDING_OBJECTS PENDING_MIGRATIONS SEMANTIC_ONLY UNSUPPORTED BASELINE_PGTAP CATALOG_EQUIVALENCE <<<"$(node -e '
+read -r FOLD_STATUS RETAINED_OBJECTS PENDING_OBJECTS PENDING_MIGRATIONS SEMANTIC_ONLY UNSUPPORTED BASELINE_PGTAP CATALOG_EQUIVALENCE <<<"$(node -e '
 const decision = JSON.parse(process.argv[1]);
 console.log([
   decision.status,
+  decision.retainedObjectCount,
   decision.pendingObjectCount,
   decision.pendingMigrationCount,
   decision.semanticOnlyObjectCount,
@@ -29,7 +30,7 @@ if ! command -v supabase >/dev/null 2>&1 || ! command -v docker >/dev/null 2>&1 
   echo "DB-UNAVAILABLE: supabase CLI and a running Docker daemon are required." >&2
   exit 2
 fi
-echo "Fold-state: ${FOLD_STATUS}; pending objects=${PENDING_OBJECTS}; pending migrations=${PENDING_MIGRATIONS}; semantic-only objects=${SEMANTIC_ONLY}; unsupported statements=${UNSUPPORTED}."
+echo "Fold-state: ${FOLD_STATUS}; retained objects=${RETAINED_OBJECTS}; pending objects=${PENDING_OBJECTS}; pending migrations=${PENDING_MIGRATIONS}; semantic-only objects=${SEMANTIC_ONLY}; unsupported statements=${UNSUPPORTED}."
 
 TEMP_ROOT=$(mktemp -d "${TMPDIR:-/tmp}/clash-baseline.XXXXXX")
 PROJECT_ID="clash_baseline_${$}"
@@ -277,7 +278,7 @@ if [[ "${VERIFICATION_STATUS}" -ne 0 ]]; then
 fi
 
 if [[ "${CATALOG_EQUIVALENCE}" != "true" ]]; then
-  echo "BASELINE-ONLY behavior and baseline/full catalog equivalence PENDING: ${PENDING_OBJECTS} objects owned by ${PENDING_MIGRATIONS} migrations remain to fold."
+  echo "BASELINE-ONLY behavior and baseline/full catalog equivalence PENDING: ${PENDING_OBJECTS} objects owned by ${PENDING_MIGRATIONS} migrations remain to fold, ${RETAINED_OBJECTS} retained by design."
   echo "Database baseline semantic verification PASS (partial): baseline apply and idempotency passed; full-history replay pgTAP passed. No baseline-equivalence claim."
 else
   echo "Database baseline semantic verification PASS: baseline applies idempotently; baseline and full replay pass pgTAP and have equivalent catalogs."

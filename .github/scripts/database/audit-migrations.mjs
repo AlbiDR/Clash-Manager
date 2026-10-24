@@ -520,7 +520,7 @@ export function identifyDefinition(statement) {
   return null;
 }
 
-function validatePolicy(policy, migrationPaths) {
+export function validatePolicy(policy, migrationPaths) {
   const errors = [];
   if (policy.version !== 1) errors.push('policy version must be 1');
   const seen = new Set();
@@ -533,6 +533,25 @@ function validatePolicy(policy, migrationPaths) {
   for (const [migrationPath, hash] of Object.entries(policy.immutableFileHashes ?? {})) {
     if (!migrationPaths.has(migrationPath)) errors.push(`immutable migration path does not exist: ${migrationPath}`);
     if (!/^[a-f0-9]{64}$/.test(hash)) errors.push(`invalid immutable migration hash: ${migrationPath}`);
+  }
+  // A retained incremental is a migration the baseline deliberately does not
+  // absorb. It is a promise about an immutable file, so it must name a file that
+  // exists and is registered, and it must say why.
+  const retainedSeen = new Set();
+  for (const entry of policy.retainedIncrementals ?? []) {
+    const retainedPath = entry?.path;
+    if (typeof retainedPath !== 'string' || !retainedPath) {
+      errors.push(`retained incremental needs a path: ${JSON.stringify(entry)}`);
+      continue;
+    }
+    if (retainedSeen.has(retainedPath)) errors.push(`retained incremental listed twice: ${retainedPath}`);
+    retainedSeen.add(retainedPath);
+    if (retainedPath === policy.baseline) errors.push(`the baseline cannot be a retained incremental: ${retainedPath}`);
+    else if (!immutablePaths.has(retainedPath)) errors.push(`retained incremental is not registered as immutable: ${retainedPath}`);
+    if (!migrationPaths.has(retainedPath)) errors.push(`retained incremental path does not exist: ${retainedPath}`);
+    if (typeof entry.reason !== 'string' || entry.reason.trim().length === 0) {
+      errors.push(`retained incremental needs a reason: ${retainedPath}`);
+    }
   }
   for (const exemption of policy.exemptions ?? []) {
     const fields = ['path', 'reason', 'maxCommentLines', 'maxCommentRatio', 'expiresOn'];
