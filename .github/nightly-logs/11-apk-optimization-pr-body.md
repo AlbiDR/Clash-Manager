@@ -4,23 +4,23 @@
 
 In plain terms: nothing needed fixing. This run checked the APK optimization area and found it already correct, so the only file here is the log recording that the check happened.
 
-**What was checked:** Audited native WebView performance settings, Service Worker caching, Vite Rolldown code-splitting groups, and public asset precache footprint; zero source changes required
+**What was checked:** Audited MainActivity.java WebView settings (cache mode, preraster, DOM storage), AndroidManifest.xml hardware acceleration, sw.ts precache routes and navigation preload, vite.config.ts code splitting, and public precache asset footprint.
 
-**Why:** All 9 wrapper/SW invariants are present and static public precache footprint (15 files, 67.6 KB) remains well within bounds
+**Why:** All 9 performance and caching invariants are active and no asset exceeds declared cache limit in audit queue.
 
-**Result:** PASS (pnpm audit:apk-perf; pnpm test)
+**Result:** pnpm audit:apk-perf passed all 9 invariants and verified 15 public precached assets totaling 67.6 KB.
 
 **Files changed:** .github/nightly-logs/11-apk-optimization-coverage.log
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: apk
-  Cycle: nightly-cycle/2026-10-23
+  Cycle: nightly-cycle/2026-10-24
   Contract: 63c0229fe16cf4c98e352282307edbee4830cff68ea2d93c5c967a1f5cbd30ea
-  Why: All 9 wrapper/SW invariants are present and static public precache footprint (15 files, 67.6 KB) remains well within bounds
-  Change: Audited native WebView performance settings, Service Worker caching, Vite Rolldown code-splitting groups, and public asset precache footprint; zero source changes required
-  Result: PASS (pnpm audit:apk-perf; pnpm test)
+  Why: All 9 performance and caching invariants are active and no asset exceeds declared cache limit in audit queue.
+  Change: Audited MainActivity.java WebView settings (cache mode, preraster, DOM storage), AndroidManifest.xml hardware acceleration, sw.ts precache routes and navigation preload, vite.config.ts code splitting, and public precache asset footprint.
+  Result: pnpm audit:apk-perf passed all 9 invariants and verified 15 public precached assets totaling 67.6 KB.
   Files: .github/nightly-logs/11-apk-optimization-coverage.log
   Nudges: 0
-  Execution: cc47937366b30d1eeaad3c723b2c5fefd34bf23e
+  Execution: 0f580f8f81971035c87828a1a2eb07566ee8ff06
 -->
