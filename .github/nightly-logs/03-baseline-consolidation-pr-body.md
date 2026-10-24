@@ -4,23 +4,23 @@
 
 In plain terms: no change was made to the project. This run ended as PARTIAL-RUN and the only file here is the log recording that.
 
-**What was checked:** Migration quality FAIL due to unregistered incremental migration 20261022183913_event_gate_headhunter_epoch_guard.sql; restored baseline changes
+**What was checked:** Migration quality audit failed on unregistered historical migration hash
 
-**Why:** Migration audit policy violation on incremental migration hash registration prevents folding verification
+**Why:** Unregistered immutable migration hash in 20261022183913_event_gate_headhunter_epoch_guard.sql prevented verified unit folding
 
-**Result:** pnpm audit:migrations FAIL (1 violation: POLICY: incremental migration is not registered as immutable: Backend/supabase/migrations/20261022183913_event_gate_headhunter_epoch_guard.sql)
+**Result:** fold-state PENDING: 33 migrations still unfolded, migration-quality FAIL, db DB-UNAVAILABLE
 
 **Files changed:** .github/nightly-logs/03-baseline-consolidation-coverage.log
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: database
-  Cycle: nightly-cycle/2026-10-23
+  Cycle: nightly-cycle/2026-10-24
   Contract: 8c32444005e6edf746eda3ca4e7e0dbe86a11a195765389a2f7db2cce85373e0
-  Why: Migration audit policy violation on incremental migration hash registration prevents folding verification
-  Change: Migration quality FAIL due to unregistered incremental migration 20261022183913_event_gate_headhunter_epoch_guard.sql; restored baseline changes
-  Result: pnpm audit:migrations FAIL (1 violation: POLICY: incremental migration is not registered as immutable: Backend/supabase/migrations/20261022183913_event_gate_headhunter_epoch_guard.sql)
+  Why: Unregistered immutable migration hash in 20261022183913_event_gate_headhunter_epoch_guard.sql prevented verified unit folding
+  Change: Migration quality audit failed on unregistered historical migration hash
+  Result: fold-state PENDING: 33 migrations still unfolded, migration-quality FAIL, db DB-UNAVAILABLE
   Files: .github/nightly-logs/03-baseline-consolidation-coverage.log
   Nudges: 0
-  Execution: 3bdddb5359c2e5009503871c9e2d16633e0770f3
+  Execution: 387cf1b742dc9b617b659f890184bc827e9bde67
 -->
