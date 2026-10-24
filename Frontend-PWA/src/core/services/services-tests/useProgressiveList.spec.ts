@@ -616,7 +616,7 @@ describe("useProgressiveList", () => {
   it("evaluates timeRemaining floating-point threshold (>1ms vs <=1ms) in idle loop", async () => {
     const scope = effectScope();
     await scope.run(async () => {
-      let remainingValues = [1.0001, 0.999];
+      const remainingValues = [1.0001, 0.999];
       let callCount = 0;
       (window as any).requestIdleCallback = vi.fn((cb) => {
         setTimeout(() => cb({
