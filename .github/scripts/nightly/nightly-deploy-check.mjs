@@ -28,6 +28,7 @@ export const CONTROL_PLANE_FILES = [
   ".github/scripts/nightly/merge-nightly-core.mjs",
   ".github/scripts/nightly/nightly-stage.mjs",
   ".github/scripts/nightly/nightly-publish-fallback.mjs",
+  ".github/scripts/nightly/nightly-spec-verify.mjs",
   ".github/scripts/nightly/nightly-patch-base.mjs",
   ".github/scripts/nightly/nightly-health.mjs",
   ".github/scripts/nightly/nightly-recap.mjs",
