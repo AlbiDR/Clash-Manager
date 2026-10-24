@@ -102,7 +102,14 @@
     "Backend/supabase/migrations/20261015202644_upsert_discovery_cache_batch.sql": "4b628ec6d89cdf987b0fef38e81e595608dedc95ff3384aecfa4de28c9e3e394",
     "Backend/supabase/migrations/20261015202548_stabilize_recruit_sync_and_rotation.sql": "97bfcdca05c2ccabdbb51aa60c821041a79f963cef32c29f320837a3ca2aa3b6",
     "Backend/supabase/migrations/20261017151347_skip_unchanged_exclusion_cache_updates.sql": "15b0351edc42c2379d63948bb2ca32c7a1fb5dd15c61fe6349c38067b566d389",
-    "Backend/supabase/migrations/20261021195547_bound_recruit_battle_poll_targets.sql": "fb68950309da2353a286cde72eee44115745b86d41ae7899c7e4d36b751bdbf2"
+    "Backend/supabase/migrations/20261021195547_bound_recruit_battle_poll_targets.sql": "fb68950309da2353a286cde72eee44115745b86d41ae7899c7e4d36b751bdbf2",
+    "Backend/supabase/migrations/20261022183913_event_gate_headhunter_epoch_guard.sql": "9c9aba712b3bbb1c73b883393344b97fd3c60b2d6029b0743ec198ded4fd176f"
   },
+  "retainedIncrementals": [
+    {
+      "path": "Backend/supabase/migrations/20260915190011_backend_health_and_safe_maintenance.sql",
+      "reason": "Widens features.pipeline_heartbeat_view from 2 columns to 5. The baseline and the retained 20260817000000 migration both declare the 2 column form, and PostgreSQL's CREATE OR REPLACE VIEW cannot shrink a view, so folding the 5 column form into the baseline would make a fresh replay fail at 20260817000000. Retained files are never edited or deleted, so this migration stays the step that widens the view."
+    }
+  ],
   "exemptions": []
 }

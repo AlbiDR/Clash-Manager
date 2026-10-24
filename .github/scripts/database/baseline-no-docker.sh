@@ -39,10 +39,11 @@ if ! FOLD_DECISION=$(node "${REPO_ROOT}/.github/scripts/database/baseline-comple
   echo "Fold-state does not support a safe database verification mode." >&2
   exit 2
 fi
-read -r FOLD_STATUS PENDING_OBJECTS PENDING_MIGRATIONS SEMANTIC_ONLY UNSUPPORTED CATALOG_EQUIVALENCE <<<"$(node -e '
+read -r FOLD_STATUS RETAINED_OBJECTS PENDING_OBJECTS PENDING_MIGRATIONS SEMANTIC_ONLY UNSUPPORTED CATALOG_EQUIVALENCE <<<"$(node -e '
 const decision = JSON.parse(process.argv[1]);
 console.log([
   decision.status,
+  decision.retainedObjectCount,
   decision.pendingObjectCount,
   decision.pendingMigrationCount,
   decision.semanticOnlyObjectCount,
@@ -139,7 +140,7 @@ snapshot() {
 
 FAILED=0
 
-echo "Fold-state: ${FOLD_STATUS}; pending objects=${PENDING_OBJECTS}; pending migrations=${PENDING_MIGRATIONS}; semantic-only objects=${SEMANTIC_ONLY}; unsupported statements=${UNSUPPORTED}."
+echo "Fold-state: ${FOLD_STATUS}; retained objects=${RETAINED_OBJECTS}; pending objects=${PENDING_OBJECTS}; pending migrations=${PENDING_MIGRATIONS}; semantic-only objects=${SEMANTIC_ONLY}; unsupported statements=${UNSUPPORTED}."
 
 echo "[1/3] baseline applies"
 fresh_cluster
@@ -171,7 +172,7 @@ if [[ ${FAILED} -eq 0 ]]; then
       echo "  FAIL: complete fold-state but baseline-only and full replay differ"; diff -u "${DATA_DIR}/first.sql" "${DATA_DIR}/replay.sql" | head -n "${DIFF_LINES}"; FAILED=1
     fi
   else
-    echo "  PASS: ${REPLAYED} migrations replayed; baseline/full equivalence PENDING (${PENDING_OBJECTS} objects in ${PENDING_MIGRATIONS} migrations)."
+    echo "  PASS: ${REPLAYED} migrations replayed; baseline/full equivalence PENDING (${PENDING_OBJECTS} objects in ${PENDING_MIGRATIONS} migrations to fold, ${RETAINED_OBJECTS} retained by design)."
   fi
 fi
 

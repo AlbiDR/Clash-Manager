@@ -6,8 +6,8 @@ import { fileURLToPath } from 'node:url';
 
 import { checkFoldState } from './fold-state.mjs';
 
-const FOLD_STATUSES = new Set(['folded', 'reconciled', 'unfolded', 'semantic-only']);
-const COUNT_KEYS = ['folded', 'reconciled', 'unfolded', 'semantic-only'];
+const FOLD_STATUSES = new Set(['folded', 'reconciled', 'unfolded', 'retained', 'semantic-only']);
+const COUNT_KEYS = ['folded', 'reconciled', 'unfolded', 'retained', 'semantic-only'];
 
 /**
  * Validate the fold-state SSOT and decide which baseline guarantees can be
@@ -56,6 +56,9 @@ export function decideBaselineCompleteness(report) {
     if (object.status === 'unfolded' && !['ABSENT', 'DIVERGENT'].includes(object.reason)) {
       throw new Error(`Unsupported unfolded-object reason for ${object.key}.`);
     }
+    if (object.status === 'retained' && (typeof object.retainedReason !== 'string' || !object.retainedReason)) {
+      throw new Error(`Retained object without a recorded reason: ${object.key}.`);
+    }
     if (object.status === 'folded' && object.reason !== undefined) {
       throw new Error(`Contradictory folded-object reason for ${object.key}.`);
     }
@@ -80,16 +83,21 @@ export function decideBaselineCompleteness(report) {
     if (report.counts.unfolded !== 0 || report.counts['semantic-only'] !== 0 || report.unsupported.length !== 0) {
       throw new Error('Contradictory FOLDED report; refusing completeness claim.');
     }
+    // Retained objects are resolved by decision, but the baseline lacks them by
+    // design, so the baseline and the full history differ on exactly those
+    // objects. Equivalence and baseline-only pgTAP are therefore not claimable.
+    const retainedObjectCount = report.counts.retained;
     return {
       status: report.status,
-      mode: 'complete',
+      mode: retainedObjectCount ? 'complete-with-retained' : 'complete',
+      retainedObjectCount,
       pendingObjectCount: 0,
       pendingMigrationCount: 0,
       semanticOnlyObjectCount: 0,
       unsupportedStatementCount: 0,
-      baselinePgTap: true,
+      baselinePgTap: retainedObjectCount === 0,
       fullReplayPgTap: true,
-      catalogEquivalence: true,
+      catalogEquivalence: retainedObjectCount === 0,
     };
   }
 
@@ -100,6 +108,7 @@ export function decideBaselineCompleteness(report) {
   return {
     status: report.status,
     mode: 'partial',
+    retainedObjectCount: report.counts.retained,
     pendingObjectCount: report.counts.unfolded,
     pendingMigrationCount: unfoldedSources.size,
     semanticOnlyObjectCount: report.counts['semantic-only'],

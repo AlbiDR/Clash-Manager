@@ -612,4 +612,48 @@ describe("useProgressiveList", () => {
     scope.stop();
     (window as any).cancelIdleCallback = originalCIC;
   });
+
+  it("evaluates timeRemaining floating-point threshold (>1ms vs <=1ms) in idle loop", async () => {
+    const scope = effectScope();
+    await scope.run(async () => {
+      const remainingValues = [1.0001, 0.999];
+      let callCount = 0;
+      (window as any).requestIdleCallback = vi.fn((cb) => {
+        setTimeout(() => cb({
+          timeRemaining: () => remainingValues[callCount++] ?? 0,
+          didTimeout: false,
+        }), 1);
+      });
+
+      const source = ref(Array.from({ length: 100 }, (_, i) => i + 1));
+      const { visibleItems } = useProgressiveList(source, 10);
+
+      expect(visibleItems.value).toHaveLength(10);
+
+      vi.advanceTimersByTime(1);
+      // Chunk 1 (10 -> 20): timeRemaining() = 1.0001 > 1 -> continues.
+      // Chunk 2 (20 -> 30): timeRemaining() = 0.999 <= 1 -> breaks loop.
+      // Total visible items: 30
+      expect(visibleItems.value).toHaveLength(30);
+    });
+    scope.stop();
+  });
+
+  it("handles source list containing sparse or null/undefined item values", async () => {
+    const scope = effectScope();
+    await scope.run(async () => {
+      const sparseSource = ref<(number | null | undefined)[]>([1, null, undefined, 4, 5, null, 7, 8, 9, 10, undefined, 12, 13, 14, 15]);
+      const { visibleItems } = useProgressiveList(sparseSource, 5);
+
+      expect(visibleItems.value).toHaveLength(5);
+      expect(visibleItems.value).toEqual([1, null, undefined, 4, 5]);
+
+      vi.advanceTimersByTime(1);
+      expect(visibleItems.value).toHaveLength(15);
+      expect(visibleItems.value[2]).toBeUndefined();
+      expect(visibleItems.value[5]).toBeNull();
+      expect(visibleItems.value[10]).toBeUndefined();
+    });
+    scope.stop();
+  });
 });

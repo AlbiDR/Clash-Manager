@@ -84,7 +84,8 @@ You act as a logic integrity and stress-test auditor. You do not build logic; yo
 ### Step 3: Test Writing and Verification
 
 - If a gap was found: Write or update the target `*.spec.ts` file in the correct directory.
-- Run exactly the selected spec: `CI=true DEBIAN_FRONTEND=noninteractive pnpm -F clash-manager-pwa test -- <spec-path>` for PWA tests or `CI=true DEBIAN_FRONTEND=noninteractive pnpm -F clash-manager-backend test -- <spec-path>` for Backend tests.
+- Verify the selected spec with exactly one command: `node .github/scripts/nightly/nightly-spec-verify.mjs --spec <repo-relative-spec-path>`. It runs the spec, then for Frontend-PWA specs ESLint and type-check, which are the same checks the merge gate applies after you finish. Do not run the spec by hand instead, and do not run lint or type-check separately: they share the one correction below.
+- Read its first line. `VERIFIED` (exit 0) means continue. `CORRECT` (exit 1) means make one targeted correction that fixes every failure it lists, then run the same command again. `RESTORE` (exit 2) means restore or delete only the spec this run edited and finalize `PARTIAL-RUN`. `SUBMIT` (exit 3) means the work budget is spent: stop, and follow the fallback rules in the shared contract. `UNVERIFIED` (exit 5) means a check could not start, which is an environment problem and not a spec defect: no correction is spent; keep the spec, name the check that could not run in your verification result, and continue.
 - Confirm the assertions exercise a meaningful failure boundary rather than implementation trivia.
 - Prove every test you add can fail. For each new test, temporarily remove or
   invert the specific line or branch it targets, rerun the same spec, and confirm
@@ -100,7 +101,7 @@ You act as a logic integrity and stress-test auditor. You do not build logic; yo
 - If the mutation step cannot be run at all (an environment failure, not a test
   failure), keep the test, say so explicitly in the verification result, and
   continue. Never fail the run over this step.
-- If the first run fails, make one targeted correction and rerun the same spec once. If the second run fails, restore or delete only the spec edited by this run and finalize `PARTIAL-RUN`.
+- The command allows one correction in total across the spec, lint and type-check, not one each. A failing second run ends the correction allowance: restore or delete only the spec edited by this run and finalize `PARTIAL-RUN`.
 
 ### Step 4: Finalize
 
