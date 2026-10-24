@@ -4,23 +4,26 @@
 
 In plain terms: this changes 1 code file, so the app's behaviour may be affected. No tests were added or changed alongside it.
 
-**What changed:** Backend/supabase/functions/ingest-royale-data/client.ts -- docs(tsdoc): harden client interface contracts and inline decision annotations
+**What changed:** docs(tsdoc): harden IngestionWorkBudget interface contracts and inline decision annotations
 
-**Why:** Documented client.ts L1 Core environment broker interface contracts, CONFIG mutations, and syncVault Vault dynamic secret fallback logic.
+**Why:** Documented IngestionWorkBudget parameters, methods, lifecycle signals, ADR Section IV mappings, decision logs, and threat annotations.
 
-**Result:** 5/5 unit tests passed in client.spec.ts.
+**Result:** PASSED type-check and Vitest ingest-royale-data unit tests (35 passed across 432 tests).
 
-**Files changed:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, Backend/supabase/functions/ingest-royale-data/client.ts
+**Files changed:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, Backend/supabase/functions/ingest-royale-data/work-budget.ts
+
+**Verified accurate:** Backend/supabase/functions/ingest-royale-data/work-budget.ts
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: documentation
-  Cycle: nightly-cycle/2026-10-23
+  Cycle: nightly-cycle/2026-10-24
   Contract: a9f522cc73babe487aa3df1b083524daba64c0dd03c9e1b446dd4bd70c376bae
-  Why: Documented client.ts L1 Core environment broker interface contracts, CONFIG mutations, and syncVault Vault dynamic secret fallback logic.
-  Change: Backend/supabase/functions/ingest-royale-data/client.ts -- docs(tsdoc): harden client interface contracts and inline decision annotations
-  Result: 5/5 unit tests passed in client.spec.ts.
-  Files: .github/nightly-logs/06-documentation-tsdoc-coverage.log, Backend/supabase/functions/ingest-royale-data/client.ts
+  Why: Documented IngestionWorkBudget parameters, methods, lifecycle signals, ADR Section IV mappings, decision logs, and threat annotations.
+  Change: docs(tsdoc): harden IngestionWorkBudget interface contracts and inline decision annotations
+  Result: PASSED type-check and Vitest ingest-royale-data unit tests (35 passed across 432 tests).
+  Files: .github/nightly-logs/06-documentation-tsdoc-coverage.log, Backend/supabase/functions/ingest-royale-data/work-budget.ts
+  Verified: Backend/supabase/functions/ingest-royale-data/work-budget.ts
   Nudges: 0
-  Execution: cd3ed0b410b505b2a427aca13b20f6d8b212bda8
+  Execution: 823d57d1e12b2d9e9f6104407522bbea507a59ef
 -->
