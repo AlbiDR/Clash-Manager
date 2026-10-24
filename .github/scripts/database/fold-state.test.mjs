@@ -10,7 +10,7 @@ import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 
 import { decideBaselineCompleteness } from './baseline-completeness.mjs';
-import { checkFoldState } from './fold-state.mjs';
+import { checkFoldState, loadRetainedIncrementals } from './fold-state.mjs';
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
 
@@ -193,7 +193,7 @@ test('a bare baseline trigger against an OR REPLACE incremental is not silently 
 });
 
 function foldReport(status, objects, unsupported = []) {
-  const counts = { folded: 0, reconciled: 0, unfolded: 0, 'semantic-only': 0 };
+  const counts = { folded: 0, reconciled: 0, unfolded: 0, retained: 0, 'semantic-only': 0 };
   for (const object of objects) counts[object.status] += 1;
   return {
     version: 1,
@@ -212,7 +212,7 @@ test('baseline completeness distinguishes complete from pending fold debt', () =
     { key: 'COLUMN:app.items.label', source: '20260531232408_change.sql', status: 'reconciled' },
   ]);
   assert.deepEqual(decideBaselineCompleteness(complete), {
-    status: 'FOLDED', mode: 'complete', pendingObjectCount: 0, pendingMigrationCount: 0,
+    status: 'FOLDED', mode: 'complete', retainedObjectCount: 0, pendingObjectCount: 0, pendingMigrationCount: 0,
     semanticOnlyObjectCount: 0, unsupportedStatementCount: 0,
     baselinePgTap: true, fullReplayPgTap: true, catalogEquivalence: true,
   });
@@ -672,4 +672,107 @@ DO $$ BEGIN PERFORM 1; END $$;
   assert.equal(report.counts['semantic-only'], 1);
   assert.equal(report.counts.unfolded, 1);
   assert.equal(report.status, 'UNFOLDED', 'DEGRADED here hid the pending list from Stage 3 for weeks');
+});
+
+
+// A baseline holding the 2 column form of a view, then a retained migration that
+// widens it. This is the pipeline_heartbeat_view shape from 2026-10-24.
+async function retainedFixture() {
+  const directory = await fixture('CREATE OR REPLACE VIEW app.item_labels AS SELECT label FROM app.items;\n');
+  await writeFile(path.join(directory, '20260531232408_widen.sql'),
+    'CREATE OR REPLACE VIEW app.item_labels AS SELECT label, id FROM app.items;\n');
+  return directory;
+}
+
+const WIDEN_RETAINED = [{ name: '20260531232408_widen.sql', reason: 'widens item_labels past the baseline projection' }];
+
+test('without a retained entry the widening migration is pending work', async t => {
+  const directory = await retainedFixture();
+  t.after(() => rm(directory, { recursive: true, force: true }));
+  const report = await checkFoldState({ migrationsDir: directory, retained: [] });
+  assert.equal(report.status, 'UNFOLDED');
+  assert.equal(report.counts.retained, 0);
+  assert.ok(report.objects.some(item => item.status === 'unfolded' && item.source === '20260531232408_widen.sql'));
+});
+
+test('a retained entry resolves exactly that migration, and says so rather than calling it folded', async t => {
+  const directory = await retainedFixture();
+  t.after(() => rm(directory, { recursive: true, force: true }));
+  const report = await checkFoldState({ migrationsDir: directory, retained: WIDEN_RETAINED });
+  assert.equal(report.status, 'FOLDED');
+  assert.equal(report.counts.unfolded, 0);
+  assert.ok(report.counts.retained >= 1);
+  const retained = report.objects.filter(item => item.status === 'retained');
+  assert.ok(retained.every(item => item.source === '20260531232408_widen.sql' && item.retainedReason));
+  assert.ok(!report.objects.some(item => item.status === 'folded' && item.source === '20260531232408_widen.sql'));
+  assert.deepEqual(report.retainedStale, []);
+});
+
+test('a retained entry never hides drift in a different migration', async t => {
+  const directory = await retainedFixture();
+  t.after(() => rm(directory, { recursive: true, force: true }));
+  await writeFile(path.join(directory, '20260531232409_other.sql'), "COMMENT ON COLUMN app.items.label IS 'Different';\n");
+  const report = await checkFoldState({ migrationsDir: directory, retained: WIDEN_RETAINED });
+  assert.equal(report.status, 'UNFOLDED');
+  assert.ok(report.objects.some(item => item.status === 'unfolded' && item.source === '20260531232409_other.sql'));
+});
+
+test('a retained entry that owns nothing divergent is reported stale', async t => {
+  const directory = await fixture('CREATE OR REPLACE VIEW app.item_labels AS SELECT label FROM app.items;\n');
+  t.after(() => rm(directory, { recursive: true, force: true }));
+  const report = await checkFoldState({
+    migrationsDir: directory,
+    retained: [{ name: '20260531232407_change.sql', reason: 'no longer needed' }],
+  });
+  assert.deepEqual(report.retainedStale, ['20260531232407_change.sql']);
+});
+
+test('a retained entry naming a file that is not in the directory is ignored, not stale', async t => {
+  const directory = await fixture('CREATE OR REPLACE VIEW app.item_labels AS SELECT label FROM app.items;\n');
+  t.after(() => rm(directory, { recursive: true, force: true }));
+  const report = await checkFoldState({ migrationsDir: directory, retained: [{ name: '29990101000000_absent.sql', reason: 'x' }] });
+  assert.deepEqual(report.retainedStale, []);
+});
+
+test('the pending list, which is built from unfolded objects, omits a retained migration', async t => {
+  const directory = await retainedFixture();
+  t.after(() => rm(directory, { recursive: true, force: true }));
+  const report = await checkFoldState({ migrationsDir: directory, retained: WIDEN_RETAINED });
+  const pending = [...new Set(report.objects.filter(item => item.status === 'unfolded').map(item => item.source))];
+  assert.deepEqual(pending, [], 'the context script builds pending-migrations.txt from unfolded objects only');
+});
+
+test('a retained completion cannot claim catalog equivalence or baseline-only pgTAP', async t => {
+  const directory = await retainedFixture();
+  t.after(() => rm(directory, { recursive: true, force: true }));
+  const report = await checkFoldState({ migrationsDir: directory, retained: WIDEN_RETAINED });
+  const decision = decideBaselineCompleteness(report);
+  assert.equal(decision.mode, 'complete-with-retained');
+  assert.equal(decision.pendingObjectCount, 0);
+  assert.ok(decision.retainedObjectCount >= 1);
+  assert.equal(decision.catalogEquivalence, false, 'the baseline and the full history differ on the retained objects');
+  assert.equal(decision.baselinePgTap, false);
+  assert.equal(decision.fullReplayPgTap, true);
+});
+
+test('the completeness check refuses a retained object with no recorded reason', () => {
+  const report = foldReport('FOLDED', [
+    { key: 'VIEW:app.v', source: '20260531232408_widen.sql', status: 'retained', reason: 'DIVERGENT' },
+  ]);
+  assert.throws(() => decideBaselineCompleteness(report), /without a recorded reason/);
+});
+
+test('the real policy retains the heartbeat widening and fold-state resolves it', async () => {
+  const retained = await loadRetainedIncrementals();
+  const heartbeat = retained.find(item => item.name === '20260915190011_backend_health_and_safe_maintenance.sql');
+  assert.ok(heartbeat, 'migration-quality.json must retain 20260915190011');
+  assert.match(heartbeat.reason, /pipeline_heartbeat_view/);
+  const report = await checkFoldState();
+  assert.ok(report.objects.some(item => item.status === 'retained' && item.key === 'VIEW:features.pipeline_heartbeat_view'));
+  assert.ok(!report.objects.some(item => item.status === 'unfolded' && item.source === heartbeat.name));
+  assert.deepEqual(report.retainedStale, []);
+});
+
+test('an unreadable policy yields no retained entries, so nothing is silently resolved', async () => {
+  assert.deepEqual(await loadRetainedIncrementals('/nonexistent/policy.json'), []);
 });

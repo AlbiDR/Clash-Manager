@@ -12,6 +12,31 @@ import { lexSql } from './sql-lexer.mjs';
 
 const BASELINE_PREFIX = '20260531232406';
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
+const POLICY_PATH = path.join(REPO_ROOT, '.github', 'nightly-config', 'migration-quality.json');
+
+/**
+ * The migrations the baseline deliberately does not absorb, as { filename: reason }.
+ *
+ * Folded migrations are never deleted, so a fresh database replays the baseline
+ * and then every retained file on top of it. A migration that CREATE OR REPLACEs
+ * a view back to fewer columns than the baseline holds cannot replay, and that
+ * conflict cannot be fixed by editing the immutable file. Naming such a
+ * migration here records the decision once instead of leaving the stage to
+ * rediscover it every night.
+ *
+ * An unreadable policy yields none: every object then stays reported as
+ * unfolded, which is the conservative answer and never hides work.
+ */
+export async function loadRetainedIncrementals(policyPath = POLICY_PATH) {
+  try {
+    const policy = JSON.parse(await readFile(policyPath, 'utf8'));
+    return (policy.retainedIncrementals ?? [])
+      .filter(entry => typeof entry?.path === 'string' && typeof entry.reason === 'string' && entry.reason.trim())
+      .map(entry => ({ name: path.posix.basename(entry.path), reason: entry.reason.trim() }));
+  } catch {
+    return [];
+  }
+}
 
 function compact(sql) {
   return sql
@@ -263,7 +288,8 @@ function evaluateMutation(item, baselineSource, definitions, exactStatements, ba
   }
 }
 
-export async function checkFoldState({ migrationsDir = path.join(REPO_ROOT, 'Backend/supabase/migrations') } = {}) {
+export async function checkFoldState({ migrationsDir = path.join(REPO_ROOT, 'Backend/supabase/migrations'), retained } = {}) {
+  const retainedByName = new Map((retained ?? await loadRetainedIncrementals()).map(entry => [entry.name, entry.reason]));
   const filenames = (await readdir(migrationsDir)).filter(name => name.endsWith('.sql')).sort();
   const baselineName = filenames.find(name => name.startsWith(BASELINE_PREFIX));
   if (!baselineName) throw new Error(`no baseline matching prefix ${BASELINE_PREFIX}`);
@@ -329,7 +355,22 @@ export async function checkFoldState({ migrationsDir = path.join(REPO_ROOT, 'Bac
       });
     }
   }
-  const counts = Object.fromEntries(['folded', 'reconciled', 'unfolded', 'semantic-only'].map(status => [status, objects.filter(item => item.status === status).length]));
+  // An object the baseline lacks, owned by a retained migration, is resolved by
+  // decision, not pending. It keeps its own status so it is never mistaken for
+  // a folded one: the baseline and the full history still differ on it.
+  const filenameSet = new Set(migrationNames);
+  const retainedOwners = new Set();
+  for (const item of objects) {
+    if (item.status === 'unfolded' && retainedByName.has(item.source)) {
+      item.status = 'retained';
+      item.retainedReason = retainedByName.get(item.source);
+      retainedOwners.add(item.source);
+    }
+  }
+  // A retained migration that no longer owns any divergent object has been
+  // outgrown, and its entry would quietly permit the next divergence.
+  const retainedStale = [...retainedByName.keys()].filter(name => filenameSet.has(name) && !retainedOwners.has(name)).sort();
+  const counts = Object.fromEntries(['folded', 'reconciled', 'unfolded', 'retained', 'semantic-only'].map(status => [status, objects.filter(item => item.status === status).length]));
   // UNFOLDED outranks DEGRADED, because known folding work is actionable and
   // must never be hidden behind what a database still has to confirm.
   //
@@ -345,7 +386,7 @@ export async function checkFoldState({ migrationsDir = path.join(REPO_ROOT, 'Bac
   // is a ceiling here, and the semantic check runs in CI on Stage 3's pull
   // request instead (nightly-database-verification.yml).
   const status = counts.unfolded ? 'UNFOLDED' : unsupported.length || counts['semantic-only'] ? 'DEGRADED' : 'FOLDED';
-  return { version: 1, status, baseline: baselineName, migrationsReplayed: migrationNames.length, counts, objects, unsupported };
+  return { version: 1, status, baseline: baselineName, migrationsReplayed: migrationNames.length, counts, objects, unsupported, retainedStale };
 }
 
 function printHuman(report) {
@@ -355,14 +396,21 @@ function printHuman(report) {
   console.log(`folded verbatim:       ${report.counts.folded}`);
   console.log(`folded + reconciled:   ${report.counts.reconciled}`);
   console.log(`semantic-only:         ${report.counts['semantic-only']}`);
+  console.log(`retained by design:    ${report.counts.retained}`);
   console.log(`unfolded:              ${report.counts.unfolded}\n`);
+  for (const item of report.objects.filter(item => item.status === 'retained')) console.log(`RETAINED ${item.key}\n           <- ${item.source} (decided in migration-quality.json, not pending)`);
+  for (const name of report.retainedStale ?? []) console.log(`STALE RETAINED ${name}: it owns no divergent object any more; remove it from retainedIncrementals`);
   for (const item of report.objects.filter(item => item.status === 'reconciled')) console.log(`RECONCILED ${item.key} ${item.reason}\n           <- ${item.source}`);
   const semantic = report.objects.filter(item => item.status === 'semantic-only');
   const printSemantic = () => {
     for (const item of semantic) console.log(`  SEMANTIC ${item.key} <- ${item.source}`);
     for (const item of report.unsupported) console.log(`  UNSUPPORTED ${item.statement} <- ${item.source}`);
   };
-  if (report.status === 'FOLDED') console.log('RESULT: FOLDED -- baseline is current, no folding work pending.');
+  if (report.status === 'FOLDED') {
+    console.log(report.counts.retained
+      ? `RESULT: FOLDED -- no folding work pending; ${report.counts.retained} object(s) are carried by retained migrations by design.`
+      : 'RESULT: FOLDED -- baseline is current, no folding work pending.');
+  }
   else if (report.status === 'UNFOLDED') {
     console.log('RESULT: UNFOLDED -- the following objects need folding:');
     for (const item of report.objects.filter(item => item.status === 'unfolded')) console.log(`  ${item.reason.padEnd(10)} ${item.key} <- ${item.source}`);

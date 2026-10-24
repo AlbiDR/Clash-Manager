@@ -34,6 +34,7 @@ on:
       - ".github/scripts/android/**"
       - ".github/nightly-prompts/**"
       - ".github/nightly-config/**"
+      - "Backend/supabase/migrations/**"
       - ".github/workflows/control-plane-tests.yml"
   pull_request:
     paths:
@@ -80,6 +81,14 @@ jobs:
         # fires. Both database defects fixed on 2026-09-10 landed with tests
         # CI would never have executed.
         run: pnpm test:migration-audit
+
+      - name: Audit migration registration
+        # Added 2026-10-24. 20261022183913 reached Beta without a
+        # migration-quality.json entry and audit:migrations, which runs on
+        # pull_request only, never saw it; Stage 3 reported it two nights
+        # later. This repository commits straight to Beta, so the audit has
+        # to run on push. It is a static read of the migrations, no database.
+        run: pnpm audit:migrations
 
       - name: Run attribution guard suite
         run: pnpm test:commit-trailers
