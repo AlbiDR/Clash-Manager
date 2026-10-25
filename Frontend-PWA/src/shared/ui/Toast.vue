@@ -57,6 +57,8 @@ let copyFeedbackTimer: number | undefined;
 
 type DismissalHold = "pointer" | "focus" | "clipboard";
 
+// EPHEMERAL: intentionally resets on cold start
+// [THREAT:] In-memory toast dismissal holds set resets on component unmount / app reload; holds do not persist cross-session.
 /** Interaction reasons currently keeping this toast readable. */
 const dismissalHolds = new Set<DismissalHold>();
 
