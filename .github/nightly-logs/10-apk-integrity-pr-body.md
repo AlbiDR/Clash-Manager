@@ -4,23 +4,23 @@
 
 In plain terms: nothing needed fixing. This run checked the APK integrity area and found it already correct, so the only file here is the log recording that the check happened.
 
-**What was checked:** Verified digital asset links fingerprint, PWA/TWA manifest parity, version code 14055010 / version name 14.55.10 sync, latest.json release pointer, target SDK 36, and cleartext HTTP prohibition.
+**What was checked:** Verified PWA/APK wrapper integrity across manifest parity, version sync, release metadata, and security policy
 
-**Why:** PWA configuration and native Android wrapper configuration are fully aligned across all audited invariants with zero drift.
+**Why:** Ensure PWA configuration changes propagate accurately to the Android packaging wrapper with no security or version mismatches
 
-**Result:** Ran node APK/audit-wrapper-integrity.mjs and node APK/verify-bridge-contract.mjs - all checks passed cleanly.
+**Result:** pnpm audit:apk passed 0 drift lines across PWA manifest, twa-manifest.json, apktool.yml, strings.xml, colors.xml, and assetlinks.json; pnpm apk:verify:source PASS; pnpm test:apk-native PASS 19/19 tests; pnpm test:apk-release PASS 11/11 tests
 
 **Files changed:** .github/nightly-logs/10-apk-integrity-coverage.log
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: apk
-  Cycle: nightly-cycle/2026-10-24
+  Cycle: nightly-cycle/2026-10-25
   Contract: 4f9b40864d05ffea731090b36800572dd7affedd8532fcd17c8ded8c9e2fbc12
-  Why: PWA configuration and native Android wrapper configuration are fully aligned across all audited invariants with zero drift.
-  Change: Verified digital asset links fingerprint, PWA/TWA manifest parity, version code 14055010 / version name 14.55.10 sync, latest.json release pointer, target SDK 36, and cleartext HTTP prohibition.
-  Result: Ran node APK/audit-wrapper-integrity.mjs and node APK/verify-bridge-contract.mjs - all checks passed cleanly.
+  Why: Ensure PWA configuration changes propagate accurately to the Android packaging wrapper with no security or version mismatches
+  Change: Verified PWA/APK wrapper integrity across manifest parity, version sync, release metadata, and security policy
+  Result: pnpm audit:apk passed 0 drift lines across PWA manifest, twa-manifest.json, apktool.yml, strings.xml, colors.xml, and assetlinks.json; pnpm apk:verify:source PASS; pnpm test:apk-native PASS 19/19 tests; pnpm test:apk-release PASS 11/11 tests
   Files: .github/nightly-logs/10-apk-integrity-coverage.log
   Nudges: 0
-  Execution: 9725d1b6df96a34be0e0e070a9d2ccdf00d5893a
+  Execution: e7aebba4e5d84b2c99e210e13deecfd4b43c5693
 -->
