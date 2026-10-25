@@ -4,23 +4,23 @@
 
 In plain terms: this adds 1 test file in the verification area. No product code changed, so the app behaves exactly as it did before.
 
-**What changed:** Frontend-PWA/src/core/services/services-tests/useProgressiveList.spec.ts -- Added unit tests for timeRemaining floating point threshold and sparse source list handling in useProgressiveList.spec.ts
+**What changed:** Expanded time.ts spec with PostgreSQL timezone offset normalization, numeric timestamp, and NaN boundary assertions
 
-**Why:** Extended useProgressiveList test coverage to prevent regressions on boundary conditions and sparse arrays.
+**Why:** Improve test coverage saturation for Layer 1 core time utilities under stress and edge conditions
 
-**Result:** Added 2 new tests in useProgressiveList.spec.ts. Mutation proof verified: inverted expected length in timeRemaining spec produced assertion failure.
+**Result:** Verified time.spec.ts (41/41 passing). Proven mutation on normalizeTimezoneOffset caught by 3 assertions and restored.
 
-**Files changed:** .github/nightly-logs/02-verification-coverage.log, Frontend-PWA/src/core/services/services-tests/useProgressiveList.spec.ts
+**Files changed:** .github/nightly-logs/02-verification-coverage.log, Frontend-PWA/src/core/utils/utils-tests/time.spec.ts
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: verification
-  Cycle: nightly-cycle/2026-10-24
+  Cycle: nightly-cycle/2026-10-25
   Contract: b2e927ebff4e2ca5a343609133745d050f07d22fd9bf3e42481440c1d14079f0
-  Why: Extended useProgressiveList test coverage to prevent regressions on boundary conditions and sparse arrays.
-  Change: Frontend-PWA/src/core/services/services-tests/useProgressiveList.spec.ts -- Added unit tests for timeRemaining floating point threshold and sparse source list handling in useProgressiveList.spec.ts
-  Result: Added 2 new tests in useProgressiveList.spec.ts. Mutation proof verified: inverted expected length in timeRemaining spec produced assertion failure.
-  Files: .github/nightly-logs/02-verification-coverage.log, Frontend-PWA/src/core/services/services-tests/useProgressiveList.spec.ts
+  Why: Improve test coverage saturation for Layer 1 core time utilities under stress and edge conditions
+  Change: Expanded time.ts spec with PostgreSQL timezone offset normalization, numeric timestamp, and NaN boundary assertions
+  Result: Verified time.spec.ts (41/41 passing). Proven mutation on normalizeTimezoneOffset caught by 3 assertions and restored.
+  Files: .github/nightly-logs/02-verification-coverage.log, Frontend-PWA/src/core/utils/utils-tests/time.spec.ts
   Nudges: 0
-  Execution: c318e38003b89d3dfe9c0c02ca7cec6acfe5a537
+  Execution: 9e272e28f70412be4eeccfd9eae13fbee202cfe4
 -->
