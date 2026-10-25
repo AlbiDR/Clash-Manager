@@ -4,23 +4,23 @@
 
 In plain terms: nothing needed fixing. This run checked the APK optimization area and found it already correct, so the only file here is the log recording that the check happened.
 
-**What was checked:** Audited MainActivity.java WebView settings (cache mode, preraster, DOM storage), AndroidManifest.xml hardware acceleration, sw.ts precache routes and navigation preload, vite.config.ts code splitting, and public precache asset footprint.
+**What was checked:** Verified APK native wrapper configurations, Service Worker routes, and Vite chunking strategies
 
-**Why:** All 9 performance and caching invariants are active and no asset exceeds declared cache limit in audit queue.
+**Why:** Audit confirmed all 9 wrapper and caching invariants are satisfied and static precache footprint is 67.6 KB across 15 files with zero bloat or violations
 
-**Result:** pnpm audit:apk-perf passed all 9 invariants and verified 15 public precached assets totaling 67.6 KB.
+**Result:** pnpm audit:apk-perf passed all 9 checks with 0 violations
 
 **Files changed:** .github/nightly-logs/11-apk-optimization-coverage.log
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: apk
-  Cycle: nightly-cycle/2026-10-24
+  Cycle: nightly-cycle/2026-10-25
   Contract: 63c0229fe16cf4c98e352282307edbee4830cff68ea2d93c5c967a1f5cbd30ea
-  Why: All 9 performance and caching invariants are active and no asset exceeds declared cache limit in audit queue.
-  Change: Audited MainActivity.java WebView settings (cache mode, preraster, DOM storage), AndroidManifest.xml hardware acceleration, sw.ts precache routes and navigation preload, vite.config.ts code splitting, and public precache asset footprint.
-  Result: pnpm audit:apk-perf passed all 9 invariants and verified 15 public precached assets totaling 67.6 KB.
+  Why: Audit confirmed all 9 wrapper and caching invariants are satisfied and static precache footprint is 67.6 KB across 15 files with zero bloat or violations
+  Change: Verified APK native wrapper configurations, Service Worker routes, and Vite chunking strategies
+  Result: pnpm audit:apk-perf passed all 9 checks with 0 violations
   Files: .github/nightly-logs/11-apk-optimization-coverage.log
   Nudges: 0
-  Execution: 0f580f8f81971035c87828a1a2eb07566ee8ff06
+  Execution: 2d5cd8cecd50d8b27e4b93ed263c5d1f9f3a57f0
 -->
