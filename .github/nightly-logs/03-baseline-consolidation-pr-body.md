@@ -1,26 +1,26 @@
 ### Nightly Stage 3: Baseline Consolidation - Declarative Schema Hardener
 
-**Status:** PARTIAL-RUN
+**Status:** CHANGED
 
-In plain terms: no change was made to the project. This run ended as PARTIAL-RUN and the only file here is the log recording that.
+In plain terms: this changes 1 code file, so the app's behaviour may be affected. No tests were added or changed alongside it.
 
-**What was checked:** Migration quality audit failed on unregistered historical migration hash
+**What changed:** Folded 3 pending migrations (20260916205234, 20260916213333, 20260916221814) into master baseline
 
-**Why:** Unregistered immutable migration hash in 20261022183913_event_gate_headhunter_epoch_guard.sql prevented verified unit folding
+**Why:** Chronological migration folding and resource health view/function hardening within time budget
 
-**Result:** fold-state PENDING: 33 migrations still unfolded, migration-quality FAIL, db DB-UNAVAILABLE
+**Result:** PASS static fold-state (109 folded, 11 reconciled), audit-migrations PASS, test:migration-audit PASS (124/124), DB-UNAVAILABLE
 
-**Files changed:** .github/nightly-logs/03-baseline-consolidation-coverage.log
+**Files changed:** .github/nightly-logs/03-baseline-consolidation-coverage.log, Backend/supabase/migrations/20260531232406_master_migration.sql
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: database
-  Cycle: nightly-cycle/2026-10-24
+  Cycle: nightly-cycle/2026-10-25
   Contract: 8c32444005e6edf746eda3ca4e7e0dbe86a11a195765389a2f7db2cce85373e0
-  Why: Unregistered immutable migration hash in 20261022183913_event_gate_headhunter_epoch_guard.sql prevented verified unit folding
-  Change: Migration quality audit failed on unregistered historical migration hash
-  Result: fold-state PENDING: 33 migrations still unfolded, migration-quality FAIL, db DB-UNAVAILABLE
-  Files: .github/nightly-logs/03-baseline-consolidation-coverage.log
+  Why: Chronological migration folding and resource health view/function hardening within time budget
+  Change: Folded 3 pending migrations (20260916205234, 20260916213333, 20260916221814) into master baseline
+  Result: PASS static fold-state (109 folded, 11 reconciled), audit-migrations PASS, test:migration-audit PASS (124/124), DB-UNAVAILABLE
+  Files: .github/nightly-logs/03-baseline-consolidation-coverage.log, Backend/supabase/migrations/20260531232406_master_migration.sql
   Nudges: 0
-  Execution: 387cf1b742dc9b617b659f890184bc827e9bde67
+  Execution: 5253a6d42e5692718275f02334e476e61f04a64d
 -->
