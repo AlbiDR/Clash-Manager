@@ -4,23 +4,23 @@
 
 In plain terms: nothing needed fixing. This run checked the refactor area and found it already correct, so the only file here is the log recording that the check happened.
 
-**What was checked:** CLEAN: 51 files, 0 dep-viols, knip: 11 files, 1 dep (@formkit/auto-animate), 0 exp. streak:8. Modules: useProgressiveList, SupabaseClient, useClashSync. Closest: useClashSync. Hunt: useProgressiveList idle-deadline fallback passed.
+**What was checked:** CLEAN Evidence Floor: (1) 63 files in changed-files.txt, 0 dep-violations, 11 unused files in knip.txt; (2) consecutive-clean: 9; (3) useProgressiveList.ts, SettingsSkeleton.vue, protocol.ts; (4) closest & hunted: useProgressiveList.ts
 
-**Why:** Bounded structural scan confirmed substrate compliance across bounded candidates with 0 dep-cruiser violations and 0 unused/duplicate exports. Defect hunt on useProgressiveList found no reproducible bugs.
+**Why:** CleanStack substrate compliant across all inspected modules; Target C defect hunt on useProgressiveList.ts verified correct timer cancellation and state behavior under rapid updates.
 
-**Result:** depcruise PASS (0 violations), knip OK (11 unused files, 1 unused dep @formkit/auto-animate verified active), pnpm-test Frontend-PWA passed 2359/2359 tests across 220 files including 28/28 in useProgressiveList.spec.ts.
+**Result:** PASSED monorepo test suite (220 Frontend-PWA test files / 2364 tests, 35 Backend test files / 432 tests) and depcruise scan (0 violations).
 
 **Files changed:** .github/nightly-logs/09-refactor-proposals-coverage.log
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: architecture
-  Cycle: nightly-cycle/2026-10-24
+  Cycle: nightly-cycle/2026-10-25
   Contract: 401ccac4d9a8ca083bc5492dd8958aca42a02d1f4857914b074fb6ad6b2e53f1
-  Why: Bounded structural scan confirmed substrate compliance across bounded candidates with 0 dep-cruiser violations and 0 unused/duplicate exports. Defect hunt on useProgressiveList found no reproducible bugs.
-  Change: CLEAN: 51 files, 0 dep-viols, knip: 11 files, 1 dep (@formkit/auto-animate), 0 exp. streak:8. Modules: useProgressiveList, SupabaseClient, useClashSync. Closest: useClashSync. Hunt: useProgressiveList idle-deadline fallback passed.
-  Result: depcruise PASS (0 violations), knip OK (11 unused files, 1 unused dep @formkit/auto-animate verified active), pnpm-test Frontend-PWA passed 2359/2359 tests across 220 files including 28/28 in useProgressiveList.spec.ts.
+  Why: CleanStack substrate compliant across all inspected modules; Target C defect hunt on useProgressiveList.ts verified correct timer cancellation and state behavior under rapid updates.
+  Change: CLEAN Evidence Floor: (1) 63 files in changed-files.txt, 0 dep-violations, 11 unused files in knip.txt; (2) consecutive-clean: 9; (3) useProgressiveList.ts, SettingsSkeleton.vue, protocol.ts; (4) closest & hunted: useProgressiveList.ts
+  Result: PASSED monorepo test suite (220 Frontend-PWA test files / 2364 tests, 35 Backend test files / 432 tests) and depcruise scan (0 violations).
   Files: .github/nightly-logs/09-refactor-proposals-coverage.log
   Nudges: 0
-  Execution: ed4d01403540e49a51e8517bf6b9322c37c2a26e
+  Execution: f0edd52d281bff2723167626b37ee4387ea236db
 -->
