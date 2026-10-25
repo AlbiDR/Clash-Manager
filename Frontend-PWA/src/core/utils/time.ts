@@ -54,8 +54,11 @@ export interface CountdownOptions {
 /**
  * Calculates duration units (days, hours, minutes, seconds) from a millisecond delta.
  *
+ * @remarks
+ * Clamps negative millisecond values to zero to guarantee non-negative duration units.
+ *
  * @param ms - The duration in milliseconds.
- * @returns Object containing the calculated units.
+ * @returns Object containing the calculated days, hours, minutes, and seconds.
  */
 export function getDurationUnits(ms: number): DurationUnits {
   const absMs = Math.max(0, ms);
@@ -124,6 +127,17 @@ export function formatCountdown(
   return `${String(totalHours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
 }
 
+/**
+ * Normalizes PostgreSQL/ISO timezone offsets into standard `[+-]HH:MM` format.
+ *
+ * @remarks
+ * [DECISION LOG] WebViews and V8 Date.parse implementations vary in handling truncated offsets
+ * (e.g., `+00` or `+0200`). Standardizing offsets to `+HH:MM` ensures deterministic parsing across Android WebViews.
+ *
+ * @param offset - Raw offset string captured from timestamp regex.
+ * @returns ISO-compliant timezone offset string.
+ * @internal
+ */
 function normalizeTimezoneOffset(offset: string | undefined): string {
   if (!offset || offset === "Z") return "Z";
   if (/^[+-]\d{2}$/.test(offset)) return `${offset}:00`;
@@ -131,6 +145,17 @@ function normalizeTimezoneOffset(offset: string | undefined): string {
   return offset;
 }
 
+/**
+ * Parses diverse date inputs (numeric timestamps, project custom format, PostgreSQL timestamps) into Epoch milliseconds.
+ *
+ * @remarks
+ * [THREAT:] Non-standard date strings in WebViews produce NaN or silent timezone shifts.
+ * Employs deterministic regex parsing for PostgreSQL/Supabase and custom project formats before falling back to Date.parse.
+ *
+ * @param dateInput - Date representation as string, timestamp number, null, or undefined.
+ * @returns Epoch time in milliseconds or null if input is missing/unparseable.
+ * @internal
+ */
 function parseAbsoluteTimeMs(dateInput: string | number | null | undefined): number | null {
   if (typeof dateInput === "number") return Number.isFinite(dateInput) ? dateInput : null;
   if (!dateInput) return null;
@@ -204,6 +229,9 @@ const formatTime = (
 /**
  * Formats a date string into a human-readable relative time (e.g., '2d ago').
  *
+ * @remarks
+ * Satisfies ADR Section IV: Presentation Orchestration & User Experience.
+ *
  * @param dateStr - The date string or timestamp to format.
  * @returns A full relative time string.
  */
@@ -212,6 +240,9 @@ export const formatTimeAgo = (dateStr: string | number | null | undefined): stri
 
 /**
  * Formats a date string into a compact relative time (e.g., '2d').
+ *
+ * @remarks
+ * Satisfies ADR Section IV: Compact UI Formatting for list items and badges.
  *
  * @param dateStr - The date string or timestamp to format.
  * @returns A short relative time string.
