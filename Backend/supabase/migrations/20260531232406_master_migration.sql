@@ -4870,13 +4870,13 @@ COMMENT ON VIEW features.pipeline_heartbeat_view IS
 
 GRANT SELECT ON features.pipeline_heartbeat_view TO authenticated, anon, service_role;
 
-CREATE OR REPLACE VIEW features.resource_health_view AS
-  SELECT message, created_at
-  FROM substrate.governance_telemetry
-  WHERE event_type = 'RESOURCE_PRESSURE'
-    AND created_at > now() - interval '48 hours'
-  ORDER BY created_at DESC
-  LIMIT 10;
+CREATE VIEW features.resource_health_view AS
+SELECT message, created_at
+FROM substrate.governance_telemetry
+WHERE event_type = 'RESOURCE_PRESSURE'
+  AND created_at > now() - interval '48 hours'
+ORDER BY created_at DESC
+LIMIT 10;
 
 GRANT SELECT ON features.resource_health_view TO anon, authenticated, service_role;
 
