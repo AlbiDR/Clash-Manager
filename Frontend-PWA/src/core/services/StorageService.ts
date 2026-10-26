@@ -13,6 +13,10 @@ import {
 
 /**
  * STORAGE SERVICE (Layer 1)
+ * ----------------------------------------------------------------------------
+ * Rationale: Low-level client persistence engine providing structured key-value
+ * storage backed by IndexedDB with automatic volatile in-memory fallbacks.
+ * ----------------------------------------------------------------------------
  *
  * @remarks
  * **Architectural Context:**
@@ -64,6 +68,7 @@ function getStorageDB(): Promise<IDBDatabase> {
     STORAGE_DB_NAME,
     STORAGE_DB_VERSION,
     (db) => {
+      // [DECISION LOG] Lazily create target store if missing during database creation or upgrade step.
       if (!db.objectStoreNames.contains(STORAGE_STORE_NAME)) {
         db.createObjectStore(STORAGE_STORE_NAME);
       }
@@ -86,7 +91,7 @@ function getStorageDB(): Promise<IDBDatabase> {
  */
 async function migrateLegacyData(newDb: IDBDatabase): Promise<void> {
   return new Promise((resolve) => {
-    // [THREAT:] Accessing indexedDB in non-browser environment or SSR causes unhandled ReferenceError runtime crash.
+    // [THREAT: Non-Browser / SSR Execution Crash] Accessing indexedDB in non-browser environment or SSR causes unhandled ReferenceError runtime crash.
     if (typeof indexedDB === "undefined") return resolve();
     const checkRequest = indexedDB.open(STORAGE_LEGACY_DB_NAME);
     
@@ -173,6 +178,7 @@ export const idb = {
    * @returns Resolves with the typed item if found, or null if missing or unavailable.
    */
   async get<T>(key: string): Promise<T | null> {
+    // [DECISION LOG] Delegate read operation to idbCore kernel with automatic memory fallback.
     return idbCore.get<T>(key, getStorageDB, STORAGE_STORE_NAME);
   },
 
@@ -190,6 +196,7 @@ export const idb = {
    * @returns Resolves when write operation completes.
    */
   async set(key: string, value: unknown): Promise<void> {
+    // [DECISION LOG] Delegate write operation to idbCore kernel with automatic memory fallback.
     return idbCore.set(key, value, getStorageDB, STORAGE_STORE_NAME);
   },
 
@@ -206,6 +213,7 @@ export const idb = {
    * @returns Resolves when key deletion completes.
    */
   async del(key: string): Promise<void> {
+    // [DECISION LOG] Delegate delete operation to idbCore kernel with automatic memory fallback.
     return idbCore.del(key, getStorageDB, STORAGE_STORE_NAME);
   },
 
@@ -221,6 +229,7 @@ export const idb = {
    * @returns Resolves when active store is cleared and legacy databases purged.
    */
   async clear(): Promise<void> {
+    // [DECISION LOG] Wipe active object store and clean up legacy database residual artifacts.
     await idbCore.clear(getStorageDB, STORAGE_STORE_NAME);
     await deleteDatabasePromise(STORAGE_LEGACY_DB_NAME);
     await purgeDeprecatedDatabases();
@@ -232,7 +241,7 @@ export const idb = {
    *
    * @remarks
    * Satisfies ADR Section III: Persistence Boundaries & Resilience.
-   * [THREAT:] Persistent IndexedDB corruption can block app bootstrap or cause infinite re-hydration crashes.
+   * [THREAT: Storage Corruption Recovery Loop] Persistent IndexedDB corruption can block app bootstrap or cause infinite re-hydration crashes.
    * [DECISION LOG] Destroy all database instances from disk, purge memory store, and force memory mode
    * to guarantee immediate recovery without requiring hard browser storage clearance.
    *
