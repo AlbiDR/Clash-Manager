@@ -22,7 +22,7 @@ catalogs:
     "@vue/test-utils": "^2.5.1"
     "@vue/tsconfig": "^0.9.1"
     dependency-cruiser: "^18.7.0"
-    eslint: "^10.9.1"
+    eslint: "^10.13.0"
     eslint-plugin-vue: "^10.10.0"
     globals: "^17.11.0"
     jsdom: "^30.1.1"
