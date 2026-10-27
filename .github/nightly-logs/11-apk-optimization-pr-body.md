@@ -4,23 +4,23 @@
 
 In plain terms: nothing needed fixing. This run checked the APK optimization area and found it already correct, so the only file here is the log recording that the check happened.
 
-**What was checked:** Audited WebView configurations, Android manifest, Service Worker precache routes, Vite chunking rules, and public asset footprint; all 9 performance invariants pass cleanly with zero violations
+**What was checked:** Audited native WebView performance settings, Service Worker caching strategies, Vite code splitting, and static public asset footprint; zero source changes required
 
-**Why:** All wrapper performance and caching invariants are fully satisfied and static precache footprint is optimized (67.6 KB total across 15 assets)
+**Why:** All 9 APK/PWA wrapper performance invariants pass with zero violations, and public precache footprint is optimal (15 files, 67.6 KB)
 
-**Result:** pnpm audit:apk-perf executed cleanly (9/9 invariants passed, 0 violations); monorepo vitest suite passed (220 files, 2364 passed)
+**Result:** pnpm audit:apk-perf PASS
 
 **Files changed:** .github/nightly-logs/11-apk-optimization-coverage.log
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: apk
-  Cycle: nightly-cycle/2026-10-26
+  Cycle: nightly-cycle/2026-10-27
   Contract: 63c0229fe16cf4c98e352282307edbee4830cff68ea2d93c5c967a1f5cbd30ea
-  Why: All wrapper performance and caching invariants are fully satisfied and static precache footprint is optimized (67.6 KB total across 15 assets)
-  Change: Audited WebView configurations, Android manifest, Service Worker precache routes, Vite chunking rules, and public asset footprint; all 9 performance invariants pass cleanly with zero violations
-  Result: pnpm audit:apk-perf executed cleanly (9/9 invariants passed, 0 violations); monorepo vitest suite passed (220 files, 2364 passed)
+  Why: All 9 APK/PWA wrapper performance invariants pass with zero violations, and public precache footprint is optimal (15 files, 67.6 KB)
+  Change: Audited native WebView performance settings, Service Worker caching strategies, Vite code splitting, and static public asset footprint; zero source changes required
+  Result: pnpm audit:apk-perf PASS
   Files: .github/nightly-logs/11-apk-optimization-coverage.log
   Nudges: 0
-  Execution: 608ff3f6abaefd6c669d73925732262e8f9defb8
+  Execution: a4d820f7ff31cb53201d3de20edec1138a4808f1
 -->
