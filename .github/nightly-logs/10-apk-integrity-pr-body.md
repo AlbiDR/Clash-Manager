@@ -4,23 +4,23 @@
 
 In plain terms: nothing needed fixing. This run checked the APK integrity area and found it already correct, so the only file here is the log recording that the check happened.
 
-**What was checked:** Verified wrapper integrity: asset links, manifest parity, version code/name sync (v14.55.14 / 14055014), release metadata (clashmanager-v14.55.14+529.apk), and security policy (cleartext forbidden, targetSdk 36).
+**What was checked:** Verified asset links, manifest parity, version code/name sync, release metadata, and security policy
 
-**Why:** Routine nightly Stage 10 APK integrity audit scan found all wrapper and manifest invariants aligned with zero mismatches.
+**Why:** PWA manifest, asset links, target SDK 36, version code 14055014, release binary metadata, and cleartext traffic policies are synchronized and compliant
 
-**Result:** Passed pnpm audit:apk, pnpm apk:verify:source, and pnpm test:apk-release.
+**Result:** Passed automated verification via pnpm audit:apk, pnpm apk:verify:source, pnpm test:apk-release, pnpm test:version-code, pnpm test:apk-native, and pnpm audit:apk-ux
 
 **Files changed:** .github/nightly-logs/10-apk-integrity-coverage.log
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: apk
-  Cycle: nightly-cycle/2026-10-26
+  Cycle: nightly-cycle/2026-10-27
   Contract: 4f9b40864d05ffea731090b36800572dd7affedd8532fcd17c8ded8c9e2fbc12
-  Why: Routine nightly Stage 10 APK integrity audit scan found all wrapper and manifest invariants aligned with zero mismatches.
-  Change: Verified wrapper integrity: asset links, manifest parity, version code/name sync (v14.55.14 / 14055014), release metadata (clashmanager-v14.55.14+529.apk), and security policy (cleartext forbidden, targetSdk 36).
-  Result: Passed pnpm audit:apk, pnpm apk:verify:source, and pnpm test:apk-release.
+  Why: PWA manifest, asset links, target SDK 36, version code 14055014, release binary metadata, and cleartext traffic policies are synchronized and compliant
+  Change: Verified asset links, manifest parity, version code/name sync, release metadata, and security policy
+  Result: Passed automated verification via pnpm audit:apk, pnpm apk:verify:source, pnpm test:apk-release, pnpm test:version-code, pnpm test:apk-native, and pnpm audit:apk-ux
   Files: .github/nightly-logs/10-apk-integrity-coverage.log
   Nudges: 0
-  Execution: b0e7ecaea1a3096d9406b4626ae560f860a03e09
+  Execution: cb6f1960e3d39ca867c1607ce7dd2935d4aa269d
 -->
