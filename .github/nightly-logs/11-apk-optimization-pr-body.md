@@ -4,23 +4,23 @@
 
 In plain terms: nothing needed fixing. This run checked the APK optimization area and found it already correct, so the only file here is the log recording that the check happened.
 
-**What was checked:** Audited native WebView performance settings, Service Worker caching strategies, Vite code splitting, and static public asset footprint; zero source changes required
+**What was checked:** Calibration pass: verified 9 wrapper performance and caching invariants and 67.6 KB static precache footprint (7 clean runs since calibration)
 
-**Why:** All 9 APK/PWA wrapper performance invariants pass with zero violations, and public precache footprint is optimal (15 files, 67.6 KB)
+**Why:** Clean calibration audit completed with zero source changes required
 
-**Result:** pnpm audit:apk-perf PASS
+**Result:** Passed pnpm audit:apk-perf and pnpm test:apk-performance and test:apk-native with zero violations
 
 **Files changed:** .github/nightly-logs/11-apk-optimization-coverage.log
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: apk
-  Cycle: nightly-cycle/2026-10-27
+  Cycle: nightly-cycle/2026-10-28
   Contract: 63c0229fe16cf4c98e352282307edbee4830cff68ea2d93c5c967a1f5cbd30ea
-  Why: All 9 APK/PWA wrapper performance invariants pass with zero violations, and public precache footprint is optimal (15 files, 67.6 KB)
-  Change: Audited native WebView performance settings, Service Worker caching strategies, Vite code splitting, and static public asset footprint; zero source changes required
-  Result: pnpm audit:apk-perf PASS
+  Why: Clean calibration audit completed with zero source changes required
+  Change: Calibration pass: verified 9 wrapper performance and caching invariants and 67.6 KB static precache footprint (7 clean runs since calibration)
+  Result: Passed pnpm audit:apk-perf and pnpm test:apk-performance and test:apk-native with zero violations
   Files: .github/nightly-logs/11-apk-optimization-coverage.log
   Nudges: 0
-  Execution: a4d820f7ff31cb53201d3de20edec1138a4808f1
+  Execution: 5cd0c91330d84905130d5c05f3e8227ea9ba9edd
 -->
