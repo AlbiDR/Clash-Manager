@@ -155,3 +155,4 @@
 * [2026-10-25] [Stage 10] [09:23Z-09:29Z 5m] CLEAN: Codebase -- Verified PWA/APK wrapper integrity across manifest parity, version sync, release metadata, and security policy
 * [2026-10-26] [Stage 10] [09:18Z-09:19Z 2m] CLEAN: Codebase -- Verified wrapper integrity: asset links, manifest parity, version code/name sync (v14.55.14 / 14055014), release metadata (clashmanager-v14.55.14+529.apk), and security policy (cleartext forbidden, targetSdk 36).
 * [2026-10-27] [Stage 10] [09:23Z-09:25Z 2m] CLEAN: Codebase -- Verified asset links, manifest parity, version code/name sync, release metadata, and security policy
+* [2026-10-28] [Stage 10] [09:05Z-09:07Z 2m] CLEAN: Codebase -- Calibration pass: 7 ordinary CLEAN runs verified full wrapper invariant set: asset links, manifest values, release metadata, version codes, and cleartext traffic policy.
