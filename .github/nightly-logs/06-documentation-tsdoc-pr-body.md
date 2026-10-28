@@ -4,23 +4,26 @@
 
 In plain terms: this changes 1 code file, so the app's behaviour may be affected. No tests were added or changed alongside it.
 
-**What changed:** docs(tsdoc): harden useBadge interface contracts and inline logic annotations
+**What changed:** docs(tsdoc): harden useProgressiveList interface contracts and inline decision annotations
 
-**Why:** Hardened UseBadgeReturn interface contract, parameter types, return types, and decision/threat annotations for cross-platform badging substrate.
+**Why:** Exported UseProgressiveListReturn interface contract and enhanced TSDoc/decision/threat annotations following recent Stage 2 additions
 
-**Result:** 22/22 unit tests passed in useBadge.spec.ts
+**Result:** vue-tsc type-check passed and 31/31 Vitest unit tests passed
 
-**Files changed:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, Frontend-PWA/src/core/services/useBadge.ts
+**Files changed:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, Frontend-PWA/src/core/services/useProgressiveList.ts
+
+**Verified accurate:** Frontend-PWA/src/core/services/useProgressiveList.ts
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: documentation
-  Cycle: nightly-cycle/2026-10-27
+  Cycle: nightly-cycle/2026-10-28
   Contract: a9f522cc73babe487aa3df1b083524daba64c0dd03c9e1b446dd4bd70c376bae
-  Why: Hardened UseBadgeReturn interface contract, parameter types, return types, and decision/threat annotations for cross-platform badging substrate.
-  Change: docs(tsdoc): harden useBadge interface contracts and inline logic annotations
-  Result: 22/22 unit tests passed in useBadge.spec.ts
-  Files: .github/nightly-logs/06-documentation-tsdoc-coverage.log, Frontend-PWA/src/core/services/useBadge.ts
+  Why: Exported UseProgressiveListReturn interface contract and enhanced TSDoc/decision/threat annotations following recent Stage 2 additions
+  Change: docs(tsdoc): harden useProgressiveList interface contracts and inline decision annotations
+  Result: vue-tsc type-check passed and 31/31 Vitest unit tests passed
+  Files: .github/nightly-logs/06-documentation-tsdoc-coverage.log, Frontend-PWA/src/core/services/useProgressiveList.ts
+  Verified: Frontend-PWA/src/core/services/useProgressiveList.ts
   Nudges: 0
-  Execution: e140f25bff04f0f9b70ce243a8437ff3fea37334
+  Execution: 733325f6ee05daa702f157e384ae93b691a9291e
 -->
