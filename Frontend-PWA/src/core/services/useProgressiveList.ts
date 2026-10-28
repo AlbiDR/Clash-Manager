@@ -4,6 +4,14 @@
 import { watch, type Ref, shallowRef, onScopeDispose } from "vue";
 
 /**
+ * Interface contract representing the return object of `useProgressiveList`.
+ */
+export interface UseProgressiveListReturn<T> {
+  /** A reactive slice of the source list that grows progressively over idle frames. */
+  visibleItems: Ref<T[]>;
+}
+
+/**
  * COMPOSABLE: useProgressiveList
  *
  * @remarks
@@ -33,13 +41,12 @@ import { watch, type Ref, shallowRef, onScopeDispose } from "vue";
  * @param sourceList - The full reactive list of items to be rendered.
  * @param initialSize - The number of items to render immediately on first load (default 12).
  *
- * @returns
- * - `visibleItems`: A reactive slice of the source list that grows progressively over idle frames.
+ * @returns {@link UseProgressiveListReturn} Interface containing the progressively populated `visibleItems` reactive slice.
  */
 export function useProgressiveList<T>(
   sourceList: Ref<readonly T[]>,
   initialSize: number = 12,
-) {
+): UseProgressiveListReturn<T> {
   /**
    * REACTIVE STATE
    * [PERF] shallowRef: Prevents deep reactivity on large arrays,
@@ -131,10 +138,12 @@ export function useProgressiveList<T>(
     progressiveChunkTimer = (frameScheduler as (cb: (deadline?: IdleDeadline | number) => void) => number)((deadline) => {
       let projectedItemCount = renderedItemCount;
 
-      // [THREAT: Runtime Interface Incompatibility] fallback requestAnimationFrame passes a
-      // DOMHighResTimeStamp numeric primitive instead of an IdleDeadline object, causing
-      // `deadline.timeRemaining()` to throw TypeError if called directly.
-      // [DECISION LOG] Deadline Feature Detection: explicitly verify 'timeRemaining' function existence.
+      // [THREAT: Runtime Interface Incompatibility / Frame Delay]
+      // Fallback requestAnimationFrame passes a DOMHighResTimeStamp numeric primitive instead of an IdleDeadline object,
+      // or custom test mocks may pass non-function timeRemaining values, causing `deadline.timeRemaining()` to throw TypeError if invoked directly.
+      //
+      // [DECISION LOG] Deadline Feature Detection:
+      // Explicitly verify `timeRemaining` function existence and function type before attempting time budgeting.
       const hasIdleDeadline = !!(deadline && typeof (deadline as IdleDeadline).timeRemaining === "function");
 
       // [PERF] IDLE BUDGETING: Process multiple chunks within a single frame

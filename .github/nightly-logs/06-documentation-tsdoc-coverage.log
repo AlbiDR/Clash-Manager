@@ -163,3 +163,4 @@
 * [2026-10-25] [Stage 6] [05:16Z-05:26Z 10m] [checks doc-debt=OK] CHANGED: Frontend-PWA/src/core/utils/time.ts -- docs(tsdoc): harden time.ts interface contracts and inline logic annotations
 * [2026-10-26] [Stage 6] [05:09Z-05:18Z 10m] [checks doc-debt=OK] CHANGED: Frontend-PWA/src/core/services/StorageService.ts -- docs(tsdoc): harden StorageService TSDoc interface contracts and inline decision annotations
 * [2026-10-27] [Stage 6] [05:18Z-05:24Z 6m] [checks doc-debt=OK] CHANGED: Frontend-PWA/src/core/services/useBadge.ts -- docs(tsdoc): harden useBadge interface contracts and inline logic annotations
+* [2026-10-28] [Stage 6] [05:07Z-05:11Z 4m] [checks doc-debt=OK] CHANGED: Frontend-PWA/src/core/services/useProgressiveList.ts -- docs(tsdoc): harden useProgressiveList interface contracts and inline decision annotations
