@@ -668,6 +668,28 @@
   - Root Cause: Unfinalized session sentinels or delayed PR publication trigger fallback publish mechanism in nightly watchdog.
   - Resolution Details: Watchdog fallback publish mechanism successfully published staged patch (PR #2334 CHANGED). Overall pipeline intervention rate for 2026-10-24: 1/11 merged stages (9.1%).
 
+* Control Plane Health Warning on Stages 1 & 3 (2026-10-25):
+  - Stages: Stage 1 (Hardening) and Stage 3 (Baseline Consolidation)
+  - State: [ACTIVE - monitor] (2026-10-25)
+  - Symptom: Control plane ledger health verdicts reported DEGRADING status for Stage 1 (streak 1, intervention rate rose from 14% to 22%) and Stage 3 (streak 1, intervention rate rose from 17% to 22%).
+  - Root Cause: Historical watchdog interventions and partial finalizations over recent cycles elevated overall stage intervention rates above health thresholds despite successful merges today.
+  - Recommended Fix: Continue monitoring stage execution durations and watchdog dispatch parameters for Stage 1 and Stage 3; ensure Stage 3 migration checks resolve cleanly to prevent PARTIAL-RUN re-triggers.
+
+* Stage 1 Pipeline Execution Failure (2026-10-26):
+  - Stage: Stage 1 (Hardening Auditor)
+  - State: [ACTIVE - investigation] (2026-10-26)
+  - Evidence: `nightly-run-ledger.json` (state: ESCALATED, failureClass: NO_PUBLISHED_OUTPUT)
+  - Symptom: Stage 1 failed to emit terminal coverage logs or publish PR output for cycle 2026-10-26, escalating with failureClass `NO_PUBLISHED_OUTPUT`.
+  - Root Cause: Pipeline dispatch or agent session execution failure resulting in missing published output.
+  - Recommended Fix: Monitor Stage 1 dispatch triggers and session timeout parameters; verify watchdog recovery routines for unpublished output.
+
+* Control Plane Health Degradation on Stages 1, 3 & 6 (2026-10-26):
+  - Stages: Stage 1 (Hardening), Stage 3 (Baseline Consolidation), Stage 6 (TSDoc Auditor)
+  - State: [ACTIVE - monitor] (2026-10-26)
+  - Symptom: Control plane ledger health verdicts reported DEGRADING status for Stage 1 (streak 2), Stage 3 (streak 2), and Stage 6 (streak 1).
+  - Root Cause: Accumulated historical watchdog interventions and missing stage outputs elevated stage degradation counters.
+  - Recommended Fix: Continue monitoring stage execution resilience and fallback publication health.
+
 ## Section 2: Cross-Stage Coherence Bugs (Priority 2)
 
 * Duplicate Merge Failure Blocks in 00-pr-history.md:
@@ -806,53 +828,53 @@
 ## Section 3: No-Diff and Low-Value Audit (Priority 3)
 
 * Stage 1 (Harden):
-  - Consecutive No-Diff Days: 2 (CLEAN logged on 2026-10-23, PR #2329; audit duration: 26m, median 6m)
-  - Analysis: Audited 5 priority targets (auth gaps, in-memory state, Valibot boundaries, dead code, layer rules) across 51 changed files; clean audit pass (PR #2329).
+  - Consecutive No-Diff Days: 1 (ESCALATED logged on 2026-10-26; audit duration: 6m, median 6m)
+  - Analysis: Stage 1 escalated with NO_PUBLISHED_OUTPUT; no source changes produced for 2026-10-26 cycle.
 
 * Stage 2 (Verify):
-  - Consecutive No-Diff Days: 0 (RECOVERABLE/OPEN_PR logged on 2026-10-24 for PR #2330; audit duration: 5m, median 12.5m)
-  - Analysis: Closed zero-coverage gap in L1 Core client & environment broker in ingest-royale-data in client.spec.ts (PR #2317). Outstanding OPEN_PR #2330.
+  - Consecutive No-Diff Days: 1 (PARTIAL-RUN logged on 2026-10-26, PR #2355; audit duration: 8m, median 11m)
+  - Analysis: Restored useProgressiveList spec edits after verification budget allowance (PR #2355).
 
 * Stage 3 (Baseline Consolidation):
-  - Consecutive No-Diff Days: 8 (PARTIAL-RUN logged on 2026-10-24, PR #2331; audit duration: 6m, median 4m)
-  - Analysis: Blocked folding due to unregistered migration hash audit failure (PR #2331).
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-10-26 in 20260531232406_master_migration.sql, PR #2357; audit duration: 5m, median 4m)
+  - Analysis: Folded 20260916221814_add_resource_health_view.sql (features.resource_health_view) into master migration baseline (PR #2357).
 
 * Stage 4 (Optimization):
-  - Consecutive No-Diff Days: 11 (CLEAN logged on 2026-10-24, PR #2332; audit duration: 6m, median 5m)
-  - Analysis: Audited 51 changed files and Edge Functions/Frontend view references via source-level grep; clean audit pass (PR #2332).
+  - Consecutive No-Diff Days: 13 (CLEAN logged on 2026-10-26, PR #2356; audit duration: 4m, median 5m)
+  - Analysis: Audited 63 changed files and Edge Functions/Frontend view references via source-level grep; clean audit pass (PR #2356).
 
 * Stage 5 (README):
-  - Consecutive No-Diff Days: 1 (CLEAN logged on 2026-10-24, PR #2333; audit duration: 5m, median 4m)
-  - Analysis: Audited codebase README files against implementation truth; verified zero documentation drift (PR #2333).
+  - Consecutive No-Diff Days: 3 (CLEAN logged on 2026-10-26, PR #2358; audit duration: 3m, median 4m)
+  - Analysis: Audited monorepo README files; verified documentation accuracy and zero README drift present (PR #2358).
 
 * Stage 6 (TSDoc):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-10-24 in work-budget.ts, PR #2334; audit duration: 4m, median 6m)
-  - Analysis: Hardened IngestionWorkBudget interface contracts and inline decision annotations in work-budget.ts (PR #2334, rescued via watchdog fallback publish).
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-10-26 in StorageService.ts, PR #2360; audit duration: 10m, median 6m)
+  - Analysis: docs(tsdoc): harden StorageService TSDoc interface contracts and inline decision annotations (PR #2360).
 
 * Stage 7 (Version Integrity):
-  - Consecutive No-Diff Days: 174 (CLEAN logged on 2026-10-24, PR #2335; audit duration: 6m, median 3m)
-  - Analysis: Monorepo version declarations and catalog protocol fully reconciled across root/Frontend-PWA/Backend package.json (PR #2335).
+  - Consecutive No-Diff Days: 176 (CLEAN logged on 2026-10-26, PR #2359; audit duration: 3m, median 3m)
+  - Analysis: Catalog scan and package version scan verified ground truth 14.55.14 across all 10 tracked targets with 0 drift (PR #2359).
 
 * Stage 8 (Dependency Audit):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-10-24 in package.json, PR #2336; audit duration: 4m, median 6.5m)
-  - Analysis: Bumped supabase devDependency from ^2.121.0 to ^2.122.0 in package.json (PR #2336).
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-10-26 in package.json, PR #2361; audit duration: 6m, median 6m)
+  - Analysis: Bumped eslint from ^10.9.1 to ^10.13.0 in monorepo catalog and updated major version watchlist (PR #2361).
 
 * Stage 9 (Refactor):
-  - Consecutive No-Diff Days: 9 (CLEAN logged on 2026-10-24, PR #2337; audit duration: 5m, median 6m)
-  - Analysis: Calibration pass on 51 candidates (0 dep viols, 11 unused files, 1 dep). Inspected useLeaderboard.ts, useProgressiveList.ts, muscle.ts; clean streak: 8 (PR #2337).
+  - Consecutive No-Diff Days: 11 (CLEAN logged on 2026-10-26, PR #2362; audit duration: 3m, median 6m)
+  - Analysis: CLEAN: 63 files, 0 dep-viols, knip: 11 files, 1 dep (@formkit/auto-animate), 0 exp. streak:10. Modules: useProgressiveList, pipeline, recruit-writer, index (PR #2362).
 
 * Stage 10 (APK-Integrity):
-  - Consecutive No-Diff Days: 107 (CLEAN logged on 2026-10-24, PR #2338; audit duration: 9m, median 3m)
-  - Analysis: Verified wrapper invariants (asset links, manifest parity, version code/name sync, release metadata, cleartext security policy) with zero mismatches found (PR #2338).
+  - Consecutive No-Diff Days: 109 (CLEAN logged on 2026-10-26, PR #2363; audit duration: 2m, median 3m)
+  - Analysis: Verified wrapper integrity: asset links, manifest parity, version code/name sync (v14.55.14 / 14055014), release metadata, and security policy (PR #2363).
 
 * Stage 11 (APK-Optimization):
-  - Consecutive No-Diff Days: 12 (CLEAN logged on 2026-10-24, PR #2339; audit duration: 5m, median 3m)
-  - Analysis: Audited native WebView performance settings, Service Worker caching, Vite Rolldown code-splitting groups, and public asset precache footprint (PR #2339).
+  - Consecutive No-Diff Days: 14 (CLEAN logged on 2026-10-26, PR #2364; audit duration: 4m, median 3m)
+  - Analysis: Audited WebView configurations, Android manifest, Service Worker precache routes, Vite chunking rules, and public asset footprint; all 9 performance invariants pass cleanly (PR #2364).
 
 * Stage 12 (APK-UX):
-  - Consecutive No-Diff Days: 26 (CLEAN logged on 2026-10-24, PR #2340; audit duration: 4m, median 4m)
-  - Analysis: Completed APK UX audit pass: 0 violations across 77 files audited (PR #2340).
+  - Consecutive No-Diff Days: 28 (CLEAN logged on 2026-10-26, PR #2365; audit duration: 3m, median 4m)
+  - Analysis: Automated APK UX audit passed with 0 candidate violations in bounded review (PR #2365).
 
 * Stage 13 (Self-Healing):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-10-24; audit duration: 9m, median 5m)
-  - Analysis: Completed daily self-healing audit pass for 2026-10-24: documented Stage 6 fallback publish recovery in Section 1, Stage 3 PARTIAL-RUN migration quality failure in Section 2, and updated Section 3 metrics across Stages 1-13.
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-10-26; audit duration: 7m, median 5m)
+  - Analysis: Completed daily self-healing audit pass for 2026-10-26: documented Stage 1 ESCALATED failure and control-plane health degradation in Section 1, and updated Section 3 metrics across Stages 1-13.

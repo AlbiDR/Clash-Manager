@@ -160,3 +160,5 @@
 * [2026-10-22] [Stage 6] [04:30Z-04:37Z 7m] [checks doc-debt=OK] CHANGED: Backend/supabase/functions/_shared/abortSignal.ts -- Documented waitWithAbort and verified 17 doc-debt source files
 * [2026-10-23] [Stage 6] [04:19Z-04:23Z 4m] [checks doc-debt=OK] CHANGED: Backend/supabase/functions/ingest-royale-data/client.ts -- Backend/supabase/functions/ingest-royale-data/client.ts -- docs(tsdoc): harden client interface contracts and inline decision annotations
 * [2026-10-24] [Stage 6] [04:07Z-04:11Z 4m] [checks doc-debt=OK] CHANGED: Backend/supabase/functions/ingest-royale-data/work-budget.ts -- docs(tsdoc): harden IngestionWorkBudget interface contracts and inline decision annotations
+* [2026-10-25] [Stage 6] [05:16Z-05:26Z 10m] [checks doc-debt=OK] CHANGED: Frontend-PWA/src/core/utils/time.ts -- docs(tsdoc): harden time.ts interface contracts and inline logic annotations
+* [2026-10-26] [Stage 6] [05:09Z-05:18Z 10m] [checks doc-debt=OK] CHANGED: Frontend-PWA/src/core/services/StorageService.ts -- docs(tsdoc): harden StorageService TSDoc interface contracts and inline decision annotations

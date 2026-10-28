@@ -152,3 +152,5 @@
 * [2026-10-22] [Stage 10] [08:09Z-08:11Z 2m] CLEAN: Codebase -- Verified PWA/APK wrapper invariants: asset links, manifest parity, version code/name sync, release metadata, and cleartext traffic policy.
 * [2026-10-23] [Stage 10] [08:30Z-08:32Z 2m] CLEAN: Codebase -- Verified wrapper invariants (asset links, manifest parity, version code/name sync, release metadata, cleartext security policy) with no mismatches found.
 * [2026-10-24] [Stage 10] [08:04Z-08:12Z 9m] CLEAN: Codebase -- Verified digital asset links fingerprint, PWA/TWA manifest parity, version code 14055010 / version name 14.55.10 sync, latest.json release pointer, target SDK 36, and cleartext HTTP prohibition.
+* [2026-10-25] [Stage 10] [09:23Z-09:29Z 5m] CLEAN: Codebase -- Verified PWA/APK wrapper integrity across manifest parity, version sync, release metadata, and security policy
+* [2026-10-26] [Stage 10] [09:18Z-09:19Z 2m] CLEAN: Codebase -- Verified wrapper integrity: asset links, manifest parity, version code/name sync (v14.55.14 / 14055014), release metadata (clashmanager-v14.55.14+529.apk), and security policy (cleartext forbidden, targetSdk 36).

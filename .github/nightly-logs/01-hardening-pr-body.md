@@ -1,26 +1,26 @@
 ### Nightly Stage 1: Hardening - Runtime Integrity Auditor
 
-**Status:** CLEAN
+**Status:** CHANGED
 
-In plain terms: nothing needed fixing. This run checked the hardening area and found it already correct, so the only file here is the log recording that the check happened.
+In plain terms: this changes 1 code file, so the app's behaviour may be affected. No tests were added or changed alongside it.
 
-**What was checked:** Audit 5 priority targets (unauthenticated endpoints, in-memory state, Valibot boundaries, dead critical-path code, cross-layer boundaries) across 51 changed files. No viable runtime or security threats found; PR history aged to 2026-10-23.
+**What changed:** Annotated in-memory Set in Toast.vue with explicit EPHEMERAL comments
 
-**Why:** All Edge Function auth barriers, rate limits, ephemeral memory annotations, Valibot schema gates, and CleanStack cross-layer rules remain fully hardened and compliant.
+**Why:** Satisfied Target A state lifecycle requirements by documenting transient component-level dismissal holds
 
-**Result:** pnpm test passed with 220 test files, 2359 tests passing.
+**Result:** Vitest suite Toast.spec.ts passed cleanly (18/18 tests passed)
 
-**Files changed:** .github/nightly-logs/00-pr-history.md, .github/nightly-logs/01-hardening-coverage.log
+**Files changed:** .github/nightly-logs/00-pr-history.md, .github/nightly-logs/01-hardening-coverage.log, Frontend-PWA/src/shared/ui/Toast.vue
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: hardening
-  Cycle: nightly-cycle/2026-10-24
+  Cycle: nightly-cycle/2026-10-25
   Contract: b8cc17977cd40f02490c220999b57dcbf99eb8b7a2175f40feb87a2655548621
-  Why: All Edge Function auth barriers, rate limits, ephemeral memory annotations, Valibot schema gates, and CleanStack cross-layer rules remain fully hardened and compliant.
-  Change: Audit 5 priority targets (unauthenticated endpoints, in-memory state, Valibot boundaries, dead critical-path code, cross-layer boundaries) across 51 changed files. No viable runtime or security threats found; PR history aged to 2026-10-23.
-  Result: pnpm test passed with 220 test files, 2359 tests passing.
-  Files: .github/nightly-logs/00-pr-history.md, .github/nightly-logs/01-hardening-coverage.log
+  Why: Satisfied Target A state lifecycle requirements by documenting transient component-level dismissal holds
+  Change: Annotated in-memory Set in Toast.vue with explicit EPHEMERAL comments
+  Result: Vitest suite Toast.spec.ts passed cleanly (18/18 tests passed)
+  Files: .github/nightly-logs/00-pr-history.md, .github/nightly-logs/01-hardening-coverage.log, Frontend-PWA/src/shared/ui/Toast.vue
   Nudges: 0
-  Execution: c318e38003b89d3dfe9c0c02ca7cec6acfe5a537
+  Execution: 9e272e28f70412be4eeccfd9eae13fbee202cfe4
 -->

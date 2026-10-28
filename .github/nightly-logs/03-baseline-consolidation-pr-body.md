@@ -1,26 +1,26 @@
 ### Nightly Stage 3: Baseline Consolidation - Declarative Schema Hardener
 
-**Status:** PARTIAL-RUN
+**Status:** CHANGED
 
-In plain terms: no change was made to the project. This run ended as PARTIAL-RUN and the only file here is the log recording that.
+In plain terms: this changes 1 code file, so the app's behaviour may be affected. No tests were added or changed alongside it.
 
-**What was checked:** Migration quality audit failed on unregistered historical migration hash
+**What changed:** Folded 20260916221814_add_resource_health_view.sql (features.resource_health_view) into master migration baseline.
 
-**Why:** Unregistered immutable migration hash in 20261022183913_event_gate_headhunter_epoch_guard.sql prevented verified unit folding
+**Why:** Consolidate oldest unfolded pending migration into master baseline per Stage 3 single-unit budget protocol.
 
-**Result:** fold-state PENDING: 33 migrations still unfolded, migration-quality FAIL, db DB-UNAVAILABLE
+**Result:** Migration audit PASS, fold-state updated (29 pending migrations remain, next: 20260917070416_smart_fold_player_battles.sql), DB verification DB-UNAVAILABLE.
 
-**Files changed:** .github/nightly-logs/03-baseline-consolidation-coverage.log
+**Files changed:** .github/nightly-logs/03-baseline-consolidation-coverage.log, Backend/supabase/migrations/20260531232406_master_migration.sql
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: database
-  Cycle: nightly-cycle/2026-10-24
+  Cycle: nightly-cycle/2026-10-26
   Contract: 8c32444005e6edf746eda3ca4e7e0dbe86a11a195765389a2f7db2cce85373e0
-  Why: Unregistered immutable migration hash in 20261022183913_event_gate_headhunter_epoch_guard.sql prevented verified unit folding
-  Change: Migration quality audit failed on unregistered historical migration hash
-  Result: fold-state PENDING: 33 migrations still unfolded, migration-quality FAIL, db DB-UNAVAILABLE
-  Files: .github/nightly-logs/03-baseline-consolidation-coverage.log
+  Why: Consolidate oldest unfolded pending migration into master baseline per Stage 3 single-unit budget protocol.
+  Change: Folded 20260916221814_add_resource_health_view.sql (features.resource_health_view) into master migration baseline.
+  Result: Migration audit PASS, fold-state updated (29 pending migrations remain, next: 20260917070416_smart_fold_player_battles.sql), DB verification DB-UNAVAILABLE.
+  Files: .github/nightly-logs/03-baseline-consolidation-coverage.log, Backend/supabase/migrations/20260531232406_master_migration.sql
   Nudges: 0
-  Execution: 387cf1b742dc9b617b659f890184bc827e9bde67
+  Execution: eeaaa63a745e0bf0e055373010e4bde511feca41
 -->

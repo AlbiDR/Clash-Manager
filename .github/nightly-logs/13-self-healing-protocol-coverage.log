@@ -86,3 +86,5 @@
 * [2026-10-22] [Stage 13] [11:15Z-11:18Z 4m] [checks audit-duration=OK] CHANGED: Codebase -- Documented Stage 5 & 6 fallback publish recoveries and Stage 3 PARTIAL-RUN migration constraint
 * [2026-10-23] [Stage 13] [11:28Z-11:37Z 9m] [checks audit-duration=OK] CHANGED: Codebase -- Documented Stage 9 fallback publish recovery, Stage 3 unregistered migration failure, and updated Sections 1-3 metrics for 2026-10-23
 * [2026-10-24] [Stage 13] [11:21Z-11:28Z 6m] [checks audit-duration=OK] CHANGED: Codebase -- Documented Stage 6 fallback publish recovery in Section 1, Stage 3 migration quality failure in Section 2, and updated Section 3 metrics for 2026-10-24
+* [2026-10-25] [Stage 13] [12:23Z-12:30Z 7m] [checks audit-duration=OK] CHANGED: Codebase -- Updated self-healing protocol log with Section 1 control-plane health warnings for Stage 1 & 3 DEGRADING verdicts and Section 3 stage metrics across PRs #2342-#2353
+* [2026-10-26] [Stage 13] [12:30Z-12:36Z 6m] [checks audit-duration=OK] CHANGED: Codebase -- Update Self-Healing Protocol Plan for 2026-10-26 run

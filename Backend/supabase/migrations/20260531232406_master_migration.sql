@@ -155,6 +155,12 @@ CREATE TABLE IF NOT EXISTS substrate.config (
 ALTER TABLE substrate.config ENABLE ROW LEVEL SECURITY;
 
 INSERT INTO substrate.config (key, value, description) VALUES
+    ('CONN_WARN_PCT', '70',
+     'Connections as a percent of max_connections that triggers a RESOURCE_PRESSURE warning.'),
+    ('DB_SIZE_WARN_MB', '400',
+     'Total database size (MB) that triggers a RESOURCE_PRESSURE warning. Free-tier compute is memory-constrained regardless of disk headroom, so this is set relative to the ~235MB post-cleanup baseline, not the 8GB disk quota.'),
+    ('RESOURCE_ALERT_COOLDOWN_HOURS', '6',
+     'Minimum hours between repeated RESOURCE_PRESSURE warnings of the same kind.'),
     ('GOVERNANCE_TELEMETRY_KEEP_DAYS', '7', 'Days of governance_telemetry retained before purge. Every purge/maintenance job logs into this table, so it is the primary driver of its size.'),
     ('MEMBER_SNAPSHOTS_KEEP_DAYS', '90', 'Days of drivers.member_snapshots (daily per-member telemetry) retained before purge. Previously had no retention and grew unbounded.'),
     (
@@ -799,6 +805,9 @@ BEGIN
     RETURN v_count;
 END;
 $function$;
+
+REVOKE EXECUTE ON FUNCTION substrate.purge_stale_member_snapshots() FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION substrate.purge_stale_member_snapshots() TO service_role;
 
 CREATE OR REPLACE FUNCTION substrate.purge_governance_telemetry()
  RETURNS void
@@ -1560,6 +1569,25 @@ BEGIN
         current_clan_tag     = EXCLUDED.current_clan_tag,
         updated_at           = now();
 
+    -- 2.5. Capture today's daily snapshot for growth/trend tracking. Fires
+    -- once per member per calendar day: only the first ingestion of the day
+    -- inserts a row, later same-day ingestions are no-ops via ON CONFLICT.
+    INSERT INTO drivers.member_snapshots (
+        player_tag, trophies, donations, donations_received, last_seen,
+        snapshot_date, snapshot_at
+    )
+    SELECT
+        m->>'tag',
+        (m->>'trophies')::INT,
+        COALESCE((m->>'donations')::INT, 0),
+        COALESCE((m->>'donationsReceived')::INT, 0),
+        (m->>'lastSeen')::TIMESTAMP WITH TIME ZONE,
+        CURRENT_DATE,
+        now()
+    FROM jsonb_array_elements(NEW.payload->'items') m
+    WHERE (m->>'tag') != v_clan_tag
+    ON CONFLICT (player_tag, snapshot_date) DO NOTHING;
+
     -- 3. DEACTIVATE LEAVERS
     UPDATE drivers.members
     SET is_active = FALSE, updated_at = now()
@@ -1877,6 +1905,64 @@ BEGIN
 END;
 $function$;
 
+CREATE OR REPLACE FUNCTION substrate.check_resource_pressure()
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'features', 'drivers', 'substrate', 'pg_temp'
+AS $function$
+DECLARE
+    v_conn_count integer;
+    v_max_conn integer;
+    v_conn_warn_pct integer;
+    v_db_size_mb numeric;
+    v_db_size_warn_mb integer;
+    v_cooldown_hours integer;
+BEGIN
+    v_conn_warn_pct   := COALESCE(substrate.config_int('CONN_WARN_PCT'), 70);
+    v_db_size_warn_mb := COALESCE(substrate.config_int('DB_SIZE_WARN_MB'), 400);
+    v_cooldown_hours  := COALESCE(substrate.config_int('RESOURCE_ALERT_COOLDOWN_HOURS'), 6);
+
+    SELECT count(*) INTO v_conn_count FROM pg_stat_activity;
+    SELECT setting::integer INTO v_max_conn FROM pg_settings WHERE name = 'max_connections';
+
+    IF v_conn_count::numeric / v_max_conn::numeric * 100 >= v_conn_warn_pct
+       AND NOT EXISTS (
+           SELECT 1 FROM substrate.governance_telemetry
+           WHERE event_type = 'RESOURCE_PRESSURE'
+             AND message ILIKE 'Connections at%'
+             AND created_at > now() - (v_cooldown_hours || ' hours')::interval
+       )
+    THEN
+        INSERT INTO substrate.governance_telemetry (event_type, status, message)
+        VALUES ('RESOURCE_PRESSURE', 'WARNING',
+                'Connections at ' || v_conn_count || '/' || v_max_conn ||
+                ' (' || round(v_conn_count::numeric / v_max_conn::numeric * 100) ||
+                '%), at or above the ' || v_conn_warn_pct || '% warning threshold.');
+    END IF;
+
+    SELECT pg_database_size(current_database())::numeric / (1024 * 1024) INTO v_db_size_mb;
+
+    IF v_db_size_mb >= v_db_size_warn_mb
+       AND NOT EXISTS (
+           SELECT 1 FROM substrate.governance_telemetry
+           WHERE event_type = 'RESOURCE_PRESSURE'
+             AND message ILIKE 'Database size%'
+             AND created_at > now() - (v_cooldown_hours || ' hours')::interval
+       )
+    THEN
+        INSERT INTO substrate.governance_telemetry (event_type, status, message)
+        VALUES ('RESOURCE_PRESSURE', 'WARNING',
+                'Database size ' || round(v_db_size_mb) || ' MB is at or above the ' ||
+                v_db_size_warn_mb || ' MB warning threshold (free-tier compute is memory-constrained; ' ||
+                'review retention settings in substrate.config or consider a compute upgrade).');
+    END IF;
+END;
+$function$;
+
+REVOKE EXECUTE ON FUNCTION substrate.check_resource_pressure() FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION substrate.check_resource_pressure() TO service_role;
+
 CREATE OR REPLACE FUNCTION substrate.pipeline_watchdog()
  RETURNS integer
  LANGUAGE plpgsql
@@ -1905,8 +1991,16 @@ BEGIN
         );
     END IF;
 
+    BEGIN
+        PERFORM substrate.check_resource_pressure();
+    EXCEPTION WHEN OTHERS THEN
+        INSERT INTO substrate.governance_telemetry (event_type, status, message)
+        VALUES ('SYSTEM_PURGE', 'ERROR', 'Resource pressure check failed: ' || SQLERRM);
+    END;
+
     RETURN v_reset_count;
-END; $function$;
+END;
+$function$;
 
 CREATE OR REPLACE FUNCTION substrate.weighted_avg(
     p_values numeric[],
@@ -4775,6 +4869,16 @@ COMMENT ON VIEW features.pipeline_heartbeat_view IS
    PostgREST rejected it with PGRST106, so the indicator always read null.';
 
 GRANT SELECT ON features.pipeline_heartbeat_view TO authenticated, anon, service_role;
+
+CREATE VIEW features.resource_health_view AS
+SELECT message, created_at
+FROM substrate.governance_telemetry
+WHERE event_type = 'RESOURCE_PRESSURE'
+  AND created_at > now() - interval '48 hours'
+ORDER BY created_at DESC
+LIMIT 10;
+
+GRANT SELECT ON features.resource_health_view TO anon, authenticated, service_role;
 
 CREATE OR REPLACE VIEW features.recruit_blacklist_view AS
   SELECT

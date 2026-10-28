@@ -78,6 +78,21 @@ describe("time utilities", () => {
       expect(formatTimeAgo("2026-08-13 21:00:00+00:00")).toBe("15h ago");
     });
 
+    it("normalizes PostgreSQL timezone offsets and handles whitespace-padded inputs", () => {
+      vi.setSystemTime(new Date("2026-08-14T12:00:00Z"));
+      // Offset +05 -> +05:00. 12:00 UTC = 17:00 (+05:00). So 2026-08-13 21:00:00+05 is 2026-08-13 16:00:00 UTC (20h ago)
+      expect(formatTimeAgo(" 2026-08-13 21:00:00+05 ")).toBe("20h ago");
+      // Offset +0530 -> +05:30.
+      expect(formatTimeAgo("2026-08-13 21:30:00+0530")).toBe("20h ago");
+    });
+
+    it("handles numeric Epoch millisecond timestamps", () => {
+      vi.setSystemTime(new Date("2026-01-01T12:00:00Z"));
+      const twoHoursAgoEpoch = new Date("2026-01-01T10:00:00Z").getTime();
+      expect(formatTimeAgo(twoHoursAgoEpoch)).toBe("2h ago");
+      expect(formatTimeAgoShort(twoHoursAgoEpoch)).toBe("2h");
+    });
+
     it("passes through compact server-generated relative labels", () => {
       expect(formatTimeAgo("Now")).toBe("Now");
       expect(formatTimeAgo("15h")).toBe("15h");
@@ -179,6 +194,10 @@ describe("time utilities", () => {
       expect(parseTimeAgoValue("some text")).toBe(99999999);
       expect(parseTimeAgoValue("10 days ago")).toBe(99999999);
     });
+
+    it("handles non-finite numbers and whitespace-padded date strings", () => {
+      expect(parseTimeAgoValue("   ")).toBe(99999999);
+    });
   });
 
   describe("getDurationUnits", () => {
@@ -267,8 +286,9 @@ describe("time utilities", () => {
       expect(formatCountdown(future, { showDays: true })).toBe("01:05:10");
     });
 
-    it("returns empty string for invalid date strings", () => {
+    it("returns empty string for invalid date strings or non-finite numbers", () => {
       expect(formatCountdown("invalid-date")).toBe("");
+      expect(formatCountdown(NaN)).toBe("");
     });
   });
 
