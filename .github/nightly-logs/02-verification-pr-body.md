@@ -1,26 +1,26 @@
 ### Nightly Stage 2: Verification - Logic Integrity Auditor
 
-**Status:** PARTIAL-RUN
+**Status:** CHANGED
 
-In plain terms: no change was made to the project. This run ended as PARTIAL-RUN and the only file here is the log recording that.
+In plain terms: this adds 1 test file in the verification area. No product code changed, so the app behaves exactly as it did before.
 
-**What was checked:** Restored StorageService spec edits after verification attempt exhausted correction allowance
+**What changed:** Added non-function timeRemaining edge case test to useProgressiveList.spec.ts and refactored bare spy assertions
 
-**Why:** StorageService was modified in PR #2360; test extensions for idb.clear() and legacy migration error paths exhausted correction budget during nightly spec verification
+**Why:** Ensure robust time-sliced scheduling behavior under non-standard IdleDeadline environments and prevent false positive spy assertions
 
-**Result:** nightly-spec-verify returned RESTORE (exit code 2); unverified spec edits reverted and PARTIAL-RUN logged
+**Result:** VERIFIED Frontend-PWA/src/core/services/services-tests/useProgressiveList.spec.ts. Mutation proof: mutated useProgressiveList.ts by bypassing typeof deadline.timeRemaining check; caught by TypeError in useProgressiveList.spec.ts
 
-**Files changed:** .github/nightly-logs/02-verification-coverage.log
+**Files changed:** .github/nightly-logs/02-verification-coverage.log, Frontend-PWA/src/core/services/services-tests/useProgressiveList.spec.ts
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: verification
-  Cycle: nightly-cycle/2026-10-27
+  Cycle: nightly-cycle/2026-10-28
   Contract: b2e927ebff4e2ca5a343609133745d050f07d22fd9bf3e42481440c1d14079f0
-  Why: StorageService was modified in PR #2360; test extensions for idb.clear() and legacy migration error paths exhausted correction budget during nightly spec verification
-  Change: Restored StorageService spec edits after verification attempt exhausted correction allowance
-  Result: nightly-spec-verify returned RESTORE (exit code 2); unverified spec edits reverted and PARTIAL-RUN logged
-  Files: .github/nightly-logs/02-verification-coverage.log
+  Why: Ensure robust time-sliced scheduling behavior under non-standard IdleDeadline environments and prevent false positive spy assertions
+  Change: Added non-function timeRemaining edge case test to useProgressiveList.spec.ts and refactored bare spy assertions
+  Result: VERIFIED Frontend-PWA/src/core/services/services-tests/useProgressiveList.spec.ts. Mutation proof: mutated useProgressiveList.ts by bypassing typeof deadline.timeRemaining check; caught by TypeError in useProgressiveList.spec.ts
+  Files: .github/nightly-logs/02-verification-coverage.log, Frontend-PWA/src/core/services/services-tests/useProgressiveList.spec.ts
   Nudges: 0
-  Execution: 659a8c509627bfed492c29e309b63a593f5ffae4
+  Execution: e2062af6dcc1937300fdb9cf4587cecc9d2496e1
 -->

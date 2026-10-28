@@ -154,14 +154,14 @@ describe("useProgressiveList", () => {
       useProgressiveList(source, 10);
 
       const scheduler = window.requestIdleCallback || window.requestAnimationFrame;
-      expect(scheduler).toHaveBeenCalled();
+      expect(scheduler).toHaveBeenCalledTimes(1);
 
       // Trigger change
       source.value = Array.from({ length: 5 }, (_, i) => i + 1);
       await nextTick();
 
       const canceller = window.cancelIdleCallback || window.cancelAnimationFrame;
-      expect(canceller).toHaveBeenCalled();
+      expect(canceller).toHaveBeenCalledWith(expect.anything());
     });
     scope.stop();
   });
@@ -211,7 +211,7 @@ describe("useProgressiveList", () => {
       const { visibleItems } = useProgressiveList(source, 10);
 
       expect(visibleItems.value).toHaveLength(10);
-      expect(window.requestAnimationFrame).toHaveBeenCalled();
+      expect(window.requestAnimationFrame).toHaveBeenCalledTimes(1);
 
       vi.advanceTimersByTime(1);
       expect(visibleItems.value).toHaveLength(20);
@@ -295,7 +295,7 @@ describe("useProgressiveList", () => {
       expect(visibleItems.value).toHaveLength(0);
 
       const canceller = window.cancelIdleCallback || window.cancelAnimationFrame;
-      expect(canceller).toHaveBeenCalled();
+      expect(canceller).toHaveBeenCalledWith(expect.anything());
     });
     scope.stop();
   });
@@ -358,7 +358,7 @@ describe("useProgressiveList", () => {
 
       // Previous timer should be canceled
       const canceller = window.cancelIdleCallback || window.cancelAnimationFrame;
-      expect(canceller).toHaveBeenCalled();
+      expect(canceller).toHaveBeenCalledWith(expect.anything());
 
       expect(visibleItems.value).toHaveLength(10);
       expect(visibleItems.value[0]).toBe(101);
@@ -450,7 +450,7 @@ describe("useProgressiveList", () => {
     });
 
     scope.stop();
-    expect(window.cancelAnimationFrame).toHaveBeenCalled();
+    expect(window.cancelAnimationFrame).toHaveBeenCalledWith(expect.anything());
 
     (window as any).cancelIdleCallback = originalCIC;
   });
@@ -655,5 +655,24 @@ describe("useProgressiveList", () => {
       expect(visibleItems.value[10]).toBeUndefined();
     });
     scope.stop();
+  });
+
+  it("handles non-function timeRemaining on deadline object gracefully without throwing", async () => {
+    const scope = effectScope();
+    const originalRIC = (window as any).requestIdleCallback;
+    await scope.run(async () => {
+      (window as any).requestIdleCallback = vi.fn((cb) => setTimeout(() => cb({ timeRemaining: 100 } as any), 1));
+
+      const source = ref(Array.from({ length: 25 }, (_, i) => i + 1));
+      const { visibleItems } = useProgressiveList(source, 10);
+
+      expect(visibleItems.value).toHaveLength(10);
+
+      vi.advanceTimersByTime(1);
+      expect(visibleItems.value).toHaveLength(20);
+      expect(visibleItems.value[19]).toBe(20);
+    });
+    scope.stop();
+    (window as any).requestIdleCallback = originalRIC;
   });
 });
