@@ -647,3 +647,11 @@
 * [2026-10-28] Target: Codebase - jsdom | ^30.1.1 | 30.1.3 | 2026-07-30 | Breaking: Requires Node.js >= 18.2, drops support for older environments.
 * [2026-10-28] Target: Codebase - @vite-pwa/assets-generator | ^2.0.0 | 2.0.0 | 2026-09-19 | Breaking: Requires Node 18+, updated sharp/consola dependencies, API refactoring.
 * [2026-10-28] Target: Codebase - @ast-grep/cli | ^0.45.3 | 0.51.0 | 2026-10-28 | Major version bump available.
+* [2026-10-29] Target: Codebase - @types/node | ^26.6.5 | ^26.6.6 | | PASS
+* [2026-10-29] Target: Codebase - vitest | ^4.1.11 | 5.0.5 | 2026-09-04 | Breaking: Dropped Node 18/20 support, browser runner refactored, native ESM strict config enforcement.
+* [2026-10-29] Target: Codebase - typescript | ~5.9.3 | 7.0.2 | 2026-06-18 | [Migration Alert: v6 is now finalized as v7 is out] Breaking: Complete port to Go (10x faster). New defaults and strictly enforced project structure.
+* [2026-10-29] Target: Codebase - pinia | ^3.0.4 | 4.1.0 | 2026-07-15 | Breaking: ESM only, @vue/devtools-api v8 peer dependency, refactored errors/warnings via Nostics.
+* [2026-10-29] Target: Codebase - jsdom | ^30.1.1 | 30.1.3 | 2026-07-30 | Breaking: Requires Node.js >= 18.2, drops support for older environments.
+* [2026-10-29] Target: Codebase - @vite-pwa/assets-generator | ^2.0.0 | 2.0.0 | 2026-09-19 | Breaking: Requires Node 18+, updated sharp/consola dependencies, API refactoring.
+* [2026-10-29] Target: Codebase - @ast-grep/cli | ^0.45.3 | 0.51.0 | 2026-10-28 | Major version bump available.
+* [2026-10-29] [Stage 8] [07:20Z-07:26Z 5m] CHANGED: package.json -- Bumped @types/node catalog entry to ^26.6.6 and updated lockfile.
