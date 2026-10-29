@@ -4,23 +4,23 @@
 
 In plain terms: nothing needed fixing. This run checked the version integrity area and found it already correct, so the only file here is the log recording that the check happened.
 
-**What was checked:** Calibration pass: Monorepo catalog and version consistency audit verified clean across 3 package manifests (package.json, Frontend-PWA/package.json, Backend/package.json) and 10 derived locations.
+**What was checked:** Scanned Frontend-PWA/package.json and Backend/package.json catalog usage, compared root/PWA/Backend package.json versions (14.55.14), and verified 0 drift across derived targets.
 
-**Why:** Calibration pass due (7 consecutive ordinary CLEAN runs reached). Widened scan verified all shared dependencies in Frontend-PWA and Backend use catalog: protocol, package.json versions match ground truth 14.55.14, and pnpm audit:version passed without drift.
+**Why:** Audit completed with 0 version drift or catalog protocol violations detected across monorepo package manifests and derived files.
 
-**Result:** PASSED: catalog adherence in root, Frontend-PWA, and Backend package.json verified; version 14.55.14 synchronized across root package.json, Frontend-PWA/package.json, Backend/package.json, 3 README badges, useProgressiveList.ts, protocol.ts, apktool.yml, and twa-manifest.json; pnpm audit:version PASSED.
+**Result:** pnpm audit:version reported 0 drift lines across 3 package manifests and all derived version targets
 
 **Files changed:** .github/nightly-logs/07-version-integrity-coverage.log
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: versioning
-  Cycle: nightly-cycle/2026-10-28
+  Cycle: nightly-cycle/2026-10-29
   Contract: 294f64f1358ef17af7639062d355427eaf3ce873f96ed18c821b7f7412d9219a
-  Why: Calibration pass due (7 consecutive ordinary CLEAN runs reached). Widened scan verified all shared dependencies in Frontend-PWA and Backend use catalog: protocol, package.json versions match ground truth 14.55.14, and pnpm audit:version passed without drift.
-  Change: Calibration pass: Monorepo catalog and version consistency audit verified clean across 3 package manifests (package.json, Frontend-PWA/package.json, Backend/package.json) and 10 derived locations.
-  Result: PASSED: catalog adherence in root, Frontend-PWA, and Backend package.json verified; version 14.55.14 synchronized across root package.json, Frontend-PWA/package.json, Backend/package.json, 3 README badges, useProgressiveList.ts, protocol.ts, apktool.yml, and twa-manifest.json; pnpm audit:version PASSED.
+  Why: Audit completed with 0 version drift or catalog protocol violations detected across monorepo package manifests and derived files.
+  Change: Scanned Frontend-PWA/package.json and Backend/package.json catalog usage, compared root/PWA/Backend package.json versions (14.55.14), and verified 0 drift across derived targets.
+  Result: pnpm audit:version reported 0 drift lines across 3 package manifests and all derived version targets
   Files: .github/nightly-logs/07-version-integrity-coverage.log
   Nudges: 0
-  Execution: 53682ad38aee6fccd95346de8ceb465083b1c62e
+  Execution: bc1da37dd1b6d86b80327a6be053e1c4e3d220ee
 -->
