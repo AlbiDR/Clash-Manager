@@ -4,23 +4,23 @@
 
 In plain terms: this adds 1 test file in the verification area. No product code changed, so the app behaves exactly as it did before.
 
-**What changed:** Added non-function timeRemaining edge case test to useProgressiveList.spec.ts and refactored bare spy assertions
+**What changed:** Added unit test suite for fetch-player-battlelog client & environment broker in client.spec.ts
 
-**Why:** Ensure robust time-sliced scheduling behavior under non-standard IdleDeadline environments and prevent false positive spy assertions
+**Why:** Close zero-coverage gap in L1 Core client & environment broker
 
-**Result:** VERIFIED Frontend-PWA/src/core/services/services-tests/useProgressiveList.spec.ts. Mutation proof: mutated useProgressiveList.ts by bypassing typeof deadline.timeRemaining check; caught by TypeError in useProgressiveList.spec.ts
+**Result:** Verified with nightly-spec-verify.mjs and mutation test.
 
-**Files changed:** .github/nightly-logs/02-verification-coverage.log, Frontend-PWA/src/core/services/services-tests/useProgressiveList.spec.ts
+**Files changed:** .github/nightly-logs/02-verification-coverage.log, Backend/supabase/functions/fetch-player-battlelog/client.spec.ts
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: verification
-  Cycle: nightly-cycle/2026-10-28
+  Cycle: nightly-cycle/2026-10-29
   Contract: b2e927ebff4e2ca5a343609133745d050f07d22fd9bf3e42481440c1d14079f0
-  Why: Ensure robust time-sliced scheduling behavior under non-standard IdleDeadline environments and prevent false positive spy assertions
-  Change: Added non-function timeRemaining edge case test to useProgressiveList.spec.ts and refactored bare spy assertions
-  Result: VERIFIED Frontend-PWA/src/core/services/services-tests/useProgressiveList.spec.ts. Mutation proof: mutated useProgressiveList.ts by bypassing typeof deadline.timeRemaining check; caught by TypeError in useProgressiveList.spec.ts
-  Files: .github/nightly-logs/02-verification-coverage.log, Frontend-PWA/src/core/services/services-tests/useProgressiveList.spec.ts
+  Why: Close zero-coverage gap in L1 Core client & environment broker
+  Change: Added unit test suite for fetch-player-battlelog client & environment broker in client.spec.ts
+  Result: Verified with nightly-spec-verify.mjs and mutation test.
+  Files: .github/nightly-logs/02-verification-coverage.log, Backend/supabase/functions/fetch-player-battlelog/client.spec.ts
   Nudges: 0
-  Execution: e2062af6dcc1937300fdb9cf4587cecc9d2496e1
+  Execution: 2d4a58e690da3afd88432f242c240b42779ccc5f
 -->
