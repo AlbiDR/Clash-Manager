@@ -21,7 +21,7 @@ The RoyaleAPI proxy caches responses per node, so different keys can return diff
 | File | Role |
 | :--- | :--- |
 | `index.ts` | The parallel fan-out and freshness selection, behind the shared handler. |
-| `client.ts` | Supabase service client. |
+| `client.ts` | Supabase service client and vault environment broker (`syncVault`). |
 
 ## Gotchas
 
