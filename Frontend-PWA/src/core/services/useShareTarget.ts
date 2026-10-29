@@ -17,15 +17,32 @@ import { cleanTag } from "../utils/text";
  * It extracts player tags from shared text/titles and redirects the user
  * to the appropriate view with filters applied.
  *
+ * Satisfies ADR Section I (Core Services) & ADR Section III (Validation Boundaries).
+ *
  * **Architectural Context:**
  * - **Layer:** Layer 1 (@core)
  * - **Import Boundaries:** May import from Layer 1 (@core) and Layer 0 (@substrate).
  *   Imports from Shared (@shared), Features (@features), or App (@app) are forbidden.
- *
- * @returns
- * - `handleShareTarget`: Main entry point for processing share intent parameters.
  */
-export function useShareTarget() {
+
+/**
+ * Return contract interface for `useShareTarget`.
+ */
+export interface UseShareTargetReturn {
+  /** Main entry point for processing share intent parameters from URL query strings. */
+  handleShareTarget: () => void;
+}
+
+/**
+ * COMPOSABLE: useShareTarget
+ *
+ * @remarks
+ * Listens for OS-level web share target payloads passed via URL search parameters,
+ * extracts valid player tags, alerts the user, and navigates to the headhunter view.
+ *
+ * @returns Object conforming to `UseShareTargetReturn`.
+ */
+export function useShareTarget(): UseShareTargetReturn {
   const router = useRouter();
   const { success } = useToast();
 
@@ -39,7 +56,7 @@ export function useShareTarget() {
    * 4. CLEANUP: Replaces the current history state to remove share parameters from the URL.
    * 5. NAVIGATION: Redirects to the Recruiter view with the extracted tag as a pin filter.
    *
-   * @sideEffects
+   * @sideeffects
    * - WRITES to `window.history` via `replaceState`.
    * - DISPATCHES toast notifications via `useToast`.
    * - TRIGGERS client-side navigation via `vue-router`.
@@ -49,15 +66,16 @@ export function useShareTarget() {
     const text = params.get("text") || params.get("title") || params.get("url");
 
     if (text) {
-      // Looks for #XXXXXX or tag=XXXXXX
+      // [THREAT:] Unsanitized user share input containing malformed or malicious query parameters.
+      // [DECISION LOG] Match standard Clash Royale player tags (#XXXXXX or tag=XXXXXX) with 3 to 9 alphanumeric chars.
       const tagMatch = text.match(/(?:#|tag=)([0-9A-Z]{3,9})/i);
 
       if (tagMatch && tagMatch[1]) {
         const extractedTag = cleanTag(tagMatch[1]);
         success(`Shared Tag Found: #${extractedTag}`);
 
-        // Clean URL: Remove the share parameters from the browser history
-        // to prevent re-triggering the logic on page reload.
+        // [THREAT:] Persistent share params causing infinite re-processing loops on manual page reloads.
+        // [DECISION LOG] Clean URL by replacing history state before performing router redirection.
         window.history.replaceState(
           {},
           document.title,
