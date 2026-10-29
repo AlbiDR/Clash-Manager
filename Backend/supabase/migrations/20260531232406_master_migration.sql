@@ -35,6 +35,12 @@
  * - 20260817000000_expose_pwa_client_surfaces.sql
  * - 20260817010000_fix_heartbeat_success_timestamps.sql
  * - 20260819000000_fix_profiler_drivers_schema_access.sql
+ * - 20260917070416_smart_fold_player_battles.sql
+ * - 20260917070530_roster_view_uses_battle_stats_function.sql
+ * - 20260917070640_fix_battle_stats_today_branch_sargable.sql
+ * - 20260917221300_optimize_roster_battle_stats_planning.sql
+ * - 20260917221532_specialize_roster_battle_stats_query.sql
+ * - 20260923225809_decouple_voyage_finalization_from_battle_trigger.sql
  *
  * Architectural Compliance Verification Log (Audited: 2026-08-31):
  * 1. Row Level Security: Verified 100% compliance across all 28 created tables.
@@ -526,7 +532,7 @@ ALTER TABLE drivers.player_battles SET (
 );
 
 CREATE TABLE IF NOT EXISTS drivers.player_battle_daily (
-    player_tag text NOT NULL CHECK (player_tag ~ '^#[0289CGJLPQRUVY]+$'::text),
+    player_tag text NOT NULL CHECK (player_tag ~ '^#[0289CGJLPQRUVY]+$'),
     battle_date date NOT NULL,
     battle_type text NOT NULL,
     battles integer NOT NULL DEFAULT 0,
@@ -534,13 +540,21 @@ CREATE TABLE IF NOT EXISTS drivers.player_battle_daily (
     fame_earned_sum bigint NOT NULL DEFAULT 0,
     team_crowns_sum bigint NOT NULL DEFAULT 0,
     opponent_crowns_sum bigint NOT NULL DEFAULT 0,
-    folded_at timestamp with time zone NOT NULL DEFAULT now(),
-    CONSTRAINT drivers_player_battle_daily_pkey PRIMARY KEY (player_tag, battle_date, battle_type)
+    folded_at timestamptz NOT NULL DEFAULT now(),
+    PRIMARY KEY (player_tag, battle_date, battle_type)
 );
 
-CREATE INDEX IF NOT EXISTS idx_player_battle_daily_player_date ON drivers.player_battle_daily USING btree (player_tag, battle_date);
+CREATE INDEX IF NOT EXISTS idx_player_battle_daily_player_date
+    ON drivers.player_battle_daily (player_tag, battle_date);
 
 ALTER TABLE drivers.player_battle_daily ENABLE ROW LEVEL SECURITY;
+
+ALTER TABLE drivers.player_battle_daily SET (
+    autovacuum_vacuum_threshold = 50,
+    autovacuum_vacuum_scale_factor = 0.05,
+    autovacuum_analyze_threshold = 50,
+    autovacuum_analyze_scale_factor = 0.05
+);
 
 -- Daily time-series telemetry for every member, powering growth analysis and trend tracking.
 CREATE TABLE IF NOT EXISTS drivers.member_snapshots (
@@ -863,23 +877,64 @@ RETURNS TABLE (
     team_crowns_sum bigint,
     opponent_crowns_sum bigint
 )
-LANGUAGE sql
+LANGUAGE plpgsql
 STABLE
 SECURITY DEFINER
 SET search_path TO 'public', 'features', 'drivers', 'substrate', 'pg_temp'
 AS $function$
-    SELECT
-        combined.player_tag,
-        sum(combined.battles)::bigint,
-        sum(combined.wins)::bigint,
-        sum(combined.fame_earned_sum)::bigint,
-        sum(combined.team_crowns_sum)::bigint,
-        sum(combined.opponent_crowns_sum)::bigint
-    FROM (
-        SELECT player_tag, battles, wins, fame_earned_sum, team_crowns_sum, opponent_crowns_sum
-        FROM drivers.player_battle_daily
-        WHERE battle_date >= (now() AT TIME ZONE 'UTC')::date - p_days
-          AND (p_player_tags IS NULL OR player_tag = ANY (p_player_tags))
+BEGIN
+    IF p_player_tags IS NULL THEN
+        RETURN QUERY
+        SELECT
+            combined.player_tag,
+            sum(combined.battles)::bigint,
+            sum(combined.wins)::bigint,
+            sum(combined.fame_earned_sum)::bigint,
+            sum(combined.team_crowns_sum)::bigint,
+            sum(combined.opponent_crowns_sum)::bigint
+        FROM (
+            SELECT
+                d.player_tag,
+                d.battles,
+                d.wins,
+                d.fame_earned_sum,
+                d.team_crowns_sum,
+                d.opponent_crowns_sum
+            FROM drivers.player_battle_daily d
+            WHERE d.battle_date >= (now() AT TIME ZONE 'UTC')::date - p_days
+
+            UNION ALL
+
+            SELECT
+                pb.player_tag,
+                count(*),
+                count(*) FILTER (WHERE pb.win_status),
+                sum(pb.fame_earned),
+                sum(pb.team_crowns),
+                sum(pb.opponent_crowns)
+            FROM drivers.player_battles pb
+            WHERE pb.battle_time >= date_trunc('day', now() AT TIME ZONE 'UTC')
+              AND pb.battle_time < date_trunc('day', now() AT TIME ZONE 'UTC') + interval '1 day'
+            GROUP BY pb.player_tag
+        ) combined
+        GROUP BY combined.player_tag;
+        RETURN;
+    END IF;
+
+    RETURN QUERY
+    WITH requested_tags AS MATERIALIZED (
+        SELECT DISTINCT unnest(p_player_tags) AS player_tag
+    ), combined AS (
+        SELECT
+            d.player_tag,
+            d.battles,
+            d.wins,
+            d.fame_earned_sum,
+            d.team_crowns_sum,
+            d.opponent_crowns_sum
+        FROM requested_tags rt
+        JOIN drivers.player_battle_daily d ON d.player_tag = rt.player_tag
+        WHERE d.battle_date >= (now() AT TIME ZONE 'UTC')::date - p_days
 
         UNION ALL
 
@@ -890,15 +945,26 @@ AS $function$
             sum(pb.fame_earned),
             sum(pb.team_crowns),
             sum(pb.opponent_crowns)
-        FROM drivers.player_battles pb
-        WHERE (pb.battle_time AT TIME ZONE 'UTC')::date = (now() AT TIME ZONE 'UTC')::date
-          AND (p_player_tags IS NULL OR pb.player_tag = ANY (p_player_tags))
+        FROM requested_tags rt
+        JOIN drivers.player_battles pb ON pb.player_tag = rt.player_tag
+        WHERE pb.battle_time >= date_trunc('day', now() AT TIME ZONE 'UTC')
+          AND pb.battle_time < date_trunc('day', now() AT TIME ZONE 'UTC') + interval '1 day'
         GROUP BY pb.player_tag
-    ) combined
+    )
+    SELECT
+        combined.player_tag,
+        sum(combined.battles)::bigint,
+        sum(combined.wins)::bigint,
+        sum(combined.fame_earned_sum)::bigint,
+        sum(combined.team_crowns_sum)::bigint,
+        sum(combined.opponent_crowns_sum)::bigint
+    FROM combined
     GROUP BY combined.player_tag;
+END;
 $function$;
 
 REVOKE EXECUTE ON FUNCTION drivers.get_player_battle_stats(integer, text[]) FROM PUBLIC;
+REVOKE ALL ON FUNCTION drivers.get_player_battle_stats(integer, text[]) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION drivers.get_player_battle_stats(integer, text[]) TO anon, authenticated, service_role;
 
 CREATE OR REPLACE FUNCTION substrate.get_vault_secret(p_name text)
@@ -2553,7 +2619,8 @@ BEGIN
     -- L2 Domain Purges
     PERFORM drivers.purge_expired_blacklist();
     PERFORM substrate.purge_inactive_members();
-    PERFORM substrate.purge_stale_battles();
+    PERFORM substrate.fold_player_battles();
+    PERFORM substrate.purge_folded_player_battles();
     PERFORM substrate.purge_stale_member_snapshots();
     PERFORM substrate.purge_worst_recruits();
     PERFORM substrate.purge_orphan_players();
@@ -2579,7 +2646,7 @@ BEGIN
     UPDATE substrate.pipeline_heartbeat
     SET status          = 'COMPLETED',
         last_success_at = NOW(),
-        last_message    = 'Maintenance complete. Raw logs, ledgers, stale battles, snapshots, orphans, voyage and cron history pruned. Voyages finalized.',
+        last_message    = 'Maintenance complete. Raw logs, ledgers, battles, snapshots, orphans, voyage and cron history folded/pruned. Voyages finalized.',
         updated_at      = NOW()
     WHERE component_id = 'NIGHTLY_MAINTENANCE';
 
@@ -2833,13 +2900,44 @@ BEGIN
                 updated_at = now()
             WHERE id = v_id;
         END IF;
-    ELSE
-        PERFORM substrate.finalize_expired_voyages();
     END IF;
 
     RETURN NEW;
 END;
 $function$;
+
+COMMENT ON FUNCTION drivers.on_battle_recorded() IS
+'AFTER INSERT trigger on drivers.player_battles (tr_battle_voyage_sync), '
+'FOR EACH ROW. Credits a battle''s crowns toward the active clan voyage''s '
+'contributions when the battle falls inside that voyage''s [start_at, end_at] '
+'window and is one of the allowlisted PvP battle types, then flips the '
+'voyage to COMPLETED once its target is met or its window has passed. '
+'AS OF 2026-09-23: no longer calls substrate.finalize_expired_voyages() when '
+'a battle does not belong to any active voyage - that is now a dedicated '
+'5-minute cron job (''finalize-expired-voyages''), decoupled from battle '
+'traffic. See 20260923225809_decouple_voyage_finalization_from_battle_trigger.sql '
+'for the full reasoning, including why voyage-completion latency is '
+'user-visible (VoyageBanner.vue''s countdown + Realtime subscription) and '
+'therefore not safe to leave undetected for more than a few minutes.';
+
+COMMENT ON FUNCTION substrate.finalize_expired_voyages() IS
+'Transitions any ACTIVE clan_voyage whose end_at has passed to COMPLETED, '
+'pre-populating 0-crown contribution rows for members who did not '
+'participate and pruning stale 0-crown rows for ex-members. '
+'AS OF 2026-09-23: invoked by the ''finalize-expired-voyages'' pg_cron job '
+'every 5 minutes (cron.job - query that table, not this comment, for the '
+'live schedule). Previously it ran as a side effect of drivers.on_battle_recorded() '
+'on every battle-log row that fell outside an active voyage window '
+'(~6,500 calls/day); moved to its own schedule because voyage expiry is a '
+'wall-clock fact, not something a battle event should be responsible for '
+'detecting. Frontend-PWA/src/shared/ui/VoyageBanner.vue shows a live '
+'countdown to a clan voyage''s end_at and refreshes exactly once when it '
+'hits zero (Frontend-PWA/src/shared/composables/useCountdown.ts) - if this '
+'function stops running on a short, predictable cadence, that banner can '
+'get stuck showing an already-ended voyage as still active until the next '
+'Realtime-triggered write or the once-daily nightly maintenance fallback '
+'(substrate.execute_nightly_maintenance(), 03:00 UTC). Keep this on a cron '
+'cadence measured in minutes, not hours.';
 
 CREATE OR REPLACE FUNCTION drivers.refresh_voyage_contributions()
  RETURNS void
@@ -5295,6 +5393,12 @@ SELECT cron.schedule(
     'headhunter-epoch-guard',
     '*/5 * * * *',
     $$SELECT substrate.run_headhunter_epoch_guard()$$
+);
+
+SELECT cron.schedule(
+    'finalize-expired-voyages',
+    '*/5 * * * *',
+    $$SELECT substrate.finalize_expired_voyages()$$
 );
 
 
