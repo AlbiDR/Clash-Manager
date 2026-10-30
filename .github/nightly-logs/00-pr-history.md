@@ -5,7 +5,7 @@ TIER_CONFIG:
   T3_HISTORICAL_DAYS: 90  # Weekly domain group; pattern recognition
   T4_ARCHIVE_DAYS:    90+  # Monthly domain summary; feeds 00-pipeline-intelligence.md
 AGING_AGENT: Stage 1 (pre-flight, runs nightly before hardening work)
-LAST_AGED:   2026-10-28
+LAST_AGED:   2026-10-30
 -->
 
 > **Format:** Entries age through four tiers as time passes. Stage 1 performs
@@ -878,35 +878,22 @@ Successfully completed the July 21, 2026 nightly automated self-healing protocol
 * [2026-09-30] PR #2020 [optimization]: Inspected 22 changed files and Edge Functions for SQL view substrate hygiene; zero structural rot or unreferenced views found. (``2684d5df0``) [View](https://github.com/AlbiDR/Clash-Manager/pull/2020)
 * [2026-09-30] PR #2019 [database]: Baseline current (0 pending migrations; migration-quality: PASS; fold-state: DEGRADED; db-verification: DB-UNAVAILABLE; read-only RLS/search_path/formatting audit passed) (``88fa45e01``) [View](https://github.com/AlbiDR/Clash-Manager/pull/2019)
 * [2026-09-30] PR #2018 [verification]: Completed logic integrity audit pass. Zero coverage gaps found, all existing tests pass. (``d95806572``) [View](https://github.com/AlbiDR/Clash-Manager/pull/2018)
-* [2026-09-29] PR #2017 [hardening]: Audited 44 candidate files and Edge Functions across Priority List items (auth gaps, in-memory state, Valibot boundaries, layer isolation); zero threat vectors found (``4c371817a``) [View](https://github.com/AlbiDR/Clash-Manager/pull/2017)
-* [2026-09-29] PR #2015 [apk]: Calibration pass: verified 9/9 wrapper invariants, WebView cache mode, SW routes, Vite chunking, and asset footprint (``b40354bac``) [View](https://github.com/AlbiDR/Clash-Manager/pull/2015)
-* [2026-09-29] PR #2016 [ux]: No UX issues found across 78 examined frontend files (``f1fa4daff``) [View](https://github.com/AlbiDR/Clash-Manager/pull/2016)
-* [2026-09-29] PR #2014 [pipeline]: Updated self-healing protocol findings for 2026-09-29: recorded Stage 7 watchdog rescue intervention in Section 1 and updated Section 3 consecutive no-diff metrics across Stages 1–13. (``a078daf9f``) [View](https://github.com/AlbiDR/Clash-Manager/pull/2014)
-* [2026-09-29] PR #2013 [apk]: No APK or wrapper configuration changes required; wrapper invariants verified. (``ba447f4ad``) [View](https://github.com/AlbiDR/Clash-Manager/pull/2013)
-* [2026-09-29] PR #2012 [architecture]: 42 candidates, dep-violations: 0, knip (2 devDeps, 5 binaries, 3 unused exp, 1 dup exp); streak: 0. Inspected core/config, useProgressiveList, deep-depth, protocol. Candidate BLITZ_DWELL_DEFAULT intentional. Defect hunt clean. (``08aee1779``) [View](https://github.com/AlbiDR/Clash-Manager/pull/2012)
-* [2026-09-29] PR #2011 [dependencies]: Bumped valibot to ^1.5.0 in monorepo catalogs (``050cf735d``) [View](https://github.com/AlbiDR/Clash-Manager/pull/2011)
-* [2026-09-29] PR #2010 [versioning]: Audit complete: No version drift or catalog protocol violations detected. (``470a4d7f2``) [View](https://github.com/AlbiDR/Clash-Manager/pull/2010)
-* [2026-09-29] PR #2009 [documentation]: Audited doc-debt targets and confirmed accurate contracts (``5352b9176``) [View](https://github.com/AlbiDR/Clash-Manager/pull/2009)
-* [2026-09-29] PR #2008 [documentation]: Reconciled ingest-royale-data README with deep depth optimizations and reliability guards (``860f02bf6``) [View](https://github.com/AlbiDR/Clash-Manager/pull/2008)
-* [2026-09-29] PR #2007 [optimization]: Inspected 42 changed files and Edge Functions for SQL view substrate hygiene; zero structural rot or unreferenced views found. (``4d48d18fc``) [View](https://github.com/AlbiDR/Clash-Manager/pull/2007)
-* [2026-09-29] PR #2006 [database]: Pending migrations: 0, migration-quality: PASS, fold-state: DEGRADED, database-verification: DB-UNAVAILABLE. Read-only RLS/search_path/formatting audit passed. (``b07ca9893``) [View](https://github.com/AlbiDR/Clash-Manager/pull/2006)
-* [2026-09-29] PR #2005 [verification]: Extended deep-depth spec with tests for isAlreadyIngested non-chronological battle logs and invalid timestamps (``d58d427b1``) [View](https://github.com/AlbiDR/Clash-Manager/pull/2005)
-* [2026-09-28] PR #2004 [hardening]: Audited 42 candidate files and Edge Functions across Priority List items (auth gaps, in-memory state, Valibot boundaries, layer isolation); zero threat vectors found (``f4a271b10``) [View](https://github.com/AlbiDR/Clash-Manager/pull/2004)
-* [2026-09-28] PR #2003 [pipeline]: Updated Self-Healing Protocol audit metrics and recorded watchdog intervention for 2026-09-28 (``4f5fdc308``) [View](https://github.com/AlbiDR/Clash-Manager/pull/2003)
-* [2026-09-28] PR #2002 [ux]: Added v-tactile directive to ViewOptions interactive controls (``b5aeb67f5``) [View](https://github.com/AlbiDR/Clash-Manager/pull/2002)
-* [2026-09-28] PR #2001 [apk]: Audited APK performance: all 9 wrapper, WebView, and caching invariants pass cleanly; precache footprint optimal (6 files, 11.1 KB) (``39a048d05``) [View](https://github.com/AlbiDR/Clash-Manager/pull/2001)
-* [2026-09-28] PR #2000 [apk]: Verified digital asset links, manifest parity, shortcut parity, version code/name sync, APK release metadata, target SDK alignment, cleartext traffic policy, and permissions with zero mismatches found. (``5d7eabc77``) [View](https://github.com/AlbiDR/Clash-Manager/pull/2000)
-* [2026-09-28] PR #1999 [architecture]: Eliminate dead components barrel index export in roster feature (``a2e2043d8``) [View](https://github.com/AlbiDR/Clash-Manager/pull/1999)
-* [2026-09-28] PR #1998 [dependencies]: Bumped tsx devDependency from ^4.23.13 to ^4.23.15 (``348918259``) [View](https://github.com/AlbiDR/Clash-Manager/pull/1998)
-* [2026-09-28] PR #1997 [versioning]: Audit complete: No version drift or catalog protocol violations detected across monorepo package manifests or derived files. (``fda90ffca``) [View](https://github.com/AlbiDR/Clash-Manager/pull/1997)
-* [2026-09-28] PR #1996 [documentation]: Harden deep-depth stage TSDoc interface contracts and threat tags (``e16d73801``) [View](https://github.com/AlbiDR/Clash-Manager/pull/1996)
-* [2026-09-28] PR #1995 [optimization]: Inspected 42 changed files and Edge Functions for SQL view substrate hygiene; zero structural rot or unreferenced views found. (``7be0987de``) [View](https://github.com/AlbiDR/Clash-Manager/pull/1995)
-* [2026-09-28] PR #1994 [documentation]: Audit doc-debt target Frontend-PWA/src/core/api/SupabaseClient.ts (``497800995``) [View](https://github.com/AlbiDR/Clash-Manager/pull/1994)
-* [2026-09-28] PR #1993 [database]: Calibration pass: 0 pending migrations examined, 29 baseline tables verified RLS-compliant, migration-quality PASS, fold-state DEGRADED, database-verification DB-UNAVAILABLE (``7034110b6``) [View](https://github.com/AlbiDR/Clash-Manager/pull/1993)
-* [2026-09-28] PR #1992 [verification]: Added unit tests for LatestBattleTimesSchema in rpcSchemas.spec.ts (``f41108dd9``) [View](https://github.com/AlbiDR/Clash-Manager/pull/1992)
 
 ## T3 -- Historical (31-90 days)
 > Grouped by week and domain. Use for pattern recognition.
+
+#### 2026-W40
+* 4 PRs [apk]: #2000, #2001, #2013, #2015
+* 2 PRs [architecture]: #1999, #2012
+* 2 PRs [database]: #1993, #2006
+* 2 PRs [dependencies]: #1998, #2011
+* 4 PRs [documentation]: #1994, #1996, #2008, #2009
+* 2 PRs [hardening]: #2004, #2017
+* 2 PRs [optimization]: #1995, #2007
+* 2 PRs [pipeline]: #2003, #2014
+* 2 PRs [ux]: #2002, #2016
+* 2 PRs [verification]: #1992, #2005
+* 2 PRs [versioning]: #1997, #2010
 
 #### 2026-W39
 * 14 PRs [apk]: #1909, #1910, #1922, #1923, #1935, #1936, #1948, #1949, #1960, #1962, #1973, #1975, #1986, #1988
