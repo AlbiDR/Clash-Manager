@@ -4,23 +4,23 @@
 
 In plain terms: this changes 1 code file, so the app's behaviour may be affected. No tests were added or changed alongside it.
 
-**What changed:** Folded 6 post-baseline migrations (20260917070416, 20260917070530, 20260917070640, 20260917221300, 20260917221532, 20260923225809) into master_migration.sql
+**What changed:** Folded 20260926233013_event_gate_voyage_finalization.sql (drivers.sync_voyage_finalization_job, drivers.on_voyage_active_change, trg_voyage_finalization_gate, VOYAGE_FINALIZATION_SCHEDULE, finalize_expired_voyages comment)
 
-**Why:** Declarative schema baselining and debt reduction per Stage 3 contract
+**Why:** Resumable fold of oldest pending migration into master baseline per Stage 3 contract
 
-**Result:** Migrations examined: 79; Objects folded: player_battle_daily table/indexes/storage, fold_player_battles, purge_folded_player_battles, get_player_battle_stats, execute_nightly_maintenance; migration-quality: PASS; fold-state: 6 units folded; database-verification: DB-UNAVAILABLE (semantic checks pending CI)
+**Result:** PASS: audit:migrations 0 violations, fold-state migration verified as folded; 22 migrations remain pending; db verification DB-UNAVAILABLE
 
 **Files changed:** .github/nightly-logs/03-baseline-consolidation-coverage.log, Backend/supabase/migrations/20260531232406_master_migration.sql
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: database
-  Cycle: nightly-cycle/2026-10-29
+  Cycle: nightly-cycle/2026-10-30
   Contract: 8c32444005e6edf746eda3ca4e7e0dbe86a11a195765389a2f7db2cce85373e0
-  Why: Declarative schema baselining and debt reduction per Stage 3 contract
-  Change: Folded 6 post-baseline migrations (20260917070416, 20260917070530, 20260917070640, 20260917221300, 20260917221532, 20260923225809) into master_migration.sql
-  Result: Migrations examined: 79; Objects folded: player_battle_daily table/indexes/storage, fold_player_battles, purge_folded_player_battles, get_player_battle_stats, execute_nightly_maintenance; migration-quality: PASS; fold-state: 6 units folded; database-verification: DB-UNAVAILABLE (semantic checks pending CI)
+  Why: Resumable fold of oldest pending migration into master baseline per Stage 3 contract
+  Change: Folded 20260926233013_event_gate_voyage_finalization.sql (drivers.sync_voyage_finalization_job, drivers.on_voyage_active_change, trg_voyage_finalization_gate, VOYAGE_FINALIZATION_SCHEDULE, finalize_expired_voyages comment)
+  Result: PASS: audit:migrations 0 violations, fold-state migration verified as folded; 22 migrations remain pending; db verification DB-UNAVAILABLE
   Files: .github/nightly-logs/03-baseline-consolidation-coverage.log, Backend/supabase/migrations/20260531232406_master_migration.sql
   Nudges: 0
-  Execution: ab1274134e3d45b9e21335629093b1776ce40f25
+  Execution: 6e8f43fbdc89b8f0d91831ed0b501f7d2d190554
 -->
