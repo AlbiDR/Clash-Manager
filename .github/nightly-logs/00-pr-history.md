@@ -16,6 +16,23 @@ LAST_AGED:   2026-10-30
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-30] PR #2409 [Stage 2]: Restored useShareTarget spec edits after verification attempt budget
+**Domain:** verification | **Commit:** 1b87ad73d | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2409)
+**Files:** .github/nightly-logs/02-verification-coverage.log, .github/nightly-logs/02-verification-pr-body.md
+**Why:** Spec verification script returned RESTORE after attempt budget
+**Change:** Restored useShareTarget spec edits after verification attempt budget
+**Result:** Restored spec changes and finalized PARTIAL-RUN per prompt instructions
+**Nudges:** 0
+
+### [2026-10-30] PR #2408 [Stage 4]: Audited changed files and Edge Functions/Frontend view references via source-level grep; confirmed zero structural rot or unreferenced database views
+**Domain:** optimization | **Commit:** d16a0165c | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2408)
+**Files:** .github/nightly-logs/04-optimization-coverage.log, .github/nightly-logs/04-optimization-pr-body.md
+**Why:** Substrate hygiene audit confirmed all database views in active use remain properly referenced and no source bottlenecks require mutation
+**Change:** Audited changed files and Edge Functions/Frontend view references via source-level grep; confirmed zero structural rot or unreferenced database views
+**Result:** Passed full monorepo pnpm test suite (220 test files, 2365 tests passed)
+**Nudges:** 0
+
+
 ### [2026-10-30] PR #2407 [Stage 3]: Folded 20260926233013_event_gate_voyage_finalization.sql (drivers.sync_voyage_finalization_job, drivers.on_voyage_active_change, trg_voyage_finalization_gate, VOYAGE_FINALIZATION_SCHEDULE, finalize_expired_voyages comment)
 **Domain:** database | **Commit:** 5d6088352 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2407)
 **Files:** .github/nightly-logs/03-baseline-consolidation-coverage.log, .github/nightly-logs/03-baseline-consolidation-pr-body.md, Backend/supabase/migrations/20260531232406_master_migration.sql
