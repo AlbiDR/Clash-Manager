@@ -16,6 +16,23 @@ LAST_AGED:   2026-10-30
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-30] PR #2412 [Stage 5]: Audited codebase README files against implementation truth; verified zero documentation drift
+**Domain:** documentation | **Commit:** a1812b8c0 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2412)
+**Files:** .github/nightly-logs/05-documentation-readme-coverage.log, .github/nightly-logs/05-documentation-readme-pr-body.md
+**Why:** All existing README files are up to date and accurately represent current implementation code across core services, shared components, and edge functions
+**Change:** Audited codebase README files against implementation truth; verified zero documentation drift
+**Result:** VERIFIED_CLEAN
+**Nudges:** 0
+
+### [2026-10-30] PR #2411 [Stage 7]: Catalog scan verified 3 manifests, package version scan verified ground truth 14.55.14 across all 3 package.json files, pnpm audit:version passed with 0 drift.
+**Domain:** versioning | **Commit:** c9ea175fc | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2411)
+**Files:** .github/nightly-logs/07-version-integrity-coverage.log, .github/nightly-logs/07-version-integrity-pr-body.md
+**Why:** All monorepo packages and derived version files are synchronized to ground truth version 14.55.14 and adhere to catalog protocol.
+**Change:** Catalog scan verified 3 manifests, package version scan verified ground truth 14.55.14 across all 3 package.json files, pnpm audit:version passed with 0 drift.
+**Result:** pnpm audit:version PASSED
+**Nudges:** 0
+
+
 ### [2026-10-30] PR #2410 [Stage 6]: docs(tsdoc): harden useToast interface contracts and inline logic annotations
 **Domain:** documentation | **Commit:** 42c20323a | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2410)
 **Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, .github/nightly-logs/06-documentation-tsdoc-pr-body.md, Frontend-PWA/src/core/services/useToast.ts
