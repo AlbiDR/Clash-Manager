@@ -157,3 +157,4 @@
 * [2026-10-27] [Stage 10] [09:23Z-09:25Z 2m] CLEAN: Codebase -- Verified asset links, manifest parity, version code/name sync, release metadata, and security policy
 * [2026-10-28] [Stage 10] [09:05Z-09:07Z 2m] CLEAN: Codebase -- Calibration pass: 7 ordinary CLEAN runs verified full wrapper invariant set: asset links, manifest values, release metadata, version codes, and cleartext traffic policy.
 * [2026-10-29] [Stage 10] [09:30Z-09:33Z 3m] CLEAN: Codebase -- PWA and APK wrapper integrity verified: asset links, manifest parity, version code/name sync, release metadata, and security policy checked.
+* [2026-10-30] [Stage 10] [09:11Z-09:14Z 3m] CLEAN: Codebase -- PWA wrapper & APK packaging integrity verified: asset links, manifest parity, version codes, release metadata, cleartext policy, and bridge/dwell parity using pnpm audit:apk and pnpm apk:verify:source.
