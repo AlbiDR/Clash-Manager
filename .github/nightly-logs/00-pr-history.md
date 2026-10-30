@@ -16,6 +16,23 @@ LAST_AGED:   2026-10-30
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-30] PR #2418 [Stage 12]: Calibration pass: no UX issues found across 77 files examined in Frontend-PWA/src; clean calibration active
+**Domain:** ux | **Commit:** 6292cfb27 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2418)
+**Files:** .github/nightly-logs/12-apk-ux-coverage.log, .github/nightly-logs/12-apk-ux-pr-body.md
+**Why:** Audit status is PASS with 0 violations across categories 1-10
+**Change:** Calibration pass: no UX issues found across 77 files examined in Frontend-PWA/src; clean calibration active
+**Result:** apk-ux-audit-status.txt: PASS; apk-ux-audit.json: 77 candidate files reviewed; UX categories 1-10 checked
+**Nudges:** 0
+
+### [2026-10-30] PR #2417 [Stage 13]: Documented Stage 12 missing published output for 2026-10-30 and updated Section 3 metrics across Stages 1-13
+**Domain:** pipeline | **Commit:** 4013b35f6 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2417)
+**Files:** .github/nightly-logs/13-self-healing-protocol-coverage.log, .github/nightly-logs/13-self-healing-protocol-pr-body.md, .github/nightly-logs/13-self-healing-protocol.md
+**Why:** Pipeline resilience audit recorded Stage 12 failureClass NO_PUBLISHED_OUTPUT and updated consecutive no-diff counters based on 2026-10-30 ledger and log evidence
+**Change:** Documented Stage 12 missing published output for 2026-10-30 and updated Section 3 metrics across Stages 1-13
+**Result:** Verified git diff --check on .github/nightly-logs/13-self-healing-protocol.md passed with 0 errors
+**Nudges:** 0
+
+
 ### [2026-10-30] PR #2416 [Stage 11]: Audited native WebView performance settings, service worker caching routes, Vite chunking, and public asset precache footprint; zero source changes required
 **Domain:** apk | **Commit:** 29b2caf3a | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2416)
 **Files:** .github/nightly-logs/11-apk-optimization-coverage.log, .github/nightly-logs/11-apk-optimization-pr-body.md
