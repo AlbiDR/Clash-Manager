@@ -4,23 +4,23 @@
 
 In plain terms: nothing needed fixing. This run checked the hardening area and found it already correct, so the only file here is the log recording that the check happened.
 
-**What was checked:** Audited unauthenticated endpoints, in-memory state, Valibot boundary gaps, dead critical-path code, and cross-layer violations across 158 changed files; zero threat vectors found
+**What was checked:** Audit priority targets (unauthenticated endpoints, in-memory state, Valibot boundaries, dead code, layer boundaries) across changed files; zero threat vectors found
 
-**Why:** Runtime security auditing sweep confirmed zero viable threat vectors and full system integrity
+**Why:** All ingress boundaries, in-memory state, and layer boundaries are hardened and secure
 
-**Result:** 100% security threat sweep completed with 2365 monorepo unit/integration tests passing cleanly
+**Result:** 220 test files passed, 2365 tests passed, zero regressions
 
 **Files changed:** .github/nightly-logs/00-pr-history.md, .github/nightly-logs/01-hardening-coverage.log
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: hardening
-  Cycle: nightly-cycle/2026-10-30
+  Cycle: nightly-cycle/2026-10-31
   Contract: b8cc17977cd40f02490c220999b57dcbf99eb8b7a2175f40feb87a2655548621
-  Why: Runtime security auditing sweep confirmed zero viable threat vectors and full system integrity
-  Change: Audited unauthenticated endpoints, in-memory state, Valibot boundary gaps, dead critical-path code, and cross-layer violations across 158 changed files; zero threat vectors found
-  Result: 100% security threat sweep completed with 2365 monorepo unit/integration tests passing cleanly
+  Why: All ingress boundaries, in-memory state, and layer boundaries are hardened and secure
+  Change: Audit priority targets (unauthenticated endpoints, in-memory state, Valibot boundaries, dead code, layer boundaries) across changed files; zero threat vectors found
+  Result: 220 test files passed, 2365 tests passed, zero regressions
   Files: .github/nightly-logs/00-pr-history.md, .github/nightly-logs/01-hardening-coverage.log
   Nudges: 0
-  Execution: 2d4a58e690da3afd88432f242c240b42779ccc5f
+  Execution: 6e8f43fbdc89b8f0d91831ed0b501f7d2d190554
 -->
