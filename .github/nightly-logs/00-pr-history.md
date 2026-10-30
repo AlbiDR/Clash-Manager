@@ -16,6 +16,15 @@ LAST_AGED:   2026-10-30
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-30] PR #2415 [Stage 10]: PWA wrapper & APK packaging integrity verified: asset links, manifest parity, version codes, release metadata, cleartext policy, and bridge/dwell parity using pnpm audit:apk and pnpm apk:verify:source.
+**Domain:** apk | **Commit:** 059304c1a | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2415)
+**Files:** .github/nightly-logs/10-apk-integrity-coverage.log, .github/nightly-logs/10-apk-integrity-pr-body.md
+**Why:** Audit scan of recent changes and wrapper invariants confirmed complete alignment between Frontend-PWA and APK configuration with zero drift or security violations.
+**Change:** PWA wrapper & APK packaging integrity verified: asset links, manifest parity, version codes, release metadata, cleartext policy, and bridge/dwell parity using pnpm audit:apk and pnpm apk:verify:source.
+**Result:** Passed 8 suites: pnpm audit:apk, pnpm apk:verify, pnpm apk:verify:source, pnpm apk:verify:bridge, pnpm apk:verify:dwell, pnpm test:apk-native, pnpm test:apk-release, pnpm test:version-code.
+**Nudges:** 0
+
+
 ### [2026-10-30] PR #2414 [Stage 9]: CLEAN: (1) 33 files, 0 dep-viols, knip 11 files/1 dep; (2) consecutive-clean: 14; (3) useProgressiveList, useToast, useClashSync; (4) closest: useProgressiveList; hunt: useProgressiveList timer race passed.
 **Domain:** architecture | **Commit:** 421ee1fd3 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2414)
 **Files:** .github/nightly-logs/09-refactor-proposals-coverage.log, .github/nightly-logs/09-refactor-proposals-pr-body.md
