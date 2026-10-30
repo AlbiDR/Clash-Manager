@@ -4,23 +4,23 @@
 
 In plain terms: no change was made to the project. This run ended as CHANGED and the only file here is the log recording that.
 
-**What changed:** Documented 2026-10-29 Stage 9 watchdog recovery, Stage 3 database verification failure, and updated Section 3 metrics
+**What changed:** Documented Stage 12 missing published output for 2026-10-30 and updated Section 3 metrics across Stages 1-13
 
-**Why:** Record observed Stage 9 watchdog fallback publish recovery and Stage 3 database verification CI failure for 2026-10-29 cycle
+**Why:** Pipeline resilience audit recorded Stage 12 failureClass NO_PUBLISHED_OUTPUT and updated consecutive no-diff counters based on 2026-10-30 ledger and log evidence
 
-**Result:** git diff --check passed with 0 errors across 13-self-healing-protocol.md and coverage log
+**Result:** Verified git diff --check on .github/nightly-logs/13-self-healing-protocol.md passed with 0 errors
 
 **Files changed:** .github/nightly-logs/13-self-healing-protocol-coverage.log, .github/nightly-logs/13-self-healing-protocol.md
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: pipeline
-  Cycle: nightly-cycle/2026-10-29
+  Cycle: nightly-cycle/2026-10-30
   Contract: df81a67e6d78a129caa22f2d9d3499a9aaf33de1a9f9c7718ff860013b7a86e1
-  Why: Record observed Stage 9 watchdog fallback publish recovery and Stage 3 database verification CI failure for 2026-10-29 cycle
-  Change: Documented 2026-10-29 Stage 9 watchdog recovery, Stage 3 database verification failure, and updated Section 3 metrics
-  Result: git diff --check passed with 0 errors across 13-self-healing-protocol.md and coverage log
+  Why: Pipeline resilience audit recorded Stage 12 failureClass NO_PUBLISHED_OUTPUT and updated consecutive no-diff counters based on 2026-10-30 ledger and log evidence
+  Change: Documented Stage 12 missing published output for 2026-10-30 and updated Section 3 metrics across Stages 1-13
+  Result: Verified git diff --check on .github/nightly-logs/13-self-healing-protocol.md passed with 0 errors
   Files: .github/nightly-logs/13-self-healing-protocol-coverage.log, .github/nightly-logs/13-self-healing-protocol.md
-  Nudges: 1
-  Execution: f481877178b03ee27f7cdf38a3f1660364cb67ea
+  Nudges: 0
+  Execution: 539ed9f2d937ef5ad523baedd4f1040cf423cfd8
 -->
