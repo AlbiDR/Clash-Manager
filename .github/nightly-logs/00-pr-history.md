@@ -16,6 +16,15 @@ LAST_AGED:   2026-10-30
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-30] PR #2410 [Stage 6]: docs(tsdoc): harden useToast interface contracts and inline logic annotations
+**Domain:** documentation | **Commit:** 42c20323a | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2410)
+**Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, .github/nightly-logs/06-documentation-tsdoc-pr-body.md, Frontend-PWA/src/core/services/useToast.ts
+**Why:** Exported UseToastReturn interface contract and added inline threat annotations for timer lifecycle and action locks
+**Change:** docs(tsdoc): harden useToast interface contracts and inline logic annotations
+**Result:** pnpm --dir Frontend-PWA type-check passed and 16/16 Vitest unit tests passed in useToast.spec.ts
+**Nudges:** 0
+
+
 ### [2026-10-30] PR #2409 [Stage 2]: Restored useShareTarget spec edits after verification attempt budget
 **Domain:** verification | **Commit:** 1b87ad73d | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2409)
 **Files:** .github/nightly-logs/02-verification-coverage.log, .github/nightly-logs/02-verification-pr-body.md
