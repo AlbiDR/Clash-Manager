@@ -16,6 +16,15 @@ LAST_AGED:   2026-10-30
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-30] PR #2407 [Stage 3]: Folded 20260926233013_event_gate_voyage_finalization.sql (drivers.sync_voyage_finalization_job, drivers.on_voyage_active_change, trg_voyage_finalization_gate, VOYAGE_FINALIZATION_SCHEDULE, finalize_expired_voyages comment)
+**Domain:** database | **Commit:** 5d6088352 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2407)
+**Files:** .github/nightly-logs/03-baseline-consolidation-coverage.log, .github/nightly-logs/03-baseline-consolidation-pr-body.md, Backend/supabase/migrations/20260531232406_master_migration.sql
+**Why:** Resumable fold of oldest pending migration into master baseline per Stage 3 contract
+**Change:** Folded 20260926233013_event_gate_voyage_finalization.sql (drivers.sync_voyage_finalization_job, drivers.on_voyage_active_change, trg_voyage_finalization_gate, VOYAGE_FINALIZATION_SCHEDULE, finalize_expired_voyages comment)
+**Result:** PASS: audit:migrations 0 violations, fold-state migration verified as folded; 22 migrations remain pending; db verification DB-UNAVAILABLE
+**Nudges:** 0
+
+
 ### [2026-10-30] PR #2406 [Stage 1]: Audit priority targets (unauthenticated endpoints, in-memory state, Valibot boundaries, dead code, layer boundaries) across changed files; zero threat vectors found
 **Domain:** hardening | **Commit:** 2d7f92a57 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2406)
 **Files:** .github/nightly-logs/00-pr-history.md, .github/nightly-logs/01-hardening-coverage.log, .github/nightly-logs/01-hardening-pr-body.md
