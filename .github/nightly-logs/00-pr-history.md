@@ -16,6 +16,15 @@ LAST_AGED:   2026-10-30
 
 ## T1 -- Active (last 7 days)
 
+### [2026-10-30] PR #2413 [Stage 8]: Bumped knip devDependency from ^6.43.0 to ^6.44.0 in monorepo catalogs and updated lockfile
+**Domain:** dependencies | **Commit:** 3acea66f5 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2413)
+**Files:** .github/nightly-logs/08-dependency-audit-coverage.log, .github/nightly-logs/08-dependency-audit-pr-body.md, package.json, pnpm-lock.yaml, pnpm-workspace.yaml
+**Why:** Apply safe Tier 1 patch/minor bump to devDependency knip
+**Change:** Bumped knip devDependency from ^6.43.0 to ^6.44.0 in monorepo catalogs and updated lockfile
+**Result:** Vitest monorepo suite passed 2365 of 2365 tests across all 220 test files cleanly
+**Nudges:** 1
+
+
 ### [2026-10-30] PR #2412 [Stage 5]: Audited codebase README files against implementation truth; verified zero documentation drift
 **Domain:** documentation | **Commit:** a1812b8c0 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2412)
 **Files:** .github/nightly-logs/05-documentation-readme-coverage.log, .github/nightly-logs/05-documentation-readme-pr-body.md
