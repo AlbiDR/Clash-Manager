@@ -4,23 +4,23 @@
 
 In plain terms: nothing needed fixing. This run checked the APK integrity area and found it already correct, so the only file here is the log recording that the check happened.
 
-**What was checked:** PWA wrapper & APK packaging integrity verified: asset links, manifest parity, version codes, release metadata, cleartext policy, and bridge/dwell parity using pnpm audit:apk and pnpm apk:verify:source.
+**What was checked:** Verified asset links, manifest parity, version code/name sync (14055014/14.55.14), release metadata (clashmanager-v14.55.14+529.apk), and cleartext traffic policy
 
-**Why:** Audit scan of recent changes and wrapper invariants confirmed complete alignment between Frontend-PWA and APK configuration with zero drift or security violations.
+**Why:** Daily audit of PWA wrapper configuration and APK packaging boundaries confirmed all invariants hold
 
-**Result:** Passed 8 suites: pnpm audit:apk, pnpm apk:verify, pnpm apk:verify:source, pnpm apk:verify:bridge, pnpm apk:verify:dwell, pnpm test:apk-native, pnpm test:apk-release, pnpm test:version-code.
+**Result:** pnpm audit:apk, pnpm apk:verify, pnpm apk:verify:source, and pnpm test:apk-release passed 11 of 11 tests with 0 drift
 
 **Files changed:** .github/nightly-logs/10-apk-integrity-coverage.log
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: apk
-  Cycle: nightly-cycle/2026-10-30
+  Cycle: nightly-cycle/2026-10-31
   Contract: 4f9b40864d05ffea731090b36800572dd7affedd8532fcd17c8ded8c9e2fbc12
-  Why: Audit scan of recent changes and wrapper invariants confirmed complete alignment between Frontend-PWA and APK configuration with zero drift or security violations.
-  Change: PWA wrapper & APK packaging integrity verified: asset links, manifest parity, version codes, release metadata, cleartext policy, and bridge/dwell parity using pnpm audit:apk and pnpm apk:verify:source.
-  Result: Passed 8 suites: pnpm audit:apk, pnpm apk:verify, pnpm apk:verify:source, pnpm apk:verify:bridge, pnpm apk:verify:dwell, pnpm test:apk-native, pnpm test:apk-release, pnpm test:version-code.
+  Why: Daily audit of PWA wrapper configuration and APK packaging boundaries confirmed all invariants hold
+  Change: Verified asset links, manifest parity, version code/name sync (14055014/14.55.14), release metadata (clashmanager-v14.55.14+529.apk), and cleartext traffic policy
+  Result: pnpm audit:apk, pnpm apk:verify, pnpm apk:verify:source, and pnpm test:apk-release passed 11 of 11 tests with 0 drift
   Files: .github/nightly-logs/10-apk-integrity-coverage.log
   Nudges: 0
-  Execution: 0523f70e95e5a3a66e14d99d9ac0bef6ce1d82ed
+  Execution: 3924161f2819981e309143f213fa39c12c319ea0
 -->
