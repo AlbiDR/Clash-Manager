@@ -215,3 +215,4 @@
 * [2026-10-28] [Stage 5] [04:32Z-04:39Z 7m] [checks doc-debt=OK] CLEAN: Codebase -- Audited codebase README files against implementation truth; verified zero documentation drift
 * [2026-10-29] [Stage 5] [04:25Z-04:30Z 5m] [checks doc-debt=OK] CHANGED: Backend/supabase/functions/fetch-player-battlelog/README.md -- docs(readme): Reconcile fetch-player-battlelog README with client.ts vault environment broker role
 * [2026-10-30] [Stage 5] [04:06Z-04:12Z 6m] [checks doc-debt=OK] CLEAN: Codebase -- Audited codebase README files against implementation truth; verified zero documentation drift
+* [2026-10-31] [Stage 5] [04:14Z-04:19Z 6m] [checks doc-debt=OK] CHANGED: Backend/supabase/functions/headhunter-scanner/README.md -- docs(readme): Reconcile headhunter-scanner README with client.ts vault environment broker role
