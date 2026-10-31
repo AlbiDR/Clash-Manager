@@ -27,7 +27,7 @@ It reports the outcome of each run into `substrate.headhunter_epoch_state`, whic
 | :--- | :--- |
 | `index.ts` | Entry point behind the [shared handler](../_shared/README.md). |
 | `scanner.ts` | Orchestrates the five stages. |
-| `client.ts` | Supabase service client for database calls. |
+| `client.ts` | Supabase service client and vault environment broker (`syncVault`). |
 | `stages/` | One file per stage (see the table above). |
 
 ## External calls
