@@ -659,3 +659,12 @@
 * [2026-10-30] Target: Codebase - typescript | ~5.9.3 | 7.0.2 | 2026-06-18 | [Migration Alert: v6 is now finalized as v7 is out] Breaking: Complete port to Go (10x faster). New defaults and strictly enforced project structure.
 * [2026-10-30] Target: Codebase - @ast-grep/cli | ^0.45.3 | 0.51.0 | 2026-10-28 | Major version bump available.
 * [2026-10-30] [Stage 8] [07:33Z-07:39Z 6m] CHANGED: package.json -- Bumped knip devDependency from ^6.43.0 to ^6.44.0 in monorepo catalogs and updated lockfile
+* [2026-10-31] Target: Codebase - vue-tsc | ^3.3.13 | ^3.3.14 | | PASS
+* [2026-10-31] Target: Codebase - vite | ^8.3.4 | ^8.3.5 | | PASS
+* [2026-10-31] Target: Codebase - vitest | ^4.1.11 | 5.0.5 | 2026-09-04 | Breaking: Dropped Node 18/20 support, browser runner refactored, native ESM strict config enforcement.
+* [2026-10-31] Target: Codebase - typescript | ~5.9.3 | 7.0.2 | 2026-06-18 | [Migration Alert: v6 is now finalized as v7 is out] Breaking: Complete port to Go (10x faster). New defaults and strictly enforced project structure.
+* [2026-10-31] Target: Codebase - pinia | ^3.0.4 | 4.1.0 | 2026-07-15 | Breaking: ESM only, @vue/devtools-api v8 peer dependency, refactored errors/warnings via Nostics.
+* [2026-10-31] Target: Codebase - jsdom | ^30.1.1 | 30.1.3 | 2026-07-30 | Breaking: Requires Node.js >= 18.2, drops support for older environments.
+* [2026-10-31] Target: Codebase - @vite-pwa/assets-generator | ^2.0.0 | 2.0.0 | 2026-09-19 | Breaking: Requires Node 18+, updated sharp/consola dependencies, API refactoring.
+* [2026-10-31] Target: Codebase - @ast-grep/cli | ^0.45.3 | 0.51.0 | 2026-10-28 | Major version bump available.
+* [2026-10-31] [Stage 8] [07:11Z-07:23Z 13m] CHANGED: package.json -- Aligned vite to ^8.3.5 and bumped vue-tsc to ^3.3.14 in monorepo catalogs and updated lockfile
