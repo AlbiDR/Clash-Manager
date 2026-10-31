@@ -10,14 +10,42 @@ import { getCurrentInstance, onUnmounted } from "vue";
  * across multiple open browser instances of the application.
  */
 export type BroadcastMessage =
-  | { type: "BADGE_UPDATE"; count: number }
-  | { type: "DATA_SYNC_SUCCESS"; timestamp: number }
-  | { type: "RECRUIT_DISMISSAL"; ids: string[] }
-  | { type: "RECRUIT_RESTORATION"; ids: string[] }
-  | { type: "FORCE_REFRESH" };
+  | {
+      /** Informs other tabs of an updated unread or pending badge count. */
+      type: "BADGE_UPDATE";
+      /** The latest numerical badge count to synchronize. */
+      count: number;
+    }
+  | {
+      /** Notifies other tabs that a full database sync completed successfully. */
+      type: "DATA_SYNC_SUCCESS";
+      /** Unix timestamp in milliseconds indicating when the sync occurred. */
+      timestamp: number;
+    }
+  | {
+      /** Broadcasts the soft dismissal of recruits to suppress them in other tabs. */
+      type: "RECRUIT_DISMISSAL";
+      /** Unique player tags corresponding to the dismissed candidates. */
+      ids: string[];
+    }
+  | {
+      /** Broadcasts the restoration of previously dismissed recruits. */
+      type: "RECRUIT_RESTORATION";
+      /** Unique player tags corresponding to the restored candidates. */
+      ids: string[];
+    }
+  | {
+      /** Instructs all peer tabs to discard cached state and refresh from origin. */
+      type: "FORCE_REFRESH";
+    };
 
 /**
  * The unique identifier for the application-wide communication channel.
+ *
+ * @remarks
+ * [DECISION LOG] Channel Isolation: A static string identifier bounds
+ * message routing strictly to instances of the Clash Manager application
+ * executing under the same origin.
  */
 const CHANNEL_NAME = "clash_manager_broadcast";
 
@@ -27,26 +55,39 @@ const CHANNEL_NAME = "clash_manager_broadcast";
  * @remarks
  * A Layer 1 (@core) hardware broker for the W3C Broadcast Channel API.
  *
+ * Satisfies CleanStack Architecture ADR Section I (Core Services) and
+ * ADR Section III: Data Flow & Transactional Integrity.
+ *
  * This service enables frictionless, low-latency communication between different
  * browser tabs or windows belonging to the same origin. It is used to maintain
  * UI synchronization for global state (badges, sync timestamps, dismissals) without
  * requiring expensive polling or server-side pushes for local events.
  *
- * It is strictly forbidden from importing from Features (@features) or App (@app)
- * layers to maintain architectural purity.
+ * **Architectural Context:**
+ * - Layer: Layer 1 (@core)
+ * - Import Boundaries: This module is a terminal leaf hardware broker.
+ *   May import from Layer 1 (@core) and Layer 0 (@substrate).
+ *   Imports from Shared (@shared), Features (@features), or App (@app) are forbidden.
+ *
+ * @sideeffects
+ * - Instantiates a native browser `BroadcastChannel` instance if supported.
+ * - Attaches and removes `message` event listeners on the underlying channel.
+ * - Dispatches cross-tab message events through the native channel.
+ * - Binds component unmount lifecycle hooks via `onUnmounted` when called in a Vue component context.
  *
  * @param onMessage - Optional callback triggered when a message is received from another tab.
  *
- * @returns
- * - `isSupported`: Boolean indicating if the Broadcast Channel API is available in the runtime.
- * - `post`: Function to broadcast a message to all other active tabs.
+ * @returns An object containing:
+ * - `isSupported`: Boolean indicating if the Broadcast Channel API is available in the runtime environment.
+ * - `post`: Function to broadcast a typed `BroadcastMessage` payload to all other active tabs.
  */
 export function useBroadcastChannel(
   onMessage?: (incomingMessage: BroadcastMessage) => void,
 ) {
   let channel: BroadcastChannel | null = null;
 
-  // Defensive Check: Ensure the API exists before instantiation to prevent runtime crashes.
+  // [DECISION LOG] API Availability Guard: Ensure the BroadcastChannel API exists
+  // before instantiation to prevent runtime reference errors in SSR or restricted runtimes.
   if (typeof BroadcastChannel !== "undefined") {
     channel = new BroadcastChannel(CHANNEL_NAME);
   }
@@ -55,6 +96,10 @@ export function useBroadcastChannel(
    * Dispatches a message to all other active tabs.
    *
    * @param outgoingMessage - The typed message payload to broadcast.
+   *
+   * @remarks
+   * Messages are dispatched synchronously across the browser process boundary
+   * to all active tabs listening on the matching channel name.
    */
   function post(outgoingMessage: BroadcastMessage) {
     if (channel) {
@@ -64,6 +109,12 @@ export function useBroadcastChannel(
 
   /**
    * Internal bridge to route native MessageEvents to the provided handler.
+   *
+   * @param event - The native MessageEvent dispatched by the browser's BroadcastChannel.
+   *
+   * @remarks
+   * [DECISION LOG] Message Unpacking: Extracts `event.data` and forwards only
+   * non-null payloads to the consumer callback.
    */
   function handleMessage(event: MessageEvent) {
     if (onMessage && event.data) {
@@ -71,7 +122,8 @@ export function useBroadcastChannel(
     }
   }
 
-  // Listener Attachment: Only bind if a handler is provided to minimize overhead.
+  // [DECISION LOG] Listener Attachment: Only bind event listener if a handler callback
+  // is provided to minimize runtime event-dispatch overhead.
   if (channel && onMessage) {
     channel.addEventListener("message", handleMessage);
   }
