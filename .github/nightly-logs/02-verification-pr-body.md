@@ -1,26 +1,26 @@
 ### Nightly Stage 2: Verification - Logic Integrity Auditor
 
-**Status:** PARTIAL-RUN
+**Status:** CHANGED
 
-In plain terms: no change was made to the project. This run ended as PARTIAL-RUN and the only file here is the log recording that.
+In plain terms: this adds 1 test file in the verification area. No product code changed, so the app behaves exactly as it did before.
 
-**What was checked:** Restored useShareTarget spec edits after verification attempt budget
+**What changed:** Added unit test suite for headhunter-scanner client broker in client.spec.ts
 
-**Why:** Spec verification script returned RESTORE after attempt budget
+**Why:** Close zero-coverage gap in L1 Core client and environment broker for headhunter-scanner
 
-**Result:** Restored spec changes and finalized PARTIAL-RUN per prompt instructions
+**Result:** Vitest client.spec.ts passed 4 of 4 tests; mutation proof inverted if (vault.ROYALE_API_KEYS) failing 2 tests
 
-**Files changed:** .github/nightly-logs/02-verification-coverage.log
+**Files changed:** .github/nightly-logs/02-verification-coverage.log, Backend/supabase/functions/headhunter-scanner/client.spec.ts
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: verification
-  Cycle: nightly-cycle/2026-10-30
+  Cycle: nightly-cycle/2026-10-31
   Contract: b2e927ebff4e2ca5a343609133745d050f07d22fd9bf3e42481440c1d14079f0
-  Why: Spec verification script returned RESTORE after attempt budget
-  Change: Restored useShareTarget spec edits after verification attempt budget
-  Result: Restored spec changes and finalized PARTIAL-RUN per prompt instructions
-  Files: .github/nightly-logs/02-verification-coverage.log
+  Why: Close zero-coverage gap in L1 Core client and environment broker for headhunter-scanner
+  Change: Added unit test suite for headhunter-scanner client broker in client.spec.ts
+  Result: Vitest client.spec.ts passed 4 of 4 tests; mutation proof inverted if (vault.ROYALE_API_KEYS) failing 2 tests
+  Files: .github/nightly-logs/02-verification-coverage.log, Backend/supabase/functions/headhunter-scanner/client.spec.ts
   Nudges: 0
-  Execution: 6e8f43fbdc89b8f0d91831ed0b501f7d2d190554
+  Execution: 9713adfb0b9876555875fe30e4a3322bbf2b32c4
 -->
