@@ -59,29 +59,50 @@ const toastTimers = new Map<string, ToastTimerState>();
 const processingIds = new Set<string>();
 
 /**
+ * Interface contract defining all reactive state, lifecycle helpers, and semantic
+ * convenience methods exposed by the `useToast` core service.
+ */
+export interface UseToastReturn {
+  /** Reactive list of active toast notifications. */
+  toasts: typeof toasts;
+  /** Creates and registers a new toast notification. Returns the assigned toast ID. */
+  add: (options: Omit<ToastOptions, "id">) => string;
+  /** Manually dismisses an active toast by its unique ID. */
+  remove: (id: string) => void;
+  /** Pauses the auto-dismissal timer for an active toast, saving remaining lifetime. */
+  pauseDismissal: (id: string) => void;
+  /** Resumes auto-dismissal for a paused toast using its saved remaining lifetime. */
+  resumeDismissal: (id: string) => void;
+  /** Executes the action handler for a toast and removes it from queue. */
+  triggerAction: (id: string) => void;
+  /** Helper method to spawn a success toast notification. */
+  success: (message: string) => string;
+  /** Helper method to spawn an error toast notification with extended duration. */
+  error: (message: string) => string;
+  /** Helper method to spawn an informational toast notification. */
+  info: (message: string) => string;
+  /** Helper method to spawn a reversible action toast notification with an action callback. */
+  undo: (message: string, action: () => void) => string;
+}
+
+/**
  * COMPOSABLE: useToast
  *
  * @remarks
  * Provides a resilient, global notification system with support for adaptive
- * durations and semantic haptic feedback.
+ * durations and semantic haptic feedback. Satisfies ADR Section III: Interface Contracts.
  *
  * [ARCHITECTURE] ADR LAYER: @core (Layer 1)
  * - Permitted Imports: Other @core services, Vue reactivity.
  * - Forbidden Imports: Any component or service from @shared or @features.
  *
- * @returns
- * - `toasts`: Reactive array of active toast notifications.
- * - `add`: Base method to create a new toast.
- * - `remove`: Manually dismiss a toast by ID.
- * - `pauseDismissal` / `resumeDismissal`: Preserve the remaining lifetime during interaction.
- * - `triggerAction`: Executes the action callback for a specific toast.
- * - `success/error/info/undo`: Semantic shorthand methods.
+ * @returns Object conforming to {@link UseToastReturn} interface.
  *
  * @sideeffects
  * - SCHEDULES `setTimeout` for automatic dismissal.
  * - MUTATES the global `toasts` reactive state.
  */
-export function useToast() {
+export function useToast(): UseToastReturn {
   /** Removes a toast's timer state, including any armed timeout. */
   function clearDismissalState(id: string) {
     const timerState = toastTimers.get(id);
@@ -94,10 +115,12 @@ export function useToast() {
   /** Arms the single service-owned timeout from the state's remaining lifetime. */
   function armDismissal(id: string, timerState: ToastTimerState) {
     if (timerState.remainingDurationMs <= 0) {
+      // Immediately remove toast if remaining duration has expired
       remove(id);
       return;
     }
 
+    // Record absolute expiration timestamp to support accurate pause elapsed time calculations
     timerState.deadlineMs = Date.now() + timerState.remainingDurationMs;
     timerState.timeout = setTimeout(() => remove(id), timerState.remainingDurationMs);
   }
@@ -118,7 +141,7 @@ export function useToast() {
     const originalAction = options.onAction;
     let actionExecuted = false;
 
-    // Wrap action to ensure it only fires once.
+    // [THREAT:] Prevent duplicate action execution if triggered simultaneously via UI tap and timer expiration
     const safeAction = originalAction
       ? () => {
           if (actionExecuted) return;
@@ -173,6 +196,7 @@ export function useToast() {
     const timerState = toastTimers.get(id);
     if (!timerState || timerState.timeout === null || timerState.deadlineMs === null) return;
 
+    // Clear active timeout and record remaining time left before deadline
     clearTimeout(timerState.timeout);
     timerState.timeout = null;
     timerState.remainingDurationMs = Math.max(timerState.deadlineMs - Date.now(), 0);
