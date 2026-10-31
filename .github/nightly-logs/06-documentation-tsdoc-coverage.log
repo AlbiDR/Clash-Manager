@@ -166,3 +166,4 @@
 * [2026-10-28] [Stage 6] [05:07Z-05:11Z 4m] [checks doc-debt=OK] CHANGED: Frontend-PWA/src/core/services/useProgressiveList.ts -- docs(tsdoc): harden useProgressiveList interface contracts and inline decision annotations
 * [2026-10-29] [Stage 6] [05:14Z-05:18Z 3m] [checks doc-debt=OK] CHANGED: Frontend-PWA/src/core/services/useShareTarget.ts -- docs(tsdoc): harden useShareTarget TSDoc interface contract and inline logic annotations
 * [2026-10-30] [Stage 6] [05:22Z-05:25Z 3m] [checks doc-debt=OK] CHANGED: Frontend-PWA/src/core/services/useToast.ts -- docs(tsdoc): harden useToast interface contracts and inline logic annotations
+* [2026-10-31] [Stage 6] [05:15Z-05:22Z 7m] [checks doc-debt=OK] CHANGED: Frontend-PWA/src/core/services/useBroadcastChannel.ts -- docs(tsdoc): harden useBroadcastChannel interface contracts and inline decision annotations
