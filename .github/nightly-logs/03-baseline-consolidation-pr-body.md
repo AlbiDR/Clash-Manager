@@ -4,23 +4,23 @@
 
 In plain terms: this changes 1 code file, so the app's behaviour may be affected. No tests were added or changed alongside it.
 
-**What changed:** Folded 20260926233152_latest_battle_times_for_ingest_skip into baseline: added public.get_latest_battle_times function declaration, privileges, and comment
+**What changed:** Folded 20260927005354_score_duels_per_round.sql and 20260927115312_record_watchdog_lease_failure_response.sql into master baseline; 19 migrations remain (next: 20261004015410_restore_roster_view_battle_stats_bridge.sql)
 
-**Why:** Oldest pending migration with unfolded schema objects resolved per Stage 3 chronological folding specification
+**Why:** Chronological folding of oldest pending migrations into canonical master_migration.sql target to eliminate schema divergence
 
-**Result:** pnpm audit:migrations PASS (79 migrations, 187 baseline objects), fold-state removed 20260926233152 (unfolded decreased 100 to 96, verbatim folded increased 133 to 137, 21 migrations remain to fold, next: 20260927005354_score_duels_per_round.sql), semantic DB-UNAVAILABLE
+**Result:** pnpm audit:migrations PASS (79 migrations examined, 187 baseline objects, 0 violations); fold-state reconciled 5 objects across 2 migrations leaving 19 pending; DB-UNAVAILABLE semantic gate deferred
 
 **Files changed:** .github/nightly-logs/03-baseline-consolidation-coverage.log, Backend/supabase/migrations/20260531232406_master_migration.sql
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: database
-  Cycle: nightly-cycle/2026-10-31
+  Cycle: nightly-cycle/2026-11-01
   Contract: 8c32444005e6edf746eda3ca4e7e0dbe86a11a195765389a2f7db2cce85373e0
-  Why: Oldest pending migration with unfolded schema objects resolved per Stage 3 chronological folding specification
-  Change: Folded 20260926233152_latest_battle_times_for_ingest_skip into baseline: added public.get_latest_battle_times function declaration, privileges, and comment
-  Result: pnpm audit:migrations PASS (79 migrations, 187 baseline objects), fold-state removed 20260926233152 (unfolded decreased 100 to 96, verbatim folded increased 133 to 137, 21 migrations remain to fold, next: 20260927005354_score_duels_per_round.sql), semantic DB-UNAVAILABLE
+  Why: Chronological folding of oldest pending migrations into canonical master_migration.sql target to eliminate schema divergence
+  Change: Folded 20260927005354_score_duels_per_round.sql and 20260927115312_record_watchdog_lease_failure_response.sql into master baseline; 19 migrations remain (next: 20261004015410_restore_roster_view_battle_stats_bridge.sql)
+  Result: pnpm audit:migrations PASS (79 migrations examined, 187 baseline objects, 0 violations); fold-state reconciled 5 objects across 2 migrations leaving 19 pending; DB-UNAVAILABLE semantic gate deferred
   Files: .github/nightly-logs/03-baseline-consolidation-coverage.log, Backend/supabase/migrations/20260531232406_master_migration.sql
   Nudges: 0
-  Execution: 2408f1850c812141eae40ce426ab9cff7be6f997
+  Execution: ed26ecd78c6083ff533a604c1b4208ea4e09b823
 -->

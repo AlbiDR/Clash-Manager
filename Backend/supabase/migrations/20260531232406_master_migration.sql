@@ -330,8 +330,19 @@ CREATE TABLE IF NOT EXISTS substrate.pipeline_heartbeat (
     last_triggered_at timestamp with time zone DEFAULT now(),
     discovery_yield integer DEFAULT 0,
     updated_at timestamp with time zone DEFAULT now(),
+    last_request_id bigint,
     CONSTRAINT substrate_pipeline_heartbeat_pkey PRIMARY KEY (component_id)
 );
+
+COMMENT ON COLUMN substrate.pipeline_heartbeat.last_request_id IS
+'The bigint net.http_post() returned when this component''s current cycle was '
+'dispatched (net._http_response.id, once a response exists). Written by the '
+'dispatcher (e.g. substrate.run_ingest_royale_data()) right after firing the '
+'HTTP call, before the edge function has necessarily reported RUNNING. Read by '
+'substrate.pipeline_watchdog() when it marks a lease FAILED on timeout, to look '
+'up what the call actually returned while the row still exists. '
+'substrate.report_heartbeat()''s upsert does not list this column, so it survives '
+'every RUNNING/COMPLETED/FAILED report in between.';
 
 ALTER TABLE substrate.pipeline_heartbeat ENABLE ROW LEVEL SECURITY;
 
@@ -1301,21 +1312,24 @@ CREATE OR REPLACE FUNCTION substrate.run_ingest_royale_data()
  SET search_path TO 'public', 'features', 'drivers', 'substrate', 'pg_temp'
 AS $function$
 DECLARE
-    v_token text;
-    v_anon  text;
+    v_token      text;
+    v_request_id bigint;
 BEGIN
     v_token := substrate.get_vault_secret('INTERNAL_BEARER_TOKEN');
-    v_anon  := substrate.get_vault_secret('SUPABASE_ANON_KEY');
-    
-    PERFORM net.http_post(
+
+    v_request_id := net.http_post(
         url := 'https://hucktamloykszinwbtuh.supabase.co/functions/v1/ingest-royale-data',
         headers := jsonb_build_object(
             'Content-Type', 'application/json',
-            'apikey', v_anon,
+            'apikey', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh1Y2t0YW1sb3lrc3ppbndidHVoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzMDQ4MDMsImV4cCI6MjA4OTg4MDgwM30.hLybwvsfXsVre7pVtGL6-gIXZrp_EW7vVHFe-6HkLYE',
             'Authorization', 'Bearer ' || v_token
         ),
         timeout_milliseconds := 180000
     );
+
+    UPDATE substrate.pipeline_heartbeat
+    SET last_request_id = v_request_id
+    WHERE component_id = 'ROYALE_DATA_INGESTOR';
 END;
 $function$;
 
@@ -2248,17 +2262,53 @@ CREATE OR REPLACE FUNCTION substrate.pipeline_watchdog()
  SET search_path TO 'public', 'features', 'drivers', 'substrate', 'pg_temp'
 AS $function$
 DECLARE
-    v_reset_count integer;
+    v_reset_count integer := 0;
+    v_lease       record;
+    v_response    record;
+    v_detail      text;
 BEGIN
-    UPDATE substrate.pipeline_heartbeat
-    SET status          = 'FAILED',
-        last_failure_at = now(),
-        last_message    = 'Watchdog timeout: Pipeline exceeded its 15-minute execution lease.',
-        updated_at      = now()
-    WHERE status = 'RUNNING'
-      AND last_triggered_at < now() - interval '15 minutes';
+    -- Failing rows still carry their pre-timeout last_request_id here: the
+    -- UPDATE below only overwrites status/timestamps/message, and RETURNING
+    -- reads the row as this statement leaves it, request_id included.
+    FOR v_lease IN
+        UPDATE substrate.pipeline_heartbeat
+        SET status          = 'FAILED',
+            last_failure_at = now(),
+            last_message    = 'Watchdog timeout: Pipeline exceeded its 15-minute execution lease.',
+            updated_at      = now()
+        WHERE status = 'RUNNING'
+          AND last_triggered_at < now() - interval '15 minutes'
+        RETURNING component_id, last_request_id
+    LOOP
+        v_detail := NULL;
+        IF v_lease.last_request_id IS NOT NULL THEN
+            SELECT status_code, timed_out, left(coalesce(error_msg, ''), 200) AS error_msg,
+                   left(coalesce(content, ''), 200) AS content
+              INTO v_response
+              FROM net._http_response
+             WHERE id = v_lease.last_request_id;
 
-    GET DIAGNOSTICS v_reset_count = ROW_COUNT;
+            IF FOUND THEN
+                v_detail := 'status=' || coalesce(v_response.status_code::text, 'null')
+                    || ' timed_out=' || v_response.timed_out::text
+                    || CASE WHEN v_response.error_msg <> '' THEN ' error=' || v_response.error_msg ELSE '' END
+                    || CASE WHEN v_response.content <> '' THEN ' content=' || v_response.content ELSE '' END;
+            ELSE
+                v_detail := 'no response recorded for request_id ' || v_lease.last_request_id
+                    || ' (pg_net has not received one yet, or has already purged it)';
+            END IF;
+        ELSE
+            v_detail := 'no request_id recorded for this lease (dispatcher predates this column, or never set it)';
+        END IF;
+
+        INSERT INTO substrate.governance_telemetry (event_type, status, message)
+        VALUES ('WATCHDOG_LEASE_FAILURE', 'WARNING',
+                v_lease.component_id || ' lease timed out: ' || v_detail);
+
+        -- Not GET DIAGNOSTICS after the loop: the INSERT two lines up would be
+        -- the last statement executed, and its row count is always 1.
+        v_reset_count := v_reset_count + 1;
+    END LOOP;
 
     IF v_reset_count > 0 THEN
         INSERT INTO substrate.governance_telemetry (event_type, status, message)
@@ -2279,6 +2329,19 @@ BEGIN
     RETURN v_reset_count;
 END;
 $function$;
+
+COMMENT ON FUNCTION substrate.pipeline_watchdog() IS
+'Ticks every 10 minutes (pipeline-watchdog cron job). Fails any pipeline_heartbeat '
+'lease stuck RUNNING past 15 minutes, and since 2026-09-27 records what its dispatch '
+'actually returned (net._http_response, via last_request_id) as a WATCHDOG_LEASE_FAILURE '
+'governance_telemetry row - one per failed lease, alongside the pre-existing aggregate '
+'WATCHDOG_INTERVENTION count. Also runs substrate.check_resource_pressure(), isolated so '
+'that check cannot abort the lease-failure handling above it. '
+'WHY: 7 lease timeouts on ROYALE_DATA_INGESTOR between 2026-09-23 and 2026-09-27 had no '
+'recorded cause; by the time anyone looked, pg_net had purged the response (observed '
+'retaining roughly 6 hours'' worth). One (2026-09-26 17:50) was caught live: WORKER_RESOURCE_LIMIT '
+'(546). Do not remove last_request_id capture from a dispatcher without expecting this to '
+'go blind for that component again.';
 
 CREATE OR REPLACE FUNCTION substrate.weighted_avg(
     p_values numeric[],
@@ -4637,74 +4700,95 @@ CREATE OR REPLACE FUNCTION public.ingest_player_battles(p_tag text, p_payload js
  SET search_path TO 'public', 'features', 'drivers', 'substrate', 'pg_temp'
 AS $function$
 DECLARE
-    v_battle                 RECORD;
     v_voyage_remaining_secs  BIGINT;
     v_interval_secs          BIGINT;
     v_member_last_seen       TIMESTAMPTZ;
 BEGIN
-    -- Insert / skip duplicate battles.
-    FOR v_battle IN
+    -- Insert / skip duplicate battles in one set-based statement instead of
+    -- a per-row loop.
+    INSERT INTO drivers.player_battles (
+        player_tag,
+        battle_time,
+        battle_type,
+        win_status,
+        result,
+        team_crowns,
+        opponent_crowns,
+        opponent_player_tag,
+        opponent_player_name
+    )
+    SELECT
+        p_tag,
+        to_timestamp(b.bt, 'YYYYMMDD"T"HH24MISS.MS"Z"'),
+        b.type,
+        (scored.result = 'win'),
+        scored.result,
+        scored.team_crowns,
+        scored.opponent_crowns,
+        b.opponent_player_tag,
+        b.opponent_player_name
+    FROM (
         SELECT
-            to_timestamp(t.bt, 'YYYYMMDD"T"HH24MISS.MS"Z"') AS battle_time,
-            t.type                   AS battle_type,
-            t.opponent_player_tag,
-            t.opponent_player_name,
-            t.team_crowns,
-            t.opponent_crowns,
+            item->>'battleTime'                                   AS bt,
+            item->>'type'                                         AS type,
+            item->'opponent'->0->>'tag'                           AS opponent_player_tag,
+            item->'opponent'->0->>'name'                          AS opponent_player_name,
+            COALESCE((item->'team'->0->>'crowns')::INT, 0)        AS team_plain,
+            COALESCE((item->'opponent'->0->>'crowns')::INT, 0)    AS opponent_plain,
+            item->'team'->0->'rounds'                             AS team_rounds,
+            item->'opponent'->0->'rounds'                         AS opponent_rounds
+        FROM jsonb_array_elements(p_payload) item
+        WHERE item->>'battleTime' IS NOT NULL
+          AND item->'opponent' IS NOT NULL
+    ) b
+    -- Pair round i of the team with round i of the opponent. A non-array side
+    -- contributes no rows, which makes the battle fall back to plain crowns.
+    CROSS JOIN LATERAL (
+        SELECT
+            count(*)                                                AS played,
+            -- Counted, not bool_and(): bool_and skips NULLs, so a round with no
+            -- crowns key would otherwise pass as numeric.
+            count(*) FILTER (WHERE jsonb_typeof(t.round->'crowns') = 'number'
+                               AND jsonb_typeof(o.round->'crowns') = 'number') AS numeric_pairs,
+            sum(CASE WHEN jsonb_typeof(t.round->'crowns') = 'number' THEN (t.round->>'crowns')::numeric::int END) AS team_sum,
+            sum(CASE WHEN jsonb_typeof(o.round->'crowns') = 'number' THEN (o.round->>'crowns')::numeric::int END) AS opponent_sum,
+            count(*) FILTER (WHERE jsonb_typeof(t.round->'crowns') = 'number' AND jsonb_typeof(o.round->'crowns') = 'number'
+                               AND (t.round->>'crowns')::numeric > (o.round->>'crowns')::numeric) AS team_won,
+            count(*) FILTER (WHERE jsonb_typeof(t.round->'crowns') = 'number' AND jsonb_typeof(o.round->'crowns') = 'number'
+                               AND (o.round->>'crowns')::numeric > (t.round->>'crowns')::numeric) AS opponent_won
+          FROM jsonb_array_elements(CASE WHEN jsonb_typeof(b.team_rounds) = 'array' THEN b.team_rounds ELSE '[]'::jsonb END)
+               WITH ORDINALITY AS t(round, idx)
+          JOIN jsonb_array_elements(CASE WHEN jsonb_typeof(b.opponent_rounds) = 'array' THEN b.opponent_rounds ELSE '[]'::jsonb END)
+               WITH ORDINALITY AS o(round, idx) USING (idx)
+    ) rounds
+    CROSS JOIN LATERAL (
+        -- CASE, not AND: jsonb_array_length() raises on a non-array, and AND does
+        -- not guarantee evaluation order.
+        SELECT CASE
+                   WHEN jsonb_typeof(b.team_rounds) = 'array' AND jsonb_typeof(b.opponent_rounds) = 'array'
+                   THEN rounds.played > 0
+                        AND rounds.numeric_pairs = rounds.played
+                        AND jsonb_array_length(b.team_rounds) = jsonb_array_length(b.opponent_rounds)
+                   ELSE false
+               END AS usable
+    ) gate
+    CROSS JOIN LATERAL (
+        -- +3 per extra round makes on_battle_recorded's team + (3 - opponent)
+        -- equal the sum of that expression over every round (never negative).
+        SELECT
+            CASE WHEN gate.usable THEN rounds.team_sum + 3 * (rounds.played - 1) ELSE b.team_plain END AS team_crowns,
+            CASE WHEN gate.usable THEN rounds.opponent_sum ELSE b.opponent_plain END                 AS opponent_crowns,
             CASE
-                WHEN t.team_crowns > t.opponent_crowns THEN 'win'
-                WHEN t.team_crowns < t.opponent_crowns THEN 'loss'
+                WHEN gate.usable AND rounds.team_won > rounds.opponent_won THEN 'win'
+                WHEN gate.usable AND rounds.team_won < rounds.opponent_won THEN 'loss'
+                -- No rounds, or rounds tied on crowns (a tiebreak we cannot see):
+                -- decide on the battle's own crowns, exactly as before.
+                WHEN b.team_plain > b.opponent_plain THEN 'win'
+                WHEN b.team_plain < b.opponent_plain THEN 'loss'
                 ELSE 'draw'
-            END AS result,
-            (t.team_crowns > t.opponent_crowns) AS win_status
-        FROM (
-            SELECT
-                item->>'battleTime'             AS bt,
-                item->>'type'                   AS type,
-                item->'team'->0->>'tag'         AS team_tag,
-                CASE
-                    WHEN item->>'type' = 'riverRaceDuel' AND jsonb_typeof(item->'team'->0->'rounds') = 'array' THEN
-                        (SELECT (COALESCE(SUM((r->>'crowns')::INT), 0) + (3 * GREATEST(COUNT(r) - 1, 0)))::INT
-                         FROM jsonb_array_elements(item->'team'->0->'rounds') r)
-                    ELSE COALESCE((item->'team'->0->>'crowns')::INT, 0)
-                END AS team_crowns,
-                item->'opponent'->0->>'tag'     AS opponent_player_tag,
-                item->'opponent'->0->>'name'    AS opponent_player_name,
-                CASE
-                    WHEN item->>'type' = 'riverRaceDuel' AND jsonb_typeof(item->'opponent'->0->'rounds') = 'array' THEN
-                        (SELECT COALESCE(SUM((r->>'crowns')::INT), 0)::INT
-                         FROM jsonb_array_elements(item->'opponent'->0->'rounds') r)
-                    ELSE COALESCE((item->'opponent'->0->>'crowns')::INT, 0)
-                END AS opponent_crowns
-            FROM jsonb_array_elements(p_payload) item
-            WHERE item->>'battleTime' IS NOT NULL
-              AND item->'opponent' IS NOT NULL
-        ) t
-    LOOP
-        INSERT INTO drivers.player_battles (
-            player_tag,
-            battle_time,
-            battle_type,
-            win_status,
-            result,
-            team_crowns,
-            opponent_crowns,
-            opponent_player_tag,
-            opponent_player_name
-        )
-        VALUES (
-            p_tag,
-            v_battle.battle_time,
-            v_battle.battle_type,
-            v_battle.win_status,
-            v_battle.result,
-            v_battle.team_crowns,
-            v_battle.opponent_crowns,
-            v_battle.opponent_player_tag,
-            v_battle.opponent_player_name
-        )
-        ON CONFLICT (player_tag, battle_time) DO NOTHING;
-    END LOOP;
+            END AS result
+    ) scored
+    ON CONFLICT (player_tag, battle_time) DO NOTHING;
 
     -- Enforce the 100-battle rolling window per player.
     DELETE FROM drivers.player_battles
@@ -4748,6 +4832,25 @@ $function$;
 
 REVOKE ALL ON FUNCTION public.ingest_player_battles(text, jsonb) FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.ingest_player_battles(text, jsonb) TO service_role;
+
+COMMENT ON FUNCTION public.ingest_player_battles(text, jsonb) IS
+'Ingests a Royale API battle-log payload (max 25 entries) for one player in one '
+'set-based INSERT ... SELECT ... ON CONFLICT DO NOTHING (batched 2026-09-23: a 25-row '
+'payload went from 262.7ms to ~68ms, see 20260923225525). Called by deep-depth.ts for '
+'every member and for recruits whose log holds something new (see get_latest_battle_times). '
+'MULTI-ROUND SCORING (2026-09-27, 20260927005354): when both sides carry a rounds array of '
+'equal length whose entries all have numeric crowns (clan-war duels), team_crowns = sum of '
+'team round crowns + 3 per extra round and opponent_crowns = sum of opponent round crowns, so '
+'the voyage credit expression team_crowns + (3 - opponent_crowns) used by on_battle_recorded, '
+'refresh_voyage_contributions and on_contribution_manual_override_updated equals the sum over '
+'rounds of (team + 3 - opponent): each round credited like a battle, never negative. Win/loss '
+'is decided by rounds won (round i vs round i on crowns). Rounds tied on crowns, missing, '
+'malformed or of unequal length fall back to the battle''s own crowns, the pre-2026-09-27 rule. '
+'NOTE team_crowns is therefore NOT a raw crown count for duels. '
+'HISTORY: 20260620120000 introduced the +3-per-round crowns formula, but it never ran: the edge '
+'function''s valibot v.object schema stripped rounds until 2026-09-27, and 173 of 230 stored duels '
+'score 0-2, which that formula cannot produce. Had it run, it would also have recorded a duel '
+'swept 0-2 as a win, because the bonus was added to the team side regardless of who won rounds.';
 
 CREATE OR REPLACE FUNCTION public.get_latest_battle_times(p_player_tags text[])
  RETURNS TABLE(player_tag text, latest_battle_time text)
