@@ -748,6 +748,15 @@
   - Recommended Fix: Audit Stage 12 dispatch triggers, runner concurrency bounds, and session timeout thresholds in CI configurations.
   - Resolution Details: Resolved on October 31, 2026. Stage 12 executed cleanly, completed APK UX audit in 2m, and published PR #2430 (CLEAN, 0 violations across frontend surface), merging untouched.
 
+* Stage 1 Ledger State Anomaly / Stale Branch Association (2026-11-01):
+  - Stage: Stage 1 (Hardening - Runtime Integrity Auditor)
+  - State: [RESOLVED - monitor] (2026-11-01)
+  - Evidence: `nightly-run-ledger.json` (state: RECOVERABLE, failureClass: OPEN_PR, health: DEGRADING), `git log` (commit `5be75dbd`, PR #2432), `01-hardening-coverage.log`
+  - Symptom: The watchdog ledger recorded Stage 1 in cycle `nightly-cycle/2026-11-01` as `state: RECOVERABLE` with `failureClass: OPEN_PR`, referencing an unmerged branch `nightly/stage-1-hardening-b96bd631-17378198453721856992` (PR #2419). Health rating degraded to `DEGRADING` (currentStreak: 1, reason: "intervention rate rose from 13% to 30%").
+  - Root Cause: The watchdog stage discovery picked up a stale open PR (#2419) associated with a previous branch instead of binding to the newly executed and completed Stage 1 session for cycle 2026-11-01, which published PR #2432 (CLEAN, commit `5be75dbd`) and merged cleanly at 01:59 UTC.
+  - Recommended Fix: Update nightly watchdog PR discovery logic to query open PRs strictly bounded by the current cycle ID or run timestamp to avoid latching onto abandoned/stale branches from earlier dates.
+  - Resolution Details: Corroborated with repository history: PR #2432 merged into Nightly with 0 intervention attempts (0 nudges). Overall pipeline intervention rate for 2026-11-01 across merged stages: 0/11 (0.0%).
+
 ## Section 2: Cross-Stage Coherence Bugs (Priority 2)
 
 * Duplicate Merge Failure Blocks in 00-pr-history.md:
@@ -899,56 +908,64 @@
   - Root Cause: Remote CI database migration verification failed during validation of the folded baseline migration against target Supabase schema invariants.
   - Recommended Fix: Audit baseline migration SQL ordering and view dependency constraints in Stage 3 master migration baseline.
 
+* Database Verification CI Workflow Failure on Baseline Consolidation PR (Stage 3, 2026-11-01):
+  - Stage: Stage 3 (Baseline Consolidation)
+  - State: [RECURRING - monitor] (2026-11-01)
+  - PR: PR #2434 (run #41265455859)
+  - Symptom: GitHub Actions `database-verification` workflow reported `conclusion: failure` on PR #2434 after Stage 3 folded `20260927005354_score_duels_per_round.sql` and `20260927115312_record_watchdog_lease_failure_response.sql` into `20260531232406_master_migration.sql`.
+  - Root Cause: Remote CI database migration verification continues to fail during validation of folded baseline migrations against Supabase test container schema invariants, while local validation (`pnpm audit:migrations PASS`, DB semantic gate deferred as `DB-UNAVAILABLE`) passes.
+  - Recommended Fix: Investigate the Supabase test container setup in CI `database-verification.yml` or the specific ordering/dependencies in `20260531232406_master_migration.sql` causing CI validation failures across consecutive baseline folding PRs (#2395, #2421, #2434).
+
 ## Section 3: No-Diff and Low-Value Audit (Priority 3)
 
 * Stage 1 (Harden):
-  - Consecutive No-Diff Days: 5 (CLEAN logged on 2026-10-31; audit duration: 4m, median 6m)
-  - Analysis: Audited unauthenticated endpoints, in-memory state, Valibot boundary gaps, dead critical-path code, and cross-layer violations across changed files; zero threat vectors found (PR #2406).
+  - Consecutive No-Diff Days: 6 (CLEAN logged on 2026-11-01, PR #2432; audit duration: 6m, median 6m)
+  - Analysis: Audited 5 priority targets (unauthenticated endpoints, in-memory state, Valibot boundaries, dead code, layer boundaries) across changed surfaces including useBroadcastChannel.ts and headhunter-scanner; zero threat vectors found (PR #2432).
 
 * Stage 2 (Verify):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-10-31 in Backend/supabase/functions/headhunter-scanner/client.spec.ts, PR #2420; audit duration: 12m, median 11m)
-  - Analysis: Added unit test suite for headhunter-scanner client broker in client.spec.ts (PR #2420).
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-11-01 in Backend/supabase/functions/query-royale-api/client.spec.ts, PR #2433; audit duration: 19m, median 11m)
+  - Analysis: Added unit test suite for query-royale-api client & environment broker in client.spec.ts (PR #2433).
 
 * Stage 3 (Baseline Consolidation):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-10-31 in Backend/supabase/migrations/20260531232406_master_migration.sql, PR #2421; audit duration: 8m, median 4m)
-  - Analysis: Folded 20260926233152_latest_battle_times_for_ingest_skip into baseline: added public.get_latest_battle_times function declaration, privileges, and comment (PR #2421).
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-11-01 in Backend/supabase/migrations/20260531232406_master_migration.sql, PR #2434; audit duration: 12m, median 4m)
+  - Analysis: Folded 20260927005354_score_duels_per_round.sql and 20260927115312_record_watchdog_lease_failure_response.sql into master baseline; 19 migrations remain (PR #2434).
 
 * Stage 4 (Optimization):
-  - Consecutive No-Diff Days: 18 (CLEAN logged on 2026-10-31, PR #2422; audit duration: 8m, median 5m)
-  - Analysis: Audited 32 changed files and 10 SQL database views via source-level grep; confirmed zero structural rot or unreferenced views (PR #2422).
+  - Consecutive No-Diff Days: 19 (CLEAN logged on 2026-11-01, PR #2435; audit duration: 6m, median 5m)
+  - Analysis: Audited 37 changed files and 10 SQL database views via source-level grep; confirmed zero structural rot or unreferenced views (PR #2435).
 
 * Stage 5 (README):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-10-31 in Backend/supabase/functions/headhunter-scanner/README.md, PR #2423; audit duration: 6m, median 4m)
-  - Analysis: docs(readme): Reconcile headhunter-scanner README with client.ts vault environment broker role (PR #2423).
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-11-01 in Backend/supabase/functions/query-royale-api/README.md, PR #2436; audit duration: 7m, median 4.5m)
+  - Analysis: docs(readme): Reconcile query-royale-api README with client.ts vault environment broker role (PR #2436).
 
 * Stage 6 (TSDoc):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-10-31 in Frontend-PWA/src/core/services/useBroadcastChannel.ts, PR #2424; audit duration: 7m, median 6m)
-  - Analysis: docs(tsdoc): harden useBroadcastChannel interface contracts and inline decision annotations (PR #2424).
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-11-01 in Frontend-PWA/src/core/services/useExternalLink.ts, PR #2437; audit duration: 11m, median 6m)
+  - Analysis: docs(tsdoc): harden useExternalLink interface contracts and inline decision annotations (PR #2437).
 
 * Stage 7 (Version Integrity):
-  - Consecutive No-Diff Days: 181 (CLEAN logged on 2026-10-31, PR #2425; audit duration: 3m, median 3m)
-  - Analysis: Catalog scan verified Frontend-PWA and Backend package.json; package version scan verified ground truth 14.55.14 across root, PWA, Backend; pnpm audit:version verified 0 drift across 10 tracked targets (PR #2425).
+  - Consecutive No-Diff Days: 182 (CLEAN logged on 2026-11-01, PR #2438; audit duration: 3m, median 3m)
+  - Analysis: Audited catalog protocols in Frontend-PWA and Backend manifests, verified ground truth version 14.55.14 across 3 manifests and derived files (PR #2438).
 
 * Stage 8 (Dependency Audit):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-10-31 in package.json, PR #2426; audit duration: 13m, median 6m)
-  - Analysis: Aligned vite to ^8.3.5 and bumped vue-tsc to ^3.3.14 in monorepo catalogs and updated lockfile (PR #2426).
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-11-01 in package.json, PR #2439; audit duration: 9m, median 6m)
+  - Analysis: Bumped knip from ^6.44.0 to ^6.44.1 in monorepo catalogs and updated lockfile (PR #2439).
 
 * Stage 9 (Refactor):
-  - Consecutive No-Diff Days: 16 (CLEAN logged on 2026-10-31, PR #2427; audit duration: 8m, median 6m)
-  - Analysis: Calibration pass: 34 files in changed-files.txt, 0 dep-viols, knip 11 files/1 dep/0 exp, streak: 15 (7 ord). Widened to apkResolverUtils.ts; audited useBroadcastChannel.ts. Closest: useBroadcastChannel. Hunt: unmount cleanup passed (PR #2427).
+  - Consecutive No-Diff Days: 17 (CLEAN logged on 2026-11-01, PR #2440; audit duration: 5m, median 6m)
+  - Analysis: CLEAN: (1) 37 files, 0 dep-viols, knip 11 files/1 dep/0 exp; (2) streak 16; (3) inspected useExternalLink, useBroadcastChannel; (4) closest: useExternalLink leaf compliant; hunt: useExternalLink intent/tag sanitization passed 10/10 (PR #2440).
 
 * Stage 10 (APK-Integrity):
-  - Consecutive No-Diff Days: 114 (CLEAN logged on 2026-10-31, PR #2428; audit duration: 3m, median 3m)
-  - Analysis: Verified asset links, manifest parity, version code/name sync (14055014/14.55.14), release metadata (clashmanager-v14.55.14+529.apk), and cleartext traffic policy (PR #2428).
+  - Consecutive No-Diff Days: 115 (CLEAN logged on 2026-11-01, PR #2441; audit duration: 3m, median 3m)
+  - Analysis: Verified PWA wrapper & APK packaging integrity: digital asset links, manifest parity, version codes/names sync (14.55.14 / 14055014), release metadata pointer (clashmanager-v14.55.14+529.apk), and cleartext traffic prohibition (PR #2441).
 
 * Stage 11 (APK-Optimization):
-  - Consecutive No-Diff Days: 19 (CLEAN logged on 2026-10-31, PR #2429; audit duration: 5m, median 3m)
-  - Analysis: Audited native WebView performance settings, Service Worker caching strategies, Vite code splitting, and static public asset footprint; zero source changes required (PR #2429).
+  - Consecutive No-Diff Days: 20 (CLEAN logged on 2026-11-01, PR #2442; audit duration: 4m, median 3m)
+  - Analysis: Audited native WebView performance settings, service worker caching routes, Vite Rolldown code splitting, and public asset precache footprint; zero source changes required (PR #2442).
 
 * Stage 12 (APK-UX):
-  - Consecutive No-Diff Days: 32 (CLEAN logged on 2026-10-31, PR #2430; audit duration: 2m, median 4m)
-  - Analysis: Audit verified zero APK UX violations across frontend surface (PR #2430).
+  - Consecutive No-Diff Days: 33 (CLEAN logged on 2026-11-01, PR #2443; audit duration: 2m, median 4m)
+  - Analysis: Automated hybrid shell UX audit completed with 0 violations across 77 files (PR #2443).
 
 * Stage 13 (Self-Healing):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-10-31; audit duration: 3m, median 5m)
-  - Analysis: Completed daily self-healing audit pass for 2026-10-31: documented Stage 12 recovery in Section 1, Stage 3 database verification workflow failure in Section 2, and updated Section 3 metrics across Stages 1-13.
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-11-01; audit duration: 8m, median 5m)
+  - Analysis: Completed daily self-healing audit pass for 2026-11-01: documented Stage 1 ledger anomaly in Section 1, Stage 3 CI database verification failure on PR #2434 in Section 2, and updated Section 3 metrics across Stages 1-13.
