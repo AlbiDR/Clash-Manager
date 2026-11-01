@@ -4,23 +4,23 @@
 
 In plain terms: nothing needed fixing. This run checked the refactor area and found it already correct, so the only file here is the log recording that the check happened.
 
-**What was checked:** Calibration pass: 34 files in changed-files.txt, 0 dep-viols, knip 11 files/1 dep/0 exp, streak: 15 (7 ord). Widened to apkResolverUtils.ts; audited useBroadcastChannel.ts. Closest: useBroadcastChannel. Hunt: unmount cleanup passed.
+**What was checked:** CLEAN: (1) 37 files, 0 dep-viols, knip 11 files/1 dep/0 exp; (2) streak 16; (3) inspected useExternalLink, useBroadcastChannel; (4) closest: useExternalLink leaf compliant; hunt: useExternalLink intent/tag sanitization passed 10/10.
 
-**Why:** Calibration pass triggered (threshold 7 reached with consecutive-clean 15). Structural scan revealed zero dependency violations, zero dead exports, and no ADR layer or sizing violations in bounded or widened candidate sets; defect hunt reproduced no behavioral defects.
+**Why:** Bounded structural scan confirmed zero ADR violations or dead exports; behavioral defect hunt revealed full specification compliance.
 
-**Result:** Vitest useBroadcastChannel.spec.ts (6/6) and apkResolver.spec.ts (31/31) passed; vue-tsc type-check 0 errors; depcruise 0 violations across 533 modules
+**Result:** Vitest executed 16 tests across useExternalLink.spec.ts (10/10) and useBroadcastChannel.spec.ts (6/6); depcruise verified 0 dependency violations across 533 modules
 
 **Files changed:** .github/nightly-logs/09-refactor-proposals-coverage.log
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: architecture
-  Cycle: nightly-cycle/2026-10-31
+  Cycle: nightly-cycle/2026-11-01
   Contract: 401ccac4d9a8ca083bc5492dd8958aca42a02d1f4857914b074fb6ad6b2e53f1
-  Why: Calibration pass triggered (threshold 7 reached with consecutive-clean 15). Structural scan revealed zero dependency violations, zero dead exports, and no ADR layer or sizing violations in bounded or widened candidate sets; defect hunt reproduced no behavioral defects.
-  Change: Calibration pass: 34 files in changed-files.txt, 0 dep-viols, knip 11 files/1 dep/0 exp, streak: 15 (7 ord). Widened to apkResolverUtils.ts; audited useBroadcastChannel.ts. Closest: useBroadcastChannel. Hunt: unmount cleanup passed.
-  Result: Vitest useBroadcastChannel.spec.ts (6/6) and apkResolver.spec.ts (31/31) passed; vue-tsc type-check 0 errors; depcruise 0 violations across 533 modules
+  Why: Bounded structural scan confirmed zero ADR violations or dead exports; behavioral defect hunt revealed full specification compliance.
+  Change: CLEAN: (1) 37 files, 0 dep-viols, knip 11 files/1 dep/0 exp; (2) streak 16; (3) inspected useExternalLink, useBroadcastChannel; (4) closest: useExternalLink leaf compliant; hunt: useExternalLink intent/tag sanitization passed 10/10.
+  Result: Vitest executed 16 tests across useExternalLink.spec.ts (10/10) and useBroadcastChannel.spec.ts (6/6); depcruise verified 0 dependency violations across 533 modules
   Files: .github/nightly-logs/09-refactor-proposals-coverage.log
   Nudges: 0
-  Execution: 049d83d155e7cd11e34728972f96944509073f8a
+  Execution: 7afe18b457d04d15c251d935309a87a6f7b72a50
 -->
