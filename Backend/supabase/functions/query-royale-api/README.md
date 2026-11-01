@@ -20,7 +20,7 @@
 | :--- | :--- |
 | `index.ts` | Entry point: validates the request, syncs the Vault, and delegates to the harvester. |
 | `harvester.ts` | The leaderboard query endpoints, clan-status filtering, and the concurrent country-rotation loop, utilizing typed error catch parameters (`harvestError`, `countryError`, `globalPolError`, `localError`) for standardized error routing. |
-| `client.ts` | Supabase service client. |
+| `client.ts` | Supabase service client and vault environment broker (`syncVault`). |
 
 ## Why Path of Legends, not the trophy ladder?
 
