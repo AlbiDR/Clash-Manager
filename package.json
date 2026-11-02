@@ -139,7 +139,7 @@
       "@vitejs/plugin-vue": "^6.0.10",
       "@vue/test-utils": "^2.5.1",
       "@vue/tsconfig": "^0.9.1",
-      "dependency-cruiser": "^18.7.0",
+      "dependency-cruiser": "^18.7.1",
       "eslint": "^10.13.0",
       "jsdom": "^30.1.1",
       "knip": "^6.44.1",
