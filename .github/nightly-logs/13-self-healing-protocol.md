@@ -757,6 +757,14 @@
   - Recommended Fix: Update nightly watchdog PR discovery logic to query open PRs strictly bounded by the current cycle ID or run timestamp to avoid latching onto abandoned/stale branches from earlier dates.
   - Resolution Details: Corroborated with repository history: PR #2432 merged into Nightly with 0 intervention attempts (0 nudges). Overall pipeline intervention rate for 2026-11-01 across merged stages: 0/11 (0.0%).
 
+* Stage 3 Execution Stalled on Interactive Feedback Request (2026-11-02):
+  - Stage: Stage 3 (Baseline Consolidation)
+  - State: [ACTIVE] (2026-11-02)
+  - Evidence: `nightly-run-ledger.json` (state: RUNNING, session: sessions/15540132527309945024, state: AWAITING_USER_FEEDBACK, lifetime: 22.1m), `.github/nightly-logs/03-baseline-consolidation-coverage.log` (last entry 2026-11-01)
+  - Symptom: Stage 3 failed to emit a terminal coverage log or publish a pull request for cycle 2026-11-02. Its Jules session entered `AWAITING_USER_FEEDBACK` and remained in `state: RUNNING`, violating the non-interactive pipeline contract.
+  - Root Cause: Agent session invoked an interactive user prompt tool or awaited external user input contrary to the nightly unattended autonomy directive (`forbidden-actions: [ask_question, ask_permission]`), causing the session to stall until timeout without finalizing.
+  - Recommended Fix: Reassert the strict unattended execution invariant in Stage 3 prompts (`03-baseline-consolidation.md`) and pre-commit checks: agents must never wait for human input, call user input tools, or stall on interactive review loops.
+
 ## Section 2: Cross-Stage Coherence Bugs (Priority 2)
 
 * Duplicate Merge Failure Blocks in 00-pr-history.md:
@@ -919,53 +927,53 @@
 ## Section 3: No-Diff and Low-Value Audit (Priority 3)
 
 * Stage 1 (Harden):
-  - Consecutive No-Diff Days: 6 (CLEAN logged on 2026-11-01, PR #2432; audit duration: 6m, median 6m)
+  - Consecutive No-Diff Days: 7 (CLEAN logged on 2026-11-01 / cycle 2026-11-02, PR #2432; audit duration: 6m, median 6m)
   - Analysis: Audited 5 priority targets (unauthenticated endpoints, in-memory state, Valibot boundaries, dead code, layer boundaries) across changed surfaces including useBroadcastChannel.ts and headhunter-scanner; zero threat vectors found (PR #2432).
 
 * Stage 2 (Verify):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-11-01 in Backend/supabase/functions/query-royale-api/client.spec.ts, PR #2433; audit duration: 19m, median 11m)
-  - Analysis: Added unit test suite for query-royale-api client & environment broker in client.spec.ts (PR #2433).
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-11-02 in Backend/supabase/functions/ping/client.spec.ts, PR #2446; audit duration: 17m, median 11.5m)
+  - Analysis: Added unit test suite for ping client & environment broker in client.spec.ts (PR #2446).
 
 * Stage 3 (Baseline Consolidation):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-11-01 in Backend/supabase/migrations/20260531232406_master_migration.sql, PR #2434; audit duration: 12m, median 4m)
-  - Analysis: Folded 20260927005354_score_duels_per_round.sql and 20260927115312_record_watchdog_lease_failure_response.sql into master baseline; 19 migrations remain (PR #2434).
+  - Consecutive No-Diff Days: 1 (Session stalled / MISSING-OUTPUT on 2026-11-02, session AWAITING_USER_FEEDBACK; audit duration: 0m this cycle, previous 12m, median 4m)
+  - Analysis: Stage 3 session stalled on interactive feedback request without generating a PR or updating its coverage log; 19 migrations remain pending baseline consolidation.
 
 * Stage 4 (Optimization):
-  - Consecutive No-Diff Days: 19 (CLEAN logged on 2026-11-01, PR #2435; audit duration: 6m, median 5m)
-  - Analysis: Audited 37 changed files and 10 SQL database views via source-level grep; confirmed zero structural rot or unreferenced views (PR #2435).
+  - Consecutive No-Diff Days: 20 (CLEAN logged on 2026-11-02, PR #2447; audit duration: 14m, median 5m)
+  - Analysis: Audited 37 changed files and 10 SQL database views via source-level grep; confirmed zero structural rot or unreferenced database views (PR #2447).
 
 * Stage 5 (README):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-11-01 in Backend/supabase/functions/query-royale-api/README.md, PR #2436; audit duration: 7m, median 4.5m)
-  - Analysis: docs(readme): Reconcile query-royale-api README with client.ts vault environment broker role (PR #2436).
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-11-02 in Backend/README.md, PR #2448; audit duration: 7m, median 5m)
+  - Analysis: Documented ping Edge Function in dedicated README and updated Backend README link (PR #2448).
 
 * Stage 6 (TSDoc):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-11-01 in Frontend-PWA/src/core/services/useExternalLink.ts, PR #2437; audit duration: 11m, median 6m)
-  - Analysis: docs(tsdoc): harden useExternalLink interface contracts and inline decision annotations (PR #2437).
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-11-02 in Frontend-PWA/src/core/services/useShare.ts, PR #2449; audit duration: 11m, median 6m)
+  - Analysis: docs(tsdoc): harden useShare TSDoc interface contract and inline logic annotations (PR #2449).
 
 * Stage 7 (Version Integrity):
-  - Consecutive No-Diff Days: 182 (CLEAN logged on 2026-11-01, PR #2438; audit duration: 3m, median 3m)
-  - Analysis: Audited catalog protocols in Frontend-PWA and Backend manifests, verified ground truth version 14.55.14 across 3 manifests and derived files (PR #2438).
+  - Consecutive No-Diff Days: 183 (CLEAN logged on 2026-11-02, PR #2450; audit duration: 2m, median 3m)
+  - Analysis: Audited catalog protocols in Frontend-PWA and Backend manifests, verified ground truth version 14.55.14 across 3 manifests and derived files (PR #2450).
 
 * Stage 8 (Dependency Audit):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-11-01 in package.json, PR #2439; audit duration: 9m, median 6m)
-  - Analysis: Bumped knip from ^6.44.0 to ^6.44.1 in monorepo catalogs and updated lockfile (PR #2439).
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-11-02 in package.json, PR #2451; audit duration: 20m, median 6m)
+  - Analysis: Bumped dependency-cruiser from ^18.7.0 to ^18.7.1 in monorepo catalogs and updated lockfile (PR #2451).
 
 * Stage 9 (Refactor):
-  - Consecutive No-Diff Days: 17 (CLEAN logged on 2026-11-01, PR #2440; audit duration: 5m, median 6m)
-  - Analysis: CLEAN: (1) 37 files, 0 dep-viols, knip 11 files/1 dep/0 exp; (2) streak 16; (3) inspected useExternalLink, useBroadcastChannel; (4) closest: useExternalLink leaf compliant; hunt: useExternalLink intent/tag sanitization passed 10/10 (PR #2440).
+  - Consecutive No-Diff Days: 18 (CLEAN logged on 2026-11-02, PR #2452; audit duration: 5m, median 6m)
+  - Analysis: CLEAN: (1) 33 files in changed-files.txt, 0 dep-viols, knip 11 files/1 dep/0 exp; (2) streak: 17; (3) inspected useShare, useExternalLink; (4) closest: useShare (74 lines, compliant); hunt: useShare AbortError/rejection paths passed 7/7 (PR #2452).
 
 * Stage 10 (APK-Integrity):
-  - Consecutive No-Diff Days: 115 (CLEAN logged on 2026-11-01, PR #2441; audit duration: 3m, median 3m)
-  - Analysis: Verified PWA wrapper & APK packaging integrity: digital asset links, manifest parity, version codes/names sync (14.55.14 / 14055014), release metadata pointer (clashmanager-v14.55.14+529.apk), and cleartext traffic prohibition (PR #2441).
+  - Consecutive No-Diff Days: 116 (CLEAN logged on 2026-11-02, PR #2453; audit duration: 3m, median 3m)
+  - Analysis: Verified digital asset links, manifest parity, version code/name sync (14.55.14 / 14055014), release metadata (clashmanager-v14.55.14+529.apk), and cleartext traffic policy (PR #2453).
 
 * Stage 11 (APK-Optimization):
-  - Consecutive No-Diff Days: 20 (CLEAN logged on 2026-11-01, PR #2442; audit duration: 4m, median 3m)
-  - Analysis: Audited native WebView performance settings, service worker caching routes, Vite Rolldown code splitting, and public asset precache footprint; zero source changes required (PR #2442).
+  - Consecutive No-Diff Days: 21 (CLEAN logged on 2026-11-02, PR #2454; audit duration: 5m, median 3m)
+  - Analysis: Audited native WebView performance settings, service worker caching routes, Vite Rolldown code splitting, and public asset precache footprint; zero source changes required (PR #2454).
 
 * Stage 12 (APK-UX):
-  - Consecutive No-Diff Days: 33 (CLEAN logged on 2026-11-01, PR #2443; audit duration: 2m, median 4m)
-  - Analysis: Automated hybrid shell UX audit completed with 0 violations across 77 files (PR #2443).
+  - Consecutive No-Diff Days: 34 (CLEAN logged on 2026-11-02, PR #2455; audit duration: 3m, median 4m)
+  - Analysis: Automated hybrid shell UX audit completed with 0 violations across 77 files (PR #2455).
 
 * Stage 13 (Self-Healing):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-11-01; audit duration: 8m, median 5m)
-  - Analysis: Completed daily self-healing audit pass for 2026-11-01: documented Stage 1 ledger anomaly in Section 1, Stage 3 CI database verification failure on PR #2434 in Section 2, and updated Section 3 metrics across Stages 1-13.
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-11-02; audit duration: 6m, median 5m)
+  - Analysis: Completed daily self-healing audit pass for 2026-11-02: documented Stage 3 interactive stalling failure in Section 1 and updated Section 3 metrics across Stages 1-13.
