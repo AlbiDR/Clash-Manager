@@ -40,7 +40,7 @@ Six Deno functions live in [`supabase/functions/`](supabase/functions). The five
 | [`query-royale-api`](supabase/functions/query-royale-api/README.md) | On demand from the PWA | Harvests clanless players from the Path of Legends leaderboard without persisting them. |
 | [`fetch-player-battlelog`](supabase/functions/fetch-player-battlelog/README.md) | On demand | Fetches one player's freshest battle log by querying every key in parallel. |
 | [`sync-player-cards`](supabase/functions/sync-player-cards/README.md) | On demand from the Laboratory | Syncs a player's card collection, normalized to a 1-16 level scale. |
-| [`ping`](supabase/functions/ping/index.ts) | On demand from the PWA | Lightweight connectivity and backend-version probe; does not check database health. |
+| [`ping`](supabase/functions/ping/README.md) | On demand from the PWA | Lightweight connectivity and backend-version probe; does not check database health. |
 
 ---
 

@@ -2,25 +2,25 @@
 
 **Status:** CHANGED
 
-In plain terms: this is a documentation change to 1 file in the documentation README area. Nothing about how the app runs is affected.
+In plain terms: this is a documentation change to 2 files in the documentation README area. Nothing about how the app runs is affected.
 
-**What changed:** docs(readme): Reconcile query-royale-api README with client.ts vault environment broker role
+**What changed:** Documented ping Edge Function in dedicated README and updated Backend README link
 
-**Why:** Document query-royale-api client.ts syncVault role and broker responsibilities in parity with sibling edge functions
+**Why:** ping was the sole Edge Function lacking a dedicated README and Backend/README.md was linking to index.ts
 
-**Result:** git diff --check reported zero errors, vitest passed 2365 tests
+**Result:** git diff --check passed with 0 errors; Vitest passed 7 of 7 tests in supabase/functions/ping
 
-**Files changed:** .github/nightly-logs/05-documentation-readme-coverage.log, Backend/supabase/functions/query-royale-api/README.md
+**Files changed:** .github/nightly-logs/05-documentation-readme-coverage.log, Backend/README.md, Backend/supabase/functions/ping/README.md
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: documentation
-  Cycle: nightly-cycle/2026-11-01
+  Cycle: nightly-cycle/2026-11-02
   Contract: cea68a5bbba1bd2cbc6d3bdfe2639f37f3935b571beab59f5da1501b1180b22d
-  Why: Document query-royale-api client.ts syncVault role and broker responsibilities in parity with sibling edge functions
-  Change: docs(readme): Reconcile query-royale-api README with client.ts vault environment broker role
-  Result: git diff --check reported zero errors, vitest passed 2365 tests
-  Files: .github/nightly-logs/05-documentation-readme-coverage.log, Backend/supabase/functions/query-royale-api/README.md
+  Why: ping was the sole Edge Function lacking a dedicated README and Backend/README.md was linking to index.ts
+  Change: Documented ping Edge Function in dedicated README and updated Backend README link
+  Result: git diff --check passed with 0 errors; Vitest passed 7 of 7 tests in supabase/functions/ping
+  Files: .github/nightly-logs/05-documentation-readme-coverage.log, Backend/README.md, Backend/supabase/functions/ping/README.md
   Nudges: 0
-  Execution: c7f65a9523d5f2210353383083693cd2a6987a6f
+  Execution: 5225fc22a2a1159e6a8762ea38c2e6852c54286e
 -->
