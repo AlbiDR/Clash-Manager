@@ -4,23 +4,23 @@
 
 In plain terms: nothing needed fixing. This run checked the APK integrity area and found it already correct, so the only file here is the log recording that the check happened.
 
-**What was checked:** Verified digital asset links, manifest parity, version code/name sync (14.55.14 / 14055014), release metadata (clashmanager-v14.55.14+529.apk), and cleartext traffic policy
+**What was checked:** Verified PWA wrapper & APK packaging integrity: digital asset links, manifest parity, version code/name sync (14.55.14 / 14055014), release metadata pointer (clashmanager-v14.55.14+529.apk), and cleartext traffic prohibition
 
-**Why:** PWA wrapper and native package configurations are fully aligned with no mismatches found
+**Why:** Routine scheduled wrapper audit; no configuration or packaging drift detected
 
-**Result:** All wrapper invariants verified with pnpm audit:apk, pnpm apk:verify:source, pnpm test:apk-native, and pnpm test:apk-release
+**Result:** pnpm audit:apk, pnpm apk:verify:source, and pnpm test:apk-release passed with 0 errors
 
 **Files changed:** .github/nightly-logs/10-apk-integrity-coverage.log
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: apk
-  Cycle: nightly-cycle/2026-11-02
+  Cycle: nightly-cycle/2026-11-03
   Contract: 4f9b40864d05ffea731090b36800572dd7affedd8532fcd17c8ded8c9e2fbc12
-  Why: PWA wrapper and native package configurations are fully aligned with no mismatches found
-  Change: Verified digital asset links, manifest parity, version code/name sync (14.55.14 / 14055014), release metadata (clashmanager-v14.55.14+529.apk), and cleartext traffic policy
-  Result: All wrapper invariants verified with pnpm audit:apk, pnpm apk:verify:source, pnpm test:apk-native, and pnpm test:apk-release
+  Why: Routine scheduled wrapper audit; no configuration or packaging drift detected
+  Change: Verified PWA wrapper & APK packaging integrity: digital asset links, manifest parity, version code/name sync (14.55.14 / 14055014), release metadata pointer (clashmanager-v14.55.14+529.apk), and cleartext traffic prohibition
+  Result: pnpm audit:apk, pnpm apk:verify:source, and pnpm test:apk-release passed with 0 errors
   Files: .github/nightly-logs/10-apk-integrity-coverage.log
   Nudges: 0
-  Execution: 66db2fff73a0675dd263a137c9aa4fc7f9a4c548
+  Execution: fb4105e590cb9d982751a12328b33b28d8dd75aa
 -->
