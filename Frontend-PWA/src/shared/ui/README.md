@@ -72,7 +72,7 @@ The signature reusable capability. `ConsoleLayout` + `ConsoleHeader` + `ConsoleL
 | `ErrorBoundary.vue` / `ErrorState.vue` | Runtime error capture and recovery UI. |
 | `ToastContainer.vue` / `Toast.vue` | Global transient notifications. Modernized with declarative `v-tactile` directive integration on interactive action, close, and copy buttons for mobile touch feedback. |
 | `EmptyState.vue` | Empty-data feedback. |
-| `GhostBenchmarkHost.vue` / `BenchmarkContent.vue` | Host overlay manager and content view for desktop popovers and mobile bottom sheets rendering benchmark tooltips and detailed score composition breakdowns driven by `useGhostBenchmarkState`. |
+| `GhostBenchmarkHost.vue` / `BenchmarkContent.vue` / `BenchmarkPanel.vue` | Host overlay manager and content views for desktop popovers and mobile bottom sheets rendering benchmark tooltips and score composition breakdowns driven by `useGhostBenchmarkState`. `BenchmarkPanel.vue` renders range comparison tracks with relative player vs average position markers, clamped visual bounds, tier badge styling, domain value formatting, and signed delta sentiment. |
 
 ## Standardized Interactive APIs
 
