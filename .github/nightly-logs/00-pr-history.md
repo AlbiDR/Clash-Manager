@@ -16,6 +16,55 @@ LAST_AGED:   2026-11-01
 
 ## T1 -- Active (last 7 days)
 
+### [2026-11-04] PR #2474 [Stage 8]: Bumped eslint to ^10.14.0 in monorepo catalogs and updated lockfile
+**Domain:** dependencies | **Commit:** 217d9de4e | [View PR](https://github.com/AlbiDR/ClashManager/pull/2474)
+**Files:** .github/nightly-logs/08-dependency-audit-coverage.log, .github/nightly-logs/08-dependency-audit-pr-body.md, package.json, pnpm-lock.yaml, pnpm-workspace.yaml
+**Why:** Tier 1 minor bump to latest release within major version 10
+**Change:** Bumped eslint to ^10.14.0 in monorepo catalogs and updated lockfile
+**Result:** pnpm --dir Frontend-PWA run lint and test passed with 0 errors
+**Nudges:** 0
+
+### [2026-11-04] PR #2475 [Stage 9]: CLEAN: (1) 35 files, 0 dep-viols, knip 11 files/1 dep/0 exp; (2) streak 19; (3) inspected useSyntheticMode, useConfirm; (4) closest: useSyntheticMode (145 lines); hunt: useSyntheticMode query parameter parsing passed 4/4
+**Domain:** architecture | **Commit:** 76722b853 | [View PR](https://github.com/AlbiDR/ClashManager/pull/2475)
+**Files:** .github/nightly-logs/09-refactor-proposals-coverage.log, .github/nightly-logs/09-refactor-proposals-pr-body.md
+**Why:** Verify layer isolation and absence of architectural debt or reproducible defects in recently touched core services
+**Change:** CLEAN: (1) 35 files, 0 dep-viols, knip 11 files/1 dep/0 exp; (2) streak 19; (3) inspected useSyntheticMode, useConfirm; (4) closest: useSyntheticMode (145 lines); hunt: useSyntheticMode query parameter parsing passed 4/4
+**Result:** Vitest useSyntheticMode.spec.ts passed 4 of 4 tests; depcruise reported 0 violations across 534 modules
+**Nudges:** 0
+
+### [2026-11-04] PR #2476 [Stage 10]: Audited asset links, manifest parity, version sync (14.55.14 / 14055014), release metadata pointer, and cleartext traffic/security policies via pnpm audit:apk and pnpm apk:verify:source; confirmed zero wrapper drift
+**Domain:** apk | **Commit:** 36ea38aa3 | [View PR](https://github.com/AlbiDR/ClashManager/pull/2476)
+**Files:** .github/nightly-logs/10-apk-integrity-coverage.log, .github/nightly-logs/10-apk-integrity-pr-body.md
+**Why:** Audit completed across all APK and PWA wrapper invariants with zero mismatches found
+**Change:** Audited asset links, manifest parity, version sync (14.55.14 / 14055014), release metadata pointer, and cleartext traffic/security policies via pnpm audit:apk and pnpm apk:verify:source; confirmed zero wrapper drift
+**Result:** All wrapper invariants verified via pnpm audit:apk, pnpm apk:verify:source, pnpm apk:verify, pnpm test:apk-native, pnpm test:apk-release, pnpm test:apk-slot-sync, and pnpm test:version-code
+**Nudges:** 0
+
+### [2026-11-04] PR #2477 [Stage 11]: Audited native WebView performance settings, service worker caching routes, Vite Rolldown code splitting, and public asset precache footprint; zero source changes required
+**Domain:** apk | **Commit:** cd61d2351 | [View PR](https://github.com/AlbiDR/ClashManager/pull/2477)
+**Files:** .github/nightly-logs/11-apk-optimization-coverage.log, .github/nightly-logs/11-apk-optimization-pr-body.md
+**Why:** Ensure native Android WebView wrapper settings and PWA precache configuration adhere to performance invariants and bundle size constraints
+**Change:** Audited native WebView performance settings, service worker caching routes, Vite Rolldown code splitting, and public asset precache footprint; zero source changes required
+**Result:** pnpm audit:apk-perf passed 9 of 9 invariants with 67.6 KB static public precache across 15 files
+**Nudges:** 0
+
+### [2026-11-04] PR #2478 [Stage 12]: Automated hybrid shell UX audit completed with 0 violations across 77 files
+**Domain:** ux | **Commit:** a9273ce7e | [View PR](https://github.com/AlbiDR/ClashManager/pull/2478)
+**Files:** .github/nightly-logs/12-apk-ux-coverage.log, .github/nightly-logs/12-apk-ux-pr-body.md
+**Why:** Structured APK UX audit reported PASS with 0 violations and 0 candidate files across 77 files examined in Frontend-PWA/src; calibration not due
+**Change:** Automated hybrid shell UX audit completed with 0 violations across 77 files
+**Result:** apk-ux-audit-status.txt: PASS; apk-ux-audit.json: 0 candidate files reviewed out of 77 examined; UX categories 1-10 checked
+**Nudges:** 0
+
+### [2026-11-04] PR #2479 [Stage 13]: Documented Stage 1 session stuck and fallback refusal, mass watchdog fallback publish rescue across Stages 2-7, Stage 3 recurring feedback stall, and updated Section 3 metrics across Stages 1-13
+**Domain:** fallback-publish | **Commit:** c77605fe2 | [View PR](https://github.com/AlbiDR/ClashManager/pull/2479)
+**Files:** .github/nightly-logs/13-self-healing-protocol-coverage.log, .github/nightly-logs/13-self-healing-protocol-pr-body.md, .github/nightly-logs/13-self-healing-protocol.md
+**Why:** Daily scheduled Stage 13 self-healing protocol audit to capture pipeline stability failures, cross-stage coherence, and lane metrics
+**Change:** Documented Stage 1 session stuck and fallback refusal, mass watchdog fallback publish rescue across Stages 2-7, Stage 3 recurring feedback stall, and updated Section 3 metrics across Stages 1-13
+**Result:** git diff --check passed with 0 errors
+**Nudges:** 0
+
+
 ### [2026-11-04] PR #2469 [Stage 2]: Inspected useConfirm service following TSDoc hardening; verified existing useConfirm.spec.ts suite covers initialization, default/custom options, resolve/reject flows, and idle calls
 **Domain:** verification | **Commit:** 7b07f1723 | [View PR](https://github.com/AlbiDR/ClashManager/pull/2469)
 **Files:** .github/nightly-logs/02-verification-coverage.log, .github/nightly-logs/02-verification-pr-body.md
