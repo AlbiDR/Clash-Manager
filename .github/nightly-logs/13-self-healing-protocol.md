@@ -773,6 +773,30 @@
   - Root Cause: Normal watchdog state sampling latency between PR publication and automated merge. PR #2467 merged cleanly into Nightly with 0 intervention attempts (0 nudges) at 11:35 UTC.
   - Recommended Fix: No fix required; watchdog transient classification cleared automatically upon branch integration. Overall pipeline intervention rate for 2026-11-03 across merged stages: 0/11 (0.0%).
 
+* Stage 1 Session Stuck and Fallback Publication Refusal (2026-11-04):
+  - Stage: Stage 1 (Hardening - Runtime Integrity Auditor)
+  - State: [FAILED - monitor] (2026-11-04)
+  - Evidence: `nightly-run-ledger.json` (state: NO_OUTPUT, failureClass: JULES_SESSION_STUCK, health: DEGRADING, reason: "intervention rate rose from 12% to 32%"), recovery: `{"nudgedAt": "2026-11-04T06:58:08.756Z", "sessionName": "sessions/9398104736296533927", "ok": true}`, fallbackRefusal: patch failed against Nightly
+  - Symptom: Stage 1 session 9398104736296533927 completed work in 44.6m without publishing native PR output (`state: NO_OUTPUT`). The nightly watchdog intervened at 06:58:08 UTC with a session nudge and attempted fallback publication, but fallback publication refused the patch because `01-hardening-coverage.log` and `01-hardening-pr-body.md` patch chunks failed to apply to upstream Nightly due to baseCommitId drift (`6ffc87bc` vs upstream `efd5c861`). Stage 1 emitted zero terminal coverage output for 2026-11-04.
+  - Root Cause: Jules native session publication did not execute or finalize before timeout, and watchdog fallback patch extraction produced a patch relative to an older tree (`6ffc87bc`) that could not rebase cleanly onto current Nightly due to coverage log conflicts.
+  - Recommended Fix: Harden watchdog fallback patch application logic with three-way merge fallback or targeted file normalization for coverage log tails, and ensure Stage 1 prompt avoids long pre-flight delays that exhaust session lifetime.
+
+* Pipeline Fallback Publication Mass Rescue (2026-11-04):
+  - Stages: Stage 2 (PR #2469), Stage 4 (PR #2470), Stage 5 (PR #2471), Stage 6 (PR #2472), Stage 7 (PR #2473)
+  - State: [RESCUED] (2026-11-04)
+  - Evidence: `nightly-run-ledger.json` (failureClass: RECOVERED_BY_FALLBACK_PUBLISH across Stages 2, 4, 5, 6, 7), PR history, git log (commits `7b07f172`, `c7b099e5`, `b98aa3bb`, `88604c7e`, `83a2983e`)
+  - Symptom: Every completed stage in cycle 2026-11-04 prior to Stage 8 failed to natively publish its PR output at session completion. The watchdog executed a batch fallback publication at 06:57:39–06:58:03 UTC, publishing fallback PRs #2469, #2470, #2471, #2472, and #2473 from session output patches, all of which passed CI and merged cleanly into Nightly.
+  - Root Cause: Upstream native PR publication mechanism in Jules unattended runner failed across all active lanes between 01:00 UTC and 06:10 UTC, leaving all sessions completed in the runner but un-published. The watchdog's `RECOVERED_BY_FALLBACK_PUBLISH` mechanism successfully rescued all 5 completed stages, preventing total cycle output loss. Overall intervention rate for merged stages: 5/5 (100.0%).
+  - Recommended Fix: Audit GitHub/Jules native publication API integration and token permissions for automated runner sessions to determine why native PR creation did not trigger upon session completion.
+
+* Stage 3 Interactive Feedback Stalling Recurrence (2026-11-04):
+  - Stage: Stage 3 (Baseline Consolidation)
+  - State: [RECURRING] (2026-11-04)
+  - Evidence: `nightly-run-ledger.json` (state: RUNNING, session: sessions/4234341519007306848, state: AWAITING_USER_FEEDBACK, lifetimeMinutes: 37.6), `.github/nightly-logs/03-baseline-consolidation-coverage.log` (last entry 2026-11-01)
+  - Symptom: For the third consecutive cycle (2026-11-02, 2026-11-03, 2026-11-04), Stage 3 failed to emit terminal coverage logs or publish a PR, halting in `AWAITING_USER_FEEDBACK` and remaining in `RUNNING`/`NO_OUTPUT`.
+  - Root Cause: Agent session continues to invoke interactive user feedback tools (`request_user_input`, `ask_question`), stalling unattended execution indefinitely until watchdog timeout.
+  - Recommended Fix: Poka-yoke preventive action is urgently required: strip or mock interactive feedback tools in the runner environment for Stage 3, and add explicit failure guards in `03-baseline-consolidation.md` prohibiting any prompt-for-feedback tool invocations.
+
 ## Section 2: Cross-Stage Coherence Bugs (Priority 2)
 
 * Duplicate Merge Failure Blocks in 00-pr-history.md:
@@ -940,56 +964,64 @@
   - Root Cause: Stage 1 dispatch and session execution began at 00:30 UTC, prior to the UTC cycle roll-over timestamp used by tag derivation, creating a one-day date discrepancy between the git tag prefix (`2026-11-02`) and the cycle ledger ID (`nightly-cycle/2026-11-03`).
   - Recommended Fix: No functional impact on downstream execution. Standardize merge coordinator tag date calculation to use the cycle ID date rather than PR creation wall-clock time if exact date string alignment across git tags is desired.
 
+* Mass Fallback Publication Timing and Upstream Divergence (2026-11-04):
+  - Stages: Stages 1, 2, 4, 5, 6, 7
+  - State: [OBSERVED - mitigated] (2026-11-04)
+  - Evidence: `nightly-run-ledger.json` (runs `2026-11-04`), PRs #2469, #2470, #2471, #2472, #2473
+  - Symptom: All five completed sessions between 01:00 UTC and 06:10 UTC completed without triggering native PR creation. The watchdog triggered sequential fallback publication for all of them within a 24-second window (06:57:39 to 06:58:03 UTC). Furthermore, Stage 1's patch failed to apply during the same fallback window because earlier unstaged changes diverged from current Nightly base.
+  - Root Cause: Shared pipeline native PR publisher failure across early morning sessions, coupled with batch watchdog fallback processing that processed all accumulated completed sessions simultaneously once the watchdog poll ran at 06:57 UTC.
+  - Recommended Fix: Ensure watchdog fallback publication handles merge conflicts in coverage logs gracefully, and investigate the Jules automated execution environment's native PR creation callback reliability.
+
 ## Section 3: No-Diff and Low-Value Audit (Priority 3)
 
 * Stage 1 (Harden):
-  - Consecutive No-Diff Days: 8 (CLEAN logged on 2026-11-02 / cycle 2026-11-03, PR #2445; audit duration: 20m, median 6m)
-  - Analysis: Audited unauthenticated endpoints, in-memory state, Valibot boundary gaps, dead critical-path code, and cross-layer violations across 35 files on changed surface and Edge Functions; zero viable threat vectors found (PR #2445).
+  - Consecutive No-Diff Days: 9 (Session stuck / NO_OUTPUT on 2026-11-04, lifetime 44.6m, fallback patch refused; previous CLEAN logged on 2026-11-02 / cycle 2026-11-03, PR #2445; audit duration: untimed this cycle, median 6m)
+  - Analysis: Stage 1 session ran for 44.6m without native publish, and watchdog fallback patch extraction failed against upstream Nightly; zero diff applied.
 
 * Stage 2 (Verify):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-11-03 in Frontend-PWA/src/shared/ui/ui-tests/BenchmarkPanel.spec.ts, PR #2458; audit duration: 15m, median 12m)
-  - Analysis: Added comprehensive unit test suite for BenchmarkPanel.vue in BenchmarkPanel.spec.ts (PR #2458).
+  - Consecutive No-Diff Days: 1 (CLEAN logged on 2026-11-04, PR #2469 rescued via fallback publish; audit duration: 16m, median 12m)
+  - Analysis: Inspected useConfirm service following TSDoc hardening; verified existing useConfirm.spec.ts suite covers initialization, default/custom options, resolve/reject flows, and idle calls (7 of 7 tests passed).
 
 * Stage 3 (Baseline Consolidation):
-  - Consecutive No-Diff Days: 2 (Session failed and stalled / NO_OUTPUT on 2026-11-03, initial session failed, redispatch session AWAITING_USER_FEEDBACK; audit duration: 0m this cycle, previous 12m, median 4m)
+  - Consecutive No-Diff Days: 3 (Session halted in AWAITING_USER_FEEDBACK / NO_OUTPUT on 2026-11-04; audit duration: 0m this cycle, previous 12m, median 4m)
   - Analysis: Stage 3 failed to complete consolidation; 19 migrations remain pending baseline consolidation.
 
 * Stage 4 (Optimization):
-  - Consecutive No-Diff Days: 21 (CLEAN logged on 2026-11-03, PR #2459; audit duration: 8m, median 5m)
-  - Analysis: Audited 35 changed files and 10 SQL database views via source-level grep; confirmed zero structural rot or unreferenced database views (PR #2459).
+  - Consecutive No-Diff Days: 22 (CLEAN logged on 2026-11-04, PR #2470 rescued via fallback publish; audit duration: 6m, median 5m)
+  - Analysis: Audited 32 changed files and 10 SQL database views via source-level grep; confirmed zero structural rot or unreferenced views. Dead component audit passed with 0 violations across 456 files.
 
 * Stage 5 (README):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-11-03 in Frontend-PWA/src/shared/ui/README.md, PR #2460; audit duration: 5m, median 5m)
-  - Analysis: Document BenchmarkPanel.vue range track visualization and delta sentiment in shared/ui README (PR #2460).
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-11-04 in Frontend-PWA/src/core/services/README.md, PR #2471 rescued via fallback publish; audit duration: 9m, median 5m)
+  - Analysis: Reconciled useConfirm architecture and interface contracts in core/services README (PR #2471).
 
 * Stage 6 (TSDoc):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-11-03 in Frontend-PWA/src/core/services/useConfirm.ts, PR #2461; audit duration: 11m, median 6m)
-  - Analysis: docs(tsdoc): harden useConfirm TSDoc interface contracts and inline decision annotations (PR #2461).
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-11-04 in Frontend-PWA/src/core/services/useSyntheticMode.ts, PR #2472 rescued via fallback publish; audit duration: 12m, median 6m)
+  - Analysis: Hardened useSyntheticMode TSDoc interface contract and inline logic annotations (PR #2472).
 
 * Stage 7 (Version Integrity):
-  - Consecutive No-Diff Days: 184 (CLEAN logged on 2026-11-03, PR #2462; audit duration: 3m, median 3m)
-  - Analysis: Audited catalog protocols in Frontend-PWA and Backend manifests, verified ground truth version 14.55.14 across 3 package manifests and derived files (PR #2462).
+  - Consecutive No-Diff Days: 185 (CLEAN logged on 2026-11-04, PR #2473 rescued via fallback publish; audit duration: 4m, median 3m)
+  - Analysis: Audited catalog protocols in Frontend-PWA and Backend manifests, verified ground truth version 14.55.14 across 3 package manifests and derived files (PR #2473).
 
 * Stage 8 (Dependency Audit):
   - Consecutive No-Diff Days: 0 (Active changes logged on 2026-11-03 in package.json, PR #2463; audit duration: 13m, median 6m)
-  - Analysis: Bumped dependency-cruiser to ^18.7.2 and updated major version watchlist (PR #2463).
+  - Analysis: Bumped dependency-cruiser to ^18.7.2 and updated major version watchlist (PR #2463). Frontier at Stage 7; scheduled for subsequent dispatch.
 
 * Stage 9 (Refactor):
   - Consecutive No-Diff Days: 19 (CLEAN logged on 2026-11-03, PR #2464; audit duration: 5m, median 6m)
-  - Analysis: CLEAN: (1) 33 files, 0 dep-viols, knip: 11 files/1 dep/0 exp; (2) streak: 18; (3) inspected useConfirm, useShare; (4) closest: useConfirm (140 lines, compliant); hunt: useConfirm resolution and idle resolve passed 7/7 (PR #2464).
+  - Analysis: Audited useConfirm and useShare composables; 0 dep-viols, knip 11 files/1 dep/0 exp (PR #2464). Frontier at Stage 7; scheduled for subsequent dispatch.
 
 * Stage 10 (APK-Integrity):
   - Consecutive No-Diff Days: 117 (CLEAN logged on 2026-11-03, PR #2465; audit duration: 3m, median 3m)
-  - Analysis: Verified PWA wrapper & APK packaging integrity: digital asset links, manifest parity, version code/name sync (14.55.14 / 14055014), release metadata pointer (clashmanager-v14.55.14+529.apk), and cleartext traffic prohibition (PR #2465).
+  - Analysis: Verified PWA wrapper & APK packaging integrity: digital asset links, manifest parity, version code/name sync (14.55.14 / 14055014), release metadata pointer (PR #2465). Frontier at Stage 7; scheduled for subsequent dispatch.
 
 * Stage 11 (APK-Optimization):
   - Consecutive No-Diff Days: 22 (CLEAN logged on 2026-11-03, PR #2466; audit duration: 4m, median 3m)
-  - Analysis: Audited native WebView performance settings, service worker caching routes, Vite Rolldown code splitting, and public asset precache footprint; zero source changes required (PR #2466).
+  - Analysis: Audited native WebView performance settings, service worker caching routes, Vite Rolldown code splitting, and public asset precache footprint (PR #2466). Frontier at Stage 7; scheduled for subsequent dispatch.
 
 * Stage 12 (APK-UX):
   - Consecutive No-Diff Days: 35 (CLEAN logged on 2026-11-03, PR #2467; audit duration: 8m, median 4m)
-  - Analysis: Automated hybrid shell UX audit completed with 0 violations across 77 files (PR #2467).
+  - Analysis: Automated hybrid shell UX audit completed with 0 violations across 77 files (PR #2467). Frontier at Stage 7; scheduled for subsequent dispatch.
 
 * Stage 13 (Self-Healing):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-11-03; audit duration: 11m, median 5m)
-  - Analysis: Completed daily self-healing audit pass for 2026-11-03: documented Stage 3 recurring failure and redispatch stalling in Section 1, Stage 12 watchdog reconciliation in Section 1, Stage 1 cycle boundary tag divergence in Section 2, and updated Section 3 metrics across Stages 1-13.
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-11-04; audit duration: 9m, median 5m)
+  - Analysis: Completed daily self-healing audit pass for 2026-11-04: documented Stage 1 session stuck & fallback refusal, 5-stage watchdog fallback publish rescue (100% intervention rate on merged PRs), Stage 3 recurring user prompt stalling in Section 1, mass fallback publishing in Section 2, and updated Section 3 metrics across Stages 1-13.
