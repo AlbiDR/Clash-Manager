@@ -4,23 +4,23 @@
 
 In plain terms: nothing needed fixing. This run checked the optimization area and found it already correct, so the only file here is the log recording that the check happened.
 
-**What was checked:** Audited 35 changed files and 10 SQL database views via source-level grep; confirmed zero structural rot or unreferenced database views
+**What was checked:** Audited 32 changed files and 10 SQL database views via source-level grep; confirmed zero structural rot or unreferenced views
 
-**Why:** Substrate hygiene audit across Edge Functions and Frontend confirmed zero unreferenced database views or structural rot
+**Why:** Audited recent file surface and SQL view references across Edge Functions and Frontend; all 10 active database views are actively referenced and dead-component audit passed with 0 violations
 
-**Result:** Vitest monorepo suite passed: 221 test files (2376 passed) in Frontend-PWA, 38 test files (444 passed) in Backend, depcruise reported 0 violations
+**Result:** Passed audit:dead-components with 0 dead components across 456 files; Vitest BenchmarkPanel.spec.ts passed 11 of 11 tests; source-level grep confirmed 10 active database views referenced across Edge Functions and Frontend
 
 **Files changed:** .github/nightly-logs/04-optimization-coverage.log
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: optimization
-  Cycle: nightly-cycle/2026-11-03
+  Cycle: nightly-cycle/2026-11-04
   Contract: aa2c8988d1392624d60bb5e0229636b4e4503d27fc3a61008485cb2452cde7f5
-  Why: Substrate hygiene audit across Edge Functions and Frontend confirmed zero unreferenced database views or structural rot
-  Change: Audited 35 changed files and 10 SQL database views via source-level grep; confirmed zero structural rot or unreferenced database views
-  Result: Vitest monorepo suite passed: 221 test files (2376 passed) in Frontend-PWA, 38 test files (444 passed) in Backend, depcruise reported 0 violations
+  Why: Audited recent file surface and SQL view references across Edge Functions and Frontend; all 10 active database views are actively referenced and dead-component audit passed with 0 violations
+  Change: Audited 32 changed files and 10 SQL database views via source-level grep; confirmed zero structural rot or unreferenced views
+  Result: Passed audit:dead-components with 0 dead components across 456 files; Vitest BenchmarkPanel.spec.ts passed 11 of 11 tests; source-level grep confirmed 10 active database views referenced across Edge Functions and Frontend
   Files: .github/nightly-logs/04-optimization-coverage.log
   Nudges: 0
-  Execution: 9c63d3b6286e8d6cc51590e2389ae8284d6da2ad
+  Execution: efd5c8610745311ff9d161e69ad61cf2c823ebd4
 -->
