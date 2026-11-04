@@ -4,23 +4,23 @@
 
 In plain terms: nothing needed fixing. This run checked the refactor area and found it already correct, so the only file here is the log recording that the check happened.
 
-**What was checked:** CLEAN: (1) 33 files, 0 dep-viols, knip: 11 files/1 dep/0 exp; (2) streak: 18; (3) inspected useConfirm, useShare; (4) closest: useConfirm (140 lines, compliant); hunt: useConfirm resolution and idle resolve passed 7/7
+**What was checked:** CLEAN: (1) 35 files, 0 dep-viols, knip 11 files/1 dep/0 exp; (2) streak 19; (3) inspected useSyntheticMode, useConfirm; (4) closest: useSyntheticMode (145 lines); hunt: useSyntheticMode query parameter parsing passed 4/4
 
-**Why:** Substrate architecture complies with ADR Layer 1 contracts; no duplicated logic or oversized modules identified; defect hunt on useConfirm verified expected resolution paths
+**Why:** Verify layer isolation and absence of architectural debt or reproducible defects in recently touched core services
 
-**Result:** depcruise reported 0 violations across 534 modules, vue-tsc type-check passed, vitest useConfirm passed 7/7
+**Result:** Vitest useSyntheticMode.spec.ts passed 4 of 4 tests; depcruise reported 0 violations across 534 modules
 
 **Files changed:** .github/nightly-logs/09-refactor-proposals-coverage.log
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: architecture
-  Cycle: nightly-cycle/2026-11-03
+  Cycle: nightly-cycle/2026-11-04
   Contract: 401ccac4d9a8ca083bc5492dd8958aca42a02d1f4857914b074fb6ad6b2e53f1
-  Why: Substrate architecture complies with ADR Layer 1 contracts; no duplicated logic or oversized modules identified; defect hunt on useConfirm verified expected resolution paths
-  Change: CLEAN: (1) 33 files, 0 dep-viols, knip: 11 files/1 dep/0 exp; (2) streak: 18; (3) inspected useConfirm, useShare; (4) closest: useConfirm (140 lines, compliant); hunt: useConfirm resolution and idle resolve passed 7/7
-  Result: depcruise reported 0 violations across 534 modules, vue-tsc type-check passed, vitest useConfirm passed 7/7
+  Why: Verify layer isolation and absence of architectural debt or reproducible defects in recently touched core services
+  Change: CLEAN: (1) 35 files, 0 dep-viols, knip 11 files/1 dep/0 exp; (2) streak 19; (3) inspected useSyntheticMode, useConfirm; (4) closest: useSyntheticMode (145 lines); hunt: useSyntheticMode query parameter parsing passed 4/4
+  Result: Vitest useSyntheticMode.spec.ts passed 4 of 4 tests; depcruise reported 0 violations across 534 modules
   Files: .github/nightly-logs/09-refactor-proposals-coverage.log
   Nudges: 0
-  Execution: 24bf6292983a43e7e1ef0dbd7f8820859d9abced
+  Execution: 02ac7d9b89212ed23be7199f2931421427eff49a
 -->
