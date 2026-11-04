@@ -2,25 +2,25 @@
 
 **Status:** CHANGED
 
-In plain terms: this updates dependencies only. No project code was written or changed, though the app should be re-tested before release.
+In plain terms: this changes 1 code file and 3 dependency files, so the app's behaviour may be affected. No tests were added or changed alongside it.
 
-**What changed:** Bumped dependency-cruiser to ^18.7.2 and updated major version watchlist
+**What changed:** Bumped eslint to ^10.14.0 in monorepo catalogs and updated lockfile
 
-**Why:** Safe patch bump for dependency-cruiser and tracked new Supabase CLI v3 major release
+**Why:** Tier 1 minor bump to latest release within major version 10
 
-**Result:** depcruise passed on Frontend-PWA/src, audit:version passed, test passed 2376 tests
+**Result:** pnpm --dir Frontend-PWA run lint and test passed with 0 errors
 
-**Files changed:** .github/nightly-logs/08-dependency-audit-coverage.log, package.json, pnpm-lock.yaml, pnpm-workspace.yaml
+**Files changed:** .github/nightly-logs/08-dependency-audit-coverage.log, Frontend-PWA/.claude/launch.json, package.json, pnpm-lock.yaml, pnpm-workspace.yaml
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: dependencies
-  Cycle: nightly-cycle/2026-11-03
+  Cycle: nightly-cycle/2026-11-04
   Contract: b865578f1a0b5d4e90f264b4dbb792c4d309c9bbea08fd314cf47cef940ff9b8
-  Why: Safe patch bump for dependency-cruiser and tracked new Supabase CLI v3 major release
-  Change: Bumped dependency-cruiser to ^18.7.2 and updated major version watchlist
-  Result: depcruise passed on Frontend-PWA/src, audit:version passed, test passed 2376 tests
-  Files: .github/nightly-logs/08-dependency-audit-coverage.log, package.json, pnpm-lock.yaml, pnpm-workspace.yaml
+  Why: Tier 1 minor bump to latest release within major version 10
+  Change: Bumped eslint to ^10.14.0 in monorepo catalogs and updated lockfile
+  Result: pnpm --dir Frontend-PWA run lint and test passed with 0 errors
+  Files: .github/nightly-logs/08-dependency-audit-coverage.log, Frontend-PWA/.claude/launch.json, package.json, pnpm-lock.yaml, pnpm-workspace.yaml
   Nudges: 0
-  Execution: 1df6d802c079c049d3cc76878fd5ebe3177821fa
+  Execution: 02ac7d9b89212ed23be7199f2931421427eff49a
 -->
