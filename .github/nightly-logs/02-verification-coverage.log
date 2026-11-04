@@ -106,3 +106,4 @@
 * [2026-11-01] [Stage 2] [01:33Z-01:52Z 19m] [checks baseline-tests=PASS] CHANGED: Backend/supabase/functions/query-royale-api/client.spec.ts -- Added unit test suite for query-royale-api client & environment broker in client.spec.ts
 * [2026-11-02] [Stage 2] [01:07Z-01:24Z 17m] [checks baseline-tests=PASS] CHANGED: Backend/supabase/functions/ping/client.spec.ts -- Added unit test suite for ping client & environment broker in client.spec.ts
 * [2026-11-03] [Stage 2] [01:06Z-01:21Z 15m] [checks baseline-tests=PASS] CHANGED: Frontend-PWA/src/shared/ui/ui-tests/BenchmarkPanel.spec.ts -- Added comprehensive unit test suite for BenchmarkPanel.vue in BenchmarkPanel.spec.ts
+* [2026-11-04] [Stage 2] [01:31Z-01:46Z 16m] [checks baseline-tests=PASS] CLEAN: Codebase -- Inspected useConfirm service following TSDoc hardening; verified existing useConfirm.spec.ts suite covers initialization, default/custom options, resolve/reject flows, and idle calls
