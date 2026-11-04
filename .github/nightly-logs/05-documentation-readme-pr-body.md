@@ -4,23 +4,23 @@
 
 In plain terms: this is a documentation change to 1 file in the documentation README area. Nothing about how the app runs is affected.
 
-**What changed:** Document BenchmarkPanel.vue range track visualization and delta sentiment in shared/ui README
+**What changed:** Reconcile useConfirm architecture and interface contracts in core/services README
 
-**Why:** BenchmarkPanel.vue was added without adjacent shared/ui README documentation
+**Why:** Document UseConfirmReturn interface contracts, modal collision safety, and resolution lifecycle guards
 
-**Result:** git diff --check reported 0 errors; Vitest BenchmarkPanel.spec.ts passed 11 of 11 tests
+**Result:** git diff --check passed with 0 errors
 
-**Files changed:** .github/nightly-logs/05-documentation-readme-coverage.log, Frontend-PWA/src/shared/ui/README.md
+**Files changed:** .github/nightly-logs/05-documentation-readme-coverage.log, Frontend-PWA/src/core/services/README.md
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: documentation
-  Cycle: nightly-cycle/2026-11-03
+  Cycle: nightly-cycle/2026-11-04
   Contract: cea68a5bbba1bd2cbc6d3bdfe2639f37f3935b571beab59f5da1501b1180b22d
-  Why: BenchmarkPanel.vue was added without adjacent shared/ui README documentation
-  Change: Document BenchmarkPanel.vue range track visualization and delta sentiment in shared/ui README
-  Result: git diff --check reported 0 errors; Vitest BenchmarkPanel.spec.ts passed 11 of 11 tests
-  Files: .github/nightly-logs/05-documentation-readme-coverage.log, Frontend-PWA/src/shared/ui/README.md
+  Why: Document UseConfirmReturn interface contracts, modal collision safety, and resolution lifecycle guards
+  Change: Reconcile useConfirm architecture and interface contracts in core/services README
+  Result: git diff --check passed with 0 errors
+  Files: .github/nightly-logs/05-documentation-readme-coverage.log, Frontend-PWA/src/core/services/README.md
   Nudges: 0
-  Execution: 25e8a8d2b2f9fbde8a8ec739235d72a293f3d860
+  Execution: efd5c8610745311ff9d161e69ad61cf2c823ebd4
 -->

@@ -84,9 +84,11 @@ This is the single registry for these services; higher-layer READMEs link here r
 ### Declarative Global Dialog Confirmation (`useConfirm.ts`)
 
 The modal confirmation composable provides a robust, styled replacement for the native browser/WebView `window.confirm()` method to prevent blocking and unstyled system alerts:
-- **State Isolation:** Implements global, reactive, single-active confirmation state (`active` ref) scoped strictly to Layer 1 Core.
-- **Asynchronous Flow:** Exposes a promise-driven `confirm(pendingConfirmationOptions)` method that pauses execution and resolves to `isUserActionConfirmed` (boolean) once the user interacts with the UI dialog, ensuring clean linear usage.
-- **Tone & Ergonomics:** Supports custom dialog text, customized button labels, and visual tone configuration (`danger` vs `default`) to convey destructive semantics (e.g. factory resets or API URL resets).
+- **Interface Contracts & Return Shape (`UseConfirmReturn`):** Formally exposes `active: Ref<ActiveConfirm | null>`, `confirm(pendingConfirmationOptions: ConfirmOptions): Promise<boolean>`, and `resolve(isUserActionConfirmed: boolean): void`. Decouples confirmation invocation sites across any layer from presentation rendering in `ConfirmDialog.vue`.
+- **Singleton State Isolation (`active` ref):** Scoped to Layer 1 Core module-level reactive state (`active`), ensuring only a single modal can be presented at a time to prevent overlapping dialog conflicts and unbounded modal queues across the shell.
+- **Asynchronous Promise Flow & Collision Safety:** Exposes a promise-driven `confirm()` method that immediately registers the active modal with default fallback labels (`confirmLabel: "Confirm"`, `cancelLabel: "Cancel"`, `tone: "default"`) and returns a Promise resolving to `boolean` (`isUserActionConfirmed`) once user input occurs.
+- **Guarded Resolution Lifecycle:** `resolve(isUserActionConfirmed)` guards against redundant or out-of-order invocations when `active.value` is null, cleanly triggering the registered promise resolver callback before resetting the active modal state to `null`.
+- **Tone & Ergonomics:** Supports custom dialog title/message, customizable action labels, and visual tone configuration (`danger` vs `default`) to visually communicate destructive actions (e.g. factory resets or API key deletions).
 
 ### Application Settings & Feature Flag Management (`useAppSettings.ts`)
 
