@@ -219,3 +219,4 @@
 * [2026-11-01] [Stage 5] [04:21Z-04:28Z 7m] [checks doc-debt=OK] CHANGED: Backend/supabase/functions/query-royale-api/README.md -- docs(readme): Reconcile query-royale-api README with client.ts vault environment broker role
 * [2026-11-02] [Stage 5] [04:17Z-04:23Z 7m] [checks doc-debt=OK] CHANGED: Backend/README.md -- Documented ping Edge Function in dedicated README and updated Backend README link
 * [2026-11-03] [Stage 5] [04:14Z-04:19Z 5m] [checks doc-debt=OK] CHANGED: Frontend-PWA/src/shared/ui/README.md -- Document BenchmarkPanel.vue range track visualization and delta sentiment in shared/ui README
+* [2026-11-04] [Stage 5] [04:31Z-04:40Z 9m] [checks doc-debt=OK] CHANGED: Frontend-PWA/src/core/services/README.md -- Reconcile useConfirm architecture and interface contracts in core/services README
