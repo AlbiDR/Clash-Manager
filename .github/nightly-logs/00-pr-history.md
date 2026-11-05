@@ -16,6 +16,63 @@ LAST_AGED:   2026-11-04
 
 ## T1 -- Active (last 7 days)
 
+### [2026-11-05] PR #2481 [Stage 2]: Frontend-PWA/src/core/services/services-tests/useSyntheticMode.spec.ts -- Expanded useSyntheticMode unit test suite with URL query parameters, SPA hash search parameters, showcase cascades, and multi-instance reactivity
+**Domain:** verification | **Commit:** 0d9212c51 | [View PR](https://github.com/AlbiDR/ClashManager/pull/2481)
+**Files:** .github/nightly-logs/02-verification-coverage.log, .github/nightly-logs/02-verification-pr-body.md, Frontend-PWA/src/core/services/services-tests/useSyntheticMode.spec.ts
+**Why:** useSyntheticMode.ts was recently modified in the working set; its spec lacked coverage for SPA hash query parameter fallback, URL parameter parsing, showcase cascades and explicit disablement suppression, and cross-caller reactivity synchronization
+**Change:** Frontend-PWA/src/core/services/services-tests/useSyntheticMode.spec.ts -- Expanded useSyntheticMode unit test suite with URL query parameters, SPA hash search parameters, showcase cascades, and multi-instance reactivity
+**Result:** nightly-spec-verify.mjs passed spec (7 of 7 assertions), eslint (0 errors), and vue-tsc type-check (0 errors); mutation test proved failure when hash query lookup was inverted
+**Nudges:** 0
+
+### [2026-11-05] PR #2482 [Stage 3]: Folded migration 20261004015410 into master baseline: added features.get_active_roster_win_rates() function and permissions, updated features.roster_view; 18 pending migrations remain to fold next with 20261004020000
+**Domain:** database | **Commit:** 4aaab294e | [View PR](https://github.com/AlbiDR/ClashManager/pull/2482)
+**Files:** .github/nightly-logs/03-baseline-consolidation-coverage.log, .github/nightly-logs/03-baseline-consolidation-pr-body.md, Backend/supabase/migrations/20260531232406_master_migration.sql
+**Why:** Fold oldest pending migration into baseline to reconcile schema divergence
+**Change:** Folded migration 20261004015410 into master baseline: added features.get_active_roster_win_rates() function and permissions, updated features.roster_view; 18 pending migrations remain to fold next with 20261004020000
+**Result:** pnpm audit:migrations PASS (0 violations across 79 migrations), fold-state 4 objects folded verbatim, DB-UNAVAILABLE semantic gate pending
+**Nudges:** 0
+
+### [2026-11-05] PR #2483 [Stage 4]: Audited 30 changed files and 10 SQL database views via source-level grep; confirmed zero structural rot or unreferenced views
+**Domain:** optimization | **Commit:** ccff302af | [View PR](https://github.com/AlbiDR/ClashManager/pull/2483)
+**Files:** .github/nightly-logs/04-optimization-coverage.log, .github/nightly-logs/04-optimization-pr-body.md
+**Why:** Audited recent file surface and SQL view references across Edge Functions and Frontend; all 10 active database views are actively referenced and dead-component audit passed with 0 violations
+**Change:** Audited 30 changed files and 10 SQL database views via source-level grep; confirmed zero structural rot or unreferenced views
+**Result:** Passed audit:dead-components with 0 dead components across 456 files; Vitest passed 221 test files (2,376 tests); source-level grep confirmed 10 active database views referenced across Edge Functions and Frontend
+**Nudges:** 0
+
+### [2026-11-05] PR #2484 [Stage 5]: Reconcile useSyntheticMode architecture and interface contracts in core/services README
+**Domain:** documentation | **Commit:** 23172e346 | [View PR](https://github.com/AlbiDR/ClashManager/pull/2484)
+**Files:** .github/nightly-logs/05-documentation-readme-coverage.log, .github/nightly-logs/05-documentation-readme-pr-body.md, Frontend-PWA/src/core/services/README.md
+**Why:** Document UseSyntheticModeReturn interface contracts, resolution precedence, and dual search/hash query parameter parsing
+**Change:** Reconcile useSyntheticMode architecture and interface contracts in core/services README
+**Result:** git diff --check passed with 0 errors; Vitest useSyntheticMode.spec.ts passed 4 of 4 tests
+**Nudges:** 0
+
+### [2026-11-05] PR #2485 [Stage 6]: docs(tsdoc): harden apkResolverUtils interface contracts and inline decision annotations
+**Domain:** documentation | **Commit:** ced3f6d13 | [View PR](https://github.com/AlbiDR/ClashManager/pull/2485)
+**Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, .github/nightly-logs/06-documentation-tsdoc-pr-body.md, Frontend-PWA/src/core/services/apkResolverUtils.ts
+**Why:** Documented exported release version, build number, SHA-256 digest, and byte size validation type guards to prevent interface drift across APK release resolution boundaries
+**Change:** docs(tsdoc): harden apkResolverUtils interface contracts and inline decision annotations
+**Result:** Vitest apkResolver.spec.ts passed 31 of 31 tests, full frontend suite passed 2376 of 2376 tests, vue-tsc passed with 0 errors
+**Nudges:** 0
+
+### [2026-11-05] PR #2486 [Stage 7]: Calibration pass: 7 ordinary CLEAN runs confirmed; audited catalog protocols in Frontend-PWA and Backend manifests, verified ground truth version 14.55.14 across 3 package manifests and derived files
+**Domain:** versioning | **Commit:** 4415a3e8a | [View PR](https://github.com/AlbiDR/ClashManager/pull/2486)
+**Files:** .github/nightly-logs/07-version-integrity-coverage.log, .github/nightly-logs/07-version-integrity-pr-body.md
+**Why:** Calibration due after 7 ordinary CLEAN runs; audited catalog protocols and monorepo version consistency across manifests and derived files
+**Change:** Calibration pass: 7 ordinary CLEAN runs confirmed; audited catalog protocols in Frontend-PWA and Backend manifests, verified ground truth version 14.55.14 across 3 package manifests and derived files
+**Result:** pnpm audit:version reported 0 drift lines across 3 manifests and derived files, all systems nominal
+**Nudges:** 0
+
+### [2026-11-04] PR #2480 [Stage 1]: Audited 5 priority targets (unauthenticated endpoints, in-memory state, Valibot boundary gaps, dead critical-path code, cross-layer violations) across changed surface; zero threat vectors found
+**Domain:** hardening | **Commit:** c06ecc3bd | [View PR](https://github.com/AlbiDR/ClashManager/pull/2480)
+**Files:** .github/nightly-logs/00-pr-history.md, .github/nightly-logs/01-hardening-coverage.log, .github/nightly-logs/01-hardening-pr-body.md
+**Why:** All ingress boundaries, in-memory state, and layer boundaries are hardened and secure
+**Change:** Audited 5 priority targets (unauthenticated endpoints, in-memory state, Valibot boundary gaps, dead critical-path code, cross-layer violations) across changed surface; zero threat vectors found
+**Result:** depcruise passed 0 violations, vue-tsc passed, vitest passed 221 files and 2376 tests cleanly
+**Nudges:** 0
+
+
 ### [2026-11-04] PR #2474 [Stage 8]: Bumped eslint to ^10.14.0 in monorepo catalogs and updated lockfile
 **Domain:** dependencies | **Commit:** 217d9de4e | [View PR](https://github.com/AlbiDR/ClashManager/pull/2474)
 **Files:** .github/nightly-logs/08-dependency-audit-coverage.log, .github/nightly-logs/08-dependency-audit-pr-body.md, package.json, pnpm-lock.yaml, pnpm-workspace.yaml
