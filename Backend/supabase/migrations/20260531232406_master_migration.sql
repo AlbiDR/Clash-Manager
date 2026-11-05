@@ -4893,6 +4893,45 @@ COMMENT ON FUNCTION public.get_latest_battle_times(text[]) IS
 'that format, so any drift here can only cost a redundant call, never a missed battle. '
 'Changing either format string without the other breaks that guarantee.';
 
+CREATE OR REPLACE FUNCTION features.get_active_roster_win_rates()
+RETURNS TABLE (
+  player_tag text,
+  win_rate numeric
+)
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = ''
+AS $function$
+  SELECT
+    stats.player_tag,
+    COALESCE(stats.wins::numeric / NULLIF(stats.battles, 0)::numeric, 0::numeric)
+  FROM drivers.get_player_battle_stats(
+    30,
+    ARRAY(
+      SELECT members.player_tag
+      FROM drivers.members AS members
+      WHERE members.is_active
+        AND members.player_tag ~ '^#[0289CGJLPQRUVY]+$'
+    )
+  ) AS stats(
+    player_tag,
+    battles,
+    wins,
+    fame_earned_sum,
+    team_crowns_sum,
+    opponent_crowns_sum
+  );
+$function$;
+
+COMMENT ON FUNCTION features.get_active_roster_win_rates() IS
+  'Publicly executable, zero-argument projection used only to supply the active roster win rates already exposed by features.roster_view. Keeps drivers.get_player_battle_stats private because that generic helper accepts caller-selected tags and windows.';
+
+REVOKE ALL ON FUNCTION features.get_active_roster_win_rates()
+  FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION features.get_active_roster_win_rates()
+  TO anon, authenticated, service_role;
+
 -- VIEWS
 -- drivers.recruits_view removed: view was unreferenced by all application code.
 -- Dropped via migration 20260726163300_drop_orphaned_views.sql.
@@ -5213,93 +5252,93 @@ GRANT SELECT ON features.scoring_view TO authenticated, anon, service_role;
 -- =============================================================================
 DROP VIEW IF EXISTS features.roster_view CASCADE;
 CREATE OR REPLACE VIEW features.roster_view AS
- WITH roster_source AS (
-         SELECT m.id,
-            m.player_tag,
-            m.player_name,
-            m.role,
-            m.exp_level,
-            m.last_seen_at,
-            m.updated_at,
-            m.snapshot_date,
-            m.trophies,
-            m.donations,
-            m.donations_received,
-            m.joined_at,
-            m.star_points,
-            m.best_trophies,
-            m.total_donations,
-            m.war_day_wins,
-            m.clan_cards_collected,
-            m.challenge_max_wins,
-            m.card_count,
-            m.elite_wild_cards,
-            m.war_wins,
-            m.week_fame,
-            m.decks_used_today,
-            m.clan_rank,
-            m.last_ingested_at,
-            m.is_active,
-            m.decks_used_weekly,
-            m.current_clan_tag,
-            s.avg_fame,
-            s.war_rate,
-            s.voyage_index,
-            s.voyage_merit,
-            s.raw_performance_score,
-            s.performance_score,
-            s.stability_index,
-            s.days_inactive,
-            s.tenure_days,
-            s.hist,
-            s.v_hist,
-            s.avg_daily_donations,
-            ltrim(m.player_tag, '#'::text) AS raw_tag
-           FROM (drivers.members m
-             LEFT JOIN features.scoring_view s ON ((s.player_tag = m.player_tag)))
-          WHERE ((m.is_active = true) AND (m.player_tag ~ '^#[0289CGJLPQRUVY]+$'::text))
-        ),
-     battle_stats AS (
-         SELECT pb.player_tag,
-                count(*) AS battle_count,
-                count(*) FILTER (WHERE pb.win_status) AS wins
-           FROM drivers.player_battles pb
-          WHERE pb.player_tag IN (SELECT rs_tags.player_tag FROM roster_source rs_tags)
-          GROUP BY pb.player_tag
-        )
- SELECT player_name,
-    role,
-    rs.player_tag,
-    clan_rank,
-    trophies,
-    exp_level,
-    donations,
-    donations_received,
-    decks_used_today,
-    decks_used_weekly,
-    week_fame,
-    avg_fame,
-    voyage_index,
-    voyage_merit,
-    COALESCE(war_rate, (0)::numeric) AS war_participation,
-    raw_performance_score,
-    performance_score,
-    stability_index,
-    substrate.format_last_seen(days_inactive) AS last_seen_label,
-    substrate.format_tenure((tenure_days)::numeric) AS tenure_label,
-    last_seen_at,
-    last_ingested_at,
-    tenure_days,
-    hist,
-    v_hist,
-    avg_daily_donations,
-    ('https://link.clashroyale.com/en?player='::text || raw_tag) AS ingame_link,
-    ('https://royaleapi.com/player/'::text || raw_tag) AS royaleapi_link,
-    war_wins,
-    COALESCE(bs.wins::numeric / NULLIF(bs.battle_count, 0)::numeric, 0::numeric) AS win_rate
-   FROM roster_source rs
-     LEFT JOIN battle_stats bs ON (bs.player_tag = rs.player_tag)
-  ORDER BY raw_performance_score DESC NULLS LAST, performance_score DESC NULLS LAST;
+WITH roster_source AS (
+  SELECT
+    members.id,
+    members.player_tag,
+    members.player_name,
+    members.role,
+    members.exp_level,
+    members.last_seen_at,
+    members.updated_at,
+    members.snapshot_date,
+    members.trophies,
+    members.donations,
+    members.donations_received,
+    members.joined_at,
+    members.star_points,
+    members.best_trophies,
+    members.total_donations,
+    members.war_day_wins,
+    members.clan_cards_collected,
+    members.challenge_max_wins,
+    members.card_count,
+    members.elite_wild_cards,
+    members.war_wins,
+    members.week_fame,
+    members.decks_used_today,
+    members.clan_rank,
+    members.last_ingested_at,
+    members.is_active,
+    members.decks_used_weekly,
+    members.current_clan_tag,
+    scoring.avg_fame,
+    scoring.war_rate,
+    scoring.voyage_index,
+    scoring.voyage_merit,
+    scoring.raw_performance_score,
+    scoring.performance_score,
+    scoring.stability_index,
+    scoring.days_inactive,
+    scoring.tenure_days,
+    scoring.hist,
+    scoring.v_hist,
+    scoring.avg_daily_donations,
+    ltrim(members.player_tag, '#'::text) AS raw_tag
+  FROM drivers.members AS members
+  LEFT JOIN features.scoring_view AS scoring ON scoring.player_tag = members.player_tag
+  WHERE members.is_active
+    AND members.player_tag ~ '^#[0289CGJLPQRUVY]+$'::text
+), battle_stats AS (
+  SELECT
+    roster_win_rates.player_tag,
+    roster_win_rates.win_rate
+  FROM features.get_active_roster_win_rates() AS roster_win_rates
+)
+SELECT
+  roster.player_name,
+  roster.role,
+  roster.player_tag,
+  roster.clan_rank,
+  roster.trophies,
+  roster.exp_level,
+  roster.donations,
+  roster.donations_received,
+  roster.decks_used_today,
+  roster.decks_used_weekly,
+  roster.week_fame,
+  roster.avg_fame,
+  roster.voyage_index,
+  roster.voyage_merit,
+  COALESCE(roster.war_rate, 0::numeric) AS war_participation,
+  roster.raw_performance_score,
+  roster.performance_score,
+  roster.stability_index,
+  substrate.format_last_seen(roster.days_inactive) AS last_seen_label,
+  substrate.format_tenure(roster.tenure_days) AS tenure_label,
+  roster.last_seen_at,
+  roster.last_ingested_at,
+  roster.tenure_days,
+  roster.hist,
+  roster.v_hist,
+  roster.avg_daily_donations,
+  'https://link.clashroyale.com/en?player='::text || roster.raw_tag AS ingame_link,
+  'https://royaleapi.com/player/'::text || roster.raw_tag AS royaleapi_link,
+  roster.war_wins,
+  COALESCE(battle_stats.win_rate, 0::numeric) AS win_rate
+FROM roster_source AS roster
+LEFT JOIN battle_stats ON battle_stats.player_tag = roster.player_tag
+ORDER BY roster.raw_performance_score DESC NULLS LAST, roster.performance_score DESC NULLS LAST;
 
 COMMENT ON COLUMN features.roster_view.war_wins IS
   'Legacy Clan War 1 day-wins (drivers.members.war_wins). Frozen at each
@@ -5315,7 +5354,7 @@ COMMENT ON COLUMN features.roster_view.win_rate IS
    alongside RPeS. Superseded war_wins there, which was never populated by
    the ingestion pipeline and always read 0.';
 
-GRANT SELECT ON features.roster_view TO authenticated, anon, service_role;
+GRANT SELECT ON features.roster_view TO anon, authenticated, service_role;
 
 -- =============================================================================
 -- 5. Rebuild features.voyage_contributions (unchanged logic, clean rebuild)
