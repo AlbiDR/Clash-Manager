@@ -206,19 +206,66 @@ export function isReleaseApkFilename(filename: string | undefined): filename is 
   return typeof filename === "string" && /^clashmanager-v\d+\.\d+\.\d+\+\d+\.apk$/.test(filename);
 }
 
+/**
+ * Validates whether a candidate string conforms to standard 3-segment semantic version format (`x.y.z`).
+ *
+ * @param version - The candidate version string to validate.
+ * @returns Type predicate boolean confirming the string matches standard semantic versioning rules.
+ *
+ * @remarks
+ * Satisfies ADR Section III: Validation Boundaries.
+ * [GUARD] Prevents non-standard version descriptors or malformed metadata payloads
+ * from traversing across the application boundary into settings and update presentation layers.
+ */
 export function isReleaseVersion(version: string | undefined): version is string {
+  // [DECISION LOG]: Strict numeric 3-segment semver check ensures consistent comparator handling.
   return typeof version === "string" && /^\d+\.\d+\.\d+$/.test(version);
 }
 
+/**
+ * Validates whether a candidate number is a valid positive integer Android build code.
+ *
+ * @param buildNumber - The candidate build number to validate.
+ * @returns Type predicate boolean confirming value is a strictly positive integer.
+ *
+ * @remarks
+ * Satisfies ADR Section III: Validation Boundaries.
+ * [GUARD] Enforces integer constraint and positive boundary on Android build IDs,
+ * protecting against NaN, floats, zero, or negative inputs from untrusted JSON payloads.
+ */
 export function isReleaseBuildNumber(buildNumber: number | undefined): buildNumber is number {
+  // [DECISION LOG]: Android versionCode requires a strictly positive 32-bit integer.
   return typeof buildNumber === "number" && Number.isInteger(buildNumber) && buildNumber > 0;
 }
 
+/**
+ * Validates whether a candidate string is a standard 64-character hexadecimal SHA-256 hash.
+ *
+ * @param value - The candidate checksum string to inspect.
+ * @returns Type predicate boolean confirming value is a valid 64-hex-character digest.
+ *
+ * @remarks
+ * Satisfies ADR Section III: Validation Boundaries.
+ * [THREAT ANNOTATION]: Checksum Tampering & Corruption Guard. Verifies cryptographic digest
+ * length and hexadecimal alphabet before presenting download integrity guarantees to the user.
+ */
 export function isSha256Digest(value: string | undefined): value is string {
+  // [DECISION LOG]: Enforces strict 64-character hexadecimal alphabet (case-insensitive).
   return typeof value === "string" && /^[a-fA-F0-9]{64}$/.test(value);
 }
 
+/**
+ * Validates whether a candidate value represents a valid non-zero positive byte count.
+ *
+ * @param value - The candidate file size in bytes.
+ * @returns Type predicate boolean confirming value is a strictly positive integer byte count.
+ *
+ * @remarks
+ * Satisfies ADR Section III: Validation Boundaries.
+ * [GUARD] Filters out zero-byte or negative byte amounts to avoid misleading binary size telemetry in the UI.
+ */
 export function isReleaseSizeBytes(value: number | undefined): value is number {
+  // [DECISION LOG]: Binary size must be a positive integer representing byte magnitude.
   return typeof value === "number" && Number.isInteger(value) && value > 0;
 }
 
