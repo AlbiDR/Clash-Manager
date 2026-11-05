@@ -683,3 +683,12 @@
 * [2026-11-03] Target: Codebase - @ast-grep/cli | ^0.45.3 | 0.51.1 | 2026-10-28 | Major version bump available.
 * [2026-11-03] [Stage 8] [07:15Z-07:28Z 13m] CHANGED: package.json -- Bumped dependency-cruiser to ^18.7.2 and updated major version watchlist
 * [2026-11-04] [Stage 8] [07:29Z-07:39Z 10m] CHANGED: Frontend-PWA/.claude/launch.json -- Bumped eslint to ^10.14.0 in monorepo catalogs and updated lockfile
+* [2026-11-05] Target: Codebase - @supabase/supabase-js | ^2.118.0 | ^2.119.0 | | PASS
+* [2026-11-05] Target: Codebase - supabase | ^2.122.0 | 3.0.0 | 2026-11-03 | Breaking: Supabase CLI v3 major release.
+* [2026-11-05] Target: Codebase - vitest | ^4.1.11 | 5.1.0 | 2026-09-04 | Breaking: Dropped Node 18/20 support, browser runner refactored, native ESM strict config enforcement.
+* [2026-11-05] Target: Codebase - typescript | ~5.9.3 | 7.0.2 | 2026-06-18 | [Migration Alert: v6 is now finalized as v7 is out] Breaking: Complete port to Go (10x faster). New defaults and strictly enforced project structure.
+* [2026-11-05] Target: Codebase - pinia | ^3.0.4 | 4.1.0 | 2026-07-15 | Breaking: ESM only, @vue/devtools-api v8 peer dependency, refactored errors/warnings via Nostics.
+* [2026-11-05] Target: Codebase - jsdom | ^30.1.1 | 30.1.3 | 2026-07-30 | Breaking: Requires Node.js >= 18.2, drops support for older environments.
+* [2026-11-05] Target: Codebase - @vite-pwa/assets-generator | ^2.0.0 | 2.0.0 | 2026-09-19 | Breaking: Requires Node 18+, updated sharp/consola dependencies, API refactoring.
+* [2026-11-05] Target: Codebase - @ast-grep/cli | ^0.45.3 | 0.51.1 | 2026-10-28 | Major version bump available.
+* [2026-11-05] [Stage 8] [07:07Z-07:20Z 13m] CHANGED: package.json -- Bumped @supabase/supabase-js to ^2.119.0 in monorepo catalogs and updated lockfile
