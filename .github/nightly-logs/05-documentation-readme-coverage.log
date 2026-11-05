@@ -220,3 +220,4 @@
 * [2026-11-02] [Stage 5] [04:17Z-04:23Z 7m] [checks doc-debt=OK] CHANGED: Backend/README.md -- Documented ping Edge Function in dedicated README and updated Backend README link
 * [2026-11-03] [Stage 5] [04:14Z-04:19Z 5m] [checks doc-debt=OK] CHANGED: Frontend-PWA/src/shared/ui/README.md -- Document BenchmarkPanel.vue range track visualization and delta sentiment in shared/ui README
 * [2026-11-04] [Stage 5] [04:31Z-04:40Z 9m] [checks doc-debt=OK] CHANGED: Frontend-PWA/src/core/services/README.md -- Reconcile useConfirm architecture and interface contracts in core/services README
+* [2026-11-05] [Stage 5] [04:07Z-04:15Z 8m] [checks doc-debt=OK] CHANGED: Frontend-PWA/src/core/services/README.md -- Reconcile useSyntheticMode architecture and interface contracts in core/services README

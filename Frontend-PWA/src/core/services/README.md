@@ -113,6 +113,15 @@ The modal confirmation composable provides a robust, styled replacement for the 
 - **Build-Time Skeleton Derivation:** Gates the visibility of structural UI skeletons whose geometric dimensions derive from build-time capture (`core/theme/bones.generated.json`, generated via `scripts/capture_skeletons.ts`).
 - **State Persistence & Control:** Exposes reactive reference `isBlueprintMode`, `toggleBlueprintMode`, and `setBlueprintMode`, synchronizing all state mutations to `localStorage`.
 
+### Synthetic Mode Engine (`useSyntheticMode.ts`)
+
+`useSyntheticMode.ts` provides a global toggle for high-fidelity mock data demonstration in Layer 1 Core:
+- **Interface Contracts & Return Shape (`UseSyntheticModeReturn`):** Formally exports `isSyntheticMode: Ref<boolean>`, `toggleSyntheticMode: () => void`, and `setSyntheticMode: (targetState: boolean) => void`. Satisfies CleanStack Architecture ADR Section I (Core Services) and ADR Section II (Presentation Orchestration) by establishing an authoritative, cross-cutting mock mode.
+- **Singleton State Isolation (`isSyntheticMode`):** Holds reactive state at module scope, ensuring all consumers (stores, adapters, UI badges) share an identical, synchronized mock data switch without prop-drilling or event emitter overhead.
+- **Dual Search & Hash Query Parameter Resolution (`getParam`):** Robust query parameter extraction inspects standard search parameters (`window.location.search`) first and falls back to hash-based query strings (`location.hash.split("?")[1]`), ensuring seamless compatibility across SPA hash routing modes while guarding against SSR/headless environments where `window` is undefined.
+- **Resolution Precedence & Production Leak Protection:** Resolves initial state through a strict precedence hierarchy: (1) explicit `localStorage` persistence (`clash_manager_synthetic_mode === "true"`), (2) explicit URL query parameter (`?synthetic=true`), and (3) showcase cascade (`?showcase=true`). The showcase fallback respects an explicit `"false"` in `localStorage` to prevent showcase URLs from forcing mock data when disabled by the user.
+- **Deterministic State Persistence:** Synchronously commits state updates to `localStorage` under `clash_manager_synthetic_mode` on every toggle or explicit assignment, with SSR/headless safety checks (`typeof localStorage !== "undefined"`).
+
 ### APK Resolution Lifecycle (`useApkManager.ts`, `apkResolver.ts` & `apkResolverUtils.ts`)
 
 The APK manager, standalone APK resolver, and helper utility services implement decomposed mechanisms for native Android wrapper upgrades. Browser-owned PWA lifecycle APIs are brokered by Layer 2 in `@shared/composables/usePwaManager.ts`:
