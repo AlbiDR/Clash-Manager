@@ -154,3 +154,4 @@
 * [2026-11-03] [Stage 4] [03:24Z-03:32Z 8m] CLEAN: Codebase -- Audited 35 changed files and 10 SQL database views via source-level grep; confirmed zero structural rot or unreferenced database views
 * [2026-11-04] [Stage 4] [03:11Z-03:16Z 6m] CLEAN: Codebase -- Audited 32 changed files and 10 SQL database views via source-level grep; confirmed zero structural rot or unreferenced views
 * [2026-11-05] [Stage 4] [03:23Z-03:31Z 8m] CLEAN: Codebase -- Audited 30 changed files and 10 SQL database views via source-level grep; confirmed zero structural rot or unreferenced views
+* [2026-11-06] [Stage 4] [03:09Z-03:13Z 4m] CLEAN: Codebase -- Calibration pass: Widened candidate scan across 10 active SQL views and Edge Functions/Frontend source code (7 clean runs since calibration); confirmed zero structural rot or unreferenced views
