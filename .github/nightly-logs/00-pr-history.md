@@ -16,6 +16,47 @@ LAST_AGED:   2026-11-04
 
 ## T1 -- Active (last 7 days)
 
+### [2026-11-06] PR #2493 [Stage 2]: Restored apkResolverUtils.spec.ts after verification exhausted attempt allowance
+**Domain:** verification | **Commit:** 4d94cfd90 | [View PR](https://github.com/AlbiDR/ClashManager/pull/2493)
+**Files:** .github/nightly-logs/02-verification-coverage.log, .github/nightly-logs/02-verification-pr-body.md
+**Why:** Attempted to add tests for isSha256Digest, isReleaseSizeBytes, and selectNewestReleaseDownload; exhausted allowance under strict two-attempt limit
+**Change:** Restored apkResolverUtils.spec.ts after verification exhausted attempt allowance
+**Result:** Vitest failed attempt 1 (mixed hex length error); restored all spec changes cleanly
+**Nudges:** 0
+
+### [2026-11-06] PR #2494 [Stage 4]: Calibration pass: Widened candidate scan across 10 active SQL views and Edge Functions/Frontend source code (7 clean runs since calibration); confirmed zero structural rot or unreferenced views
+**Domain:** optimization | **Commit:** ab12b0d0c | [View PR](https://github.com/AlbiDR/ClashManager/pull/2494)
+**Files:** .github/nightly-logs/04-optimization-coverage.log, .github/nightly-logs/04-optimization-pr-body.md
+**Why:** Calibration due after 7 consecutive clean runs; verified active database views and recently changed frontend services contain zero dead code or substrate rot
+**Change:** Calibration pass: Widened candidate scan across 10 active SQL views and Edge Functions/Frontend source code (7 clean runs since calibration); confirmed zero structural rot or unreferenced views
+**Result:** Source grep audit verified 10 active views and 0 new orphaned views, type-check passed, vitest useSyntheticMode 10/10 passed
+**Nudges:** 0
+
+### [2026-11-06] PR #2495 [Stage 5]: Reconcile apkResolverUtils metadata boundary validation guards in core services README
+**Domain:** documentation | **Commit:** ffb4ce91a | [View PR](https://github.com/AlbiDR/ClashManager/pull/2495)
+**Files:** .github/nightly-logs/05-documentation-readme-coverage.log, .github/nightly-logs/05-documentation-readme-pr-body.md, Frontend-PWA/src/core/services/README.md
+**Why:** Document isReleaseVersion, isReleaseBuildNumber, isSha256Digest, and isReleaseSizeBytes validation boundary type guards per ADR Section III
+**Change:** Reconcile apkResolverUtils metadata boundary validation guards in core services README
+**Result:** git diff --check passed with 0 errors; Vitest apkResolverUtils.spec.ts passed 33 of 33 tests
+**Nudges:** 0
+
+### [2026-11-06] PR #2496 [Stage 6]: docs(tsdoc): harden useApkManager interface contracts and inline decision annotations
+**Domain:** documentation | **Commit:** ca2006dc0 | [View PR](https://github.com/AlbiDR/ClashManager/pull/2496)
+**Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, .github/nightly-logs/06-documentation-tsdoc-pr-body.md, Frontend-PWA/src/core/services/useApkManager.ts
+**Why:** Documented helper methods and reactive state in useApkManager following ADR Section II & IV Layer 1 standards
+**Change:** docs(tsdoc): harden useApkManager interface contracts and inline decision annotations
+**Result:** pnpm -F clash-manager-pwa type-check PASS, vitest 2382/2382 passed
+**Nudges:** 0
+
+### [2026-11-06] PR #2497 [Stage 7]: Audited catalog protocols in Frontend-PWA and Backend manifests, verified ground truth version 14.55.14 across 3 package manifests and derived files
+**Domain:** versioning | **Commit:** 41b5a404c | [View PR](https://github.com/AlbiDR/ClashManager/pull/2497)
+**Files:** .github/nightly-logs/07-version-integrity-coverage.log, .github/nightly-logs/07-version-integrity-pr-body.md
+**Why:** Eliminate monorepo version drift across manifests and derived locations
+**Change:** Audited catalog protocols in Frontend-PWA and Backend manifests, verified ground truth version 14.55.14 across 3 package manifests and derived files
+**Result:** pnpm audit:version reported 0 drift lines across 3 manifests and 10 tracked targets
+**Nudges:** 0
+
+
 ### [2026-11-05] PR #2487 [Stage 8]: Bumped @supabase/supabase-js to ^2.119.0 in monorepo catalogs and updated lockfile
 **Domain:** dependencies | **Commit:** 2a245c37f | [View PR](https://github.com/AlbiDR/ClashManager/pull/2487)
 **Files:** .github/nightly-logs/08-dependency-audit-coverage.log, .github/nightly-logs/08-dependency-audit-pr-body.md, package.json, pnpm-lock.yaml, pnpm-workspace.yaml
