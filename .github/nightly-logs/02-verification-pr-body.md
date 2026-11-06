@@ -1,26 +1,26 @@
 ### Nightly Stage 2: Verification - Logic Integrity Auditor
 
-**Status:** CHANGED
+**Status:** PARTIAL-RUN
 
-In plain terms: this adds 1 test file in the verification area. No product code changed, so the app behaves exactly as it did before.
+In plain terms: no change was made to the project. This run ended as PARTIAL-RUN and the only file here is the log recording that.
 
-**What changed:** Frontend-PWA/src/core/services/services-tests/useSyntheticMode.spec.ts -- Expanded useSyntheticMode unit test suite with URL query parameters, SPA hash search parameters, showcase cascades, and multi-instance reactivity
+**What was checked:** Restored apkResolverUtils.spec.ts after verification exhausted attempt allowance
 
-**Why:** useSyntheticMode.ts was recently modified in the working set; its spec lacked coverage for SPA hash query parameter fallback, URL parameter parsing, showcase cascades and explicit disablement suppression, and cross-caller reactivity synchronization
+**Why:** Attempted to add tests for isSha256Digest, isReleaseSizeBytes, and selectNewestReleaseDownload; exhausted allowance under strict two-attempt limit
 
-**Result:** nightly-spec-verify.mjs passed spec (7 of 7 assertions), eslint (0 errors), and vue-tsc type-check (0 errors); mutation test proved failure when hash query lookup was inverted
+**Result:** Vitest failed attempt 1 (mixed hex length error); restored all spec changes cleanly
 
-**Files changed:** .github/nightly-logs/02-verification-coverage.log, Frontend-PWA/src/core/services/services-tests/useSyntheticMode.spec.ts
+**Files changed:** .github/nightly-logs/02-verification-coverage.log
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: verification
-  Cycle: nightly-cycle/2026-11-05
+  Cycle: nightly-cycle/2026-11-06
   Contract: b2e927ebff4e2ca5a343609133745d050f07d22fd9bf3e42481440c1d14079f0
-  Why: useSyntheticMode.ts was recently modified in the working set; its spec lacked coverage for SPA hash query parameter fallback, URL parameter parsing, showcase cascades and explicit disablement suppression, and cross-caller reactivity synchronization
-  Change: Frontend-PWA/src/core/services/services-tests/useSyntheticMode.spec.ts -- Expanded useSyntheticMode unit test suite with URL query parameters, SPA hash search parameters, showcase cascades, and multi-instance reactivity
-  Result: nightly-spec-verify.mjs passed spec (7 of 7 assertions), eslint (0 errors), and vue-tsc type-check (0 errors); mutation test proved failure when hash query lookup was inverted
-  Files: .github/nightly-logs/02-verification-coverage.log, Frontend-PWA/src/core/services/services-tests/useSyntheticMode.spec.ts
+  Why: Attempted to add tests for isSha256Digest, isReleaseSizeBytes, and selectNewestReleaseDownload; exhausted allowance under strict two-attempt limit
+  Change: Restored apkResolverUtils.spec.ts after verification exhausted attempt allowance
+  Result: Vitest failed attempt 1 (mixed hex length error); restored all spec changes cleanly
+  Files: .github/nightly-logs/02-verification-coverage.log
   Nudges: 0
-  Execution: 7482ee6f835c7dce4582860bb03d68bce51221b2
+  Execution: 6701934e102938ec43c707c477d1adb7166a100f
 -->
