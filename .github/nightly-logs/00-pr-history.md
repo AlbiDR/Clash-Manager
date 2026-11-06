@@ -16,6 +16,55 @@ LAST_AGED:   2026-11-04
 
 ## T1 -- Active (last 7 days)
 
+### [2026-11-06] PR #2498 [Stage 8]: Bumped vite to ^8.3.6 in monorepo catalogs and updated lockfile
+**Domain:** dependencies | **Commit:** b5ca79523 | [View PR](https://github.com/AlbiDR/ClashManager/pull/2498)
+**Files:** .github/nightly-logs/08-dependency-audit-coverage.log, .github/nightly-logs/08-dependency-audit-pr-body.md, package.json, pnpm-lock.yaml, pnpm-workspace.yaml
+**Why:** Safe Tier 1 patch bump to maintain Vite build tooling hygiene
+**Change:** Bumped vite to ^8.3.6 in monorepo catalogs and updated lockfile
+**Result:** Vitest 221 test files and 2382 tests passed, pnpm audit:version clean
+**Nudges:** 0
+
+### [2026-11-06] PR #2499 [Stage 9]: CLEAN: (1) 37 files, 0 dep-viols, knip 11 files/1 dep/0 exp; (2) streak 21 (5 ord); (3) useApkManager, apkResolverUtils; (4) closest: useApkManager (411 lines, pure helpers delegated); hunt: apkResolverUtils version cmp passed 33/33.
+**Domain:** architecture | **Commit:** 05b00a771 | [View PR](https://github.com/AlbiDR/ClashManager/pull/2499)
+**Files:** .github/nightly-logs/09-refactor-proposals-coverage.log, .github/nightly-logs/09-refactor-proposals-pr-body.md
+**Why:** ADR structural compliance verified across core services; evaluated useApkManager and apkResolverUtils for SRP and defects
+**Change:** CLEAN: (1) 37 files, 0 dep-viols, knip 11 files/1 dep/0 exp; (2) streak 21 (5 ord); (3) useApkManager, apkResolverUtils; (4) closest: useApkManager (411 lines, pure helpers delegated); hunt: apkResolverUtils version cmp passed 33/33.
+**Result:** Vitest core services suite passed 40 files (606 passed), depcruise reported 0 violations across 534 modules
+**Nudges:** 0
+
+### [2026-11-06] PR #2500 [Stage 10]: Audited asset links, manifest parity, version sync (14.55.14 / 14055014), release metadata pointer (clashmanager-v14.55.14+529.apk), and cleartext traffic/security policies via pnpm audit:apk and pnpm apk:verify:source
+**Domain:** apk | **Commit:** e4e8f493d | [View PR](https://github.com/AlbiDR/ClashManager/pull/2500)
+**Files:** .github/nightly-logs/10-apk-integrity-coverage.log, .github/nightly-logs/10-apk-integrity-pr-body.md
+**Why:** PWA and native wrapper configurations match with zero drift across all audited invariants
+**Change:** Audited asset links, manifest parity, version sync (14.55.14 / 14055014), release metadata pointer (clashmanager-v14.55.14+529.apk), and cleartext traffic/security policies via pnpm audit:apk and pnpm apk:verify:source
+**Result:** pnpm audit:apk and pnpm apk:verify:source confirmed all manifest, asset link, version, release pointer, and security policies match
+**Nudges:** 0
+
+### [2026-11-06] PR #2501 [Stage 11]: Audited native WebView performance settings, service worker caching routes, Vite code splitting, and public asset precache footprint; zero source changes required
+**Domain:** apk | **Commit:** 50f5314d2 | [View PR](https://github.com/AlbiDR/ClashManager/pull/2501)
+**Files:** .github/nightly-logs/11-apk-optimization-coverage.log, .github/nightly-logs/11-apk-optimization-pr-body.md
+**Why:** Bounded scan of APK native wrapper, PWA service worker, and packaging manifests confirmed complete optimization with 0 violations
+**Change:** Audited native WebView performance settings, service worker caching routes, Vite code splitting, and public asset precache footprint; zero source changes required
+**Result:** pnpm audit:apk-perf verified 9 of 9 invariants and 67.6 KB static public precache across 15 files; pnpm apk:verify:source verified custom native layer intact
+**Nudges:** 0
+
+### [2026-11-06] PR #2502 [Stage 12]: Automated hybrid shell UX audit completed with 0 violations across 77 files
+**Domain:** ux | **Commit:** 491b1d24f | [View PR](https://github.com/AlbiDR/ClashManager/pull/2502)
+**Files:** .github/nightly-logs/12-apk-ux-coverage.log, .github/nightly-logs/12-apk-ux-pr-body.md
+**Why:** Structured audit PASS with 0 candidate violations across UX categories 1-10; no source changes required
+**Change:** Automated hybrid shell UX audit completed with 0 violations across 77 files
+**Result:** apk-ux-audit-status.txt: PASS; apk-ux-audit.json: 0 candidate files reviewed; UX categories 1-10 checked
+**Nudges:** 0
+
+### [2026-11-06] PR #2503 [Stage 13]: Documented recurring 5-stage fallback publish mass rescue, S01 fallback refusal, S03 interactive stalling, 6 degrading health stages, and updated Section 3 metrics across Stages 1-13
+**Domain:** fallback-publish | **Commit:** 37be41ea5 | [View PR](https://github.com/AlbiDR/ClashManager/pull/2503)
+**Files:** .github/nightly-logs/13-self-healing-protocol-coverage.log, .github/nightly-logs/13-self-healing-protocol-pr-body.md, .github/nightly-logs/13-self-healing-protocol.md
+**Why:** Audit resilience and operational health across completed pipeline stages for cycle 2026-11-06
+**Change:** Documented recurring 5-stage fallback publish mass rescue, S01 fallback refusal, S03 interactive stalling, 6 degrading health stages, and updated Section 3 metrics across Stages 1-13
+**Result:** git diff --check passed with 0 errors; nightly recap verification validated
+**Nudges:** 0
+
+
 ### [2026-11-06] PR #2493 [Stage 2]: Restored apkResolverUtils.spec.ts after verification exhausted attempt allowance
 **Domain:** verification | **Commit:** 4d94cfd90 | [View PR](https://github.com/AlbiDR/ClashManager/pull/2493)
 **Files:** .github/nightly-logs/02-verification-coverage.log, .github/nightly-logs/02-verification-pr-body.md
