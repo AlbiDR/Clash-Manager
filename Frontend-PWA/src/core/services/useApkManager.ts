@@ -117,52 +117,107 @@ export function useApkManager() {
 
   /**
    * Compares installed native shell metadata against a published release target.
+   *
+   * @param release - Published APK metadata model to compare against.
+   * @returns Negative if installed is older, positive if installed is newer, zero if identical, or undefined if unresolvable.
+   *
+   * @remarks
+   * Satisfies ADR Section III: Validation Boundaries and ADR Section IV: Hardware/Browser Brokering.
+   * Extracts version and build number via the native WebView bridge before delegating to `compareInstalledRelease`.
    */
   function getInstalledReleaseComparison(release: ApkReleaseDownload): number | undefined {
+    // [DECISION LOG] Delegates semantic comparison to apkManagerUtils with bridge-extracted version and build.
     return compareInstalledRelease(getNativeVersionName(), getNativeBuildNumber(), release);
   }
 
   /**
    * Checks if the currently installed native shell is up to date relative to the published release.
+   *
+   * @param release - Target release download metadata.
+   * @returns True if installed version and build match or exceed the published release.
+   *
+   * @remarks
+   * Evaluates installed native app status against remote release data to prevent redundant downloads.
    */
   function isInstalledApkCurrent(release: ApkReleaseDownload): boolean {
+    // [DECISION LOG] Evaluates equality or forward progression of installed shell relative to published artifact.
     return checkIsInstalledCurrent(getNativeVersionName(), getNativeBuildNumber(), release);
   }
 
   /**
    * Checks if the published update feed is older than the currently installed native shell.
+   *
+   * @param release - Target release download metadata.
+   * @returns True if published release version/build is strictly older than what is currently running.
+   *
+   * @remarks
+   * [THREAT ANNOTATION: Stale Feed Rollback] Protects against stale CDN caches or superseded
+   * metadata endpoints offering a downgrade that could corrupt local app databases or state.
    */
   function isPublishedApkOlderThanInstalled(release: ApkReleaseDownload): boolean {
+    // [GUARD] Protects against stale CDN caches proposing a version downgrade.
     return checkIsPublishedOlder(getNativeVersionName(), getNativeBuildNumber(), release);
   }
 
-  /** Formatted display label for the installed native shell environment. */
+  /**
+   * Formatted display label for the installed native shell environment.
+   *
+   * @remarks
+   * Concatenates version name, version code, and build number into a unified diagnostic badge.
+   */
   const installedApkLabel = computed(() => {
+    // [DECISION LOG] Resolves triple-attribute bridge tuple into standardized label.
     return formatInstalledApkLabel(getNativeVersionName(), getNativeVersionCode(), getNativeBuildNumber());
   });
 
-  /** Formatted display label for the latest published APK release. */
+  /**
+   * Formatted display label for the latest published APK release.
+   *
+   * @remarks
+   * Provides version and build number representation (e.g., "v1.2.3 (45)") for the active download target.
+   */
   const latestApkLabel = computed(() => getReleaseVersionLabel(latestApkRelease.value));
 
   /**
    * Direct download URL for the active APK release, guarded against stale/current versions.
+   *
+   * @remarks
+   * Returns an empty string if the download target is already installed, older than the installed shell,
+   * or if no release is currently resolved.
    */
   // [THREAT:] Prevents downloading stale release feeds over a newer installed APK shell.
   const apkDirectDownloadUrl = computed(() => {
     const release = latestApkRelease.value;
     if (!release) return "";
+    // [GUARD] Inhibit direct download link when update feed represents a downgrade.
     if (isPublishedApkOlderThanInstalled(release)) return "";
+    // [GUARD] Inhibit download link when installed APK already matches or exceeds published build.
     if (isInstalledApkCurrent(release)) return "";
     return release.url;
   });
 
-  /** Formatted summary label detailing target file size and SHA-256 checksum preview. */
+  /**
+   * Formatted summary label detailing target file size and SHA-256 checksum preview.
+   *
+   * @remarks
+   * Provides human-readable byte magnitude and cryptographic fingerprint indicator for user verification.
+   */
   const apkArtifactLabel = computed(() => formatApkArtifactLabel(latestApkRelease.value));
 
-  /** Display label detailing the feed source and URL. */
+  /**
+   * Display label detailing the feed source and URL.
+   *
+   * @remarks
+   * Names the origin source (Same-Origin, GitHub Contents API, or Remote metadata) that supplied the release.
+   */
   const apkFeedSourceLabel = computed(() => formatApkFeedSourceLabel(latestApkRelease.value));
 
-  /** List of change items associated with the latest release. */
+  /**
+   * List of change items associated with the latest release.
+   *
+   * @remarks
+   * Normalizes string or array changelog entries from the release payload into an array of strings.
+   */
   const apkChangelog = computed(() => latestApkRelease.value?.changelog ?? []);
 
   /**
