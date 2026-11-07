@@ -26,6 +26,8 @@ import {
   isReleaseApkFilename,
   isReleaseVersion,
   isReleaseBuildNumber,
+  isSha256Digest,
+  isReleaseSizeBytes,
   buildApkDownloadUrl,
   buildSameOriginApkReleaseUrl,
   buildSameOriginApkDownloadUrl,
@@ -314,6 +316,71 @@ describe("apkResolverUtils", () => {
     it("should handle single candidate lists", () => {
       const candidate = { filename: "clashmanager-v1.0.0+1.apk", url: "https://host/1" };
       expect(selectNewestReleaseDownload([candidate])).toBe(candidate);
+    });
+
+    it("should break ties on identical versions by preferring candidate with higher completeness score", () => {
+      const filename = "clashmanager-v14.43.1+173.apk";
+      const validSha = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
+      const validSize = 25000000;
+
+      // Score 0: neither sha256 nor sizeBytes
+      const bareCandidate = { filename, url: "https://host/bare" };
+      // Score 1: only sha256
+      const shaOnlyCandidate = { filename, url: "https://host/sha", sha256: validSha };
+      // Score 1: only sizeBytes
+      const sizeOnlyCandidate = { filename, url: "https://host/size", sizeBytes: validSize };
+      // Score 2: both sha256 and sizeBytes
+      const fullCandidate = { filename, url: "https://host/full", sha256: validSha, sizeBytes: validSize };
+
+      // Candidate with score 1 beats score 0 even if score 0 comes first
+      expect(selectNewestReleaseDownload([bareCandidate, shaOnlyCandidate])).toBe(shaOnlyCandidate);
+      expect(selectNewestReleaseDownload([bareCandidate, sizeOnlyCandidate])).toBe(sizeOnlyCandidate);
+
+      // Candidate with score 2 beats score 1 and score 0
+      expect(selectNewestReleaseDownload([bareCandidate, fullCandidate])).toBe(fullCandidate);
+      expect(selectNewestReleaseDownload([shaOnlyCandidate, fullCandidate])).toBe(fullCandidate);
+      expect(selectNewestReleaseDownload([sizeOnlyCandidate, fullCandidate])).toBe(fullCandidate);
+
+      // If earlier candidate already has higher or equal score, earlier candidate is kept
+      expect(selectNewestReleaseDownload([fullCandidate, shaOnlyCandidate])).toBe(fullCandidate);
+      expect(selectNewestReleaseDownload([fullCandidate, bareCandidate])).toBe(fullCandidate);
+    });
+  });
+
+  describe("isSha256Digest", () => {
+    it("should return true for valid 64-character hexadecimal SHA-256 digests (lowercase, uppercase, mixed)", () => {
+      const lower = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
+      const upper = "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855";
+      const mixed = "e3B0c44298FC1c149afBF4c8996fb92427ae41e4649B934ca495991B7852b855";
+      expect(isSha256Digest(lower)).toBe(true);
+      expect(isSha256Digest(upper)).toBe(true);
+      expect(isSha256Digest(mixed)).toBe(true);
+    });
+
+    it("should return false for invalid strings, wrong lengths, or non-hex characters", () => {
+      expect(isSha256Digest("e3b0c442")).toBe(false); // too short
+      expect(isSha256Digest("e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b85500")).toBe(false); // too long (66 chars)
+      expect(isSha256Digest("g".repeat(64))).toBe(false); // non-hex
+      expect(isSha256Digest("e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b85 ")).toBe(false); // trailing space
+      expect(isSha256Digest("")).toBe(false);
+      expect(isSha256Digest(undefined)).toBe(false);
+    });
+  });
+
+  describe("isReleaseSizeBytes", () => {
+    it("should return true for strictly positive integers", () => {
+      expect(isReleaseSizeBytes(1)).toBe(true);
+      expect(isReleaseSizeBytes(1024)).toBe(true);
+      expect(isReleaseSizeBytes(25489123)).toBe(true);
+    });
+
+    it("should return false for zero, negative numbers, floats, NaN, or undefined", () => {
+      expect(isReleaseSizeBytes(0)).toBe(false);
+      expect(isReleaseSizeBytes(-1)).toBe(false);
+      expect(isReleaseSizeBytes(-1024)).toBe(false);
+      expect(isReleaseSizeBytes(1024.5)).toBe(false);
+      expect(isReleaseSizeBytes(NaN)).toBe(false);
+      expect(isReleaseSizeBytes(undefined)).toBe(false);
     });
   });
 });
