@@ -222,3 +222,4 @@
 * [2026-11-04] [Stage 5] [04:31Z-04:40Z 9m] [checks doc-debt=OK] CHANGED: Frontend-PWA/src/core/services/README.md -- Reconcile useConfirm architecture and interface contracts in core/services README
 * [2026-11-05] [Stage 5] [04:07Z-04:15Z 8m] [checks doc-debt=OK] CHANGED: Frontend-PWA/src/core/services/README.md -- Reconcile useSyntheticMode architecture and interface contracts in core/services README
 * [2026-11-06] [Stage 5] [04:28Z-04:35Z 7m] [checks doc-debt=OK] CHANGED: Frontend-PWA/src/core/services/README.md -- Reconcile apkResolverUtils metadata boundary validation guards in core services README
+* [2026-11-07] [Stage 5] [04:31Z-04:36Z 5m] [checks doc-debt=OK] CHANGED: Frontend-PWA/src/core/services/README.md -- Reconcile useApkManager architecture, update state machine, and bridge brokering in core services README
