@@ -16,6 +16,39 @@ LAST_AGED:   2026-11-04
 
 ## T1 -- Active (last 7 days)
 
+### [2026-11-07] PR #2504 [Stage 2]: Frontend-PWA/src/core/services/services-tests/apkResolverUtils.spec.ts -- Expanded apkResolverUtils unit test suite with boundary validation and tie-breaking completeness score logic
+**Domain:** verification | **Commit:** c9990e549 | [View PR](https://github.com/AlbiDR/ClashManager/pull/2504)
+**Files:** .github/nightly-logs/02-verification-coverage.log, .github/nightly-logs/02-verification-pr-body.md, Frontend-PWA/src/core/services/services-tests/apkResolverUtils.spec.ts
+**Why:** apkResolverUtils.ts was recently modified in the working set; its spec lacked coverage for isSha256Digest, isReleaseSizeBytes, and selectNewestReleaseDownload metadata completeness tie-breaking
+**Change:** Frontend-PWA/src/core/services/services-tests/apkResolverUtils.spec.ts -- Expanded apkResolverUtils unit test suite with boundary validation and tie-breaking completeness score logic
+**Result:** nightly-spec-verify.mjs passed spec (38 of 38 assertions), eslint (0 errors), and vue-tsc type-check (0 errors); mutation test proved failure when isSha256Digest regex excluded uppercase hex
+**Nudges:** 0
+
+### [2026-11-07] PR #2505 [Stage 4]: Audited 35 changed files and 10 SQL database views via source-level grep; confirmed zero structural rot or unreferenced database views
+**Domain:** optimization | **Commit:** 4effee4d8 | [View PR](https://github.com/AlbiDR/ClashManager/pull/2505)
+**Files:** .github/nightly-logs/04-optimization-coverage.log, .github/nightly-logs/04-optimization-pr-body.md
+**Why:** PWA, Edge Functions, and database substrate are verified clean of structural rot and unreferenced views
+**Change:** Audited 35 changed files and 10 SQL database views via source-level grep; confirmed zero structural rot or unreferenced database views
+**Result:** Vitest 221 test files passed (2382 passed), source-level grep verified active references across 10 database views
+**Nudges:** 0
+
+### [2026-11-07] PR #2506 [Stage 5]: Reconcile useApkManager architecture, update state machine, and bridge brokering in core services README
+**Domain:** documentation | **Commit:** 0ff6f1556 | [View PR](https://github.com/AlbiDR/ClashManager/pull/2506)
+**Files:** .github/nightly-logs/05-documentation-readme-coverage.log, .github/nightly-logs/05-documentation-readme-pr-body.md, Frontend-PWA/src/core/services/README.md
+**Why:** Document ApkUpdateState machine, downgrade prevention threat guards, native bridge permission checking, multi-tier download dispatching, and reactive computed labels per ADR Section II & IV
+**Change:** Reconcile useApkManager architecture, update state machine, and bridge brokering in core services README
+**Result:** git diff --check passed with 0 errors; Vitest useApkManager.spec.ts passed 13 of 13 tests
+**Nudges:** 0
+
+### [2026-11-07] PR #2507 [Stage 6]: docs(tsdoc): harden useDeepLinkHandler interface contracts and inline decision annotations
+**Domain:** documentation | **Commit:** 1deba396e | [View PR](https://github.com/AlbiDR/ClashManager/pull/2507)
+**Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, .github/nightly-logs/06-documentation-tsdoc-pr-body.md, Frontend-PWA/src/core/services/useDeepLinkHandler.ts
+**Why:** Define UseDeepLinkHandlerReturn contract, DeepLinkTargetItem boundary, and document auto-scroll layout lifecycle guards per CleanStack Architecture Layer 1
+**Change:** docs(tsdoc): harden useDeepLinkHandler interface contracts and inline decision annotations
+**Result:** vue-tsc type-check passed 0 errors, Vitest useDeepLinkHandler.spec.ts passed 9 of 9, depcruise 0 violations across 534 modules
+**Nudges:** 0
+
+
 ### [2026-11-06] PR #2498 [Stage 8]: Bumped vite to ^8.3.6 in monorepo catalogs and updated lockfile
 **Domain:** dependencies | **Commit:** b5ca79523 | [View PR](https://github.com/AlbiDR/ClashManager/pull/2498)
 **Files:** .github/nightly-logs/08-dependency-audit-coverage.log, .github/nightly-logs/08-dependency-audit-pr-body.md, package.json, pnpm-lock.yaml, pnpm-workspace.yaml
