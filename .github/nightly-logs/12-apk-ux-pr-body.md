@@ -4,9 +4,9 @@
 
 In plain terms: nothing needed fixing. This run checked the APK UX area and found it already correct, so the only file here is the log recording that the check happened.
 
-**What was checked:** Automated hybrid shell UX audit completed with 0 violations across 77 files
+**What was checked:** Calibration pass: no UX issues found across 77 files examined; clean-since-calibration=7; candidates=0
 
-**Why:** Structured audit PASS with 0 candidate violations across UX categories 1-10; no source changes required
+**Why:** Audited all 10 hybrid shell UX criteria with zero violations found
 
 **Result:** apk-ux-audit-status.txt: PASS; apk-ux-audit.json: 0 candidate files reviewed; UX categories 1-10 checked
 
@@ -15,12 +15,12 @@ In plain terms: nothing needed fixing. This run checked the APK UX area and foun
 <!--
 NIGHTLY_PR_METADATA:
   Domain: ux
-  Cycle: nightly-cycle/2026-11-06
+  Cycle: nightly-cycle/2026-11-07
   Contract: f279dcd9fa3e895a0f76426a8bcab2381910b64ed4f8694d2c16ab7f8ec4ce04
-  Why: Structured audit PASS with 0 candidate violations across UX categories 1-10; no source changes required
-  Change: Automated hybrid shell UX audit completed with 0 violations across 77 files
+  Why: Audited all 10 hybrid shell UX criteria with zero violations found
+  Change: Calibration pass: no UX issues found across 77 files examined; clean-since-calibration=7; candidates=0
   Result: apk-ux-audit-status.txt: PASS; apk-ux-audit.json: 0 candidate files reviewed; UX categories 1-10 checked
   Files: .github/nightly-logs/12-apk-ux-coverage.log
   Nudges: 0
-  Execution: 2fe517eadf626f611e485f438f78fa330a19de9f
+  Execution: c37d3b694e2313654b27937fa44d91a5b3ef42eb
 -->
