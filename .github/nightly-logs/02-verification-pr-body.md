@@ -1,26 +1,26 @@
 ### Nightly Stage 2: Verification - Logic Integrity Auditor
 
-**Status:** PARTIAL-RUN
+**Status:** CHANGED
 
-In plain terms: no change was made to the project. This run ended as PARTIAL-RUN and the only file here is the log recording that.
+In plain terms: this adds 1 test file in the verification area. No product code changed, so the app behaves exactly as it did before.
 
-**What was checked:** Restored apkResolverUtils.spec.ts after verification exhausted attempt allowance
+**What changed:** Frontend-PWA/src/core/services/services-tests/apkResolverUtils.spec.ts -- Expanded apkResolverUtils unit test suite with boundary validation and tie-breaking completeness score logic
 
-**Why:** Attempted to add tests for isSha256Digest, isReleaseSizeBytes, and selectNewestReleaseDownload; exhausted allowance under strict two-attempt limit
+**Why:** apkResolverUtils.ts was recently modified in the working set; its spec lacked coverage for isSha256Digest, isReleaseSizeBytes, and selectNewestReleaseDownload metadata completeness tie-breaking
 
-**Result:** Vitest failed attempt 1 (mixed hex length error); restored all spec changes cleanly
+**Result:** nightly-spec-verify.mjs passed spec (38 of 38 assertions), eslint (0 errors), and vue-tsc type-check (0 errors); mutation test proved failure when isSha256Digest regex excluded uppercase hex
 
-**Files changed:** .github/nightly-logs/02-verification-coverage.log
+**Files changed:** .github/nightly-logs/02-verification-coverage.log, Frontend-PWA/src/core/services/services-tests/apkResolverUtils.spec.ts
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: verification
-  Cycle: nightly-cycle/2026-11-06
+  Cycle: nightly-cycle/2026-11-07
   Contract: b2e927ebff4e2ca5a343609133745d050f07d22fd9bf3e42481440c1d14079f0
-  Why: Attempted to add tests for isSha256Digest, isReleaseSizeBytes, and selectNewestReleaseDownload; exhausted allowance under strict two-attempt limit
-  Change: Restored apkResolverUtils.spec.ts after verification exhausted attempt allowance
-  Result: Vitest failed attempt 1 (mixed hex length error); restored all spec changes cleanly
-  Files: .github/nightly-logs/02-verification-coverage.log
+  Why: apkResolverUtils.ts was recently modified in the working set; its spec lacked coverage for isSha256Digest, isReleaseSizeBytes, and selectNewestReleaseDownload metadata completeness tie-breaking
+  Change: Frontend-PWA/src/core/services/services-tests/apkResolverUtils.spec.ts -- Expanded apkResolverUtils unit test suite with boundary validation and tie-breaking completeness score logic
+  Result: nightly-spec-verify.mjs passed spec (38 of 38 assertions), eslint (0 errors), and vue-tsc type-check (0 errors); mutation test proved failure when isSha256Digest regex excluded uppercase hex
+  Files: .github/nightly-logs/02-verification-coverage.log, Frontend-PWA/src/core/services/services-tests/apkResolverUtils.spec.ts
   Nudges: 0
-  Execution: 6701934e102938ec43c707c477d1adb7166a100f
+  Execution: 8163a14524e9c9f4b169c2fcecefbaaa0e6bc4b7
 -->
