@@ -16,6 +16,55 @@ LAST_AGED:   2026-11-04
 
 ## T1 -- Active (last 7 days)
 
+### [2026-11-07] PR #2508 [Stage 7]: Audited catalog protocols in Frontend-PWA and Backend manifests; verified version 14.55.14 across 3 package manifests, README badges, Android APK manifests, and substrate constants
+**Domain:** versioning | **Commit:** ed3c46428 | [View PR](https://github.com/AlbiDR/ClashManager/pull/2508)
+**Files:** .github/nightly-logs/07-version-integrity-coverage.log, .github/nightly-logs/07-version-integrity-pr-body.md
+**Why:** Eliminate monorepo version drift and enforce catalog adherence across packages
+**Change:** Audited catalog protocols in Frontend-PWA and Backend manifests; verified version 14.55.14 across 3 package manifests, README badges, Android APK manifests, and substrate constants
+**Result:** pnpm audit:version reported 0 drift lines across 3 manifests and all derived declarations; test:version-code passed 18 of 18
+**Nudges:** 0
+
+### [2026-11-07] PR #2509 [Stage 8]: Bumped vue to ^3.5.45 in monorepo catalogs and updated lockfile
+**Domain:** dependencies | **Commit:** 5d5684f76 | [View PR](https://github.com/AlbiDR/ClashManager/pull/2509)
+**Files:** .github/nightly-logs/08-dependency-audit-coverage.log, .github/nightly-logs/08-dependency-audit-pr-body.md, package.json, pnpm-lock.yaml, pnpm-workspace.yaml
+**Why:** Safe automated Tier 1 patch update for core framework runtime
+**Change:** Bumped vue to ^3.5.45 in monorepo catalogs and updated lockfile
+**Result:** pnpm audit:version clean, Frontend-PWA vitest passed 2387 of 2387 across 221 suites
+**Nudges:** 0
+
+### [2026-11-07] PR #2510 [Stage 10]: Audited asset links, manifest parity, version sync (14.55.14 / 14055014), release metadata pointer (clashmanager-v14.55.14+529.apk), and cleartext traffic/security policies via pnpm audit:apk and pnpm apk:verify:source
+**Domain:** apk | **Commit:** d386e651b | [View PR](https://github.com/AlbiDR/ClashManager/pull/2510)
+**Files:** .github/nightly-logs/10-apk-integrity-coverage.log, .github/nightly-logs/10-apk-integrity-pr-body.md
+**Why:** Routine stage-10 wrapper integrity audit confirmed parity across PWA manifest, digital asset links, Android manifest, and release artifacts with zero drift detected
+**Change:** Audited asset links, manifest parity, version sync (14.55.14 / 14055014), release metadata pointer (clashmanager-v14.55.14+529.apk), and cleartext traffic/security policies via pnpm audit:apk and pnpm apk:verify:source
+**Result:** pnpm audit:apk verified 38 wrapper invariants; pnpm apk:verify:source verified native layer and classes.dex; pnpm apk:verify verified release APK integrity; Vitest apkResolverUtils.spec.ts passed 38 of 38
+**Nudges:** 0
+
+### [2026-11-07] PR #2511 [Stage 11]: Audited native WebView performance settings, service worker caching routes, Vite code splitting, and public asset precache footprint; zero source changes required
+**Domain:** apk | **Commit:** bdbe1da47 | [View PR](https://github.com/AlbiDR/ClashManager/pull/2511)
+**Files:** .github/nightly-logs/11-apk-optimization-coverage.log, .github/nightly-logs/11-apk-optimization-pr-body.md
+**Why:** PWA and Android wrapper performance configurations are verified optimal and clean of bloat
+**Change:** Audited native WebView performance settings, service worker caching routes, Vite code splitting, and public asset precache footprint; zero source changes required
+**Result:** audit:apk-perf confirmed 9 of 9 invariants present and 67.6 KB static precache footprint across 15 files with 0 violations
+**Nudges:** 0
+
+### [2026-11-07] PR #2512 [Stage 12]: Calibration pass: no UX issues found across 77 files examined; clean-since-calibration=7; candidates=0
+**Domain:** ux | **Commit:** 47e2b7da0 | [View PR](https://github.com/AlbiDR/ClashManager/pull/2512)
+**Files:** .github/nightly-logs/12-apk-ux-coverage.log, .github/nightly-logs/12-apk-ux-pr-body.md
+**Why:** Audited all 10 hybrid shell UX criteria with zero violations found
+**Change:** Calibration pass: no UX issues found across 77 files examined; clean-since-calibration=7; candidates=0
+**Result:** apk-ux-audit-status.txt: PASS; apk-ux-audit.json: 0 candidate files reviewed; UX categories 1-10 checked
+**Nudges:** 0
+
+### [2026-11-07] PR #2513 [Stage 13]: Documented recurring 4-stage fallback publish mass rescue, S01 empty session refusal, S03 interactive stalling, 8 degrading health stages, and updated Section 3 metrics across Stages 1-13
+**Domain:** fallback-publish | **Commit:** 8d08078a0 | [View PR](https://github.com/AlbiDR/ClashManager/pull/2513)
+**Files:** .github/nightly-logs/13-self-healing-protocol-coverage.log, .github/nightly-logs/13-self-healing-protocol-pr-body.md, .github/nightly-logs/13-self-healing-protocol.md
+**Why:** Living self-healing protocol update per ADR RCA/CAPA requirements
+**Change:** Documented recurring 4-stage fallback publish mass rescue, S01 empty session refusal, S03 interactive stalling, 8 degrading health stages, and updated Section 3 metrics across Stages 1-13
+**Result:** git diff --check passed with 0 errors
+**Nudges:** 0
+
+
 ### [2026-11-07] PR #2504 [Stage 2]: Frontend-PWA/src/core/services/services-tests/apkResolverUtils.spec.ts -- Expanded apkResolverUtils unit test suite with boundary validation and tie-breaking completeness score logic
 **Domain:** verification | **Commit:** c9990e549 | [View PR](https://github.com/AlbiDR/ClashManager/pull/2504)
 **Files:** .github/nightly-logs/02-verification-coverage.log, .github/nightly-logs/02-verification-pr-body.md, Frontend-PWA/src/core/services/services-tests/apkResolverUtils.spec.ts
