@@ -16,6 +16,63 @@ LAST_AGED:   2026-11-04
 
 ## T1 -- Active (last 7 days)
 
+### [2026-11-08] PR #2519 [Stage 7]: Audited catalog protocols in Frontend-PWA/package.json and Backend/package.json; verified ground truth version 14.55.14 across 3 package manifests, README badges, Android APK manifests, and substrate constants
+**Domain:** versioning | **Commit:** a7c575af9 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2519)
+**Files:** .github/nightly-logs/07-version-integrity-coverage.log, .github/nightly-logs/07-version-integrity-pr-body.md
+**Why:** Routine scheduled version integrity audit confirmed zero version drift and complete catalog adherence
+**Change:** Audited catalog protocols in Frontend-PWA/package.json and Backend/package.json; verified ground truth version 14.55.14 across 3 package manifests, README badges, Android APK manifests, and substrate constants
+**Result:** pnpm audit:version reported 0 drift lines and 0 catalog violations across all tracked manifests and derived locations
+**Nudges:** 0
+
+### [2026-11-08] PR #2520 [Stage 8]: Bumped knip devDependency from ^6.44.1 to ^6.44.2 in monorepo catalogs and updated lockfile
+**Domain:** dependencies | **Commit:** f009d9c0d | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2520)
+**Files:** .github/nightly-logs/08-dependency-audit-coverage.log, .github/nightly-logs/08-dependency-audit-pr-body.md, package.json, pnpm-lock.yaml, pnpm-workspace.yaml
+**Why:** Safe automated Tier 1 patch maintenance bump for monorepo devDependency knip
+**Change:** Bumped knip devDependency from ^6.44.1 to ^6.44.2 in monorepo catalogs and updated lockfile
+**Result:** pnpm install updated pnpm-lock.yaml, knip executed cleanly
+**Nudges:** 0
+
+### [2026-11-08] PR #2521 [Stage 9]: CLEAN: (1) 35 files, 0 dep-viols, knip 11 files/1 dep/0 exp; (2) streak: 22 (6 ord); (3) inspected useDeepLinkHandler, apkResolver; (4) closest: useDeepLinkHandler (147L, ADR compliant); hunt: useDeepLinkHandler query pin passed 9/9
+**Domain:** architecture | **Commit:** af08285b4 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2521)
+**Files:** .github/nightly-logs/09-refactor-proposals-coverage.log, .github/nightly-logs/09-refactor-proposals-pr-body.md
+**Why:** Bounded scan of changed-files candidates and CleanStack ADR compliance check confirmed no layer violations or candidate extractions, and defect hunt on useDeepLinkHandler reproduced no defects
+**Change:** CLEAN: (1) 35 files, 0 dep-viols, knip 11 files/1 dep/0 exp; (2) streak: 22 (6 ord); (3) inspected useDeepLinkHandler, apkResolver; (4) closest: useDeepLinkHandler (147L, ADR compliant); hunt: useDeepLinkHandler query pin passed 9/9
+**Result:** depcruise reported 0 violations across 534 modules; Vitest useDeepLinkHandler.spec.ts passed 9 of 9 tests
+**Nudges:** 0
+
+### [2026-11-08] PR #2522 [Stage 10]: Audited asset links, manifest parity, version sync (14.55.14 / 14055014), release metadata pointer (clashmanager-v14.55.14+529.apk), and cleartext traffic/security policies via pnpm audit:apk and pnpm apk:verify:source
+**Domain:** apk | **Commit:** 012e5ef7a | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2522)
+**Files:** .github/nightly-logs/10-apk-integrity-coverage.log, .github/nightly-logs/10-apk-integrity-pr-body.md
+**Why:** Ensure PWA web manifest aligns with Android APK wrapper, digital asset links match production signing keys, and security profile forbids cleartext traffic
+**Change:** Audited asset links, manifest parity, version sync (14.55.14 / 14055014), release metadata pointer (clashmanager-v14.55.14+529.apk), and cleartext traffic/security policies via pnpm audit:apk and pnpm apk:verify:source
+**Result:** pnpm audit:apk reported 0 mismatches across manifests, assetlinks, and permissions; pnpm apk:verify:source passed 12 tokens; test:apk-native passed 19 tests, test:apk-release passed 11 tests
+**Nudges:** 0
+
+### [2026-11-08] PR #2523 [Stage 11]: Audited native WebView performance settings, service worker caching routes, Vite code splitting, and public asset precache footprint; zero source changes required
+**Domain:** apk | **Commit:** 34755e120 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2523)
+**Files:** .github/nightly-logs/11-apk-optimization-coverage.log, .github/nightly-logs/11-apk-optimization-pr-body.md
+**Why:** Ensure native APK wrapper boot times, caching strategies, and asset footprint remain fully optimized without regressions
+**Change:** Audited native WebView performance settings, service worker caching routes, Vite code splitting, and public asset precache footprint; zero source changes required
+**Result:** pnpm audit:apk-perf reported all 9 wrapper invariants PASS and 15 precache assets at 67.6 KB with 0 violations
+**Nudges:** 0
+
+### [2026-11-08] PR #2524 [Stage 12]: Automated hybrid shell UX audit completed with 0 violations across 77 files
+**Domain:** ux | **Commit:** 1c83104fe | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2524)
+**Files:** .github/nightly-logs/12-apk-ux-coverage.log, .github/nightly-logs/12-apk-ux-pr-body.md
+**Why:** Automated APK UX audit and bounded candidate scan identified 0 violations across categories 1-10
+**Change:** Automated hybrid shell UX audit completed with 0 violations across 77 files
+**Result:** apk-ux-audit-status.txt: PASS; apk-ux-audit.json: 0 candidate files reviewed; UX categories 1-10 checked
+**Nudges:** 0
+
+### [2026-11-08] PR #2525 [Stage 13]: Documented recurring 5-stage fallback publish mass rescue, S01 empty session refusal, 12 degrading health stages, and updated Section 3 metrics across Stages 1-13
+**Domain:** fallback-publish | **Commit:** 670991ce9 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2525)
+**Files:** .github/nightly-logs/13-self-healing-protocol-coverage.log, .github/nightly-logs/13-self-healing-protocol-pr-body.md, .github/nightly-logs/13-self-healing-protocol.md
+**Why:** Pipeline surgeon resilience audit across 2026-11-08 ledger and PR history
+**Change:** Documented recurring 5-stage fallback publish mass rescue, S01 empty session refusal, 12 degrading health stages, and updated Section 3 metrics across Stages 1-13
+**Result:** Verified targeted protocol edits via git diff --check and audit duration checks
+**Nudges:** 0
+
+
 ### [2026-11-08] PR #2514 [Stage 2]: Restored useDeepLinkHandler.spec.ts after verification attempt allowance exhausted
 **Domain:** verification | **Commit:** e8ecaea1b | [View PR](https://github.com/AlbiDR/ClashManager/pull/2514)
 **Files:** .github/nightly-logs/02-verification-coverage.log, .github/nightly-logs/02-verification-pr-body.md
