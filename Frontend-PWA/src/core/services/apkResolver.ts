@@ -11,7 +11,15 @@
  * @remarks
  * This service parses GitHub repository releases and metadata to resolve the latest
  * companion APK filename and binary download URLs for the hybrid Android wrapper.
- * Satisfies CleanStack Architecture Layer 1 standards.
+ * Satisfies CleanStack Architecture Layer 1 standards and ADR Section IV: Resilience
+ * & Hardware Integration by providing robust multi-tier fallback resolution against
+ * network partitions and external API rate-limiting.
+ *
+ * **Architectural Context:**
+ * - **Layer:** Layer 1 (@core)
+ * - **Satisfaction:** Satisfies ADR Section I (Core Services) and ADR Section IV (Resilience).
+ * - **Import Boundaries:** May import from Layer 1 (@core/services, @core/types) and Layer 0 (@substrate).
+ *   Imports from Shared (@shared), Features (@features), or App (@app) are forbidden.
  */
 
 import * as v from "valibot";
@@ -37,14 +45,26 @@ import {
   selectNewestReleaseDownload,
 } from "./apkResolverUtils";
 
-/** GitHub's contents response shape at the external-data trust boundary. */
+/**
+ * Valibot validation schema defining GitHub's contents API response shape at the external-data trust boundary.
+ *
+ * @remarks
+ * Satisfies ADR Section III: Validation Boundaries.
+ * Guards against malformed or unexpected payload structures returned by the GitHub contents directory endpoint.
+ */
 const GitHubReleaseContentsSchema = v.array(v.object({
   download_url: v.optional(v.nullable(v.string())),
   name: v.optional(v.string()),
   type: v.optional(v.string()),
 }));
 
-/** Release metadata shape shared by the same-origin and remote latest.json feeds. */
+/**
+ * Valibot validation schema defining release metadata shape shared by the same-origin and remote latest.json feeds.
+ *
+ * @remarks
+ * Satisfies ADR Section III: Validation Boundaries.
+ * Ensures metadata fields (buildNumber, changelog, filename, sha256, sizeBytes, version) conform to contract.
+ */
 const ApkReleaseMetadataSchema = v.object({
   buildNumber: v.optional(v.number()),
   changelog: v.optional(v.union([v.string(), v.array(v.string())])),
@@ -59,13 +79,19 @@ export * from "./apkResolverUtils";
 
 /**
  * Registry state holding the active memoized resolution result.
+ *
+ * @remarks
  * [DECISION LOG]: Kept private within module scope to prevent external mutation.
+ * Stores cached release metadata and TTL expiration timestamp.
  */
 let apkResolutionCache: ApkResolutionCache | undefined;
 
 /**
  * Active promise pointer to deduplicate concurrent resolution requests.
- * [DECISION LOG]: Mitigates race conditions and prevents cache stampede.
+ *
+ * @remarks
+ * [DECISION LOG]: Mitigates race conditions and prevents cache stampede by sharing
+ * the in-flight resolution promise among concurrent callers.
  */
 let pendingApkResolution: Promise<ApkReleaseDownload | undefined> | undefined;
 
@@ -77,7 +103,7 @@ let pendingApkResolution: Promise<ApkReleaseDownload | undefined> | undefined;
  * @returns Resolves with the network response.
  *
  * @remarks
- * [THREAT ANNOTATION]: Network Exhaustion/Stall Guard. Binds requests with a hard-timeout
+ * [THREAT ANNOTATION]: Network Exhaustion / Stall Guard. Binds requests with a hard-timeout
  * abort controller and overrides storage directives with 'no-store' to guarantee fresh data ingress.
  *
  * [FIX] No `Cache-Control` request header. It is not a CORS-safelisted header, so it
@@ -85,6 +111,9 @@ let pendingApkResolution: Promise<ApkReleaseDownload | undefined> | undefined;
  * the preflight with 403 and api.github.com does not allow the header, so two of the
  * three update sources failed on every check, in every browser. `cache: "no-store"`
  * and the timestamp query already keep every response fresh.
+ *
+ * @sideeffects
+ * Dispatches an outbound HTTP network request via fetch with an abort signal timeout.
  */
 async function fetchFresh(url: string, init: RequestInit = {}): Promise<Response> {
   const controller = new AbortController();
@@ -106,6 +135,12 @@ async function fetchFresh(url: string, init: RequestInit = {}): Promise<Response
 
 /**
  * Queries GitHub's contents directory list API as an autonomous fallback route.
+ *
+ * @remarks
+ * Inspects GitHub contents API when metadata files are missing or inaccessible.
+ *
+ * [THREAT ANNOTATION]: External API Rate Limiting. GitHub unauthenticated API rate limits
+ * (60 requests/hr) may cause 403 responses; failures are caught and logged gracefully as warnings.
  *
  * @returns The found newest APK model, or undefined on failure.
  */
@@ -129,6 +164,7 @@ async function resolveApkReleaseFromContentsApi(): Promise<ApkReleaseDownload | 
       }
       : undefined;
   } catch (contentsError: unknown) {
+    // [DECISION LOG] Graceful degradation: contents API failure emits warning without halting fallback pipeline.
     console.warn("[PWA] APK contents fallback failed", contentsError);
     return undefined;
   }
@@ -140,7 +176,14 @@ async function resolveApkReleaseFromContentsApi(): Promise<ApkReleaseDownload | 
  * @param metadataUrl - Target metadata url string.
  * @param buildDownloadUrl - Factory mapping to construct download urls.
  * @param sourceName - Human identifier for diagnostic warnings.
- * @returns Structured release download mapping, or undefined.
+ * @returns Structured release download mapping, or undefined if parsing or verification fails.
+ *
+ * @remarks
+ * [THREAT ANNOTATION]: Malformed Metadata Injection. Incoming metadata is validated through
+ * `ApkReleaseMetadataSchema` and checked for valid release filename structures.
+ *
+ * [DECISION LOG] Handles SPA host fallbacks: static hosts serving index.html for missing
+ * latest.json return HTML content-types, which are safely classified as source misses.
  */
 async function resolveApkReleaseFromMetadataUrl(
   metadataUrl: string,
@@ -190,7 +233,7 @@ async function resolveApkReleaseFromMetadataUrl(
       }
     }
   } catch (resolveApkError: unknown) {
-    // Invalid JSON is an ordinary source miss: the remaining resolvers still
+    // [DECISION LOG] Invalid JSON is an ordinary source miss: the remaining resolvers still
     // run and may provide the release. Preserve warnings for operational errors.
     if (!(resolveApkError instanceof Error && resolveApkError.name === "SyntaxError")) {
       console.warn(`[PWA] ${sourceName} APK metadata resolution failed`, resolveApkError);
@@ -203,7 +246,10 @@ async function resolveApkReleaseFromMetadataUrl(
 /**
  * Resolves companion updates against GitHub's latest.json metadata endpoint.
  *
- * @returns Matching release data, or undefined.
+ * @remarks
+ * Direct remote resolution querying the primary release channel.
+ *
+ * @returns Matching release data, or undefined on resolution failure.
  */
 async function resolveApkReleaseFromLatestMetadata(): Promise<ApkReleaseDownload | undefined> {
   return resolveApkReleaseFromMetadataUrl(APK_LATEST_METADATA_URL, buildApkDownloadUrl, "Remote latest.json");
@@ -212,7 +258,10 @@ async function resolveApkReleaseFromLatestMetadata(): Promise<ApkReleaseDownload
 /**
  * Resolves companion updates against same-origin's hosted latest.json metadata endpoint.
  *
- * @returns Matching same-origin release data, or undefined.
+ * @remarks
+ * Prioritizes locally hosted releases when the PWA is served alongside its companion binary distribution.
+ *
+ * @returns Matching same-origin release data, or undefined if unavailable.
  */
 async function resolveApkReleaseFromSameOriginMetadata(): Promise<ApkReleaseDownload | undefined> {
   const sameOriginMetadataUrl = buildSameOriginApkReleaseUrl("latest.json");
@@ -228,13 +277,14 @@ async function resolveApkReleaseFromSameOriginMetadata(): Promise<ApkReleaseDown
 /**
  * Uncached, multi-source resolution orchestration executed in parallel.
  *
- * @returns The absolute peak chronological release candidate found.
+ * @returns The absolute peak chronological release candidate found, or undefined if no source succeeded.
  *
  * @remarks
  * [DECISION LOG]: Runs three resolution workflows in parallel (Same-origin, GitHub API,
  * Remote latest.json metadata) to establish fault-tolerance against network failures or CDN outages.
  */
 async function resolveLatestApkReleaseUncached(): Promise<ApkReleaseDownload | undefined> {
+  // [DECISION LOG] Parallel execution guarantees resolution completes in the latency of the fastest source.
   const [releaseFromSameOriginMetadata, releaseFromContentsApi, releaseFromLatestMetadata] = await Promise.all([
     resolveApkReleaseFromSameOriginMetadata(),
     resolveApkReleaseFromContentsApi(),
@@ -251,14 +301,19 @@ async function resolveLatestApkReleaseUncached(): Promise<ApkReleaseDownload | u
 /**
  * Resolves the absolute newest APK companion release, utilizing caching and race-deduplication.
  *
- * @returns The newest verified download payload, or undefined.
- *
  * @remarks
  * [DECISION LOG]: Wraps concurrent queries into a single pending transaction promise
  * to prevent high-frequency cache stampedes. Enforces a sliding cache TTL expiration.
+ * Satisfies CleanStack Architecture Layer 1 contracts.
+ *
+ * @returns The newest verified download payload, or undefined if unresolvable.
+ *
+ * @sideeffects
+ * Updates module-level `apkResolutionCache` and `pendingApkResolution` promises.
  */
 export async function resolveLatestApkRelease(): Promise<ApkReleaseDownload | undefined> {
   const now = Date.now();
+  // [DECISION LOG] Cache Check: return valid unexpired cache entry immediately to avoid redundant fetches.
   if (apkResolutionCache && apkResolutionCache.expiresAt > now) {
     return {
       buildNumber: apkResolutionCache.buildNumber,
@@ -272,6 +327,7 @@ export async function resolveLatestApkRelease(): Promise<ApkReleaseDownload | un
       version: apkResolutionCache.version,
     };
   }
+  // [DECISION LOG] Stampede Protection: Return existing promise if resolution is currently in-flight.
   if (pendingApkResolution) return pendingApkResolution;
 
   pendingApkResolution = resolveLatestApkReleaseUncached()
@@ -302,7 +358,10 @@ export async function resolveLatestApkRelease(): Promise<ApkReleaseDownload | un
 /**
  * Resolves only the companion filename segment of the newest verified release.
  *
- * @returns The companion file name, or undefined.
+ * @remarks
+ * Convenience wrapper returning filename only.
+ *
+ * @returns The companion file name, or undefined if no release is found.
  */
 export async function resolveLatestApkFilename(): Promise<string | undefined> {
   return (await resolveLatestApkRelease())?.filename;
@@ -311,6 +370,9 @@ export async function resolveLatestApkFilename(): Promise<string | undefined> {
 /**
  * Clears active module cached structures during testing runs.
  * Only functional inside a designated test runtime environment.
+ *
+ * @remarks
+ * [DECISION LOG] Test Isolation Guard: Prevents cross-test cache contamination in Vitest runner.
  */
 export function resetApkResolutionCacheForTests(): void {
   if (import.meta.env.TEST) {
