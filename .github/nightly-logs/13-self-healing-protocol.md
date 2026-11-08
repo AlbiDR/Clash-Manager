@@ -886,6 +886,42 @@
   - Root Cause: High reliance on watchdog fallback publication (100% intervention rate on merged stages over the last 4 cycles) combined with recurrent interactive tool stalling drives escalating intervention metrics.
   - Recommended Fix: Resolve the native PR publication handoff failure to lower the pipeline-wide intervention rate.
 
+* Stage 1 Jules Session Empty Output Recurrence & Fallback Refusal (2026-11-08):
+  - Stage: Stage 1 (Hardening)
+  - State: [RECURRING] (2026-11-08)
+  - Evidence: `nightly-run-ledger.json` (state: ESCALATED, failureClass: JULES_SESSION_EMPTY, session: sessions/15353224648150498938, lifetimeMinutes: 27.2, fallbackRefusal: "Stage 1: session holds no change set to publish", recovery: nudgedAt 06:40:45Z, ok: true, attempts: 0, interventionAttempts: 1)
+  - Symptom: For the second consecutive cycle, Stage 1 completed execution (lifetime 27.2m) without producing any change set or coverage log record. The watchdog nudged the session at 06:40:45 UTC, but fallback publication was refused because no patch was emitted. Stage 1 escalated with state ESCALATED. Health rating: DEGRADING (intervention rate rose from 12% to 40%, 5 runs in a row needing help).
+  - Root Cause: Jules execution completed without writing either source modifications or an updated terminal coverage-log record to disk before terminating, leaving an empty session output.
+  - Recommended Fix: Class-level Poka-yoke: Enforce via lifecycle start/guard wrapper that a terminal coverage-log entry is recorded, and ensure the session writes its verdict before exiting to prevent unrecoverable zero-output states.
+
+* Pipeline Fallback Publication Mass Rescue Recurrence (2026-11-08):
+  - Stages: Stage 2 (PR #2514), Stage 3 (PR #2515), Stage 4 (PR #2516), Stage 5 (PR #2517), Stage 6 (PR #2518)
+  - State: [RECURRING] [RESCUED] (2026-11-08)
+  - Evidence: `nightly-run-ledger.json` (failureClass: RECOVERED_BY_FALLBACK_PUBLISH across Stages 2, 3, 4, 5, 6), PR history (PRs #2514-#2518)
+  - Symptom: For the fifth consecutive cycle (2026-11-04 through 2026-11-08), 100% of merged stages (5 of 5: S02, S03, S04, S05, S06) failed to natively publish PRs upon session completion. The watchdog initiated fallback publication at 06:40:15–06:40:40 UTC (a 25-second batch window), extracting session patches to create PRs #2514-#2518. All 5 fallback PRs passed verification dispatch and merged into Nightly. Intervention rate for merged stages reached 5/5 (100.0%).
+  - Root Cause: Systemic native PR publication failure in the Jules unattended runner environment. Sessions finish work and finalize records, but the terminal publication handoff fails to open PRs natively on GitHub, requiring automated watchdog fallback rescue.
+  - Recommended Fix: Class-level preventive action: Audit the Jules native task publication agent hook and API lifecycle to identify why runner sessions exit without initiating PR creation. Maintain watchdog fallback publishing as an essential safety net.
+
+* Pipeline Health Adverse Degradation Trends (2026-11-08):
+  - Stages: Stage 1 (Hardening), Stage 2 (Verification), Stage 3 (Baseline Consolidation), Stage 4 (Optimization), Stage 5 (README), Stage 6 (TSDoc), Stage 7 (Version Integrity), Stage 9 (Refactor), Stage 10 (APK Integrity), Stage 11 (APK Optimization), Stage 12 (APK UX), Stage 13 (Self-Healing)
+  - State: [ACTIVE - monitor] (2026-11-08)
+  - Evidence: `nightly-run-ledger.json` (`evidence.health.verdict: DEGRADING` across 12 of 13 stages judged over 85 observed runs; only Stage 8 remains HEALTHY)
+  - Symptom: Degradation warnings expanded across almost the entire pipeline (12 of 13 stages) due to sustained 100% intervention rates across recent cycles:
+    - Stage 1 (Hardening): intervention rate rose from 12% to 40% (streak 5).
+    - Stage 2 (Verification): intervention rate rose from 16% to 18% (streak 5).
+    - Stage 3 (Baseline Consolidation): intervention rate rose from 15% to 30% (streak 2).
+    - Stage 4 (Optimization): intervention rate rose from 16% to 21% (streak 5).
+    - Stage 5 (Documentation README): intervention rate rose from 21% to 23% (streak 5).
+    - Stage 6 (Documentation TSDoc): intervention rate rose from 14% to 33% (streak 5).
+    - Stage 7 (Version Integrity): intervention rate rose from 16% to 21% (streak 4).
+    - Stage 9 (Refactor): intervention rate rose from 16% to 28% (streak 4).
+    - Stage 10 (APK Integrity): intervention rate rose from 14% to 21% (streak 4).
+    - Stage 11 (APK Optimization): intervention rate rose from 19% to 21% (streak 4).
+    - Stage 12 (APK UX): intervention rate rose from 19% to 26% (streak 4).
+    - Stage 13 (Self Healing Protocol): intervention rate rose from 12% to 16% (streak 4).
+  - Root Cause: Persistent reliance on watchdog fallback publication across all productive stages, inflating intervention rates across multi-day rolling windows.
+  - Recommended Fix: Address the native PR publication handoff mechanism in the scheduled Jules workflow to restore unattended native completion and bring pipeline health back to HEALTHY.
+
 ## Section 2: Cross-Stage Coherence Bugs (Priority 2)
 
 * Duplicate Merge Failure Blocks in 00-pr-history.md:
@@ -1093,56 +1129,72 @@
   - Root Cause: Effective cross-stage serialization and separation of concerns across test verification, architectural documentation, and interface typing contracts.
   - Recommended Fix: No defect. Demonstrates successful multi-stage layering under autonomous operation.
 
+* Recurrent Batch Fallback Publication Upstream Race Window (2026-11-08):
+  - Stages: Stages 2, 3, 4, 5, 6
+  - State: [RECURRING] (2026-11-08)
+  - Evidence: `nightly-run-ledger.json` (fallbackPublish timestamp batch: 06:40:15Z to 06:40:40Z across 5 stages), PRs #2514-#2518
+  - Symptom: Five completed sessions accumulated without native PR publication and were batch-processed by the watchdog fallback publisher within a 25-second window (06:40:15 to 06:40:40 UTC). While all 5 PRs merged successfully tonight, Stage 1 again failed fallback rescue due to an empty change set.
+  - Root Cause: Watchdog cron polling interval batches accumulated sessions rather than publishing immediately upon each session deadline.
+  - Recommended Fix: Ensure watchdog fallback processor sequences PR creation and merges with strict serial rebasing or uses per-stage event triggers rather than batched cron polling.
+
+* Downstream Documentation Layering Following Stage 2 Partial-Run Reversion (2026-11-08):
+  - Stages: Stage 2 (PR #2514), Stage 5 (PR #2517), Stage 6 (PR #2518)
+  - State: [OBSERVED - benign] (2026-11-08)
+  - Evidence: PR #2514 (`02-verification-coverage.log`: PARTIAL-RUN, restored `useDeepLinkHandler.spec.ts`), PR #2517 (`Frontend-PWA/src/core/services/README.md`), PR #2518 (`Frontend-PWA/src/core/services/apkResolver.ts`)
+  - Symptom: In Stage 2, verification attempted unit test additions for `useDeepLinkHandler.spec.ts` but hit attempt allowance limits, cleanly reverting the test file to submit a PARTIAL-RUN. Downstream Stage 5 documented `useDeepLinkHandler` presentation orchestration in `core/services/README.md`, and Stage 6 hardened `apkResolver` TSDoc contracts. Both documentation PRs merged without conflict.
+  - Root Cause: Strict stage contract governance guarantees that failed test experiments are cleanly rolled back, leaving the shared substrate in a clean state for downstream stages.
+  - Recommended Fix: No defect. Demonstrates expected resilience and isolation under stage lifecycle contracts.
+
 ## Section 3: No-Diff and Low-Value Audit (Priority 3)
 
 * Stage 1 (Harden):
-  - Consecutive No-Diff Days: 12 (Session empty / fallback refused on 2026-11-07, lifetime 27.2m; previous CLEAN logged on 2026-11-04, PR #2480; audit duration: 8m, median 6m)
-  - Analysis: Stage 1 session completed in 27.2m but produced an empty session output (`JULES_SESSION_EMPTY`). Watchdog nudge was accepted but fallback publish was refused because no diff was present. Health rating: DEGRADING (intervention rate 37%, 4 runs in a row needing help).
+  - Consecutive No-Diff Days: 13 (Session empty / fallback refused on 2026-11-08, lifetime 27.2m; previous CLEAN logged on 2026-11-04, PR #2480; audit duration: 8m, median 6m)
+  - Analysis: Stage 1 session completed in 27.2m but produced an empty session output (`JULES_SESSION_EMPTY`). Watchdog nudge was accepted but fallback publish was refused because no diff was present. Health rating: DEGRADING (intervention rate 40%, 5 runs in a row needing help).
 
 * Stage 2 (Verify):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-11-07 in `apkResolverUtils.spec.ts`, PR #2504 rescued via fallback publish; audit duration: 12m, median 12m)
-  - Analysis: Expanded apkResolverUtils unit test suite with boundary validation and tie-breaking completeness score logic (38 assertions); passed spec, eslint, and vue-tsc type-check.
+  - Consecutive No-Diff Days: 1 (PARTIAL-RUN logged on 2026-11-08 restoring `useDeepLinkHandler.spec.ts`, PR #2514 rescued via fallback publish; audit duration: 13m, median 12m)
+  - Analysis: Attempted unit test expansion for `useDeepLinkHandler.spec.ts` but hit attempt allowance limits, cleanly reverting to PARTIAL-RUN. Health rating: DEGRADING (intervention rate 18%, 5 runs in a row needing help).
 
 * Stage 3 (Baseline Consolidation):
-  - Consecutive No-Diff Days: 2 (Session halted in AWAITING_USER_FEEDBACK / RUNNING on 2026-11-07; lifetime 36.6m; previous CHANGED on 2026-11-05, PR #2482; audit duration: untimed/0m this cycle, median 4m)
-  - Analysis: Stage 3 failed to complete consolidation due to recurrent interactive user feedback stalling; 18 migrations remain pending baseline consolidation. DB semantic verification remained DB-UNAVAILABLE. Health rating: DEGRADING (intervention rate 28%).
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-11-08 in `master_migration.sql`, PR #2515 rescued via fallback publish; audit duration: 9m, median 4m)
+  - Analysis: Folded migration 20260705030000_voyage_history_pruning.sql into baseline; 18 migrations remain pending with 20261004015410 next. Health rating: DEGRADING (intervention rate 30%).
 
 * Stage 4 (Optimization):
-  - Consecutive No-Diff Days: 25 (CLEAN logged on 2026-11-07, PR #2505 rescued via fallback publish; audit duration: 8m, median 5m)
-  - Analysis: Audited 35 changed files and 10 SQL database views via source-level grep; confirmed zero structural rot or unreferenced database views. Saturated by design across current view surface.
+  - Consecutive No-Diff Days: 26 (CLEAN logged on 2026-11-08, PR #2516 rescued via fallback publish; audit duration: 3m, median 5m)
+  - Analysis: Audited 32 changed files and 10 SQL database views via source-level grep; confirmed zero structural rot or unreferenced database views. Saturated by design across current view surface. Health rating: DEGRADING (intervention rate 21%, 5 runs in a row needing help).
 
 * Stage 5 (README):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-11-07 in Frontend-PWA/src/core/services/README.md, PR #2506 rescued via fallback publish; audit duration: 5m, median 5m)
-  - Analysis: Reconciled useApkManager architecture, updated state machine, downgrade threat guards, and bridge brokering in core services README (PR #2506).
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-11-08 in Frontend-PWA/src/core/services/README.md, PR #2517 rescued via fallback publish; audit duration: 5m, median 5m)
+  - Analysis: Reconciled useDeepLinkHandler presentation orchestration, reactivity contracts, and auto-scroll layout lifecycle guards in core services README (PR #2517). Health rating: DEGRADING (intervention rate 23%, 5 runs in a row needing help).
 
 * Stage 6 (TSDoc):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-11-07 in Frontend-PWA/src/core/services/useDeepLinkHandler.ts, PR #2507 rescued via fallback publish; audit duration: 8m, median 6m)
-  - Analysis: Hardened useDeepLinkHandler interface contracts and inline decision annotations (PR #2507). Health rating: DEGRADING (intervention rate 30%).
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-11-08 in Frontend-PWA/src/core/services/apkResolver.ts, PR #2518 rescued via fallback publish; audit duration: 12m, median 6m)
+  - Analysis: Hardened apkResolver interface contracts and inline decision annotations (PR #2518). Health rating: DEGRADING (intervention rate 33%, 5 runs in a row needing help).
 
 * Stage 7 (Version Integrity):
-  - Consecutive No-Diff Days: 187 (CLEAN logged on 2026-11-06, PR #2497 rescued via fallback publish; audit duration: 3m, median 3m)
-  - Analysis: Audited catalog protocols in Frontend-PWA and Backend manifests, verified ground truth version 14.55.14 across 3 package manifests and derived files (PR #2497). Saturated by design. Health rating: DEGRADING (intervention rate 19%). Frontier at Stage 7; scheduled for subsequent dispatch.
+  - Consecutive No-Diff Days: 188 (CLEAN logged on 2026-11-07, PR #2508; audit duration: 11m, median 3m)
+  - Analysis: Audited catalog protocols in Frontend-PWA and Backend manifests, verified ground truth version 14.55.14 across 3 package manifests, README badges, Android APK manifests, and substrate constants. Saturated by design. Health rating: DEGRADING (intervention rate 21%). Settling / frontier at Stage 7; scheduled for subsequent dispatch.
 
 * Stage 8 (Dependency Audit):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-11-06 in package.json, PR #2498; audit duration: 13m, median 7m)
-  - Analysis: Bumped vite to ^8.3.6 in monorepo catalogs and updated lockfile (PR #2498). Frontier at Stage 7; scheduled for subsequent dispatch.
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-11-07 in package.json, PR #2509; audit duration: 9m, median 7m)
+  - Analysis: Bumped vue to ^3.5.45 in monorepo catalogs and updated lockfile (PR #2509). Health rating: HEALTHY (no adverse trend). Frontier at Stage 7; scheduled for subsequent dispatch.
 
 * Stage 9 (Refactor):
   - Consecutive No-Diff Days: 22 (CLEAN logged on 2026-11-06, PR #2499; audit duration: 9m, median 6m)
-  - Analysis: Audited useApkManager and apkResolverUtils; 0 dep-viols, knip 11 files/1 dep/0 exp. Health rating: DEGRADING (intervention rate 26%). Frontier at Stage 7; scheduled for subsequent dispatch.
+  - Analysis: Audited useApkManager and apkResolverUtils; 0 dep-viols, knip 11 files/1 dep/0 exp. Health rating: DEGRADING (intervention rate 28%). Frontier at Stage 7; scheduled for subsequent dispatch.
 
 * Stage 10 (APK-Integrity):
-  - Consecutive No-Diff Days: 120 (CLEAN logged on 2026-11-06, PR #2500; audit duration: 4m, median 3m)
-  - Analysis: Audited asset links, manifest parity, version sync (14.55.14 / 14055014), release metadata pointer (clashmanager-v14.55.14+529.apk), and cleartext traffic/security policies. Health rating: DEGRADING (intervention rate 19%). Frontier at Stage 7; scheduled for subsequent dispatch.
+  - Consecutive No-Diff Days: 121 (CLEAN logged on 2026-11-07, PR #2510; audit duration: 3m, median 3m)
+  - Analysis: Audited asset links, manifest parity, version sync (14.55.14 / 14055014), release metadata pointer (clashmanager-v14.55.14+529.apk), and cleartext traffic/security policies. Health rating: DEGRADING (intervention rate 21%). Frontier at Stage 7; scheduled for subsequent dispatch.
 
 * Stage 11 (APK-Optimization):
-  - Consecutive No-Diff Days: 25 (CLEAN logged on 2026-11-06, PR #2501; audit duration: 5m, median 4m)
-  - Analysis: Audited native WebView performance settings, service worker caching routes, Vite code splitting, and public asset precache footprint; zero source changes required. Frontier at Stage 7; scheduled for subsequent dispatch.
+  - Consecutive No-Diff Days: 26 (CLEAN logged on 2026-11-07, PR #2511; audit duration: 5m, median 4m)
+  - Analysis: Audited native WebView performance settings, service worker caching routes, Vite code splitting, and public asset precache footprint; zero source changes required. Health rating: DEGRADING (intervention rate 21%). Frontier at Stage 7; scheduled for subsequent dispatch.
 
 * Stage 12 (APK-UX):
-  - Consecutive No-Diff Days: 38 (CLEAN logged on 2026-11-06, PR #2502; audit duration: 5m, median 4m)
-  - Analysis: Automated hybrid shell UX audit completed with 0 violations across 77 files. Health rating: DEGRADING (intervention rate 24%). Frontier at Stage 7; scheduled for subsequent dispatch.
+  - Consecutive No-Diff Days: 39 (CLEAN logged on 2026-11-07, PR #2512; audit duration: 5m, median 4m)
+  - Analysis: Calibration pass completed: no UX issues found across 77 files examined. Health rating: DEGRADING (intervention rate 26%). Frontier at Stage 7; scheduled for subsequent dispatch.
 
 * Stage 13 (Self-Healing):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-11-07; audit duration: 9m this run, median 5m)
-  - Analysis: Completed daily self-healing audit pass for 2026-11-07: documented Stage 1 empty session refusal, Stage 3 recurring interactive feedback stall in Section 1, 4-stage recurring fallback publish mass rescue (100% intervention rate on merged stages), 8 degrading health stages (S01, S03, S06, S07, S09, S10, S12, S13), cross-stage contract stabilization across S02, S05, S06 in Section 2, and updated Section 3 metrics across Stages 1-13.
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-11-08; audit duration: 10m this run, median 5m)
+  - Analysis: Completed daily self-healing audit pass for 2026-11-08: documented Stage 1 recurring empty session refusal, 5-stage recurring fallback publish mass rescue (PRs #2514-#2518, 100% intervention rate on merged stages), 12 degrading health stages (S01, S02, S03, S04, S05, S06, S07, S09, S10, S11, S12, S13), cross-stage contract stabilization across S02, S05, S06 in Section 2, and updated Section 3 metrics across Stages 1-13.
