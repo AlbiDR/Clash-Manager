@@ -206,6 +206,15 @@ The Native Bridge service coordinates communication between the Web/PWA layer an
 - **Standardized Shell Contracts (`layoutProps` & `layoutEvents`):** Computes reactive props and event handlers tailored for `ConsoleLayout.vue`, bundling status badges, emptiness indicators, remote data provenance, and action handlers with support for feature-specific event overrides (`eventsOverride`).
 - **Card Metadata & List Memoization (`getCardMetadata` & `getMemoKeys`):** Exposes `selectedSet` (O(1) Set lookups) and helper methods (`getCardMetadata`, `getMemoKeys`) to generate stable reactive flags and key arrays for Vue list rendering and memoization.
 
+### Navigation Deep-Linking & Card Expansion (`useDeepLinkHandler.ts`)
+
+`useDeepLinkHandler.ts` centralizes presentation orchestration for deep-linked item expansion and auto-scroll across list-based views (Roster, Headhunter) in Layer 1 Core:
+- **Presentation Orchestration Contract (`UseDeepLinkHandlerReturn`):** Decouples navigation-driven DOM interaction and card expansion from monolithic feature views. Returns a reactive Set of expanded card identifiers (`expandedIds`), an expansion toggle function (`toggleExpand`), and a deep-link evaluation handler (`processDeepLink`).
+- **Set Copy Reactivity Design:** In Vue 3, mutating a reactive `Set` directly does not reliably propagate triggers across subscriber components. The service guarantees deterministic reactivity by cloning the current Set into a new instance on every toggle or expansion event before reassigning `expandedIds.value`.
+- **Single-Shot Run-Once Guard (`deepLinkHandled`):** Evaluates candidate deep links exactly once per lifecycle run. Background data revalidation (stale-while-revalidate / SWR) and periodic syncs are prevented from repeatedly re-triggering auto-scroll or resetting user viewport positions.
+- **Parameter Type Normalization & Boundary Protection:** Normalizes candidate URL query values (`route.query.pin`), safely coercing multi-value arrays (`string[]`) to their primary string element to defend against parameter type spoofing. Verifies candidate ID existence within the active `DeepLinkTargetItem` collection before updating state, preventing phantom DOM queries on stale or forged deep-link URLs.
+- **Asynchronous Layout Settling & Smooth Auto-Scroll:** Defers DOM element discovery (`getElementById`) until Vue settles render cycles via `nextTick()`. Executes smooth center-block scrolling (`targetElement.scrollIntoView({ behavior: 'smooth', block: 'center' })`) to prevent jarring layout thrashing and viewport clipping beneath fixed header or footer bars on mobile displays.
+
 ### Automated Batch Deep-Linking Pipeline (`useBlitzMode.ts`)
 
 `useBlitzMode.ts` orchestrates automated batch deep-linking across console feature views in Layer 1 Core:
