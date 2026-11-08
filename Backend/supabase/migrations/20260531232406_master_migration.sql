@@ -5354,7 +5354,7 @@ COMMENT ON COLUMN features.roster_view.win_rate IS
    alongside RPeS. Superseded war_wins there, which was never populated by
    the ingestion pipeline and always read 0.';
 
-GRANT SELECT ON features.roster_view TO anon, authenticated, service_role;
+GRANT SELECT ON features.roster_view TO authenticated, anon, service_role;
 
 -- =============================================================================
 -- 5. Rebuild features.voyage_contributions (unchanged logic, clean rebuild)
