@@ -16,6 +16,47 @@ LAST_AGED:   2026-11-04
 
 ## T1 -- Active (last 7 days)
 
+### [2026-11-08] PR #2514 [Stage 2]: Restored useDeepLinkHandler.spec.ts after verification attempt allowance exhausted
+**Domain:** verification | **Commit:** e8ecaea1b | [View PR](https://github.com/AlbiDR/ClashManager/pull/2514)
+**Files:** .github/nightly-logs/02-verification-coverage.log, .github/nightly-logs/02-verification-pr-body.md
+**Why:** Two-attempt allowance reached during verification mutation testing
+**Change:** Restored useDeepLinkHandler.spec.ts after verification attempt allowance exhausted
+**Result:** Attempt limit reached on useDeepLinkHandler.spec.ts; source restored to clean state
+**Nudges:** 0
+
+### [2026-11-08] PR #2515 [Stage 3]: Folded migration 20260705030000_voyage_history_pruning.sql by reconciling SELECT privilege on features.roster_view; 18 migrations remain to fold with 20261004015410_restore_roster_view_battle_stats_bridge.sql next
+**Domain:** database | **Commit:** d0fa050a9 | [View PR](https://github.com/AlbiDR/ClashManager/pull/2515)
+**Files:** .github/nightly-logs/03-baseline-consolidation-coverage.log, .github/nightly-logs/03-baseline-consolidation-pr-body.md, Backend/supabase/migrations/20260531232406_master_migration.sql
+**Why:** Reconciled divergent grant privilege in master baseline to match chronological incremental migration definition
+**Change:** Folded migration 20260705030000_voyage_history_pruning.sql by reconciling SELECT privilege on features.roster_view; 18 migrations remain to fold with 20261004015410_restore_roster_view_battle_stats_bridge.sql next
+**Result:** pnpm audit:migrations passed with 0 violations across 79 migrations; fold-state confirmed 20260705030000_voyage_history_pruning.sql folded and removed from pending migrations; DB-UNAVAILABLE semantic verification pending CI
+**Nudges:** 0
+
+### [2026-11-08] PR #2516 [Stage 4]: Audited 32 changed files and 10 SQL database views via source-level grep; confirmed zero structural rot or unreferenced database views
+**Domain:** optimization | **Commit:** 48556f0b3 | [View PR](https://github.com/AlbiDR/ClashManager/pull/2516)
+**Files:** .github/nightly-logs/04-optimization-coverage.log, .github/nightly-logs/04-optimization-pr-body.md
+**Why:** Bounded scan of recent changed files and substrate hygiene check confirmed existing code paths are fully optimized and clean
+**Change:** Audited 32 changed files and 10 SQL database views via source-level grep; confirmed zero structural rot or unreferenced database views
+**Result:** Source grep verified 10 active SQL views; audit:dead-components passed 456 files with 0 dead components; Vitest apkResolverUtils.spec.ts passed 38 of 38
+**Nudges:** 0
+
+### [2026-11-08] PR #2517 [Stage 5]: Reconcile useDeepLinkHandler presentation orchestration, reactivity contracts, and auto-scroll layout lifecycle guards in core services README
+**Domain:** documentation | **Commit:** 718b4db7d | [View PR](https://github.com/AlbiDR/ClashManager/pull/2517)
+**Files:** .github/nightly-logs/05-documentation-readme-coverage.log, .github/nightly-logs/05-documentation-readme-pr-body.md, Frontend-PWA/src/core/services/README.md
+**Why:** Document UseDeepLinkHandlerReturn contract, DeepLinkTargetItem boundary, Set copy reactivity, single-shot execution guard, and layout settling per CleanStack Architecture Layer 1
+**Change:** Reconcile useDeepLinkHandler presentation orchestration, reactivity contracts, and auto-scroll layout lifecycle guards in core services README
+**Result:** git diff --check passed with 0 errors; Vitest useDeepLinkHandler.spec.ts passed 9 of 9 tests
+**Nudges:** 0
+
+### [2026-11-08] PR #2518 [Stage 6]: docs(tsdoc): harden apkResolver interface contracts and inline decision annotations
+**Domain:** documentation | **Commit:** 7fff0dbde | [View PR](https://github.com/AlbiDR/ClashManager/pull/2518)
+**Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, .github/nightly-logs/06-documentation-tsdoc-pr-body.md, Frontend-PWA/src/core/services/apkResolver.ts
+**Why:** Synchronize Layer 1 APK release resolver interface contracts, ADR compliance notes, and threat annotations with implementation reality
+**Change:** docs(tsdoc): harden apkResolver interface contracts and inline decision annotations
+**Result:** pnpm --dir Frontend-PWA type-check clean; Vitest apkResolver.spec.ts and apkResolverUtils.spec.ts passed 69 of 69; depcruise 0 violations
+**Nudges:** 0
+
+
 ### [2026-11-07] PR #2508 [Stage 7]: Audited catalog protocols in Frontend-PWA and Backend manifests; verified version 14.55.14 across 3 package manifests, README badges, Android APK manifests, and substrate constants
 **Domain:** versioning | **Commit:** ed3c46428 | [View PR](https://github.com/AlbiDR/ClashManager/pull/2508)
 **Files:** .github/nightly-logs/07-version-integrity-coverage.log, .github/nightly-logs/07-version-integrity-pr-body.md
