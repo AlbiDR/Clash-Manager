@@ -6,21 +6,21 @@ In plain terms: nothing needed fixing. This run checked the APK integrity area a
 
 **What was checked:** Audited asset links, manifest parity, version sync (14.55.14 / 14055014), release metadata pointer (clashmanager-v14.55.14+529.apk), and cleartext traffic/security policies via pnpm audit:apk and pnpm apk:verify:source
 
-**Why:** Routine stage-10 wrapper integrity audit confirmed parity across PWA manifest, digital asset links, Android manifest, and release artifacts with zero drift detected
+**Why:** Ensure PWA web manifest aligns with Android APK wrapper, digital asset links match production signing keys, and security profile forbids cleartext traffic
 
-**Result:** pnpm audit:apk verified 38 wrapper invariants; pnpm apk:verify:source verified native layer and classes.dex; pnpm apk:verify verified release APK integrity; Vitest apkResolverUtils.spec.ts passed 38 of 38
+**Result:** pnpm audit:apk reported 0 mismatches across manifests, assetlinks, and permissions; pnpm apk:verify:source passed 12 tokens; test:apk-native passed 19 tests, test:apk-release passed 11 tests
 
 **Files changed:** .github/nightly-logs/10-apk-integrity-coverage.log
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: apk
-  Cycle: nightly-cycle/2026-11-07
+  Cycle: nightly-cycle/2026-11-08
   Contract: 4f9b40864d05ffea731090b36800572dd7affedd8532fcd17c8ded8c9e2fbc12
-  Why: Routine stage-10 wrapper integrity audit confirmed parity across PWA manifest, digital asset links, Android manifest, and release artifacts with zero drift detected
+  Why: Ensure PWA web manifest aligns with Android APK wrapper, digital asset links match production signing keys, and security profile forbids cleartext traffic
   Change: Audited asset links, manifest parity, version sync (14.55.14 / 14055014), release metadata pointer (clashmanager-v14.55.14+529.apk), and cleartext traffic/security policies via pnpm audit:apk and pnpm apk:verify:source
-  Result: pnpm audit:apk verified 38 wrapper invariants; pnpm apk:verify:source verified native layer and classes.dex; pnpm apk:verify verified release APK integrity; Vitest apkResolverUtils.spec.ts passed 38 of 38
+  Result: pnpm audit:apk reported 0 mismatches across manifests, assetlinks, and permissions; pnpm apk:verify:source passed 12 tokens; test:apk-native passed 19 tests, test:apk-release passed 11 tests
   Files: .github/nightly-logs/10-apk-integrity-coverage.log
   Nudges: 0
-  Execution: c37d3b694e2313654b27937fa44d91a5b3ef42eb
+  Execution: dfed510783578a6ad5f70dcd51ce29e5a9b5c8a0
 -->
