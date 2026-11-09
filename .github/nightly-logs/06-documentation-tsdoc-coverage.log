@@ -175,3 +175,4 @@
 * [2026-11-06] [Stage 6] [05:22Z-05:30Z 9m] [checks doc-debt=OK] CHANGED: Frontend-PWA/src/core/services/useApkManager.ts -- docs(tsdoc): harden useApkManager interface contracts and inline decision annotations
 * [2026-11-07] [Stage 6] [05:32Z-05:40Z 8m] [checks doc-debt=OK] CHANGED: Frontend-PWA/src/core/services/useDeepLinkHandler.ts -- docs(tsdoc): harden useDeepLinkHandler interface contracts and inline decision annotations
 * [2026-11-08] [Stage 6] [05:19Z-05:31Z 12m] [checks doc-debt=OK] CHANGED: Frontend-PWA/src/core/services/apkResolver.ts -- docs(tsdoc): harden apkResolver interface contracts and inline decision annotations
+* [2026-11-09] [Stage 6] [05:23Z-05:31Z 8m] [checks doc-debt=OK] CHANGED: Frontend-PWA/src/core/services/useNativeBridge.ts -- docs(tsdoc): harden useNativeBridge interface contracts and inline decision annotations

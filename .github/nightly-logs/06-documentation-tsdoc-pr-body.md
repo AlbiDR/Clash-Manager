@@ -4,23 +4,23 @@
 
 In plain terms: this changes 1 code file, so the app's behaviour may be affected. No tests were added or changed alongside it.
 
-**What changed:** docs(tsdoc): harden apkResolver interface contracts and inline decision annotations
+**What changed:** docs(tsdoc): harden useNativeBridge interface contracts and inline decision annotations
 
-**Why:** Synchronize Layer 1 APK release resolver interface contracts, ADR compliance notes, and threat annotations with implementation reality
+**Why:** Define UseNativeBridgeReturn contract interface, document hardware brokerage and intent fallbacks, and record threat annotations per CleanStack Architecture Layer 1
 
-**Result:** pnpm --dir Frontend-PWA type-check clean; Vitest apkResolver.spec.ts and apkResolverUtils.spec.ts passed 69 of 69; depcruise 0 violations
+**Result:** vue-tsc passed, Vitest passed 25 of 25 tests across useNativeBridge specs, depcruise reported 0 violations
 
-**Files changed:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, Frontend-PWA/src/core/services/apkResolver.ts
+**Files changed:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, Frontend-PWA/src/core/services/useNativeBridge.ts
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: documentation
-  Cycle: nightly-cycle/2026-11-08
+  Cycle: nightly-cycle/2026-11-09
   Contract: a9f522cc73babe487aa3df1b083524daba64c0dd03c9e1b446dd4bd70c376bae
-  Why: Synchronize Layer 1 APK release resolver interface contracts, ADR compliance notes, and threat annotations with implementation reality
-  Change: docs(tsdoc): harden apkResolver interface contracts and inline decision annotations
-  Result: pnpm --dir Frontend-PWA type-check clean; Vitest apkResolver.spec.ts and apkResolverUtils.spec.ts passed 69 of 69; depcruise 0 violations
-  Files: .github/nightly-logs/06-documentation-tsdoc-coverage.log, Frontend-PWA/src/core/services/apkResolver.ts
+  Why: Define UseNativeBridgeReturn contract interface, document hardware brokerage and intent fallbacks, and record threat annotations per CleanStack Architecture Layer 1
+  Change: docs(tsdoc): harden useNativeBridge interface contracts and inline decision annotations
+  Result: vue-tsc passed, Vitest passed 25 of 25 tests across useNativeBridge specs, depcruise reported 0 violations
+  Files: .github/nightly-logs/06-documentation-tsdoc-coverage.log, Frontend-PWA/src/core/services/useNativeBridge.ts
   Nudges: 0
-  Execution: 2e089b38be567839b11f854ba52c3a231349f04e
+  Execution: ee5d3fa812ffc0dfa85284c57b64d3144abd892c
 -->

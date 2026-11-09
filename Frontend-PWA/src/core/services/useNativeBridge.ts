@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 AlbiDR
 
-import { ref, computed } from "vue";
+import { ref, computed, type ComputedRef, type Ref } from "vue";
 import { type WindowWithBridge, type AndroidBridge, type BlitzRunRecord } from "@core/types";
 import { useToast } from "@core/services/useToast";
 
@@ -20,21 +20,68 @@ import { useToast } from "@core/services/useToast";
  * ensuring that the web-layer remains decoupled from hardware specifics and
  * provides graceful fallbacks for standard PWA environments.
  *
- * Satisfies ADR Section IV (Resilience & Operational Security) by brokering
- * all hardware-level interactions and enforcing strict type boundaries.
+ * Satisfies CleanStack Architecture ADR Section I: Core Services and ADR Section IV:
+ * Resilience & Operational Security by brokering all hardware-level interactions
+ * and enforcing strict type boundaries.
+ *
+ * **Architectural Context:**
+ * - **Layer:** Layer 1 (@core)
+ * - **Import Boundaries:** May import from Layer 1 (@core) and Layer 0 (@substrate).
+ *   Imports from Shared (@shared), Features (@features), or App (@app) are forbidden.
  */
 
+/**
+ * Return contract interface for the {@link useNativeBridge} composable.
+ *
+ * @remarks
+ * Satisfies ADR Section I: Core Services and ADR Section IV: Resilience & Operational Security.
+ * Defines reactive flags, coordinates, and dispatch methods for native Android hardware brokering.
+ */
+export interface UseNativeBridgeReturn {
+  /** Computed boolean indicating whether running within the native Android TWA shell wrapper. */
+  isNativeWrapper: ComputedRef<boolean>;
+  /** Safe access to the injected AndroidBridge instance or undefined when running in standard browser. */
+  bridge: ComputedRef<AndroidBridge | undefined>;
+  /** Reactive status of Android Accessibility permission. */
+  isAccessibilityAllowed: Ref<boolean>;
+  /** Reactive status of Android Overlay ('Draw over other apps') permission. */
+  isOverlayAllowed: Ref<boolean>;
+  /** Reactive status of Android REQUEST_INSTALL_PACKAGES permission. */
+  isPackageInstallAllowed: Ref<boolean>;
+  /** Computed boolean indicating whether native shell supports opening package install settings. */
+  isPackageInstallSettingsSupported: ComputedRef<boolean>;
+  /** Percentage (0-100) horizontal coordinate for the Blitz invite button tap target. */
+  inviteX: Ref<number>;
+  /** Percentage (0-100) vertical coordinate for the Blitz invite button tap target. */
+  inviteY: Ref<number>;
+  /** Percentage (0-100) horizontal coordinate for the Blitz dialog close button tap target. */
+  closeX: Ref<number>;
+  /** Percentage (0-100) vertical coordinate for the Blitz dialog close button tap target. */
+  closeY: Ref<number>;
+  /** Re-evaluates native permission flags by querying AndroidBridge methods. */
+  checkPermissions: () => void;
+  /** Dispatches intent to open Android Accessibility settings. */
+  openAccessibilitySettings: () => void;
+  /** Dispatches intent to open Android Overlay permission settings for Clash Manager. */
+  openOverlaySettings: () => void;
+  /** Dispatches intent to open Android package installation permission settings. */
+  openPackageInstallSettings: () => boolean;
+  /** Hydrates calibration coordinates from native bridge storage. */
+  loadCoordinates: () => void;
+  /** Serializes and saves calibration coordinates to native bridge storage. */
+  saveCoordinates: () => void;
+}
+
 // EPHEMERAL: intentionally resets on cold start
-// [THREAT:] System permission flags are polled at runtime and reset on cold start.
+// [THREAT ANNOTATION] System permission flags are polled at runtime and reset on cold start.
 const isAccessibilityAllowed = ref(false);
 const isOverlayAllowed = ref(false);
 const isPackageInstallAllowed = ref(false);
 
 // EPHEMERAL: intentionally resets on cold start
-// [THREAT:] Calibration coordinates reset to native defaults on cold start until hydrated.
-// Shown only until the shell answers getCoordinates(). They mirror the shell's
-// Calibration.DEFAULT (APK/src/.../Calibration.java) as percentages; inviteY and
-// closeY had drifted (72.14 and 20.44), placing the markers away from the taps.
+// [THREAT ANNOTATION] Stale Calibration Vector: Calibration coordinates reset to native
+// defaults on cold start until hydrated from AndroidBridge.getCoordinates().
+// They mirror the shell's Calibration.DEFAULT (APK/src/.../Calibration.java) as percentages.
 const inviteX = ref(50.83);
 const inviteY = ref(72.18);
 const closeX = ref(92.13);
@@ -46,11 +93,14 @@ let isInitialized = false;
  * Polls permission flags from the native bridge.
  *
  * @remarks
- * [THREAT:] Polling hardware state on the main thread; impact is minimized
- * by checking function existence before execution.
+ * [THREAT ANNOTATION] Main Thread Overhead: Polling hardware state on the main thread;
+ * impact is minimized by checking function existence before execution.
  *
- * [DECISION LOG] Permissions are re-checked on 'focus' to catch system-level
- * changes made while the app was in the background.
+ * [DECISION LOG] Permissions are re-checked on 'focus' and 'visibilitychange' to catch
+ * system-level changes made while the app was in the background.
+ *
+ * @sideeffects
+ * Mutates module-scoped reactive flags: `isAccessibilityAllowed`, `isOverlayAllowed`, `isPackageInstallAllowed`.
  */
 function checkPermissions() {
   if (typeof window === "undefined") return;
@@ -72,12 +122,12 @@ function checkPermissions() {
  * Converts a native decimal coordinate (0.0-1.0) into a UI percentage (0-100).
  *
  * @remarks
- * [THREAT:] The native layer is an untrusted producer; a missing or non-numeric
- * axis must never be allowed to poison reactive state with NaN.
+ * [THREAT ANNOTATION] Untrusted Producer Boundary: The native layer is an untrusted producer;
+ * a missing, non-numeric, or out-of-range axis must never poison reactive state with NaN.
  *
  * @param rawAxisValue - The unvalidated axis value taken from the native payload.
  * @param fallbackPercent - The current percentage to retain when validation fails.
- * @returns The axis as a rounded percentage, or the fallback when unusable.
+ * @returns The axis as a rounded percentage (0.00-100.00), or the fallback when unusable.
  */
 function toCalibrationPercent(rawAxisValue: unknown, fallbackPercent: number): number {
   if (typeof rawAxisValue !== "number" || !Number.isFinite(rawAxisValue)) return fallbackPercent;
@@ -90,11 +140,14 @@ function toCalibrationPercent(rawAxisValue: unknown, fallbackPercent: number): n
  * Hydrates calibration coordinates from native persistence.
  *
  * @remarks
- * [THREAT:] JSON parsing of untrusted native strings; guarded by try-catch
- * and manual validation of parsed values.
+ * [THREAT ANNOTATION] Malformed Payload Ingestion: JSON parsing of untrusted native strings
+ * is guarded by try-catch and manual per-axis validation to prevent NaN contamination.
  *
  * [DECISION LOG] COORDINATE RECONSTRUCTION: Coordinates are converted from
  * decimal (0.0-1.0) back to percentage (0-100) for UI-layer compatibility.
+ *
+ * @sideeffects
+ * Mutates reactive coordinates `inviteX`, `inviteY`, `closeX`, `closeY`.
  */
 function loadCoordinates() {
   if (typeof window === "undefined") return;
@@ -131,6 +184,12 @@ function loadCoordinates() {
  * @remarks
  * [DECISION LOG] COORDINATE NORMALIZATION: Values are stored as floats (0.0-1.0)
  * to remain resolution-independent across different device screen densities.
+ *
+ * [THREAT ANNOTATION] Corrupted Write Guard: Validates that each coordinate is not NaN
+ * before dispatching `saveCoordinates` across the JSBridge interface.
+ *
+ * @sideeffects
+ * Invokes native method `AndroidBridge.saveCoordinates()`.
  */
 function saveCoordinates() {
   if (typeof window === "undefined") return;
@@ -157,12 +216,14 @@ const BLITZ_RUN_OUTCOMES: readonly BlitzRunRecord["outcome"][] = ["running", "co
  * Parses the shell's Blitz run record.
  *
  * @remarks
- * [THREAT:] The native layer is an untrusted producer, and an older or newer
- * shell may send a shape this build does not know; anything malformed is
- * treated as "no record" rather than reported.
+ * [THREAT ANNOTATION] Schema Drift & Untrusted Serialization: The native layer is an
+ * untrusted producer, and an older or newer shell may send a shape this build does not know;
+ * anything malformed is treated as "no record" rather than reported.
+ *
+ * Satisfies CleanStack Architecture ADR Section III: Validation Boundaries.
  *
  * @param raw - The unvalidated value returned by `getLastBlitzRun()`.
- * @returns The record, or null when there is none or it is malformed.
+ * @returns The validated BlitzRunRecord, or null when absent or malformed.
  */
 export function parseBlitzRun(raw: unknown): BlitzRunRecord | null {
   if (typeof raw !== "string" || raw === "") return null;
@@ -194,8 +255,12 @@ export function parseBlitzRun(raw: unknown): BlitzRunRecord | null {
 /**
  * One plain sentence about a finished Blitz run.
  *
- * @param run - A parsed run record.
- * @returns The toast to show, or null while the run is still going.
+ * @remarks
+ * Formats a user-facing toast descriptor based on the execution outcome of an automated Blitz session.
+ * Distinguishes full invite runs from profile-only scanning runs.
+ *
+ * @param run - A parsed {@link BlitzRunRecord}.
+ * @returns The toast descriptor to show, or null while the run is still in-flight.
  */
 export function describeBlitzRun(run: BlitzRunRecord): { type: "success" | "info" | "error"; message: string } | null {
   const players = `${run.players} ${run.players === 1 ? "player" : "players"}`;
@@ -227,6 +292,9 @@ export function describeBlitzRun(run: BlitzRunRecord): { type: "success" | "info
  * it, so the shell records it and the PWA reports it on return. The end time of
  * the reported run is kept in localStorage, so a run that ended while the app
  * was closed is still reported once, and never twice.
+ *
+ * @sideeffects
+ * Reads/writes localStorage key `cm.blitz.lastReportedRunEnd` and dispatches toast notifications.
  */
 function reportLastBlitzRun() {
   const bridge = (window as WindowWithBridge).AndroidBridge;
@@ -257,8 +325,12 @@ function reportLastBlitzRun() {
  * settings, calibration moved in the native overlay, and a Blitz run.
  *
  * @remarks
+ * [DECISION LOG] Re-hydrates permissions, calibration, and completed Blitz execution state.
  * [FIX] Calibration used to load once, so a marker moved in the overlay was
  * overwritten by the PWA's stale copy on its next save.
+ *
+ * @sideeffects
+ * Triggers permission checks, coordinate reloads, and blitz toast evaluations.
  */
 function onReturnToApp() {
   checkPermissions();
@@ -297,28 +369,17 @@ function init() {
  * COMPOSABLE: useNativeBridge
  *
  * @remarks
- * Satisfies ADR Section II (Structural Unitary Architecture) by providing a
- * singleton interface to hardware capabilities and native Android orchestration.
+ * Satisfies CleanStack Architecture ADR Section I: Core Services, ADR Section II:
+ * Presentation Orchestration, and ADR Section IV: Resilience & Operational Security.
+ * Acts as the authoritative Layer 1 broker between the Vue presentation tier and the
+ * native Kotlin AndroidBridge container.
  *
- * @returns An object containing:
- * - `isNativeWrapper`: Computed boolean indicating if running inside the Android TWA.
- * - `bridge`: Safe access to the `AndroidBridge` instance or undefined if unavailable.
- * - `isAccessibilityAllowed`: Reactive boolean reflecting Accessibility permission status.
- * - `isOverlayAllowed`: Reactive boolean reflecting Overlay (Draw Over Other Apps) permission status.
- * - `isPackageInstallAllowed`: Reactive boolean reflecting APK install request status.
- * - `isPackageInstallSettingsSupported`: Whether the installed native shell can open APK install settings.
- * - `inviteX`: Reactive percentage (0-100) for the Blitz 'Invite' button X-coordinate.
- * - `inviteY`: Reactive percentage (0-100) for the Blitz 'Invite' button Y-coordinate.
- * - `closeX`: Reactive percentage (0-100) for the Blitz 'Close' button X-coordinate.
- * - `closeY`: Reactive percentage (0-100) for the Blitz 'Close' button Y-coordinate.
- * - `checkPermissions`: Method to manually trigger a re-poll of native permission flags.
- * - `openAccessibilitySettings`: Method to trigger a native intent for Accessibility settings.
- * - `openOverlaySettings`: Method to trigger a native intent for Overlay permission settings.
- * - `openPackageInstallSettings`: Method to trigger a native intent for APK install settings.
- * - `loadCoordinates`: Method to hydrate calibration state from the native bridge.
- * - `saveCoordinates`: Method to persist current calibration state to the native bridge.
+ * @returns {@link UseNativeBridgeReturn} interface containing reactive hardware state and actions.
+ *
+ * @sideeffects
+ * Initializes window and document event listeners for focus and visibility change.
  */
-export function useNativeBridge() {
+export function useNativeBridge(): UseNativeBridgeReturn {
   init();
 
   /**
@@ -344,6 +405,12 @@ export function useNativeBridge() {
 
   /**
    * Deep-links the user to the Accessibility settings.
+   *
+   * @remarks
+   * Uses native bridge method when available, with a browser fallback intent URI.
+   *
+   * @sideeffects
+   * Dispatches Android intent via native bridge or redirects window location.
    */
   function openAccessibilitySettings() {
     if (bridge.value?.openAccessibilitySettings) {
@@ -382,6 +449,11 @@ export function useNativeBridge() {
 
   /**
    * Deep-links the user to the per-app package install permission settings.
+   *
+   * @remarks
+   * Evaluates native bridge capability before dispatching the system intent.
+   *
+   * @returns Boolean indicating whether the intent was successfully dispatched to AndroidBridge.
    */
   function openPackageInstallSettings(): boolean {
     if (bridge.value?.openPackageInstallSettings) {
@@ -413,6 +485,11 @@ export function useNativeBridge() {
 
 /**
  * TEST EXPORT: Resets the singleton state for unit testing.
+ *
+ * @remarks
+ * [DECISION LOG] Test Isolation Guard: Restores initial permissions and coordinate
+ * state between test suite runs to avoid leaked side effects.
+ *
  * @internal
  */
 export function resetNativeBridgeState() {
