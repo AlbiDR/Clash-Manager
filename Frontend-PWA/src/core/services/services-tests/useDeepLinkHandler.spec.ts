@@ -158,4 +158,61 @@ describe("useDeepLinkHandler", () => {
     expect(document.getElementById).toHaveBeenCalledWith("test-123");
     // Should not crash even if element is null
   });
+
+  it("creates a new Set instance reference on each toggle to ensure reactivity", () => {
+    const { expandedIds, toggleExpand } = useDeepLinkHandler(domIdPrefix);
+    const initialSet = expandedIds.value;
+
+    toggleExpand("123");
+    const expandedSet = expandedIds.value;
+    expect(expandedSet).not.toBe(initialSet);
+    expect(expandedSet.has("123")).toBe(true);
+
+    toggleExpand("123");
+    const collapsedSet = expandedIds.value;
+    expect(collapsedSet).not.toBe(expandedSet);
+    expect(collapsedSet.has("123")).toBe(false);
+  });
+
+  it("does not expand or scroll when pin is an empty string", async () => {
+    mockRoute.query = { pin: "" };
+    const { expandedIds, processDeepLink } = useDeepLinkHandler(domIdPrefix);
+
+    processDeepLink([...items, { id: "" }]);
+    await nextTick();
+
+    expect(expandedIds.value.has("")).toBe(false);
+    expect(document.getElementById).not.toHaveBeenCalled();
+  });
+
+  it("ignores pinned items when first element of query array is empty string", async () => {
+    mockRoute.query = { pin: ["", "123"] };
+    const { expandedIds, processDeepLink } = useDeepLinkHandler(domIdPrefix);
+
+    processDeepLink(items);
+    await nextTick();
+
+    expect(expandedIds.value.has("123")).toBe(false);
+    expect(document.getElementById).not.toHaveBeenCalled();
+  });
+
+  it("preserves single-shot handled status when successive calls pass matching datasets", async () => {
+    mockRoute.query = { pin: "123" };
+    const { expandedIds, processDeepLink } = useDeepLinkHandler(domIdPrefix);
+
+    const mockScrollIntoView = vi.fn();
+    (document.getElementById as any).mockReturnValue({ scrollIntoView: mockScrollIntoView });
+
+    // Initial pass matching item
+    processDeepLink(items);
+    await nextTick();
+    expect(expandedIds.value.has("123")).toBe(true);
+    expect(document.getElementById).toHaveBeenCalledTimes(1);
+
+    // Successive pass with additional items
+    processDeepLink([{ id: "123" }, { id: "789" }]);
+    await nextTick();
+    expect(document.getElementById).toHaveBeenCalledTimes(1);
+    expect(mockScrollIntoView).toHaveBeenCalledTimes(1);
+  });
 });
