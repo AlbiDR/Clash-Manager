@@ -42,6 +42,7 @@ This is the single registry for these services; higher-layer READMEs link here r
 | `useVisibilityRefresh.ts` | Refreshes data when the document regains focus. |
 | `useBroadcastChannel.ts` | Cross-tab state sync (settings, dismissals). |
 | `useNativeBridge.ts` | Brokers the [Android bridge](../../../../APK/README.md): permissions and Blitz calibration for the wrapper. |
+| `usePowerSaving.ts` | Brokers native Android Battery Saver status, maintaining reactive state and DOM attributes. |
 | `useExternalLink.ts` | OS intents and Clash Royale deep links. |
 | `useShare.ts` / `useShareTarget.ts` | Web Share API and inbound shared player tags. |
 | `useBadge.ts` | App badges, native or notification-based. |
@@ -52,6 +53,7 @@ This is the single registry for these services; higher-layer READMEs link here r
 | :--- | :--- |
 | `useAppSettings.ts` | Application settings and feature flags, mirrored to LocalStorage and IndexedDB. |
 | `useConfirm.ts` | Global modal confirmation service (replacing native `confirm()` with styled MD3 ConfirmDialog) to eliminate unstyled system blocks in Android. |
+| `apkManagerUtils.ts` | Pure helper functions, formatting utilities, and version comparison logic for APK update management. |
 | `apkResolver.ts` | Dynamic APK release metadata, version matching, and filename resolution utility. |
 | `apkResolverUtils.ts` | Pure utilities, constants, types, and helpers for companion APK version parsing and release resolution. |
 | `useApkManager.ts` | Native APK shell update management (installed vs published release comparison, download dispatching, and bridge state). |
@@ -122,12 +124,13 @@ The modal confirmation composable provides a robust, styled replacement for the 
 - **Resolution Precedence & Production Leak Protection:** Resolves initial state through a strict precedence hierarchy: (1) explicit `localStorage` persistence (`clash_manager_synthetic_mode === "true"`), (2) explicit URL query parameter (`?synthetic=true`), and (3) showcase cascade (`?showcase=true`). The showcase fallback respects an explicit `"false"` in `localStorage` to prevent showcase URLs from forcing mock data when disabled by the user.
 - **Deterministic State Persistence:** Synchronously commits state updates to `localStorage` under `clash_manager_synthetic_mode` on every toggle or explicit assignment, with SSR/headless safety checks (`typeof localStorage !== "undefined"`).
 
-### APK Resolution Lifecycle (`useApkManager.ts`, `apkResolver.ts` & `apkResolverUtils.ts`)
+### APK Resolution Lifecycle (`useApkManager.ts`, `apkManagerUtils.ts`, `apkResolver.ts` & `apkResolverUtils.ts`)
 
 The APK manager, standalone APK resolver, and helper utility services implement decomposed mechanisms for native Android wrapper upgrades. Browser-owned PWA lifecycle APIs are brokered by Layer 2 in `@shared/composables/usePwaManager.ts`:
 
-1. **Dedicated APK Shell Update Management (`useApkManager.ts`):** Manages native APK metadata resolution, installed vs. published release version comparison, download dispatching, and bridge status monitoring.
+1. **Dedicated APK Shell Update Management (`useApkManager.ts` & `apkManagerUtils.ts`):** Manages native APK metadata resolution, installed vs. published release version comparison, download dispatching, and bridge status monitoring.
    - **Update State Machine (`ApkUpdateState`):** Drives UI status and notification workflows through distinct deterministic states: `idle`, `checking`, `available`, `current`, `blocked`, `mismatch`, and `error`.
+   - **Pure Comparison & Formatting Helpers (`apkManagerUtils.ts`):** Houses pure mathematical semver comparison (`compareReleaseVersions`), installed-to-published candidate evaluation (`getInstalledReleaseComparison`), currency validation (`isInstalledApkCurrent`), and presentation formatting (`formatInstalledApkLabel`, `formatApkArtifactLabel`, `formatApkFeedSourceLabel`, `getReleaseVersionLabel`).
    - **Downgrade & Stale Feed Protection:** Prevents downloading stale release feeds or rollback versions (`isPublishedApkOlderThanInstalled`). If the published feed version or build number is strictly older than what is currently running, downloads are blocked and transition to `mismatch` with telemetry warnings, protecting local app databases and SQLite state from downgrade corruption.
    - **Bridge Permission Brokering & Fallbacks:** Checks package install permissions (`canRequestPackageInstalls`). If permissions are missing, redirects the user to system settings (`openPackageInstallSettings`) with a `blocked` state. For legacy shells lacking permission check APIs, automatically falls back to browser-mediated downloads.
    - **Multi-Tier Download Dispatching:** For modern native shells (`>= MIN_NATIVE_APK_DOWNLOAD_RESULT_BUILD = 191`), delegates download actions to `downloadApkFile(url, filename, sha256)`. If native download is declined or unavailable, cascades gracefully to `openExternalUrl` or standard window location redirection.
@@ -189,6 +192,15 @@ The Native Bridge service coordinates communication between the Web/PWA layer an
   - **Resolution Independence:** Persists coordinates to the native layer normalized as floats (0.0 - 1.0) via `saveCoordinates()` to ensure density-independent execution across various screen footprints.
   - **Reconstruction & Rounding:** Hydrates raw native coordinates via `loadCoordinates()`, converting the decimal offsets back to percentage values (0 - 100) and rounding to precision limits for high UI rendering fidelity.
   - **Robust Fallback Paths:** Implements Android intents for opening deep-linked system settings (`ACCESSIBILITY_SETTINGS` and `MANAGE_OVERLAY_PERMISSION`) if running in normal web browser environments where direct bridge method invocations are unavailable.
+
+### Android Battery Saver & Hardware Power Brokering (`usePowerSaving.ts`)
+
+`usePowerSaving.ts` acts as the Layer 1 hardware broker for native Android Battery Saver status, maintaining state synchronization and triggering global runtime optimizations:
+- **Module Singleton State (`isPowerSaving`):** Encapsulates reactive state at module scope, exposing a read-only `isPowerSaving` ref to all downstream consumers (`useClashSync`, `useTheme`, `useHaptics`, `useMotionPreference`, `useWakeLock`) to guarantee zero duplicate event listener registrations and uniform power-awareness.
+- **Direct Bridge State Re-evaluation:** Rather than relying solely on push events, directly re-queries `bridge.isPowerSaveMode()` via `refreshPowerSaving()` on window focus and document visibility transitions (`visibilitychange`). This mitigates stale hardware state when power-saving toggles occur while the application is backgrounded.
+- **Graceful Shell Fallback:** In web browsers or older native shells lacking `isPowerSaveMode`, gracefully defaults to `false` without throwing runtime exceptions.
+- **DOM Attribute Toggling (`data-power-saving`):** Toggles the `data-power-saving` attribute on `document.documentElement` synchronously upon state shifts. This drives global CSS optimizations (disabling resource-heavy blur filters, simplifying card shadows, and clamping CSS keyframe animations) directly in the presentation tier.
+- **System Event Listeners:** Attaches single-attachment listeners for native container change notifications (`cm-power-save-change`), window `focus`, and document `visibilitychange`.
 
 ### Console Metadata & Stats Badge Service (`useConsoleMetadata.ts`)
 
