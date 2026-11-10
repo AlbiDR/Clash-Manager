@@ -16,6 +16,15 @@ LAST_AGED:   2026-11-04
 
 ## T1 -- Active (last 7 days)
 
+### [2026-11-10] PR #2548 [Stage 11]: Audited native WebView performance settings, service worker caching routes, Vite Rolldown code splitting, and public asset precache footprint; zero source changes required
+**Domain:** apk | **Commit:** a9008595c | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2548)
+**Files:** .github/nightly-logs/11-apk-optimization-coverage.log, .github/nightly-logs/11-apk-optimization-pr-body.md
+**Why:** Routine performance audit verified all 9 wrapper, WebView, and SW caching invariants with 0 violations
+**Change:** Audited native WebView performance settings, service worker caching routes, Vite Rolldown code splitting, and public asset precache footprint; zero source changes required
+**Result:** pnpm audit:apk-perf reported 9 of 9 invariants PASS, 15 files and 67.6 KB precache footprint
+**Nudges:** 0
+
+
 ### [2026-11-10] PR #2547 [Stage 10]: Audited asset links, manifest parity, version sync (14.55.14 / 14055014), release metadata pointer (clashmanager-v14.55.14+529.apk), and cleartext traffic/security policies via pnpm audit:apk and pnpm test:apk-release
 **Domain:** apk | **Commit:** a53378a80 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2547)
 **Files:** .github/nightly-logs/10-apk-integrity-coverage.log, .github/nightly-logs/10-apk-integrity-pr-body.md
