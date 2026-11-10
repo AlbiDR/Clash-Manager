@@ -16,6 +16,15 @@ LAST_AGED:   2026-11-04
 
 ## T1 -- Active (last 7 days)
 
+### [2026-11-10] PR #2542 [Stage 5]: Reconcile useNativeBridge architecture, permission brokering, lifecycle re-hydration, and Blitz telemetry contracts in core services README
+**Domain:** documentation | **Commit:** 06044bb98 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2542)
+**Files:** .github/nightly-logs/05-documentation-readme-coverage.log, .github/nightly-logs/05-documentation-readme-pr-body.md, Frontend-PWA/src/core/services/README.md
+**Why:** Reconcile core services README with recent Stage 6 contract hardening and Stage 2 unit test expansion in useNativeBridge.ts
+**Change:** Reconcile useNativeBridge architecture, permission brokering, lifecycle re-hydration, and Blitz telemetry contracts in core services README
+**Result:** git diff --check passed with 0 errors; pnpm -C Frontend-PWA test useNativeBridge.spec.ts passed 16 of 16 tests
+**Nudges:** 0
+
+
 ### [2026-11-10] PR #2541 [Stage 4]: Audited 29 changed files and 10 SQL database views via source-level grep; confirmed zero structural rot or unreferenced database views
 **Domain:** optimization | **Commit:** 055a69932 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2541)
 **Files:** .github/nightly-logs/04-optimization-coverage.log, .github/nightly-logs/04-optimization-pr-body.md
