@@ -16,6 +16,15 @@ LAST_AGED:   2026-11-04
 
 ## T1 -- Active (last 7 days)
 
+### [2026-11-10] PR #2546 [Stage 9]: Calibration pass: 34 files in changed-files, 0 dep-viols, knip 11 files/1 dep/0 exp, streak: 23 (7 ord). Widened to useConnectivityManager; inspected useNetworkInfo. Closest: useNetworkInfo (165L, cohesive). Hunt: edge RTT/downlink passed.
+**Domain:** architecture | **Commit:** 2ed991589 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2546)
+**Files:** .github/nightly-logs/09-refactor-proposals-coverage.log, .github/nightly-logs/09-refactor-proposals-pr-body.md
+**Why:** Calibration pass triggered with calibration-due: YES. Substrate architecture strictly aligned with CleanStack ADR Layer 1 contracts with 0 depcruise violations, 0 knip export debt, and zero reproducible logic defects.
+**Change:** Calibration pass: 34 files in changed-files, 0 dep-viols, knip 11 files/1 dep/0 exp, streak: 23 (7 ord). Widened to useConnectivityManager; inspected useNetworkInfo. Closest: useNetworkInfo (165L, cohesive). Hunt: edge RTT/downlink passed.
+**Result:** depcruise passed 0 violations across 534 modules; type-check passed; vitest passed 19/19 unit tests across useNetworkInfo.spec.ts and useConnectionStatus.spec.ts.
+**Nudges:** 0
+
+
 ### [2026-11-10] PR #2545 [Stage 8]: Bumped vite to ^8.3.7 in monorepo catalogs and updated lockfile
 **Domain:** dependencies | **Commit:** c5e3cf5c7 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2545)
 **Files:** .github/nightly-logs/08-dependency-audit-coverage.log, .github/nightly-logs/08-dependency-audit-pr-body.md, package.json, pnpm-lock.yaml, pnpm-workspace.yaml
