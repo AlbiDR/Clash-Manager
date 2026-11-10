@@ -16,6 +16,15 @@ LAST_AGED:   2026-11-04
 
 ## T1 -- Active (last 7 days)
 
+### [2026-11-10] PR #2547 [Stage 10]: Audited asset links, manifest parity, version sync (14.55.14 / 14055014), release metadata pointer (clashmanager-v14.55.14+529.apk), and cleartext traffic/security policies via pnpm audit:apk and pnpm test:apk-release
+**Domain:** apk | **Commit:** a53378a80 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2547)
+**Files:** .github/nightly-logs/10-apk-integrity-coverage.log, .github/nightly-logs/10-apk-integrity-pr-body.md
+**Why:** Regular Stage 10 packaging integrity audit completed with no configuration drift or mismatches detected
+**Change:** Audited asset links, manifest parity, version sync (14.55.14 / 14055014), release metadata pointer (clashmanager-v14.55.14+529.apk), and cleartext traffic/security policies via pnpm audit:apk and pnpm test:apk-release
+**Result:** pnpm audit:apk verified 23 checks 0 drift, pnpm test:apk-release passed 11 of 11, pnpm test:apk-native passed 19 of 19
+**Nudges:** 0
+
+
 ### [2026-11-10] PR #2546 [Stage 9]: Calibration pass: 34 files in changed-files, 0 dep-viols, knip 11 files/1 dep/0 exp, streak: 23 (7 ord). Widened to useConnectivityManager; inspected useNetworkInfo. Closest: useNetworkInfo (165L, cohesive). Hunt: edge RTT/downlink passed.
 **Domain:** architecture | **Commit:** 2ed991589 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2546)
 **Files:** .github/nightly-logs/09-refactor-proposals-coverage.log, .github/nightly-logs/09-refactor-proposals-pr-body.md
