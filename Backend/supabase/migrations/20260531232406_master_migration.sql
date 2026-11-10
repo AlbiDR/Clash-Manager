@@ -979,9 +979,10 @@ BEGIN
 END;
 $function$;
 
-REVOKE EXECUTE ON FUNCTION drivers.get_player_battle_stats(integer, text[]) FROM PUBLIC;
-REVOKE ALL ON FUNCTION drivers.get_player_battle_stats(integer, text[]) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION drivers.get_player_battle_stats(integer, text[]) TO anon, authenticated, service_role;
+REVOKE EXECUTE ON FUNCTION drivers.get_player_battle_stats(integer, text[])
+  FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION drivers.get_player_battle_stats(integer, text[])
+  TO service_role;
 
 CREATE OR REPLACE FUNCTION substrate.get_vault_secret(p_name text)
  RETURNS text
@@ -3182,10 +3183,20 @@ COMMENT ON FUNCTION drivers.sync_voyage_finalization_job() IS
 'voyage is live is unchanged: the job runs every 5 minutes from the moment a '
 'voyage becomes ACTIVE with an end_at until it is COMPLETED.';
 
+REVOKE EXECUTE ON FUNCTION drivers.sync_voyage_finalization_job()
+  FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION drivers.sync_voyage_finalization_job()
+  TO service_role;
+
 COMMENT ON FUNCTION drivers.on_voyage_active_change() IS
 'Statement-level trigger function for trg_voyage_finalization_gate (AFTER INSERT, '
 'DELETE or UPDATE OF status, end_at on drivers.clan_voyage). Only delegates to '
 'drivers.sync_voyage_finalization_job(); see that comment.';
+
+REVOKE EXECUTE ON FUNCTION drivers.on_voyage_active_change()
+  FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION drivers.on_voyage_active_change()
+  TO service_role;
 
 CREATE OR REPLACE FUNCTION drivers.purge_expired_blacklist()
  RETURNS integer
@@ -5354,7 +5365,7 @@ COMMENT ON COLUMN features.roster_view.win_rate IS
    alongside RPeS. Superseded war_wins there, which was never populated by
    the ingestion pipeline and always read 0.';
 
-GRANT SELECT ON features.roster_view TO authenticated, anon, service_role;
+GRANT SELECT ON features.roster_view TO anon, authenticated, service_role;
 
 -- =============================================================================
 -- 5. Rebuild features.voyage_contributions (unchanged logic, clean rebuild)
