@@ -16,6 +16,119 @@ LAST_AGED:   2026-11-04
 
 ## T1 -- Active (last 7 days)
 
+### [2026-11-10] PR #2538 [Stage 1]: Audited 5 priority threat targets (unauthenticated endpoints, in-memory state, Valibot boundary gaps, dead critical-path code, cross-layer violations) across changed surface and Edge Functions; zero viable threat vectors found
+**Domain:** hardening | **Commit:** 0607c154d | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2538)
+**Files:** .github/nightly-logs/01-hardening-coverage.log, .github/nightly-logs/01-hardening-pr-body.md
+**Why:** Runtime integrity audit of current surface and Edge Function endpoints found zero unauthenticated routes, unbounded in-memory state, or validation leaks
+**Change:** Audited 5 priority threat targets (unauthenticated endpoints, in-memory state, Valibot boundary gaps, dead critical-path code, cross-layer violations) across changed surface and Edge Functions; zero viable threat vectors found
+**Result:** Vitest 221 Frontend-PWA suites (2391 tests) and 39 Backend suites (446 tests) passed; depcruise 0 violations across 534 modules
+**Nudges:** 0
+
+### [2026-11-10] PR #2539 [Stage 2]: Frontend-PWA/src/core/services/services-tests/useNativeBridge.spec.ts -- Expanded useNativeBridge unit test suite with tests for NaN coordinate rejection, string parsing, decimal boundary hydration, and corrupted JSON resilience.
+**Domain:** verification | **Commit:** f1341a40b | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2539)
+**Files:** .github/nightly-logs/02-verification-coverage.log, .github/nightly-logs/02-verification-pr-body.md, Frontend-PWA/src/core/services/services-tests/useNativeBridge.spec.ts
+**Why:** Recent-Change Priority: covered useNativeBridge calibration boundary checks and write sanitization following recent Layer 1 contract hardening.
+**Change:** Frontend-PWA/src/core/services/services-tests/useNativeBridge.spec.ts -- Expanded useNativeBridge unit test suite with tests for NaN coordinate rejection, string parsing, decimal boundary hydration, and corrupted JSON resilience.
+**Result:** Vitest useNativeBridge.spec.ts passed 16 of 16 tests, vue-tsc passed 0 errors, ESLint reported 0 errors; mutation testing verified both NaN guard inversion and boundary check inversion fail the new assertions
+**Nudges:** 0
+
+### [2026-11-09] PR #2526 [Stage 1]: Calibration pass: Widened scan of 5 priorities across Edge Functions and core services (apkResolver.ts, useDeepLinkHandler.ts); verified 7 ordinary CLEAN cycles since calibration with 0 viable threats; PR history aged to 2026-11-09.
+**Domain:** hardening | **Commit:** ff7b843af | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2526)
+**Files:** .github/nightly-logs/01-hardening-coverage.log, .github/nightly-logs/01-hardening-pr-body.md
+**Why:** Calibration due after 7 consecutive clean runs; widened scan across Edge Function boundaries and frontend core services confirmed complete defensive posture
+**Change:** Calibration pass: Widened scan of 5 priorities across Edge Functions and core services (apkResolver.ts, useDeepLinkHandler.ts); verified 7 ordinary CLEAN cycles since calibration with 0 viable threats; PR history aged to 2026-11-09.
+**Result:** Vitest backend passed 39 of 39 files (446 tests); Vitest frontend passed 221 of 221 files (2387 tests); depcruise reported 0 violations across 534 modules
+**Nudges:** 0
+
+### [2026-11-09] PR #2527 [Stage 2]: Frontend-PWA/src/core/services/services-tests/useDeepLinkHandler.spec.ts -- Expanded useDeepLinkHandler spec with Set reactivity contracts, empty pin queries, array normalizations, and successive dataset idempotence
+**Domain:** verification | **Commit:** 33d1788ed | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2527)
+**Files:** .github/nightly-logs/02-verification-coverage.log, .github/nightly-logs/02-verification-pr-body.md, Frontend-PWA/src/core/services/services-tests/useDeepLinkHandler.spec.ts
+**Why:** useDeepLinkHandler.ts lacked coverage for Set reference identity on toggle, empty string pin boundaries, leading empty pin arrays, and single-shot execution across successive item updates
+**Change:** Frontend-PWA/src/core/services/services-tests/useDeepLinkHandler.spec.ts -- Expanded useDeepLinkHandler spec with Set reactivity contracts, empty pin queries, array normalizations, and successive dataset idempotence
+**Result:** nightly-spec-verify.mjs passed spec (13 of 13 assertions), eslint (0 errors), and vue-tsc type-check (0 errors); mutation test proved failure when toggleExpand mutated Set in-place without returning a new Set instance
+**Nudges:** 0
+
+### [2026-11-09] PR #2529 [Stage 4]: Audited 35 changed files and 10 SQL database views via source-level grep; confirmed zero structural rot or unreferenced database views
+**Domain:** optimization | **Commit:** a39448901 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2529)
+**Files:** .github/nightly-logs/04-optimization-coverage.log, .github/nightly-logs/04-optimization-pr-body.md
+**Why:** Routine scheduled substrate hygiene and structural rot audit confirmed no actionable bottlenecks or orphaned logic
+**Change:** Audited 35 changed files and 10 SQL database views via source-level grep; confirmed zero structural rot or unreferenced database views
+**Result:** Vitest 221 test suites passed (2391 passed, 2 skipped), 0 unreferenced views in active use
+**Nudges:** 0
+
+### [2026-11-09] PR #2530 [Stage 5]: Reconcile usePowerSaving and apkManagerUtils architecture and contracts in core services README
+**Domain:** documentation | **Commit:** ee5d3fa81 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2530)
+**Files:** .github/nightly-logs/05-documentation-readme-coverage.log, .github/nightly-logs/05-documentation-readme-pr-body.md, Frontend-PWA/src/core/services/README.md
+**Why:** Document missing Layer 1 Android Battery Saver hardware broker and decomposed APK manager utilities in service registry and architecture sections
+**Change:** Reconcile usePowerSaving and apkManagerUtils architecture and contracts in core services README
+**Result:** depcruise 0 violations, git diff --check clean
+**Nudges:** 0
+
+### [2026-11-09] PR #2531 [Stage 6]: docs(tsdoc): harden useNativeBridge interface contracts and inline decision annotations
+**Domain:** documentation | **Commit:** b8181ab9d | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2531)
+**Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, .github/nightly-logs/06-documentation-tsdoc-pr-body.md, Frontend-PWA/src/core/services/useNativeBridge.ts
+**Why:** Define UseNativeBridgeReturn contract interface, document hardware brokerage and intent fallbacks, and record threat annotations per CleanStack Architecture Layer 1
+**Change:** docs(tsdoc): harden useNativeBridge interface contracts and inline decision annotations
+**Result:** vue-tsc passed, Vitest passed 25 of 25 tests across useNativeBridge specs, depcruise reported 0 violations
+**Nudges:** 0
+
+### [2026-11-09] PR #2532 [Stage 7]: Audited catalog protocols in Frontend-PWA/package.json and Backend/package.json; verified ground truth version 14.55.14 across 3 package manifests, README badges, Android APK manifests, and substrate constants
+**Domain:** versioning | **Commit:** 55b05118f | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2532)
+**Files:** .github/nightly-logs/07-version-integrity-coverage.log, .github/nightly-logs/07-version-integrity-pr-body.md
+**Why:** Eliminate monorepo version drift and enforce catalog adherence
+**Change:** Audited catalog protocols in Frontend-PWA/package.json and Backend/package.json; verified ground truth version 14.55.14 across 3 package manifests, README badges, Android APK manifests, and substrate constants
+**Result:** pnpm audit:version reported 0 drift lines across 3 manifests and 10 derived targets
+**Nudges:** 0
+
+### [2026-11-09] PR #2533 [Stage 8]: Bumped eslint-plugin-vue from ^10.10.0 to ^10.12.0 in catalogs and updated pnpm-lock.yaml
+**Domain:** dependencies | **Commit:** d5ab0812a | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2533)
+**Files:** .github/nightly-logs/08-dependency-audit-coverage.log, .github/nightly-logs/08-dependency-audit-pr-body.md, pnpm-lock.yaml, pnpm-workspace.yaml
+**Why:** Safe automated minor bump for ESLint Vue plugin within current major v10
+**Change:** Bumped eslint-plugin-vue from ^10.10.0 to ^10.12.0 in catalogs and updated pnpm-lock.yaml
+**Result:** eslint passed 0 errors, Vitest passed 221 test files across Backend and Frontend-PWA
+**Nudges:** 0
+
+### [2026-11-09] PR #2534 [Stage 10]: Audited asset links, manifest parity, version sync (14.55.14 / 14055014), release metadata pointer (clashmanager-v14.55.14+529.apk), and cleartext traffic/security policies via pnpm audit:apk and pnpm apk:verify:source
+**Domain:** apk | **Commit:** 1b833a3c6 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2534)
+**Files:** .github/nightly-logs/10-apk-integrity-coverage.log, .github/nightly-logs/10-apk-integrity-pr-body.md
+**Why:** Routine nightly packaging audit confirmed complete alignment between PWA and Android wrapper configurations with zero drift
+**Change:** Audited asset links, manifest parity, version sync (14.55.14 / 14055014), release metadata pointer (clashmanager-v14.55.14+529.apk), and cleartext traffic/security policies via pnpm audit:apk and pnpm apk:verify:source
+**Result:** pnpm audit:apk passed 29 checks and pnpm apk:verify:source confirmed 13 native declarations and intact classes.dex
+**Nudges:** 0
+
+### [2026-11-09] PR #2535 [Stage 11]: Audited native WebView performance settings, service worker caching routes, Vite code splitting, and public asset precache footprint; zero source changes required
+**Domain:** apk | **Commit:** 66e56e6bb | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2535)
+**Files:** .github/nightly-logs/11-apk-optimization-coverage.log, .github/nightly-logs/11-apk-optimization-pr-body.md
+**Why:** Ensure native APK wrapper boot times, caching strategies, and asset footprint remain fully optimized without regressions
+**Change:** Audited native WebView performance settings, service worker caching routes, Vite code splitting, and public asset precache footprint; zero source changes required
+**Result:** pnpm audit:apk-perf reported all 9 wrapper invariants PASS and 15 precache assets at 67.6 KB with 0 violations
+**Nudges:** 0
+
+### [2026-11-09] PR #2536 [Stage 12]: Automated hybrid shell UX audit completed with 0 violations across 77 files
+**Domain:** ux | **Commit:** 61e95e930 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2536)
+**Files:** .github/nightly-logs/12-apk-ux-coverage.log, .github/nightly-logs/12-apk-ux-pr-body.md
+**Why:** Automated APK UX audit reported PASS with 0 violations and 0 candidate files across 77 examined files in Frontend-PWA/src; UX categories 1-10 verified clean
+**Change:** Automated hybrid shell UX audit completed with 0 violations across 77 files
+**Result:** apk-ux-audit-status.txt: PASS; apk-ux-audit.json: 0 candidate files reviewed; UX categories 1-10 checked
+**Nudges:** 0
+
+### [2026-11-09] PR #2537 [Stage 13]: Documented Stage 1 watchdog nudge rescue, Stages 3 & 9 interactive stalls, multi-track layering, and updated Section 3 metrics across Stages 1-13
+**Domain:** pipeline | **Commit:** 983bfbe5f | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2537)
+**Files:** .github/nightly-logs/13-self-healing-protocol-coverage.log, .github/nightly-logs/13-self-healing-protocol-pr-body.md, .github/nightly-logs/13-self-healing-protocol.md
+**Why:** Daily pipeline resilience audit and living protocol update for 2026-11-09
+**Change:** Documented Stage 1 watchdog nudge rescue, Stages 3 & 9 interactive stalls, multi-track layering, and updated Section 3 metrics across Stages 1-13
+**Result:** git diff --check clean, all sections updated in 13-self-healing-protocol.md
+**Nudges:** 0
+
+### [2026-11-08] PR #2528 [Stage 1]: Calibration pass: audited 5 priority threat targets across changed surface and widened Target B/C older core services; zero threat vectors found; clean-since-calibration=7
+**Domain:** hardening | **Commit:** d2c87add7 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2528)
+**Files:** .github/nightly-logs/01-hardening-coverage.log, .github/nightly-logs/01-hardening-pr-body.md
+**Why:** Calibration pass due (7 clean runs since calibration); widened Target B/C architectural boundary audit confirmed zero threats across 534 modules
+**Change:** Calibration pass: audited 5 priority threat targets across changed surface and widened Target B/C older core services; zero threat vectors found; clean-since-calibration=7
+**Result:** depcruise passed 0 violations across 534 modules; vitest passed all tests in useApkManager.spec.ts and useDeepLinkHandler.spec.ts
+**Nudges:** 0
+
+
 ### [2026-11-08] PR #2519 [Stage 7]: Audited catalog protocols in Frontend-PWA/package.json and Backend/package.json; verified ground truth version 14.55.14 across 3 package manifests, README badges, Android APK manifests, and substrate constants
 **Domain:** versioning | **Commit:** a7c575af9 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2519)
 **Files:** .github/nightly-logs/07-version-integrity-coverage.log, .github/nightly-logs/07-version-integrity-pr-body.md
