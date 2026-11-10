@@ -16,6 +16,15 @@ LAST_AGED:   2026-11-04
 
 ## T1 -- Active (last 7 days)
 
+### [2026-11-10] PR #2545 [Stage 8]: Bumped vite to ^8.3.7 in monorepo catalogs and updated lockfile
+**Domain:** dependencies | **Commit:** c5e3cf5c7 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2545)
+**Files:** .github/nightly-logs/08-dependency-audit-coverage.log, .github/nightly-logs/08-dependency-audit-pr-body.md, package.json, pnpm-lock.yaml, pnpm-workspace.yaml
+**Why:** Safe Tier 1 patch bump to contain dependency rot and align build tooling
+**Change:** Bumped vite to ^8.3.7 in monorepo catalogs and updated lockfile
+**Result:** pnpm -r test passed across all workspaces; pnpm audit:version reported 0 drift lines
+**Nudges:** 0
+
+
 ### [2026-11-10] PR #2544 [Stage 7]: Audited catalog protocols in Frontend-PWA/package.json and Backend/package.json; verified ground truth version 14.55.14 across 3 package manifests, README badges, Android APK manifests, and substrate constants
 **Domain:** versioning | **Commit:** bf8550b82 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2544)
 **Files:** .github/nightly-logs/07-version-integrity-coverage.log, .github/nightly-logs/07-version-integrity-pr-body.md
