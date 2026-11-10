@@ -16,6 +16,15 @@ LAST_AGED:   2026-11-04
 
 ## T1 -- Active (last 7 days)
 
+### [2026-11-10] PR #2543 [Stage 6]: docs(tsdoc): harden useNetworkInfo interface contracts and inline decision annotations
+**Domain:** documentation | **Commit:** 39230a08d | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2543)
+**Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, .github/nightly-logs/06-documentation-tsdoc-pr-body.md, Frontend-PWA/src/core/services/useNetworkInfo.ts
+**Why:** Reconcile useNetworkInfo interface contracts and telemetry degradation annotations with CleanStack ADR Section I & IV
+**Change:** docs(tsdoc): harden useNetworkInfo interface contracts and inline decision annotations
+**Result:** vue-tsc type-check passed 0 errors; Vitest useNetworkInfo.spec.ts passed 9 of 9 tests; eslint passed 0 errors
+**Nudges:** 0
+
+
 ### [2026-11-10] PR #2542 [Stage 5]: Reconcile useNativeBridge architecture, permission brokering, lifecycle re-hydration, and Blitz telemetry contracts in core services README
 **Domain:** documentation | **Commit:** 06044bb98 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2542)
 **Files:** .github/nightly-logs/05-documentation-readme-coverage.log, .github/nightly-logs/05-documentation-readme-pr-body.md, Frontend-PWA/src/core/services/README.md
