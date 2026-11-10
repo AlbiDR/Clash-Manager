@@ -16,6 +16,15 @@ LAST_AGED:   2026-11-04
 
 ## T1 -- Active (last 7 days)
 
+### [2026-11-10] PR #2540 [Stage 3]: Folded 20261004015410 and 20261004020000 into master baseline: aligned features.roster_view GRANT SELECT privilege order and revoked public execution on drivers internal routines
+**Domain:** database | **Commit:** 3e171dea6 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2540)
+**Files:** .github/nightly-logs/03-baseline-consolidation-coverage.log, .github/nightly-logs/03-baseline-consolidation-pr-body.md, Backend/supabase/migrations/20260531232406_master_migration.sql
+**Why:** Ensure master baseline accurately reflects hardened privileges and chronological DDL declarations
+**Change:** Folded 20261004015410 and 20261004020000 into master baseline: aligned features.roster_view GRANT SELECT privilege order and revoked public execution on drivers internal routines
+**Result:** pnpm audit:migrations PASS; fold-state reconciled 2 migrations, 17 migrations still to fold, DB-UNAVAILABLE
+**Nudges:** 0
+
+
 ### [2026-11-10] PR #2538 [Stage 1]: Audited 5 priority threat targets (unauthenticated endpoints, in-memory state, Valibot boundary gaps, dead critical-path code, cross-layer violations) across changed surface and Edge Functions; zero viable threat vectors found
 **Domain:** hardening | **Commit:** 0607c154d | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2538)
 **Files:** .github/nightly-logs/01-hardening-coverage.log, .github/nightly-logs/01-hardening-pr-body.md
