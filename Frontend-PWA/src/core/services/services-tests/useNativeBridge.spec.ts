@@ -124,6 +124,46 @@ describe("useNativeBridge", () => {
     expect(mockBridge.saveCoordinates).toHaveBeenCalledWith(0.1, 0.2, 0.3, 0.4);
   });
 
+  it("parses string coordinates but aborts bridge save when any coordinate is NaN", () => {
+    const { saveCoordinates, inviteX, inviteY, closeX, closeY } = useNativeBridge();
+    // Valid numeric strings should convert and save properly
+    (inviteX as any).value = "15.5";
+    (inviteY as any).value = "25.5";
+    (closeX as any).value = "35.5";
+    (closeY as any).value = "45.5";
+    saveCoordinates();
+    expect(mockBridge.saveCoordinates).toHaveBeenCalledTimes(1);
+    expect(mockBridge.saveCoordinates).toHaveBeenCalledWith(0.155, 0.255, 0.355, 0.455);
+
+    mockBridge.saveCoordinates.mockClear();
+
+    // If any coordinate is unparseable / NaN, saveCoordinates must cleanly abort
+    (inviteX as any).value = "invalid-nan";
+    saveCoordinates();
+    expect(mockBridge.saveCoordinates).toHaveBeenCalledTimes(0);
+  });
+
+  it("handles exact boundary decimals and malformed JSON syntax gracefully in loadCoordinates", () => {
+    const { loadCoordinates, inviteX, inviteY, closeX, closeY } = useNativeBridge();
+    // Exact boundary decimals 0.0 (0%) and 1.0 (100%)
+    mockBridge.getCoordinates.mockReturnValueOnce(
+      JSON.stringify({ inviteX: 0, inviteY: 1, closeX: 0.0, closeY: 1.0 }),
+    );
+    loadCoordinates();
+    expect(inviteX.value).toBe(0);
+    expect(inviteY.value).toBe(100);
+    expect(closeX.value).toBe(0);
+    expect(closeY.value).toBe(100);
+
+    // Completely malformed JSON syntax must be caught and preserve existing coordinates
+    mockBridge.getCoordinates.mockReturnValueOnce("{corrupted-json-syntax:");
+    loadCoordinates();
+    expect(inviteX.value).toBe(0);
+    expect(inviteY.value).toBe(100);
+    expect(closeX.value).toBe(0);
+    expect(closeY.value).toBe(100);
+  });
+
   it("delegates accessibility settings to the bridge", () => {
     const { openAccessibilitySettings } = useNativeBridge();
     openAccessibilitySettings();
