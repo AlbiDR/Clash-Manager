@@ -4,23 +4,23 @@
 
 In plain terms: nothing needed fixing. This run checked the APK optimization area and found it already correct, so the only file here is the log recording that the check happened.
 
-**What was checked:** Audited native WebView performance settings, service worker caching routes, Vite code splitting, and public asset precache footprint; zero source changes required
+**What was checked:** Audited native WebView performance settings, service worker caching routes, Vite Rolldown code splitting, and public asset precache footprint; zero source changes required
 
-**Why:** Ensure native APK wrapper boot times, caching strategies, and asset footprint remain fully optimized without regressions
+**Why:** Routine performance audit verified all 9 wrapper, WebView, and SW caching invariants with 0 violations
 
-**Result:** pnpm audit:apk-perf reported all 9 wrapper invariants PASS and 15 precache assets at 67.6 KB with 0 violations
+**Result:** pnpm audit:apk-perf reported 9 of 9 invariants PASS, 15 files and 67.6 KB precache footprint
 
 **Files changed:** .github/nightly-logs/11-apk-optimization-coverage.log
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: apk
-  Cycle: nightly-cycle/2026-11-09
+  Cycle: nightly-cycle/2026-11-10
   Contract: 63c0229fe16cf4c98e352282307edbee4830cff68ea2d93c5c967a1f5cbd30ea
-  Why: Ensure native APK wrapper boot times, caching strategies, and asset footprint remain fully optimized without regressions
-  Change: Audited native WebView performance settings, service worker caching routes, Vite code splitting, and public asset precache footprint; zero source changes required
-  Result: pnpm audit:apk-perf reported all 9 wrapper invariants PASS and 15 precache assets at 67.6 KB with 0 violations
+  Why: Routine performance audit verified all 9 wrapper, WebView, and SW caching invariants with 0 violations
+  Change: Audited native WebView performance settings, service worker caching routes, Vite Rolldown code splitting, and public asset precache footprint; zero source changes required
+  Result: pnpm audit:apk-perf reported 9 of 9 invariants PASS, 15 files and 67.6 KB precache footprint
   Files: .github/nightly-logs/11-apk-optimization-coverage.log
   Nudges: 0
-  Execution: 56aa2f038a9d0c5fd01583fc9c01aece90abce51
+  Execution: beb5aabafc4acc6157770516db7f2fb62efc8bd3
 -->
