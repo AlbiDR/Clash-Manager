@@ -16,6 +16,15 @@ LAST_AGED:   2026-11-04
 
 ## T1 -- Active (last 7 days)
 
+### [2026-11-10] PR #2544 [Stage 7]: Audited catalog protocols in Frontend-PWA/package.json and Backend/package.json; verified ground truth version 14.55.14 across 3 package manifests, README badges, Android APK manifests, and substrate constants
+**Domain:** versioning | **Commit:** bf8550b82 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2544)
+**Files:** .github/nightly-logs/07-version-integrity-coverage.log, .github/nightly-logs/07-version-integrity-pr-body.md
+**Why:** Routine nightly version integrity audit to detect and reconcile monorepo version drift
+**Change:** Audited catalog protocols in Frontend-PWA/package.json and Backend/package.json; verified ground truth version 14.55.14 across 3 package manifests, README badges, Android APK manifests, and substrate constants
+**Result:** pnpm audit:version reported 0 drift lines across 3 manifests and derived files
+**Nudges:** 0
+
+
 ### [2026-11-10] PR #2543 [Stage 6]: docs(tsdoc): harden useNetworkInfo interface contracts and inline decision annotations
 **Domain:** documentation | **Commit:** 39230a08d | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2543)
 **Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, .github/nightly-logs/06-documentation-tsdoc-pr-body.md, Frontend-PWA/src/core/services/useNetworkInfo.ts
