@@ -16,6 +16,15 @@ LAST_AGED:   2026-11-04
 
 ## T1 -- Active (last 7 days)
 
+### [2026-11-10] PR #2549 [Stage 12]: Bounded audit of Frontend-PWA/src confirmed 0 violations and 0 candidates across categories 1-10; no mobile UX regressions detected.
+**Domain:** ux | **Commit:** f32b84812 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2549)
+**Files:** .github/nightly-logs/12-apk-ux-coverage.log, .github/nightly-logs/12-apk-ux-pr-body.md
+**Why:** Structured audit returned PASS with 0 candidates; all 10 hybrid UX interaction and viewport categories are compliant.
+**Change:** Bounded audit of Frontend-PWA/src confirmed 0 violations and 0 candidates across categories 1-10; no mobile UX regressions detected.
+**Result:** apk-ux-audit-status.txt: PASS; apk-ux-audit.json: 0 candidate files reviewed; UX categories 1-10 checked
+**Nudges:** 0
+
+
 ### [2026-11-10] PR #2548 [Stage 11]: Audited native WebView performance settings, service worker caching routes, Vite Rolldown code splitting, and public asset precache footprint; zero source changes required
 **Domain:** apk | **Commit:** a9008595c | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2548)
 **Files:** .github/nightly-logs/11-apk-optimization-coverage.log, .github/nightly-logs/11-apk-optimization-pr-body.md
