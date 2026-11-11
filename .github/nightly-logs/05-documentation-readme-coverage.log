@@ -226,3 +226,4 @@
 * [2026-11-08] [Stage 5] [04:24Z-04:28Z 5m] [checks doc-debt=OK] CHANGED: Frontend-PWA/src/core/services/README.md -- Reconcile useDeepLinkHandler presentation orchestration, reactivity contracts, and auto-scroll layout lifecycle guards in core services README
 * [2026-11-09] [Stage 5] [04:20Z-04:30Z 9m] [checks doc-debt=OK] CHANGED: Frontend-PWA/src/core/services/README.md -- Reconcile usePowerSaving and apkManagerUtils architecture and contracts in core services README
 * [2026-11-10] [Stage 5] [04:25Z-04:33Z 7m] [checks doc-debt=OK] CHANGED: Frontend-PWA/src/core/services/README.md -- Reconcile useNativeBridge architecture, permission brokering, lifecycle re-hydration, and Blitz telemetry contracts in core services README
+* [2026-11-11] [Stage 5] [04:18Z-04:22Z 4m] [checks doc-debt=OK] CHANGED: Frontend-PWA/src/core/services/README.md -- Reconcile useNetworkInfo architecture, singleton contracts, and degradation heuristics in core services README
