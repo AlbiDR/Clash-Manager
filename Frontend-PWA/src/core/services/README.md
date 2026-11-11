@@ -195,6 +195,15 @@ The Native Bridge service coordinates communication between the Web/PWA layer an
   - **Reconstruction & Rounding:** Hydrates raw native coordinates via `loadCoordinates()`, converting decimal offsets back to percentage values (0 - 100) via `toCalibrationPercent()` with boundary validation and fallback retention to defend against malformed payloads.
   - **Robust Fallback Paths:** Implements Android intents for opening deep-linked system settings (`ACCESSIBILITY_SETTINGS` and `MANAGE_OVERLAY_PERMISSION`) if running in normal web browser environments where direct bridge method invocations are unavailable.
 
+### Network Telemetry & Degradation Brokering (`useNetworkInfo.ts`)
+
+`useNetworkInfo.ts` acts as the Layer 1 hardware broker for the W3C Network Information API, providing reactive connection metrics and latency/bandwidth degradation detection:
+- **Interface Contracts & Return Shape (`UseNetworkInfoReturn`):** Formally exports `UseNetworkInfoReturn`, exposing `isSupported: boolean`, `effectiveType: DeepReadonly<Ref<string>>`, `downlink: DeepReadonly<Ref<number>>`, `saveData: DeepReadonly<Ref<boolean>>`, `rtt: DeepReadonly<Ref<number>>`, and `isSlowConnection: ComputedRef<boolean>`. Satisfies CleanStack Architecture ADR Section I (Core Services) and ADR Section IV (Resilience & Connectivity) by establishing an authoritative network quality contract.
+- **Module Singleton State & Cold Boot Defaults:** Encapsulates reactive connection metrics at module scope (`effectiveType`, `downlink`, `saveData`, `rtt`). Optimistic defaults (`effectiveType = '4g'`, `downlink = 10`, `saveData = false`, `rtt = 0`) prevent premature degradation gating during cold boot initialization or server-side hydration.
+- **Defensive API Probing & Environmental Safety:** Safely inspects browser globals (`navigator.connection || navigator.webkitConnection || navigator.mozConnection`), gracefully falling back to unsupported state (`isSupported: false`) when running in non-browser, SSR, or Web Worker environments without throwing runtime exceptions.
+- **Degradation Detection Heuristic (`isSlowConnection`):** Computes connection degradation via multi-factor threshold evaluation: cellular 2G classifications (`effectiveType === 'slow-2g' || effectiveType === '2g'`), high network latency (`rtt > 500`), or constrained downlink bandwidth (`downlink < 1`). This allows presentation and sync engines to scale back non-critical asset hydration and telemetry polling.
+- **Idempotent Hardware Listener Registration:** Uses an internal lifecycle guard (`isInitialized`) to guarantee a single, idempotent `change` event listener attachment to the underlying hardware API, preventing duplicate listener registration and memory leaks across multiple composable consumer instances.
+
 ### Android Battery Saver & Hardware Power Brokering (`usePowerSaving.ts`)
 
 `usePowerSaving.ts` acts as the Layer 1 hardware broker for native Android Battery Saver status, maintaining state synchronization and triggering global runtime optimizations:
