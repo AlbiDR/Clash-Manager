@@ -16,6 +16,15 @@ LAST_AGED:   2026-11-11
 
 ## T1 -- Active (last 7 days)
 
+### [2026-11-11] PR #2557 [Stage 8]: Bumped knip devDependency from ^6.44.2 to ^6.45.0 in monorepo catalogs and updated lockfile
+**Domain:** dependencies | **Commit:** 3c440baa1 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2557)
+**Files:** .github/nightly-logs/08-dependency-audit-coverage.log, .github/nightly-logs/08-dependency-audit-pr-body.md, package.json, pnpm-lock.yaml, pnpm-workspace.yaml
+**Why:** Tier 1 patch/minor dependency bump to keep static analysis tooling up to date
+**Change:** Bumped knip devDependency from ^6.44.2 to ^6.45.0 in monorepo catalogs and updated lockfile
+**Result:** knip 6.45.0 executed successfully, audit:version reported 0 drift lines across 3 manifests, test:nightly-lifecycle passed 65 of 65
+**Nudges:** 0
+
+
 ### [2026-11-11] PR #2556 [Stage 7]: Audited catalog protocols in Frontend-PWA/package.json and Backend/package.json; verified ground truth version 14.55.14 across 3 package manifests, README badges, Android APK manifests, and substrate constants
 **Domain:** versioning | **Commit:** ff35a3556 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2556)
 **Files:** .github/nightly-logs/07-version-integrity-coverage.log, .github/nightly-logs/07-version-integrity-pr-body.md
