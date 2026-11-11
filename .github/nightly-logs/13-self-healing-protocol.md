@@ -932,10 +932,10 @@
 
 * Stages 3 and 9 Recurrent Interactive Tool Invocations and User Feedback Stalls (2026-11-09):
   - Stages: Stage 3 (Baseline Consolidation), Stage 9 (Refactor)
-  - State: [RESOLVED - monitor] (2026-11-10; resolved on 2026-11-10 as S03 merged PR #2540 in 13m and S09 merged PR #2546 in 11m with zero interactive tool stalls)
-  - Evidence: `nightly-run-ledger.json` (Stage 3 session: sessions/3322303932589230175, state: AWAITING_USER_FEEDBACK, lifetimeMinutes: 24.2, ledger state: RUNNING; Stage 9 session: sessions/2465141245726612552, state: AWAITING_USER_FEEDBACK, lifetimeMinutes: 27.2, ledger state: RUNNING), `pnpm nightly:recap`
-  - Symptom: Both Stage 3 and Stage 9 halted autonomous execution during their runs by entering the `AWAITING_USER_FEEDBACK` state after invoking interactive tools (`request_user_input` / `ask_question`). Neither session finalized coverage logs or opened PRs, leaving both stages stuck in RUNNING status in the ledger.
-  - Root Cause: Unattended agent workflows in Stages 3 and 9 continue to encounter logic paths that call interactive user feedback tools instead of executing autonomous fallback decisions or completing clean log-only results.
+  - State: [RECURRING] (Stage 3 recurred on 2026-11-11; Stage 9 resolved on 2026-11-10 and completed cleanly in PR #2558 on 2026-11-11)
+  - Evidence: `nightly-run-ledger.json` (Stage 3 session on 2026-11-09: sessions/3322303932589230175; Stage 3 session on 2026-11-11: sessions/18063367983568941123, redispatched from failed session sessions/7233916138731114929, state: AWAITING_USER_FEEDBACK, lifetimeMinutes: 21.2, ledger state: RUNNING), `pnpm nightly:recap`
+  - Symptom: Stage 3 halted autonomous execution again on 2026-11-11 after redispatch, entering the `AWAITING_USER_FEEDBACK` state after invoking interactive tools. Stage 3 produced no finalized coverage log entry or PR, remaining stuck in RUNNING status in the ledger. Stage 9 executed autonomously (PR #2558) without interactive stalls.
+  - Root Cause: Unattended agent workflows in Stage 3 continue to encounter logic paths that invoke interactive user feedback tools (`request_user_input` / `ask_question`) instead of executing autonomous fallback decisions or completing clean log-only results.
   - Recommended Fix: Class-level preventive action: Enforce strict prohibition of interactive feedback tools in unattended stage environments via tool schema stripping or runtime error interception in runner wrappers.
 
 * Pipeline Health Adverse Degradation Trends (2026-11-09):
@@ -958,6 +958,18 @@
   - Symptom: All 12 preceding stages completed fully autonomous executions and published native PRs (PRs #2538-#2549) without watchdog nudges or fallback interventions (0 nudges across all 12 stages, 0 attempts). Every preceding stage reset its health streak to 0 and achieved HEALTHY status. Only Stage 13 shows DEGRADING (streak 1) due to rolling historical intervention rate accounting (rising from 11% to 20%).
   - Root Cause: Rolling window calculations reflect past fallback publishing and watchdog rescues from cycles 2026-11-04 through 2026-11-08. Stage 13 is currently in-flight and evaluated mid-cycle before its terminal native PR publication.
   - Recommended Fix: Maintain unattended native PR publication discipline to allow Stage 13 rolling intervention rate to decay back below degradation threshold.
+
+* Stage 3 Awaiting User Feedback Stall and Degrading Health on Stages 12 & 13 (2026-11-11):
+  - Stages: Stage 3 (Baseline Consolidation, RUNNING / AWAITING_USER_FEEDBACK); Stage 12 (APK UX, DEGRADING streak 1); Stage 13 (Self-Healing, DEGRADING streak 1)
+  - State: [ACTIVE - monitor] (2026-11-11)
+  - Evidence: `nightly-run-ledger.json` (Stage 3: redispatched to session sessions/18063367983568941123, state: AWAITING_USER_FEEDBACK; Stage 12: `verdict: DEGRADING`, `currentStreak: 1`, reason: "intervention rate rose from 18% to 29%", state: RECOVERABLE / OPEN_PR; Stage 13: `verdict: DEGRADING`, `currentStreak: 1`, reason: "intervention rate rose from 11% to 20%"), PR #2561
+  - Symptom:
+    - Stage 3 stalled again after dispatching sessions/18063367983568941123, which blocked awaiting interactive feedback for 21.2m, yielding zero migration baseline fold progress today.
+    - Stage 12 completed its hybrid UX audit in 2m and published PR #2561 natively, which merged into Nightly; however, the ledger snapshot captured it during OPEN_PR evaluation with a DEGRADING health verdict due to historical rolling intervention rates (rising from 18% to 29%).
+    - Stage 13 reflects rolling historical intervention rate degradation (rising from 11% to 20%).
+    - Stages 1, 2, 4, 5, 6, 7, 8, 9, 10, and 11 all maintained HEALTHY status (streak 0, 0 attempts, 0 interventions).
+  - Root Cause: Unattended runner interactive tool allowance in Stage 3; rolling window calculations in Stages 12 and 13 reflecting historical fallback publishing runs from 2026-11-04 to 2026-11-08.
+  - Recommended Fix: Enforce interactive tool prohibition in Stage 3 prompt/runner; continue clean native PR publication to allow Stage 12 and Stage 13 rolling intervention rates to decay.
 
 ## Section 2: Cross-Stage Coherence Bugs (Priority 2)
 
@@ -1215,56 +1227,75 @@
   - Root Cause: Impeccable contract compliance, robust domain encapsulation, and stable native Jules PR publication handoffs produced zero merge conflicts or execution races.
   - Recommended Fix: No defect. Affirms operational peak health and resilience of the pipeline.
 
+* Cross-Stage Autonomous Native Delivery and Clean Test Rollback Isolation (2026-11-11):
+  - Stages: S01, S02, S04, S05, S06, S07, S08, S09, S10, S11, S12 (PRs #2551-#2561)
+  - State: [OBSERVED - benign] (2026-11-11)
+  - Evidence: PRs #2551-#2561; `00-pr-history.md`; coverage logs for S01-S12
+  - Symptom: 11 of 12 preceding stages completed and merged native PRs without watchdog fallback. Substrate isolation worked as designed:
+    - Stage 1 aged T1 PR history and verified 0 threat vectors across 534 modules (PR #2551, 10m).
+    - Stage 2 encountered verification allowance exhaustion when attempting `useNetworkInfo.spec.ts` additions, executed a clean rollback to submit a PARTIAL-RUN (PR #2552, 12m), ensuring zero unverified test artifacts contaminated downstream stages.
+    - Stage 4 audited 10 active SQL views and 6 historical views with zero structural rot (PR #2553, 4m).
+    - Stage 5 documented `useNetworkInfo` architecture in `Frontend-PWA/src/core/services/README.md` (PR #2554, 4m).
+    - Stage 6 hardened `useSelectionStore.ts` TSDoc interface contracts and inline decision annotations (PR #2555, 8m).
+    - Stage 7 confirmed catalog protocol ground truth version 14.55.14 across all manifests (PR #2556, 3m).
+    - Stage 8 bumped `knip` devDependency to ^6.45.0 in monorepo catalogs and lockfile (PR #2557, 16m).
+    - Stage 9 audited `useSelectionStore.ts` and `useConsoleSelection.ts` with 0 dep-viols and 0 knip export debt (PR #2558, 9m).
+    - Stage 10 verified APK packaging, asset links, and security policies (PR #2559, 3m).
+    - Stage 11 verified native WebView performance settings, service worker caching, and code splitting (PR #2560, 13m).
+    - Stage 12 audited 77 files across 10 UX interaction categories in 2m (PR #2561).
+  - Root Cause: Robust contract enforcement and bounded blast radiuses ensured Stage 2 test rollback did not impair downstream documentation, dependency, or refactoring lanes.
+  - Recommended Fix: No defect. Affirms operational stability across all active execution lanes.
+
 ## Section 3: No-Diff and Low-Value Audit (Priority 3)
 
 * Stage 1 (Harden):
-  - Consecutive No-Diff Days: 15 (CLEAN logged on 2026-11-10, PR #2538, session lifetime 48.7m, run duration 17m; audit duration: 17m this run, median 6m)
-  - Analysis: Audited 5 priority threat targets (unauthenticated endpoints, in-memory state, Valibot boundary gaps, dead critical-path code, cross-layer violations) across changed surface and Edge Functions; zero viable threat vectors found across 534 modules. Native PR publication succeeded with 0 nudges. Health rating: HEALTHY (current streak 0).
+  - Consecutive No-Diff Days: 16 (CLEAN logged on 2026-11-11, PR #2551, run duration 10m; audit duration: 10m this run, median 6m)
+  - Analysis: Audited 5 priority threat targets (unauthenticated endpoints, in-memory state, Valibot boundary gaps, dead critical-path code, cross-layer violations) across changed surface and Edge Functions; zero viable threat vectors found across 534 modules. Aged T1 PR history. Native PR publication succeeded with 0 nudges. Health rating: HEALTHY (current streak 0).
 
 * Stage 2 (Verify):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-11-10 in Frontend-PWA/src/core/services/services-tests/useNativeBridge.spec.ts, PR #2539; audit duration: 27m, median 12.5m)
-  - Analysis: Expanded useNativeBridge unit test suite with tests for NaN coordinate rejection, string parsing, decimal boundary hydration, and corrupted JSON resilience (16 assertions, Vitest PASS, mutation test verified). Health rating: HEALTHY (current streak 0).
+  - Consecutive No-Diff Days: 0 (PARTIAL-RUN logged on 2026-11-11, PR #2552; audit duration: 12m, median 12m)
+  - Analysis: Restored useNetworkInfo spec edits after verification attempt allowance exhausted. Clean rollback prevented broken test commits. Health rating: HEALTHY (current streak 0).
 
 * Stage 3 (Baseline Consolidation):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-11-10 in Backend/supabase/migrations/20260531232406_master_migration.sql, PR #2540; audit duration: 13m, median 4.5m)
-  - Analysis: Folded migrations 20261004015410 and 20261004020000 into master baseline: aligned features.roster_view GRANT SELECT privilege order and revoked public execution on drivers internal routines. 17 migrations remain pending. Autonomous execution restored (0 interactive stalls). Health rating: HEALTHY (current streak 0).
+  - Consecutive No-Diff Days: 1 (Stalled in RUNNING / AWAITING_USER_FEEDBACK on 2026-11-11; 0m effective progress, median 4.5m)
+  - Analysis: Interactive tool invocation halted session sessions/18063367983568941123. No migrations folded today. 17 migrations remain pending. Health rating: HEALTHY in ledger snapshot (streak 0), but runtime execution impaired.
 
 * Stage 4 (Optimization):
-  - Consecutive No-Diff Days: 28 (CLEAN logged on 2026-11-10, PR #2541; audit duration: 8m, median 5m)
-  - Analysis: Audited 29 changed files and 10 SQL database views via source-level grep; confirmed zero structural rot or unreferenced database views. Saturated by design across current view surface. Health rating: HEALTHY (current streak 0).
+  - Consecutive No-Diff Days: 29 (CLEAN logged on 2026-11-11, PR #2553; audit duration: 4m, median 5m)
+  - Analysis: Audited 10 active SQL views and 6 historical views via source-level grep; inspected 24 changed files; zero structural rot or unreferenced database views. Saturated by design. Health rating: HEALTHY (current streak 0).
 
 * Stage 5 (README):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-11-10 in Frontend-PWA/src/core/services/README.md, PR #2542; audit duration: 7m, median 5m)
-  - Analysis: Reconciled useNativeBridge architecture, permission brokering, lifecycle re-hydration, and Blitz telemetry contracts in core services README (PR #2542). Health rating: HEALTHY (current streak 0).
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-11-11 in Frontend-PWA/src/core/services/README.md, PR #2554; audit duration: 4m, median 5m)
+  - Analysis: Reconciled useNetworkInfo architecture, singleton contracts, and degradation heuristics in core services README (PR #2554). Health rating: HEALTHY (current streak 0).
 
 * Stage 6 (TSDoc):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-11-10 in Frontend-PWA/src/core/services/useNetworkInfo.ts, PR #2543; audit duration: 8m, median 6m)
-  - Analysis: Hardened useNetworkInfo interface contracts and inline decision annotations (PR #2543). Health rating: HEALTHY (current streak 0).
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-11-11 in Frontend-PWA/src/core/services/useSelectionStore.ts, PR #2555; audit duration: 8m, median 6m)
+  - Analysis: Hardened useSelectionStore interface contracts and inline decision annotations (PR #2555). Health rating: HEALTHY (current streak 0).
 
 * Stage 7 (Version Integrity):
-  - Consecutive No-Diff Days: 190 (CLEAN logged on 2026-11-10, PR #2544; audit duration: 3m, median 3m)
+  - Consecutive No-Diff Days: 191 (CLEAN logged on 2026-11-11, PR #2556; audit duration: 3m, median 3m)
   - Analysis: Audited catalog protocols in Frontend-PWA and Backend manifests; verified ground truth version 14.55.14 across 3 package manifests, README badges, Android APK manifests, and substrate constants. Saturated by design. Health rating: HEALTHY (current streak 0).
 
 * Stage 8 (Dependency Audit):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-11-10 in package.json and pnpm-lock.yaml, PR #2545; audit duration: 13m, median 7m)
-  - Analysis: Bumped vite to ^8.3.7 in monorepo catalogs and updated lockfile (PR #2545). Health rating: HEALTHY (current streak 0).
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-11-11 in package.json and pnpm-lock.yaml, PR #2557; audit duration: 16m, median 7m)
+  - Analysis: Bumped knip devDependency from ^6.44.2 to ^6.45.0 in monorepo catalogs and updated lockfile (PR #2557). Health rating: HEALTHY (current streak 0).
 
 * Stage 9 (Refactor):
-  - Consecutive No-Diff Days: 0 (Active calibration pass logged on 2026-11-10, PR #2546; audit duration: 11m, median 6m)
-  - Analysis: Calibration pass completed: widened scan to useConnectivityManager; inspected useNetworkInfo (165L, cohesive). Passed depcruise across 534 modules, 0 dep-viols, 0 knip export debt. Interactive feedback stall resolved. Health rating: HEALTHY (current streak 0).
+  - Consecutive No-Diff Days: 1 (CLEAN logged on 2026-11-11, PR #2558; audit duration: 9m, median 6m)
+  - Analysis: Inspected useSelectionStore.ts (142L) and useConsoleSelection.ts; 28 files audited, 0 dep-viols, 0 knip export debt; state & filters passed. Health rating: HEALTHY (current streak 0).
 
 * Stage 10 (APK-Integrity):
-  - Consecutive No-Diff Days: 123 (CLEAN logged on 2026-11-10, PR #2547; audit duration: 3m, median 3m)
+  - Consecutive No-Diff Days: 124 (CLEAN logged on 2026-11-11, PR #2559; audit duration: 3m, median 3m)
   - Analysis: Audited asset links, manifest parity, version sync (14.55.14 / 14055014), release metadata pointer (clashmanager-v14.55.14+529.apk), and cleartext traffic/security policies via pnpm audit:apk and pnpm test:apk-release. Saturated by design. Health rating: HEALTHY (current streak 0).
 
 * Stage 11 (APK-Optimization):
-  - Consecutive No-Diff Days: 28 (CLEAN logged on 2026-11-10, PR #2548; audit duration: 6m, median 5m)
+  - Consecutive No-Diff Days: 29 (CLEAN logged on 2026-11-11, PR #2560; audit duration: 13m, median 5m)
   - Analysis: Audited native WebView performance settings, service worker caching routes, Vite Rolldown code splitting, and public asset precache footprint; zero source changes required. Saturated by design. Health rating: HEALTHY (current streak 0).
 
 * Stage 12 (APK-UX):
-  - Consecutive No-Diff Days: 41 (CLEAN logged on 2026-11-10, PR #2549; audit duration: 3m, median 3m)
-  - Analysis: Bounded audit of Frontend-PWA/src confirmed 0 violations and 0 candidates across categories 1-10; no mobile UX regressions detected. Saturated by design. Health rating: HEALTHY (current streak 0).
+  - Consecutive No-Diff Days: 42 (CLEAN logged on 2026-11-11, PR #2561; audit duration: 2m, median 3m)
+  - Analysis: Automated hybrid shell UX audit completed with 0 violations across 77 files. Clean native PR merged into Nightly. Health verdict is DEGRADING (streak 1, intervention rate rose from 18% to 29%) due to historical rolling window calculation. Saturated by design.
 
 * Stage 13 (Self-Healing):
-  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-11-10; audit duration: 12m this run, median 5m)
-  - Analysis: Completed daily self-healing audit pass for 2026-11-10: documented resolution of Stage 1 watchdog nudge and Stages 3 & 9 interactive feedback stalls, restoration of HEALTHY status across Stages 1-12 with streak 0, Stage 13 rolling intervention rate accounting lag in Section 1, 12-stage autonomous native delivery in Section 2, and updated Section 3 metrics across Stages 1-13.
+  - Consecutive No-Diff Days: 0 (Active changes logged on 2026-11-11; audit duration: 8m this run, median 5m)
+  - Analysis: Completed daily self-healing audit pass for 2026-11-11: documented recurrence of Stage 3 interactive feedback stall in Section 1, active degradation warnings on Stages 12 & 13, cross-stage native delivery and Stage 2 test rollback isolation in Section 2, and updated Section 3 metrics across Stages 1-13.
