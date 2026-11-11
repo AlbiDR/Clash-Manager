@@ -177,3 +177,4 @@
 * [2026-11-08] [Stage 6] [05:19Z-05:31Z 12m] [checks doc-debt=OK] CHANGED: Frontend-PWA/src/core/services/apkResolver.ts -- docs(tsdoc): harden apkResolver interface contracts and inline decision annotations
 * [2026-11-09] [Stage 6] [05:23Z-05:31Z 8m] [checks doc-debt=OK] CHANGED: Frontend-PWA/src/core/services/useNativeBridge.ts -- docs(tsdoc): harden useNativeBridge interface contracts and inline decision annotations
 * [2026-11-10] [Stage 6] [05:23Z-05:32Z 8m] [checks doc-debt=OK] CHANGED: Frontend-PWA/src/core/services/useNetworkInfo.ts -- docs(tsdoc): harden useNetworkInfo interface contracts and inline decision annotations
+* [2026-11-11] [Stage 6] [05:30Z-05:38Z 8m] [checks doc-debt=OK] CHANGED: Frontend-PWA/src/core/services/useSelectionStore.ts -- docs(tsdoc): harden useSelectionStore interface contracts and inline decision annotations
