@@ -16,6 +16,15 @@ LAST_AGED:   2026-11-11
 
 ## T1 -- Active (last 7 days)
 
+### [2026-11-11] PR #2558 [Stage 9]: CLEAN: (1) 28 files, 0 dep-viols, knip 11 files/1 dep/0 exp; (2) streak: 24; (3) useSelectionStore.ts, useConsoleSelection.ts; (4) closest: useSelectionStore (142L); hunt: useSelectionStore/useConsoleSelection state & filters passed.
+**Domain:** architecture | **Commit:** 1cc8052db | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2558)
+**Files:** .github/nightly-logs/09-refactor-proposals-coverage.log, .github/nightly-logs/09-refactor-proposals-pr-body.md
+**Why:** Architecture fully conforms to CleanStack ADR with zero structural debt, and defect hunt confirmed zero functional anomalies
+**Change:** CLEAN: (1) 28 files, 0 dep-viols, knip 11 files/1 dep/0 exp; (2) streak: 24; (3) useSelectionStore.ts, useConsoleSelection.ts; (4) closest: useSelectionStore (142L); hunt: useSelectionStore/useConsoleSelection state & filters passed.
+**Result:** Vitest suites passed 10/10; vue-tsc passed 0 errors; depcruise reported 0 violations
+**Nudges:** 0
+
+
 ### [2026-11-11] PR #2557 [Stage 8]: Bumped knip devDependency from ^6.44.2 to ^6.45.0 in monorepo catalogs and updated lockfile
 **Domain:** dependencies | **Commit:** 3c440baa1 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2557)
 **Files:** .github/nightly-logs/08-dependency-audit-coverage.log, .github/nightly-logs/08-dependency-audit-pr-body.md, package.json, pnpm-lock.yaml, pnpm-workspace.yaml
