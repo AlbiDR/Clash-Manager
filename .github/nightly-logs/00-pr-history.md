@@ -16,6 +16,15 @@ LAST_AGED:   2026-11-11
 
 ## T1 -- Active (last 7 days)
 
+### [2026-11-11] PR #2562 [Stage 13]: Documented recurrence of Stage 3 interactive stall, active degradation trends on Stages 12 & 13, cross-stage native delivery and test rollback isolation, and updated Section 3 metrics
+**Domain:** pipeline | **Commit:** 10f6b9b1d | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2562)
+**Files:** .github/nightly-logs/13-self-healing-protocol-coverage.log, .github/nightly-logs/13-self-healing-protocol-pr-body.md, .github/nightly-logs/13-self-healing-protocol.md
+**Why:** Living protocol document update reflecting observed 2026-11-11 pipeline execution
+**Change:** Documented recurrence of Stage 3 interactive stall, active degradation trends on Stages 12 & 13, cross-stage native delivery and test rollback isolation, and updated Section 3 metrics
+**Result:** git diff --check reported zero whitespace errors and verified protocol edits in-place
+**Nudges:** 1
+
+
 ### [2026-11-11] PR #2561 [Stage 12]: Automated hybrid shell UX audit completed with 0 violations across 77 files
 **Domain:** ux | **Commit:** ae8128bd3 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2561)
 **Files:** .github/nightly-logs/12-apk-ux-coverage.log, .github/nightly-logs/12-apk-ux-pr-body.md
