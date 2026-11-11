@@ -16,6 +16,15 @@ LAST_AGED:   2026-11-11
 
 ## T1 -- Active (last 7 days)
 
+### [2026-11-11] PR #2555 [Stage 6]: docs(tsdoc): harden useSelectionStore interface contracts and inline decision annotations
+**Domain:** documentation | **Commit:** 39a779103 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2555)
+**Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, .github/nightly-logs/06-documentation-tsdoc-pr-body.md, Frontend-PWA/src/core/services/useSelectionStore.ts
+**Why:** Define UseSelectionStoreReturn contract interface and reconcile reactive state boundaries with CleanStack ADR Section I & III
+**Change:** docs(tsdoc): harden useSelectionStore interface contracts and inline decision annotations
+**Result:** vue-tsc type-check passed 0 errors; Vitest useSelectionStore.spec.ts passed 5 of 5 tests; depcruise reported 0 violations
+**Nudges:** 0
+
+
 ### [2026-11-11] PR #2554 [Stage 5]: Reconcile useNetworkInfo architecture, singleton contracts, and degradation heuristics in core services README
 **Domain:** documentation | **Commit:** 864586d2b | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2554)
 **Files:** .github/nightly-logs/05-documentation-readme-coverage.log, .github/nightly-logs/05-documentation-readme-pr-body.md, Frontend-PWA/src/core/services/README.md
