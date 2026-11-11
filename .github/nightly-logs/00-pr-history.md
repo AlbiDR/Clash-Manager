@@ -16,6 +16,15 @@ LAST_AGED:   2026-11-11
 
 ## T1 -- Active (last 7 days)
 
+### [2026-11-11] PR #2554 [Stage 5]: Reconcile useNetworkInfo architecture, singleton contracts, and degradation heuristics in core services README
+**Domain:** documentation | **Commit:** 864586d2b | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2554)
+**Files:** .github/nightly-logs/05-documentation-readme-coverage.log, .github/nightly-logs/05-documentation-readme-pr-body.md, Frontend-PWA/src/core/services/README.md
+**Why:** Document useNetworkInfo interface contracts, reactive module singleton state, and degradation thresholds following recent Layer 1 contract hardening
+**Change:** Reconcile useNetworkInfo architecture, singleton contracts, and degradation heuristics in core services README
+**Result:** git diff --check passed with 0 errors; pnpm -C Frontend-PWA test useNetworkInfo.spec.ts passed 9 of 9 tests
+**Nudges:** 0
+
+
 ### [2026-11-11] PR #2553 [Stage 4]: Audited 10 active SQL views and 6 historical views via source-level grep; inspected 24 changed files; zero structural rot or unreferenced database views
 **Domain:** optimization | **Commit:** adeed1c4b | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2553)
 **Files:** .github/nightly-logs/04-optimization-coverage.log, .github/nightly-logs/04-optimization-pr-body.md
