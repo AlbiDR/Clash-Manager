@@ -15,6 +15,23 @@ LAST_AGED:   2026-11-11
 ---
 
 ## T1 -- Active (last 7 days)
+
+### [2026-11-11] PR #2551 [Stage 1]: Audited 5 priority threat targets (unauthenticated endpoints, in-memory state, Valibot boundary gaps, dead critical-path code, cross-layer violations) across changed surface and Edge Functions; zero viable threat vectors found
+**Domain:** hardening | **Commit:** 921b4d8b8 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2551)
+**Files:** .github/nightly-logs/00-pr-history.md, .github/nightly-logs/01-hardening-coverage.log, .github/nightly-logs/01-hardening-pr-body.md
+**Why:** Bounded threat surface scan and aging pass confirmed all runtime boundaries, in-memory state variables, and layer isolations are intact and secure
+**Change:** Audited 5 priority threat targets (unauthenticated endpoints, in-memory state, Valibot boundary gaps, dead critical-path code, cross-layer violations) across changed surface and Edge Functions; zero viable threat vectors found
+**Result:** depcruise 0 violations, Backend Vitest passed 39 of 39 files and 446 of 446 tests, git diff --check passed with 0 errors
+**Nudges:** 0
+
+### [2026-11-11] PR #2552 [Stage 2]: Restored useNetworkInfo spec edits after verification attempt allowance exhausted
+**Domain:** verification | **Commit:** 3f88cf5bd | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2552)
+**Files:** .github/nightly-logs/02-verification-coverage.log, .github/nightly-logs/02-verification-pr-body.md
+**Why:** Verification attempts exhausted the 2-attempt budget for useNetworkInfo.spec.ts, requiring clean restoration per contract
+**Change:** Restored useNetworkInfo spec edits after verification attempt allowance exhausted
+**Result:** nightly-spec-verify RESTORE returned on attempt 2 of 2; working tree restored to clean state
+**Nudges:** 0
+
 ### [2026-11-10] PR #2550 [Stage 13]: Documented resolution of Stage 1 nudge & Stages 3/9 stalls, health recovery across S01-S12, S13 rolling lag, 12-stage native delivery, and updated Section 3 metrics
 **Domain:** pipeline | **Commit:** fa623cc07 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2550)
 **Files:** .github/nightly-logs/13-self-healing-protocol-coverage.log, .github/nightly-logs/13-self-healing-protocol-pr-body.md, .github/nightly-logs/13-self-healing-protocol.md
