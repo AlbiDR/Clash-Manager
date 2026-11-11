@@ -1,26 +1,26 @@
 ### Nightly Stage 2: Verification - Logic Integrity Auditor
 
-**Status:** CHANGED
+**Status:** PARTIAL-RUN
 
-In plain terms: this adds 1 test file in the verification area. No product code changed, so the app behaves exactly as it did before.
+In plain terms: no change was made to the project. This run ended as PARTIAL-RUN and the only file here is the log recording that.
 
-**What changed:** Frontend-PWA/src/core/services/services-tests/useNativeBridge.spec.ts -- Expanded useNativeBridge unit test suite with tests for NaN coordinate rejection, string parsing, decimal boundary hydration, and corrupted JSON resilience.
+**What was checked:** Restored useNetworkInfo spec edits after verification attempt allowance exhausted
 
-**Why:** Recent-Change Priority: covered useNativeBridge calibration boundary checks and write sanitization following recent Layer 1 contract hardening.
+**Why:** Verification attempts exhausted the 2-attempt budget for useNetworkInfo.spec.ts, requiring clean restoration per contract
 
-**Result:** Vitest useNativeBridge.spec.ts passed 16 of 16 tests, vue-tsc passed 0 errors, ESLint reported 0 errors; mutation testing verified both NaN guard inversion and boundary check inversion fail the new assertions
+**Result:** nightly-spec-verify RESTORE returned on attempt 2 of 2; working tree restored to clean state
 
-**Files changed:** .github/nightly-logs/02-verification-coverage.log, Frontend-PWA/src/core/services/services-tests/useNativeBridge.spec.ts
+**Files changed:** .github/nightly-logs/02-verification-coverage.log
 
 <!--
 NIGHTLY_PR_METADATA:
   Domain: verification
-  Cycle: nightly-cycle/2026-11-10
+  Cycle: nightly-cycle/2026-11-11
   Contract: b2e927ebff4e2ca5a343609133745d050f07d22fd9bf3e42481440c1d14079f0
-  Why: Recent-Change Priority: covered useNativeBridge calibration boundary checks and write sanitization following recent Layer 1 contract hardening.
-  Change: Frontend-PWA/src/core/services/services-tests/useNativeBridge.spec.ts -- Expanded useNativeBridge unit test suite with tests for NaN coordinate rejection, string parsing, decimal boundary hydration, and corrupted JSON resilience.
-  Result: Vitest useNativeBridge.spec.ts passed 16 of 16 tests, vue-tsc passed 0 errors, ESLint reported 0 errors; mutation testing verified both NaN guard inversion and boundary check inversion fail the new assertions
-  Files: .github/nightly-logs/02-verification-coverage.log, Frontend-PWA/src/core/services/services-tests/useNativeBridge.spec.ts
+  Why: Verification attempts exhausted the 2-attempt budget for useNetworkInfo.spec.ts, requiring clean restoration per contract
+  Change: Restored useNetworkInfo spec edits after verification attempt allowance exhausted
+  Result: nightly-spec-verify RESTORE returned on attempt 2 of 2; working tree restored to clean state
+  Files: .github/nightly-logs/02-verification-coverage.log
   Nudges: 0
-  Execution: 59bf084728d7e598a3a399715cdb3de95a749aeb
+  Execution: 0b70d11b4ccf0ae51e776beed3cf07f70887ccc6
 -->
