@@ -16,6 +16,15 @@ LAST_AGED:   2026-11-11
 
 ## T1 -- Active (last 7 days)
 
+### [2026-11-11] PR #2559 [Stage 10]: Audited asset links, manifest parity, version sync (14.55.14 / 14055014), release metadata pointer (clashmanager-v14.55.14+529.apk), and cleartext traffic/security policies via pnpm audit:apk and pnpm test:apk-release
+**Domain:** apk | **Commit:** 9efb0076d | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2559)
+**Files:** .github/nightly-logs/10-apk-integrity-coverage.log, .github/nightly-logs/10-apk-integrity-pr-body.md
+**Why:** PWA and native APK wrapper configurations are fully synchronized with no drift detected across target invariants
+**Change:** Audited asset links, manifest parity, version sync (14.55.14 / 14055014), release metadata pointer (clashmanager-v14.55.14+529.apk), and cleartext traffic/security policies via pnpm audit:apk and pnpm test:apk-release
+**Result:** pnpm audit:apk passed 24 invariant checks, pnpm apk:verify:source passed 13 token checks, and pnpm test:apk-release passed 11 of 11 tests
+**Nudges:** 0
+
+
 ### [2026-11-11] PR #2558 [Stage 9]: CLEAN: (1) 28 files, 0 dep-viols, knip 11 files/1 dep/0 exp; (2) streak: 24; (3) useSelectionStore.ts, useConsoleSelection.ts; (4) closest: useSelectionStore (142L); hunt: useSelectionStore/useConsoleSelection state & filters passed.
 **Domain:** architecture | **Commit:** 1cc8052db | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2558)
 **Files:** .github/nightly-logs/09-refactor-proposals-coverage.log, .github/nightly-logs/09-refactor-proposals-pr-body.md
