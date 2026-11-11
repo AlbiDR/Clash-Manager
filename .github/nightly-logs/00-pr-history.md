@@ -16,6 +16,15 @@ LAST_AGED:   2026-11-11
 
 ## T1 -- Active (last 7 days)
 
+### [2026-11-11] PR #2556 [Stage 7]: Audited catalog protocols in Frontend-PWA/package.json and Backend/package.json; verified ground truth version 14.55.14 across 3 package manifests, README badges, Android APK manifests, and substrate constants
+**Domain:** versioning | **Commit:** ff35a3556 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2556)
+**Files:** .github/nightly-logs/07-version-integrity-coverage.log, .github/nightly-logs/07-version-integrity-pr-body.md
+**Why:** Routine nightly version integrity audit to detect and reconcile monorepo version drift
+**Change:** Audited catalog protocols in Frontend-PWA/package.json and Backend/package.json; verified ground truth version 14.55.14 across 3 package manifests, README badges, Android APK manifests, and substrate constants
+**Result:** pnpm audit:version reported 0 drift lines across 3 manifests and derived files
+**Nudges:** 0
+
+
 ### [2026-11-11] PR #2555 [Stage 6]: docs(tsdoc): harden useSelectionStore interface contracts and inline decision annotations
 **Domain:** documentation | **Commit:** 39a779103 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2555)
 **Files:** .github/nightly-logs/06-documentation-tsdoc-coverage.log, .github/nightly-logs/06-documentation-tsdoc-pr-body.md, Frontend-PWA/src/core/services/useSelectionStore.ts
