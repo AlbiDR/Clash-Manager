@@ -16,6 +16,15 @@ LAST_AGED:   2026-11-12
 
 ## T1 -- Active (last 7 days)
 
+### [2026-11-12] PR #2565 [Stage 3]: Folded 20260705030000_voyage_history_pruning.sql by reconciling features.roster_view grant in master baseline; 19 migrations remain still to fold next 20260917070640_fix_battle_stats_today_branch_sargable.sql
+**Domain:** database | **Commit:** 3d0dd307f | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2565)
+**Files:** .github/nightly-logs/03-baseline-consolidation-coverage.log, .github/nightly-logs/03-baseline-consolidation-pr-body.md, Backend/supabase/migrations/20260531232406_master_migration.sql
+**Why:** Target A chronological migration folding of oldest pending migration to advance declarative baseline consolidation
+**Change:** Folded 20260705030000_voyage_history_pruning.sql by reconciling features.roster_view grant in master baseline; 19 migrations remain still to fold next 20260917070640_fix_battle_stats_today_branch_sargable.sql
+**Result:** pnpm audit:migrations PASS (79 migrations, 188 baseline objects, 0 violations); fold-state reconciled 20260705030000_voyage_history_pruning.sql with 19 migrations owning unfolded objects remaining; DB-UNAVAILABLE
+**Nudges:** 0
+
+
 ### [2026-11-12] PR #2563 [Stage 1]: Audited 5 priority threat targets (unauthenticated endpoints, in-memory state, Valibot boundary gaps, dead critical-path code, cross-layer violations) across changed surface and Edge Functions; zero viable threat vectors found
 **Domain:** hardening | **Commit:** 82a2a1231 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2563)
 **Files:** .github/nightly-logs/00-pr-history.md, .github/nightly-logs/01-hardening-coverage.log, .github/nightly-logs/01-hardening-pr-body.md
