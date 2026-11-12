@@ -15,6 +15,23 @@ LAST_AGED:   2026-11-12
 ---
 
 ## T1 -- Active (last 7 days)
+
+### [2026-11-12] PR #2563 [Stage 1]: Audited 5 priority threat targets (unauthenticated endpoints, in-memory state, Valibot boundary gaps, dead critical-path code, cross-layer violations) across changed surface and Edge Functions; zero viable threat vectors found
+**Domain:** hardening | **Commit:** 82a2a1231 | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2563)
+**Files:** .github/nightly-logs/00-pr-history.md, .github/nightly-logs/01-hardening-coverage.log, .github/nightly-logs/01-hardening-pr-body.md
+**Why:** Bounded threat scan confirmed zero runtime security vulnerabilities or failure mode risks on changed files
+**Change:** Audited 5 priority threat targets (unauthenticated endpoints, in-memory state, Valibot boundary gaps, dead critical-path code, cross-layer violations) across changed surface and Edge Functions; zero viable threat vectors found
+**Result:** depcruise reported 0 violations across 534 modules, pnpm test passed 2393 tests across 221 test files
+**Nudges:** 0
+
+### [2026-11-12] PR #2564 [Stage 2]: Expanded useSelectionStore spec coverage for array immutability, toggle deduplication, forced mode resets, order preservation, and instance state isolation
+**Domain:** verification | **Commit:** 03288506e | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2564)
+**Files:** .github/nightly-logs/02-verification-coverage.log, .github/nightly-logs/02-verification-pr-body.md, Frontend-PWA/src/core/services/services-tests/useSelectionStore.spec.ts
+**Why:** Covered recent contract hardening changes to useSelectionStore.ts with saturating unit tests and mutation proofs
+**Change:** Expanded useSelectionStore spec coverage for array immutability, toggle deduplication, forced mode resets, order preservation, and instance state isolation
+**Result:** Vitest passed 12 of 12 tests in useSelectionStore.spec.ts; ESLint and vue-tsc passed with 0 errors; mutation in clearSelection caught by assertion
+**Nudges:** 0
+
 ### [2026-11-11] PR #2562 [Stage 13]: Documented recurrence of Stage 3 interactive stall, active degradation trends on Stages 12 & 13, cross-stage native delivery and test rollback isolation, and updated Section 3 metrics
 **Domain:** pipeline | **Commit:** 10f6b9b1d | [View PR](https://github.com/AlbiDR/Clash-Manager/pull/2562)
 **Files:** .github/nightly-logs/13-self-healing-protocol-coverage.log, .github/nightly-logs/13-self-healing-protocol-pr-body.md, .github/nightly-logs/13-self-healing-protocol.md
